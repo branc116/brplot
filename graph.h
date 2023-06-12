@@ -1,5 +1,6 @@
 #pragma once
 #include "raylib.h"
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +35,10 @@ typedef struct {
   point_group_t groups[GROUP_CAP];
   int groups_len;
   Color group_colors[GROUP_CAP];
+
+  bool shaders_dirty;
 } graph_values_t;
+
 
 typedef struct {Vector2* v; point_group_t* group;} pp_ret;
 

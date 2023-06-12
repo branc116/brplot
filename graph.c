@@ -56,7 +56,28 @@ void test_points(graph_values_t* gv) {
 }
 
 void update_graph_values(graph_values_t* gv) {
-  int w = GetScreenWidth() - GRAPH_LEFT_PAD - 60, h = GetScreenHeight() - 110;
+  if (gv->shaders_dirty) {
+    gv->shaders_dirty = false;
+    Shader new_line = LoadShader("./shaders/line.vs", "./shaders/line.fs");
+    if (new_line.locs != NULL) {
+      UnloadShader(gv->linesShader);
+      gv->linesShader = new_line;
+    }
+    Shader new_grid = LoadShader(NULL, "./shaders/grid.fs");
+    if (new_grid.locs != NULL) {
+      UnloadShader(gv->gridShader);
+      gv->gridShader = new_grid;
+    }
+    for (int i = 0; i < 2; ++i) {
+      gv->uResolution[i] = GetShaderLocation(gv->shaders[i], "resolution");
+      gv->uZoom[i] = GetShaderLocation(gv->shaders[i], "zoom");
+      gv->uOffset[i] = GetShaderLocation(gv->shaders[i], "offset");
+      gv->uScreen[i] = GetShaderLocation(gv->shaders[i], "screen");
+    }
+  }
+  int w = GetScreenWidth() - GRAPH_LEFT_PAD - 60, h = GetScreenHeight() - 120;
+  gv->graph_rect.x = GRAPH_LEFT_PAD;
+  gv->graph_rect.y = 60;
   gv->graph_rect.width = w;
   gv->graph_rect.height = h;
   gv->uvScreen.x = GetScreenWidth();
