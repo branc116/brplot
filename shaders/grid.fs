@@ -2,7 +2,8 @@
 
 precision mediump float;
 
-uniform vec2 resolution;
+//x, y, width, height
+uniform vec4 resolution;
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 zoom;
@@ -23,7 +24,7 @@ float map(vec2 fragCoord, vec2 zoom_level, vec2 offset) {
     vec2 baseMajor = baseMinor + 1;
     vec2 divs = vec2(pow(10, baseMinor.x), pow(10, baseMinor.y));
     vec2 divsMajor = vec2(pow(10, baseMajor.x), pow(10, baseMajor.y));
-    vec2 cPos = ( fragCoord - .5*resolution.xy ) / resolution.y;
+    vec2 cPos = ( fragCoord - .5*resolution.zw ) / resolution.w;
     cPos *= zoom_level;
     cPos += offset;
     vec2 mcPosd = mod(cPos + divs/2., divs) - divs/2.;
@@ -39,6 +40,6 @@ float map(vec2 fragCoord, vec2 zoom_level, vec2 offset) {
 }
 
 void main(void) {
-    vec2 fragCoord = gl_FragCoord.xy;
+    vec2 fragCoord = gl_FragCoord.xy - resolution.xy;
     out_color = 0.6*vec4(map(fragCoord, zoom, offset));
 }

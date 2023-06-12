@@ -14,8 +14,7 @@
 
 
 
-void *udp_main(void* ptr) {
-  (void)(ptr);
+void *udp_main(void* gv) {
   printf("Attempting to bind on localhost:42069\n");
   char buffer[64] = {0};
   struct in_addr a;
@@ -53,7 +52,7 @@ void *udp_main(void* ptr) {
     if (s <= 0) continue;
 
     buffer[s] = 0;
-    add_point_callback(buffer, s); 
+    add_point_callback(gv, buffer, s);
   }
   printf("Killing listening thread\n");
 
