@@ -6,63 +6,10 @@
 
 static void test_points(graph_values_t* gv);
 static void refresh_shaders_if_dirty(graph_values_t* gv);
-static int DrawButton(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...) {
-  Vector2 mp = GetMousePosition();
-  int c = 0;
-  va_list args;
-  va_start(args, str);
-  vsprintf(buff, str, args);
-  va_end(args);
-  float pad = 5.;
-  Vector2 size = { MeasureText(buff, font_size) +  2 * pad, font_size + 2 * pad };
-  Rectangle box = { x, y, size.x, size.y };
-  bool is_in = CheckCollisionPointRec(mp, box);
-  if (is_in) {
-    bool is_p = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
-    c = is_p ? 2 : 1;
-    if (is_p && is_pressed) {
-      *is_pressed = !*is_pressed;
-    }
-  }
-  if (is_pressed && *is_pressed) {
-    DrawRectangleRec(box, BLUE);
-  } else if (is_in) {
-    DrawRectangleRec(box, RED);
-  }
-  DrawText(buff, x + pad, y + pad, font_size, WHITE);
-  return c;
-}
+static void update_resolution(graph_values_t* gv);
 
-static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale) {
-  DrawButton(NULL, gv->graph_rect.x - 30, gv->graph_rect.y - 30, font_scale * 10,
-      buff, "(%f, %f)", -gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, gv->uvZoom.y/2 + gv->uvOffset.y);
-  DrawButton(NULL, gv->graph_rect.x + gv->graph_rect.width - 120, gv->graph_rect.y - 30, font_scale * 10,
-      buff, "(%f, %f)", gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, gv->uvZoom.y/2 + gv->uvOffset.y);
-
-  DrawButton(NULL, gv->graph_rect.x - 30, gv->graph_rect.y + 20 + gv->graph_rect.height, font_scale * 10,
-      buff, "(%f, %f)", -gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, -gv->uvZoom.y/2 + gv->uvOffset.y);
-  DrawButton(NULL, gv->graph_rect.x + gv->graph_rect.width - 120, gv->graph_rect.y + 20 + gv->graph_rect.height, font_scale * 10,
-      buff, "(%f, %f)", gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, -gv->uvZoom.y/2 + gv->uvOffset.y);
-
-  int i = 0;
-  DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "offset: (%f, %f)", gv->uvOffset.x, gv->uvOffset.y);
-  DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "zoom: (%f, %f)", gv->uvZoom.x, gv->uvZoom.y);
-  DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "Line groups: %d/%d", gv->groups_len, GROUP_CAP);
-  for(int j = 0; j < gv->groups_len; ++j) {
-    DrawButton(&gv->groups[j].is_selected, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "Group #%d: %d/%d", gv->groups[j].group_id, gv->groups[j].len, gv->groups[j].cap);
-  }
-}
-
-static void update_resolution(graph_values_t* gv) {
-  gv->uvScreen.x = GetScreenWidth();
-  gv->uvScreen.y = GetScreenHeight();
-  int w = gv->uvScreen.x - GRAPH_LEFT_PAD - 60, h = gv->uvScreen.y - 120;
-  gv->graph_rect.x = GRAPH_LEFT_PAD;
-  gv->graph_rect.y = 60;
-  gv->graph_rect.width = w;
-  gv->graph_rect.height = h;
-}
-
+static int DrawButton(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...);
+static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale);
 
 void DrawGraph(graph_values_t* gv) {
   char buff[128];
@@ -216,5 +163,62 @@ static void test_points(graph_values_t* gv) {
     pp_ret r = push_point(gv, p, group);
     r.v->x = r.group->len; 
   }
+}
+
+static int DrawButton(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...) {
+  Vector2 mp = GetMousePosition();
+  int c = 0;
+  va_list args;
+  va_start(args, str);
+  vsprintf(buff, str, args);
+  va_end(args);
+  float pad = 5.;
+  Vector2 size = { MeasureText(buff, font_size) +  2 * pad, font_size + 2 * pad };
+  Rectangle box = { x, y, size.x, size.y };
+  bool is_in = CheckCollisionPointRec(mp, box);
+  if (is_in) {
+    bool is_p = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+    c = is_p ? 2 : 1;
+    if (is_p && is_pressed) {
+      *is_pressed = !*is_pressed;
+    }
+  }
+  if (is_pressed && *is_pressed) {
+    DrawRectangleRec(box, BLUE);
+  } else if (is_in) {
+    DrawRectangleRec(box, RED);
+  }
+  DrawText(buff, x + pad, y + pad, font_size, WHITE);
+  return c;
+}
+
+static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale) {
+  DrawButton(NULL, gv->graph_rect.x - 30, gv->graph_rect.y - 30, font_scale * 10,
+      buff, "(%f, %f)", -gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, gv->uvZoom.y/2 + gv->uvOffset.y);
+  DrawButton(NULL, gv->graph_rect.x + gv->graph_rect.width - 120, gv->graph_rect.y - 30, font_scale * 10,
+      buff, "(%f, %f)", gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, gv->uvZoom.y/2 + gv->uvOffset.y);
+
+  DrawButton(NULL, gv->graph_rect.x - 30, gv->graph_rect.y + 20 + gv->graph_rect.height, font_scale * 10,
+      buff, "(%f, %f)", -gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, -gv->uvZoom.y/2 + gv->uvOffset.y);
+  DrawButton(NULL, gv->graph_rect.x + gv->graph_rect.width - 120, gv->graph_rect.y + 20 + gv->graph_rect.height, font_scale * 10,
+      buff, "(%f, %f)", gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, -gv->uvZoom.y/2 + gv->uvOffset.y);
+
+  int i = 0;
+  DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "offset: (%f, %f)", gv->uvOffset.x, gv->uvOffset.y);
+  DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "zoom: (%f, %f)", gv->uvZoom.x, gv->uvZoom.y);
+  DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "Line groups: %d/%d", gv->groups_len, GROUP_CAP);
+  for(int j = 0; j < gv->groups_len; ++j) {
+    DrawButton(&gv->groups[j].is_selected, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "Group #%d: %d/%d", gv->groups[j].group_id, gv->groups[j].len, gv->groups[j].cap);
+  }
+}
+
+static void update_resolution(graph_values_t* gv) {
+  gv->uvScreen.x = GetScreenWidth();
+  gv->uvScreen.y = GetScreenHeight();
+  int w = gv->uvScreen.x - GRAPH_LEFT_PAD - 60, h = gv->uvScreen.y - 120;
+  gv->graph_rect.x = GRAPH_LEFT_PAD;
+  gv->graph_rect.y = 60;
+  gv->graph_rect.width = w;
+  gv->graph_rect.height = h;
 }
 
