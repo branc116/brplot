@@ -1,4 +1,4 @@
-#Raylib plotter.
+# Raylib plotter.
 
 Smol application that plots lines that are sent to the application using udp socket.
 
@@ -49,7 +49,8 @@ Make drawing lines use buffers ( Don't use DrawLineStrip function by raylib. ) M
 
 ### Screenshot
 
-![media/rlplot.png](screenshot)
+![screenshot](media/rlplot.png)
 
 ### License
+
 MIT
