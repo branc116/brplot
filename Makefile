@@ -1,7 +1,7 @@
-CCFLAGS=-Wall -Wpedantic -Wextra -g
+CCFLAGS=-Wall -Wpedantic -Wextra -O3
 
 bin/rlplot: build/udp.o build/main.o build/graph.o
-	gcc -pthread -lraylib -o bin/rlplot build/udp.o build/main.o build/graph.o
+	gcc $(CCFLAGS) -pthread -lraylib -o bin/rlplot build/udp.o build/main.o build/graph.o
 
 build/udp.o: udp.c udp.h
 	gcc $(CCFLAGS) -c -o build/udp.o udp.c

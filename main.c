@@ -1,4 +1,3 @@
-#include "raylib.h"
 #include <stddef.h>
 #include <assert.h>
 #include <errno.h>
@@ -10,6 +9,8 @@
 #include "udp.h"
 #include "graph.h"
 
+#include "raylib.h"
+
 #include "unistd.h"
 #include "pthread.h"
 #include <sys/inotify.h>
@@ -18,18 +19,7 @@
 #define WIDTH 800
 #define HEIGHT 600
 int main_gui(graph_values_t* gv) {
-  add_point_callback(gv, "0.0;0", 10);
-  add_point_callback(gv, "1.0;0", 10);
-  add_point_callback(gv, "3.0;0", 10);
-  add_point_callback(gv, "2.0;0", 10);
-  add_point_callback(gv, "2.0;0", 10);
-  add_point_callback(gv, "-0.0;1", 20);
-  add_point_callback(gv, "-1.0;1", 20);
-  add_point_callback(gv, "-3.0;1", 20);
-  add_point_callback(gv, "-2.0;1", 20);
-  add_point_callback(gv, "-2.0;1", 20);
   while(!WindowShouldClose()) {
-    update_graph_values(gv);
     BeginDrawing();
       ClearBackground(BLACK);
       DrawGraph(gv);
@@ -47,6 +37,7 @@ void add_point_callback(void* gv, char* buffer, size_t s) {
   pp_ret r = push_point(gv, p, group);
   r.v->x = r.group->len - 1;
 }
+
 void* watch_shader_change(void* gv) {
   int fd = inotify_init();
   uint32_t buff[128];
@@ -59,6 +50,7 @@ void* watch_shader_change(void* gv) {
   return NULL;
 }
 
+graph_values_t gv;
 
 int main(void) {
   pthread_t thread1, thread2;

@@ -9,6 +9,7 @@ extern "C" {
 typedef struct {
   int start, cap, len;
   int group_id;
+  bool is_selected;
 } point_group_t;
 
 typedef struct {
@@ -28,10 +29,10 @@ typedef struct {
   Vector2 uvOffset;
   Vector2 uvScreen;
 
-#define POINTS_CAP 1024
+#define POINTS_CAP (8 * 1024 * 1024)
   Vector2 points[POINTS_CAP];
 
-#define GROUP_CAP 8
+#define GROUP_CAP 32
   point_group_t groups[GROUP_CAP];
   int groups_len;
   Color group_colors[GROUP_CAP];
@@ -43,16 +44,23 @@ typedef struct {
 typedef struct {Vector2* v; point_group_t* group;} pp_ret;
 
 #define GRAPH_LEFT_PAD 400
-#define init_graph_values(name, w, h) graph_values_t name = { \
-  .gridShader = LoadShader(NULL, "shaders/grid.fs"), \
-  .linesShader = LoadShader("shaders/line.vs", "shaders/line.fs"), \
-  .group_colors = { RED, GREEN, BLUE, LIGHTGRAY, PINK, GOLD, VIOLET, DARKPURPLE }, \
-  .groups_len = 0, \
-  .graph_rect = { GRAPH_LEFT_PAD, 50, w - GRAPH_LEFT_PAD - 60, h - 110 }, \
-  .uvOffset = { 0., 0. }, \
-  .uvZoom = { 1., 1. }, \
-  .uvScreen = { w, h } \
-}; do { \
+#define init_graph_values(name, w, h) \
+  name.gridShader = LoadShader(NULL, "shaders/grid.fs"); \
+  name.linesShader = LoadShader("shaders/line.vs", "shaders/line.fs"); \
+  Color cs[] = { RED, GREEN, BLUE, LIGHTGRAY, PINK, GOLD, VIOLET, DARKPURPLE }; \
+  for (int i = 0; i < 8; ++i) { \
+    name.group_colors[i] = cs[i]; \
+  } \
+  name.groups_len = 0; \
+  Rectangle r = { GRAPH_LEFT_PAD, 50, w - GRAPH_LEFT_PAD - 60, h - 110 }; \
+  name.graph_rect = r; \
+  Vector2 o = { 0., 0. }; \
+  name.uvOffset = o; \
+  Vector2 z = { 1., 1. }; \
+  name.uvZoom = z; \
+  Vector2 sc = { w, h }; \
+  name.uvScreen = sc; \
+  do { \
     for (int i = 0; i < 2; ++i) { \
       gv.uResolution[i] = GetShaderLocation(name.shaders[i], "resolution"); \
       gv.uZoom[i] = GetShaderLocation(name.shaders[i], "zoom"); \
@@ -64,8 +72,6 @@ typedef struct {Vector2* v; point_group_t* group;} pp_ret;
   } while(0)
 
 pp_ret push_point(graph_values_t* gv, Vector2 v, int group);
-void test_points(graph_values_t* gv);
-void update_graph_values(graph_values_t* gv);
 void DrawGraph(graph_values_t* gv);
 
 #ifdef __cplusplus

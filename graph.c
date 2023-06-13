@@ -2,11 +2,140 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include <raylib.h>
+#include <stdarg.h>
+
+static void test_points(graph_values_t* gv);
+static void refresh_shaders_if_dirty(graph_values_t* gv);
+static int DrawButton(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...) {
+  Vector2 mp = GetMousePosition();
+  int c = 0;
+  va_list args;
+  va_start(args, str);
+  vsprintf(buff, str, args);
+  va_end(args);
+  float pad = 5.;
+  Vector2 size = { MeasureText(buff, font_size) +  2 * pad, font_size + 2 * pad };
+  Rectangle box = { x, y, size.x, size.y };
+  bool is_in = CheckCollisionPointRec(mp, box);
+  if (is_in) {
+    bool is_p = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+    c = is_p ? 2 : 1;
+    if (is_p && is_pressed) {
+      *is_pressed = !*is_pressed;
+    }
+  }
+  if (is_pressed && *is_pressed) {
+    DrawRectangleRec(box, BLUE);
+  } else if (is_in) {
+    DrawRectangleRec(box, RED);
+  }
+  DrawText(buff, x + pad, y + pad, font_size, WHITE);
+  return c;
+}
+
+static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale) {
+  DrawButton(NULL, gv->graph_rect.x - 30, gv->graph_rect.y - 30, font_scale * 10,
+      buff, "(%f, %f)", -gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, gv->uvZoom.y/2 + gv->uvOffset.y);
+  DrawButton(NULL, gv->graph_rect.x + gv->graph_rect.width - 120, gv->graph_rect.y - 30, font_scale * 10,
+      buff, "(%f, %f)", gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, gv->uvZoom.y/2 + gv->uvOffset.y);
+
+  DrawButton(NULL, gv->graph_rect.x - 30, gv->graph_rect.y + 20 + gv->graph_rect.height, font_scale * 10,
+      buff, "(%f, %f)", -gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, -gv->uvZoom.y/2 + gv->uvOffset.y);
+  DrawButton(NULL, gv->graph_rect.x + gv->graph_rect.width - 120, gv->graph_rect.y + 20 + gv->graph_rect.height, font_scale * 10,
+      buff, "(%f, %f)", gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, -gv->uvZoom.y/2 + gv->uvOffset.y);
+
+  int i = 0;
+  DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "offset: (%f, %f)", gv->uvOffset.x, gv->uvOffset.y);
+  DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "zoom: (%f, %f)", gv->uvZoom.x, gv->uvZoom.y);
+  DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "Line groups: %d/%d", gv->groups_len, GROUP_CAP);
+  for(int j = 0; j < gv->groups_len; ++j) {
+    DrawButton(&gv->groups[j].is_selected, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "Group #%d: %d/%d", gv->groups[j].group_id, gv->groups[j].len, gv->groups[j].cap);
+  }
+}
+
+static void update_resolution(graph_values_t* gv) {
+  gv->uvScreen.x = GetScreenWidth();
+  gv->uvScreen.y = GetScreenHeight();
+  int w = gv->uvScreen.x - GRAPH_LEFT_PAD - 60, h = gv->uvScreen.y - 120;
+  gv->graph_rect.x = GRAPH_LEFT_PAD;
+  gv->graph_rect.y = 60;
+  gv->graph_rect.width = w;
+  gv->graph_rect.height = h;
+}
+
+
+void DrawGraph(graph_values_t* gv) {
+  char buff[128];
+  float font_scale = 1.4;
+  update_resolution(gv);
+  refresh_shaders_if_dirty(gv);
+  Vector2 mp = GetMousePosition();
+  bool is_inside = CheckCollisionPointRec(mp, gv->graph_rect);
+
+  if (is_inside) {
+    if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
+      Vector2 delt = GetMouseDelta();
+      gv->uvOffset.x -= gv->uvZoom.x*delt.x/gv->graph_rect.height;
+      gv->uvOffset.y += gv->uvZoom.y*delt.y/gv->graph_rect.height;
+    }
+
+    float mw = GetMouseWheelMove();
+    if (IsKeyDown(KEY_X)) {
+      gv->uvZoom.x *= (1 + mw/10);
+    } else if (IsKeyDown(KEY_Y)) {
+      gv->uvZoom.y *= (1 + mw/10);
+    } else {
+      gv->uvZoom.x *= (1 + mw/10);
+      gv->uvZoom.y *= (1 + mw/10);
+    }
+
+    if (IsKeyPressed(KEY_R)) {
+      gv->uvZoom.x = gv->uvZoom.y = 1;
+      gv->uvOffset.x = gv->uvOffset.y = 0;
+    }
+    if (IsKeyPressed(KEY_C)) {
+      gv->groups_len = 0;
+    }
+    if (IsKeyPressed(KEY_T)) {
+      for (int i = 0; i < 100; ++i) {
+        test_points(gv);
+      }
+    }
+  }
+  DrawLeftPanel(gv, buff, font_scale);
+  for (int i = 0; i < 2; ++i) {
+    SetShaderValue(gv->shaders[i], gv->uResolution[i], &gv->graph_rect, SHADER_UNIFORM_VEC4);
+    SetShaderValue(gv->shaders[i], gv->uZoom[i], &gv->uvZoom, SHADER_UNIFORM_VEC2);
+    SetShaderValue(gv->shaders[i], gv->uOffset[i], &gv->uvOffset, SHADER_UNIFORM_VEC2);
+    SetShaderValue(gv->shaders[i], gv->uScreen[i], &gv->uvScreen, SHADER_UNIFORM_VEC2);
+  }
+  BeginShaderMode(gv->gridShader);
+    DrawRectangleRec(gv->graph_rect, RED);
+  EndShaderMode();
+  BeginShaderMode(gv->linesShader);
+    for (int j = 0; j < gv->groups_len; ++j) {
+      if (gv->groups[j].is_selected) {
+        DrawLineStrip(&gv->points[gv->groups[j].start], gv->groups[j].len, gv->group_colors[j]);
+      }
+    }
+  EndShaderMode();
+  if (is_inside) {
+    float pad = 5.;
+    float fs = 10 * font_scale;
+    Vector2 s = { 100, fs + 2 * pad};
+    Vector2 mp_in_graph = { mp.x - gv->graph_rect.x, mp.y - gv->graph_rect.y };
+    sprintf(buff, "(%.1e, %.1e)", -(gv->graph_rect.width  - 2.*mp_in_graph.x)/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x,
+                                   (gv->graph_rect.height - 2.*mp_in_graph.y)/gv->graph_rect.height*gv->uvZoom.y/2. + gv->uvOffset.y);
+    s.x = MeasureText(buff, fs) + 2 * pad;
+    DrawRectangleV(mp, s, RAYWHITE);
+    DrawText(buff, mp.x + pad, mp.y + pad, fs, BLACK);
+  }
+}
 
 pp_ret push_point(graph_values_t* gv, Vector2 v, int group) {
   pp_ret ret;
   if (gv->groups_len == 0) {
-    point_group_t g = { 0, POINTS_CAP, 1, group };
+    point_group_t g = { 0, POINTS_CAP, 1, group, true };
     gv->groups[0] = g;
     gv->points[0] = v;
     gv->groups_len++;
@@ -36,7 +165,7 @@ pp_ret push_point(graph_values_t* gv, Vector2 v, int group) {
   }
   int l = max_group->cap;
   int ns2 = max_group->start + (l - (l / 2));
-  point_group_t ng = { ns2, l / 2, 1, group };
+  point_group_t ng = { ns2, l / 2, 1, group, true };
   gv->groups[gv->groups_len++] = ng;
   max_group->cap = l - (l / 2);
   gv->points[ns2] = v;
@@ -45,17 +174,8 @@ pp_ret push_point(graph_values_t* gv, Vector2 v, int group) {
   return ret;
 }
 
-void test_points(graph_values_t* gv) {
-  for(int i = 0; i < 1025; ++i) {
-    int group = i % 8;
-    int x = i / 8;
-    float y = (float)i / 10;
-    Vector2 p = {x, y * y * (1 + group) };
-    push_point(gv, p, group);
-  }
-}
 
-void update_graph_values(graph_values_t* gv) {
+static void refresh_shaders_if_dirty(graph_values_t* gv) {
   if (gv->shaders_dirty) {
     gv->shaders_dirty = false;
     Shader new_line = LoadShader("./shaders/line.vs", "./shaders/line.fs");
@@ -75,63 +195,26 @@ void update_graph_values(graph_values_t* gv) {
       gv->uScreen[i] = GetShaderLocation(gv->shaders[i], "screen");
     }
   }
-  int w = GetScreenWidth() - GRAPH_LEFT_PAD - 60, h = GetScreenHeight() - 120;
-  gv->graph_rect.x = GRAPH_LEFT_PAD;
-  gv->graph_rect.y = 60;
-  gv->graph_rect.width = w;
-  gv->graph_rect.height = h;
-  gv->uvScreen.x = GetScreenWidth();
-  gv->uvScreen.y = GetScreenHeight();
-
-  if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
-    Vector2 delt = GetMouseDelta();
-    gv->uvOffset.x -= gv->uvZoom.x*delt.x/h;
-    gv->uvOffset.y += gv->uvZoom.y*delt.y/h;
-  }
-
-  float mw = GetMouseWheelMove();
-  if (IsKeyDown(KEY_X)) {
-    gv->uvZoom.x *= (1 + mw/10);
-  } else if (IsKeyDown(KEY_Y)) {
-    gv->uvZoom.y *= (1 + mw/10);
-  } else {
-    gv->uvZoom.x *= (1 + mw/10);
-    gv->uvZoom.y *= (1 + mw/10);
-  }
-
-  if (IsKeyPressed(KEY_R)) {
-    gv->uvZoom.x = gv->uvZoom.y = 1;
-    gv->uvOffset.x = gv->uvOffset.y = 0;
-  }
-  for (int i = 0; i < 2; ++i) {
-    SetShaderValue(gv->shaders[i], gv->uResolution[i], &gv->graph_rect, SHADER_UNIFORM_VEC4);
-    SetShaderValue(gv->shaders[i], gv->uZoom[i], &gv->uvZoom, SHADER_UNIFORM_VEC2);
-    SetShaderValue(gv->shaders[i], gv->uOffset[i], &gv->uvOffset, SHADER_UNIFORM_VEC2);
-    SetShaderValue(gv->shaders[i], gv->uScreen[i], &gv->uvScreen, SHADER_UNIFORM_VEC2);
-  }
 }
 
-void DrawGraph(graph_values_t* gv) {
-  char buff[128];
-  int i = 0;
-  sprintf(buff, "(%f, %f)", gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. - gv->uvOffset.x, gv->uvZoom.y/2 + gv->uvOffset.y);
-  DrawText(buff, gv->graph_rect.x - 30, gv->graph_rect.y - 30, 10, WHITE);
-
-  sprintf(buff, "offset: (%f, %f)", gv->uvOffset.x, gv->uvOffset.y);
-  DrawText(buff, 30, gv->graph_rect.y + 30*(i++), 15, WHITE);
-
-  sprintf(buff, "zoom: (%f, %f)", gv->uvZoom.x, gv->uvZoom.y);
-  DrawText(buff, 30, gv->graph_rect.y + 30*(i++), 15, WHITE);
-
-  DrawText("dl(10,20)", gv->graph_rect.x - 30, gv->graph_rect.y + 30 + gv->graph_rect.height, 10, WHITE);
-  BeginShaderMode(gv->gridShader);
-    DrawRectangleRec(gv->graph_rect, RED);
-  EndShaderMode();
-  BeginShaderMode(gv->linesShader);
-    for (int i = 0; i < gv->groups_len; ++i) {
-        DrawLineStrip(&gv->points[gv->groups[i].start], gv->groups[i].len, gv->group_colors[i]);
-    }
-  EndShaderMode();
+static void test_points(graph_values_t* gv) {
+  add_point_callback(gv, "0.0;0", 10);
+  add_point_callback(gv, "1.0;0", 10);
+  add_point_callback(gv, "3.0;0", 10);
+  add_point_callback(gv, "2.0;0", 10);
+  add_point_callback(gv, "2.0;0", 10);
+  add_point_callback(gv, "-0.0;1", 10);
+  add_point_callback(gv, "-1.0;1", 10);
+  add_point_callback(gv, "-3.0;1", 10);
+  add_point_callback(gv, "-2.0;1", 10);
+  add_point_callback(gv, "-2.0;1", 10);
+  for(int i = 0; i < 1025; ++i) {
+    int group = i % 8;
+    int x = i / 8;
+    float y = (float)i / 10;
+    Vector2 p = {x, y * y * (1 + group) };
+    pp_ret r = push_point(gv, p, group);
+    r.v->x = r.group->len; 
+  }
 }
-
 
