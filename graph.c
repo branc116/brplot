@@ -363,23 +363,23 @@ static bool GenMeshLineStrip(smol_mesh_t* mesh, point_group_t* g, int offset)
           //First triangle
           mesh->verticies[v+0] = strip[0].x;
           mesh->verticies[v+1] = strip[0].y;
-          mesh->verticies[v+2] = 0;
+          mesh->verticies[v+2] = -1;
           mesh->verticies[v+3] = strip[2].x;
           mesh->verticies[v+4] = strip[2].y;
-          mesh->verticies[v+5] = 0;
+          mesh->verticies[v+5] = -1;
           mesh->verticies[v+6] = strip[1].x;
           mesh->verticies[v+7] = strip[1].y;
-          mesh->verticies[v+8] = 0;
+          mesh->verticies[v+8] = 1;
           //Second triangle
           mesh->verticies[v+9]  = strip[1].x;
           mesh->verticies[v+10] = strip[1].y;
-          mesh->verticies[v+11] = 0;
+          mesh->verticies[v+11] = 1;
           mesh->verticies[v+12] = strip[2].x;
           mesh->verticies[v+13] = strip[2].y;
-          mesh->verticies[v+14] = 0;
+          mesh->verticies[v+14] = -1;
           mesh->verticies[v+15] = strip[3].x;
           mesh->verticies[v+16] = strip[3].y;
-          mesh->verticies[v+17] = 0;
+          mesh->verticies[v+17] = 1;
           for (int i = 0; i < 18; i += 3) {
           //Not a normal, this is dx, dy, length for first triangle 
             mesh->normals[v+i+0] = delta.x;
