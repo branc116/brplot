@@ -18,7 +18,9 @@
 
 #define WIDTH 800
 #define HEIGHT 600
+
 int main_gui(graph_values_t* gv) {
+  init_graph(gv);
   while(!WindowShouldClose()) {
     BeginDrawing();
       ClearBackground(BLACK);
@@ -34,8 +36,9 @@ void add_point_callback(void* gv, char* buffer, size_t s) {
   Vector2 p = {0, 0};
   int group = 0;
   sscanf(buffer, "%f;%d", &p.y, &group);
-  pp_ret r = push_point(gv, p, group);
-  r.v->x = r.group->len - 1;
+  point_group_t* g = push_point_group(gv, group);
+  p.x = g->len;
+  push_point(g, p);
 }
 
 void* watch_shader_change(void* gv) {

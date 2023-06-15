@@ -1,15 +1,55 @@
 #include "graph.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include <raylib.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <math.h>
 #include <stdarg.h>
+#include <string.h>
+
+#include "raylib.h"
+#include "rlgl.h"
+
+// This is the size of one group of points that will be drawn with one draw call.
+// TODO: make this dynamic.
+#define PTOM_COUNT (1<<15)
 
 static void test_points(graph_values_t* gv);
 static void refresh_shaders_if_dirty(graph_values_t* gv);
 static void update_resolution(graph_values_t* gv);
+static void init_smol_mesh(smol_mesh_t* mesh);
+
+//TODO: think about renaming this to snake case.
+//I used PascalCase to name this functions because they are the same class of functions raylib provieds.
+//But this are not raylib functions. I don't know...
+//TODO: Maybe move this functions to something like Raylib extensions file.
+//      Or Smol mesh file...
+static bool GenMeshLineStrip(smol_mesh_t* mesh, point_group_t* gv, int offset);
+static void UploadSmolMesh(smol_mesh_t* mesh, bool dynamic);
+static void DrawLineStripMesh(smol_mesh_t* mesh, Shader shader, Color color);
+static void UpdateSmolMesh(smol_mesh_t* mesh);
+static void UnloadSmolMesh(smol_mesh_t* mesh);
 
 static int DrawButton(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...);
 static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale);
+
+// Neded for copying stuff to gpu.
+static float tmp_v_buff[3*PTOM_COUNT*3*2];
+static float tmp_norm_buff[3*PTOM_COUNT*3*2];
+static float tmp_v_buff2[2*PTOM_COUNT*3*2];
+
+static smol_mesh_t temp_smol_mesh = {
+  .verticies = tmp_v_buff,
+  .normals = tmp_norm_buff,
+  .tex_cords = tmp_v_buff2,
+  .length = PTOM_COUNT,
+};
+
+void init_graph(graph_values_t* gv) {
+  (void)gv;
+  GenMeshLineStrip(&temp_smol_mesh, NULL, 0);
+  UploadSmolMesh(&temp_smol_mesh, true);
+}
 
 void DrawGraph(graph_values_t* gv) {
   char buff[128];
@@ -41,6 +81,13 @@ void DrawGraph(graph_values_t* gv) {
       gv->uvOffset.x = gv->uvOffset.y = 0;
     }
     if (IsKeyPressed(KEY_C)) {
+      for (int i = 0; i < gv->groups_len; ++i) {
+        point_group_t* g = &gv->groups[i];
+        for (int j = 0; j < g->smol_meshes_len; ++j) {
+          UnloadSmolMesh(&g->meshes[j]);
+        }
+        memset(gv->groups, 0, sizeof(gv->groups));
+      }
       gv->groups_len = 0;
     }
     if (IsKeyPressed(KEY_T)) {
@@ -56,16 +103,39 @@ void DrawGraph(graph_values_t* gv) {
     SetShaderValue(gv->shaders[i], gv->uOffset[i], &gv->uvOffset, SHADER_UNIFORM_VEC2);
     SetShaderValue(gv->shaders[i], gv->uScreen[i], &gv->uvScreen, SHADER_UNIFORM_VEC2);
   }
+  DrawFPS(0, 0);
   BeginShaderMode(gv->gridShader);
     DrawRectangleRec(gv->graph_rect, RED);
   EndShaderMode();
-  BeginShaderMode(gv->linesShader);
+  {
     for (int j = 0; j < gv->groups_len; ++j) {
-      if (gv->groups[j].is_selected) {
-        DrawLineStrip(&gv->points[gv->groups[j].start], gv->groups[j].len, gv->group_colors[j]);
+      point_group_t * g = &gv->groups[j];
+      if ( g->len / PTOM_COUNT > g->smol_meshes_len ) {
+        int indx = g->smol_meshes_len++;
+        smol_mesh_t* sm = &g->meshes[indx];
+        init_smol_mesh(sm);
+        assert(GenMeshLineStrip(sm, g, indx*sm->length));
+        UploadSmolMesh(sm, false);
       }
     }
-  EndShaderMode();
+    for (int j = 0; j < gv->groups_len; ++j) {
+      point_group_t* g = &gv->groups[j];
+      if (g->is_selected) {
+        if (GenMeshLineStrip(&temp_smol_mesh, g, g->smol_meshes_len*(temp_smol_mesh.length))) {
+          UpdateSmolMesh(&temp_smol_mesh);
+          DrawLineStripMesh(&temp_smol_mesh, gv->linesShader, gv->group_colors[j]);
+        }
+      }
+    }
+    for (int j = 0; j < gv->groups_len; ++j) {
+      point_group_t * g = &gv->groups[j];
+      if (g->is_selected) {
+        for (int k = 0; k < g->smol_meshes_len; ++k) {
+          DrawLineStripMesh(&g->meshes[k], gv->linesShader, gv->group_colors[j]);
+        }
+      }
+    }
+  }
   if (is_inside) {
     float pad = 5.;
     float fs = 10 * font_scale;
@@ -79,30 +149,25 @@ void DrawGraph(graph_values_t* gv) {
   }
 }
 
-pp_ret push_point(graph_values_t* gv, Vector2 v, int group) {
-  pp_ret ret;
+point_group_t* init_point_group_t(point_group_t* g, int cap, int group_id, Vector2* points) {
+    g->cap = cap;
+    g->len = 0;
+    g->group_id = group_id;
+    g->is_selected = true;
+    g->points = points;
+    g->smol_meshes_len = 0;
+    return g;
+}
+
+point_group_t* push_point_group(graph_values_t *gv, int group) {
   if (gv->groups_len == 0) {
-    point_group_t g = { 0, POINTS_CAP, 1, group, true };
-    gv->groups[0] = g;
-    gv->points[0] = v;
-    gv->groups_len++;
-    ret.v = &gv->points[0];
-    ret.group = &gv->groups[0];
-    return ret;
+    return init_point_group_t(&gv->groups[gv->groups_len++], POINTS_CAP, group, gv->points);
   }
   int max_size = 0;
   point_group_t* max_group = &gv->groups[0];
   for (int i = 0; i < gv->groups_len; ++i) {
     if (gv->groups[i].group_id == group) {
-      if (gv->groups[i].len + 1 > gv->groups[i].cap) {
-        fprintf(stderr, "Trying to add point to a group thats full");
-        exit(-1);
-      }
-      int index = gv->groups[i].start + gv->groups[i].len++;
-      gv->points[index] = v;
-      ret.v = &gv->points[index];
-      ret.group = &gv->groups[i];
-      return ret;
+      return &gv->groups[i];
     }
     int size = gv->groups[i].cap;
     if (size > max_size) {
@@ -111,14 +176,17 @@ pp_ret push_point(graph_values_t* gv, Vector2 v, int group) {
     }
   }
   int l = max_group->cap;
-  int ns2 = max_group->start + (l - (l / 2));
-  point_group_t ng = { ns2, l / 2, 1, group, true };
-  gv->groups[gv->groups_len++] = ng;
+  Vector2* ns2 = max_group->points + (l - (l / 2));
   max_group->cap = l - (l / 2);
-  gv->points[ns2] = v;
-  ret.v = &gv->points[ns2];
-  ret.group = &gv->groups[gv->groups_len - 1];
-  return ret;
+  return init_point_group_t(&gv->groups[gv->groups_len++], l / 2, group, ns2);
+}
+
+void push_point(point_group_t* g, Vector2 v) {
+  if (g->len + 1 > g->cap) {
+    fprintf(stderr, "Trying to add point to a group thats full");
+    exit(-1);
+  }
+  g->points[g->len++] = v;
 }
 
 
@@ -145,23 +213,19 @@ static void refresh_shaders_if_dirty(graph_values_t* gv) {
 }
 
 static void test_points(graph_values_t* gv) {
-  add_point_callback(gv, "0.0;0", 10);
-  add_point_callback(gv, "1.0;0", 10);
-  add_point_callback(gv, "3.0;0", 10);
-  add_point_callback(gv, "2.0;0", 10);
-  add_point_callback(gv, "2.0;0", 10);
-  add_point_callback(gv, "-0.0;1", 10);
-  add_point_callback(gv, "-1.0;1", 10);
-  add_point_callback(gv, "-3.0;1", 10);
-  add_point_callback(gv, "-2.0;1", 10);
-  add_point_callback(gv, "-2.0;1", 10);
   for(int i = 0; i < 1025; ++i) {
-    int group = i % 8;
-    int x = i / 8;
-    float y = (float)i / 10;
-    Vector2 p = {x, y * y * (1 + group) };
-    pp_ret r = push_point(gv, p, group);
-    r.v->x = r.group->len; 
+    int group = 0;
+    float y = (float)i*0.1;
+    point_group_t* g = push_point_group(gv, group);
+    Vector2 p = {g->len*1.1, sin(y) };
+    push_point(g, p);
+  }
+  for(int i = 0; i < 1025; ++i) {
+    int group = 1;
+    float y = (float)i*0.1;
+    point_group_t* g = push_point_group(gv, group);
+    Vector2 p = {g->len*10.1, sin(y) };
+    push_point(g, p);
   }
 }
 
@@ -220,5 +284,168 @@ static void update_resolution(graph_values_t* gv) {
   gv->graph_rect.y = 60;
   gv->graph_rect.width = w;
   gv->graph_rect.height = h;
+}
+
+static void init_smol_mesh(smol_mesh_t* mesh) {
+  mesh->verticies = tmp_v_buff;
+  mesh->normals = tmp_norm_buff;
+  mesh->tex_cords = tmp_v_buff2;
+  mesh->length = PTOM_COUNT;
+}
+
+static void UnloadSmolMesh(smol_mesh_t* mesh) {
+  Mesh m = { 0 };
+  m.vaoId = mesh->vaoId;
+  m.vboId = mesh->vboId;
+  UnloadMesh(m);
+}
+
+static void UpdateSmolMesh(smol_mesh_t* mesh) {
+  Mesh m = { 0 };
+  m.vaoId = mesh->vaoId;
+  m.vboId = mesh->vboId;
+  // length * (2 triengle per line) * (3 verticies per triangle) * (3 floats per vertex)
+  int number_of_floats = mesh->length*2*3*3;
+  UpdateMeshBuffer(m, 0, mesh->verticies, number_of_floats * sizeof(float), 0);
+  UpdateMeshBuffer(m, 2, mesh->normals, number_of_floats * sizeof(float), 0);
+}
+
+static void UploadSmolMesh(smol_mesh_t* mesh, bool dynamic) {
+  Mesh m = { 0 };
+  m.vaoId = mesh->vaoId;
+  m.vboId = mesh->vboId;
+  m.vertices = mesh->verticies;
+  m.normals = mesh->normals;
+  m.texcoords = mesh->tex_cords;
+  m.vertexCount = mesh->vertex_count;
+  m.triangleCount = mesh->triangle_count;
+
+  UploadMesh(&m, dynamic);
+  mesh->vboId = m.vboId;
+  mesh->vaoId = m.vaoId;
+}
+
+static bool GenMeshLineStrip(smol_mesh_t* mesh, point_group_t* g, int offset)
+{
+    int l = g != NULL ? g->len - offset - 1 : 0;
+    int count = PTOM_COUNT < l ? PTOM_COUNT : l;
+    count = count < 0 ? 0 : count;
+
+    // Clear rest of normals so that end of buffer can be detected inside of the shader.
+    for (int i = count; i < mesh->length; ++i) {
+      mesh->normals[i] = 0;
+    }
+
+    mesh->vertex_count = mesh->length*2*3;
+    mesh->triangle_count = mesh->length*2;
+
+    if (count <= 0) return false;
+
+    float thick = 0.1;
+    // Todo: check if index v is inside gv->points
+    for (int v = 0; v < (count*2*3*3); v += 2*3*3)
+    {
+      Vector2 startPos = g->points[offset + v/(2*3*3)];
+      Vector2 endPos = g->points[offset + v/(2*3*3) + 1];
+      Vector2 delta = { endPos.x - startPos.x, endPos.y - startPos.y };
+      float length = sqrtf(delta.x*delta.x + delta.y*delta.y);
+
+      if ((length > 0) && (thick > 0))
+      {
+          float scale = thick/(2*length);
+          Vector2 radius = { -scale*delta.y, scale*delta.x };
+          Vector2 strip[4] = {
+              { startPos.x - radius.x, startPos.y - radius.y },
+              { startPos.x + radius.x, startPos.y + radius.y },
+              { endPos.x - radius.x, endPos.y - radius.y },
+              { endPos.x + radius.x, endPos.y + radius.y }
+          };
+          //First triangle
+          mesh->verticies[v+0] = strip[0].x;
+          mesh->verticies[v+1] = strip[0].y;
+          mesh->verticies[v+2] = 0;
+          mesh->verticies[v+3] = strip[2].x;
+          mesh->verticies[v+4] = strip[2].y;
+          mesh->verticies[v+5] = 0;
+          mesh->verticies[v+6] = strip[1].x;
+          mesh->verticies[v+7] = strip[1].y;
+          mesh->verticies[v+8] = 0;
+          //Second triangle
+          mesh->verticies[v+9]  = strip[1].x;
+          mesh->verticies[v+10] = strip[1].y;
+          mesh->verticies[v+11] = 0;
+          mesh->verticies[v+12] = strip[2].x;
+          mesh->verticies[v+13] = strip[2].y;
+          mesh->verticies[v+14] = 0;
+          mesh->verticies[v+15] = strip[3].x;
+          mesh->verticies[v+16] = strip[3].y;
+          mesh->verticies[v+17] = 0;
+          for (int i = 0; i < 18; i += 3) {
+          //Not a normal, this is dx, dy, length for first triangle 
+            mesh->normals[v+i+0] = delta.x;
+            mesh->normals[v+i+1] = delta.y;
+            mesh->normals[v+i+2] = length;
+          }
+      }
+    }
+    return true;
+}
+
+// Copy paste from Raylib source. More or less. Delted stuff that were not needed..
+static void DrawLineStripMesh(smol_mesh_t* mesh, Shader shader, Color color)
+{
+    // Bind shader program
+    rlEnableShader(shader.id);
+
+    // Try binding vertex array objects (VAO) or use VBOs if not possible
+    // WARNING: UploadMesh() enables all vertex attributes available in mesh and sets default attribute values
+    // for shader expected vertex attributes that are not provided by the mesh (i.e. colors)
+    // This could be a dangerous approach because different meshes with different shaders can enable/disable some attributes
+    if (!rlEnableVertexArray(mesh->vaoId))
+    {
+        // Bind mesh VBO data: vertex position (shader-location = 0)
+        rlEnableVertexBuffer(mesh->vboId[0]);
+        rlSetVertexAttribute(shader.locs[SHADER_LOC_VERTEX_POSITION], 3, RL_FLOAT, 0, 0, 0);
+        rlEnableVertexAttribute(shader.locs[SHADER_LOC_VERTEX_POSITION]);
+    }
+
+    // Bind mesh VBO data: vertex colors (shader-location = 3, if available)
+    if (shader.locs[SHADER_LOC_VERTEX_COLOR] != -1)
+    {
+        if (mesh->vboId[3] != 0)
+        {
+            rlEnableVertexBuffer(mesh->vboId[3]);
+            rlSetVertexAttribute(shader.locs[SHADER_LOC_VERTEX_COLOR], 4, RL_UNSIGNED_BYTE, 1, 0, 0);
+            rlEnableVertexAttribute(shader.locs[SHADER_LOC_VERTEX_COLOR]);
+        }
+        else
+        {
+            // Set default value for defined vertex attribute in shader but not provided by mesh
+            // WARNING: It could result in GPU undefined behaviour
+            float value[4] = { color.r, color.g, color.b, color.a };
+            rlSetVertexAttributeDefault(shader.locs[SHADER_LOC_VERTEX_COLOR], value, SHADER_ATTRIB_VEC4, 4);
+            rlDisableVertexAttribute(shader.locs[SHADER_LOC_VERTEX_COLOR]);
+        }
+    }
+
+    // Bind mesh VBO data: vertex colors (shader-location = 3, if available)
+    if (shader.locs[SHADER_LOC_VERTEX_NORMAL] != -1)
+    {
+        if (mesh->vboId[2] != 0)
+        {
+            rlEnableVertexBuffer(mesh->vboId[2]);
+            rlSetVertexAttribute(shader.locs[SHADER_LOC_VERTEX_NORMAL], 3, RL_FLOAT, 0, 0, 0);
+            rlEnableVertexAttribute(shader.locs[SHADER_LOC_VERTEX_NORMAL]);
+        }
+    }
+
+    rlDrawVertexArray(0, mesh->vertex_count);
+    // Disable all possible vertex array objects (or VBOs)
+    rlDisableVertexArray();
+    rlDisableVertexBuffer();
+    rlDisableVertexBufferElement();
+
+    // Disable shader program
+    rlDisableShader();
 }
 

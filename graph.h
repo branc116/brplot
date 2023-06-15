@@ -7,9 +7,27 @@ extern "C" {
 #endif
 
 typedef struct {
-  int start, cap, len;
+  unsigned int vaoId;     // OpenGL Vertex Array Object id
+  unsigned int *vboId;    // OpenGL Vertex Buffer Objects id (default vertex data)
+  float* verticies;
+  float* tex_cords;
+  float* normals;
+  // Max Number of points and only number of points.
+  int length;
+  // length * (2 triengle per line) * (3 verticies per triangle)
+  int vertex_count;
+  // length * (2 triengle per line)
+  int triangle_count;
+} smol_mesh_t;
+
+#define SMOL_MESHES_CAP 1024
+typedef struct {
+  int cap, len;
   int group_id;
   bool is_selected;
+  Vector2* points;
+  int smol_meshes_len;
+  smol_mesh_t meshes[SMOL_MESHES_CAP];
 } point_group_t;
 
 typedef struct {
@@ -29,7 +47,7 @@ typedef struct {
   Vector2 uvOffset;
   Vector2 uvScreen;
 
-#define POINTS_CAP (8 * 1024 * 1024)
+#define POINTS_CAP (32 * 1024 * 1024)
   Vector2 points[POINTS_CAP];
 
 #define GROUP_CAP 32
@@ -71,7 +89,10 @@ typedef struct {Vector2* v; point_group_t* group;} pp_ret;
     memset(gv.groups, 0, sizeof(gv.groups)); \
   } while(0)
 
-pp_ret push_point(graph_values_t* gv, Vector2 v, int group);
+
+point_group_t* push_point_group(graph_values_t* gv, int group);
+void push_point(point_group_t* gv, Vector2 v);
+void init_graph(graph_values_t* gv);
 void DrawGraph(graph_values_t* gv);
 
 #ifdef __cplusplus
