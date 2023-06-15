@@ -45,11 +45,18 @@ client_socket.sendto(f"{y_value};{group_id}".encode(), ("localhost", port_number
 * **R** - Reset offset and zoom to (0, 0) and (1, 1)
 
 ### Todo
-Make drawing lines use buffers ( Don't use DrawLineStrip function by raylib. ) Maybe use DrawMesh? It's ok for plots with ~1'000'000 points, but I want more!
+* ~~Make drawing lines use buffers ( Don't use DrawLineStrip function by raylib. ) Maybe use DrawMesh? It's ok for plots with ~1'000'000 points, but I want more!~~
+  * Implemented this now. For every line, 2 triangle are created. Old points are put in buffers and are drawn like that. Plotter can now handle 30'000'000 points, easy.
+* When having many points ( 30'000'000 ), a few probles ocure:
+  * Distante points start being rounded up/down to closest float. It don't look right.
+  * When zoomed out a lot. It becomes quite slow. ( I guess there is a lot of drawing of the same pixel.. )
+    * Maybe combine few lines that are close when zoomed out... ( how to detect this ? )
+* I'm not happy with the thickness of the line when zooming in and out.
+  * It's not that bad, but it's inconsistent.
 
 ### Screenshot
-
-![screenshot](media/rlplot.png)
+![screenshot1](media/rlplot.png)
+![screenshot2](media/rlplot_20230615_152303.png)
 
 ### License
 
