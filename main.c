@@ -11,8 +11,14 @@
 
 #include "raylib.h"
 
+#ifdef PLATFORM_WEB
+#define WIDTH (1280*1.6)
+#define HEIGHT (720*1.6)
+#else
 #define WIDTH 1280
 #define HEIGHT 720
+#endif
+
 
 int main_gui(graph_values_t* gv) {
   init_graph(gv);
@@ -40,7 +46,11 @@ graph_values_t gv;
 
 int main(void) {
   InitWindow(WIDTH, HEIGHT, "Ray plot");
+#ifdef PLATFORM_WEB
+  SetTargetFPS(60);
+#else
   SetTargetFPS(165);
+#endif
   SetWindowState(FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
   init_graph_values(gv, WIDTH, HEIGHT);
   start_refreshing_shaders(&gv);

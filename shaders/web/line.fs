@@ -10,7 +10,7 @@ uniform vec2 zoom;
 
 void main()
 {
-  float shade = 1. - smoothstep(length(normal/zoom.yx), 0.0, .1) ;
+  float shade = 1. - smoothstep(length(normal), 0.0, .3) ;
   if (shade == 0.) return;
   vec4 cshade = vec4(shade);
   vec4 r = resolution;

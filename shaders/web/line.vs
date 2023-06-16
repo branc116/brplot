@@ -16,11 +16,16 @@ uniform vec2 screen;
 
 void main(void)
 {
+    // TODO: make this uniform.
+    float thick = 0.09;
     vc = vec4(normalize(vertexColor));
-    normal = vec2(0);
-    normal = -vertexPosition.z * normalize(vertexNormal.yx * zoom * vec2(-1, 1));
+    vec2 tg = vertexNormal.xy;
     vec2 position = vertexPosition.xy;
-      position += normal * 0.05 * (1. - min(zoom.xy*.1, 20000.0));
+
+    normal = -vertexPosition.z * normalize(tg.yx * zoom * vec2(-1, 1));
+    vec2 dif = normal * thick/2.;
+    position -= dif * (min(zoom * 0.1, 20000.0));
+
     vec2 size = resolution.zw;
 
     //Don't know why, but this value works...

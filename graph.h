@@ -47,8 +47,13 @@ typedef struct {
   Vector2 uvOffset;
   Vector2 uvScreen;
 
-#define POINTS_CAP (64 * 1024 * 1024)
-  Vector2 points[POINTS_CAP];
+#ifdef PLATFORM_WEB
+#define POINTS_CAP (1 * 1024 * 1024)
+#else
+#define POINTS_CAP (32 * 1024 * 1024)
+#endif
+
+Vector2 points[POINTS_CAP];
 
 #define GROUP_CAP 32
   point_group_t groups[GROUP_CAP];
