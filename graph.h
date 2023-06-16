@@ -48,7 +48,7 @@ typedef struct {
   Vector2 uvScreen;
 
 #ifdef PLATFORM_WEB
-#define POINTS_CAP (1 * 1024 * 1024)
+#define POINTS_CAP (16 * 1024 * 1024)
 #else
 #define POINTS_CAP (32 * 1024 * 1024)
 #endif
@@ -85,13 +85,13 @@ typedef struct {Vector2* v; point_group_t* group;} pp_ret;
   name.uvScreen = sc; \
   do { \
     for (int i = 0; i < 2; ++i) { \
-      gv.uResolution[i] = GetShaderLocation(name.shaders[i], "resolution"); \
-      gv.uZoom[i] = GetShaderLocation(name.shaders[i], "zoom"); \
-      gv.uOffset[i] = GetShaderLocation(name.shaders[i], "offset"); \
-      gv.uScreen[i] = GetShaderLocation(name.shaders[i], "screen"); \
+      name.uResolution[i] = GetShaderLocation(name.shaders[i], "resolution"); \
+      name.uZoom[i] = GetShaderLocation(name.shaders[i], "zoom"); \
+      name.uOffset[i] = GetShaderLocation(name.shaders[i], "offset"); \
+      name.uScreen[i] = GetShaderLocation(name.shaders[i], "screen"); \
     } \
-    memset(gv.points, 0, sizeof(gv.points)); \
-    memset(gv.groups, 0, sizeof(gv.groups)); \
+    memset(name.points, 0, sizeof(name.points)); \
+    memset(name.groups, 0, sizeof(name.groups)); \
   } while(0)
 
 

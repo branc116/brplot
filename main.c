@@ -42,18 +42,17 @@ void add_point_callback(void* gv, char* buffer, size_t s) {
   push_point(g, p);
 }
 
-graph_values_t gv;
-
 int main(void) {
   InitWindow(WIDTH, HEIGHT, "Ray plot");
+  graph_values_t* gv = malloc(sizeof(graph_values_t));
 #ifdef PLATFORM_WEB
   SetTargetFPS(60);
 #else
   SetTargetFPS(165);
 #endif
   SetWindowState(FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
-  init_graph_values(gv, WIDTH, HEIGHT);
-  start_refreshing_shaders(&gv);
-  udp_main(&gv);
-  main_gui(&gv);
+  init_graph_values((*gv), WIDTH, HEIGHT);
+  start_refreshing_shaders(gv);
+  udp_main(gv);
+  main_gui(gv);
 } 
