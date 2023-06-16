@@ -51,12 +51,14 @@ client_socket.sendto(f"{y_value};{group_id}".encode(), ("localhost", port_number
   * Distante points start being rounded up/down to closest float. It don't look right.
   * When zoomed out a lot. It becomes quite slow. ( I guess there is a lot of drawing of the same pixel.. )
     * Maybe combine few lines that are close when zoomed out... ( how to detect this ? )
-* I'm not happy with the thickness of the line when zooming in and out.
-  * It's not that bad, but it's inconsistent.
+* ~~I'm not happy with the thickness of the line when zooming in and out.~~
+  * ~~It's not that bad, but it's inconsistent.~~
+  * Made is consistent. And now it's smooth af.
 
 ### Screenshot
-![screenshot1](media/rlplot.png)
+![screenshot3](media/rlplot_20230616_145925.png)
 ![screenshot2](media/rlplot_20230615_152303.png)
+![screenshot1](media/rlplot.png)
 
 ### License
 
