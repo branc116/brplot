@@ -13,32 +13,18 @@ uniform vec4 resolution;
 uniform vec2 zoom;
 uniform vec2 screen;
 
-float move_dir() {
-  int m = gl_VertexID % 6;
-  if (m == 0) {
-    return 1.;
-  } else if (m == 1) {
-    return 1.;
-  } else if (m == 2) {
-    return -1.;
-  } else if (m == 3) {
-    return -1.;
-  } else if (m == 4) {
-    return 1.;
-  } else {
-    return -1.;
-  }
-}
-
 void main(void)
 {
-    //vc = vec4(gl_VertexID % 3 == 2 && gl_VertexID % 2 == 0 ? 1.0 : 0.0); //vertexColor;
-    //vc = 1*vec4(gl_VertexID > 50 ? 1.0 : 0.0); //vertexColor;
+    // TODO: make this uniform.
+    float thick = 0.09;
     vc = vec4(normalize(vertexColor));
-    normal = vec2(0, 0);
-    normal = move_dir() * normalize(vertexNormal.yx * zoom * vec2(-1, 1));
+    vec2 tg = vertexNormal.xy;
     vec2 position = vertexPosition.xy;
-      position += normal * 0.05 * (1 - min(zoom.xy*.1, 20000.0));
+
+    normal = -vertexPosition.z * normalize(tg.yx * zoom * vec2(-1, 1));
+    vec2 dif = normal * thick/2.;
+    position -= dif * (min(zoom * 0.1, 20000.0));
+
     vec2 size = resolution.zw;
 
     //Don't know why, but this value works...

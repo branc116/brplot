@@ -213,19 +213,15 @@ static void refresh_shaders_if_dirty(graph_values_t* gv) {
 }
 
 static void test_points(graph_values_t* gv) {
-  for(int i = 0; i < 1025; ++i) {
-    int group = 0;
-    float y = (float)i*0.1;
-    point_group_t* g = push_point_group(gv, group);
-    Vector2 p = {g->len*1.1, sin(y) };
-    push_point(g, p);
-  }
-  for(int i = 0; i < 1025; ++i) {
-    int group = 1;
-    float y = (float)i*0.1;
-    point_group_t* g = push_point_group(gv, group);
-    Vector2 p = {g->len*10.1, sin(y) };
-    push_point(g, p);
+  for (int harm = 1; harm <= 4; ++harm) {
+    for(int i = 0; i < 1025; ++i) {
+      int group = harm;
+      point_group_t* g = push_point_group(gv, group);
+      float x = g->len*.1;
+      float y = (float)x*0.01;
+      Vector2 p = {x, harm*sin(y/(1<<harm)) };
+      push_point(g, p);
+    }
   }
 }
 
@@ -325,6 +321,11 @@ static void UploadSmolMesh(smol_mesh_t* mesh, bool dynamic) {
   mesh->vaoId = m.vaoId;
 }
 
+static void merge_points(float* a, float* b) {
+  float nv = (*a + *b)/2;
+  *a = *b = nv;
+}
+
 static bool GenMeshLineStrip(smol_mesh_t* mesh, point_group_t* g, int offset)
 {
     int l = g != NULL ? g->len - offset - 1 : 0;
@@ -341,7 +342,6 @@ static bool GenMeshLineStrip(smol_mesh_t* mesh, point_group_t* g, int offset)
 
     if (count <= 0) return false;
 
-    float thick = 0.1;
     // Todo: check if index v is inside gv->points
     for (int v = 0; v < (count*2*3*3); v += 2*3*3)
     {
@@ -350,45 +350,50 @@ static bool GenMeshLineStrip(smol_mesh_t* mesh, point_group_t* g, int offset)
       Vector2 delta = { endPos.x - startPos.x, endPos.y - startPos.y };
       float length = sqrtf(delta.x*delta.x + delta.y*delta.y);
 
-      if ((length > 0) && (thick > 0))
-      {
-          float scale = thick/(2*length);
-          Vector2 radius = { -scale*delta.y, scale*delta.x };
-          Vector2 strip[4] = {
-              { startPos.x - radius.x, startPos.y - radius.y },
-              { startPos.x + radius.x, startPos.y + radius.y },
-              { endPos.x - radius.x, endPos.y - radius.y },
-              { endPos.x + radius.x, endPos.y + radius.y }
-          };
-          //First triangle
-          mesh->verticies[v+0] = strip[0].x;
-          mesh->verticies[v+1] = strip[0].y;
-          mesh->verticies[v+2] = -1;
-          mesh->verticies[v+3] = strip[2].x;
-          mesh->verticies[v+4] = strip[2].y;
-          mesh->verticies[v+5] = -1;
-          mesh->verticies[v+6] = strip[1].x;
-          mesh->verticies[v+7] = strip[1].y;
-          mesh->verticies[v+8] = 1;
-          //Second triangle
-          mesh->verticies[v+9]  = strip[1].x;
-          mesh->verticies[v+10] = strip[1].y;
-          mesh->verticies[v+11] = 1;
-          mesh->verticies[v+12] = strip[2].x;
-          mesh->verticies[v+13] = strip[2].y;
-          mesh->verticies[v+14] = -1;
-          mesh->verticies[v+15] = strip[3].x;
-          mesh->verticies[v+16] = strip[3].y;
-          mesh->verticies[v+17] = 1;
-          for (int i = 0; i < 18; i += 3) {
-          //Not a normal, this is dx, dy, length for first triangle 
-            mesh->normals[v+i+0] = delta.x;
-            mesh->normals[v+i+1] = delta.y;
-            mesh->normals[v+i+2] = length;
-          }
+      Vector2 strip[2] = {
+          { startPos.x, startPos.y},
+          { endPos.x, endPos.y},
+      };
+      //First triangle
+      mesh->verticies[v+0] = strip[0].x;
+      mesh->verticies[v+1] = strip[0].y;
+      mesh->verticies[v+2] = -1;
+      mesh->verticies[v+3] = strip[1].x;
+      mesh->verticies[v+4] = strip[1].y;
+      mesh->verticies[v+5] = -1;
+      mesh->verticies[v+6] = strip[0].x;
+      mesh->verticies[v+7] = strip[0].y;
+      mesh->verticies[v+8] = 1;
+      //Second triangle
+      mesh->verticies[v+9]  = strip[0].x;
+      mesh->verticies[v+10] = strip[0].y;
+      mesh->verticies[v+11] = 1;
+      mesh->verticies[v+12] = strip[1].x;
+      mesh->verticies[v+13] = strip[1].y;
+      mesh->verticies[v+14] = -1;
+      mesh->verticies[v+15] = strip[1].x;
+      mesh->verticies[v+16] = strip[1].y;
+      mesh->verticies[v+17] = 1;
+
+      for (int i = 0; i < 18; i += 3) {
+      //Not a normal, this is dx, dy, length for first triangle 
+        mesh->normals[v+i+0] = delta.x;
+        mesh->normals[v+i+1] = delta.y;
+        mesh->normals[v+i+2] = length;
       }
-    }
-    return true;
+  }
+  for (int i = 1; i < count; ++i) {
+    int vend = (i - 1) * 18, vstart = i * 18;
+    merge_points(&mesh->normals[vend+3], &mesh->normals[vstart+0]);
+    merge_points(&mesh->normals[vend+4], &mesh->normals[vstart+1]);
+    mesh->normals[vend+12] = mesh->normals[vend+3];
+    mesh->normals[vend+13] = mesh->normals[vend+4];
+    merge_points(&mesh->normals[vend+15], &mesh->normals[vstart+6]);
+    merge_points(&mesh->normals[vend+16], &mesh->normals[vstart+7]);
+    mesh->normals[vstart+9] = mesh->normals[vstart+6];
+    mesh->normals[vstart+10] = mesh->normals[vstart+7];
+  }
+  return true;
 }
 
 // Copy paste from Raylib source. More or less. Delted stuff that were not needed..
