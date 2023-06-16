@@ -26,7 +26,7 @@ void start_refreshing_shaders(graph_values_t* gv) {
   pthread_t thread2;
   pthread_attr_t attrs2;
   pthread_attr_init(&attrs2);
-  if (pthread_create(&thread2, &attrs2, watch_shader_change, &gv)) {
+  if (pthread_create(&thread2, &attrs2, watch_shader_change, gv)) {
     fprintf(stderr, "ERROR while creating thread %d:`%s`\n", errno, strerror(errno));
   }
 }
