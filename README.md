@@ -51,6 +51,11 @@ client_socket.sendto(f"{y_value};{group_id}".encode(), ("localhost", port_number
   * Distante points start being rounded up/down to closest float. It don't look right.
   * When zoomed out a lot. It becomes quite slow. ( I guess there is a lot of drawing of the same pixel.. )
     * Maybe combine few lines that are close when zoomed out... ( how to detect this ? )
+  * Maybe use geometry shader ( don't generate triangles on cpu. )
+  * Gpu memory usage will be lower. Current gpu memory usage:
+    * (N lines)*(2 triangles per line)*(3*vertices per triangle)*((3 floats for position) + (3 float for tangents))*(4 bytes per float)
+    * If N = 64'000'000, gpu usage will be ~9GB. This seems high...
+
 * ~~I'm not happy with the thickness of the line when zooming in and out.~~
   * ~~It's not that bad, but it's inconsistent.~~
   * Made is consistent. And now it's smooth af.
