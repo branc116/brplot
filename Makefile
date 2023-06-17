@@ -1,4 +1,4 @@
-CCFLAGS=-Wall -Wpedantic -Wextra -lm -O3 -flto
+CCFLAGS=-Wall -Wpedantic -Wextra -lm -g
 
 bin/rlplot: build/udp.o build/main.o build/graph.o build/refresh_shaders.o
 	gcc $(CCFLAGS) -pthread -lraylib -o bin/rlplot build/udp.o build/main.o build/graph.o build/refresh_shaders.o

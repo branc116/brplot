@@ -26,7 +26,7 @@ static void init_smol_mesh(smol_mesh_t* mesh);
 //      Or Smol mesh file...
 static bool GenMeshLineStrip(smol_mesh_t* mesh, point_group_t* gv, int offset);
 static void UploadSmolMesh(smol_mesh_t* mesh, bool dynamic);
-static void DrawLineStripMesh(smol_mesh_t* mesh, Shader shader, Color color);
+static void DrawLineStripMesh(smol_mesh_t* mesh, Shader shader);
 static void UpdateSmolMesh(smol_mesh_t* mesh);
 static void UnloadSmolMesh(smol_mesh_t* mesh);
 
@@ -36,12 +36,10 @@ static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale);
 // Neded for copying stuff to gpu.
 static float tmp_v_buff[3*PTOM_COUNT*3*2];
 static float tmp_norm_buff[3*PTOM_COUNT*3*2];
-static float tmp_v_buff2[2*PTOM_COUNT*3*2];
 
 static smol_mesh_t temp_smol_mesh = {
   .verticies = tmp_v_buff,
   .normals = tmp_norm_buff,
-  .tex_cords = tmp_v_buff2,
   .length = PTOM_COUNT,
 };
 
@@ -119,19 +117,18 @@ void DrawGraph(graph_values_t* gv) {
       }
     }
     for (int j = 0; j < gv->groups_len; ++j) {
-      point_group_t* g = &gv->groups[j];
-      if (g->is_selected) {
-        if (GenMeshLineStrip(&temp_smol_mesh, g, g->smol_meshes_len*(temp_smol_mesh.length))) {
-          UpdateSmolMesh(&temp_smol_mesh);
-          DrawLineStripMesh(&temp_smol_mesh, gv->linesShader, gv->group_colors[j]);
-        }
-      }
-    }
-    for (int j = 0; j < gv->groups_len; ++j) {
       point_group_t * g = &gv->groups[j];
       if (g->is_selected) {
-        for (int k = 0; k < g->smol_meshes_len; ++k) {
-          DrawLineStripMesh(&g->meshes[k], gv->linesShader, gv->group_colors[j]);
+        int ml = g->smol_meshes_len;
+        Color c = gv->group_colors[j];
+        Vector3 cv = {c.r/255.f, c.g/255.f, c.b/255.f};
+        SetShaderValue(gv->linesShader, gv->uColor, &cv, SHADER_UNIFORM_VEC3);
+        if (GenMeshLineStrip(&temp_smol_mesh, g, g->smol_meshes_len*(temp_smol_mesh.length))) {
+          UpdateSmolMesh(&temp_smol_mesh);
+          DrawLineStripMesh(&temp_smol_mesh, gv->linesShader);
+        }
+        for (int k = 0; k < ml; ++k) {
+          DrawLineStripMesh(&g->meshes[k], gv->linesShader);
         }
       }
     }
@@ -147,6 +144,28 @@ void DrawGraph(graph_values_t* gv) {
     DrawRectangleV(mp, s, RAYWHITE);
     DrawText(buff, mp.x + pad, mp.y + pad, fs, BLACK);
   }
+}
+static void UploadSmolMesh(smol_mesh_t* mesh, bool dynamic) {
+
+    mesh->vaoId = 0;        // Vertex Array Object
+    mesh->vboIdVertex = 0;     // Vertex buffer: positions
+    mesh->vboIdNormal = 0;     // Vertex buffer: texcoords
+
+    mesh->vaoId = rlLoadVertexArray();
+    rlEnableVertexArray(mesh->vaoId);
+
+    mesh->vboIdVertex = rlLoadVertexBuffer(mesh->verticies, mesh->vertex_count*3*sizeof(float), dynamic);
+    rlSetVertexAttribute(0, 3, RL_FLOAT, 0, 0, 0);
+    rlEnableVertexAttribute(0);
+
+    // Enable vertex attributes: normals (shader-location = 2)
+    mesh->vboIdNormal = rlLoadVertexBuffer(mesh->normals, mesh->vertex_count*3*sizeof(float), dynamic);
+    rlSetVertexAttribute(2, 3, RL_FLOAT, 0, 0, 0);
+    rlEnableVertexAttribute(1);
+    if (mesh->vaoId > 0) TRACELOG(LOG_INFO, "VAO: [ID %i] Smol Mesh uploaded successfully to VRAM (GPU)", mesh->vaoId);
+    else TRACELOG(LOG_INFO, "VBO: Smol Mesh uploaded successfully to VRAM (GPU)");
+
+    rlDisableVertexArray();
 }
 
 point_group_t* init_point_group_t(point_group_t* g, int cap, int group_id, Vector2* points) {
@@ -209,6 +228,7 @@ static void refresh_shaders_if_dirty(graph_values_t* gv) {
       gv->uOffset[i] = GetShaderLocation(gv->shaders[i], "offset");
       gv->uScreen[i] = GetShaderLocation(gv->shaders[i], "screen");
     }
+    gv->uColor = GetShaderLocation(gv->linesShader, "color");
   }
 }
 
@@ -285,15 +305,13 @@ static void update_resolution(graph_values_t* gv) {
 static void init_smol_mesh(smol_mesh_t* mesh) {
   mesh->verticies = tmp_v_buff;
   mesh->normals = tmp_norm_buff;
-  mesh->tex_cords = tmp_v_buff2;
   mesh->length = PTOM_COUNT;
 }
 
 static void UnloadSmolMesh(smol_mesh_t* mesh) {
-  Mesh m = { 0 };
-  m.vaoId = mesh->vaoId;
-  m.vboId = mesh->vboId;
-  UnloadMesh(m);
+  rlUnloadVertexArray(mesh->vaoId);
+  rlUnloadVertexBuffer(mesh->vboIdVertex);
+  rlUnloadVertexBuffer(mesh->vboIdNormal);
 }
 
 static void UpdateSmolMesh(smol_mesh_t* mesh) {
@@ -303,22 +321,7 @@ static void UpdateSmolMesh(smol_mesh_t* mesh) {
   // length * (2 triengle per line) * (3 verticies per triangle) * (3 floats per vertex)
   int number_of_floats = mesh->length*2*3*3;
   UpdateMeshBuffer(m, 0, mesh->verticies, number_of_floats * sizeof(float), 0);
-  UpdateMeshBuffer(m, 2, mesh->normals, number_of_floats * sizeof(float), 0);
-}
-
-static void UploadSmolMesh(smol_mesh_t* mesh, bool dynamic) {
-  Mesh m = { 0 };
-  m.vaoId = mesh->vaoId;
-  m.vboId = mesh->vboId;
-  m.vertices = mesh->verticies;
-  m.normals = mesh->normals;
-  m.texcoords = mesh->tex_cords;
-  m.vertexCount = mesh->vertex_count;
-  m.triangleCount = mesh->triangle_count;
-
-  UploadMesh(&m, dynamic);
-  mesh->vboId = m.vboId;
-  mesh->vaoId = m.vaoId;
+  UpdateMeshBuffer(m, 1, mesh->normals, number_of_floats * sizeof(float), 0);
 }
 
 static void merge_points(float* a, float* b) {
@@ -397,60 +400,37 @@ static bool GenMeshLineStrip(smol_mesh_t* mesh, point_group_t* g, int offset)
 }
 
 // Copy paste from Raylib source. More or less. Delted stuff that were not needed..
-static void DrawLineStripMesh(smol_mesh_t* mesh, Shader shader, Color color)
+static void DrawLineStripMesh(smol_mesh_t* mesh, Shader shader)
 {
-    // Bind shader program
-    rlEnableShader(shader.id);
+  // Bind shader program
+  rlEnableShader(shader.id);
 
-    // Try binding vertex array objects (VAO) or use VBOs if not possible
-    // WARNING: UploadMesh() enables all vertex attributes available in mesh and sets default attribute values
-    // for shader expected vertex attributes that are not provided by the mesh (i.e. colors)
-    // This could be a dangerous approach because different meshes with different shaders can enable/disable some attributes
-    if (!rlEnableVertexArray(mesh->vaoId))
-    {
-        // Bind mesh VBO data: vertex position (shader-location = 0)
-        rlEnableVertexBuffer(mesh->vboId[0]);
-        rlSetVertexAttribute(shader.locs[SHADER_LOC_VERTEX_POSITION], 3, RL_FLOAT, 0, 0, 0);
-        rlEnableVertexAttribute(shader.locs[SHADER_LOC_VERTEX_POSITION]);
-    }
+  // Try binding vertex array objects (VAO) or use VBOs if not possible
+  // WARNING: UploadMesh() enables all vertex attributes available in mesh and sets default attribute values
+  // for shader expected vertex attributes that are not provided by the mesh (i.e. colors)
+  // This could be a dangerous approach because different meshes with different shaders can enable/disable some attributes
+  if (rlEnableVertexArray(mesh->vaoId))
+  {
+  }
+  // Bind mesh VBO data: vertex position (shader-location = 0)
+  rlEnableVertexBuffer(mesh->vboId[0]);
+  rlSetVertexAttribute(shader.locs[SHADER_LOC_VERTEX_POSITION], 3, RL_FLOAT, 0, 0, 0);
+  rlEnableVertexAttribute(shader.locs[SHADER_LOC_VERTEX_POSITION]);
 
-    // Bind mesh VBO data: vertex colors (shader-location = 3, if available)
-    if (shader.locs[SHADER_LOC_VERTEX_COLOR] != -1)
-    {
-        if (mesh->vboId[3] != 0)
-        {
-            rlEnableVertexBuffer(mesh->vboId[3]);
-            rlSetVertexAttribute(shader.locs[SHADER_LOC_VERTEX_COLOR], 4, RL_UNSIGNED_BYTE, 1, 0, 0);
-            rlEnableVertexAttribute(shader.locs[SHADER_LOC_VERTEX_COLOR]);
-        }
-        else
-        {
-            // Set default value for defined vertex attribute in shader but not provided by mesh
-            // WARNING: It could result in GPU undefined behaviour
-            float value[4] = { color.r, color.g, color.b, color.a };
-            rlSetVertexAttributeDefault(shader.locs[SHADER_LOC_VERTEX_COLOR], value, SHADER_ATTRIB_VEC4, 4);
-            rlDisableVertexAttribute(shader.locs[SHADER_LOC_VERTEX_COLOR]);
-        }
-    }
+  if (shader.locs[SHADER_LOC_VERTEX_NORMAL]) {
+    rlEnableVertexBuffer(mesh->vboIdNormal);
+    rlSetVertexAttribute(shader.locs[SHADER_LOC_VERTEX_NORMAL], 3, RL_FLOAT, 0, 0, 0);
+    rlEnableVertexAttribute(shader.locs[SHADER_LOC_VERTEX_NORMAL]);
+  }
 
-    // Bind mesh VBO data: vertex colors (shader-location = 3, if available)
-    if (shader.locs[SHADER_LOC_VERTEX_NORMAL] != -1)
-    {
-        if (mesh->vboId[2] != 0)
-        {
-            rlEnableVertexBuffer(mesh->vboId[2]);
-            rlSetVertexAttribute(shader.locs[SHADER_LOC_VERTEX_NORMAL], 3, RL_FLOAT, 0, 0, 0);
-            rlEnableVertexAttribute(shader.locs[SHADER_LOC_VERTEX_NORMAL]);
-        }
-    }
+  // Bind mesh VBO data: vertex colors (shader-location = 3, if available)
+  rlDrawVertexArray(0, mesh->vertex_count);
+  // Disable all possible vertex array objects (or VBOs)
+  rlDisableVertexArray();
+  rlDisableVertexBuffer();
+  rlDisableVertexBufferElement();
 
-    rlDrawVertexArray(0, mesh->vertex_count);
-    // Disable all possible vertex array objects (or VBOs)
-    rlDisableVertexArray();
-    rlDisableVertexBuffer();
-    rlDisableVertexBufferElement();
-
-    // Disable shader program
-    rlDisableShader();
+  // Disable shader program
+  rlDisableShader();
 }
 

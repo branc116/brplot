@@ -8,9 +8,13 @@ extern "C" {
 
 typedef struct {
   unsigned int vaoId;     // OpenGL Vertex Array Object id
-  unsigned int *vboId;    // OpenGL Vertex Buffer Objects id (default vertex data)
+  union {
+    unsigned int vboId[2];
+    struct {
+      unsigned int vboIdVertex, vboIdNormal;
+    };
+  };
   float* verticies;
-  float* tex_cords;
   float* normals;
   // Max Number of points and only number of points.
   int length;
@@ -41,6 +45,7 @@ typedef struct {
   int uZoom[2];
   int uOffset[2];
   int uScreen[2];
+  int uColor; // Only for linesShader
 
   Rectangle graph_rect;
   Vector2 uvZoom;
@@ -50,7 +55,7 @@ typedef struct {
 #ifdef PLATFORM_WEB
 #define POINTS_CAP (16 * 1024 * 1024)
 #else
-#define POINTS_CAP (32 * 1024 * 1024)
+#define POINTS_CAP (64 * 1024 * 1024)
 #endif
 
 Vector2 points[POINTS_CAP];
@@ -90,6 +95,7 @@ typedef struct {Vector2* v; point_group_t* group;} pp_ret;
       name.uOffset[i] = GetShaderLocation(name.shaders[i], "offset"); \
       name.uScreen[i] = GetShaderLocation(name.shaders[i], "screen"); \
     } \
+    name.uColor = GetShaderLocation(name.linesShader, "color"); \
     memset(name.points, 0, sizeof(name.points)); \
     memset(name.groups, 0, sizeof(name.groups)); \
   } while(0)
