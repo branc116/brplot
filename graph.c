@@ -238,10 +238,20 @@ static void test_points(graph_values_t* gv) {
       int group = harm;
       point_group_t* g = push_point_group(gv, group);
       float x = g->len*.1;
-      float y = (float)x*0.01;
-      Vector2 p = {x, harm*sin(y/(1<<harm)) };
+      float y = (float)x*0.1;
+      Vector2 p = {x*.1, .1*harm*sin(10.*y/(1<<harm)) };
       push_point(g, p);
     }
+  }
+
+  for(int i = 0; i < 1025; ++i) {
+    int group = 5;
+    point_group_t* g = push_point_group(gv, group);
+    float t = g->len*.1;
+    float x = sqrtf(t)*cos(log2f(t));
+    float y = sqrtf(t)*sin(log2f(t));
+    Vector2 p = {x, y };
+    push_point(g, p);
   }
 }
 
