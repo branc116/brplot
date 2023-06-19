@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include "smol_mesh.h"
 #include "points_group.h"
+#include "config.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -6,10 +6,6 @@
 extern "C" {
 #endif
 
-// This is the size of one group of points that will be drawn with one draw call.
-// TODO: make this dynamic.
-#define PTOM_COUNT (1<<15)
-
 typedef struct {
   unsigned int vaoId;     // OpenGL Vertex Array Object id
   union {

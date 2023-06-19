@@ -1,7 +1,10 @@
 #include "smol_mesh.h"
-#include "rlgl.h"
+#include "config.h"
+
 #include <stdlib.h>
 #include <math.h>
+
+#include "rlgl.h"
 
 // Neded for copying stuff to gpu.
 float tmp_v_buff[3*PTOM_COUNT*3*2];

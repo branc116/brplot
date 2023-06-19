@@ -1,17 +1,11 @@
 #pragma once
 #include "raylib.h"
 #include "smol_mesh.h"
+#include "config.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#ifdef PLATFORM_WEB
-#define POINTS_CAP (16 * 1024 * 1024)
-#else
-#define POINTS_CAP (64 * 1024 * 1024)
-#endif
-#define SMOL_MESHES_CAP 1024
 
 typedef struct {
   int cap, len;
