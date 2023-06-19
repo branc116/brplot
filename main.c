@@ -8,6 +8,7 @@
 #include "udp.h"
 #include "graph.h"
 #include "refresh_shaders.h"
+#include "points_group.h"
 
 #include "raylib.h"
 
@@ -37,9 +38,10 @@ void add_point_callback(void* gv, char* buffer, size_t s) {
   Vector2 p = {0, 0};
   int group = 0;
   sscanf(buffer, "%f;%d", &p.y, &group);
-  point_group_t* g = push_point_group(gv, group);
+  graph_values_t* gvt = gv;
+  points_group_t *g = points_group_get(gvt->groups, &gvt->groups_len, GROUP_CAP, gvt->points, group);
   p.x = g->len;
-  push_point(g, p);
+  points_group_push_point(g, p);
 }
 
 int main(void) {

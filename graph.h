@@ -1,38 +1,12 @@
 #pragma once
 #include "raylib.h"
 #include <stdbool.h>
+#include "smol_mesh.h"
+#include "points_group.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef struct {
-  unsigned int vaoId;     // OpenGL Vertex Array Object id
-  union {
-    unsigned int vboId[2];
-    struct {
-      unsigned int vboIdVertex, vboIdNormal;
-    };
-  };
-  float* verticies;
-  float* normals;
-  // Max Number of points and only number of points.
-  int length;
-  // length * (2 triengle per line) * (3 verticies per triangle)
-  int vertex_count;
-  // length * (2 triengle per line)
-  int triangle_count;
-} smol_mesh_t;
-
-#define SMOL_MESHES_CAP 1024
-typedef struct {
-  int cap, len;
-  int group_id;
-  bool is_selected;
-  Vector2* points;
-  int smol_meshes_len;
-  smol_mesh_t meshes[SMOL_MESHES_CAP];
-} point_group_t;
 
 typedef struct {
   union {
@@ -52,24 +26,15 @@ typedef struct {
   Vector2 uvOffset;
   Vector2 uvScreen;
 
-#ifdef PLATFORM_WEB
-#define POINTS_CAP (16 * 1024 * 1024)
-#else
-#define POINTS_CAP (64 * 1024 * 1024)
-#endif
-
 Vector2 points[POINTS_CAP];
 
 #define GROUP_CAP 32
-  point_group_t groups[GROUP_CAP];
+  points_group_t groups[GROUP_CAP];
   int groups_len;
   Color group_colors[GROUP_CAP];
 
   bool shaders_dirty;
 } graph_values_t;
-
-
-typedef struct {Vector2* v; point_group_t* group;} pp_ret;
 
 #define GRAPH_LEFT_PAD 400
 #define init_graph_values(name, w, h) \
@@ -80,14 +45,10 @@ typedef struct {Vector2* v; point_group_t* group;} pp_ret;
     name.group_colors[i] = cs[i]; \
   } \
   name.groups_len = 0; \
-  Rectangle r = { GRAPH_LEFT_PAD, 50, w - GRAPH_LEFT_PAD - 60, h - 110 }; \
-  name.graph_rect = r; \
-  Vector2 o = { 0., 0. }; \
-  name.uvOffset = o; \
-  Vector2 z = { 1., 1. }; \
-  name.uvZoom = z; \
-  Vector2 sc = { w, h }; \
-  name.uvScreen = sc; \
+  name.graph_rect = (Rectangle){ GRAPH_LEFT_PAD, 50, w - GRAPH_LEFT_PAD - 60, h - 110 }; \
+  name.uvOffset = (Vector2){ 0., 0. }; \
+  name.uvZoom = (Vector2){ 1., 1. }; \
+  name.uvScreen = (Vector2){ w, h }; \
   do { \
     for (int i = 0; i < 2; ++i) { \
       name.uResolution[i] = GetShaderLocation(name.shaders[i], "resolution"); \
@@ -100,9 +61,6 @@ typedef struct {Vector2* v; point_group_t* group;} pp_ret;
     memset(name.groups, 0, sizeof(name.groups)); \
   } while(0)
 
-
-point_group_t* push_point_group(graph_values_t* gv, int group);
-void push_point(point_group_t* gv, Vector2 v);
 void init_graph(graph_values_t* gv);
 void DrawGraph(graph_values_t* gv);
 
