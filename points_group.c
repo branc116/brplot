@@ -1,6 +1,7 @@
 #include "points_group.h"
 
 #include "raylib.h"
+#include "smol_mesh.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +15,7 @@ static points_group_t* points_group_init(points_group_t* g, int cap, int group_i
     g->is_selected = true;
     g->points = points;
     g->smol_meshes_len = 0;
+    g->is_sorted = true;
     return g;
 }
 
@@ -50,9 +52,15 @@ void points_group_push_point(points_group_t* g, Vector2 v) {
     exit(-1);
   }
   g->points[g->len++] = v;
+  if (g->len > 1 && g->is_sorted && g->points[g->len - 1].x < g->points[g->len - 2].x) {
+    g->is_sorted = false;
+  }
 }
+#define sample_points_cap 1024
+static Vector2 sample_points[sample_points_cap];
+int points_group_sample_points(points_group_t const* g, Rectangle rect, Vector2* out_points, int max_number_of_points);
 
-void points_groups_draw(points_group_t* gs, int len, Shader shader, int color_uniform, Color* colors) {
+void points_groups_draw(points_group_t* gs, int len, Shader shader, int color_uniform, Color* colors, Rectangle rect) {
   for (int j = 0; j < len; ++j) {
     points_group_t * g = &gs[j];
     if (g->len / PTOM_COUNT > g->smol_meshes_len ) {
@@ -66,19 +74,60 @@ void points_groups_draw(points_group_t* gs, int len, Shader shader, int color_un
   for (int j = 0; j < len; ++j) {
     points_group_t * g = &gs[j];
     if (g->is_selected) {
-      int ml = g->smol_meshes_len;
       Color c = colors[j];
       Vector3 cv = {c.r/255.f, c.g/255.f, c.b/255.f};
       SetShaderValue(shader, color_uniform, &cv, SHADER_UNIFORM_VEC3);
-      if (smol_mesh_gen_line_strip(smol_mesh_get_temp(), g->points, g->len, g->smol_meshes_len*(PTOM_COUNT))) {
-        smol_mesh_update(smol_mesh_get_temp());
-        smol_mesh_draw_line_strip(smol_mesh_get_temp(), shader);
-      }
-      for (int k = 0; k < ml; ++k) {
-        smol_mesh_draw_line_strip(&g->meshes[k], shader);
+      if (g->is_sorted) {
+        int len = points_group_sample_points(g, rect, sample_points, sample_points_cap);
+        if (len > 1){
+          smol_mesh_gen_line_strip(smol_mesh_get_temp(), sample_points, len, 0);
+          smol_mesh_update(smol_mesh_get_temp());
+          smol_mesh_draw_line_strip(smol_mesh_get_temp(), shader);
+        }
+
+      } else {
+        int ml = g->smol_meshes_len;
+        if (smol_mesh_gen_line_strip(smol_mesh_get_temp(), g->points, g->len, g->smol_meshes_len*(PTOM_COUNT))) {
+          smol_mesh_update(smol_mesh_get_temp());
+          smol_mesh_draw_line_strip(smol_mesh_get_temp(), shader);
+        }
+        for (int k = 0; k < ml; ++k) {
+          smol_mesh_draw_line_strip(&g->meshes[k], shader);
+        }
       }
     }
   }
+}
+
+Vector2 const* binary_search(Vector2 const* lb, Vector2 const* ub, float x_value) {
+  if (lb->x > x_value) return NULL;
+  if (ub->x < x_value) return NULL;
+  while (ub - lb > 1) {
+    Vector2 const* mid = lb + (ub - lb)/2;
+    if (mid->x < x_value) lb = mid;
+    else if (mid->x > x_value) ub = mid;
+    else return mid;
+  }
+  return lb;
+}
+
+int points_group_sample_points(points_group_t const* g, Rectangle rect, Vector2* out_points, int max_number_of_points) {
+  if (g->len == 0) {
+    return 0;
+  }
+  int out_index = 0;
+  float cur = rect.x;
+  float step = rect.width/max_number_of_points;
+  Vector2 const* lb = g->points, *ub = g->points + g->len - 1;
+  while (lb != NULL && out_index < max_number_of_points && cur < rect.width) {
+    Vector2 const* clb = binary_search(lb, ub, cur);
+    if (clb != NULL) {
+      out_points[out_index++] = *clb;
+      lb = clb;
+    }
+    cur += step;
+  }
+  return out_index;
 }
 
 void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_array_cap, Vector2* all_points) {

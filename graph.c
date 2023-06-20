@@ -17,6 +17,7 @@ static void update_resolution(graph_values_t* gv);
 
 static int DrawButton(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...);
 static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale);
+static Rectangle graph_get_rectangle(graph_values_t* gv);
 
 void init_graph(graph_values_t* gv) {
   (void)gv;
@@ -79,7 +80,7 @@ void DrawGraph(graph_values_t* gv) {
   BeginShaderMode(gv->gridShader);
     DrawRectangleRec(gv->graph_rect, RED);
   EndShaderMode();
-  points_groups_draw(gv->groups, gv->groups_len, gv->linesShader, gv->uColor, gv->group_colors);
+  points_groups_draw(gv->groups, gv->groups_len, gv->linesShader, gv->uColor, gv->group_colors, graph_get_rectangle(gv));
   if (is_inside) {
     float pad = 5.;
     float fs = 10 * font_scale;
