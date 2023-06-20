@@ -143,16 +143,22 @@ static int DrawButton(bool* is_pressed, float x, float y, float font_size, char*
   return c;
 }
 
+static Rectangle graph_get_rectangle(graph_values_t* gv) {
+  return (Rectangle){-gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, gv->uvZoom.y/2 + gv->uvOffset.y,
+    gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x, gv->uvZoom.y};
+}
+
 static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale) {
+  Rectangle r = graph_get_rectangle(gv);
   DrawButton(NULL, gv->graph_rect.x - 30, gv->graph_rect.y - 30, font_scale * 10,
-      buff, "(%f, %f)", -gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, gv->uvZoom.y/2 + gv->uvOffset.y);
+      buff, "(%f, %f)", r.x, r.y);
   DrawButton(NULL, gv->graph_rect.x + gv->graph_rect.width - 120, gv->graph_rect.y - 30, font_scale * 10,
-      buff, "(%f, %f)", gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, gv->uvZoom.y/2 + gv->uvOffset.y);
+      buff, "(%f, %f)", r.x + r.width, r.y);
 
   DrawButton(NULL, gv->graph_rect.x - 30, gv->graph_rect.y + 20 + gv->graph_rect.height, font_scale * 10,
-      buff, "(%f, %f)", -gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, -gv->uvZoom.y/2 + gv->uvOffset.y);
+      buff, "(%f, %f)", r.x, r.y - r.height);
   DrawButton(NULL, gv->graph_rect.x + gv->graph_rect.width - 120, gv->graph_rect.y + 20 + gv->graph_rect.height, font_scale * 10,
-      buff, "(%f, %f)", gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x, -gv->uvZoom.y/2 + gv->uvOffset.y);
+      buff, "(%f, %f)", r.x + r.width, r.y - r.height);
 
   int i = 0;
   DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "offset: (%f, %f)", gv->uvOffset.x, gv->uvOffset.y);
