@@ -10,8 +10,8 @@ uniform vec3 color;
 
 void main()
 {
-  float shade = 1 - smoothstep(length(normal), 0.0, .3) ;
-  if (shade == 0) return;
+  float shade = 1. - smoothstep(length(normal), 0.0, .3) ;
+  if (shade == 0.) return;
   vec4 cshade = vec4(shade);
   vec4 r = resolution;
   r.x += 2;

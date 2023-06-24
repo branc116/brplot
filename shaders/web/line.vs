@@ -4,9 +4,7 @@ precision mediump float;
 attribute vec3 vertexPosition;
 // This is not normal. This is dx, dy, and length of the line.
 attribute vec3 vertexNormal;
-attribute vec4 vertexColor;
 
-varying vec4 vc;
 varying vec2 normal;
 
 uniform vec2 offset;
@@ -18,7 +16,6 @@ void main(void)
 {
     // TODO: make this uniform.
     float thick = 0.09;
-    vc = vec4(normalize(vertexColor));
     vec2 tg = vertexNormal.xy;
     vec2 position = vertexPosition.xy;
 
