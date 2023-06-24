@@ -9,7 +9,7 @@ extern "C" {
 //Maximum number of points that can be shown by this plotter.
 //If you try to show more, this program will crash....
 #ifdef PLATFORM_WEB
-#define POINTS_CAP (16 * 1024 * 1024)
+#define POINTS_CAP (128 * 1024 * 1024)
 #else
 #define POINTS_CAP (64 * 1024 * 1024)
 #endif
@@ -79,8 +79,8 @@ typedef struct {
 } graph_values_t;
 
 void smol_mesh_init(smol_mesh_t* mesh);
-void smol_mesh_init_temp();
-smol_mesh_t* smol_mesh_get_temp();
+void smol_mesh_init_temp(void);
+smol_mesh_t* smol_mesh_get_temp(void);
 bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2* points, int len, int offset);
 void smol_mesh_upload(smol_mesh_t* mesh, bool dynamic);
 void smol_mesh_draw_line_strip(smol_mesh_t* mesh, Shader shader);
