@@ -62,6 +62,7 @@ int points_group_sample_points(points_group_t const* g, Rectangle rect, Vector2*
 void points_groups_draw(points_group_t* gs, int len, Shader shader, int color_uniform, Color* colors, Rectangle rect) {
   for (int j = 0; j < len; ++j) {
     points_group_t * g = &gs[j];
+    if (g->is_sorted) continue; // Don't move to gpu if group is soreted, no need for it...
     if (g->len / PTOM_COUNT > g->smol_meshes_len ) {
       int indx = g->smol_meshes_len++;
       smol_mesh_t* sm = &g->meshes[indx];
@@ -112,17 +113,26 @@ Vector2 const* binary_search(Vector2 const* lb, Vector2 const* ub, float x_value
   return lb;
 }
 
+Vector2 interpolate(Vector2 a, Vector2 b, float x) {
+  assert(x >= a.x);
+  assert(x <= b.x);
+  assert(a.x <= b.x);
+  float k = (x - a.x)/(b.x - a.x);
+  return (Vector2){.x = a.x*(1 - k) + b.x*k, .y =  a.y*(1 - k) + b.y*k };
+}
+
 int points_group_sample_points(points_group_t const* g, Rectangle rect, Vector2* out_points, int max_number_of_points) {
   if (g->len == 0) {
     return 0;
   }
   int out_index = 0, i = 0;
-  float step = rect.width/max_number_of_points;
+  float step = 1.1*rect.width/max_number_of_points;
   Vector2 const* lb = g->points, *ub = &g->points[g->len - 1];
   while (lb != NULL && i < max_number_of_points) {
-    Vector2 const* clb = binary_search(lb, ub, rect.x + step * i++);
+    float cur = rect.x + step * i++;
+    Vector2 const* clb = binary_search(lb, ub, cur); // Clb will alway be LESS than g->len - 1, so Clb + 1 will always be LESS OR EQUAL to g->len - 1
     if (clb != NULL) {
-      out_points[out_index++] = *clb;
+      out_points[out_index++] = interpolate(clb[0], clb[1], cur);
       lb = clb;
     }
   }
@@ -131,7 +141,7 @@ int points_group_sample_points(points_group_t const* g, Rectangle rect, Vector2*
 
 void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_array_cap, Vector2* all_points) {
   for (int harm = 1; harm <= 4; ++harm) {
-    for(int i = 0; i < 1025; ++i) {
+    for(int i = 0; i < 10025; ++i) {
       int group = harm;
       points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, all_points, group);
       float x = g->len*.1;
@@ -140,7 +150,7 @@ void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_
       points_group_push_point(g, p);
     }
   }
-
+/*
   for(int i = 0; i < 1025; ++i) {
     int group = 5;
     points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, all_points, group);
@@ -150,5 +160,6 @@ void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_
     Vector2 p = {x, y };
     points_group_push_point(g, p);
   }
+*/
 }
 
