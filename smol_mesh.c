@@ -1,5 +1,6 @@
 #include "plotter.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
@@ -26,25 +27,26 @@ void smol_mesh_upload(smol_mesh_t* mesh, bool dynamic) {
 
     mesh->vboIdVertex = rlLoadVertexBuffer(mesh->verticies, mesh->vertex_count*3*sizeof(float), dynamic);
     rlSetVertexAttribute(0, 3, RL_FLOAT, 0, 0, 0);
-    rlEnableVertexAttribute(0);
+    //rlEnableVertexAttribute(0);
 
     // Enable vertex attributes: normals (shader-location = 2)
     mesh->vboIdNormal = rlLoadVertexBuffer(mesh->normals, mesh->vertex_count*3*sizeof(float), dynamic);
     rlSetVertexAttribute(2, 3, RL_FLOAT, 0, 0, 0);
-    rlEnableVertexAttribute(1);
-    if (mesh->vaoId > 0) TRACELOG(LOG_INFO, "VAO: [ID %i] Smol Mesh uploaded successfully to VRAM (GPU)", mesh->vaoId);
-    else TRACELOG(LOG_INFO, "VBO: Smol Mesh uploaded successfully to VRAM (GPU)");
+    //rlEnableVertexAttribute(1);
+    if (mesh->vaoId > 0) printf("VAO: [ID %i] Smol Mesh uploaded successfully to VRAM (GPU)\n", mesh->vaoId);
+    else printf("VBO: Smol Mesh uploaded successfully to VRAM (GPU)\n");
 
     rlDisableVertexArray();
 }
 
-void smol_mesh_init_temp() {
+void smol_mesh_init_temp(void) {
   smol_mesh_init(&temp_smol_mesh);
   smol_mesh_gen_line_strip(&temp_smol_mesh, NULL, 0, 0);
   smol_mesh_upload(&temp_smol_mesh, true);
+  TRACELOG(LOG_INFO, "DONE INITING\n");
 }
 
-smol_mesh_t* smol_mesh_get_temp() {
+smol_mesh_t* smol_mesh_get_temp(void) {
   return &temp_smol_mesh;
 }
 
@@ -150,15 +152,13 @@ void smol_mesh_draw_line_strip(smol_mesh_t* mesh, Shader shader) {
 
   rlEnableVertexArray(mesh->vaoId);
   // Bind mesh VBO data: vertex position (shader-location = 0)
-  rlEnableVertexBuffer(mesh->vboId[0]);
+  rlEnableVertexBuffer(mesh->vboIdVertex);
   rlSetVertexAttribute(shader.locs[SHADER_LOC_VERTEX_POSITION], 3, RL_FLOAT, 0, 0, 0);
   rlEnableVertexAttribute(shader.locs[SHADER_LOC_VERTEX_POSITION]);
 
-  if (shader.locs[SHADER_LOC_VERTEX_NORMAL]) {
-    rlEnableVertexBuffer(mesh->vboIdNormal);
-    rlSetVertexAttribute(shader.locs[SHADER_LOC_VERTEX_NORMAL], 3, RL_FLOAT, 0, 0, 0);
-    rlEnableVertexAttribute(shader.locs[SHADER_LOC_VERTEX_NORMAL]);
-  }
+  rlEnableVertexBuffer(mesh->vboIdNormal);
+  rlSetVertexAttribute(shader.locs[SHADER_LOC_VERTEX_NORMAL], 3, RL_FLOAT, 0, 0, 0);
+  rlEnableVertexAttribute(shader.locs[SHADER_LOC_VERTEX_NORMAL]);
 
   // Bind mesh VBO data: vertex colors (shader-location = 3, if available)
   rlDrawVertexArray(0, mesh->vertex_count);
