@@ -1,5 +1,4 @@
-#include "smol_mesh.h"
-#include "config.h"
+#include "plotter.h"
 
 #include <stdlib.h>
 #include <math.h>

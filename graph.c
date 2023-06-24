@@ -1,4 +1,4 @@
-#include "graph.h"
+#include "plotter.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,10 +7,8 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "points_group.h"
 #include "raylib.h"
 #include "rlgl.h"
-#include "smol_mesh.h"
 
 static void refresh_shaders_if_dirty(graph_values_t* gv);
 static void update_resolution(graph_values_t* gv);
@@ -19,12 +17,31 @@ static int DrawButton(bool* is_pressed, float x, float y, float font_size, char*
 static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale);
 static Rectangle graph_get_rectangle(graph_values_t* gv);
 
-void init_graph(graph_values_t* gv) {
-  (void)gv;
+void graph_init(graph_values_t* gv, float width, float height) {
+  gv->gridShader = LoadShader(NULL, "shaders/grid.fs"); \
+  gv->linesShader = LoadShader("shaders/line.vs", "shaders/line.fs"); \
+  Color cs[] = { RED, GREEN, BLUE, LIGHTGRAY, PINK, GOLD, VIOLET, DARKPURPLE }; \
+  for (int i = 0; i < 8; ++i) { \
+    gv->group_colors[i] = cs[i]; \
+  } \
+  gv->groups_len = 0; \
+  gv->graph_rect = (Rectangle){ GRAPH_LEFT_PAD, 50, width - GRAPH_LEFT_PAD - 60, height - 110 }; \
+  gv->uvOffset = (Vector2){ 0., 0. }; \
+  gv->uvZoom = (Vector2){ 1., 1. }; \
+  gv->uvScreen = (Vector2){ width, height }; \
+  for (int i = 0; i < 2; ++i) { \
+    gv->uResolution[i] = GetShaderLocation(gv->shaders[i], "resolution"); \
+    gv->uZoom[i] = GetShaderLocation(gv->shaders[i], "zoom"); \
+    gv->uOffset[i] = GetShaderLocation(gv->shaders[i], "offset"); \
+    gv->uScreen[i] = GetShaderLocation(gv->shaders[i], "screen"); \
+  } \
+  gv->uColor = GetShaderLocation(gv->linesShader, "color"); \
+  memset(gv->points, 0, sizeof(gv->points)); \
+  memset(gv->groups, 0, sizeof(gv->groups)); \
   smol_mesh_init_temp();
 }
 
-void DrawGraph(graph_values_t* gv) {
+void graph_draw(graph_values_t* gv) {
   char buff[128];
   float font_scale = 1.4;
   update_resolution(gv);

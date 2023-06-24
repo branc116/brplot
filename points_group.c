@@ -1,7 +1,6 @@
-#include "points_group.h"
+#include "plotter.h"
 
 #include "raylib.h"
-#include "smol_mesh.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -100,8 +99,10 @@ void points_groups_draw(points_group_t* gs, int len, Shader shader, int color_un
 }
 
 Vector2 const* binary_search(Vector2 const* lb, Vector2 const* ub, float x_value) {
-  if (lb->x > x_value) return NULL;
-  if (ub->x < x_value) return NULL;
+  if (lb->x > x_value)
+    return NULL;
+  if (ub->x < x_value)
+    return NULL;
   while (ub - lb > 1) {
     Vector2 const* mid = lb + (ub - lb)/2;
     if (mid->x < x_value) lb = mid;
@@ -115,17 +116,15 @@ int points_group_sample_points(points_group_t const* g, Rectangle rect, Vector2*
   if (g->len == 0) {
     return 0;
   }
-  int out_index = 0;
-  float cur = rect.x;
+  int out_index = 0, i = 0;
   float step = rect.width/max_number_of_points;
-  Vector2 const* lb = g->points, *ub = g->points + g->len - 1;
-  while (lb != NULL && out_index < max_number_of_points && cur < rect.width) {
-    Vector2 const* clb = binary_search(lb, ub, cur);
+  Vector2 const* lb = g->points, *ub = &g->points[g->len - 1];
+  while (lb != NULL && i < max_number_of_points) {
+    Vector2 const* clb = binary_search(lb, ub, rect.x + step * i++);
     if (clb != NULL) {
       out_points[out_index++] = *clb;
       lb = clb;
     }
-    cur += step;
   }
   return out_index;
 }

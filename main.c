@@ -1,14 +1,11 @@
+#include "plotter.h"
+
 #include <stddef.h>
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "udp.h"
-#include "graph.h"
-#include "refresh_shaders.h"
-#include "points_group.h"
 
 #include "raylib.h"
 
@@ -20,13 +17,12 @@
 #define HEIGHT 720
 #endif
 
-
 int main_gui(graph_values_t* gv) {
-  init_graph(gv);
+  graph_init(gv, WIDTH, HEIGHT);
   while(!WindowShouldClose()) {
     BeginDrawing();
       ClearBackground(BLACK);
-      DrawGraph(gv);
+      graph_draw(gv);
     EndDrawing();
   }
   CloseWindow();
@@ -53,8 +49,8 @@ int main(void) {
   SetTargetFPS(165);
 #endif
   SetWindowState(FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
-  init_graph_values((*gv), WIDTH, HEIGHT);
   start_refreshing_shaders(gv);
   udp_main(gv);
   main_gui(gv);
 } 
+

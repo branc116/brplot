@@ -1,4 +1,4 @@
-#include "refresh_shaders.h"
+#include "plotter.h"
 
 #include <pthread.h>
 #include <stdio.h>
@@ -30,3 +30,4 @@ void start_refreshing_shaders(graph_values_t* gv) {
     fprintf(stderr, "ERROR while creating thread %d:`%s`\n", errno, strerror(errno));
   }
 }
+
