@@ -27,12 +27,11 @@ void smol_mesh_upload(smol_mesh_t* mesh, bool dynamic) {
 
     mesh->vboIdVertex = rlLoadVertexBuffer(mesh->verticies, mesh->vertex_count*3*sizeof(float), dynamic);
     rlSetVertexAttribute(0, 3, RL_FLOAT, 0, 0, 0);
-    //rlEnableVertexAttribute(0);
 
     // Enable vertex attributes: normals (shader-location = 2)
     mesh->vboIdNormal = rlLoadVertexBuffer(mesh->normals, mesh->vertex_count*3*sizeof(float), dynamic);
     rlSetVertexAttribute(2, 3, RL_FLOAT, 0, 0, 0);
-    //rlEnableVertexAttribute(1);
+
     if (mesh->vaoId > 0) printf("VAO: [ID %i] Smol Mesh uploaded successfully to VRAM (GPU)\n", mesh->vaoId);
     else printf("VBO: Smol Mesh uploaded successfully to VRAM (GPU)\n");
 
@@ -43,7 +42,6 @@ void smol_mesh_init_temp(void) {
   smol_mesh_init(&temp_smol_mesh);
   smol_mesh_gen_line_strip(&temp_smol_mesh, NULL, 0, 0);
   smol_mesh_upload(&temp_smol_mesh, true);
-  TRACELOG(LOG_INFO, "DONE INITING\n");
 }
 
 smol_mesh_t* smol_mesh_get_temp(void) {

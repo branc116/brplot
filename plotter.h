@@ -9,9 +9,9 @@ extern "C" {
 //Maximum number of points that can be shown by this plotter.
 //If you try to show more, this program will crash....
 #ifdef PLATFORM_WEB
-#define POINTS_CAP (128 * 1024 * 1024)
+#define POINTS_CAP (1 * 1024 * 1024)
 #else
-#define POINTS_CAP (64 * 1024 * 1024)
+#define POINTS_CAP (128 * 1024 * 1024)
 #endif
 #define SMOL_MESHES_CAP 1024
 
@@ -99,11 +99,8 @@ void graph_draw(graph_values_t* gv);
 // mark gv->shader_dirty flag to true if there were any change to shaders.
 void start_refreshing_shaders(graph_values_t* gv);
 
-// TODO remove this. Use pipeing from nc or something to achive this efect.
-// This doesn't follow unix philosophy.
-void udp_main(void* ptr);
-void add_point_callback(void* gv, char* buffer, size_t s);
-
+void read_input_main(graph_values_t* ptr);
+void add_point_callback(graph_values_t* gv, float value, int group);
 
 #ifdef __cplusplus
 }

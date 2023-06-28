@@ -18,7 +18,6 @@
 #endif
 
 int main_gui(graph_values_t* gv) {
-  graph_init(gv, WIDTH, HEIGHT);
   while(!WindowShouldClose()) {
     BeginDrawing();
       ClearBackground(BLACK);
@@ -29,13 +28,9 @@ int main_gui(graph_values_t* gv) {
   return 0;
 }
 
-void add_point_callback(void* gv, char* buffer, size_t s) {
-  (void)s;
-  Vector2 p = {0, 0};
-  int group = 0;
-  sscanf(buffer, "%f;%d", &p.y, &group);
-  graph_values_t* gvt = gv;
-  points_group_t *g = points_group_get(gvt->groups, &gvt->groups_len, GROUP_CAP, gvt->points, group);
+void add_point_callback(graph_values_t* gv, float value, int group) {
+  Vector2 p = {0, value};
+  points_group_t *g = points_group_get(gv->groups, &gv->groups_len, GROUP_CAP, gv->points, group);
   p.x = g->len;
   points_group_push_point(g, p);
 }
@@ -49,8 +44,9 @@ int main(void) {
   SetTargetFPS(165);
 #endif
   SetWindowState(FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
+  graph_init(gv, WIDTH, HEIGHT);
   start_refreshing_shaders(gv);
-  udp_main(gv);
+  read_input_main(gv);
   main_gui(gv);
 } 
 
