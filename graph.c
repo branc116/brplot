@@ -1,4 +1,7 @@
 #include "plotter.h"
+#ifdef RELEASE
+#include "shaders.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,8 +21,13 @@ static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale);
 static Rectangle graph_get_rectangle(graph_values_t* gv);
 
 void graph_init(graph_values_t* gv, float width, float height) {
+#ifdef RELEASE
+  gv->gridShader = LoadShaderFromMemory(NULL, SHADER_GRID_FS);
+  gv->linesShader = LoadShaderFromMemory(SHADER_LINE_VS, SHADER_LINE_FS);
+#else
   gv->gridShader = LoadShader(NULL, "shaders/grid.fs");
   gv->linesShader = LoadShader("shaders/line.vs", "shaders/line.fs");
+#endif
   Color cs[] = { RED, GREEN, BLUE, LIGHTGRAY, PINK, GOLD, VIOLET, DARKPURPLE };
   for (int i = 0; i < 8; ++i) {
     gv->group_colors[i] = cs[i];

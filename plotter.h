@@ -95,9 +95,11 @@ void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_
 void graph_init(graph_values_t* gv, float width, float height);
 void graph_draw(graph_values_t* gv);
 
+#ifndef RELEASE
 // Start watching shaders folder for changes and
 // mark gv->shader_dirty flag to true if there were any change to shaders.
 void start_refreshing_shaders(graph_values_t* gv);
+#endif
 
 void read_input_main(graph_values_t* ptr);
 void add_point_callback(graph_values_t* gv, float value, int group);

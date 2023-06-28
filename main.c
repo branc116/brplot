@@ -45,7 +45,9 @@ int main(void) {
 #endif
   SetWindowState(FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
   graph_init(gv, WIDTH, HEIGHT);
+#ifndef RELEASE
   start_refreshing_shaders(gv);
+#endif
   read_input_main(gv);
   main_gui(gv);
 } 
