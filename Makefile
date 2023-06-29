@@ -65,10 +65,3 @@ clean:
 	rm build/*
 	rm bin/*
 
-.PHONY: zip
-zip:
-	cp /usr/lib/libraylib.so.420 bin/libraylib.so.420
-	cp /usr/lib/libraylib.so.420 bin/libraylib.so.420
-	test -d bin/shaders || mkdir bin/shaders && cp -r shaders/line.fs shaders/line.vs shaders/grid.fs bin/shaders
-	test -f bin/rlplot.zip && rm bin/rlplot.zip || echo "ok"
-	zip bin/rlplot.zip bin/* bin/**/*
