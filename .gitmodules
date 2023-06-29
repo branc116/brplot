@@ -1,0 +1,6 @@
+[submodule "raylib"]
+	path = raylib
+	url = git@github.com:raysan5/raylib.git
+[submodule "mach-glfw"]
+	path = mach-glfw
+	url = git@github.com:hexops/mach-glfw.git
