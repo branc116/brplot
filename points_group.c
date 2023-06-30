@@ -7,54 +7,46 @@
 #include <assert.h>
 #include <math.h>
 
-static points_group_t* points_group_init(points_group_t* g, int cap, int group_id, Vector2* points) {
-    g->cap = cap;
+static points_group_t* points_group_init(points_group_t* g, int group_id) {
+    g->cap = 1024;
     g->len = 0;
     g->group_id = group_id;
     g->is_selected = true;
-    g->points = points;
+    if (g->points != NULL) {
+      free(g->points);
+    }
+    g->points = malloc(sizeof(Vector2) * 1024);
     g->smol_meshes_len = 0;
     g->is_sorted = true;
     return g;
 }
 
-points_group_t* points_group_get(points_group_t* pg_array, int* pg_array_len, int pg_array_cap, Vector2* all_points, int group) {
+points_group_t* points_group_get(points_group_t* pg_array, int* pg_array_len, int pg_array_cap, int group) {
   assert(pg_array);
   assert(pg_array_len != NULL);
-  assert(*pg_array_len < pg_array_cap);
 
   if (*pg_array_len == 0) {
-    return points_group_init(&pg_array[(*pg_array_len)++], POINTS_CAP, group, all_points);
+    return points_group_init(&pg_array[(*pg_array_len)++], group);
   }
 
-  int max_size = 0;
-  points_group_t* max_group = &pg_array[0];
   for (int i = 0; i < *pg_array_len; ++i) {
     if (pg_array[i].group_id == group) {
       return &pg_array[i];
     }
-    int size = pg_array[i].cap;
-    if (size > max_size) {
-      max_group = &pg_array[i];
-      max_size = size;
-    }
   }
-  int l = max_group->cap;
-  Vector2* ns2 = max_group->points + (l - (l / 2));
-  max_group->cap = l - (l / 2);
-  return points_group_init(&pg_array[(*pg_array_len)++], l / 2, group, ns2);
+
+  assert(*pg_array_len < pg_array_cap);
+  return points_group_init(&pg_array[(*pg_array_len)++], group);
 }
 
 void points_group_push_point(points_group_t* g, Vector2 v) {
-  if (g->len + 1 > g->cap) {
-    fprintf(stderr, "Trying to add point to a group thats full");
-    exit(-1);
-  }
-  g->points[g->len++] = v;
-  if (g->len > 1 && g->is_sorted && g->points[g->len - 1].x < g->points[g->len - 2].x) {
+  while (g->len + 1 > g->cap); // Render thread will call realloc and size will be bigger.
+  if (g->len > 0 && g->is_sorted && g->points[g->len - 1].x > v.x) {
     g->is_sorted = false;
   }
+  g->points[g->len++] = v;
 }
+
 #define sample_points_cap 1024
 static Vector2 sample_points[sample_points_cap];
 int points_group_sample_points(points_group_t const* g, Rectangle rect, Vector2* out_points, int max_number_of_points);
@@ -139,11 +131,28 @@ int points_group_sample_points(points_group_t const* g, Rectangle rect, Vector2*
   return out_index;
 }
 
-void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_array_cap, Vector2* all_points) {
+bool points_group_realloc(points_group_t* pg, int new_cap) {
+    Vector2* new_arr = realloc(pg->points, new_cap * sizeof(Vector2));
+    if (new_arr == NULL) {
+      TraceLog(LOG_WARNING, "Out of memory. Can't add any more lines. Buy more RAM, or close Chrome");
+      return false;
+    }
+    pg->points = new_arr;
+    pg->cap = new_cap;
+    return true;
+}
+
+void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_array_cap) {
   for (int harm = 1; harm <= 4; ++harm) {
-    for(int i = 0; i < 10025; ++i) {
-      int group = harm;
-      points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, all_points, group);
+    int group = harm, points_to_add = 10025;
+    points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, group);
+    // This can only be called from render thread and render thread must realloc points array.
+    if (g->cap <= g->len + points_to_add) {
+      if (!points_group_realloc(g, 2 * (g->len + points_to_add))) {
+        continue;
+      }
+    }
+    for(int i = 0; i < points_to_add; ++i) {
       float x = g->len*.1;
       float y = (float)x*0.1;
       Vector2 p = {x*.1, .1*harm*sin(10.*y/(1<<harm)) };

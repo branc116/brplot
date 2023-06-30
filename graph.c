@@ -44,7 +44,6 @@ void graph_init(graph_values_t* gv, float width, float height) {
     gv->uScreen[i] = GetShaderLocation(gv->shaders[i], "screen");
   }
   gv->uColor = GetShaderLocation(gv->linesShader, "color");
-  memset(gv->points, 0, sizeof(gv->points));
   memset(gv->groups, 0, sizeof(gv->groups));
   smol_mesh_init_temp();
 }
@@ -87,10 +86,11 @@ void graph_draw(graph_values_t* gv) {
         memset(gv->groups, 0, sizeof(gv->groups));
       }
       gv->groups_len = 0;
+      gv->groups_need_freeing = true;
     }
     if (IsKeyPressed(KEY_T)) {
       for (int i = 0; i < 100; ++i) {
-        points_group_add_test_points(gv->groups, &gv->groups_len, GROUP_CAP, gv->points);
+        points_group_add_test_points(gv->groups, &gv->groups_len, GROUP_CAP);
       }
     }
   }
