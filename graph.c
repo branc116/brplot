@@ -37,6 +37,7 @@ void graph_init(graph_values_t* gv, float width, float height) {
   gv->uvOffset = (Vector2){ 0., 0. };
   gv->uvZoom = (Vector2){ 1., 1. };
   gv->uvScreen = (Vector2){ width, height };
+  gv->uvDelta = (Vector2){ 0., 0. };
   for (int i = 0; i < 2; ++i) {
     gv->uResolution[i] = GetShaderLocation(gv->shaders[i], "resolution");
     gv->uZoom[i] = GetShaderLocation(gv->shaders[i], "zoom");
@@ -47,6 +48,10 @@ void graph_init(graph_values_t* gv, float width, float height) {
   memset(gv->groups, 0, sizeof(gv->groups));
   smol_mesh_init_temp();
 }
+static float signf(float x) {
+  return x > 0.f ?  1.f :
+         x < 0.f ? -1.f : 0.f;
+}
 
 void graph_draw(graph_values_t* gv) {
   char buff[128];
@@ -55,6 +60,23 @@ void graph_draw(graph_values_t* gv) {
   refresh_shaders_if_dirty(gv);
   Vector2 mp = GetMousePosition();
   bool is_inside = CheckCollisionPointRec(mp, gv->graph_rect);
+  if (gv->follow) {
+    Rectangle sr = graph_get_rectangle(gv);
+    Vector2 middle = { sr.x + sr.width/2, sr.y - sr.height/2 };
+    for (int i = 0; i < gv->groups_len; ++i) {
+      points_group_t* pg = &gv->groups[i];
+      int gl = pg->len;
+      if (!pg->is_selected) continue;
+      gv->uvDelta.x += ((middle.x - pg->points[gl - 1].x))/10000;
+      gv->uvDelta.y += ((middle.y - pg->points[gl - 1].y))/10000;
+    }
+    gv->uvOffset.x -= gv->uvDelta.x;
+    gv->uvOffset.y -= gv->uvDelta.y;
+    gv->uvDelta.x *= 0.99f;
+    gv->uvDelta.y *= 0.99f;
+  } else {
+    gv->uvDelta = (Vector2){ 0, 0 };
+  }
 
   if (is_inside) {
     if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
@@ -94,7 +116,6 @@ void graph_draw(graph_values_t* gv) {
       }
     }
   }
-  DrawLeftPanel(gv, buff, font_scale);
   for (int i = 0; i < 2; ++i) {
     SetShaderValue(gv->shaders[i], gv->uResolution[i], &gv->graph_rect, SHADER_UNIFORM_VEC4);
     SetShaderValue(gv->shaders[i], gv->uZoom[i], &gv->uvZoom, SHADER_UNIFORM_VEC2);
@@ -102,6 +123,7 @@ void graph_draw(graph_values_t* gv) {
     SetShaderValue(gv->shaders[i], gv->uScreen[i], &gv->uvScreen, SHADER_UNIFORM_VEC2);
   }
   DrawFPS(0, 0);
+  DrawLeftPanel(gv, buff, font_scale);
   BeginShaderMode(gv->gridShader);
     DrawRectangleRec(gv->graph_rect, RED);
   EndShaderMode();
@@ -187,6 +209,7 @@ static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale) {
       buff, "(%f, %f)", r.x + r.width, r.y - r.height);
 
   int i = 0;
+  DrawButton(&gv->follow, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "Follow");
   DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "offset: (%f, %f)", gv->uvOffset.x, gv->uvOffset.y);
   DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "zoom: (%f, %f)", gv->uvZoom.x, gv->uvZoom.y);
   DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "Line groups: %d/%d", gv->groups_len, GROUP_CAP);

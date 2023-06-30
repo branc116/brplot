@@ -61,6 +61,7 @@ typedef struct {
   Vector2 uvZoom;
   Vector2 uvOffset;
   Vector2 uvScreen;
+  Vector2 uvDelta;
 
   points_group_t groups[GROUP_CAP];
   int groups_len;
@@ -68,6 +69,8 @@ typedef struct {
 
   bool shaders_dirty;
   bool groups_need_freeing;
+  bool follow;
+
 } graph_values_t;
 
 void smol_mesh_init(smol_mesh_t* mesh);
