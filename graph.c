@@ -67,8 +67,8 @@ void graph_draw(graph_values_t* gv) {
       points_group_t* pg = &gv->groups[i];
       int gl = pg->len;
       if (!pg->is_selected) continue;
-      gv->uvDelta.x += ((middle.x - pg->points[gl - 1].x))/10000;
-      gv->uvDelta.y += ((middle.y - pg->points[gl - 1].y))/10000;
+      gv->uvDelta.x += ((middle.x - pg->points[gl - 1].x))/1000;
+      gv->uvDelta.y += ((middle.y - pg->points[gl - 1].y))/1000;
     }
     gv->uvOffset.x -= gv->uvDelta.x;
     gv->uvOffset.y -= gv->uvDelta.y;
@@ -86,13 +86,14 @@ void graph_draw(graph_values_t* gv) {
     }
 
     float mw = GetMouseWheelMove();
+    float mw_scale = (1 + mw/10);
     if (IsKeyDown(KEY_X)) {
-      gv->uvZoom.x *= (1 + mw/10);
+      gv->uvZoom.x *= mw_scale;
     } else if (IsKeyDown(KEY_Y)) {
-      gv->uvZoom.y *= (1 + mw/10);
+      gv->uvZoom.y *= mw_scale;
     } else {
-      gv->uvZoom.x *= (1 + mw/10);
-      gv->uvZoom.y *= (1 + mw/10);
+      gv->uvZoom.x *= mw_scale;
+      gv->uvZoom.y *= mw_scale;
     }
 
     if (IsKeyPressed(KEY_R)) {
@@ -114,6 +115,9 @@ void graph_draw(graph_values_t* gv) {
       for (int i = 0; i < 100; ++i) {
         points_group_add_test_points(gv->groups, &gv->groups_len, GROUP_CAP);
       }
+    }
+    if (IsKeyPressed(KEY_F)) {
+      gv->follow = !gv->follow;
     }
   }
   for (int i = 0; i < 2; ++i) {
