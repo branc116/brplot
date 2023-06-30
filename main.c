@@ -52,14 +52,17 @@ void add_point_callback(graph_values_t* gv, float value, int group) {
 }
 
 int main(void) {
-  InitWindow(WIDTH, HEIGHT, "Ray plot");
+#ifdef RELEASE
+  SetTraceLogLevel(LOG_ERROR);
+#endif
+  InitWindow(WIDTH, HEIGHT, "rlplot");
   graph_values_t* gv = malloc(sizeof(graph_values_t));
 #ifdef PLATFORM_WEB
   SetTargetFPS(60);
 #else
   SetTargetFPS(165);
 #endif
-  SetWindowState(FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
+  SetWindowState(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
   graph_init(gv, WIDTH, HEIGHT);
 #ifndef RELEASE
   start_refreshing_shaders(gv);

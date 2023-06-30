@@ -7,8 +7,8 @@
 #include "rlgl.h"
 
 // Neded for copying stuff to gpu.
-float tmp_v_buff[3*PTOM_COUNT*3*2];
-float tmp_norm_buff[3*PTOM_COUNT*3*2];
+static float tmp_v_buff[3*PTOM_COUNT*3*2];
+static float tmp_norm_buff[3*PTOM_COUNT*3*2];
 
 static smol_mesh_t temp_smol_mesh = {
   .verticies = tmp_v_buff,
@@ -31,9 +31,6 @@ void smol_mesh_upload(smol_mesh_t* mesh, bool dynamic) {
     // Enable vertex attributes: normals (shader-location = 2)
     mesh->vboIdNormal = rlLoadVertexBuffer(mesh->normals, mesh->vertex_count*3*sizeof(float), dynamic);
     rlSetVertexAttribute(2, 3, RL_FLOAT, 0, 0, 0);
-
-    if (mesh->vaoId > 0) printf("VAO: [ID %i] Smol Mesh uploaded successfully to VRAM (GPU)\n", mesh->vaoId);
-    else printf("VBO: Smol Mesh uploaded successfully to VRAM (GPU)\n");
 
     rlDisableVertexArray();
 }
