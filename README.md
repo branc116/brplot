@@ -2,18 +2,41 @@
 
 Smol application that plots lines that are sent to the application stdin.
 
-### Compile
+## Compile
 
 ```bash
-mkdir bin && \
-mkdir build && \ 
-make
+zig build -Doptimize=ReleaseFast
+```
+
+## Install
+When built, rlplot is only one file and you can install it using ```install``` command. Here I'm installing it to ```/usr/bin``` directory, but this can be any other directory...
+
+```bash
+sudo install zig-out/bin/rlplot /usr/bin/rlplot
+```
+
+## Clean
+```bash
+rm -rdf zig-out;
+rm -rdf zig-cache;
+```
+
+## Uninstall
+```bash
+sudo rm /usr/bin/rlplot
 ```
 
 ## Run
 rlplot is designed in such a way that it plays nicely with other unix tools. You can just pipe the output of your program to rlplot and rlplot will do it's best to plot your data.
 
 ### Examples
+
+#### Plot first 8 Fibonacci numbers from user input
+```bash
+rlplot
+1 1 2 3 5 8 13 21
+```
+
 #### Nice Plot
 ```bash
 # Plot numbers from 1 to 69
@@ -78,6 +101,11 @@ while :; do echo $(sensors | grep 'Core' | awk -p '{print substr($3, 1, 4) ";" $
 # Add 52 to group 0
 # Add 1 to group 1
 # substr transforms "+52.0C" to "52.0", so one awk will output lines like "52.0;0"
+```
+
+#### Plot ram usage.
+```bash
+while :; do echo $(free | grep Mem | awk -p '{print $3/1024}'); sleep 0.01; done | ./zig-out/bin/rlplot
 ```
 
 #### Udp client in python
