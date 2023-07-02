@@ -62,7 +62,7 @@ pub fn addRlPlot(b: *std.build.Builder, opt: std.builtin.OptimizeMode, target: s
     rlplot.linkLibrary(raylib);
     rlplot.linkLibC();
     rlplot.addIncludePath("raylib/src");
-    rlplot.addCSourceFiles(&.{ "graph.c", "main.c", "points_group.c", "read_input.c", "smol_mesh.c" }, rlplot_flags);
+    rlplot.addCSourceFiles(&.{ "graph.c", "main.c", "points_group.c", "read_input.c", "smol_mesh.c", "q.c" }, rlplot_flags);
     if (opt != .Debug) {
         try genShaderhFile();
 

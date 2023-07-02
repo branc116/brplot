@@ -15,7 +15,6 @@
 
 static void refresh_shaders_if_dirty(graph_values_t* gv);
 static void update_resolution(graph_values_t* gv);
-
 static int DrawButton(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...);
 static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale);
 static Rectangle graph_get_rectangle(graph_values_t* gv);
@@ -47,7 +46,9 @@ void graph_init(graph_values_t* gv, float width, float height) {
   gv->uColor = GetShaderLocation(gv->linesShader, "color");
   memset(gv->groups, 0, sizeof(gv->groups));
   smol_mesh_init_temp();
+  q_init(&gv->commands);
 }
+
 static float signf(float x) {
   return x > 0.f ?  1.f :
          x < 0.f ? -1.f : 0.f;
@@ -101,15 +102,7 @@ void graph_draw(graph_values_t* gv) {
       gv->uvOffset.x = gv->uvOffset.y = 0;
     }
     if (IsKeyPressed(KEY_C)) {
-      for (int i = 0; i < gv->groups_len; ++i) {
-        points_group_t* g = &gv->groups[i];
-        for (int j = 0; j < g->smol_meshes_len; ++j) {
-          smol_mesh_unload(&g->meshes[j]);
-        }
-        memset(gv->groups, 0, sizeof(gv->groups));
-      }
-      gv->groups_len = 0;
-      gv->groups_need_freeing = true;
+      points_group_clear_all(gv->groups, &gv->groups_len);
     }
     if (IsKeyPressed(KEY_T)) {
       for (int i = 0; i < 100; ++i) {
@@ -143,6 +136,23 @@ void graph_draw(graph_values_t* gv) {
     DrawRectangleV(mp, s, RAYWHITE);
     DrawText(buff, mp.x + pad, mp.y + pad, fs, BLACK);
   }
+  while (1) {
+    q_command comm = q_pop(&gv->commands);
+    switch (comm.type) {
+      case q_command_none: goto end;
+      case q_command_push_point_y: points_group_push_y(gv->groups, &gv->groups_len, GROUP_CAP, comm.push_point_y.y, comm.push_point_y.group);
+                                   break;
+      case q_command_push_point_xy: points_group_push_xy(gv->groups, &gv->groups_len, GROUP_CAP, comm.push_point_xy.x, comm.push_point_xy.y, comm.push_point_xy.group);
+                                    break;
+      case q_command_pop: break; //TODO
+      case q_command_clear: points_group_clear(gv->groups, &gv->groups_len, comm.clear.group);
+                            break;
+      case q_command_clear_all: points_group_clear_all(gv->groups, &gv->groups_len);
+                                break;
+    }
+  }
+end: return;
+
 }
 
 static void refresh_shaders_if_dirty(graph_values_t* gv) {

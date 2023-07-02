@@ -1,6 +1,7 @@
 -Wall
 -Wextra
 -Wpedantic
+-DPLATFORM_DESKTOP
 -lraylib
 -lpthread
 -g

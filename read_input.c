@@ -24,6 +24,7 @@ void read_input_main(graph_values_t* gv) {
 static void *read_input_main_worker(void* gv) {
   int cur_str_len = 0;
   char cur_str[128];
+  graph_values_t* gvt = gv;
   memset(cur_str, 0, sizeof(cur_str));
   while(1) {
     float value = 0;
@@ -42,7 +43,12 @@ static void *read_input_main_worker(void* gv) {
     memset(cur_str, 0, sizeof(cur_str));
     cur_str_len = 0;
     if (ret < 1) continue;
-    add_point_callback(gv, value, group);
+    while (!q_push(&gvt->commands, (q_command) {
+          .type = q_command_push_point_y,
+          .push_point_y = {
+            .group = group,
+            .y = value
+          } }));
   }
   return NULL;
 }
