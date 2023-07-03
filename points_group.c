@@ -222,7 +222,7 @@ static Vector2 const* binary_search(Vector2 const* lb, Vector2 const* ub, float 
 static bool points_group_realloc(points_group_t* pg, int new_cap) {
     Vector2* new_arr = realloc(pg->points, new_cap * sizeof(Vector2));
     if (new_arr == NULL) {
-      TraceLog(LOG_WARNING, "Out of memory. Can't add any more lines. Buy more RAM, or close Chrome");
+      fprintf(stderr, "Out of memory. Can't add any more lines. Buy more RAM, or close Chrome");
       return false;
     }
     pg->points = new_arr;
