@@ -6,13 +6,9 @@
 
 #include "rlgl.h"
 
-// Neded for copying stuff to gpu.
-static float tmp_v_buff[3*PTOM_COUNT*3*2];
-static float tmp_norm_buff[3*PTOM_COUNT*3*2];
-
 static smol_mesh_t temp_smol_mesh = {
-  .verticies = tmp_v_buff,
-  .normals = tmp_norm_buff,
+  .verticies = NULL,
+  .normals = NULL,
   .length = PTOM_COUNT,
 };
 
@@ -36,7 +32,11 @@ void smol_mesh_upload(smol_mesh_t* mesh, bool dynamic) {
 }
 
 void smol_mesh_init_temp(void) {
-  smol_mesh_init(&temp_smol_mesh);
+  temp_smol_mesh = (smol_mesh_t){
+    .verticies = malloc(3*PTOM_COUNT*3*2*sizeof(float)),
+    .normals = malloc(3*PTOM_COUNT*3*2*sizeof(float)),
+    .length = PTOM_COUNT,
+  };
   smol_mesh_gen_line_strip(&temp_smol_mesh, NULL, 0, 0);
   smol_mesh_upload(&temp_smol_mesh, true);
 }
@@ -46,8 +46,8 @@ smol_mesh_t* smol_mesh_get_temp(void) {
 }
 
 void smol_mesh_init(smol_mesh_t* mesh) {
-  mesh->verticies = tmp_v_buff;
-  mesh->normals = tmp_norm_buff;
+  mesh->verticies = temp_smol_mesh.verticies;
+  mesh->normals = temp_smol_mesh.normals;
   mesh->length = PTOM_COUNT;
 }
 

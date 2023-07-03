@@ -28,8 +28,6 @@ int main_gui(graph_values_t* gv) {
   return 0;
 }
 
-RLAPI void rlEnableDoubleBuffer(void);                  // Enable double buffer
-                                                        //
 int main(void) {
 #ifdef RELEASE
   SetTraceLogLevel(LOG_ERROR);
@@ -37,7 +35,6 @@ int main(void) {
   InitWindow(WIDTH, HEIGHT, "rlplot");
   graph_values_t* gv = malloc(sizeof(graph_values_t));
   SetWindowState(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
-  rlEnableDoubleBuffer();
   graph_init(gv, WIDTH, HEIGHT);
 #ifndef RELEASE
   start_refreshing_shaders(gv);
