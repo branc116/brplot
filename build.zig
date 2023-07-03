@@ -1,5 +1,4 @@
 const std = @import("std");
-const glfw = @import("mach-glfw/build.zig");
 
 const rlplot_flags = &[_][]const u8{
     "-std=gnu99",
@@ -14,14 +13,14 @@ fn rlf(comptime name: []const u8) []const u8 {
 
 pub fn addRayLib(b: *std.build.Builder, target: std.zig.CrossTarget, opt: std.builtin.Mode) *std.Build.CompileStep {
     const raylib = b.addStaticLibrary(.{ .name = "raylib", .optimize = opt, .target = target });
+    raylib.linkLibC();
     const sources = .{ rlf("rcore.c"), rlf("rtext.c"), rlf("rmodels.c"), rlf("rtextures.c"), rlf("utils.c"), rlf("rshapes.c") };
     raylib.addCSourceFiles(&sources, rlplot_flags);
 
     switch (target.getOsTag()) {
         .linux => {
-            raylib.addCSourceFiles(&.{"raylib/src/rglfw.c"}, rlplot_flags);
-            //raylib.addIncludePath("/usr/include");
             raylib.defineCMacro("PLATFORM_DESKTOP", null);
+            raylib.linkSystemLibrary("glfw");
         },
         else => {
             @panic("Unsupported OS");
@@ -58,14 +57,12 @@ pub fn addRlPlot(b: *std.build.Builder, opt: std.builtin.OptimizeMode, target: s
     const rlplot = b.addExecutable(.{ .name = "rlplot", .optimize = opt, .target = target });
     const raylib = addRayLib(b, target, opt);
 
-    try glfw.link(b, raylib, .{ .shared = false, .x11 = true, .wayland = true, .opengl = true, .gles = true });
     rlplot.linkLibrary(raylib);
     rlplot.linkLibC();
     rlplot.addIncludePath("raylib/src");
     rlplot.addCSourceFiles(&.{ "graph.c", "main.c", "points_group.c", "read_input.c", "smol_mesh.c", "q.c" }, rlplot_flags);
     if (opt != .Debug) {
         try genShaderhFile();
-
         rlplot.defineCMacro("RELEASE", null);
         rlplot.want_lto = true;
         raylib.want_lto = true;
