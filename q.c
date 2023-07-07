@@ -10,11 +10,14 @@ void q_init(q_commands* q) {
   q->capacity = cap;
   q->read_index = 0;
   q->write_index = 0;
+#ifdef LOCK_T
   pthread_mutexattr_t attrs;
   pthread_mutexattr_init(&attrs);
   pthread_mutex_init(&q->push_mutex, &attrs);
+#endif
 }
 
+#ifdef LOCK_T
 bool q_push_safe(q_commands* q, q_command command) {
   bool ret = false;
   pthread_mutex_lock(&q->push_mutex);
@@ -22,6 +25,7 @@ bool q_push_safe(q_commands* q, q_command command) {
   pthread_mutex_unlock(&q->push_mutex);
   return ret;
 }
+#endif
 
 bool q_push(q_commands* q, q_command command) {
   if ((q->write_index + 1 + q->capacity) % q->capacity == q->read_index) return false;

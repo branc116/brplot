@@ -17,11 +17,17 @@ extern "C" {
 //TODO: Do something with this...
 #define GRAPH_LEFT_PAD 400
 
-#define LINUX
 #ifdef LINUX
 #include "pthread.h"
 #define LOCK_T pthread_mutex_t
 #endif
+
+#ifdef LOCK_T
+#define LOCK(x) LOCK_T x;
+#else
+#define LOCK(x)
+#endif
+
 
 typedef enum {
   q_command_none,
@@ -56,7 +62,7 @@ typedef struct {
   int read_index, write_index;
   int capacity;
   q_command* commands;
-  LOCK_T push_mutex;
+  LOCK(push_mutex)
 } q_commands;
 
 typedef struct {
@@ -166,8 +172,10 @@ void add_point_callback(graph_values_t* gv, float value, int group);
 
 // Only render thread can access this functions.
 void q_init(q_commands* q);
+#ifdef LOCK_T
 // If you know that only one thread writes to q use q_push, else use this.
 bool q_push_safe(q_commands *q, q_command command);
+#endif
 // If you know that only one thread writes to q us this, else use q_push_safe.
 bool q_push(q_commands* q, q_command command);
 // Only render thread can access this functions.

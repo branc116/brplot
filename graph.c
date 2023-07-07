@@ -1,6 +1,15 @@
 #include "plotter.h"
+
 #ifdef RELEASE
+
+#ifdef PLATFORM_DESKTOP
 #include "shaders.h"
+#elif PLATFORM_WEB
+#include "shaders_web.h"
+#else
+#error "Shaders for this platform arn't defined"
+#endif
+
 #endif
 
 #include <stdio.h>
