@@ -17,7 +17,7 @@ CCFLAGS+= -DEXTERNAL_CONFIG_FLAGS=1 \
   -DMAX_MATERIAL_MAPS=0 \
   -DMAX_MESH_VERTEX_BUFFERS=7
 
-CCFLAGS_LINUX= -lglfw -DLINUX -DPLATFORM_DESKTOP -s -fallow-store-data-races $(CCFLAGS)
+CCFLAGS_LINUX= -Wl,-z,now -lglfw -DLINUX -DPLATFORM_DESKTOP -s -fallow-store-data-races $(CCFLAGS)
 SHADERS= SHADER_GRID_FS:shaders/grid.fs SHADER_LINE_FS:shaders/line.fs SHADER_LINE_VS:shaders/line.vs
 SOURCE= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c \
         refresh_shaders.c smol_mesh.c main.c points_group.c graph.c q.c read_input.c
