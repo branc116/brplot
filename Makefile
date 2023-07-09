@@ -1,6 +1,6 @@
 RL= raylib/src
 CCFLAGS_DEBUG= -Wall -Wpedantic -Wextra -lm -g
-CCFLAGS= -DRELEASE -I$(RL) -Wpedantic -Wextra -lm -Oz -ffast-math -flto=auto
+CCFLAGS= -DRELEASE -I$(RL) -Wpedantic -Wextra -lm -Os -ffast-math -flto=auto
 #raylib configs
 CCFLAGS+= -DEXTERNAL_CONFIG_FLAGS=1 \
   -DSUPPORT_MODULE_RSHAPES=1 \
