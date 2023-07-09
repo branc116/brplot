@@ -1,6 +1,5 @@
 RL= raylib/src
-CCFLAGS_DEBUG= -Wall -Wpedantic -Wextra -lm -g
-CCFLAGS= -DRELEASE -I$(RL) -Wpedantic -Wextra -lm -Os -ffast-math -flto=auto
+CCFLAGS= -DRELEASE -I$(RL) -Wpedantic -Wextra -Os -ffast-math -flto=auto
 #raylib configs
 CCFLAGS+= -DEXTERNAL_CONFIG_FLAGS=1 \
   -DSUPPORT_MODULE_RSHAPES=1 \
@@ -17,7 +16,7 @@ CCFLAGS+= -DEXTERNAL_CONFIG_FLAGS=1 \
   -DMAX_MATERIAL_MAPS=0 \
   -DMAX_MESH_VERTEX_BUFFERS=7
 
-CCFLAGS_LINUX= -Wl,-z,now -lglfw -DLINUX -DPLATFORM_DESKTOP -s -fallow-store-data-races $(CCFLAGS)
+CCFLAGS_LINUX= -Wl,-z,now -DLINUX -DPLATFORM_DESKTOP $(CCFLAGS)
 SHADERS= SHADER_GRID_FS:shaders/grid.fs SHADER_LINE_FS:shaders/line.fs SHADER_LINE_VS:shaders/line.vs
 SOURCE= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c \
         refresh_shaders.c smol_mesh.c main.c points_group.c graph.c q.c read_input.c
@@ -36,7 +35,7 @@ bin/rlplot: $(SOURCE) shaders.h plotter.h
 	$(foreach var,$(OBJSDIR), test -d $(var) || mkdir -p $(var);)
 	$(foreach var,$(SOURCE), gcc $(CCFLAGS_LINUX) -c -o $(patsubst %.c, build/%.o, $(var)) $(var) && ) echo "OK"
 	test -d bin || mkdir bin;
-	gcc $(CCFLAGS_LINUX) -o bin/rlplot $(OBJS)
+	gcc $(CCFLAGS_LINUX) -o bin/rlplot $(OBJS) -lm -lglfw
 
 shaders.h: ./shaders/line.vs ./shaders/line.fs ./shaders/grid.fs
 	# This will break if there are `"` characters in shaders
