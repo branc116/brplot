@@ -121,6 +121,9 @@ void graph_draw(graph_values_t* gv) {
     if (IsKeyPressed(KEY_F)) {
       gv->follow = !gv->follow;
     }
+    if (IsKeyPressed(KEY_D)) {
+      gv->debug = (gv->debug + 1) % 3;
+    }
   }
   for (int i = 0; i < 2; ++i) {
     SetShaderValue(gv->shaders[i], gv->uResolution[i], &gv->graph_rect, SHADER_UNIFORM_VEC4);
@@ -133,7 +136,7 @@ void graph_draw(graph_values_t* gv) {
   BeginShaderMode(gv->gridShader);
     DrawRectangleRec(gv->graph_rect, RED);
   EndShaderMode();
-  points_groups_draw(gv->groups, gv->groups_len, gv->linesShader, gv->uColor, gv->group_colors, graph_get_rectangle(gv));
+  points_groups_draw(gv->groups, gv->groups_len, gv->linesShader, gv->uColor, gv->group_colors, graph_get_rectangle(gv), gv->debug);
   if (is_inside) {
     float pad = 5.;
     float fs = 10 * font_scale;
@@ -219,6 +222,8 @@ static Rectangle graph_get_rectangle(graph_values_t* gv) {
     gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x, gv->uvZoom.y};
 }
 
+#define StackPannel(max_height, x_offset, y_offset, y_item_offset, item_height)
+
 static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale) {
   Rectangle r = graph_get_rectangle(gv);
   DrawButton(NULL, gv->graph_rect.x - 30, gv->graph_rect.y - 30, font_scale * 10,
@@ -237,7 +242,16 @@ static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale) {
   DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "zoom: (%f, %f)", gv->uvZoom.x, gv->uvZoom.y);
   DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "Line groups: %d/%d", gv->groups_len, GROUP_CAP);
   for(int j = 0; j < gv->groups_len; ++j) {
-    DrawButton(&gv->groups[j].is_selected, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "Group #%d: %d/%d", gv->groups[j].group_id, gv->groups[j].len, gv->groups[j].cap);
+    int p = DrawButton(&gv->groups[j].is_selected, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "Group #%d: %d/%d; %d", gv->groups[j].group_id, gv->groups[j].len, gv->groups[j].cap, gv->groups[j].qt_expands);
+    if (p > 0 && IsKeyPressed(KEY_P)) {
+      quad_tree_print_dot(&gv->groups[j].qt);
+    }
+    if (p > 0 && IsKeyPressed(KEY_B)) {
+      quad_tree_t qt = {0};
+      quad_tree_balance(&qt, &gv->groups[j].qt, gv->groups[j].points);
+      //quad_tree_free(&gv->groups[j].qt); TODO: implement
+      memcpy(&gv->groups[j].qt, &qt, sizeof(quad_tree_t));
+    }
   }
 }
 

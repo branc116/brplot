@@ -10,12 +10,16 @@ extern "C" {
 
 // This is the size of one group of points that will be drawn with one draw call.
 // TODO: make this dynamic.
-#define PTOM_COUNT (1<<15)
+#define PTOM_COUNT (1<<10)
 
 #define GROUP_CAP 32
 
 //TODO: Do something with this...
 #define GRAPH_LEFT_PAD 400
+
+#define QUAD_TREE_MAX_GROUPS 16
+#define QUAD_TREE_SPLIT_COUNT 1024
+
 
 #ifdef LINUX
 #include "pthread.h"
@@ -83,13 +87,42 @@ typedef struct {
   int triangle_count;
 } smol_mesh_t;
 
+enum {
+  QUAD_TREE_UP_LEFT = 0,
+  QUAD_TREE_UP_RIGHT,
+  QUAD_TREE_DOWN_LEFT,
+  QUAD_TREE_DOWN_RIGHT,
+  QUAD_TREE_DIR_COUNT
+}; 
+
+typedef struct _quad_tree_s {
+  Rectangle bounds;
+  int count;
+  union {
+    struct {
+      int start_index;
+      int length;
+    } groups[QUAD_TREE_MAX_GROUPS];
+    struct {
+      Vector2 split_point;
+      struct _quad_tree_s* children;
+    } node;
+  };
+  bool is_leaf;
+} quad_tree_t;
+
+
 typedef struct {
   int cap, len;
   int group_id;
-  bool is_selected, is_sorted;
+  bool is_selected, is_sorted, quad_tree;
   Vector2* points;
-  int smol_meshes_len;
-  smol_mesh_t meshes[SMOL_MESHES_CAP];
+  struct {
+    int smol_meshes_len;
+    smol_mesh_t meshes[SMOL_MESHES_CAP];
+  } sm;
+  quad_tree_t qt;
+  int qt_expands;
 } points_group_t;
 
 typedef struct {
@@ -119,6 +152,8 @@ typedef struct {
 
   // Any thread can write to this q, only render thread can pop
   q_commands commands;
+
+  int debug;
 
   bool shaders_dirty;
   bool follow;
@@ -152,9 +187,15 @@ void points_group_clear(points_group_t* pg_array, int* pg_array_len, int group_i
 // Only render thread can access this functions.
 void points_group_clear_all(points_group_t* pg_array, int* pg_array_len);
 // Only render thread can access this functions.
-void points_groups_draw(points_group_t* pg_array, int pg_len, Shader shader, int color_uniform, Color* colors, Rectangle rect);
+void points_groups_draw(points_group_t* pg_array, int pg_len, Shader shader, int color_uniform, Color* colors, Rectangle rect, int debug);
 // Only render thread can access this functions.
 void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_array_cap);
+
+void quad_tree_init(quad_tree_t* qt);
+bool quad_tree_add_point(quad_tree_t* root, Vector2 const * all_points, Vector2 point, int index);
+int quad_tree_draw_lines(quad_tree_t* qt, Rectangle screen, Vector2* all_points, int all_points_count, Shader shader, int debug);
+void quad_tree_print_dot(quad_tree_t* t);
+void quad_tree_balance(quad_tree_t* dest, quad_tree_t const * qt, Vector2 const * all_points);
 
 // Only render thread can access this functions.
 void graph_init(graph_values_t* gv, float width, float height);

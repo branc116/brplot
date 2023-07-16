@@ -60,7 +60,7 @@ void points_group_clear_all(points_group_t* pg_array, int* pg_array_len) {
 
 void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_array_cap) {
   for (int harm = 1; harm <= 4; ++harm) {
-    int group = harm, points_to_add = 10025;
+    int group = harm, points_to_add = 16;
     points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, group);
     // This can only be called from render thread and render thread must realloc points array.
     if (g->cap <= g->len + points_to_add) {
@@ -75,26 +75,24 @@ void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_
       points_group_push_point(g, p);
     }
   }
-/*
   for(int i = 0; i < 1025; ++i) {
     int group = 5;
-    points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, all_points, group);
-    float t = g->len*.1;
+    points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, group);
+    float t = (1 + g->len)*.1;
     float x = sqrtf(t)*cos(log2f(t));
     float y = sqrtf(t)*sin(log2f(t));
     Vector2 p = {x, y };
     points_group_push_point(g, p);
   }
-*/
 }
 
-void points_groups_draw(points_group_t* gs, int len, Shader shader, int color_uniform, Color* colors, Rectangle rect) {
+void points_groups_draw(points_group_t* gs, int len, Shader shader, int color_uniform, Color* colors, Rectangle rect, int debug) {
   for (int j = 0; j < len; ++j) {
     points_group_t * g = &gs[j];
     if (g->is_sorted) continue; // Don't move to gpu if group is soreted, no need for it...
-    if (g->len / PTOM_COUNT > g->smol_meshes_len ) {
-      int indx = g->smol_meshes_len++;
-      smol_mesh_t* sm = &g->meshes[indx];
+    if (g->len / PTOM_COUNT > g->sm.smol_meshes_len ) {
+      int indx = g->sm.smol_meshes_len++;
+      smol_mesh_t* sm = &g->sm.meshes[indx];
       smol_mesh_init(sm);
       assert(smol_mesh_gen_line_strip(sm, g->points, g->len, indx*sm->length));
       smol_mesh_upload(sm, false);
@@ -113,15 +111,16 @@ void points_groups_draw(points_group_t* gs, int len, Shader shader, int color_un
           smol_mesh_update(smol_mesh_get_temp());
           smol_mesh_draw_line_strip(smol_mesh_get_temp(), shader);
         }
-
+      } else if (g->quad_tree) {
+        g->qt_expands = quad_tree_draw_lines(&g->qt, rect, g->points, g->len, shader, debug);
       } else {
-        int ml = g->smol_meshes_len;
-        if (smol_mesh_gen_line_strip(smol_mesh_get_temp(), g->points, g->len, g->smol_meshes_len*(PTOM_COUNT))) {
+        int ml = g->sm.smol_meshes_len;
+        if (smol_mesh_gen_line_strip(smol_mesh_get_temp(), g->points, g->len, g->sm.smol_meshes_len*(PTOM_COUNT))) {
           smol_mesh_update(smol_mesh_get_temp());
           smol_mesh_draw_line_strip(smol_mesh_get_temp(), shader);
         }
         for (int k = 0; k < ml; ++k) {
-          smol_mesh_draw_line_strip(&g->meshes[k], shader);
+          smol_mesh_draw_line_strip(&g->sm.meshes[k], shader);
         }
       }
     }
@@ -152,7 +151,7 @@ static points_group_t* points_group_init(points_group_t* g, int group_id) {
     g->group_id = group_id;
     g->is_selected = true;
     g->points = malloc(sizeof(Vector2) * 1024);
-    g->smol_meshes_len = 0;
+    g->sm.smol_meshes_len = 0;
     g->is_sorted = true;
     return g;
 }
@@ -175,21 +174,33 @@ static points_group_t* points_group_get(points_group_t* pg_array, int* pg_array_
   return points_group_init(&pg_array[(*pg_array_len)++], group);
 }
 
+static void points_group_init_quad_tree(points_group_t* g) {
+  g->quad_tree = true;
+  quad_tree_init(&g->qt);
+  for (int i = 0; i < g->len; ++i)
+    quad_tree_add_point(&g->qt, g->points, g->points[i], i);
+}
+
 static void points_group_push_point(points_group_t* g, Vector2 v) {
   if (g->len >= g->cap) {
     assert(points_group_realloc(g, g->cap * 2));
   }
   if (g->len > 0 && g->is_sorted && g->points[g->len - 1].x > v.x) {
     g->is_sorted = false;
+    points_group_init_quad_tree(g);
   }
-  g->points[g->len++] = v;
+  g->points[g->len] = v;
+  if (g->quad_tree) {
+    quad_tree_add_point(&g->qt, g->points, g->points[g->len], g->len);
+  }
+  ++g->len;
 }
 
 static void points_group_deinit(points_group_t* g) {
     // Remove smol meshes
-    int sm_len = g->smol_meshes_len;
+    int sm_len = g->sm.smol_meshes_len;
     for (int j = 0; j < sm_len; ++j) {
-      smol_mesh_unload(&g->meshes[j]);
+      smol_mesh_unload(&g->sm.meshes[j]);
     }
     // Free points
     free(g->points);
