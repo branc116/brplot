@@ -27,6 +27,9 @@ static void update_resolution(graph_values_t* gv);
 static int DrawButton(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...);
 static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale);
 static Rectangle graph_get_rectangle(graph_values_t* gv);
+static void graph_update_mouse_position(graph_values_t* gv);
+
+Vector2 graph_mouse_position;
 
 void graph_init(graph_values_t* gv, float width, float height) {
 #ifdef RELEASE
@@ -69,6 +72,7 @@ void graph_draw(graph_values_t* gv) {
   update_resolution(gv);
   refresh_shaders_if_dirty(gv);
   Vector2 mp = GetMousePosition();
+  graph_update_mouse_position(gv);
   bool is_inside = CheckCollisionPointRec(mp, gv->graph_rect);
   if (gv->follow) {
     Rectangle sr = graph_get_rectangle(gv);
@@ -114,15 +118,13 @@ void graph_draw(graph_values_t* gv) {
       points_group_clear_all(gv->groups, &gv->groups_len);
     }
     if (IsKeyPressed(KEY_T)) {
-      for (int i = 0; i < 100; ++i) {
-        points_group_add_test_points(gv->groups, &gv->groups_len, GROUP_CAP);
-      }
+      points_group_add_test_points(gv->groups, &gv->groups_len, GROUP_CAP);
     }
     if (IsKeyPressed(KEY_F)) {
       gv->follow = !gv->follow;
     }
     if (IsKeyPressed(KEY_D)) {
-      gv->debug = (gv->debug + 1) % 3;
+      gv->debug = (gv->debug + 1) % 5;
     }
   }
   for (int i = 0; i < 2; ++i) {
@@ -141,9 +143,7 @@ void graph_draw(graph_values_t* gv) {
     float pad = 5.;
     float fs = 10 * font_scale;
     Vector2 s = { 100, fs + 2 * pad};
-    Vector2 mp_in_graph = { mp.x - gv->graph_rect.x, mp.y - gv->graph_rect.y };
-    sprintf(buff, "(%.1e, %.1e)", -(gv->graph_rect.width  - 2.*mp_in_graph.x)/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x,
-                                   (gv->graph_rect.height - 2.*mp_in_graph.y)/gv->graph_rect.height*gv->uvZoom.y/2. + gv->uvOffset.y);
+    sprintf(buff, "(%.1e, %.1e)", graph_mouse_position.x, graph_mouse_position.y);
     s.x = MeasureText(buff, fs) + 2 * pad;
     DrawRectangleV(mp, s, RAYWHITE);
     DrawText(buff, mp.x + pad, mp.y + pad, fs, BLACK);
@@ -164,7 +164,14 @@ void graph_draw(graph_values_t* gv) {
     }
   }
 end: return;
+}
 
+static void graph_update_mouse_position(graph_values_t* gv) {
+  Vector2 mp = GetMousePosition();
+  Vector2 mp_in_graph = { mp.x - gv->graph_rect.x, mp.y - gv->graph_rect.y };
+  graph_mouse_position = (Vector2) { 
+    -(gv->graph_rect.width  - 2.*mp_in_graph.x)/gv->graph_rect.height*gv->uvZoom.x/2. + gv->uvOffset.x,
+     (gv->graph_rect.height - 2.*mp_in_graph.y)/gv->graph_rect.height*gv->uvZoom.y/2. + gv->uvOffset.y };
 }
 
 static void refresh_shaders_if_dirty(graph_values_t* gv) {

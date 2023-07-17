@@ -19,7 +19,10 @@ CCFLAGS+= -DEXTERNAL_CONFIG_FLAGS=1 \
 CCFLAGS_LINUX= -Wl,-z,now -DLINUX -DPLATFORM_DESKTOP $(CCFLAGS)
 SHADERS= SHADER_GRID_FS:shaders/grid.fs SHADER_LINE_FS:shaders/line.fs SHADER_LINE_VS:shaders/line.vs
 SOURCE= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c \
-        refresh_shaders.c smol_mesh.c main.c points_group.c graph.c q.c read_input.c
+        refresh_shaders.c smol_mesh.c main.c points_group.c graph.c q.c read_input.c quad_tree.c
+
+CCFLAGS_DBG = -Wall -Wpedantic -Wextra -g -DLINUX -DPLATFORM_DESKTOP
+SOURCE_DBG=refresh_shaders.c smol_mesh.c main.c points_group.c graph.c q.c read_input.c quad_tree.c 
 
 SOURCE_WEB= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c \
         web_specific/refresh_shaders.c smol_mesh.c main.c points_group.c graph.c q.c web_specific/read_input.c
@@ -36,6 +39,10 @@ bin/rlplot: $(SOURCE) shaders.h plotter.h
 	$(foreach var,$(SOURCE), gcc $(CCFLAGS_LINUX) -c -o $(patsubst %.c, build/%.o, $(var)) $(var) && ) echo "OK"
 	test -d bin || mkdir bin;
 	gcc $(CCFLAGS_LINUX) -o bin/rlplot $(OBJS) -lm -lglfw
+
+bin/rlplot_dbg: $(SOURCE_DBG) plotter.h
+	test -d bin || mkdir bin;
+	gcc $(CCFLAGS_DBG) -o bin/rlplot_dbg $(SOURCE_DBG) -lraylib -lm -lglfw
 
 shaders.h: ./shaders/line.vs ./shaders/line.fs ./shaders/grid.fs
 	# This will break if there are `"` characters in shaders

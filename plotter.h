@@ -197,6 +197,7 @@ int quad_tree_draw_lines(quad_tree_t* qt, Rectangle screen, Vector2* all_points,
 void quad_tree_print_dot(quad_tree_t* t);
 void quad_tree_balance(quad_tree_t* dest, quad_tree_t const * qt, Vector2 const * all_points);
 
+extern Vector2 graph_mouse_position;
 // Only render thread can access this functions.
 void graph_init(graph_values_t* gv, float width, float height);
 // Only render thread can access this functions.
