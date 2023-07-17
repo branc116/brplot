@@ -72,7 +72,7 @@ static void merge_points(float* a, float* b) {
   *a = *b = nv;
 }
 
-bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2* points, int len, int offset) {
+bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, int len, int offset) {
     int l = points != NULL ? len - offset - 1 : 0;
     int count = PTOM_COUNT < l ? PTOM_COUNT : l;
     count = count < 0 ? 0 : count;

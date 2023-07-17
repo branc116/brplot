@@ -17,8 +17,8 @@ extern "C" {
 //TODO: Do something with this...
 #define GRAPH_LEFT_PAD 400
 
-#define QUAD_TREE_MAX_GROUPS 16
-#define QUAD_TREE_SPLIT_COUNT 1024
+#define QUAD_TREE_MAX_GROUPS 32
+#define QUAD_TREE_SPLIT_COUNT 256
 
 
 #ifdef LINUX
@@ -95,14 +95,16 @@ enum {
   QUAD_TREE_DIR_COUNT
 }; 
 
+typedef struct {
+  int start_index;
+  int length;
+} quad_tree_groups_t;
 typedef struct _quad_tree_s {
   Rectangle bounds;
+  Rectangle bb;
   int count;
   union {
-    struct {
-      int start_index;
-      int length;
-    } groups[QUAD_TREE_MAX_GROUPS];
+    quad_tree_groups_t groups[QUAD_TREE_MAX_GROUPS];
     struct {
       Vector2 split_point;
       struct _quad_tree_s* children;
@@ -168,7 +170,7 @@ void smol_mesh_init_temp(void);
 // Only render thread can access this functions.
 smol_mesh_t* smol_mesh_get_temp(void);
 // Only render thread can access this functions.
-bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2* points, int len, int offset);
+bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, int len, int offset);
 // Only render thread can access this functions.
 void smol_mesh_upload(smol_mesh_t* mesh, bool dynamic);
 // Only render thread can access this functions.
@@ -195,7 +197,9 @@ void quad_tree_init(quad_tree_t* qt);
 bool quad_tree_add_point(quad_tree_t* root, Vector2 const * all_points, Vector2 point, int index);
 int quad_tree_draw_lines(quad_tree_t* qt, Rectangle screen, Vector2* all_points, int all_points_count, Shader shader, int debug);
 void quad_tree_print_dot(quad_tree_t* t);
-void quad_tree_balance(quad_tree_t* dest, quad_tree_t const * qt, Vector2 const * all_points);
+void quad_tree_balance(quad_tree_t* dest, quad_tree_t const * qt, Vector2 const * all_points, int depth);
+// This will only free qt->node.children memory recursivley.
+void quad_tree_free(quad_tree_t* qt);
 
 extern Vector2 graph_mouse_position;
 // Only render thread can access this functions.

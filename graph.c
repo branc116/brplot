@@ -62,6 +62,7 @@ void graph_init(graph_values_t* gv, float width, float height) {
 }
 
 static float signf(float x) {
+  (void)signf;
   return x > 0.f ?  1.f :
          x < 0.f ? -1.f : 0.f;
 }
@@ -255,8 +256,8 @@ static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale) {
     }
     if (p > 0 && IsKeyPressed(KEY_B)) {
       quad_tree_t qt = {0};
-      quad_tree_balance(&qt, &gv->groups[j].qt, gv->groups[j].points);
-      //quad_tree_free(&gv->groups[j].qt); TODO: implement
+      quad_tree_balance(&qt, &gv->groups[j].qt, gv->groups[j].points, 0);
+      quad_tree_free(&gv->groups[j].qt);
       memcpy(&gv->groups[j].qt, &qt, sizeof(quad_tree_t));
     }
   }
