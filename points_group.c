@@ -60,7 +60,7 @@ void points_group_clear_all(points_group_t* pg_array, int* pg_array_len) {
 
 void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_array_cap) {
   for (int harm = 1; harm <= 4; ++harm) {
-    int group = harm, points_to_add = 16;
+    int group = harm, points_to_add = 1024;
     points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, group);
     // This can only be called from render thread and render thread must realloc points array.
     if (g->cap <= g->len + points_to_add) {
@@ -75,9 +75,9 @@ void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_
       points_group_push_point(g, p);
     }
   }
-  for(int i = 0; i < 1024; ++i) {
+  for(int i = 0; i < 1024*3; ++i) {
     printf("i = %d\n", i);
-    int group = 5;
+    int group = 4;
     points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, group);
     float t = (1 + g->len)*.1;
     float x = sqrtf(t)*cos(log2f(t));
@@ -85,9 +85,23 @@ void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_
     Vector2 p = {x, y };
     points_group_push_point(g, p);
   }
+  {
+    points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, 6);
+    int l = g->len;
+    for(int i = 0; i < 0; ++i) {
+      for(int j = 0; j < 0; ++j) {
+        printf("i = %d\n", i);
+        int group = 6;
+        float x = -50 + j + l;
+        float y = (-50 + (i - j) + l) * (i % 2 == 0 ? 1 : -1);
+        Vector2 p = {x, y};
+        points_group_push_point(g, p);
+      }
+    }
+  }
 }
 
-void points_groups_draw(points_group_t* gs, int len, smol_mesh_t* line_mesh, Color* colors, Rectangle rect, int debug) {
+void points_groups_draw(points_group_t* gs, int len, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Color* colors, Rectangle rect, int debug) {
   for (int j = 0; j < len; ++j) {
     points_group_t * g = &gs[j];
     if (g->is_selected) {
@@ -96,14 +110,17 @@ void points_groups_draw(points_group_t* gs, int len, smol_mesh_t* line_mesh, Col
         int samp_len = points_group_sample_points(g, rect, sample_points, sample_points_cap);
         if (samp_len > 1) smol_mesh_gen_line_strip(line_mesh, sample_points, samp_len, c);
       } else {
-        g->qt_expands = quad_tree_draw(&g->qt, c, rect, line_mesh, g->points, g->len, debug);
+        g->qt_expands = quad_tree_draw(&g->qt, c, rect, line_mesh, quad_mesh, g->points, g->len, debug);
       }
     }
   }
   if (line_mesh->cur_len > 0) {
     smol_mesh_update(line_mesh);
-    smol_mesh_draw_line_strip(line_mesh);
-    line_mesh->cur_len = 0;
+    smol_mesh_draw(line_mesh);
+  }
+  if (quad_mesh->cur_len > 0) {
+    smol_mesh_update(quad_mesh);
+    smol_mesh_draw(quad_mesh);
   }
 }
 

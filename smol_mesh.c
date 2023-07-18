@@ -45,6 +45,46 @@ void smol_mesh_update(smol_mesh_t* mesh) {
   rlUpdateVertexBuffer(mesh->vboIdColor, mesh->colors, number_of_floats, 0);
 }
 
+void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 tangent, Color color) {
+  int c = mesh->cur_len++;
+  if (c >= mesh->capacity) {
+    smol_mesh_update(mesh);
+    smol_mesh_draw(mesh);
+    c = mesh->cur_len++;
+  }
+  c*=18;
+  mesh->verticies[c+0] = rect.x;
+  mesh->verticies[c+1] = rect.y;
+  mesh->verticies[c+2] = 0;
+  mesh->verticies[c+3] = rect.x + rect.width;
+  mesh->verticies[c+4] = rect.y;
+  mesh->verticies[c+5] = 0;
+  mesh->verticies[c+6] = rect.x + rect.width;
+  mesh->verticies[c+7] = rect.y + rect.height;
+  mesh->verticies[c+8] = 0;
+
+  mesh->verticies[c+9] = rect.x + rect.width;
+  mesh->verticies[c+10] = rect.y + rect.height;
+  mesh->verticies[c+11] = 0;
+  mesh->verticies[c+12] = rect.x;
+  mesh->verticies[c+13] = rect.y + rect.height;
+  mesh->verticies[c+14] = 0;
+  mesh->verticies[c+15] = rect.x;
+  mesh->verticies[c+16] = rect.y;
+  mesh->verticies[c+17] = 0;
+  for (int i = 0; i < 18; i += 3) {
+    mesh->normals[c+i+0] = tangent.x;
+    mesh->normals[c+i+1] = tangent.y;
+    mesh->normals[c+i+2] = 0;
+  }
+  Vector3 vc = {color.r/255.f, color.g/255.f, color.b/255.f};
+  for (int i = 0; i < 18; i += 3) {
+    mesh->colors[c+i+0] = vc.x;
+    mesh->colors[c+i+1] = vc.y;
+    mesh->colors[c+i+2] = vc.z;
+  }
+}
+
 bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, int len, Color color) {
   // Todo: check if index v is inside gv->points
   int vn = 2*3*3;
@@ -54,7 +94,7 @@ bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, int len
     int c = mesh->cur_len++;
     if (c >= mesh->capacity) {
       smol_mesh_update(mesh);
-      smol_mesh_draw_line_strip(mesh);
+      smol_mesh_draw(mesh);
       c = mesh->cur_len++;
     }
     c *= vn;
@@ -89,7 +129,7 @@ bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, int len
     mesh->verticies[c+17] = 1;
 
     for (int i = 0; i < vn; i += 3) {
-      //Not a normal, this is dx, dy, length for first triangle 
+      //Not a normal, this is dx, dy, length for first triangle
       mesh->normals[c+i+0] = delta.x;
       mesh->normals[c+i+1] = delta.y;
       mesh->normals[c+i+2] = length;
@@ -115,7 +155,7 @@ bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, int len
   return true;
 }
 
-void smol_mesh_draw_line_strip(smol_mesh_t* mesh) {
+void smol_mesh_draw(smol_mesh_t* mesh) {
   // Bind shader program
   rlEnableShader(mesh->active_shader.id);
 

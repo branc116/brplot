@@ -17,7 +17,7 @@ extern "C" {
 //TODO: Do something with this...
 #define GRAPH_LEFT_PAD 400
 
-#define QUAD_TREE_MAX_GROUPS 32
+#define QUAD_TREE_MAX_GROUPS 128
 #define QUAD_TREE_SPLIT_COUNT 256
 
 
@@ -143,6 +143,7 @@ typedef struct {
   Vector2 uvScreen;
   Vector2 uvDelta;
   smol_mesh_t* lines_mesh;
+  smol_mesh_t* quads_mesh;
 
   // TODO: This is too big, do something about it! 1MB
   // Only render thread can read or write to this array.
@@ -162,10 +163,11 @@ typedef struct {
 
 
 smol_mesh_t* smol_mesh_malloc(int capacity, Shader s);
+void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 tangent, Color color);
 // Only render thread can access this functions.
 bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, int len, Color color);
 // Only render thread can access this functions.
-void smol_mesh_draw_line_strip(smol_mesh_t* mesh);
+void smol_mesh_draw(smol_mesh_t* mesh);
 // Only render thread can access this functions.
 void smol_mesh_update(smol_mesh_t* mesh);
 // Only render thread can access this functions.
@@ -180,13 +182,13 @@ void points_group_clear(points_group_t* pg_array, int* pg_array_len, int group_i
 // Only render thread can access this functions.
 void points_group_clear_all(points_group_t* pg_array, int* pg_array_len);
 // Only render thread can access this functions.
-void points_groups_draw(points_group_t* pg_array, int pg_len, smol_mesh_t* line_mesh, Color* colors, Rectangle rect, int debug);
+void points_groups_draw(points_group_t* pg_array, int pg_len, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Color* colors, Rectangle rect, int debug);
 // Only render thread can access this functions.
 void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_array_cap);
 
 void quad_tree_init(quad_tree_t* qt);
 bool quad_tree_add_point(quad_tree_t* root, Vector2 const * all_points, Vector2 point, int index);
-int quad_tree_draw(quad_tree_t* qt, Color color, Rectangle screen, smol_mesh_t* line_mesh, Vector2* all_points, int all_points_count, int debug);
+int quad_tree_draw(quad_tree_t* qt, Color color, Rectangle screen, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Vector2* all_points, int all_points_count, int debug);
 void quad_tree_print_dot(quad_tree_t* t);
 // This will only free qt->node.children memory recursivley.
 void quad_tree_free(quad_tree_t* qt);

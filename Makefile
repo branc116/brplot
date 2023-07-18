@@ -17,7 +17,7 @@ CCFLAGS+= -DEXTERNAL_CONFIG_FLAGS=1 \
   -DMAX_MESH_VERTEX_BUFFERS=7
 
 CCFLAGS_LINUX= -Wl,-z,now -DLINUX -DPLATFORM_DESKTOP $(CCFLAGS)
-SHADERS= SHADER_GRID_FS:shaders/grid.fs SHADER_LINE_FS:shaders/line.fs SHADER_LINE_VS:shaders/line.vs
+SHADERS= SHADER_GRID_FS:shaders/grid.fs SHADER_LINE_FS:shaders/line.fs SHADER_LINE_VS:shaders/line.vs SHADER_QUAD_FS:shaders/quad.fs SHADER_QUAD_VS:shaders/quad.vs
 SOURCE= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c \
         refresh_shaders.c smol_mesh.c main.c points_group.c graph.c q.c read_input.c quad_tree.c
 

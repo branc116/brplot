@@ -35,7 +35,7 @@ void graph_init(graph_values_t* gv, float width, float height) {
 #ifdef RELEASE
   gv->gridShader = LoadShaderFromMemory(NULL, SHADER_GRID_FS);
   gv->linesShader = LoadShaderFromMemory(SHADER_LINE_VS, SHADER_LINE_FS);
-  gv->linesShader = LoadShaderFromMemory(SHADER_QUAD_VS, SHADER_QUAD_FS);
+  gv->quadShader = LoadShaderFromMemory(SHADER_QUAD_VS, SHADER_QUAD_FS);
 #else
   gv->gridShader = LoadShader(NULL, "shaders/grid.fs");
   gv->linesShader = LoadShader("shaders/line.vs", "shaders/line.fs");
@@ -60,6 +60,7 @@ void graph_init(graph_values_t* gv, float width, float height) {
   memset(gv->groups, 0, sizeof(gv->groups));
   q_init(&gv->commands);
   gv->lines_mesh = smol_mesh_malloc(PTOM_COUNT, gv->linesShader);
+  gv->quads_mesh = smol_mesh_malloc(PTOM_COUNT, gv->quadShader);
 }
 
 void graph_draw(graph_values_t* gv) {
@@ -123,7 +124,7 @@ void graph_draw(graph_values_t* gv) {
       gv->debug = (gv->debug + 1) % 5;
     }
   }
-  for (int i = 0; i < 2; ++i) {
+  for (int i = 0; i < 3; ++i) {
     SetShaderValue(gv->shaders[i], gv->uResolution[i], &gv->graph_rect, SHADER_UNIFORM_VEC4);
     SetShaderValue(gv->shaders[i], gv->uZoom[i], &gv->uvZoom, SHADER_UNIFORM_VEC2);
     SetShaderValue(gv->shaders[i], gv->uOffset[i], &gv->uvOffset, SHADER_UNIFORM_VEC2);
@@ -135,7 +136,8 @@ void graph_draw(graph_values_t* gv) {
     DrawRectangleRec(gv->graph_rect, RED);
   EndShaderMode();
   gv->lines_mesh->active_shader = gv->linesShader;
-  points_groups_draw(gv->groups, gv->groups_len, gv->lines_mesh, gv->group_colors, graph_get_rectangle(gv), gv->debug);
+  gv->quads_mesh->active_shader = gv->quadShader;
+  points_groups_draw(gv->groups, gv->groups_len, gv->lines_mesh, gv->quads_mesh, gv->group_colors, graph_get_rectangle(gv), gv->debug);
   if (is_inside) {
     float pad = 5.;
     float fs = 10 * font_scale;

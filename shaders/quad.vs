@@ -1,10 +1,12 @@
 #version 330
 
 in vec3 vertexPosition;
+in vec3 vertexColor;
 // This is not normal. This is dx, dy, and length of the line.
 in vec3 vertexNormal;
 
 out vec2 normal;
+out vec3 color;
 
 uniform vec2 offset;
 uniform vec4 resolution;
@@ -13,14 +15,9 @@ uniform vec2 screen;
 
 void main(void)
 {
-    // TODO: make this uniform.
-    float thick = 0.09;
-    vec2 tg = vertexNormal.xy;
+    normal = vertexNormal.xy;
+    color = vertexColor;
     vec2 position = vertexPosition.xy;
-
-    normal = -vertexPosition.z * normalize(tg.yx * zoom * vec2(-1, 1));
-    vec2 dif = normal * thick/2.;
-    position -= dif * (min(zoom * 0.1, 20000.0));
 
     vec2 size = resolution.zw;
 

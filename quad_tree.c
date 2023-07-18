@@ -34,12 +34,13 @@ static Rectangle _screen;
 static Vector2 const * _all_points;
 static int _all_points_count;
 static smol_mesh_t* _line_mesh;
+static smol_mesh_t* _quad_mesh;
 static Color _color;
 static int _debug;
 
 static bool balancing = false;
 
-int quad_tree_draw(quad_tree_t* qt, Color color, Rectangle screen, smol_mesh_t* line_mesh, Vector2* all_points, int all_points_count, int debug) {
+int quad_tree_draw(quad_tree_t* qt, Color color, Rectangle screen, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Vector2* all_points, int all_points_count, int debug) {
   int c = 0;
   _c = &c;
   _screen = screen;
@@ -47,6 +48,7 @@ int quad_tree_draw(quad_tree_t* qt, Color color, Rectangle screen, smol_mesh_t* 
   _all_points = all_points;
   _all_points_count = all_points_count;
   _line_mesh = line_mesh;
+  _quad_mesh = quad_mesh;
   _color = color;
   _debug = debug;
   _quad_tree_draw_lines(qt);
@@ -82,7 +84,7 @@ void quad_tree_free(quad_tree_t* qt) {
 bool quad_tree_add_point(quad_tree_t* root, Vector2 const * all_points, Vector2 point, int index) {
   _all_points = all_points;
   _quad_tree_add_point(root, point, index);
-  quad_tree_check(root);
+  //quad_tree_check(root);
   return true;
 }
 
@@ -118,7 +120,8 @@ static bool _quad_tree_add_point(quad_tree_t* root, Vector2 point, int index) {
       if (d) {
         printf("Successful groups sort %d\n", d);
       } else {
-        assert(0);
+        quad_tree_split(root);
+        //assert(0);
       }
       _quad_tree_add_point(root, point, index);
     } else {
@@ -441,6 +444,10 @@ static void quad_tree_draw_rects(quad_tree_t* qt) {
 
 static void _quad_tree_draw_lines(quad_tree_t* qt) {
   if (!CheckCollisionRecs(qt->bounds, _screen)) return;
+  if (qt->bounds.height * qt->bounds.width < 0.00003 * _screen.width * _screen.height) {
+    smol_mesh_gen_quad(_quad_mesh, qt->bounds, (Vector2){0,0}, _color);
+    return;
+  }
   if (!qt->is_leaf) {
     for (int i = 0; i < QUAD_TREE_DIR_COUNT; ++i) {
       _quad_tree_draw_lines(&qt->node.children[i]);
