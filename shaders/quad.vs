@@ -2,11 +2,9 @@
 
 in vec3 vertexPosition;
 // This is not normal. This is dx, dy, and length of the line.
-in vec3 vertexColor;
 in vec3 vertexNormal;
 
 out vec2 normal;
-out vec3 color;
 
 uniform vec2 offset;
 uniform vec4 resolution;
@@ -15,7 +13,6 @@ uniform vec2 screen;
 
 void main(void)
 {
-    color = vertexColor;
     // TODO: make this uniform.
     float thick = 0.09;
     vec2 tg = vertexNormal.xy;

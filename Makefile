@@ -21,7 +21,7 @@ SHADERS= SHADER_GRID_FS:shaders/grid.fs SHADER_LINE_FS:shaders/line.fs SHADER_LI
 SOURCE= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c \
         refresh_shaders.c smol_mesh.c main.c points_group.c graph.c q.c read_input.c quad_tree.c
 
-CCFLAGS_DBG = -Wall -Wpedantic -Wextra -g -DLINUX -DPLATFORM_DESKTOP
+CCFLAGS_DBG = -Wall -Wpedantic -Wextra -g -DLINUX -DPLATFORM_DESKTOP -pg -fsanitize=address
 SOURCE_DBG=refresh_shaders.c smol_mesh.c main.c points_group.c graph.c q.c read_input.c quad_tree.c 
 
 SOURCE_WEB= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c \

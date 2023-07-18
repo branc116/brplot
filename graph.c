@@ -35,9 +35,11 @@ void graph_init(graph_values_t* gv, float width, float height) {
 #ifdef RELEASE
   gv->gridShader = LoadShaderFromMemory(NULL, SHADER_GRID_FS);
   gv->linesShader = LoadShaderFromMemory(SHADER_LINE_VS, SHADER_LINE_FS);
+  gv->linesShader = LoadShaderFromMemory(SHADER_QUAD_VS, SHADER_QUAD_FS);
 #else
   gv->gridShader = LoadShader(NULL, "shaders/grid.fs");
   gv->linesShader = LoadShader("shaders/line.vs", "shaders/line.fs");
+  gv->quadShader = LoadShader("shaders/quad.vs", "shaders/quad.fs");
 #endif
   Color cs[] = { RED, GREEN, BLUE, LIGHTGRAY, PINK, GOLD, VIOLET, DARKPURPLE };
   for (int i = 0; i < 8; ++i) {
@@ -49,22 +51,15 @@ void graph_init(graph_values_t* gv, float width, float height) {
   gv->uvZoom = (Vector2){ 1., 1. };
   gv->uvScreen = (Vector2){ width, height };
   gv->uvDelta = (Vector2){ 0., 0. };
-  for (int i = 0; i < 2; ++i) {
+  for (int i = 0; i < 3; ++i) {
     gv->uResolution[i] = GetShaderLocation(gv->shaders[i], "resolution");
     gv->uZoom[i] = GetShaderLocation(gv->shaders[i], "zoom");
     gv->uOffset[i] = GetShaderLocation(gv->shaders[i], "offset");
     gv->uScreen[i] = GetShaderLocation(gv->shaders[i], "screen");
   }
-  gv->uColor = GetShaderLocation(gv->linesShader, "color");
   memset(gv->groups, 0, sizeof(gv->groups));
-  smol_mesh_init_temp();
   q_init(&gv->commands);
-}
-
-static float signf(float x) {
-  (void)signf;
-  return x > 0.f ?  1.f :
-         x < 0.f ? -1.f : 0.f;
+  gv->lines_mesh = smol_mesh_malloc(PTOM_COUNT, gv->linesShader);
 }
 
 void graph_draw(graph_values_t* gv) {
@@ -139,7 +134,8 @@ void graph_draw(graph_values_t* gv) {
   BeginShaderMode(gv->gridShader);
     DrawRectangleRec(gv->graph_rect, RED);
   EndShaderMode();
-  points_groups_draw(gv->groups, gv->groups_len, gv->linesShader, gv->uColor, gv->group_colors, graph_get_rectangle(gv), gv->debug);
+  gv->lines_mesh->active_shader = gv->linesShader;
+  points_groups_draw(gv->groups, gv->groups_len, gv->lines_mesh, gv->group_colors, graph_get_rectangle(gv), gv->debug);
   if (is_inside) {
     float pad = 5.;
     float fs = 10 * font_scale;
@@ -188,13 +184,17 @@ static void refresh_shaders_if_dirty(graph_values_t* gv) {
       UnloadShader(gv->gridShader);
       gv->gridShader = new_grid;
     }
-    for (int i = 0; i < 2; ++i) {
+    Shader new_quad = LoadShader("./shaders/quad.vs", "./shaders/quad.fs");
+    if (new_quad.locs != NULL) {
+      UnloadShader(gv->quadShader);
+      gv->quadShader = new_quad;
+    }
+    for (int i = 0; i < 3; ++i) {
       gv->uResolution[i] = GetShaderLocation(gv->shaders[i], "resolution");
       gv->uZoom[i] = GetShaderLocation(gv->shaders[i], "zoom");
       gv->uOffset[i] = GetShaderLocation(gv->shaders[i], "offset");
       gv->uScreen[i] = GetShaderLocation(gv->shaders[i], "screen");
     }
-    gv->uColor = GetShaderLocation(gv->linesShader, "color");
   }
 }
 
@@ -249,18 +249,16 @@ static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale) {
   DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "offset: (%f, %f)", gv->uvOffset.x, gv->uvOffset.y);
   DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "zoom: (%f, %f)", gv->uvZoom.x, gv->uvZoom.y);
   DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "Line groups: %d/%d", gv->groups_len, GROUP_CAP);
+  DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "Line draw calls: %d", gv->lines_mesh->draw_calls);
+  DrawButton(NULL, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "Points drawn: %d", gv->lines_mesh->points_drawn);
   for(int j = 0; j < gv->groups_len; ++j) {
     int p = DrawButton(&gv->groups[j].is_selected, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "Group #%d: %d/%d; %d", gv->groups[j].group_id, gv->groups[j].len, gv->groups[j].cap, gv->groups[j].qt_expands);
     if (p > 0 && IsKeyPressed(KEY_P)) {
       quad_tree_print_dot(&gv->groups[j].qt);
     }
-    if (p > 0 && IsKeyPressed(KEY_B)) {
-      quad_tree_t qt = {0};
-      quad_tree_balance(&qt, &gv->groups[j].qt, gv->groups[j].points, 0);
-      quad_tree_free(&gv->groups[j].qt);
-      memcpy(&gv->groups[j].qt, &qt, sizeof(quad_tree_t));
-    }
   }
+  gv->lines_mesh->draw_calls = 0;
+  gv->lines_mesh->points_drawn = 0;
 }
 
 static void update_resolution(graph_values_t* gv) {

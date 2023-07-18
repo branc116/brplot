@@ -75,7 +75,7 @@ void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_
       points_group_push_point(g, p);
     }
   }
-  for(int i = 0; i < 1024*1024; ++i) {
+  for(int i = 0; i < 1024; ++i) {
     printf("i = %d\n", i);
     int group = 5;
     points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, group);
@@ -87,44 +87,23 @@ void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_
   }
 }
 
-void points_groups_draw(points_group_t* gs, int len, Shader shader, int color_uniform, Color* colors, Rectangle rect, int debug) {
-  for (int j = 0; j < len; ++j) {
-    points_group_t * g = &gs[j];
-    if (g->is_sorted) continue; // Don't move to gpu if group is soreted, no need for it...
-    if (g->len / PTOM_COUNT > g->sm.smol_meshes_len ) {
-      int indx = g->sm.smol_meshes_len++;
-      smol_mesh_t* sm = &g->sm.meshes[indx];
-      smol_mesh_init(sm);
-      assert(smol_mesh_gen_line_strip(sm, g->points, g->len, indx*sm->length));
-      smol_mesh_upload(sm, false);
-    }
-  }
+void points_groups_draw(points_group_t* gs, int len, smol_mesh_t* line_mesh, Color* colors, Rectangle rect, int debug) {
   for (int j = 0; j < len; ++j) {
     points_group_t * g = &gs[j];
     if (g->is_selected) {
       Color c = colors[j];
-      Vector3 cv = {c.r/255.f, c.g/255.f, c.b/255.f};
-      SetShaderValue(shader, color_uniform, &cv, SHADER_UNIFORM_VEC3);
       if (g->is_sorted) {
-        int len = points_group_sample_points(g, rect, sample_points, sample_points_cap);
-        if (len > 1){
-          smol_mesh_gen_line_strip(smol_mesh_get_temp(), sample_points, len, 0);
-          smol_mesh_update(smol_mesh_get_temp());
-          smol_mesh_draw_line_strip(smol_mesh_get_temp(), shader);
-        }
-      } else if (g->quad_tree) {
-        g->qt_expands = quad_tree_draw_lines(&g->qt, rect, g->points, g->len, shader, debug);
+        int samp_len = points_group_sample_points(g, rect, sample_points, sample_points_cap);
+        if (samp_len > 1) smol_mesh_gen_line_strip(line_mesh, sample_points, samp_len, c);
       } else {
-        int ml = g->sm.smol_meshes_len;
-        if (smol_mesh_gen_line_strip(smol_mesh_get_temp(), g->points, g->len, g->sm.smol_meshes_len*(PTOM_COUNT))) {
-          smol_mesh_update(smol_mesh_get_temp());
-          smol_mesh_draw_line_strip(smol_mesh_get_temp(), shader);
-        }
-        for (int k = 0; k < ml; ++k) {
-          smol_mesh_draw_line_strip(&g->sm.meshes[k], shader);
-        }
+        g->qt_expands = quad_tree_draw(&g->qt, c, rect, line_mesh, g->points, g->len, debug);
       }
     }
+  }
+  if (line_mesh->cur_len > 0) {
+    smol_mesh_update(line_mesh);
+    smol_mesh_draw_line_strip(line_mesh);
+    line_mesh->cur_len = 0;
   }
 }
 
@@ -152,7 +131,6 @@ static points_group_t* points_group_init(points_group_t* g, int group_id) {
     g->group_id = group_id;
     g->is_selected = true;
     g->points = malloc(sizeof(Vector2) * 1024);
-    g->sm.smol_meshes_len = 0;
     g->is_sorted = true;
     return g;
 }
@@ -176,7 +154,6 @@ static points_group_t* points_group_get(points_group_t* pg_array, int* pg_array_
 }
 
 static void points_group_init_quad_tree(points_group_t* g) {
-  g->quad_tree = true;
   quad_tree_init(&g->qt);
   for (int i = 0; i < g->len; ++i)
     quad_tree_add_point(&g->qt, g->points, g->points[i], i);
@@ -191,20 +168,16 @@ static void points_group_push_point(points_group_t* g, Vector2 v) {
     points_group_init_quad_tree(g);
   }
   g->points[g->len] = v;
-  if (g->quad_tree) {
+  if (!g->is_sorted) {
     quad_tree_add_point(&g->qt, g->points, g->points[g->len], g->len);
   }
   ++g->len;
 }
 
 static void points_group_deinit(points_group_t* g) {
-    // Remove smol meshes
-    int sm_len = g->sm.smol_meshes_len;
-    for (int j = 0; j < sm_len; ++j) {
-      smol_mesh_unload(&g->sm.meshes[j]);
-    }
     // Free points
     free(g->points);
+    if (!g->is_sorted) quad_tree_free(&g->qt);
     g->points = NULL;
     g->len = 0;
 }

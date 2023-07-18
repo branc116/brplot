@@ -1,12 +1,12 @@
 #version 330
 in vec2 normal;
-in vec3 color;
 
 out vec4 finalColor;
 
 uniform vec2 screen;
 uniform vec4 resolution;
 uniform vec2 zoom;
+uniform vec3 color;
 
 void main()
 {

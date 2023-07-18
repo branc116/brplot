@@ -72,19 +72,19 @@ typedef struct {
 typedef struct {
   unsigned int vaoId;     // OpenGL Vertex Array Object id
   union {
-    unsigned int vboId[2];
+    unsigned int vboId[3];
     struct {
-      unsigned int vboIdVertex, vboIdNormal;
+      unsigned int vboIdVertex, vboIdNormal, vboIdColor;
     };
   };
   float* verticies;
   float* normals;
+  float* colors;
+  Shader active_shader;
+  int cur_len;
   // Max Number of points and only number of points.
-  int length;
-  // length * (2 triengle per line) * (3 verticies per triangle)
-  int vertex_count;
-  // length * (2 triengle per line)
-  int triangle_count;
+  int capacity;
+  int draw_calls, points_drawn;
 } smol_mesh_t;
 
 enum {
@@ -99,9 +99,11 @@ typedef struct {
   int start_index;
   int length;
 } quad_tree_groups_t;
+
 typedef struct _quad_tree_s {
   Rectangle bounds;
   Rectangle bb;
+  Vector2 average_tangent;
   int count;
   union {
     quad_tree_groups_t groups[QUAD_TREE_MAX_GROUPS];
@@ -117,34 +119,30 @@ typedef struct _quad_tree_s {
 typedef struct {
   int cap, len;
   int group_id;
-  bool is_selected, is_sorted, quad_tree;
+  bool is_selected, is_sorted;
   Vector2* points;
-  struct {
-    int smol_meshes_len;
-    smol_mesh_t meshes[SMOL_MESHES_CAP];
-  } sm;
   quad_tree_t qt;
   int qt_expands;
 } points_group_t;
 
 typedef struct {
   union {
-    Shader shaders[2];
+    Shader shaders[3];
     struct {
-      Shader gridShader, linesShader;
+      Shader gridShader, linesShader, quadShader;
     };
   };
-  int uResolution[2];
-  int uZoom[2];
-  int uOffset[2];
-  int uScreen[2];
-  int uColor; // Only for linesShader
+  int uResolution[3];
+  int uZoom[3];
+  int uOffset[3];
+  int uScreen[3];
 
   Rectangle graph_rect;
   Vector2 uvZoom;
   Vector2 uvOffset;
   Vector2 uvScreen;
   Vector2 uvDelta;
+  smol_mesh_t* lines_mesh;
 
   // TODO: This is too big, do something about it! 1MB
   // Only render thread can read or write to this array.
@@ -163,22 +161,15 @@ typedef struct {
 } graph_values_t;
 
 
+smol_mesh_t* smol_mesh_malloc(int capacity, Shader s);
 // Only render thread can access this functions.
-void smol_mesh_init(smol_mesh_t* mesh);
+bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, int len, Color color);
 // Only render thread can access this functions.
-void smol_mesh_init_temp(void);
-// Only render thread can access this functions.
-smol_mesh_t* smol_mesh_get_temp(void);
-// Only render thread can access this functions.
-bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, int len, int offset);
-// Only render thread can access this functions.
-void smol_mesh_upload(smol_mesh_t* mesh, bool dynamic);
-// Only render thread can access this functions.
-void smol_mesh_draw_line_strip(smol_mesh_t* mesh, Shader shader);
+void smol_mesh_draw_line_strip(smol_mesh_t* mesh);
 // Only render thread can access this functions.
 void smol_mesh_update(smol_mesh_t* mesh);
 // Only render thread can access this functions.
-void smol_mesh_unload(smol_mesh_t* mesh);
+void smol_mesh_free(smol_mesh_t* mesh);
 
 // Only render thread can access this functions.
 void points_group_push_y(points_group_t* pg_array, int* pg_array_len, int pg_array_cap, float y, int group);
@@ -189,15 +180,14 @@ void points_group_clear(points_group_t* pg_array, int* pg_array_len, int group_i
 // Only render thread can access this functions.
 void points_group_clear_all(points_group_t* pg_array, int* pg_array_len);
 // Only render thread can access this functions.
-void points_groups_draw(points_group_t* pg_array, int pg_len, Shader shader, int color_uniform, Color* colors, Rectangle rect, int debug);
+void points_groups_draw(points_group_t* pg_array, int pg_len, smol_mesh_t* line_mesh, Color* colors, Rectangle rect, int debug);
 // Only render thread can access this functions.
 void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_array_cap);
 
 void quad_tree_init(quad_tree_t* qt);
 bool quad_tree_add_point(quad_tree_t* root, Vector2 const * all_points, Vector2 point, int index);
-int quad_tree_draw_lines(quad_tree_t* qt, Rectangle screen, Vector2* all_points, int all_points_count, Shader shader, int debug);
+int quad_tree_draw(quad_tree_t* qt, Color color, Rectangle screen, smol_mesh_t* line_mesh, Vector2* all_points, int all_points_count, int debug);
 void quad_tree_print_dot(quad_tree_t* t);
-void quad_tree_balance(quad_tree_t* dest, quad_tree_t const * qt, Vector2 const * all_points, int depth);
 // This will only free qt->node.children memory recursivley.
 void quad_tree_free(quad_tree_t* qt);
 
