@@ -77,7 +77,7 @@ void graph_draw(graph_values_t* gv) {
     for (int i = 0; i < gv->groups_len; ++i) {
       points_group_t* pg = &gv->groups[i];
       int gl = pg->len;
-      if (!pg->is_selected) continue;
+      if (!pg->is_selected || gl == 0) continue;
       gv->uvDelta.x += ((middle.x - pg->points[gl - 1].x))/1000;
       gv->uvDelta.y += ((middle.y - pg->points[gl - 1].y))/1000;
     }
@@ -256,7 +256,7 @@ static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale) {
   for(int j = 0; j < gv->groups_len; ++j) {
     int p = DrawButton(&gv->groups[j].is_selected, 30, gv->graph_rect.y + 33*(i++), font_scale * 15, buff, "Group #%d: %d/%d; %d", gv->groups[j].group_id, gv->groups[j].len, gv->groups[j].cap, gv->groups[j].qt_expands);
     if (p > 0 && IsKeyPressed(KEY_P)) {
-      quad_tree_print_dot(&gv->groups[j].qt);
+      quad_tree_print_dot(gv->groups[j].qt);
     }
   }
   gv->lines_mesh->draw_calls = 0;

@@ -110,7 +110,7 @@ void points_groups_draw(points_group_t* gs, int len, smol_mesh_t* line_mesh, smo
         int samp_len = points_group_sample_points(g, rect, sample_points, sample_points_cap);
         if (samp_len > 1) smol_mesh_gen_line_strip(line_mesh, sample_points, samp_len, c);
       } else {
-        g->qt_expands = quad_tree_draw(&g->qt, c, rect, line_mesh, quad_mesh, g->points, g->len, debug);
+        g->qt_expands = quad_tree_draw(g->qt, c, rect, line_mesh, quad_mesh, g->points, g->len, debug);
       }
     }
   }
@@ -171,9 +171,9 @@ static points_group_t* points_group_get(points_group_t* pg_array, int* pg_array_
 }
 
 static void points_group_init_quad_tree(points_group_t* g) {
-  quad_tree_init(&g->qt);
+  g->qt = quad_tree_malloc();
   for (int i = 0; i < g->len; ++i)
-    quad_tree_add_point(&g->qt, g->points, g->points[i], i);
+    quad_tree_add_point(g->qt, g->points, g->points[i], i);
 }
 
 static void points_group_push_point(points_group_t* g, Vector2 v) {
@@ -186,7 +186,7 @@ static void points_group_push_point(points_group_t* g, Vector2 v) {
   }
   g->points[g->len] = v;
   if (!g->is_sorted) {
-    quad_tree_add_point(&g->qt, g->points, g->points[g->len], g->len);
+    quad_tree_add_point(g->qt, g->points, g->points[g->len], g->len);
   }
   ++g->len;
 }
@@ -194,7 +194,7 @@ static void points_group_push_point(points_group_t* g, Vector2 v) {
 static void points_group_deinit(points_group_t* g) {
     // Free points
     free(g->points);
-    if (!g->is_sorted) quad_tree_free(&g->qt);
+    if (!g->is_sorted) quad_tree_free(g->qt);
     g->points = NULL;
     g->len = 0;
 }

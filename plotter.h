@@ -17,7 +17,6 @@ extern "C" {
 //TODO: Do something with this...
 #define GRAPH_LEFT_PAD 400
 
-#define QUAD_TREE_MAX_GROUPS 128
 #define QUAD_TREE_SPLIT_COUNT 256
 
 
@@ -87,13 +86,17 @@ typedef struct {
   int draw_calls, points_drawn;
 } smol_mesh_t;
 
-enum {
+typedef enum {
   QUAD_TREE_UP_LEFT = 0,
   QUAD_TREE_UP_RIGHT,
   QUAD_TREE_DOWN_LEFT,
   QUAD_TREE_DOWN_RIGHT,
-  QUAD_TREE_DIR_COUNT
-}; 
+  QUAD_TREE_DIR_COUNT,
+  QUAD_TREE_DIR_UP = 0,
+  QUAD_TREE_DIR_DOWN = 2,
+  QUAD_TREE_DIR_LEFT = 0,
+  QUAD_TREE_DIR_RIGHT = 1
+} quad_tree_dir; 
 
 typedef struct {
   int start_index;
@@ -101,19 +104,20 @@ typedef struct {
 } quad_tree_groups_t;
 
 typedef struct _quad_tree_s {
+  quad_tree_groups_t* groups;
   Rectangle bounds;
-  Rectangle bb;
-  Vector2 average_tangent;
-  int count;
-  union {
-    quad_tree_groups_t groups[QUAD_TREE_MAX_GROUPS];
-    struct {
-      Vector2 split_point;
-      struct _quad_tree_s* children;
-    } node;
-  };
+  Vector2 split_point, mid_point, scatter;
+  struct _quad_tree_s* children;
+  int count, groups_len, groups_cap;
   bool is_leaf;
 } quad_tree_t;
+
+#define QUAD_TREE_ROOT_TEMP_CAP 1024
+typedef struct {
+  int temp[QUAD_TREE_ROOT_TEMP_CAP], temp_length;
+  Vector2 temp_mid_point;
+  quad_tree_t* root;
+} quad_tree_root_t;
 
 
 typedef struct {
@@ -121,7 +125,7 @@ typedef struct {
   int group_id;
   bool is_selected, is_sorted;
   Vector2* points;
-  quad_tree_t qt;
+  quad_tree_root_t* qt;
   int qt_expands;
 } points_group_t;
 
@@ -132,16 +136,10 @@ typedef struct {
       Shader gridShader, linesShader, quadShader;
     };
   };
-  int uResolution[3];
-  int uZoom[3];
-  int uOffset[3];
-  int uScreen[3];
+  int uResolution[3], uZoom[3], uOffset[3], uScreen[3];
 
   Rectangle graph_rect;
-  Vector2 uvZoom;
-  Vector2 uvOffset;
-  Vector2 uvScreen;
-  Vector2 uvDelta;
+  Vector2 uvZoom, uvOffset, uvScreen, uvDelta;
   smol_mesh_t* lines_mesh;
   smol_mesh_t* quads_mesh;
 
@@ -186,12 +184,12 @@ void points_groups_draw(points_group_t* pg_array, int pg_len, smol_mesh_t* line_
 // Only render thread can access this functions.
 void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_array_cap);
 
-void quad_tree_init(quad_tree_t* qt);
-bool quad_tree_add_point(quad_tree_t* root, Vector2 const * all_points, Vector2 point, int index);
-int quad_tree_draw(quad_tree_t* qt, Color color, Rectangle screen, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Vector2* all_points, int all_points_count, int debug);
-void quad_tree_print_dot(quad_tree_t* t);
+quad_tree_root_t* quad_tree_malloc(void);
+bool quad_tree_add_point(quad_tree_root_t* root, Vector2 const * all_points, Vector2 point, int index);
+int quad_tree_draw(quad_tree_root_t* qt, Color color, Rectangle screen, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Vector2* all_points, int all_points_count, int debug);
+void quad_tree_print_dot(quad_tree_root_t* t);
 // This will only free qt->node.children memory recursivley.
-void quad_tree_free(quad_tree_t* qt);
+void quad_tree_free(quad_tree_root_t* qt);
 
 extern Vector2 graph_mouse_position;
 // Only render thread can access this functions.
