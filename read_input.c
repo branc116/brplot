@@ -34,7 +34,7 @@ static void *read_input_main_worker(void* gv) {
       printf("EOF detected, stop reading stdin\n");
       return NULL;
     } else if (c == 'e' || c == 'E' || c == '.' || c == ';' || (c >= '0' && c <= '9') || c == '-') {
-      cur_str[cur_str_len++] = c;
+      cur_str[cur_str_len++] = (char)c;
       if (cur_str_len + 1 < (int)sizeof(cur_str)) continue;
     } else if (cur_str_len == 0) {
       continue;

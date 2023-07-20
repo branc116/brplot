@@ -1,6 +1,8 @@
 #include "plotter.h"
 
+#include <assert.h>
 #include <raylib.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -8,11 +10,10 @@
 
 #include "rlgl.h"
 
-static int smol_mesh_get_vertex_count(smol_mesh_t* mesh);
-static int smol_mesh_get_vb_size(smol_mesh_t* mesh);
+static size_t smol_mesh_get_vb_size(smol_mesh_t* mesh);
 static void smol_mesh_upload(smol_mesh_t* mesh, bool dynamic);
 
-smol_mesh_t* smol_mesh_malloc(int capacity, Shader s) {
+smol_mesh_t* smol_mesh_malloc(size_t capacity, Shader s) {
   smol_mesh_t* ret = malloc(sizeof(smol_mesh_t));
   *ret = (smol_mesh_t){
     // Maybe join this 3 mallocs into 1 malloc
@@ -39,59 +40,70 @@ void smol_mesh_free(smol_mesh_t* mesh) {
 }
 
 void smol_mesh_update(smol_mesh_t* mesh) {
-  int number_of_floats = smol_mesh_get_vb_size(mesh);
+  int number_of_floats = (int)smol_mesh_get_vb_size(mesh);
   rlUpdateVertexBuffer(mesh->vboIdVertex, mesh->verticies, number_of_floats, 0);
   rlUpdateVertexBuffer(mesh->vboIdNormal, mesh->normals, number_of_floats, 0);
   rlUpdateVertexBuffer(mesh->vboIdColor, mesh->colors, number_of_floats, 0);
 }
+static float point_distance(Vector2 from, Vector2 to, Rectangle r) {
+  Vector2 uvf = {(from.x - r.x)/r.width, (from.y - r.y)/r.height};
+  Vector2 uvt = {(to.x - r.x)/r.width, (to.y - r.y)/r.height};
+  float dx = uvf.x - uvt.x;
+  float dy = uvt.y - uvt.y;
+  float ret = sqrtf(dx*dx + dy*dy);
+  assert(ret <= sqrtf(1.f + 1.f));
+  assert(ret >= 0.f);
+  return ret;
+}
 
 void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 tangent, Color color) {
-  int c = mesh->cur_len++;
+  size_t c = mesh->cur_len++;
   if (c >= mesh->capacity) {
     smol_mesh_update(mesh);
     smol_mesh_draw(mesh);
     c = mesh->cur_len++;
   }
   c*=18;
+  //assert(CheckCollisionPointRec(tangent, rect));
   mesh->verticies[c+0] = rect.x;
   mesh->verticies[c+1] = rect.y;
-  mesh->verticies[c+2] = 0;
+  mesh->verticies[c+2] = point_distance(tangent, (Vector2){rect.x, rect.y}, rect);
   mesh->verticies[c+3] = rect.x + rect.width;
   mesh->verticies[c+4] = rect.y;
-  mesh->verticies[c+5] = 0;
+  mesh->verticies[c+5] = point_distance(tangent, (Vector2){rect.x + rect.width, rect.y}, rect);
   mesh->verticies[c+6] = rect.x + rect.width;
   mesh->verticies[c+7] = rect.y + rect.height;
-  mesh->verticies[c+8] = 0;
+  mesh->verticies[c+8] = point_distance(tangent, (Vector2){rect.x + rect.width, rect.y + rect.height}, rect);
 
   mesh->verticies[c+9] = rect.x + rect.width;
   mesh->verticies[c+10] = rect.y + rect.height;
-  mesh->verticies[c+11] = 0;
+  mesh->verticies[c+11] = point_distance(tangent, (Vector2){rect.x + rect.width, rect.y + rect.height}, rect);
   mesh->verticies[c+12] = rect.x;
   mesh->verticies[c+13] = rect.y + rect.height;
-  mesh->verticies[c+14] = 0;
+  mesh->verticies[c+14] = point_distance(tangent, (Vector2){rect.x, rect.y + rect.height}, rect);
   mesh->verticies[c+15] = rect.x;
   mesh->verticies[c+16] = rect.y;
-  mesh->verticies[c+17] = 0;
-  for (int i = 0; i < 18; i += 3) {
+  mesh->verticies[c+17] = point_distance(tangent, (Vector2){rect.x, rect.y}, rect);
+  for (size_t i = 0; i < 18; i += 3) {
     mesh->normals[c+i+0] = tangent.x;
     mesh->normals[c+i+1] = tangent.y;
     mesh->normals[c+i+2] = 0;
   }
   Vector3 vc = {color.r/255.f, color.g/255.f, color.b/255.f};
-  for (int i = 0; i < 18; i += 3) {
+  for (size_t i = 0; i < 18; i += 3) {
     mesh->colors[c+i+0] = vc.x;
     mesh->colors[c+i+1] = vc.y;
     mesh->colors[c+i+2] = vc.z;
   }
 }
 
-bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, int len, Color color) {
+bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t len, Color color) {
   // Todo: check if index v is inside gv->points
-  int vn = 2*3*3;
+  size_t vn = 2*3*3;
   Vector3 cv = {color.r/255.f, color.g/255.f, color.b/255.f};
-  for (int v = 0; v < ((len - 1)*vn); v += vn)
+  for (size_t v = 0; v < ((len - 1)*vn); v += vn)
   {
-    int c = mesh->cur_len++;
+    size_t c = mesh->cur_len++;
     if (c >= mesh->capacity) {
       smol_mesh_update(mesh);
       smol_mesh_draw(mesh);
@@ -128,14 +140,14 @@ bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, int len
     mesh->verticies[c+16] = strip[1].y;
     mesh->verticies[c+17] = 1;
 
-    for (int i = 0; i < vn; i += 3) {
+    for (size_t i = 0; i < vn; i += 3) {
       //Not a normal, this is dx, dy, length for first triangle
       mesh->normals[c+i+0] = delta.x;
       mesh->normals[c+i+1] = delta.y;
       mesh->normals[c+i+2] = length;
     }
 
-    for (int i = 0; i < vn; i += 3) {
+    for (size_t i = 0; i < vn; i += 3) {
       mesh->colors[c+i+0] = cv.x;
       mesh->colors[c+i+1] = cv.y;
       mesh->colors[c+i+2] = cv.z;
@@ -162,19 +174,19 @@ void smol_mesh_draw(smol_mesh_t* mesh) {
   rlEnableVertexArray(mesh->vaoId);
   // Bind mesh VBO data: vertex position (shader-location = 0)
   rlEnableVertexBuffer(mesh->vboIdVertex);
-  rlSetVertexAttribute(mesh->active_shader.locs[SHADER_LOC_VERTEX_POSITION], 3, RL_FLOAT, 0, 0, 0);
-  rlEnableVertexAttribute(mesh->active_shader.locs[SHADER_LOC_VERTEX_POSITION]);
+  rlSetVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_POSITION], 3, RL_FLOAT, 0, 0, 0);
+  rlEnableVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_POSITION]);
 
   rlEnableVertexBuffer(mesh->vboIdNormal);
-  rlSetVertexAttribute(mesh->active_shader.locs[SHADER_LOC_VERTEX_NORMAL], 3, RL_FLOAT, 0, 0, 0);
-  rlEnableVertexAttribute(mesh->active_shader.locs[SHADER_LOC_VERTEX_NORMAL]);
+  rlSetVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_NORMAL], 3, RL_FLOAT, 0, 0, 0);
+  rlEnableVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_NORMAL]);
 
   rlEnableVertexBuffer(mesh->vboIdColor);
-  rlSetVertexAttribute(mesh->active_shader.locs[SHADER_LOC_VERTEX_COLOR], 3, RL_FLOAT, 0, 0, 0);
-  rlEnableVertexAttribute(mesh->active_shader.locs[SHADER_LOC_VERTEX_COLOR]);
+  rlSetVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_COLOR], 3, RL_FLOAT, 0, 0, 0);
+  rlEnableVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_COLOR]);
 
   // Bind mesh VBO data: vertex colors (shader-location = 3, if available)
-  rlDrawVertexArray(0, mesh->cur_len*2*3);
+  rlDrawVertexArray(0, (int)mesh->cur_len*2*3);
   // Disable all possible vertex array objects (or VBOs)
   rlDisableVertexArray();
   rlDisableVertexBuffer();
@@ -187,12 +199,7 @@ void smol_mesh_draw(smol_mesh_t* mesh) {
   mesh->cur_len = 0;
 }
 
-static int smol_mesh_get_vertex_count(smol_mesh_t* mesh) {
-  // length * (2 triengle per line) * (3 verticies per triangle)
-  return mesh->cur_len * 2 * 3;
-}
-
-static int smol_mesh_get_vb_size(smol_mesh_t* mesh) {
+static size_t smol_mesh_get_vb_size(smol_mesh_t* mesh) {
   return mesh->capacity * 3 * 2 * 3 * sizeof(float);
 }
 
@@ -201,19 +208,19 @@ static void smol_mesh_upload(smol_mesh_t* mesh, bool dynamic) {
     mesh->vaoId = 0;        // Vertex Array Object
     mesh->vboIdVertex = 0;     // Vertex buffer: positions
     mesh->vboIdNormal = 0;     // Vertex buffer: texcoords
-    int cap = smol_mesh_get_vb_size(mesh);
+    int cap = (int)smol_mesh_get_vb_size(mesh);
 
     mesh->vaoId = rlLoadVertexArray();
     rlEnableVertexArray(mesh->vaoId);
 
     mesh->vboIdVertex = rlLoadVertexBuffer(mesh->verticies, cap, dynamic);
-    rlSetVertexAttribute(mesh->active_shader.locs[SHADER_LOC_VERTEX_POSITION], 3, RL_FLOAT, 0, 0, 0);
+    rlSetVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_POSITION], 3, RL_FLOAT, 0, 0, 0);
 
     mesh->vboIdNormal = rlLoadVertexBuffer(mesh->normals, cap, dynamic);
-    rlSetVertexAttribute(mesh->active_shader.locs[SHADER_LOC_VERTEX_NORMAL], 3, RL_FLOAT, 0, 0, 0);
+    rlSetVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_NORMAL], 3, RL_FLOAT, 0, 0, 0);
 
     mesh->vboIdColor = rlLoadVertexBuffer(mesh->colors, cap, dynamic);
-    rlSetVertexAttribute(mesh->active_shader.locs[SHADER_LOC_VERTEX_COLOR], 3, RL_FLOAT, 0, 0, 0);
+    rlSetVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_COLOR], 3, RL_FLOAT, 0, 0, 0);
 
     rlDisableVertexArray();
 }

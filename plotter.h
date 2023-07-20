@@ -62,8 +62,8 @@ typedef struct {
 } q_command;
 
 typedef struct {
-  int read_index, write_index;
-  int capacity;
+  size_t read_index, write_index;
+  size_t capacity;
   q_command* commands;
   LOCK(push_mutex)
 } q_commands;
@@ -80,10 +80,10 @@ typedef struct {
   float* normals;
   float* colors;
   Shader active_shader;
-  int cur_len;
+  size_t cur_len;
   // Max Number of points and only number of points.
-  int capacity;
-  int draw_calls, points_drawn;
+  size_t capacity;
+  size_t draw_calls, points_drawn;
 } smol_mesh_t;
 
 typedef enum {
@@ -99,8 +99,8 @@ typedef enum {
 } quad_tree_dir; 
 
 typedef struct {
-  int start_index;
-  int length;
+  size_t start_index;
+  size_t length;
 } quad_tree_groups_t;
 
 typedef struct _quad_tree_s {
@@ -108,13 +108,13 @@ typedef struct _quad_tree_s {
   Rectangle bounds;
   Vector2 split_point, mid_point, scatter;
   struct _quad_tree_s* children;
-  int count, groups_len, groups_cap;
+  size_t count, groups_len, groups_cap;
   bool is_leaf;
 } quad_tree_t;
 
 #define QUAD_TREE_ROOT_TEMP_CAP 1024
 typedef struct {
-  int temp[QUAD_TREE_ROOT_TEMP_CAP], temp_length;
+  size_t temp[QUAD_TREE_ROOT_TEMP_CAP], temp_length;
   Vector2 temp_mid_point;
   quad_tree_t* root;
   float balanc_max_baddness;
@@ -124,7 +124,7 @@ typedef struct {
 
 
 typedef struct {
-  int cap, len;
+  size_t cap, len;
   int group_id;
   bool is_selected, is_sorted;
   Vector2* points;
@@ -149,7 +149,7 @@ typedef struct {
   // TODO: This is too big, do something about it! 1MB
   // Only render thread can read or write to this array.
   points_group_t groups[GROUP_CAP];
-  int groups_len;
+  size_t groups_len;
   Color group_colors[GROUP_CAP];
 
   // Any thread can write to this q, only render thread can pop
@@ -163,10 +163,10 @@ typedef struct {
 } graph_values_t;
 
 
-smol_mesh_t* smol_mesh_malloc(int capacity, Shader s);
+smol_mesh_t* smol_mesh_malloc(size_t capacity, Shader s);
 void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 tangent, Color color);
 // Only render thread can access this functions.
-bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, int len, Color color);
+bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t len, Color color);
 // Only render thread can access this functions.
 void smol_mesh_draw(smol_mesh_t* mesh);
 // Only render thread can access this functions.
@@ -175,21 +175,21 @@ void smol_mesh_update(smol_mesh_t* mesh);
 void smol_mesh_free(smol_mesh_t* mesh);
 
 // Only render thread can access this functions.
-void points_group_push_y(points_group_t* pg_array, int* pg_array_len, int pg_array_cap, float y, int group);
+void points_group_push_y(points_group_t* pg_array, size_t* pg_array_len, size_t pg_array_cap, float y, int group);
 // Only render thread can access this functions.
-void points_group_push_xy(points_group_t* pg_array, int* pg_array_len, int pg_array_cap, float x, float y, int group);
+void points_group_push_xy(points_group_t* pg_array, size_t* pg_array_len, size_t pg_array_cap, float x, float y, int group);
 // Only render thread can access this functions.
-void points_group_clear(points_group_t* pg_array, int* pg_array_len, int group_id);
+void points_group_clear(points_group_t* pg_array, size_t* pg_array_len, int group_id);
 // Only render thread can access this functions.
-void points_group_clear_all(points_group_t* pg_array, int* pg_array_len);
+void points_group_clear_all(points_group_t* pg_array, size_t* pg_array_len);
 // Only render thread can access this functions.
-void points_groups_draw(points_group_t* pg_array, int pg_len, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Color* colors, Rectangle rect, int debug);
+void points_groups_draw(points_group_t* pg_array, size_t pg_len, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Color* colors, Rectangle rect, int debug);
 // Only render thread can access this functions.
-void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_array_cap);
+void points_group_add_test_points(points_group_t* pg_array, size_t* pg_len, size_t pg_array_cap);
 
 quad_tree_root_t* quad_tree_malloc(void);
-bool quad_tree_add_point(quad_tree_root_t* root, Vector2 const * all_points, Vector2 point, int index);
-int quad_tree_draw(quad_tree_root_t* qt, Color color, Rectangle screen, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Vector2* all_points, int all_points_count, int debug);
+bool quad_tree_add_point(quad_tree_root_t* root, Vector2 const * all_points, size_t index);
+int quad_tree_draw(quad_tree_root_t* qt, Color color, Rectangle screen, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Vector2* all_points, size_t all_points_count, int debug);
 void quad_tree_print_dot(quad_tree_root_t* t);
 // This will only free qt->node.children memory recursivley.
 void quad_tree_free(quad_tree_root_t* qt);

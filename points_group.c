@@ -12,28 +12,28 @@
 static Vector2 sample_points[sample_points_cap];
 
 static points_group_t* points_group_init(points_group_t* g, int group_id);
-static points_group_t* points_group_get(points_group_t* pg_array, int* pg_array_len, int pg_array_cap, int group);
+static points_group_t* points_group_get(points_group_t* pg_array, size_t* pg_array_len, size_t pg_array_cap, int group);
 static void points_group_push_point(points_group_t* g, Vector2 v);
 static void points_group_deinit(points_group_t* g);
 static Vector2 interpolate(Vector2 a, Vector2 b, float x);
 static Vector2 const* binary_search(Vector2 const* lb, Vector2 const* ub, float x_value);
-static bool points_group_realloc(points_group_t* pg, int new_cap);
-static int points_group_sample_points(points_group_t const* g, Rectangle rect, Vector2* out_points, int max_number_of_points);
+static bool points_group_realloc(points_group_t* pg, size_t new_cap);
+static size_t points_group_sample_points(points_group_t const* g, Rectangle rect, Vector2* out_points, size_t max_number_of_points);
 
-void points_group_push_y(points_group_t* pg_array, int* pg_array_len, int pg_array_cap, float y, int group) {
+void points_group_push_y(points_group_t* pg_array, size_t* pg_array_len, size_t pg_array_cap, float y, int group) {
   points_group_t* pg = points_group_get(pg_array, pg_array_len, pg_array_cap, group);
-  points_group_push_point(pg, (Vector2){ .x = pg->len, .y = y });
+  points_group_push_point(pg, (Vector2){ .x = (float)pg->len, .y = y });
 }
 
-void points_group_push_xy(points_group_t* pg_array, int* pg_array_len, int pg_array_cap, float x, float y, int group) {
+void points_group_push_xy(points_group_t* pg_array, size_t* pg_array_len, size_t pg_array_cap, float x, float y, int group) {
   points_group_t* pg = points_group_get(pg_array, pg_array_len, pg_array_cap, group);
   points_group_push_point(pg, (Vector2){ .x = x, .y = y });
 }
 
-void points_group_clear(points_group_t* pg_array, int* pg_array_len, int group_id) {
-  int len = *pg_array_len;
+void points_group_clear(points_group_t* pg_array, size_t* pg_array_len, int group_id) {
+  size_t len = *pg_array_len;
   bool found = false;
-  for (int i = 0; i < len; ++i) {
+  for (size_t i = 0; i < len; ++i) {
     if (pg_array[i].group_id == group_id) {
       found = true;
       points_group_deinit(&pg_array[i]);
@@ -48,19 +48,20 @@ void points_group_clear(points_group_t* pg_array, int* pg_array_len, int group_i
   }
 }
 
-void points_group_clear_all(points_group_t* pg_array, int* pg_array_len) {
-  int len = *pg_array_len;
-  for (int i = 0; i < len; ++i) {
+void points_group_clear_all(points_group_t* pg_array, size_t* pg_array_len) {
+  size_t len = *pg_array_len;
+  for (size_t i = 0; i < len; ++i) {
     points_group_t* g = &pg_array[i];
     points_group_deinit(g);
   }
-  memset(pg_array, 0, sizeof(pg_array[0]) * *pg_array_len);
+  memset(pg_array, 0, sizeof(points_group_t) * *pg_array_len);
   *pg_array_len = 0;
 }
 
-void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_array_cap) {
+void points_group_add_test_points(points_group_t* pg_array, size_t* pg_len, size_t pg_array_cap) {
   for (int harm = 1; harm <= 4; ++harm) {
-    int group = harm, points_to_add = 1024;
+    int group = harm;
+    size_t points_to_add = 1024;
     points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, group);
     // This can only be called from render thread and render thread must realloc points array.
     if (g->cap <= g->len + points_to_add) {
@@ -68,10 +69,10 @@ void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_
         continue;
       }
     }
-    for(int i = 0; i < points_to_add; ++i) {
-      float x = g->len*.1;
-      float y = (float)x*0.1;
-      Vector2 p = {x*.1, .1*harm*sin(10.*y/(1<<harm)) };
+    for(size_t i = 0; i < points_to_add; ++i) {
+      float x = (float)g->len*.1f;
+      float y = (float)x*0.1f;
+      Vector2 p = {x*.1f, .1f*(float)harm*sinf(10.f*y/(float)(1<<harm)) };
       points_group_push_point(g, p);
     }
   }
@@ -79,35 +80,34 @@ void points_group_add_test_points(points_group_t* pg_array, int* pg_len, int pg_
     printf("i = %d\n", i);
     int group = 4;
     points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, group);
-    float t = (1 + g->len)*.1;
-    float x = sqrtf(t)*cos(log2f(t));
-    float y = sqrtf(t)*sin(log2f(t));
+    float t = (float)(1 + g->len)*.1f;
+    float x = sqrtf(t)*cosf(log2f(t));
+    float y = sqrtf(t)*sinf(log2f(t));
     Vector2 p = {x, y };
     points_group_push_point(g, p);
   }
   {
     points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, 6);
-    int l = g->len;
+    int l = (int)g->len;
     for(int i = 0; i < 0; ++i) {
       for(int j = 0; j < 0; ++j) {
         printf("i = %d\n", i);
-        int group = 6;
-        float x = -50 + j + l;
-        float y = (-50 + (i - j) + l) * (i % 2 == 0 ? 1 : -1);
-        Vector2 p = {x, y};
+        int x = -50 + j + l;
+        int y = (-50 + (i - j) + l) * (i % 2 == 0 ? 1 : -1);
+        Vector2 p = {(float)x, (float)y};
         points_group_push_point(g, p);
       }
     }
   }
 }
 
-void points_groups_draw(points_group_t* gs, int len, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Color* colors, Rectangle rect, int debug) {
-  for (int j = 0; j < len; ++j) {
+void points_groups_draw(points_group_t* gs, size_t len, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Color* colors, Rectangle rect, int debug) {
+  for (size_t j = 0; j < len; ++j) {
     points_group_t * g = &gs[j];
     if (g->is_selected) {
       Color c = colors[j];
       if (g->is_sorted) {
-        int samp_len = points_group_sample_points(g, rect, sample_points, sample_points_cap);
+        size_t samp_len = points_group_sample_points(g, rect, sample_points, sample_points_cap);
         if (samp_len > 1) smol_mesh_gen_line_strip(line_mesh, sample_points, samp_len, c);
       } else {
         g->qt_expands = quad_tree_draw(g->qt, c, rect, line_mesh, quad_mesh, g->points, g->len, debug);
@@ -124,15 +124,15 @@ void points_groups_draw(points_group_t* gs, int len, smol_mesh_t* line_mesh, smo
   }
 }
 
-static int points_group_sample_points(points_group_t const* g, Rectangle rect, Vector2* out_points, int max_number_of_points) {
+static size_t points_group_sample_points(points_group_t const* g, Rectangle rect, Vector2* out_points, size_t max_number_of_points) {
   if (g->len == 0) {
     return 0;
   }
-  int out_index = 0, i = 0;
-  float step = 1.1*rect.width/max_number_of_points;
+  size_t out_index = 0, i = 0;
+  float step = 1.1f*rect.width/(float)max_number_of_points;
   Vector2 const* lb = g->points, *ub = &g->points[g->len - 1];
   while (lb != NULL && i < max_number_of_points) {
-    float cur = rect.x + step * i++;
+    float cur = rect.x + step * (float)(i++);
     Vector2 const* clb = binary_search(lb, ub, cur); // Clb will alway be LESS than g->len - 1, so Clb + 1 will always be LESS OR EQUAL to g->len - 1
     if (clb != NULL) {
       out_points[out_index++] = interpolate(clb[0], clb[1], cur);
@@ -152,7 +152,7 @@ static points_group_t* points_group_init(points_group_t* g, int group_id) {
     return g;
 }
 
-static points_group_t* points_group_get(points_group_t* pg_array, int* pg_array_len, int pg_array_cap, int group) {
+static points_group_t* points_group_get(points_group_t* pg_array, size_t* pg_array_len, size_t pg_array_cap, int group) {
   assert(pg_array);
   assert(pg_array_len != NULL);
 
@@ -160,7 +160,7 @@ static points_group_t* points_group_get(points_group_t* pg_array, int* pg_array_
     return points_group_init(&pg_array[(*pg_array_len)++], group);
   }
 
-  for (int i = 0; i < *pg_array_len; ++i) {
+  for (size_t i = 0; i < *pg_array_len; ++i) {
     if (pg_array[i].group_id == group) {
       return &pg_array[i];
     }
@@ -172,8 +172,8 @@ static points_group_t* points_group_get(points_group_t* pg_array, int* pg_array_
 
 static void points_group_init_quad_tree(points_group_t* g) {
   g->qt = quad_tree_malloc();
-  for (int i = 0; i < g->len; ++i)
-    quad_tree_add_point(g->qt, g->points, g->points[i], i);
+  for (size_t i = 0; i < g->len; ++i)
+    quad_tree_add_point(g->qt, g->points, i);
 }
 
 static void points_group_push_point(points_group_t* g, Vector2 v) {
@@ -186,7 +186,7 @@ static void points_group_push_point(points_group_t* g, Vector2 v) {
   }
   g->points[g->len] = v;
   if (!g->is_sorted) {
-    quad_tree_add_point(g->qt, g->points, g->points[g->len], g->len);
+    quad_tree_add_point(g->qt, g->points, g->len);
   }
   ++g->len;
 }
@@ -221,7 +221,7 @@ static Vector2 const* binary_search(Vector2 const* lb, Vector2 const* ub, float 
   return lb;
 }
 
-static bool points_group_realloc(points_group_t* pg, int new_cap) {
+static bool points_group_realloc(points_group_t* pg, size_t new_cap) {
     Vector2* new_arr = realloc(pg->points, new_cap * sizeof(Vector2));
     if (new_arr == NULL) {
       fprintf(stderr, "Out of memory. Can't add any more lines. Buy more RAM, or close Chrome");

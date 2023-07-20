@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 void q_init(q_commands* q) {
-  int cap = 1024 * 1024;
+  size_t cap = 1024 * 1024;
   q->commands = malloc(cap * sizeof(q->commands[0]));
   q->capacity = cap;
   q->read_index = 0;

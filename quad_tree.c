@@ -19,14 +19,13 @@ static void quad_tree_extend_rect(Rectangle* rect, Vector2 point);
 static void quad_tree_split(quad_tree_t* rect);
 static void _quad_tree_draw_lines(quad_tree_t* qt);
 //TODO: Point need not be passed as functon argument 
-static int _quad_tree_add_point(quad_tree_t* root, Vector2 point, int index);
+static int _quad_tree_add_point(quad_tree_t* root, size_t index);
 static void quad_tree_draw_rects(quad_tree_t* qt);
-static Vector2 quad_tree_mid_point(quad_tree_t const * qt, int n);
+static Vector2 quad_tree_mid_point(quad_tree_t const * qt, size_t n);
 static void quad_tree_copy(quad_tree_t* dest, quad_tree_t const* src);
 static void quad_tree_draw_rects_for_point(quad_tree_t* qt, Vector2 point);
 static bool should_balance(quad_tree_t* t);
-static void quad_tree_extend_bb(Rectangle* bb, Vector2 point);
-static int quad_tree_sort_groups(quad_tree_groups_t* groups, int len);
+static size_t quad_tree_sort_groups(quad_tree_groups_t* groups, size_t len);
 static void quad_tree_balance(quad_tree_t* dest, quad_tree_t const * qt, int depth);
 static void quad_tree_print_info(quad_tree_t* qt, Vector2 x, int depth);
 static int _quad_tree_print_dot(quad_tree_t* t, int* n);
@@ -37,7 +36,7 @@ static void quad_tree_visit(quad_tree_t* root, quad_tree_visitor enter, quad_tre
 static int* _c;
 static Rectangle _screen;
 static Vector2 const * _all_points;
-static int _all_points_count;
+static size_t _all_points_count;
 static smol_mesh_t* _line_mesh;
 static smol_mesh_t* _quad_mesh;
 static Color _color;
@@ -46,7 +45,7 @@ static quad_tree_root_t* _root;
 
 static bool balancing = false;
 
-int quad_tree_draw(quad_tree_root_t* qt, Color color, Rectangle screen, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Vector2* all_points, int all_points_count, int debug) {
+int quad_tree_draw(quad_tree_root_t* qt, Color color, Rectangle screen, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Vector2* all_points, size_t all_points_count, int debug) {
   int c = 0;
   _root = qt;
   _c = &c;
@@ -65,10 +64,10 @@ int quad_tree_draw(quad_tree_root_t* qt, Color color, Rectangle screen, smol_mes
     quad_tree_print_info(qt->root, graph_mouse_position, 0);
   }
   // Draw temp points
-  for (int i = 0; i < qt->temp_length; ++i) {
-    int index = qt->temp[i];
-    int len = 0;
-    if (index > 0) { ++index; ++len; }
+  for (size_t i = 0; i < qt->temp_length; ++i) {
+    size_t index = qt->temp[i];
+    size_t len = 0;
+    if (index > 0) { --index; ++len; }
     if (index < all_points_count) ++len;
     smol_mesh_gen_line_strip(line_mesh, &all_points[index], len, color);
   }
@@ -136,8 +135,8 @@ static quad_tree_t* quad_tree_node_malloc(Vector2 split_point) {
 }
 
 static void _quad_tree_root_womit(quad_tree_root_t* root) {
-  for (int i = 0; i < root->temp_length; ++i) {
-    _quad_tree_add_point(root->root, _all_points[root->temp[i]], root->temp[i]);
+  for (size_t i = 0; i < root->temp_length; ++i) {
+    _quad_tree_add_point(root->root, root->temp[i]);
   }
   root->temp_length = 0;
 }
@@ -176,17 +175,17 @@ static void quad_tree_change_root(quad_tree_root_t* root) {
   quad_tree_extend_rect(&new_root->bounds, sp);
 }
 
-bool quad_tree_add_point(quad_tree_root_t* root, Vector2 const * all_points, Vector2 point, int index) {
+bool quad_tree_add_point(quad_tree_root_t* root, Vector2 const * all_points, size_t index) {
   _all_points = all_points;
   _root = root;
   Vector2 p = all_points[index];
   assert(root->temp_length < QUAD_TREE_ROOT_TEMP_CAP);
-  root->temp[root->temp_length++] = index;
-  float factor = (float)(root->temp_length - 1) / (root->temp_length);
+  root->temp[root->temp_length++] = (size_t)index;
+  float factor = (float)(root->temp_length - 1) / (float)(root->temp_length);
   root->temp_mid_point.x *= factor;
   root->temp_mid_point.y *= factor;
-  root->temp_mid_point.x += p.x / (root->temp_length);
-  root->temp_mid_point.y += p.y / (root->temp_length);
+  root->temp_mid_point.x += p.x / (float)(root->temp_length);
+  root->temp_mid_point.y += p.y / (float)(root->temp_length);
   if (root->temp_length < QUAD_TREE_ROOT_TEMP_CAP)
     return true;
 
@@ -203,8 +202,9 @@ bool quad_tree_add_point(quad_tree_root_t* root, Vector2 const * all_points, Vec
   return false;
 }
 
-static int _quad_tree_add_point(quad_tree_t* root, Vector2 point, int index) {
+static int _quad_tree_add_point(quad_tree_t* root, size_t index) {
   int ret = 0;
+  Vector2 point = _all_points[index];
   // Check for NaN
   if (point.x != point.x) return false;
   if (point.y != point.y) return false;
@@ -216,7 +216,7 @@ static int _quad_tree_add_point(quad_tree_t* root, Vector2 point, int index) {
       memset(root->groups, 0, sizeof(quad_tree_groups_t)*256); 
       root->groups_cap = 256;
     }
-    for (int i = 0; i < root->groups_cap; ++i) {
+    for (size_t i = 0; i < root->groups_cap; ++i) {
       if (root->groups[i].length == 0) {
         root->groups[i].start_index = index;
         root->groups[i].length = 1;
@@ -236,15 +236,15 @@ static int _quad_tree_add_point(quad_tree_t* root, Vector2 point, int index) {
       quad_tree_extend_rect(&root->bounds, point);
     }
     if (!is_ok) {
-      int d = quad_tree_sort_groups(root->groups, root->groups_len);
+      size_t d = quad_tree_sort_groups(root->groups, root->groups_len);
       if (d) {
         root->groups_len -= d;
-        printf("Successful groups sort %d\n", d);
+        printf("Successful groups sort %lu\n", d);
       } else {
         quad_tree_split(root);
         assert(0);
       }
-      _quad_tree_add_point(root, point, index);
+      _quad_tree_add_point(root, index);
     } else {
       ++root->count;
       if (root->count > QUAD_TREE_SPLIT_COUNT)
@@ -259,7 +259,7 @@ static int _quad_tree_add_point(quad_tree_t* root, Vector2 point, int index) {
       quad_tree_extend_rect(&root->bounds, point);
     }
     ++root->count;
-    int child_should_balance = _quad_tree_add_point(&root->children[node_index], point, index);
+    int child_should_balance = _quad_tree_add_point(&root->children[node_index], index);
     if (!balancing && _root->balanc_enable) {
       bool root_shuld_balance = should_balance(root);
       if (child_should_balance > 1 && root_shuld_balance) {
@@ -275,22 +275,24 @@ static int _quad_tree_add_point(quad_tree_t* root, Vector2 point, int index) {
       }
     }
   }
-  float factor = (float)(root->count - 1) / (root->count);
+  float factor = (float)(root->count - 1) / (float)(root->count);
   root->mid_point.x *= factor;
   root->mid_point.y *= factor;
-  root->mid_point.x += point.x / (root->count);
-  root->mid_point.y += point.y / (root->count);
-  //quad_tree_check(root);
+  root->mid_point.x += point.x / (float)(root->count);
+  root->mid_point.y += point.y / (float)(root->count);
+  //quad_tree_check(dest, all_points);
+  assert(CheckCollisionPointRec(root->mid_point, root->bounds));
+  quad_tree_check(root);
   return ret;
 }
 
 static void quad_tree_check(quad_tree_t* rect) {
-  int sum = 0;
+  size_t sum = 0;
   if (rect->is_leaf) {
-    for (int i = 0; i < rect->groups_len; ++i) {
+    for (size_t i = 0; i < rect->groups_len; ++i) {
       sum += rect->groups[i].length;
-      for (int j = 0; j < rect->groups[i].length; ++j) {
-        assert(CheckCollisionPointRec(_all_points[rect->groups[i].start_index + j], rect->bounds));
+      for (size_t j = 0; j < rect->groups[i].length; ++j) {
+        //assert(CheckCollisionPointRec(_all_points[rect->groups[i].start_index + j], rect->bounds));
       }
     }
     assert(sum == rect->count);
@@ -315,9 +317,9 @@ static void quad_tree_split(quad_tree_t* rect) {
   rect->split_point = sp;
   rect->count = 0;
   rect->children = quad_tree_malloc_children();
-  for (int i = 0; i < rect->groups_len; ++i) {
-    for (int j = 0; j < rect->groups[i].length; ++j) {
-      _quad_tree_add_point(rect, _all_points[rect->groups[i].start_index + j], rect->groups[i].start_index + j);
+  for (size_t i = 0; i < rect->groups_len; ++i) {
+    for (size_t j = 0; j < rect->groups[i].length; ++j) {
+      _quad_tree_add_point(rect, rect->groups[i].start_index + j);
     }
   }
   free(rect->groups);
@@ -350,7 +352,7 @@ static void quad_tree_extend_rect(Rectangle* rect, Vector2 point) {
 }
 
 static float quad_tree_calc_baddnes(quad_tree_t const * qt) {
-  float badnes = (MAX(MAX(qt->children[0].count, qt->children[1].count), MAX(qt->children[2].count, qt->children[3].count))) / (float)qt->count;
+  float badnes = (float)(MAX(MAX(qt->children[0].count, qt->children[1].count), MAX(qt->children[2].count, qt->children[3].count))) / (float)qt->count;
   return badnes;
 }
 
@@ -378,12 +380,12 @@ static void quad_tree_balance(quad_tree_t* dest, quad_tree_t const * qt, int dep
 }
 
 static void quad_tree_copy(quad_tree_t* dest, quad_tree_t const * src) {
-  int dest_start = dest->count;
+  size_t dest_start = dest->count;
   if (src->is_leaf) {
-    for (int i = 0; i < src->groups_len; ++i) {
+    for (size_t i = 0; i < src->groups_len; ++i) {
       if (src->groups[i].length == 0) break;
-      for (int j = 0; j < src->groups[i].length; ++j) {
-        _quad_tree_add_point(dest, _all_points[src->groups[i].start_index + j], src->groups[i].start_index + j);
+      for (size_t j = 0; j < src->groups[i].length; ++j) {
+        _quad_tree_add_point(dest, src->groups[i].start_index + j);
       }
     }
   } else {
@@ -395,7 +397,7 @@ static void quad_tree_copy(quad_tree_t* dest, quad_tree_t const * src) {
   return;
 }
 
-static Vector2 quad_tree_mid_point(quad_tree_t const * qt, int n) {
+static Vector2 quad_tree_mid_point(quad_tree_t const * qt, size_t n) {
   (void)n;
   float bx = qt->bounds.width/2, by = qt->bounds.height/2;
   float b = MAX(bx, by);
@@ -430,16 +432,16 @@ static void quad_tree_print_info(quad_tree_t* qt, Vector2 x, int depth) {
   }
   //if (!CheckCollisionPointRec(x, qt->bounds)) return;
   if (qt->is_leaf) {
-    int l = qt->groups_len;
+    size_t l = qt->groups_len;
     indent(depth);
-    printf("Leaf: %d groups, (%f, %f, %f, %f)\n", l, qt->bounds.x, qt->bounds.y, qt->bounds.width, qt->bounds.height);
-    for (int i = 0; i < l; ++i) {
+    printf("Leaf: %ld groups, (%f, %f, %f, %f)\n", l, qt->bounds.x, qt->bounds.y, qt->bounds.width, qt->bounds.height);
+    for (size_t i = 0; i < l; ++i) {
       indent(depth + 1);
-      printf("%d - %d (%d)\n", qt->groups[i].start_index, qt->groups[i].start_index + qt->groups[i].length, qt->groups[i].length);
+      printf("%lu - %lu (%lu)\n", qt->groups[i].start_index, qt->groups[i].start_index + qt->groups[i].length, qt->groups[i].length);
     }
   } else {
     indent(depth);
-    printf("Node: %d points, (%f, %f, %f, %f)\n", qt->count, qt->bounds.x, qt->bounds.y, qt->bounds.width, qt->bounds.height);
+    printf("Node: %ld points, (%f, %f, %f, %f)\n", qt->count, qt->bounds.x, qt->bounds.y, qt->bounds.width, qt->bounds.height);
     for (int i = 0; i < QUAD_TREE_DIR_COUNT; ++i) {
       quad_tree_print_info(&qt->children[i], x, depth + 1);
     }
@@ -447,7 +449,7 @@ static void quad_tree_print_info(quad_tree_t* qt, Vector2 x, int depth) {
 }
 
 static bool should_balance(quad_tree_t* t) {
-  return !t->is_leaf && t->count < _root->balanc_max_elements && t->count > _root->balanc_min_elements && quad_tree_calc_baddnes(t) > _root->balanc_max_baddness;
+  return !t->is_leaf && (int)t->count < _root->balanc_max_elements && (int)t->count > _root->balanc_min_elements && quad_tree_calc_baddnes(t) > _root->balanc_max_baddness;
 }
 
 static int quad_tree_sort_groups_cop(const quad_tree_groups_t* a, const quad_tree_groups_t* b) {
@@ -456,13 +458,14 @@ static int quad_tree_sort_groups_cop(const quad_tree_groups_t* a, const quad_tre
   return -a->start_index > -b->start_index;
 }
 
-static int quad_tree_sort_groups(quad_tree_groups_t* groups, int len) {
+static size_t quad_tree_sort_groups(quad_tree_groups_t* groups, size_t len) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
   qsort(groups, len, sizeof(quad_tree_groups_t), quad_tree_sort_groups_cop);
 #pragma GCC diagnostic pop
-  int c = 0;
-  for (int i = 1; i < len; ++i) {
+  size_t c = 0;
+  for (size_t i = 1; i < len; ++i) {
+    size_t start = groups[i - 1].length;
     if (groups[i - 1].start_index <= groups[i].start_index + groups[i].length && groups[i].length > 0) {
       if (groups[i].start_index + groups[i].length < groups[i - 1].start_index + groups[i - 1].length)
         groups[i - 1].length += (groups[i - 1].start_index - groups[i].start_index);
@@ -470,13 +473,13 @@ static int quad_tree_sort_groups(quad_tree_groups_t* groups, int len) {
         groups[i - 1].length += (groups[i].length);
       groups[i - 1].start_index = groups[i].start_index;
       ++c;
-      for (int j = i + 1; j < len; ++j) {
+      for (size_t j = i + 1; j < len; ++j) {
         groups[j - 1] = groups[j];
       }
       groups[len - 1] = (quad_tree_groups_t){0};
       --i;
+      assert(start <= groups[i].length);
     }
-    assert(groups[i].length >= 0);
   }
   return c;
 }
@@ -533,7 +536,7 @@ static void quad_tree_draw_rects(quad_tree_t* qt) {
 static void _quad_tree_draw_lines(quad_tree_t* qt) {
   if (!CheckCollisionRecs(qt->bounds, _screen)) return;
   if (qt->bounds.height * qt->bounds.width < 0.00003 * _screen.width * _screen.height) {
-    smol_mesh_gen_quad(_quad_mesh, qt->bounds, (Vector2){0,0}, _color);
+    smol_mesh_gen_quad(_quad_mesh, qt->bounds, qt->mid_point, _color);
     return;
   }
   if (!qt->is_leaf) {
@@ -543,15 +546,16 @@ static void _quad_tree_draw_lines(quad_tree_t* qt) {
     return;
   }
   ++*_c;
-  for (int i = 0; i < qt->groups_len; ++i) {
+  for (size_t i = 0; i < qt->groups_len; ++i) {
     Vector2 const * ps = &_all_points[qt->groups[i].start_index];
-    int l = qt->groups[i].length;
+    size_t l = qt->groups[i].length;
     if (ps != _all_points) {
       ps -= 1;
       l += 1;
     }
-    for (int j = 0; j < l; j+=PTOM_COUNT) {
-      int len = MIN(l - j, PTOM_COUNT);
+    for (size_t j = 0; j < l; j+=PTOM_COUNT) {
+      assert(l > j);
+      size_t len = MIN(l - j, PTOM_COUNT);
       smol_mesh_gen_line_strip(_line_mesh, ps + j, len, _color);
     }
   }
@@ -560,10 +564,10 @@ static void _quad_tree_draw_lines(quad_tree_t* qt) {
 static int _quad_tree_print_dot(quad_tree_t* t, int* n) {
   int id = ++*n;
   if (t->is_leaf) {
-    printf(" id%d [label=\"%f,%f,%f,%f\\n%d\"]\n", id, t->bounds.x, t->bounds.y, t->bounds.width, t->bounds.height, t->count);
+    printf(" id%d [label=\"%f,%f,%f,%f\\n%lu\"]\n", id, t->bounds.x, t->bounds.y, t->bounds.width, t->bounds.height, t->count);
     return id;
   } else {
-    printf(" id%d [label=\"%f,%f,%f,%f\\l%f,%f\\l%d\"]\n", id, t->bounds.x, t->bounds.y, t->bounds.width, t->bounds.height, t->split_point.x, t->split_point.y, t->count);
+    printf(" id%d [label=\"%f,%f,%f,%f\\l%f,%f\\l%lu\"]\n", id, t->bounds.x, t->bounds.y, t->bounds.width, t->bounds.height, t->split_point.x, t->split_point.y, t->count);
     for (int i = 0; i < QUAD_TREE_DIR_COUNT; ++i) {
       int c = _quad_tree_print_dot(&t->children[i], n);
       printf(" id%d -> id%d;\n", id, c);
@@ -592,10 +596,12 @@ static void quad_tree_visit(quad_tree_t* root, quad_tree_visitor enter, quad_tre
 
 typedef struct { int cur_depth, max_depth; } quad_tree_max_depth_data;
 static void quad_tree_max_depth_visit_enter(quad_tree_t* node, quad_tree_max_depth_data* count) {
+  (void)node;
   count->cur_depth++;
   if (count->cur_depth > count->max_depth) count->max_depth = count->cur_depth;
 }
 static void quad_tree_max_depth_visit_exit(quad_tree_t* node, quad_tree_max_depth_data* count) {
+  (void)node;
   --count->cur_depth;
 }
 
@@ -608,6 +614,7 @@ int quad_tree_max_depth(quad_tree_root_t* r) {
 }
 
 static void quad_tree_count_nodes_visit_enter(quad_tree_t* node, int* count) {
+  (void)node;
   ++*count;
 }
 int quad_tree_count_nodes(quad_tree_root_t* r) {
@@ -619,9 +626,9 @@ typedef struct {float good_sum; int nodes_count; } quad_tree_average_goodness_da
 static void quad_tree_average_goodness_enter(quad_tree_t* qt, quad_tree_average_goodness_data* data) {
   if (qt->is_leaf) return;
   float goodness = 0;
-  int optim = qt->count / 4;
+  int optim = (int)qt->count / 4;
   for (int i = 0; i < 4; ++i) {
-    goodness += (1 - abs(optim - qt->children->count) / (float)optim) / 4;
+    goodness += (1.f - (float)abs(optim - (int)qt->children->count) / (float)optim) / 4.f;
   }
   //assert(goodness >= 0 && goodness <= 1);
   data->good_sum += goodness;
@@ -631,22 +638,23 @@ static void quad_tree_average_goodness_enter(quad_tree_t* qt, quad_tree_average_
 float quad_tree_average_goodness(quad_tree_root_t* r) {
   quad_tree_average_goodness_data data = {0};
   quad_tree_visit(r->root, quad_tree_average_goodness_enter, NULL, &data);
-  return data.good_sum/data.nodes_count;
+  return (float)data.good_sum/(float)data.nodes_count;
 }
 typedef struct {int cur_depth; long long sum;} quad_tree_average_depth_data;
 static void quad_tree_average_depth_enter(quad_tree_t* r, quad_tree_average_depth_data* data) {
   ++data->cur_depth;
   if (r->is_leaf) {
-    data->sum += r->count * data->cur_depth;
+    data->sum += (int)r->count * data->cur_depth;
   }
 }
 static void quad_tree_average_depth_exit(quad_tree_t* r, quad_tree_average_depth_data* data) {
+  (void)r;
   --data->cur_depth;
 }
 float quad_tree_average_depth(quad_tree_root_t* r) {
   quad_tree_average_depth_data data = {0};
-  quad_tree_visit(r->root, quad_tree_average_depth_enter, NULL, &data);
-  return data.sum/(double)r->root->count;
+  quad_tree_visit(r->root, quad_tree_average_depth_enter, quad_tree_average_depth_exit, &data);
+  return (float)data.sum/(float)r->root->count;
 }
 
 #pragma GCC diagnostic pop
