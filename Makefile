@@ -79,5 +79,5 @@ clean:
 
 .PHONY: bench
 bench:
-	gcc $(CCFLAGS_DBG) -o bin/bench ./benchmark.c ./quad_tree.c ./smol_mesh.c ./graph.c ./points_group.c ./q.c -lm -lraylib && ./bin/bench
+	gcc $(CCFLAGS_DBG) -o bin/bench ./benchmark.c ./quad_tree.c ./smol_mesh.c ./graph.c ./points_group.c ./q.c -lm -lraylib
 

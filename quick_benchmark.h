@@ -105,7 +105,7 @@ unsigned long long __rdtsc(void);
 			_end = (uint64_t)QB_SETTINGS_BENCH_FUNC(); \
 			_tot += _end - _start; \
 		} \
-		fprintf(file, "%-50s calls: %.4d %10s %lld.%lld ms\n", \
+		fprintf(file, "%-50s calls: %.4d %10s %llu.%llu ms\n", \
 			display, (int)n_runs, "time:", _tot / n_runs / 1000000, _tot / n_runs % 1000000 / 1000); \
 	} while(0)
 

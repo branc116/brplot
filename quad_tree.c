@@ -19,7 +19,7 @@ static void quad_tree_extend_rect(Rectangle* rect, Vector2 point);
 static void quad_tree_split(quad_tree_t* rect);
 static void _quad_tree_draw_lines(quad_tree_t* qt);
 //TODO: Point need not be passed as functon argument 
-static bool _quad_tree_add_point(quad_tree_t* root, Vector2 point, int index);
+static int _quad_tree_add_point(quad_tree_t* root, Vector2 point, int index);
 static void quad_tree_draw_rects(quad_tree_t* qt);
 static Vector2 quad_tree_mid_point(quad_tree_t const * qt, int n);
 static void quad_tree_copy(quad_tree_t* dest, quad_tree_t const* src);
@@ -42,11 +42,13 @@ static smol_mesh_t* _line_mesh;
 static smol_mesh_t* _quad_mesh;
 static Color _color;
 static int _debug;
+static quad_tree_root_t* _root;
 
-static bool balancing = true;
+static bool balancing = false;
 
 int quad_tree_draw(quad_tree_root_t* qt, Color color, Rectangle screen, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Vector2* all_points, int all_points_count, int debug) {
   int c = 0;
+  _root = qt;
   _c = &c;
   _screen = screen;
   _screen.y -= _screen.height; // Transform `y positive down` to `y positive up`
@@ -176,6 +178,7 @@ static void quad_tree_change_root(quad_tree_root_t* root) {
 
 bool quad_tree_add_point(quad_tree_root_t* root, Vector2 const * all_points, Vector2 point, int index) {
   _all_points = all_points;
+  _root = root;
   Vector2 p = all_points[index];
   assert(root->temp_length < QUAD_TREE_ROOT_TEMP_CAP);
   root->temp[root->temp_length++] = index;
@@ -200,8 +203,8 @@ bool quad_tree_add_point(quad_tree_root_t* root, Vector2 const * all_points, Vec
   return false;
 }
 
-static bool _quad_tree_add_point(quad_tree_t* root, Vector2 point, int index) {
-  bool ret = false;
+static int _quad_tree_add_point(quad_tree_t* root, Vector2 point, int index) {
+  int ret = 0;
   // Check for NaN
   if (point.x != point.x) return false;
   if (point.y != point.y) return false;
@@ -256,19 +259,27 @@ static bool _quad_tree_add_point(quad_tree_t* root, Vector2 point, int index) {
       quad_tree_extend_rect(&root->bounds, point);
     }
     ++root->count;
-    bool child_should_balance = _quad_tree_add_point(&root->children[node_index], point, index);
-    if (!balancing) {
-      bool root_shuld_balance = ret = should_balance(root);
-      if (child_should_balance && root_shuld_balance) {
+    int child_should_balance = _quad_tree_add_point(&root->children[node_index], point, index);
+    if (!balancing && _root->balanc_enable) {
+      bool root_shuld_balance = should_balance(root);
+      if (child_should_balance > 1 && root_shuld_balance) {
+        balancing = true;
         quad_tree_t dest = {0};
         quad_tree_balance(&dest, root, 0);
         _quad_tree_free(root);
         memcpy(root, &dest, sizeof(quad_tree_t));
-        ret = false;
+        ret = 0;
+        balancing = false;
+      } else {
+        ret = root_shuld_balance ? 1 + child_should_balance : 0;
       }
-      ret = should_balance(root);
     }
   }
+  float factor = (float)(root->count - 1) / (root->count);
+  root->mid_point.x *= factor;
+  root->mid_point.y *= factor;
+  root->mid_point.x += point.x / (root->count);
+  root->mid_point.y += point.y / (root->count);
   //quad_tree_check(root);
   return ret;
 }
@@ -348,8 +359,8 @@ static void quad_tree_balance(quad_tree_t* dest, quad_tree_t const * qt, int dep
     memcpy(dest, qt, sizeof(*dest));
     return;
   }
-  balancing = true;
-  printf("BALANCING baddness=%f, count=%d, depth=%d\n", quad_tree_calc_baddnes(qt), qt->count, depth);
+  //printf("BALANCING baddness=%f, count=%d, depth=%d\n", quad_tree_calc_baddnes(qt), qt->count, depth);
+  ++_root->balanc_count;
   dest->is_leaf = false;
   dest->split_point = quad_tree_mid_point(qt, qt->count);
   dest->children = quad_tree_malloc_children();
@@ -363,8 +374,7 @@ static void quad_tree_balance(quad_tree_t* dest, quad_tree_t const * qt, int dep
     }
   }
   //quad_tree_check(dest, all_points);
-  balancing = false;
-  printf("BALANCED baddness=%f, count=%d, depth=%d\n", quad_tree_calc_baddnes(dest), dest->count, depth);
+  //printf("BALANCED baddness=%f, count=%d, depth=%d\n", quad_tree_calc_baddnes(dest), dest->count, depth);
 }
 
 static void quad_tree_copy(quad_tree_t* dest, quad_tree_t const * src) {
@@ -437,7 +447,7 @@ static void quad_tree_print_info(quad_tree_t* qt, Vector2 x, int depth) {
 }
 
 static bool should_balance(quad_tree_t* t) {
-  return !t->is_leaf && t->count < 32*QUAD_TREE_SPLIT_COUNT && t->count > 16*QUAD_TREE_SPLIT_COUNT && (MAX(MAX(t->children[0].count, t->children[1].count), MAX(t->children[2].count, t->children[3].count))) > t->count * 0.9;
+  return !t->is_leaf && t->count < _root->balanc_max_elements && t->count > _root->balanc_min_elements && quad_tree_calc_baddnes(t) > _root->balanc_max_baddness;
 }
 
 static int quad_tree_sort_groups_cop(const quad_tree_groups_t* a, const quad_tree_groups_t* b) {
@@ -588,6 +598,9 @@ static void quad_tree_max_depth_visit_enter(quad_tree_t* node, quad_tree_max_dep
 static void quad_tree_max_depth_visit_exit(quad_tree_t* node, quad_tree_max_depth_data* count) {
   --count->cur_depth;
 }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 int quad_tree_max_depth(quad_tree_root_t* r) {
   quad_tree_max_depth_data data;
   quad_tree_visit(r->root, quad_tree_max_depth_visit_enter, quad_tree_max_depth_visit_exit, &data);
@@ -620,3 +633,20 @@ float quad_tree_average_goodness(quad_tree_root_t* r) {
   quad_tree_visit(r->root, quad_tree_average_goodness_enter, NULL, &data);
   return data.good_sum/data.nodes_count;
 }
+typedef struct {int cur_depth; long long sum;} quad_tree_average_depth_data;
+static void quad_tree_average_depth_enter(quad_tree_t* r, quad_tree_average_depth_data* data) {
+  ++data->cur_depth;
+  if (r->is_leaf) {
+    data->sum += r->count * data->cur_depth;
+  }
+}
+static void quad_tree_average_depth_exit(quad_tree_t* r, quad_tree_average_depth_data* data) {
+  --data->cur_depth;
+}
+float quad_tree_average_depth(quad_tree_root_t* r) {
+  quad_tree_average_depth_data data = {0};
+  quad_tree_visit(r->root, quad_tree_average_depth_enter, NULL, &data);
+  return data.sum/(double)r->root->count;
+}
+
+#pragma GCC diagnostic pop

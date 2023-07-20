@@ -117,6 +117,9 @@ typedef struct {
   int temp[QUAD_TREE_ROOT_TEMP_CAP], temp_length;
   Vector2 temp_mid_point;
   quad_tree_t* root;
+  float balanc_max_baddness;
+  int balanc_max_elements, balanc_min_elements, balanc_count;
+  bool balanc_enable;
 } quad_tree_root_t;
 
 
