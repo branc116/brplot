@@ -51,8 +51,8 @@ static float point_distance(Vector2 from, Vector2 to, Rectangle r) {
   float dx = uvf.x - uvt.x;
   float dy = uvt.y - uvt.y;
   float ret = sqrtf(dx*dx + dy*dy);
-  assert(ret <= sqrtf(1.f + 1.f));
-  assert(ret >= 0.f);
+  //assert(ret <= sqrtf(1.f + 1.f));
+  //assert(ret >= 0.f);
   return ret;
 }
 

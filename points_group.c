@@ -172,6 +172,10 @@ static points_group_t* points_group_get(points_group_t* pg_array, size_t* pg_arr
 
 static void points_group_init_quad_tree(points_group_t* g) {
   g->qt = quad_tree_malloc();
+  g->qt->balanc_enable = true;
+  g->qt->balanc_max_baddness = 0.69f;
+  g->qt->balanc_max_elements = 15360;
+  g->qt->balanc_min_elements = 256;
   for (size_t i = 0; i < g->len; ++i)
     quad_tree_add_point(g->qt, g->points, i);
 }
