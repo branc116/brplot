@@ -7,6 +7,7 @@ in vec3 vertexNormal;
 
 out vec2 normal;
 out vec3 color;
+out float dist;
 
 uniform vec2 offset;
 uniform vec4 resolution;
@@ -15,6 +16,7 @@ uniform vec2 screen;
 
 void main(void)
 {
+    dist = pow(1 - vertexPosition.z, 8.);
     normal = vertexNormal.xy;
     color = vertexColor;
     vec2 position = vertexPosition.xy;

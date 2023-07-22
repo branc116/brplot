@@ -51,50 +51,79 @@ static float point_distance(Vector2 from, Vector2 to, Rectangle r) {
   float dx = uvf.x - uvt.x;
   float dy = uvt.y - uvt.y;
   float ret = sqrtf(dx*dx + dy*dy);
-  //assert(ret <= sqrtf(1.f + 1.f));
-  //assert(ret >= 0.f);
-  return ret;
+  assert(ret <= 1.f);
+  assert(ret <= sqrtf(1.f + 1.f));
+  assert(ret >= 0.f);
+  return ret / sqrtf(1.f + 1.f);
 }
 
-void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 tangent, Color color) {
+void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 center, Color color) {
   size_t c = mesh->cur_len++;
-  if (c >= mesh->capacity) {
+  if (c + 1 >= mesh->capacity) {
     smol_mesh_update(mesh);
     smol_mesh_draw(mesh);
     c = mesh->cur_len++;
   }
   c*=18;
-  //assert(CheckCollisionPointRec(tangent, rect));
-  mesh->verticies[c+0] = rect.x;
-  mesh->verticies[c+1] = rect.y;
-  mesh->verticies[c+2] = point_distance(tangent, (Vector2){rect.x, rect.y}, rect);
-  mesh->verticies[c+3] = rect.x + rect.width;
-  mesh->verticies[c+4] = rect.y;
-  mesh->verticies[c+5] = point_distance(tangent, (Vector2){rect.x + rect.width, rect.y}, rect);
-  mesh->verticies[c+6] = rect.x + rect.width;
-  mesh->verticies[c+7] = rect.y + rect.height;
-  mesh->verticies[c+8] = point_distance(tangent, (Vector2){rect.x + rect.width, rect.y + rect.height}, rect);
-
-  mesh->verticies[c+9] = rect.x + rect.width;
-  mesh->verticies[c+10] = rect.y + rect.height;
-  mesh->verticies[c+11] = point_distance(tangent, (Vector2){rect.x + rect.width, rect.y + rect.height}, rect);
-  mesh->verticies[c+12] = rect.x;
-  mesh->verticies[c+13] = rect.y + rect.height;
-  mesh->verticies[c+14] = point_distance(tangent, (Vector2){rect.x, rect.y + rect.height}, rect);
-  mesh->verticies[c+15] = rect.x;
-  mesh->verticies[c+16] = rect.y;
-  mesh->verticies[c+17] = point_distance(tangent, (Vector2){rect.x, rect.y}, rect);
-  for (size_t i = 0; i < 18; i += 3) {
-    mesh->normals[c+i+0] = tangent.x;
-    mesh->normals[c+i+1] = tangent.y;
+  for (size_t i = 0; i < 18*2; i += 3) {
+    mesh->normals[c+i+0] = center.x;
+    mesh->normals[c+i+1] = center.y;
     mesh->normals[c+i+2] = 0;
   }
   Vector3 vc = {color.r/255.f, color.g/255.f, color.b/255.f};
-  for (size_t i = 0; i < 18; i += 3) {
+  for (size_t i = 0; i < 18*2; i += 3) {
     mesh->colors[c+i+0] = vc.x;
     mesh->colors[c+i+1] = vc.y;
     mesh->colors[c+i+2] = vc.z;
   }
+  float ld = point_distance(center, (Vector2){rect.x, rect.y}, rect),
+        rd = point_distance(center, (Vector2){rect.x + rect.width, rect.y}, rect),
+        ru = point_distance(center, (Vector2){rect.x + rect.width, rect.y + rect.height}, rect),
+        lu = point_distance(center, (Vector2){rect.x, rect.y + rect.height}, rect);
+  //float m = maxf(maxf(ld, rd), maxf(ru, lu));
+  //ld /= m; rd /= m; ru /= m; lu /= m;
+  //assert(CheckCollisionPointRec(tangent, rect));
+  mesh->verticies[c+0] = rect.x + rect.width;
+  mesh->verticies[c+1] = rect.y;
+  mesh->verticies[c+2] = rd;
+  mesh->verticies[c+3] = center.x;
+  mesh->verticies[c+4] = center.y;
+  mesh->verticies[c+5] = 0.f;
+  mesh->verticies[c+6] = rect.x;
+  mesh->verticies[c+7] = rect.y;
+  mesh->verticies[c+8] = ld;
+
+  mesh->verticies[c+9] = rect.x + rect.width;
+  mesh->verticies[c+10] = rect.y + rect.height;
+  mesh->verticies[c+11] = ru;
+  mesh->verticies[c+12] = center.x;
+  mesh->verticies[c+13] = center.y;
+  mesh->verticies[c+14] = 0.f;
+  mesh->verticies[c+15] = rect.x + rect.width;
+  mesh->verticies[c+16] = rect.y;
+  mesh->verticies[c+17] = rd;
+
+  c += 18;
+  mesh->cur_len++;
+  mesh->verticies[c+0] = rect.x;
+  mesh->verticies[c+1] = rect.y + rect.height;
+  mesh->verticies[c+2] = lu;
+  mesh->verticies[c+3] = center.x;
+  mesh->verticies[c+4] = center.y;
+  mesh->verticies[c+5] = 0.f;
+  mesh->verticies[c+6] = rect.x + rect.width;
+  mesh->verticies[c+7] = rect.y + rect.height;
+  mesh->verticies[c+8] = ru;
+
+  mesh->verticies[c+9] = rect.x;
+  mesh->verticies[c+10] = rect.y;
+  mesh->verticies[c+11] = ld;
+  mesh->verticies[c+12] = center.x;
+  mesh->verticies[c+13] = center.y;
+  mesh->verticies[c+14] = 0.f;
+  mesh->verticies[c+15] = rect.x;
+  mesh->verticies[c+16] = rect.y + rect.height;
+  mesh->verticies[c+17] = lu;
 }
 
 bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t len, Color color) {

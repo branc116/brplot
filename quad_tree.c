@@ -546,8 +546,9 @@ static void quad_tree_draw_rects(quad_tree_t* qt) {
 }
 
 static void _quad_tree_draw_lines(quad_tree_t* qt) {
+  if (qt->count == 0) return;
   if (!CheckCollisionRecs(qt->bounds, _screen)) return;
-  if (qt->bounds.height * qt->bounds.width < 0.00003 * _screen.width * _screen.height) {
+  if (qt->count > 10 && qt->bounds.height * qt->bounds.width < 0.0003 * _screen.width * _screen.height) {
     smol_mesh_gen_quad(_quad_mesh, qt->bounds, qt->mid_point, _color);
     return;
   }

@@ -8,26 +8,26 @@ int quad_tree_count_nodes(quad_tree_root_t* r);
 float quad_tree_average_goodness(quad_tree_root_t* r);
 float quad_tree_average_depth(quad_tree_root_t* r);
 
-void gen_rand_points(Vector2* data, int len) {
-  for (int i = 0 ; i < len; ++i) {
+void gen_rand_points(Vector2* data, size_t len) {
+  for (size_t i = 0 ; i < len; ++i) {
     float x = (float)rand() / (float)RAND_MAX;
     float y = (float)rand() / (float)RAND_MAX;
     data[i] = (Vector2){x, y};
   }
 }
 
-void gen_sin_points(Vector2* data, int len) {
-  for (int i = 0 ; i < len; ++i) {
-    float x = i;
-    float y = sinf(x/100);
+void gen_sin_points(Vector2* data, size_t len) {
+  for (size_t i = 0 ; i < len; ++i) {
+    float x = (float)i;
+    float y = sinf(x/100.f);
     data[i] = (Vector2){x, y};
   }
 }
 
-void insert_data_ordered(Vector2* data, int data_len) {
+void insert_data_ordered(Vector2* data, size_t data_len) {
   quad_tree_root_t* root = quad_tree_malloc();
-  for (int i = 0 ; i < data_len; ++i) {
-    quad_tree_add_point(root, data, data[i], i);
+  for (size_t i = 0 ; i < data_len; ++i) {
+    quad_tree_add_point(root, data, i);
   }
   printf("nodes = %d ", quad_tree_count_nodes(root));
   printf("goodnes = %.4f ", quad_tree_average_goodness(root));
@@ -35,10 +35,10 @@ void insert_data_ordered(Vector2* data, int data_len) {
   quad_tree_free(root);
 }
 
-void insert_data_reversed(Vector2* data, int data_len) {
+void insert_data_reversed(Vector2* data, size_t data_len) {
   quad_tree_root_t* root = quad_tree_malloc();
-  for (int i = 0 ; i < data_len; ++i) {
-    quad_tree_add_point(root, data, data[data_len - i - 1], data_len - i - 1);
+  for (size_t i = 0 ; i < data_len; ++i) {
+    quad_tree_add_point(root, data, data_len - i - 1);
   }
   printf("nodes = %d ", quad_tree_count_nodes(root));
   printf("goodnes = %.4f ", quad_tree_average_goodness(root));
@@ -46,11 +46,11 @@ void insert_data_reversed(Vector2* data, int data_len) {
   quad_tree_free(root);
 }
 
-void insert_data_out_in(Vector2* data, int data_len) {
+void insert_data_out_in(Vector2* data, size_t data_len) {
   quad_tree_root_t* root = quad_tree_malloc();
-  for (int i = 0 ; i < data_len/2; i++) {
-    quad_tree_add_point(root, data, data[data_len - i - 1], data_len - i - 1);
-    quad_tree_add_point(root, data, data[i], i);
+  for (size_t i = 0 ; i < data_len/2; i++) {
+    quad_tree_add_point(root, data, data_len - i - 1);
+    quad_tree_add_point(root, data, i);
   }
   printf("nodes = %d ", quad_tree_count_nodes(root));
   printf("goodnes = %.4f ", quad_tree_average_goodness(root));
@@ -59,17 +59,18 @@ void insert_data_out_in(Vector2* data, int data_len) {
 }
 #define len 1025*8*2
 void bench1(FILE* data_out) {
+  (void)data_out;
   Vector2 *data = malloc(sizeof(Vector2)*len);
   gen_rand_points(data, len);
   Vector2 *data_sin = malloc(sizeof(Vector2)*len);
   gen_sin_points(data_sin, len);
   QB_BENCH_BEGIN(stdout, 1, 1);
-      QB_BENCH_ADD(insert_data_ordered, data, len/16);
-      QB_BENCH_ADD(insert_data_ordered, data, len/4);
-      QB_BENCH_ADD(insert_data_ordered, data, len);
-      QB_BENCH_ADD(insert_data_reversed, data, len/16);
-      QB_BENCH_ADD(insert_data_reversed, data, len/4);
-      QB_BENCH_ADD(insert_data_reversed, data, len);
+//      QB_BENCH_ADD(insert_data_ordered, data, len/16);
+//      QB_BENCH_ADD(insert_data_ordered, data, len/4);
+//      QB_BENCH_ADD(insert_data_ordered, data, len);
+//      QB_BENCH_ADD(insert_data_reversed, data, len/16);
+//      QB_BENCH_ADD(insert_data_reversed, data, len/4);
+//      QB_BENCH_ADD(insert_data_reversed, data, len);
       QB_BENCH_ADD(insert_data_out_in, data, len/16);
       QB_BENCH_ADD(insert_data_out_in, data, len/4);
       QB_BENCH_ADD(insert_data_out_in, data, len);
@@ -86,9 +87,9 @@ void bench1(FILE* data_out) {
   free(data);
   free(data_sin);
 }
-void fun(quad_tree_root_t* root, Vector2* data, int data_len) {
-  for (int i = 0 ; i < data_len; i++) {
-    quad_tree_add_point(root, data, data[i], i);
+void fun(quad_tree_root_t* root, Vector2* data, size_t data_len) {
+  for (size_t i = 0 ; i < data_len; i++) {
+    quad_tree_add_point(root, data, i);
   }
 }
 void balanc_bench(FILE* data_out) {
@@ -97,7 +98,7 @@ void balanc_bench(FILE* data_out) {
   QB_BENCH_BEGIN(stdout, 1, 1);
     for (int k = 20; k < 65; k+=5) {
       for (int j = 1; j < 8; ++j) {
-        for (float i = 0.55; i <= .7; i+=0.02) { 
+        for (float i = 0.55f; i <= .7f; i+=0.02f) { 
           gen_sin_points(data_sin, len);
           quad_tree_root_t* root = quad_tree_malloc();
           root->balanc_enable = true;
@@ -128,7 +129,7 @@ int main(int argc, char ** argv) {
   fprintf(data_out, "SHITFUCK\n");
 
   if (argc <= 1) {
-    for (int i = 0; i < sizeof(all_bechs)/sizeof(bench); ++i) {
+    for (size_t i = 0; i < sizeof(all_bechs)/sizeof(bench); ++i) {
       all_bechs[i](data_out);
     }
   } else {

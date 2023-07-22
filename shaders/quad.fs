@@ -1,6 +1,7 @@
 #version 330
 in vec2 normal;
 in vec3 color;
+in float dist;
 
 out vec4 finalColor;
 
@@ -15,7 +16,7 @@ void main()
   r.z -= 4;
   r.y += 2;
   r.w -= 4;
-  finalColor.rgba = vec4(color, 1.0);
+  finalColor.rgba = dist * vec4(color, 1.0);
   finalColor.a = gl_FragCoord.x <= r.x || gl_FragCoord.x >= (r.x + r.z) || 
    gl_FragCoord.y <= r.y || gl_FragCoord.y >= (r.y + r.w) ? 0. : 1.;
 }
