@@ -16,7 +16,7 @@ uniform vec2 screen;
 
 void main(void)
 {
-    dist = pow(1 - vertexPosition.z, 8.);
+    dist = vertexPosition.z;
     normal = vertexNormal.xy;
     color = vertexColor;
     vec2 position = vertexPosition.xy;

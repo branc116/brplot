@@ -106,7 +106,7 @@ typedef struct {
 typedef struct _quad_tree_s {
   quad_tree_groups_t* groups;
   Rectangle bounds;
-  Vector2 split_point, mid_point, scatter;
+  Vector2 split_point, mid_point, tangent;
   struct _quad_tree_s* children;
   size_t count, groups_len, groups_cap;
   bool is_leaf;
@@ -164,7 +164,7 @@ typedef struct {
 
 
 smol_mesh_t* smol_mesh_malloc(size_t capacity, Shader s);
-void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 tangent, Color color);
+void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 mid_point, Vector2 tangent, Color color);
 // Only render thread can access this functions.
 bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t len, Color color);
 // Only render thread can access this functions.
@@ -219,6 +219,10 @@ bool q_push_safe(q_commands *q, q_command command);
 bool q_push(q_commands* q, q_command command);
 // Only render thread can access this functions.
 q_command q_pop(q_commands* q);
+
+static inline float maxf(float a, float b) {
+  return a > b ? a : b;
+}
 
 #ifdef __cplusplus
 }

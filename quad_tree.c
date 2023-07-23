@@ -31,6 +31,8 @@ static void quad_tree_print_info(quad_tree_t* qt, Vector2 x, int depth);
 static int _quad_tree_print_dot(quad_tree_t* t, int* n);
 static void quad_tree_check(quad_tree_t* rect);
 static void quad_tree_visit(quad_tree_t* root, quad_tree_visitor enter, quad_tree_visitor exit, void* data);
+static void help_rolling_average(Vector2* old_avg, Vector2 new_point, size_t new_count);
+static Vector2 help_get_tangent(size_t index);
 
 // A lot of functions in here are recursive, so passing a lot of stuff by arguments may not be optimal.
 static int* _c;
@@ -130,7 +132,7 @@ static quad_tree_t* quad_tree_node_malloc(Vector2 split_point) {
     nr->groups_cap = 0;
     nr->mid_point = (Vector2){0};
     nr->count = 0;
-    nr->scatter = (Vector2){0};
+    nr->tangent = (Vector2){0};
     nr->bounds = (Rectangle){0};
     return nr;
 }
@@ -141,6 +143,7 @@ static void _quad_tree_root_womit(quad_tree_root_t* root) {
   }
   root->temp_length = 0;
 }
+
 static void quad_tree_change_root(quad_tree_root_t* root) {
   Rectangle b = root->root->bounds;
   Vector2 p = root->temp_mid_point;
@@ -167,7 +170,7 @@ static void quad_tree_change_root(quad_tree_root_t* root) {
   quad_tree_t* new_root = quad_tree_node_malloc(sp);
   new_root->count = root->root->count;
   new_root->mid_point = root->root->mid_point;
-  new_root->scatter = root->root->scatter;
+  new_root->tangent = root->root->tangent;
   new_root->bounds = root->root->bounds;
   memcpy(&new_root->children[dir], root->root, sizeof(quad_tree_t));
   free(root->root);
@@ -275,14 +278,36 @@ static int _quad_tree_add_point(quad_tree_t* root, size_t index) {
     }
   }
   quad_tree_extend_rect(&root->bounds, point);
-  float factor = (float)(root->count - 1) / (float)(root->count);
-  root->mid_point.x *= factor;
-  root->mid_point.y *= factor;
-  root->mid_point.x += point.x / (float)(root->count);
-  root->mid_point.y += point.y / (float)(root->count);
+  help_rolling_average(&root->mid_point, point, root->count);
+  help_rolling_average(&root->tangent, help_get_tangent(index), root->count);
   //assert(CheckCollisionPointRec(root->mid_point, root->bounds));
   //quad_tree_check(root);
   return ret;
+}
+
+static Vector2 help_get_tangent(size_t index) {
+  Vector2 a, b;
+  if (index == 0) {
+    a = _all_points[index];
+    b = _all_points[index + 1];
+  } else {
+    b = _all_points[index];
+    a = _all_points[index - 1];
+  }
+  Vector2 tg = (Vector2){ b.x - a.x, b.y - a.y };
+  float tg_norm = sqrtf(tg.x * tg.x + tg.y * tg.y);
+  Vector2 tg_n = (Vector2){ tg.x / tg_norm, tg.y / tg_norm };
+  if (tg_n.x == tg_n.x && tg_n.y == tg_n.y)
+    return tg_n;
+  return (Vector2){0};
+}
+
+static void help_rolling_average(Vector2* old_avg, Vector2 new_point, size_t new_count) {
+  float factor = (float)(new_count - 1) / (float)(new_count);
+  old_avg->x *= factor;
+  old_avg->y *= factor;
+  old_avg->x += new_point.x / (float)(new_count);
+  old_avg->y += new_point.y / (float)(new_count);
 }
 
 static void quad_tree_check(quad_tree_t* rect) {
@@ -548,8 +573,8 @@ static void quad_tree_draw_rects(quad_tree_t* qt) {
 static void _quad_tree_draw_lines(quad_tree_t* qt) {
   if (qt->count == 0) return;
   if (!CheckCollisionRecs(qt->bounds, _screen)) return;
-  if (qt->count > 10 && qt->bounds.height * qt->bounds.width < 0.0003 * _screen.width * _screen.height) {
-    smol_mesh_gen_quad(_quad_mesh, qt->bounds, qt->mid_point, _color);
+  if (qt->count > 10 && qt->bounds.height * qt->bounds.width < 0.0001 * _screen.width * _screen.height) {
+    smol_mesh_gen_quad(_quad_mesh, qt->bounds, qt->mid_point, qt->tangent, _color);
     return;
   }
   if (!qt->is_leaf) {

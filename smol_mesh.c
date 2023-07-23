@@ -45,19 +45,27 @@ void smol_mesh_update(smol_mesh_t* mesh) {
   rlUpdateVertexBuffer(mesh->vboIdNormal, mesh->normals, number_of_floats, 0);
   rlUpdateVertexBuffer(mesh->vboIdColor, mesh->colors, number_of_floats, 0);
 }
-static float point_distance(Vector2 from, Vector2 to, Rectangle r) {
-  Vector2 uvf = {(from.x - r.x)/r.width, (from.y - r.y)/r.height};
-  Vector2 uvt = {(to.x - r.x)/r.width, (to.y - r.y)/r.height};
-  float dx = uvf.x - uvt.x;
-  float dy = uvt.y - uvt.y;
-  float ret = sqrtf(dx*dx + dy*dy);
-  assert(ret <= 1.f);
-  assert(ret <= sqrtf(1.f + 1.f));
-  assert(ret >= 0.f);
-  return ret / sqrtf(1.f + 1.f);
+static float point_distance(Vector2 tg, Vector2 center, Vector2 to, Rectangle r) {
+  Vector2 uv_center = { (center.x - r.x) / r.width, (center.y - r.y) / r.width};
+  Vector2 uv_to = { (to.x - r.x) / r.width, (to.y - r.y) / r.width};
+  float tg_norm = (float)sqrtf(tg.x * tg.x + tg.y * tg.y);
+  float ret;
+  if (tg_norm != 0) {
+    Vector2 u = { tg.y / tg_norm, -tg.x / tg_norm };
+    float b = -( u.x*uv_center.x + u.y*uv_center.y);
+    ret = (u.x*uv_to.x + u.y*uv_to.y + b);
+  } else {
+    Vector2 u = { 1.f, 0.f };
+    float b = -( u.x*uv_center.x + u.y*uv_center.y);
+    ret = u.x*uv_to.x + u.y*uv_to.y + b;
+  }
+  assert(ret == ret);
+  assert(ret > -2. && ret < 2);
+  return ret;
 }
 
-void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 center, Color color) {
+void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 center, Vector2 tangent, Color color) {
+  float sqrt_2 = sqrtf(2);
   size_t c = mesh->cur_len++;
   if (c + 1 >= mesh->capacity) {
     smol_mesh_update(mesh);
@@ -76,10 +84,10 @@ void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 center, Color
     mesh->colors[c+i+1] = vc.y;
     mesh->colors[c+i+2] = vc.z;
   }
-  float ld = point_distance(center, (Vector2){rect.x, rect.y}, rect),
-        rd = point_distance(center, (Vector2){rect.x + rect.width, rect.y}, rect),
-        ru = point_distance(center, (Vector2){rect.x + rect.width, rect.y + rect.height}, rect),
-        lu = point_distance(center, (Vector2){rect.x, rect.y + rect.height}, rect);
+  float ld = point_distance(tangent, center, (Vector2){rect.x, rect.y}, rect)/sqrt_2,
+        rd = point_distance(tangent, center, (Vector2){rect.x + rect.width, rect.y}, rect)/sqrt_2,
+        ru = point_distance(tangent, center, (Vector2){rect.x + rect.width, rect.y + rect.height}, rect)/sqrt_2,
+        lu = point_distance(tangent, center, (Vector2){rect.x, rect.y + rect.height}, rect)/sqrt_2;
   //float m = maxf(maxf(ld, rd), maxf(ru, lu));
   //ld /= m; rd /= m; ru /= m; lu /= m;
   //assert(CheckCollisionPointRec(tangent, rect));

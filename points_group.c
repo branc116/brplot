@@ -77,7 +77,6 @@ void points_group_add_test_points(points_group_t* pg_array, size_t* pg_len, size
     }
   }
   for(int i = 0; i < 1024*3; ++i) {
-    printf("i = %d\n", i);
     int group = 4;
     points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, group);
     float t = (float)(1 + g->len)*.1f;
