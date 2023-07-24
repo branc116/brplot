@@ -32,9 +32,10 @@ int main(void) {
 #ifdef RELEASE
   SetTraceLogLevel(LOG_ERROR);
 #endif
+  SetWindowState(FLAG_MSAA_4X_HINT);
   InitWindow(WIDTH, HEIGHT, "rlplot");
-  graph_values_t* gv = malloc(sizeof(graph_values_t));
   SetWindowState(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
+  graph_values_t* gv = malloc(sizeof(graph_values_t));
   graph_init(gv, WIDTH, HEIGHT);
 #ifndef RELEASE
   start_refreshing_shaders(gv);
