@@ -4,3 +4,4 @@ www
 shaders.h
 zig-out
 zig-cache
+bench
