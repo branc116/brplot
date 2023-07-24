@@ -29,9 +29,9 @@ int main_gui(graph_values_t* gv) {
 }
 
 int main(void) {
-//#ifdef RELEASE
+#ifdef RELEASE
   SetTraceLogLevel(LOG_ERROR);
-//#endif
+#endif
   InitWindow(WIDTH, HEIGHT, "rlplot");
   graph_values_t* gv = malloc(sizeof(graph_values_t));
   SetWindowState(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
