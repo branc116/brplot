@@ -50,14 +50,13 @@ static float point_distance(Vector2 tg, Vector2 center, Vector2 to, Rectangle r)
   Vector2 uv_to = { (to.x - r.x) / r.width, (to.y - r.y) / r.width};
   float tg_norm = (float)sqrtf(tg.x * tg.x + tg.y * tg.y);
   float ret;
-  if (tg_norm != 0) {
+  if (tg_norm == tg_norm && tg_norm > 0.f) {
     Vector2 u = { tg.y / tg_norm, -tg.x / tg_norm };
     float b = -( u.x*uv_center.x + u.y*uv_center.y);
     ret = (u.x*uv_to.x + u.y*uv_to.y + b);
   } else {
-    Vector2 u = { 1.f, 0.f };
-    float b = -( u.x*uv_center.x + u.y*uv_center.y);
-    ret = u.x*uv_to.x + u.y*uv_to.y + b;
+    float b = -uv_center.x;
+    ret = uv_to.x + b;
   }
   assert(ret == ret);
   assert(ret > -2. && ret < 2);

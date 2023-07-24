@@ -146,6 +146,8 @@ typedef struct {
   smol_mesh_t* lines_mesh;
   smol_mesh_t* quads_mesh;
 
+  Font font;
+
   // TODO: This is too big, do something about it! 1MB
   // Only render thread can read or write to this array.
   points_group_t groups[GROUP_CAP];

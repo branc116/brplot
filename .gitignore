@@ -5,3 +5,4 @@ shaders.h
 zig-out
 zig-cache
 bench
+default_font.h

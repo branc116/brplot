@@ -21,6 +21,7 @@
 
 #include "raylib.h"
 #include "rlgl.h"
+#include "default_font.h"
 
 static void refresh_shaders_if_dirty(graph_values_t* gv);
 static void update_resolution(graph_values_t* gv);
@@ -29,7 +30,10 @@ static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale);
 static Rectangle graph_get_rectangle(graph_values_t* gv);
 static void graph_update_mouse_position(graph_values_t* gv);
 
+static Font default_font;
+
 Vector2 graph_mouse_position;
+
 
 void graph_init(graph_values_t* gv, float width, float height) {
 #ifdef RELEASE
@@ -61,11 +65,33 @@ void graph_init(graph_values_t* gv, float width, float height) {
   q_init(&gv->commands);
   gv->lines_mesh = smol_mesh_malloc(PTOM_COUNT, gv->linesShader);
   gv->quads_mesh = smol_mesh_malloc(PTOM_COUNT, gv->quadShader);
+  default_font = gv->font = LoadFontFromMemory(".ttf", default_font_data,
+                        sizeof(default_font_data), 64, NULL,
+                        default_font_glyphs);
+}
+
+static void help_draw_text(const char *text, Vector2 pos, float fontSize, Color color) {
+  float defaultFontSize = 10.f;
+  if (fontSize < defaultFontSize) fontSize = defaultFontSize;
+  float spacing = fontSize/defaultFontSize;
+
+  DrawTextEx(default_font, text, (Vector2){roundf(pos.x), roundf(pos.y)}, floorf(fontSize), 1.0f, color);
+}
+
+static float help_measure_text(const char* txt, float font_size) {
+  Vector2 textSize = { 0.0f, 0.0f };
+
+  float defaultFontSize = 10;   // Default Font chars height in pixel
+  if (font_size < defaultFontSize) font_size = defaultFontSize;
+
+  textSize = MeasureTextEx(default_font, txt, floorf(font_size), 1.0f);
+ 
+  return textSize.x;
 }
 
 void graph_draw(graph_values_t* gv) {
   char buff[128];
-  float font_scale = 1.4f;
+  float font_scale = 1.8f;
   update_resolution(gv);
   refresh_shaders_if_dirty(gv);
   Vector2 mp = GetMousePosition();
@@ -139,13 +165,13 @@ void graph_draw(graph_values_t* gv) {
   gv->quads_mesh->active_shader = gv->quadShader;
   points_groups_draw(gv->groups, gv->groups_len, gv->lines_mesh, gv->quads_mesh, gv->group_colors, graph_get_rectangle(gv), gv->debug);
   if (is_inside) {
-    int pad = 5;
-    int fs = (int)(10.f * font_scale);
-    Vector2 s = { 100.f, (float)(fs + 2 * pad)};
+    float pad = 5.f;
+    float fs = (10.f * font_scale);
+    Vector2 s = { 100.f, fs + 2 * pad};
     sprintf(buff, "(%.1e, %.1e)", graph_mouse_position.x, graph_mouse_position.y);
-    s.x = (float)MeasureText(buff, fs) + 2.f * (float)pad;
+    s.x = help_measure_text(buff, fs) + 2.f * (float)pad;
     DrawRectangleV(mp, s, RAYWHITE);
-    DrawText(buff, (int)mp.x + pad, (int)mp.y + pad, fs, BLACK);
+    help_draw_text(buff, (Vector2){mp.x + pad, mp.y + pad}, fs, BLACK);
   }
   while (1) {
     q_command comm = q_pop(&gv->commands);
@@ -207,8 +233,8 @@ static int DrawButton(bool* is_pressed, float x, float y, float font_size, char*
   va_start(args, str);
   vsprintf(buff, str, args);
   va_end(args);
-  int pad = 5;
-  Vector2 size = { (float)MeasureText(buff, (int)font_size) + 2.f * (float)pad, font_size + 2.f * (float)pad };
+  float pad = 5.f;
+  Vector2 size = { help_measure_text(buff, font_size) + 2.f * pad, font_size + 2.f * pad };
   Rectangle box = { x, y, size.x, size.y };
   bool is_in = CheckCollisionPointRec(mp, box);
   if (is_in) {
@@ -223,7 +249,7 @@ static int DrawButton(bool* is_pressed, float x, float y, float font_size, char*
   } else if (is_in) {
     DrawRectangleRec(box, RED);
   }
-  DrawText(buff, (int)x + pad, (int)y + pad, (int)font_size, WHITE);
+  help_draw_text(buff, (Vector2){x + pad, y + pad}, font_size, WHITE);
   return c;
 }
 
