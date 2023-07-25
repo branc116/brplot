@@ -1,11 +1,35 @@
-# Raylib plotter.
+# Rlplot
 
 Smol application that plots lines that are sent to the application stdin.
 
 ## Compile
 
+Rlplot can be built using GNU make ( using gcc internlly ) or using ![Zig](https://github.com/ziglang/zig) ( zig is love ). Use whatever you like.
+
+## Using zig for linux
+
 ```bash
 zig build -Doptimize=ReleaseFast
+```
+
+## Using zig for windows
+```bash
+zig build -Dtarget=x86_64-windows-gnu -Doptimize=ReleaseSmall
+```
+
+## Using make for linux ( using gcc internally )
+```bash
+make
+```
+
+## Using make for windows ( but using zig internally... )
+```bash
+make windows
+```
+
+## Using make for web
+```bash
+EMSCRIPTEN="path to emscripten" make www/index.wasm
 ```
 
 ## Install
@@ -17,8 +41,7 @@ sudo install zig-out/bin/rlplot /usr/bin/rlplot
 
 ## Clean
 ```bash
-rm -rdf zig-out;
-rm -rdf zig-cache;
+make clean
 ```
 
 ## Uninstall
@@ -30,6 +53,8 @@ sudo rm /usr/bin/rlplot
 rlplot is designed in such a way that it plays nicely with other unix tools. You can just pipe the output of your program to rlplot and rlplot will do it's best to plot your data.
 
 ### Examples
+I think that more or less all of the examples listed on ![ttyplot examples](https://github.com/tenox7/ttyplot#examples) should work with rlplot ( just replace ttyplot with rlplot. )
+But here are some more examples:
 
 #### Plot first 8 Fibonacci numbers from user input
 ```bash
@@ -135,6 +160,7 @@ nc -ulkp 42069 | rlplot;
 * **T** - Add test points
 * **C** - Clear all points
 * **R** - Reset offset and zoom to (0, 0) and (1, 1)
+* **D** - Toggle quad tree debug view.
 
 ### Todo
 * ~~Make drawing lines use buffers ( Don't use DrawLineStrip function by raylib. ) Maybe use DrawMesh? It's ok for plots with ~1'000'000 points, but I want more!~~
@@ -147,13 +173,24 @@ nc -ulkp 42069 | rlplot;
     * Problem still remains if x values aren't sorted.
   * Maybe use geometry shader ( don't generate triangles on cpu. )
   * ~~Gpu memory usage will be lower. Current gpu memory usage:~~
-    * (N lines)*(2 triangles per line)*(3*vertices per triangle)*((3 floats for position) + (3 float for tangents))*(4 bytes per float)
-    * If N = 64'000'000, gpu usage will be ~9GB. This seems high...
+    * ~~(N lines)*(2 triangles per line)*(3*vertices per triangle)*((3 floats for position) + (3 float for tangents))*(4 bytes per float)~~
+    * ~~If N = 64'000'000, gpu usage will be ~9GB. This seems high...~~
     * This is partly fixed. If plot values are sequential gpu memory usage can be constant with regard to number of points.
-    * Problem still remains if x values aren't sorted.
+    * ~~Problem still remains if x values aren't sorted.~~
+        * This is now solved by using quad tree structure for storing data points.
+        * Still there is work to be done to make quad tree structure closer to optimal.
 * ~~I'm not happy with the thickness of the line when zooming in and out.~~
   * ~~It's not that bad, but it's inconsistent.~~
   * Made is consistent. And now it's smooth af.
+* Quad tree rectangless are not inside one another, bounds of outer quad are smoller than that of inner quad. Fix this...
+* Text looks like shit... I don't know how to fix it...
+* Values on x,y axis should be on each horisontal and vertical line. ( Not in corners. )
+* Colors should be configurable. Black background is the best background but maybe there will be a need to have a white background.
+    * This will require having a configuration file ( Maybe )
+    * Or parse tty codes for changing colors... hmmm ( could be cool )
+        * does ttyplot do this ??
+
+
 
 ### Screenshot
 ![screenshot3](media/rlplot_20230616_145925.png)
