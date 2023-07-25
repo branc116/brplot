@@ -36,35 +36,40 @@ Vector2 graph_mouse_position;
 
 
 void graph_init(graph_values_t* gv, float width, float height) {
+  *gv = (graph_values_t){
 #ifdef RELEASE
-  gv->gridShader = LoadShaderFromMemory(NULL, SHADER_GRID_FS);
-  gv->linesShader = LoadShaderFromMemory(SHADER_LINE_VS, SHADER_LINE_FS);
-  gv->quadShader = LoadShaderFromMemory(SHADER_QUAD_VS, SHADER_QUAD_FS);
+    .gridShader = LoadShaderFromMemory(NULL, SHADER_GRID_FS),
+    .linesShader = LoadShaderFromMemory(SHADER_LINE_VS, SHADER_LINE_FS),
+    .quadShader = LoadShaderFromMemory(SHADER_QUAD_VS, SHADER_QUAD_FS),
 #else
-  gv->gridShader = LoadShader(NULL, "src/shaders/grid.fs");
-  gv->linesShader = LoadShader("src/shaders/line.vs", "src/shaders/line.fs");
-  gv->quadShader = LoadShader("src/shaders/quad.vs", "src/shaders/quad.fs");
+    .gridShader = LoadShader(NULL, "src/desktop/shaders/grid.fs"),
+    .linesShader = LoadShader("src/desktop/shaders/line.vs", "src/desktop/shaders/line.fs"),
+    .quadShader = LoadShader("src/desktop/shaders/quad.vs", "src/desktop/shaders/quad.fs"),
 #endif
-  Color cs[] = { RED, GREEN, BLUE, LIGHTGRAY, PINK, GOLD, VIOLET, DARKPURPLE };
-  for (int i = 0; i < 8; ++i) {
-    gv->group_colors[i] = cs[i];
-  }
-  gv->groups_len = 0;
-  gv->graph_rect = (Rectangle){ GRAPH_LEFT_PAD, 50, width - GRAPH_LEFT_PAD - 60, height - 110 };
-  gv->uvOffset = (Vector2){ 0., 0. };
-  gv->uvZoom = (Vector2){ 1., 1. };
-  gv->uvScreen = (Vector2){ width, height };
-  gv->uvDelta = (Vector2){ 0., 0. };
+    .uvOffset = { 0., 0. },
+    .uvZoom = { 1., 1. },
+    .uvScreen = { width, height },
+    .uvDelta = { 0., 0. },
+    .groups_len = 0,
+    .groups = {0},
+    .group_colors = { RED, GREEN, BLUE, LIGHTGRAY, PINK, GOLD, VIOLET, DARKPURPLE },
+    .graph_rect = { GRAPH_LEFT_PAD, 50, width - GRAPH_LEFT_PAD - 60, height - 110 },
+    .lines_mesh = NULL,
+    .quads_mesh = NULL,
+    .follow = false,
+    .shaders_dirty = false,
+    .debug = 0,
+    .commands = {0}
+  };
   for (int i = 0; i < 3; ++i) {
     gv->uResolution[i] = GetShaderLocation(gv->shaders[i], "resolution");
     gv->uZoom[i] = GetShaderLocation(gv->shaders[i], "zoom");
     gv->uOffset[i] = GetShaderLocation(gv->shaders[i], "offset");
     gv->uScreen[i] = GetShaderLocation(gv->shaders[i], "screen");
   }
-  memset(gv->groups, 0, sizeof(gv->groups));
-  q_init(&gv->commands);
   gv->lines_mesh = smol_mesh_malloc(PTOM_COUNT, gv->linesShader);
   gv->quads_mesh = smol_mesh_malloc(PTOM_COUNT, gv->quadShader);
+  q_init(&gv->commands);
   default_font = gv->font = LoadFontFromMemory(".ttf", default_font_data,
                         sizeof(default_font_data), 64, NULL,
                         default_font_glyphs);
@@ -202,17 +207,17 @@ static void graph_update_mouse_position(graph_values_t* gv) {
 static void refresh_shaders_if_dirty(graph_values_t* gv) {
   if (gv->shaders_dirty) {
     gv->shaders_dirty = false;
-    Shader new_line = LoadShader("./src/shaders/line.vs", "./src/shaders/line.fs");
+    Shader new_line = LoadShader("./src/desktop/shaders/line.vs", "./src/desktop/shaders/line.fs");
     if (new_line.locs != NULL) {
       UnloadShader(gv->linesShader);
       gv->linesShader = new_line;
     }
-    Shader new_grid = LoadShader(NULL, "./src/shaders/grid.fs");
+    Shader new_grid = LoadShader(NULL, "./src/desktop/shaders/grid.fs");
     if (new_grid.locs != NULL) {
       UnloadShader(gv->gridShader);
       gv->gridShader = new_grid;
     }
-    Shader new_quad = LoadShader("./src/shaders/quad.vs", "./src/shaders/quad.fs");
+    Shader new_quad = LoadShader("./src/desktop/shaders/quad.vs", "./src/desktop/shaders/quad.fs");
     if (new_quad.locs != NULL) {
       UnloadShader(gv->quadShader);
       gv->quadShader = new_quad;

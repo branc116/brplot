@@ -1,4 +1,4 @@
-#include "plotter.h"
+#include "../../plotter.h"
 
 #include <pthread.h>
 #include <stdio.h>

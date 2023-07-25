@@ -19,12 +19,14 @@ CCFLAGS+= -DEXTERNAL_CONFIG_FLAGS=1 \
 	-DSUPPORT_TRACELOG=1
 
 CCFLAGS_LINUX= -Wl,-z,now -DLINUX -DPLATFORM_DESKTOP $(CCFLAGS)
-SHADERS= SHADER_GRID_FS:src/shaders/grid.fs SHADER_LINE_FS:src/shaders/line.fs SHADER_LINE_VS:src/shaders/line.vs SHADER_QUAD_FS:src/shaders/quad.fs SHADER_QUAD_VS:src/shaders/quad.vs
+SHADERS= SHADER_GRID_FS:src/desktop/shaders/grid.fs SHADER_LINE_FS:src/desktop/shaders/line.fs SHADER_LINE_VS:src/desktop/shaders/line.vs SHADER_QUAD_FS:src/desktop/shaders/quad.fs SHADER_QUAD_VS:src/desktop/shaders/quad.vs
 SOURCE= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c \
-        src/refresh_shaders.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/read_input.c src/quad_tree.c
+        ./src/desktop/linux/read_input.c src/refresh_shaders.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/read_input.c src/quad_tree.c
 
-CCFLAGS_DBG = -Wconversion -Wall -Wpedantic -Wextra -g -DLINUX -DPLATFORM_DESKTOP -pg -fsanitize=address
-SOURCE_DBG=src/refresh_shaders.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/read_input.c src/quad_tree.c 
+CCFLAGS_DBG = -Wconversion -Wall -Wpedantic -Wextra -g -DLINUX -DPLATFORM_DESKTOP -pg -fsanitize=address -fsanitize=leak \
+							-fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
+							-fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
+SOURCE_DBG= src/desktop/linux/refresh_shaders.c ./src/desktop/linux/read_input.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/read_input.c src/quad_tree.c 
 
 SOURCE_WEB= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c \
         src/web_specific/refresh_shaders.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/web_specific/read_input.c
@@ -90,4 +92,8 @@ clean:
 .PHONY: bench
 bench:
 	gcc $(CCFLAGS_DBG) -o bin/bench ./src/benchmark.c ./src/quad_tree.c ./src/smol_mesh.c ./src/graph.c ./src/points_group.c ./src/q.c -lm -lraylib
+
+.PHONY: windows
+windows:
+	zig build -Dtarget=x86_64-windows-gnu -Doptimize=ReleaseSmall
 

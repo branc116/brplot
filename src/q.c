@@ -1,7 +1,6 @@
 #include "plotter.h"
 
 #include "stdbool.h"
-#include "pthread.h"
 #include <stdlib.h>
 
 void q_init(q_commands* q) {

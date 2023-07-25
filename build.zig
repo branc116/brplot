@@ -22,6 +22,16 @@ pub fn addRayLib(b: *std.build.Builder, target: std.zig.CrossTarget, opt: std.bu
             raylib.defineCMacro("PLATFORM_DESKTOP", null);
             raylib.linkSystemLibrary("glfw");
         },
+        .windows => {
+            raylib.defineCMacro("PLATFORM_DESKTOP", null);
+            raylib.defineCMacro("_WIN32", "1");
+            raylib.addIncludePath("./raylib/src/external/glfw/include");
+            raylib.addCSourceFile(rlf("/rglfw.c"), rlplot_flags);
+            raylib.linkSystemLibrary("winmm");
+            raylib.linkSystemLibrary("gdi32");
+            raylib.linkSystemLibrary("opengl32");
+            raylib.addIncludePath("./raylib/src/external/glfw/deps/mingw");
+        },
         else => {
             @panic("Unsupported OS");
         },
@@ -47,11 +57,11 @@ fn one_shader(f: std.fs.File, comptime name: []const u8, comptime macroName: []c
 fn genShaderhFile() !void {
     std.fs.cwd().deleteFile("shaders.h") catch |e| print("{}", .{e});
     const file = try std.fs.cwd().createFile("shaders.h", .{ .read = true });
-    _ = try one_shader(file, "src/shaders/grid.fs", "SHADER_GRID_FS");
-    _ = try one_shader(file, "src/shaders/line.fs", "SHADER_LINE_FS");
-    _ = try one_shader(file, "src/shaders/line.vs", "SHADER_LINE_VS");
-    _ = try one_shader(file, "src/shaders/quad.fs", "SHADER_QUAD_FS");
-    _ = try one_shader(file, "src/shaders/quad.vs", "SHADER_QUAD_VS");
+    _ = try one_shader(file, "src/desktop/shaders/grid.fs", "SHADER_GRID_FS");
+    _ = try one_shader(file, "src/desktop/shaders/line.fs", "SHADER_LINE_FS");
+    _ = try one_shader(file, "src/desktop/shaders/line.vs", "SHADER_LINE_VS");
+    _ = try one_shader(file, "src/desktop/shaders/quad.fs", "SHADER_QUAD_FS");
+    _ = try one_shader(file, "src/desktop/shaders/quad.vs", "SHADER_QUAD_VS");
 }
 
 // This has been tested to work with zig master branch as of commit 87de821 or May 14 2023
@@ -69,12 +79,18 @@ pub fn addRlPlot(b: *std.build.Builder, opt: std.builtin.OptimizeMode, target: s
         rlplot.want_lto = true;
         raylib.want_lto = true;
     } else {
-        rlplot.addCSourceFiles(&.{"src/refresh_shaders.c"}, rlplot_flags);
+        rlplot.addCSourceFiles(&.{"src/desktop/linux/refresh_shaders.c"}, rlplot_flags);
     }
 
     switch (target.getOsTag()) {
         .linux => {
             rlplot.defineCMacro("PLATFORM_DESKTOP", null);
+            rlplot.addCSourceFile("./src/desktop/linux/read_input.c", rlplot_flags);
+        },
+        .windows => {
+            rlplot.defineCMacro("PLATFORM_DESKTOP", null);
+            rlplot.defineCMacro("_WIN32", "1");
+            rlplot.addCSourceFile("./src/desktop/win/read_input.c", rlplot_flags);
         },
         else => {
             @panic("Unsupported OS");
