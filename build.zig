@@ -32,7 +32,7 @@ pub fn addRayLib(b: *std.build.Builder, target: std.zig.CrossTarget, opt: std.bu
 const print = std.debug.print;
 
 fn one_shader(f: std.fs.File, comptime name: []const u8, comptime macroName: []const u8) !void {
-    const file = @embedFile("shaders/" ++ name);
+    const file = @embedFile(name);
     _ = try f.write("\n#define " ++ macroName ++ "\\\n  \"");
     for (file) |v| {
         if (v == '\n') {
@@ -47,9 +47,11 @@ fn one_shader(f: std.fs.File, comptime name: []const u8, comptime macroName: []c
 fn genShaderhFile() !void {
     std.fs.cwd().deleteFile("shaders.h") catch |e| print("{}", .{e});
     const file = try std.fs.cwd().createFile("shaders.h", .{ .read = true });
-    _ = try one_shader(file, "grid.fs", "SHADER_GRID_FS");
-    _ = try one_shader(file, "line.fs", "SHADER_LINE_FS");
-    _ = try one_shader(file, "line.vs", "SHADER_LINE_VS");
+    _ = try one_shader(file, "src/shaders/grid.fs", "SHADER_GRID_FS");
+    _ = try one_shader(file, "src/shaders/line.fs", "SHADER_LINE_FS");
+    _ = try one_shader(file, "src/shaders/line.vs", "SHADER_LINE_VS");
+    _ = try one_shader(file, "src/shaders/quad.fs", "SHADER_QUAD_FS");
+    _ = try one_shader(file, "src/shaders/quad.vs", "SHADER_QUAD_VS");
 }
 
 // This has been tested to work with zig master branch as of commit 87de821 or May 14 2023
@@ -60,14 +62,14 @@ pub fn addRlPlot(b: *std.build.Builder, opt: std.builtin.OptimizeMode, target: s
     rlplot.linkLibrary(raylib);
     rlplot.linkLibC();
     rlplot.addIncludePath("raylib/src");
-    rlplot.addCSourceFiles(&.{ "graph.c", "main.c", "points_group.c", "read_input.c", "smol_mesh.c", "q.c" }, rlplot_flags);
+    rlplot.addCSourceFiles(&.{ "src/graph.c", "src/main.c", "src/points_group.c", "src/read_input.c", "src/smol_mesh.c", "src/q.c", "src/quad_tree.c" }, rlplot_flags);
     if (opt != .Debug) {
         try genShaderhFile();
         rlplot.defineCMacro("RELEASE", null);
         rlplot.want_lto = true;
         raylib.want_lto = true;
     } else {
-        rlplot.addCSourceFiles(&.{"refresh_shaders.c"}, rlplot_flags);
+        rlplot.addCSourceFiles(&.{"src/refresh_shaders.c"}, rlplot_flags);
     }
 
     switch (target.getOsTag()) {

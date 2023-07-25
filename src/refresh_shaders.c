@@ -13,7 +13,7 @@
 static void* watch_shader_change(void* gv) {
   int fd = inotify_init();
   uint32_t buff[128];
-  inotify_add_watch(fd, "shaders", IN_MODIFY | IN_CLOSE_WRITE);
+  inotify_add_watch(fd, "src/shaders", IN_MODIFY | IN_CLOSE_WRITE);
   graph_values_t* gvt = gv;
   while(true) {
     read(fd, buff, sizeof(buff));

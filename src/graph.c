@@ -41,9 +41,9 @@ void graph_init(graph_values_t* gv, float width, float height) {
   gv->linesShader = LoadShaderFromMemory(SHADER_LINE_VS, SHADER_LINE_FS);
   gv->quadShader = LoadShaderFromMemory(SHADER_QUAD_VS, SHADER_QUAD_FS);
 #else
-  gv->gridShader = LoadShader(NULL, "shaders/grid.fs");
-  gv->linesShader = LoadShader("shaders/line.vs", "shaders/line.fs");
-  gv->quadShader = LoadShader("shaders/quad.vs", "shaders/quad.fs");
+  gv->gridShader = LoadShader(NULL, "src/shaders/grid.fs");
+  gv->linesShader = LoadShader("src/shaders/line.vs", "src/shaders/line.fs");
+  gv->quadShader = LoadShader("src/shaders/quad.vs", "src/shaders/quad.fs");
 #endif
   Color cs[] = { RED, GREEN, BLUE, LIGHTGRAY, PINK, GOLD, VIOLET, DARKPURPLE };
   for (int i = 0; i < 8; ++i) {
@@ -202,17 +202,17 @@ static void graph_update_mouse_position(graph_values_t* gv) {
 static void refresh_shaders_if_dirty(graph_values_t* gv) {
   if (gv->shaders_dirty) {
     gv->shaders_dirty = false;
-    Shader new_line = LoadShader("./shaders/line.vs", "./shaders/line.fs");
+    Shader new_line = LoadShader("./src/shaders/line.vs", "./src/shaders/line.fs");
     if (new_line.locs != NULL) {
       UnloadShader(gv->linesShader);
       gv->linesShader = new_line;
     }
-    Shader new_grid = LoadShader(NULL, "./shaders/grid.fs");
+    Shader new_grid = LoadShader(NULL, "./src/shaders/grid.fs");
     if (new_grid.locs != NULL) {
       UnloadShader(gv->gridShader);
       gv->gridShader = new_grid;
     }
-    Shader new_quad = LoadShader("./shaders/quad.vs", "./shaders/quad.fs");
+    Shader new_quad = LoadShader("./src/shaders/quad.vs", "./src/shaders/quad.fs");
     if (new_quad.locs != NULL) {
       UnloadShader(gv->quadShader);
       gv->quadShader = new_quad;
