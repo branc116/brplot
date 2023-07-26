@@ -76,8 +76,8 @@ void points_group_add_test_points(points_group_t* pg_array, size_t* pg_len, size
       points_group_push_point(g, p);
     }
   }
-  for(int i = 0; i < 1024*3; ++i) {
-    int group = 4;
+  for(int i = 0; i < 2*1024; ++i) {
+    int group = 5;
     points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, group);
     float t = (float)(1 + g->len)*.1f;
     float x = sqrtf(t)*cosf(log2f(t));

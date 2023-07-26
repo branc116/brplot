@@ -15,24 +15,27 @@
 typedef void (*quad_tree_visitor)(quad_tree_t*, void*);
 
 
-static void quad_tree_extend_rect(Rectangle* rect, Vector2 point);
+static void quad_tree_extend_rect(bb_t* rect, Vector2 point);
 static void quad_tree_split(quad_tree_t* rect);
 static void _quad_tree_draw_lines(quad_tree_t* qt);
 //TODO: Point need not be passed as functon argument 
 static int _quad_tree_add_point(quad_tree_t* root, size_t index);
 static void quad_tree_draw_rects(quad_tree_t* qt);
-static Vector2 quad_tree_mid_point(quad_tree_t const * qt, size_t n);
+static Vector2 quad_tree_split_point(Vector2 mid_point, Vector2 parent_split_point);
 static void quad_tree_copy(quad_tree_t* dest, quad_tree_t const* src);
 static void quad_tree_draw_rects_for_point(quad_tree_t* qt, Vector2 point);
 static bool should_balance(quad_tree_t* t);
 static size_t quad_tree_sort_groups(quad_tree_groups_t* groups, size_t len);
-static void quad_tree_balance(quad_tree_t* dest, quad_tree_t const * qt, int depth);
-static void quad_tree_print_info(quad_tree_t* qt, Vector2 x, int depth);
-static int _quad_tree_print_dot(quad_tree_t* t, int* n);
+static void quad_tree_balance(quad_tree_t* dest);
+static void _quad_tree_balance(quad_tree_t* dest, quad_tree_t const * qt, int depth);
+static void quad_tree_print_info(quad_tree_t* qt, Vector2 x, int depth, int max_depth);
 static void quad_tree_check(quad_tree_t* rect);
 static void quad_tree_visit(quad_tree_t* root, quad_tree_visitor enter, quad_tree_visitor exit, void* data);
 static void help_rolling_average(Vector2* old_avg, Vector2 new_point, size_t new_count);
 static Vector2 help_get_tangent(size_t index);
+static bool help_check_collision_bb_p(bb_t bb, Vector2 p);
+static bool help_check_collision_bb_rec(bb_t bb, Rectangle rec);
+static void quad_tree_square_children(quad_tree_t* qt);
 
 // A lot of functions in here are recursive, so passing a lot of stuff by arguments may not be optimal.
 static int* _c;
@@ -63,7 +66,7 @@ int quad_tree_draw(quad_tree_root_t* qt, Color color, Rectangle screen, smol_mes
   if (debug == 1 || debug == 2) quad_tree_draw_rects(qt->root);
   if (debug == 3 || debug == 4) quad_tree_draw_rects_for_point(qt->root, graph_mouse_position);
   if (debug && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-    quad_tree_print_info(qt->root, graph_mouse_position, 0);
+    quad_tree_print_info(qt->root, graph_mouse_position, 0, -1);
   }
   // Draw temp points
   for (size_t i = 0; i < qt->temp_length; ++i) {
@@ -74,15 +77,6 @@ int quad_tree_draw(quad_tree_root_t* qt, Color color, Rectangle screen, smol_mes
     smol_mesh_gen_line_strip(line_mesh, &all_points[index], len, color);
   }
   return c;
-}
-
-void quad_tree_print_dot(quad_tree_root_t* t) {
-  int id = 0;
-  printf("digraph L {\n");
-  printf("node [shape=record fontname=Arial];\n");
-  _quad_tree_print_dot(t->root, &id);
-  printf("}\n");
-  return;
 }
 
 quad_tree_root_t* quad_tree_malloc(void) {
@@ -110,7 +104,7 @@ void quad_tree_free(quad_tree_root_t* qt) {
   free(qt);
 }
 
-static quad_tree_t* quad_tree_malloc_children() {
+static quad_tree_t* quad_tree_malloc_children(quad_tree_t const * parent) {
   quad_tree_t* rect = malloc(QUAD_TREE_DIR_COUNT * sizeof(quad_tree_t));
   for (int i = 0; i < QUAD_TREE_DIR_COUNT; ++i) {
     rect[i].is_leaf = true;
@@ -118,7 +112,8 @@ static quad_tree_t* quad_tree_malloc_children() {
     rect[i].groups_len = 0;
     rect[i].groups_cap = 0;
     rect[i].groups = NULL;
-    rect[i].bounds = (Rectangle){0};
+    rect[i].bounds = (bb_t){0};
+    rect[i].parent = parent;
   }
   return rect;
 }
@@ -127,45 +122,54 @@ static quad_tree_t* quad_tree_node_malloc(Vector2 split_point) {
     quad_tree_t* nr = malloc(sizeof(quad_tree_t));
     nr->is_leaf = false;
     nr->split_point = split_point;
-    nr->children = quad_tree_malloc_children();
+    nr->children = quad_tree_malloc_children(nr);
     nr->groups_len = 0;
     nr->groups_cap = 0;
     nr->mid_point = (Vector2){0};
     nr->count = 0;
     nr->tangent = (Vector2){0};
-    nr->bounds = (Rectangle){0};
+    nr->bounds = (bb_t){0};
+    nr->parent = NULL;
     return nr;
 }
 
 static void _quad_tree_root_womit(quad_tree_root_t* root) {
   for (size_t i = 0; i < root->temp_length; ++i) {
     _quad_tree_add_point(root->root, root->temp[i]);
+    for (int i = 0; i < QUAD_TREE_DIR_COUNT; ++i) {
+      root->root->bounds.xmin = minf(root->root->bounds.xmin, root->root->children[i].bounds.xmin);
+      root->root->bounds.ymin = minf(root->root->bounds.ymin, root->root->children[i].bounds.ymin);
+      root->root->bounds.xmax = maxf(root->root->bounds.xmax, root->root->children[i].bounds.xmax);
+      root->root->bounds.ymax = maxf(root->root->bounds.ymax, root->root->children[i].bounds.ymax);
+    }
+    //quad_tree_check(root->root);
   }
   root->temp_length = 0;
 }
 
 static void quad_tree_change_root(quad_tree_root_t* root) {
-  Rectangle b = root->root->bounds;
+  bb_t b = root->root->bounds;
   Vector2 p = root->temp_mid_point;
   Vector2 sp = {0};
   quad_tree_dir dir = 0;
-  float down = p.y - b.y;
-  float up = b.y + b.height - p.y;
-  float left = p.x - b.x;
-  float right = b.x + b.width - p.x;
+  float down = p.y - b.ymin;
+  float up = b.ymax - p.y;
+  float left = p.x - b.xmin;
+  float right = b.xmax - p.x;
+  float height = b.ymax - b.ymin, width = b.xmax - b.xmin;
   if (up < down) {
     dir = QUAD_TREE_DIR_DOWN;
-    sp.y = nextafterf(b.y + 2*b.height, INFINITY);
+    sp.y = nextafterf(b.ymax + height, INFINITY);
   } else {
     dir = QUAD_TREE_DIR_UP;
-    sp.y = nextafterf(b.y - b.height, -INFINITY);
+    sp.y = nextafterf(b.ymin - height, -INFINITY);
   }
   if (right < left) {
     dir |= QUAD_TREE_DIR_LEFT;
-    sp.x = nextafterf(b.x + 2*b.width, INFINITY);
+    sp.x = nextafterf(b.xmax + width, INFINITY);
   } else {
     dir |= QUAD_TREE_DIR_RIGHT;
-    sp.x = nextafterf(b.x -b.width, -INFINITY);
+    sp.x = nextafterf(b.xmin - width, -INFINITY);
   }
   quad_tree_t* new_root = quad_tree_node_malloc(sp);
   new_root->count = root->root->count;
@@ -173,6 +177,10 @@ static void quad_tree_change_root(quad_tree_root_t* root) {
   new_root->tangent = root->root->tangent;
   new_root->bounds = root->root->bounds;
   memcpy(&new_root->children[dir], root->root, sizeof(quad_tree_t));
+  for (int i = 0; i < QUAD_TREE_DIR_COUNT; ++i) {
+    new_root->children[i].parent = new_root;
+    new_root->children[dir].children[i].parent = &new_root->children[dir];
+  }
   free(root->root);
   root->root = new_root;
   _quad_tree_root_womit(root);
@@ -198,7 +206,7 @@ bool quad_tree_add_point(quad_tree_root_t* root, Vector2 const * all_points, siz
     _quad_tree_root_womit(root);
     return true;
   }
-  if (CheckCollisionPointRec(root->temp_mid_point, root->root->bounds)) {
+  if (help_check_collision_bb_p(root->root->bounds, root->temp_mid_point)) {
     _quad_tree_root_womit(root);
   } else {
     quad_tree_change_root(root);
@@ -235,7 +243,7 @@ static int _quad_tree_add_point(quad_tree_t* root, size_t index) {
       }
     }
     if (root->count == 0) {
-      root->bounds = (Rectangle){.x = point.x, .y = point.y, .width = 0, .height = 0};
+      root->bounds = (bb_t){.xmin = point.x, .ymin = point.y, .xmax = point.x, .ymax = point.y};
     } else {
       quad_tree_extend_rect(&root->bounds, point);
     }
@@ -258,20 +266,40 @@ static int _quad_tree_add_point(quad_tree_t* root, size_t index) {
     bool down = point.y < root->split_point.y, right = point.x > root->split_point.x;
     int node_index = (down << 1) | (right);
     if (root->count == 0) {
-      root->bounds = (Rectangle){.x = point.x, .y = point.y, .height = 0, .width = 0};
-    } 
+      root->bounds = (bb_t){.xmin = point.x, .ymin = point.y, .xmax = point.x, .ymax = point.y};
+    } else {
+      Vector2 d;
+      if (down && right) {
+        d.y = root->split_point.y - point.y;
+        d.x = point.x - root->split_point.x;
+        float maxD = maxf(d.x, d.y);
+        quad_tree_extend_rect(&root->bounds, (Vector2){root->split_point.x + maxD, root->split_point.y - maxD});
+      } else if (down && !right) {
+        d.y = root->split_point.y - point.y;
+        d.x = root->split_point.x - point.x; 
+        float maxD = maxf(d.x, d.y);
+        quad_tree_extend_rect(&root->bounds, (Vector2){root->split_point.x - maxD, root->split_point.y - maxD});
+      } else if (!down && !right) {
+        d.y = point.y - root->split_point.y;
+        d.x = root->split_point.x - point.x; 
+        float maxD = maxf(d.x, d.y);
+        quad_tree_extend_rect(&root->bounds, (Vector2){root->split_point.x - maxD, root->split_point.y + maxD});
+      } else if (!down && right) {
+        d.y = point.y - root->split_point.y;
+        d.x = point.x - root->split_point.x;
+        float maxD = maxf(d.x, d.y);
+        quad_tree_extend_rect(&root->bounds, (Vector2){root->split_point.x + maxD, root->split_point.y + maxD});
+      }
+    }
     ++root->count;
     int child_should_balance = _quad_tree_add_point(&root->children[node_index], index);
     if (!balancing && _root->balanc_enable) {
       bool root_shuld_balance = should_balance(root);
       if (child_should_balance > 1 && root_shuld_balance) {
         balancing = true;
-        quad_tree_t dest = {0};
-        quad_tree_balance(&dest, root, 0);
-        _quad_tree_free(root);
-        memcpy(root, &dest, sizeof(quad_tree_t));
-        ret = 0;
+        quad_tree_balance(root);
         balancing = false;
+        ret = 0;
       } else {
         ret = root_shuld_balance ? 1 + child_should_balance : 0;
       }
@@ -280,8 +308,8 @@ static int _quad_tree_add_point(quad_tree_t* root, size_t index) {
   quad_tree_extend_rect(&root->bounds, point);
   help_rolling_average(&root->mid_point, point, root->count);
   help_rolling_average(&root->tangent, help_get_tangent(index), root->count);
+  //quad_tree_square_children(root);
   //assert(CheckCollisionPointRec(root->mid_point, root->bounds));
-  //quad_tree_check(root);
   return ret;
 }
 
@@ -316,20 +344,21 @@ static void quad_tree_check(quad_tree_t* rect) {
     for (size_t i = 0; i < rect->groups_len; ++i) {
       sum += rect->groups[i].length;
       for (size_t j = 0; j < rect->groups[i].length; ++j) {
-         assert(CheckCollisionPointRec(_all_points[rect->groups[i].start_index + j], rect->bounds));
+         assert(help_check_collision_bb_p(rect->bounds, _all_points[rect->groups[i].start_index + j]));
       }
     }
     assert(sum == rect->count);
     return;
   }
   for (int i = 0; i < QUAD_TREE_DIR_COUNT; ++i) {
+    assert(rect == rect->children[i].parent);
     if (rect->children[i].count == 0) continue;
     assert(rect->count >= rect->children[i].count);
-    assert(rect->bounds.x <= rect->children[i].bounds.x);
-    assert(rect->bounds.y <= rect->children[i].bounds.y);
+    //assert(rect->bounds.xmin <= rect->children[i].bounds.xmin);
+    //assert(rect->bounds.ymin <= rect->children[i].bounds.ymin);
     // quad_tree_print_info(rect, 0.0, 0) 
-    //assert(rect->bounds.x + rect->bounds.width >= rect->children[i].bounds.x + rect->children[i].bounds.width );
-    //assert(rect->bounds.y + rect->bounds.height >= rect->children[i].bounds.y + rect->children[i].bounds.height );
+    //assert(rect->bounds.xmax >= rect->children[i].bounds.xmax);
+    //assert(rect->bounds.ymax >= rect->children[i].bounds.ymax);
     //assert(rect->bounds.width >= rect->children[i].bounds.width);
     //assert(rect->bounds.height >= rect->children[i].bounds.height);
     quad_tree_check(&rect->children[i]);
@@ -340,12 +369,12 @@ static void quad_tree_check(quad_tree_t* rect) {
 
 static void quad_tree_split(quad_tree_t* rect) {
   assert(rect->is_leaf);
-  Vector2 sp = quad_tree_mid_point(rect, rect->count);
+  Vector2 sp = quad_tree_split_point(rect->mid_point, rect->parent->split_point);
   rect->is_leaf = false;
   rect->split_point = sp;
   rect->count = 0;
-  rect->children = quad_tree_malloc_children();
-  rect->bounds = (Rectangle){0};
+  rect->children = quad_tree_malloc_children(rect);
+  rect->bounds = (bb_t){0};
   for (size_t i = 0; i < rect->groups_len; ++i) {
     for (size_t j = 0; j < rect->groups[i].length; ++j) {
       // b 324 if rect->groups[i].start_index + j == 998
@@ -354,32 +383,15 @@ static void quad_tree_split(quad_tree_t* rect) {
   }
   free(rect->groups);
   rect->groups_len = 0;
+  quad_tree_check(rect);
 }
 
-static void quad_tree_extend_rect(Rectangle* rect, Vector2 point) {
+static void quad_tree_extend_rect(bb_t* rect, Vector2 point) {
   //if (CheckCollisionPointRec(point, *rect)) return;
-  float dx = point.x - rect->x;
-  float dy = point.y - rect->y;
-  if (dx > 0) {
-    rect->width = MAX(dx, rect->width);
-    while (rect->width + rect->x < point.x) rect->width = nextafterf(rect->width, INFINITY);
-  } else if (dx < 0) {
-    float old_reach = rect->width + rect->x;
-    rect->x = point.x;
-    rect->width -= dx;
-    while (rect->width + rect->x < old_reach) rect->width = nextafterf(rect->width, INFINITY);
-  }
-  if (dy > 0) {
-    rect->height = MAX(dy, rect->height);
-    while (rect->height + rect->y < point.y) rect->height = nextafterf(rect->height, INFINITY);
-  } else if (dy < 0) {
-    float old_reach = rect->height + rect->y;
-    rect->y = point.y;
-    rect->height -= dy;
-    while (rect->height + rect->y < old_reach) rect->height = nextafterf(rect->height, INFINITY);
-  }
-  // b quad_tree.c:352 if rect->width == 0.375137419 || rect->height == 0.375137419
-  rect->width = rect->height = MAX(rect->width, rect->height);
+  rect->xmax = maxf(rect->xmax, point.x);
+  rect->ymax = maxf(rect->ymax, point.y);
+  rect->xmin = minf(rect->xmin, point.x);
+  rect->ymin = minf(rect->ymin, point.y);
 }
 
 static float quad_tree_calc_baddnes(quad_tree_t const * qt) {
@@ -387,7 +399,7 @@ static float quad_tree_calc_baddnes(quad_tree_t const * qt) {
   return badnes;
 }
 
-static void quad_tree_balance(quad_tree_t* dest, quad_tree_t const * qt, int depth) {
+static void _quad_tree_balance(quad_tree_t* dest, quad_tree_t const * qt, int depth) {
   if (qt->is_leaf) {
     memcpy(dest, qt, sizeof(*dest));
     return;
@@ -395,19 +407,23 @@ static void quad_tree_balance(quad_tree_t* dest, quad_tree_t const * qt, int dep
   //printf("BALANCING baddness=%f, count=%d, depth=%d\n", quad_tree_calc_baddnes(qt), qt->count, depth);
   ++_root->balanc_count;
   dest->is_leaf = false;
-  dest->split_point = quad_tree_mid_point(qt, qt->count);
-  dest->children = quad_tree_malloc_children();
+  dest->split_point = qt->parent == NULL ? qt->mid_point : quad_tree_split_point(qt->mid_point, qt->parent->split_point);
+  dest->children = quad_tree_malloc_children(qt);
+  dest->parent = qt->parent;
   quad_tree_copy(dest, qt);
   for (int i = 0; i < QUAD_TREE_DIR_COUNT; ++i) {
     if (should_balance(&dest->children[i])) {
-      quad_tree_t t = {0};
-      quad_tree_balance(&t, &dest->children[i], depth + 1);
-      _quad_tree_free(&dest->children[i]);
-      memcpy(&dest->children[i], &t, sizeof(t));
+      quad_tree_balance(&dest->children[i]);
     }
   }
-  //quad_tree_check(dest, all_points);
   //printf("BALANCED baddness=%f, count=%d, depth=%d\n", quad_tree_calc_baddnes(dest), dest->count, depth);
+}
+static void quad_tree_balance(quad_tree_t* qt) {
+  quad_tree_t dest = {0};
+  _quad_tree_balance(&dest, qt, 0);
+  _quad_tree_free(qt);
+  memcpy(qt, &dest, sizeof(quad_tree_t));
+  quad_tree_check(qt);
 }
 
 static void quad_tree_copy(quad_tree_t* dest, quad_tree_t const * src) {
@@ -428,36 +444,20 @@ static void quad_tree_copy(quad_tree_t* dest, quad_tree_t const * src) {
   return;
 }
 
-static Vector2 quad_tree_mid_point(quad_tree_t const * qt, size_t n) {
-  (void)n;
-  float bx = qt->bounds.width/2, by = qt->bounds.height/2;
-  float b = MAX(bx, by);
-  //return (Vector2){ .x = b, .y = b };
-  return (Vector2){ .x = qt->bounds.x + b, .y = qt->bounds.y + b };
-//  Vector2 ret = {0};
-//  if (qt->is_leaf) {
-//    for (int i = 0; i < QUAD_TREE_MAX_GROUPS; ++i) {
-//      for (int j = 0; j < qt->groups[i].length; ++j) {
-//        ret.x += _all_points[qt->groups[i].start_index + j].x / n;
-//        ret.y += _all_points[qt->groups[i].start_index + j].y / n;
-//      }
-//    }
-//    return ret;
-//  }
-//  for (int i = 0; i < QUAD_TREE_DIR_COUNT; ++i) {
-//    Vector2 r = quad_tree_mid_point(&qt->node.children[i], n);
-//    ret.x += r.x;
-//    ret.y += r.y;
-//  }
-//  return ret;
+static Vector2 quad_tree_split_point(Vector2 mid_point, Vector2 parent_split_point) {
+  Vector2 d = { mid_point.x - parent_split_point.x, mid_point.y - parent_split_point.y };
+  float maxD = maxf(absf(d.x), absf(d.y));
+  return (Vector2){parent_split_point.x + signf(d.x)*maxD, parent_split_point.y + signf(d.y)*maxD};
 }
+
 static void indent(int depth) {
   for (int i = 0; i < depth; ++i) {
     printf("  ");
   }
 }
 
-static void quad_tree_print_info(quad_tree_t* qt, Vector2 x, int depth) {
+static void quad_tree_print_info(quad_tree_t* qt, Vector2 x, int depth, int max_depth) {
+  if (max_depth == 0) return;
   if (depth == 0) {
     printf("Info for point (%f, %f)\n", x.x, x.y);
   }
@@ -465,22 +465,22 @@ static void quad_tree_print_info(quad_tree_t* qt, Vector2 x, int depth) {
   if (qt->is_leaf) {
     size_t l = qt->groups_len;
     indent(depth);
-    printf("Leaf: %ld groups, x=[%f, %f] (%f); y=[%f, %f] (%f)\n", l, qt->bounds.x, qt->bounds.x + qt->bounds.width, qt->bounds.width, qt->bounds.y, qt->bounds.y + qt->bounds.height, qt->bounds.height);
+    printf("Leaf: %ld groups, x=[%f, %f] (%f); y=[%f, %f] (%f)\n", l, qt->bounds.xmin, qt->bounds.xmax, qt->bounds.xmax - qt->bounds.xmin, qt->bounds.ymin, qt->bounds.ymax, qt->bounds.ymax - qt->bounds.ymin);
     for (size_t i = 0; i < l; ++i) {
       quad_tree_groups_t g = qt->groups[i];
       indent(depth + 1);
       printf("[%lu, %lu) (%lu) ", g.start_index, g.start_index + g.length, g.length);
       for (size_t j = 0; j < (MIN(3, g.length)); ++j) {
-        Vector2 p = _all_points[g.start_index + j];
+        Vector2 p = _all_points[g.length + g.start_index - j - 1];
         printf("(%.3f, %.3f) ", p.x, p.y);
       }
       printf(g.length > 3 ? "...\n" : "\n");
     }
   } else {
     indent(depth);
-    printf("Node: %ld points, x=[%f, %f] (%f); y=[%f, %f] (%f)\n", qt->count, qt->bounds.x, qt->bounds.x + qt->bounds.width, qt->bounds.width, qt->bounds.y, qt->bounds.y + qt->bounds.height, qt->bounds.height);
+    printf("Node: %ld groups, x=[%f, %f] (%f); y=[%f, %f] (%f)\n", qt->count, qt->bounds.xmin, qt->bounds.xmax, qt->bounds.xmax - qt->bounds.xmin, qt->bounds.ymin, qt->bounds.ymax, qt->bounds.ymax - qt->bounds.ymin);
     for (int i = 0; i < QUAD_TREE_DIR_COUNT; ++i) {
-      quad_tree_print_info(&qt->children[i], x, depth + 1);
+      quad_tree_print_info(&qt->children[i], x, depth + 1, max_depth - 1);
     }
   }
 }
@@ -522,13 +522,13 @@ static size_t quad_tree_sort_groups(quad_tree_groups_t* groups, size_t len) {
 }
 
 static void quad_tree_draw_rects_for_point(quad_tree_t* qt, Vector2 point) {
-  if (CheckCollisionPointRec(point, qt->bounds)) {
+  if (help_check_collision_bb_p(qt->bounds, point)) {
     if (qt->is_leaf || _debug == 4) {
-      Vector2 vec[5] = { {.x = qt->bounds.x, .y = qt->bounds.y},
-        {.x = qt->bounds.x + qt->bounds.width, .y = qt->bounds.y},
-        {.x = qt->bounds.x + qt->bounds.width, .y = qt->bounds.y + qt->bounds.height},
-        {.x = qt->bounds.x, .y = qt->bounds.y + qt->bounds.height},
-        {.x = qt->bounds.x, .y = qt->bounds.y} };
+      Vector2 vec[5] = { {.x = qt->bounds.xmin, .y = qt->bounds.ymin},
+        {.x = qt->bounds.xmax, .y = qt->bounds.ymin},
+        {.x = qt->bounds.xmax, .y = qt->bounds.ymax},
+        {.x = qt->bounds.xmin, .y = qt->bounds.ymax},
+        {.x = qt->bounds.xmin, .y = qt->bounds.ymin} };
       smol_mesh_gen_line_strip(_line_mesh, vec, 5, _color);
     }
   }
@@ -539,26 +539,26 @@ static void quad_tree_draw_rects_for_point(quad_tree_t* qt, Vector2 point) {
 }
 
 static void quad_tree_draw_rects(quad_tree_t* qt) {
-  if (!CheckCollisionRecs(_screen, qt->bounds)) return;
+  if (!help_check_collision_bb_rec(qt->bounds, _screen)) return;
   if (qt->is_leaf) {
-      Vector2 vec[5] = { {.x = qt->bounds.x, .y = qt->bounds.y},
-        {.x = qt->bounds.x + qt->bounds.width, .y = qt->bounds.y},
-        {.x = qt->bounds.x + qt->bounds.width, .y = qt->bounds.y + qt->bounds.height},
-        {.x = qt->bounds.x, .y = qt->bounds.y + qt->bounds.height},
-        {.x = qt->bounds.x, .y = qt->bounds.y} };
+      Vector2 vec[5] = { {.x = qt->bounds.xmin, .y = qt->bounds.ymin},
+        {.x = qt->bounds.xmax, .y = qt->bounds.ymin},
+        {.x = qt->bounds.xmax, .y = qt->bounds.ymax},
+        {.x = qt->bounds.xmin, .y = qt->bounds.ymax},
+        {.x = qt->bounds.xmin, .y = qt->bounds.ymin} };
       smol_mesh_gen_line_strip(_line_mesh, vec, 5, _color);
   } else {
     Vector2 vec[10] = {
-      {.x = qt->bounds.x, .y = qt->bounds.y},
-      {.x = qt->bounds.x + qt->bounds.width, .y = qt->bounds.y},
-      {.x = qt->bounds.x + qt->bounds.width, .y = qt->bounds.y + qt->bounds.height},
-      {.x = qt->bounds.x, .y = qt->bounds.y + qt->bounds.height},
-      {.x = qt->bounds.x, .y = qt->bounds.y},
-      {.x = qt->bounds.x, .y = qt->split_point.y},
-      {.x = qt->bounds.x + qt->bounds.width, .y = qt->split_point.y},
+      {.x = qt->bounds.xmin, .y = qt->bounds.ymin},
+      {.x = qt->bounds.xmax, .y = qt->bounds.ymin},
+      {.x = qt->bounds.xmax, .y = qt->bounds.ymax},
+      {.x = qt->bounds.xmin, .y = qt->bounds.ymax},
+      {.x = qt->bounds.xmin, .y = qt->bounds.ymin},
+      {.x = qt->bounds.xmin, .y = qt->split_point.y},
+      {.x = qt->bounds.xmax, .y = qt->split_point.y},
       {.x = qt->split_point.x, .y = qt->split_point.y},
-      {.x = qt->split_point.x, .y = qt->bounds.y + qt->bounds.height},
-      {.x = qt->split_point.x, .y = qt->bounds.y}
+      {.x = qt->split_point.x, .y = qt->bounds.ymax},
+      {.x = qt->split_point.x, .y = qt->bounds.ymin}
     };
     smol_mesh_gen_line_strip(_line_mesh, vec, 10, _color);
   }
@@ -572,9 +572,10 @@ static void quad_tree_draw_rects(quad_tree_t* qt) {
 
 static void _quad_tree_draw_lines(quad_tree_t* qt) {
   if (qt->count == 0) return;
-  if (!CheckCollisionRecs(qt->bounds, _screen)) return;
-  if (qt->count > 10 && qt->bounds.height * qt->bounds.width < 0.0001 * _screen.width * _screen.height) {
-    smol_mesh_gen_quad(_quad_mesh, qt->bounds, qt->mid_point, qt->tangent, _color);
+  if (!help_check_collision_bb_rec(qt->bounds, _screen)) return;
+  Rectangle bb_rect = { qt->bounds.xmin, qt->bounds.ymin, qt->bounds.xmax - qt->bounds.xmin, qt->bounds.ymax - qt->bounds.ymin };
+  if (qt->count > 10 && bb_rect.height * bb_rect.width < 0.0001 * _screen.width * _screen.height) {
+    smol_mesh_gen_quad(_quad_mesh, bb_rect, qt->mid_point, qt->tangent, _color);
     return;
   }
   if (!qt->is_leaf) {
@@ -599,21 +600,103 @@ static void _quad_tree_draw_lines(quad_tree_t* qt) {
   }
 }
 
-static int _quad_tree_print_dot(quad_tree_t* t, int* n) {
-  int id = ++*n;
-  if (t->is_leaf) {
-    printf(" id%d [label=\"%f,%f,%f,%f\\n%lu\"]\n", id, t->bounds.x, t->bounds.y, t->bounds.width, t->bounds.height, t->count);
-    return id;
-  } else {
-    printf(" id%d [label=\"%f,%f,%f,%f\\l%f,%f\\l%lu\"]\n", id, t->bounds.x, t->bounds.y, t->bounds.width, t->bounds.height, t->split_point.x, t->split_point.y, t->count);
-    for (int i = 0; i < QUAD_TREE_DIR_COUNT; ++i) {
-      int c = _quad_tree_print_dot(&t->children[i], n);
-      printf(" id%d -> id%d;\n", id, c);
-    }
-  }
-  return id;
+static bool help_check_collision_bb_p(bb_t bb, Vector2 p) {
+  return bb.xmin <= p.x && bb.xmax >= p.x && bb.ymin <= p.y && bb.ymax >= p.y;
 }
 
+static bool help_check_collision_bb_rec(bb_t bb, Rectangle rec) {
+  return (bb.xmin <= (rec.x + rec.width)) &&
+         (bb.xmax >= rec.x) &&
+         (bb.ymin <= (rec.y + rec.height)) &&
+         (bb.ymax >= rec.y);
+}
+
+static void quad_tree_square_children(quad_tree_t* qt) {
+  if (qt->is_leaf) return;
+  //printf("BEFORE\n");
+  //quad_tree_print_info(qt, (Vector2){0}, 0, 2);
+  for (int i = 0; i < QUAD_TREE_DIR_COUNT; ++i) {
+    quad_tree_t* child = &qt->children[i];
+    if (child->count == 0) continue;
+    bb_t bounds;
+    if (i == QUAD_TREE_DOWN_LEFT) {
+      bounds.xmin = qt->bounds.xmin;
+      bounds.ymin = qt->bounds.ymin;
+      bounds.xmax = qt->split_point.x;
+      bounds.ymax = qt->split_point.y;
+    }
+    else if (i == QUAD_TREE_DOWN_RIGHT) {
+      bounds.xmin = qt->split_point.x;
+      bounds.ymin = qt->bounds.ymin;
+      bounds.xmax = qt->bounds.xmax;
+      bounds.ymax = qt->split_point.y;
+    }
+    else if (i == QUAD_TREE_UP_RIGHT) {
+      bounds.xmin = qt->split_point.x;
+      bounds.ymin = qt->split_point.y;
+      bounds.xmax = qt->bounds.xmax;
+      bounds.ymax = qt->bounds.ymax;
+    }
+    else if (i == QUAD_TREE_UP_LEFT) {
+      bounds.xmin = qt->bounds.xmin;
+      bounds.ymin = qt->split_point.y;
+      bounds.xmax = qt->split_point.x;
+      bounds.ymax = qt->bounds.ymax;
+    }
+    float cheight = child->bounds.ymax - child->bounds.ymin,
+          cwidth  = child->bounds.xmax - child->bounds.xmin;
+    float dif = absf(cheight - cwidth);
+    if (cheight > cwidth) {
+      float left_pad = qt->bounds.xmin - bounds.xmin,
+            right_pad = bounds.xmax - qt->bounds.xmax,
+            dif2 = dif/2;
+      if (dif2 <= left_pad && dif2 <= right_pad) {
+        child->bounds.xmax += dif2;
+        child->bounds.xmin -= dif2;
+      } else if (dif <= left_pad) {
+        child->bounds.xmin -= dif;
+      } else if (dif <= right_pad) {
+        child->bounds.xmax += dif;
+      } else {
+        float d2 = dif - right_pad;
+        assert(d2 > 0.f);
+        child->bounds.xmax = bounds.xmax;
+        child->bounds.xmin -= d2;
+      }
+    } else if (cwidth > cheight) {
+      float down_pad = qt->bounds.ymin - bounds.ymin,
+            up_pad = bounds.ymax - qt->bounds.ymax,
+            dif2 = dif/2;
+      if (dif2 <= up_pad && dif2 <= down_pad) {
+        child->bounds.ymax += dif2;
+        child->bounds.ymin -= dif2;
+      } else if (dif <= down_pad) {
+        child->bounds.ymin -= dif;
+      } else if (dif <= up_pad) {
+        child->bounds.ymax += dif;
+      } else {
+        float d2 = dif - up_pad;
+        assert(d2 > 0.f);
+        child->bounds.ymax = bounds.ymax;
+        child->bounds.ymin -= d2;
+      }
+    }
+//    assert(child->bounds.xmin >= bounds.xmin);
+//    assert(child->bounds.xmax <= bounds.xmax);
+//    assert(child->bounds.ymin >= bounds.ymin);
+//    assert(child->bounds.ymax <= bounds.ymax);
+//
+//    assert(child->bounds.xmin >= qt->bounds.xmin);
+//    assert(child->bounds.xmax <= qt->bounds.xmax);
+//    assert(child->bounds.ymin >= qt->bounds.ymin);
+//    assert(child->bounds.ymax <= qt->bounds.ymax);
+  }
+  //printf("AFTER\n");
+  //quad_tree_print_info(qt, (Vector2){0}, 0, 2);
+}
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 static quad_tree_visitor _visitor_enter, _visitor_exit;
 static void * _visitor_user_data;
 static void _quad_tree_visit(quad_tree_t* root) {
@@ -643,8 +726,6 @@ static void quad_tree_max_depth_visit_exit(quad_tree_t* node, quad_tree_max_dept
   --count->cur_depth;
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 int quad_tree_max_depth(quad_tree_root_t* r) {
   quad_tree_max_depth_data data;
   quad_tree_visit(r->root, quad_tree_max_depth_visit_enter, quad_tree_max_depth_visit_exit, &data);

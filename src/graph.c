@@ -78,8 +78,6 @@ void graph_init(graph_values_t* gv, float width, float height) {
 static void help_draw_text(const char *text, Vector2 pos, float fontSize, Color color) {
   float defaultFontSize = 10.f;
   if (fontSize < defaultFontSize) fontSize = defaultFontSize;
-  float spacing = fontSize/defaultFontSize;
-
   DrawTextEx(default_font, text, (Vector2){roundf(pos.x), roundf(pos.y)}, floorf(fontSize), 1.0f, color);
 }
 
@@ -285,10 +283,7 @@ static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale) {
   DrawButton(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Line draw calls: %d", gv->lines_mesh->draw_calls);
   DrawButton(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Points drawn: %d", gv->lines_mesh->points_drawn);
   for(size_t j = 0; j < gv->groups_len; ++j) {
-    int p = DrawButton(&gv->groups[j].is_selected, 30.f, gv->graph_rect.y + (float)(33 * (i++)), font_scale * 15.f, buff, "Group #%d: %d/%d; %d", gv->groups[j].group_id, gv->groups[j].len, gv->groups[j].cap, gv->groups[j].qt_expands);
-    if (p > 0 && IsKeyPressed(KEY_P)) {
-      quad_tree_print_dot(gv->groups[j].qt);
-    }
+    DrawButton(&gv->groups[j].is_selected, 30.f, gv->graph_rect.y + (float)(33 * (i++)), font_scale * 15.f, buff, "Group #%d: %d/%d; %d", gv->groups[j].group_id, gv->groups[j].len, gv->groups[j].cap, gv->groups[j].qt_expands);
   }
   gv->lines_mesh->draw_calls = 0;
   gv->lines_mesh->points_drawn = 0;

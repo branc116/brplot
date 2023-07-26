@@ -102,12 +102,16 @@ typedef struct {
   size_t start_index;
   size_t length;
 } quad_tree_groups_t;
+typedef struct bounding_box {
+  float xmin, ymin, xmax, ymax;
+} bb_t;
 
 typedef struct _quad_tree_s {
   quad_tree_groups_t* groups;
-  Rectangle bounds;
+  bb_t bounds;
   Vector2 split_point, mid_point, tangent;
   struct _quad_tree_s* children;
+  struct _quad_tree_s const * parent;
   size_t count, groups_len, groups_cap;
   bool is_leaf;
 } quad_tree_t;
@@ -224,6 +228,18 @@ q_command q_pop(q_commands* q);
 
 static inline float maxf(float a, float b) {
   return a > b ? a : b;
+}
+
+static inline float minf(float a, float b) {
+  return a > b ? b : a;
+}
+
+static inline float absf(float a) {
+  return a > 0 ? a : -a;
+}
+static inline float signf(float a) {
+  return a > 0.f ?  1.f :
+         a < 0.f ? -1.f : 0.f;
 }
 
 #ifdef __cplusplus
