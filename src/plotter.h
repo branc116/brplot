@@ -17,7 +17,7 @@ extern "C" {
 //TODO: Do something with this...
 #define GRAPH_LEFT_PAD 400
 
-#define QUAD_TREE_SPLIT_COUNT 256
+#define QUAD_TREE_SPLIT_COUNT 4
 
 
 #ifdef LINUX
@@ -86,18 +86,6 @@ typedef struct {
   size_t draw_calls, points_drawn;
 } smol_mesh_t;
 
-typedef enum {
-  QUAD_TREE_UP_LEFT = 0,
-  QUAD_TREE_UP_RIGHT,
-  QUAD_TREE_DOWN_LEFT,
-  QUAD_TREE_DOWN_RIGHT,
-  QUAD_TREE_DIR_COUNT,
-  QUAD_TREE_DIR_UP = 0,
-  QUAD_TREE_DIR_DOWN = 2,
-  QUAD_TREE_DIR_LEFT = 0,
-  QUAD_TREE_DIR_RIGHT = 1
-} quad_tree_dir; 
-
 typedef struct {
   size_t start_index;
   size_t length;
@@ -106,34 +94,34 @@ typedef struct bounding_box {
   float xmin, ymin, xmax, ymax;
 } bb_t;
 
-typedef struct _quad_tree_s {
-  quad_tree_groups_t* groups;
-  bb_t bounds;
-  Vector2 split_point, mid_point, tangent;
-  struct _quad_tree_s* children;
-  struct _quad_tree_s const * parent;
-  size_t count, groups_len, groups_cap;
-  bool is_leaf;
-} quad_tree_t;
+typedef enum {
+  resampling_dir_null = 0ul,
+  resampling_dir_left = 1ul,
+  resampling_dir_right = 2ul,
+  resampling_dir_up = 4ul,
+  resampling_dir_down = 8ul
+} resampling_dir;
 
-#define QUAD_TREE_ROOT_TEMP_CAP 1024
 typedef struct {
-  size_t temp[QUAD_TREE_ROOT_TEMP_CAP], temp_length;
-  Vector2 temp_mid_point;
-  quad_tree_t* root;
-  float balanc_max_baddness;
-  int balanc_max_elements, balanc_min_elements, balanc_count;
-  bool balanc_enable;
-} quad_tree_root_t;
+  bb_t bounds;
+  size_t from, count;
+  resampling_dir dir;
+} resamping_interval_t;
 
+typedef struct {
+  Vector2 const ** points;
+  resamping_interval_t* intervals;
+  Vector2* temp_points;
+  size_t intervals_count, intervals_cap;
+  size_t resampling_count, raw_count;
+} resampling_t;
 
 typedef struct {
   size_t cap, len;
   int group_id;
-  bool is_selected, is_sorted;
+  bool is_selected;
   Vector2* points;
-  quad_tree_root_t* qt;
-  int qt_expands;
+  resampling_t* resampling;
 } points_group_t;
 
 typedef struct {
@@ -161,8 +149,6 @@ typedef struct {
   // Any thread can write to this q, only render thread can pop
   q_commands commands;
 
-  int debug;
-
   bool shaders_dirty;
   bool follow;
 
@@ -171,39 +157,26 @@ typedef struct {
 
 smol_mesh_t* smol_mesh_malloc(size_t capacity, Shader s);
 void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 mid_point, Vector2 tangent, Color color);
-// Only render thread can access this functions.
 bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t len, Color color);
-// Only render thread can access this functions.
+void smol_mesh_gen_bb(smol_mesh_t* mesh, bb_t bb, Color color);
 void smol_mesh_draw(smol_mesh_t* mesh);
-// Only render thread can access this functions.
 void smol_mesh_update(smol_mesh_t* mesh);
-// Only render thread can access this functions.
 void smol_mesh_free(smol_mesh_t* mesh);
 
-// Only render thread can access this functions.
 void points_group_push_y(points_group_t* pg_array, size_t* pg_array_len, size_t pg_array_cap, float y, int group);
-// Only render thread can access this functions.
 void points_group_push_xy(points_group_t* pg_array, size_t* pg_array_len, size_t pg_array_cap, float x, float y, int group);
-// Only render thread can access this functions.
 void points_group_clear(points_group_t* pg_array, size_t* pg_array_len, int group_id);
-// Only render thread can access this functions.
 void points_group_clear_all(points_group_t* pg_array, size_t* pg_array_len);
-// Only render thread can access this functions.
-void points_groups_draw(points_group_t* pg_array, size_t pg_len, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Color* colors, Rectangle rect, int debug);
-// Only render thread can access this functions.
+void points_groups_draw(points_group_t* pg_array, size_t pg_len, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Color* colors, Rectangle rect);
 void points_group_add_test_points(points_group_t* pg_array, size_t* pg_len, size_t pg_array_cap);
 
-quad_tree_root_t* quad_tree_malloc(void);
-bool quad_tree_add_point(quad_tree_root_t* root, Vector2 const * all_points, size_t index);
-int quad_tree_draw(quad_tree_root_t* qt, Color color, Rectangle screen, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Vector2* all_points, size_t all_points_count, int debug);
-void quad_tree_print_dot(quad_tree_root_t* t);
-// This will only free qt->node.children memory recursivley.
-void quad_tree_free(quad_tree_root_t* qt);
+resampling_t* resampling_malloc(Vector2 const ** points);
+void resampling_free(resampling_t* res);
+size_t resampling_draw(resampling_t* res, Rectangle screen, smol_mesh_t* lines_mesh, smol_mesh_t* quad_mesh, Color color);
+void resampling_add_point(resampling_t* res, size_t index);
 
 extern Vector2 graph_mouse_position;
-// Only render thread can access this functions.
 void graph_init(graph_values_t* gv, float width, float height);
-// Only render thread can access this functions.
 void graph_draw(graph_values_t* gv);
 
 #ifndef RELEASE
@@ -240,6 +213,10 @@ static inline float absf(float a) {
 static inline float signf(float a) {
   return a > 0.f ?  1.f :
          a < 0.f ? -1.f : 0.f;
+}
+static inline int signi(int a) {
+  return a > 0 ?  1 :
+         a < 0 ? -1 : 0;
 }
 
 #ifdef __cplusplus

@@ -58,7 +58,6 @@ void graph_init(graph_values_t* gv, float width, float height) {
     .quads_mesh = NULL,
     .follow = false,
     .shaders_dirty = false,
-    .debug = 0,
     .commands = {0}
   };
   for (int i = 0; i < 3; ++i) {
@@ -149,9 +148,6 @@ void graph_draw(graph_values_t* gv) {
     if (IsKeyPressed(KEY_F)) {
       gv->follow = !gv->follow;
     }
-    if (IsKeyPressed(KEY_D)) {
-      gv->debug = (gv->debug + 1) % 5;
-    }
   }
   for (int i = 0; i < 3; ++i) {
     SetShaderValue(gv->shaders[i], gv->uResolution[i], &gv->graph_rect, SHADER_UNIFORM_VEC4);
@@ -166,7 +162,7 @@ void graph_draw(graph_values_t* gv) {
   EndShaderMode();
   gv->lines_mesh->active_shader = gv->linesShader;
   gv->quads_mesh->active_shader = gv->quadShader;
-  points_groups_draw(gv->groups, gv->groups_len, gv->lines_mesh, gv->quads_mesh, gv->group_colors, graph_get_rectangle(gv), gv->debug);
+  points_groups_draw(gv->groups, gv->groups_len, gv->lines_mesh, gv->quads_mesh, gv->group_colors, graph_get_rectangle(gv));
   if (is_inside) {
     float pad = 5.f;
     float fs = (10.f * font_scale);
@@ -283,7 +279,7 @@ static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale) {
   DrawButton(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Line draw calls: %d", gv->lines_mesh->draw_calls);
   DrawButton(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Points drawn: %d", gv->lines_mesh->points_drawn);
   for(size_t j = 0; j < gv->groups_len; ++j) {
-    DrawButton(&gv->groups[j].is_selected, 30.f, gv->graph_rect.y + (float)(33 * (i++)), font_scale * 15.f, buff, "Group #%d: %d/%d; %d", gv->groups[j].group_id, gv->groups[j].len, gv->groups[j].cap, gv->groups[j].qt_expands);
+    DrawButton(&gv->groups[j].is_selected, 30.f, gv->graph_rect.y + (float)(33 * (i++)), font_scale * 15.f, buff, "Group #%d: %d/%d; %ul/%ul/%ul", gv->groups[j].group_id, gv->groups[j].len, gv->groups[j].cap, gv->groups[j].resampling->intervals_count, gv->groups[j].resampling->raw_count, gv->groups[j].resampling->resampling_count);
   }
   gv->lines_mesh->draw_calls = 0;
   gv->lines_mesh->points_drawn = 0;

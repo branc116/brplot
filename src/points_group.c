@@ -8,17 +8,11 @@
 #include <math.h>
 #include <string.h>
 
-#define sample_points_cap 1024
-static Vector2 sample_points[sample_points_cap];
-
 static points_group_t* points_group_init(points_group_t* g, int group_id);
 static points_group_t* points_group_get(points_group_t* pg_array, size_t* pg_array_len, size_t pg_array_cap, int group);
 static void points_group_push_point(points_group_t* g, Vector2 v);
 static void points_group_deinit(points_group_t* g);
-static Vector2 interpolate(Vector2 a, Vector2 b, float x);
-static Vector2 const* binary_search(Vector2 const* lb, Vector2 const* ub, float x_value);
 static bool points_group_realloc(points_group_t* pg, size_t new_cap);
-static size_t points_group_sample_points(points_group_t const* g, Rectangle rect, Vector2* out_points, size_t max_number_of_points);
 
 void points_group_push_y(points_group_t* pg_array, size_t* pg_array_len, size_t pg_array_cap, float y, int group) {
   points_group_t* pg = points_group_get(pg_array, pg_array_len, pg_array_cap, group);
@@ -59,24 +53,19 @@ void points_group_clear_all(points_group_t* pg_array, size_t* pg_array_len) {
 }
 
 void points_group_add_test_points(points_group_t* pg_array, size_t* pg_len, size_t pg_array_cap) {
-  for (int harm = 1; harm <= 4; ++harm) {
-    int group = harm;
-    size_t points_to_add = 1024;
+  {
+    int group = 0;
     points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, group);
-    // This can only be called from render thread and render thread must realloc points array.
-    if (g->cap <= g->len + points_to_add) {
-      if (!points_group_realloc(g, 2 * (g->len + points_to_add))) {
-        continue;
-      }
-    }
-    for(size_t i = 0; i < points_to_add; ++i) {
-      float x = (float)g->len*.1f;
-      float y = (float)x*0.1f;
-      Vector2 p = {x*.1f, .1f*(float)harm*sinf(10.f*y/(float)(1<<harm)) };
-      points_group_push_point(g, p);
-    }
+    for (int i = 0; i < 1024; ++i)
+      points_group_push_point(g, (Vector2){(float)g->len, sinf((float)g->len/128.f)});
   }
-  for(int i = 0; i < 2*1024; ++i) {
+  {
+    int group = 1;
+    points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, group);
+    for (int i = 0; i < 1024; ++i)
+      points_group_push_point(g, (Vector2){-(float)g->len, sinf((float)g->len/128.f)});
+  }
+  for(int i = 0; i < 1024*1024; ++i) {
     int group = 5;
     points_group_t* g = points_group_get(pg_array, pg_len, pg_array_cap, group);
     float t = (float)(1 + g->len)*.1f;
@@ -100,17 +89,12 @@ void points_group_add_test_points(points_group_t* pg_array, size_t* pg_len, size
   }
 }
 
-void points_groups_draw(points_group_t* gs, size_t len, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Color* colors, Rectangle rect, int debug) {
+void points_groups_draw(points_group_t* gs, size_t len, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Color* colors, Rectangle rect) {
   for (size_t j = 0; j < len; ++j) {
     points_group_t * g = &gs[j];
     if (g->is_selected) {
       Color c = colors[j];
-      if (g->is_sorted) {
-        size_t samp_len = points_group_sample_points(g, rect, sample_points, sample_points_cap);
-        if (samp_len > 1) smol_mesh_gen_line_strip(line_mesh, sample_points, samp_len, c);
-      } else {
-        g->qt_expands = quad_tree_draw(g->qt, c, rect, line_mesh, quad_mesh, g->points, g->len, debug);
-      }
+      resampling_draw(g->resampling, rect, line_mesh, quad_mesh, c);
     }
   }
   if (line_mesh->cur_len > 0) {
@@ -123,31 +107,13 @@ void points_groups_draw(points_group_t* gs, size_t len, smol_mesh_t* line_mesh, 
   }
 }
 
-static size_t points_group_sample_points(points_group_t const* g, Rectangle rect, Vector2* out_points, size_t max_number_of_points) {
-  if (g->len == 0) {
-    return 0;
-  }
-  size_t out_index = 0, i = 0;
-  float step = 1.1f*rect.width/(float)max_number_of_points;
-  Vector2 const* lb = g->points, *ub = &g->points[g->len - 1];
-  while (lb != NULL && i < max_number_of_points) {
-    float cur = rect.x + step * (float)(i++);
-    Vector2 const* clb = binary_search(lb, ub, cur); // Clb will alway be LESS than g->len - 1, so Clb + 1 will always be LESS OR EQUAL to g->len - 1
-    if (clb != NULL) {
-      out_points[out_index++] = interpolate(clb[0], clb[1], cur);
-      lb = clb;
-    }
-  }
-  return out_index;
-}
-
 static points_group_t* points_group_init(points_group_t* g, int group_id) {
     g->cap = 1024;
     g->len = 0;
     g->group_id = group_id;
     g->is_selected = true;
     g->points = malloc(sizeof(Vector2) * 1024);
-    g->is_sorted = true;
+    g->resampling = resampling_malloc((Vector2 const **)&g->points);
     return g;
 }
 
@@ -169,59 +135,21 @@ static points_group_t* points_group_get(points_group_t* pg_array, size_t* pg_arr
   return points_group_init(&pg_array[(*pg_array_len)++], group);
 }
 
-static void points_group_init_quad_tree(points_group_t* g) {
-  g->qt = quad_tree_malloc();
-  g->qt->balanc_enable = true;
-  g->qt->balanc_max_baddness = 0.69f;
-  g->qt->balanc_max_elements = 15360;
-  g->qt->balanc_min_elements = 256;
-  for (size_t i = 0; i < g->len; ++i)
-    quad_tree_add_point(g->qt, g->points, i);
-}
-
 static void points_group_push_point(points_group_t* g, Vector2 v) {
   if (g->len >= g->cap) {
     assert(points_group_realloc(g, g->cap * 2));
   }
-  if (g->len > 0 && g->is_sorted && g->points[g->len - 1].x > v.x) {
-    g->is_sorted = false;
-    points_group_init_quad_tree(g);
-  }
   g->points[g->len] = v;
-  if (!g->is_sorted) {
-    quad_tree_add_point(g->qt, g->points, g->len);
-  }
+  resampling_add_point(g->resampling, g->len);
   ++g->len;
 }
 
 static void points_group_deinit(points_group_t* g) {
     // Free points
     free(g->points);
-    if (!g->is_sorted) quad_tree_free(g->qt);
+    resampling_free(g->resampling);
     g->points = NULL;
     g->len = 0;
-}
-
-static Vector2 interpolate(Vector2 a, Vector2 b, float x) {
-  assert(x >= a.x);
-  assert(x <= b.x);
-  assert(a.x <= b.x);
-  float k = (x - a.x)/(b.x - a.x);
-  return (Vector2){.x = a.x*(1 - k) + b.x*k, .y =  a.y*(1 - k) + b.y*k };
-}
-
-static Vector2 const* binary_search(Vector2 const* lb, Vector2 const* ub, float x_value) {
-  if (lb->x > x_value)
-    return NULL;
-  if (ub->x < x_value)
-    return NULL;
-  while (ub - lb > 1) {
-    Vector2 const* mid = lb + (ub - lb)/2;
-    if (mid->x < x_value) lb = mid;
-    else if (mid->x > x_value) ub = mid;
-    else return mid;
-  }
-  return lb;
 }
 
 static bool points_group_realloc(points_group_t* pg, size_t new_cap) {

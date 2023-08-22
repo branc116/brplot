@@ -133,10 +133,23 @@ void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 center, Vecto
   mesh->verticies[c+17] = lu;
 }
 
+void smol_mesh_gen_bb(smol_mesh_t* mesh, bb_t bb, Color color) {
+  float xmi = bb.xmin, ymi = bb.ymin , xma = bb.xmax, yma = bb.ymax;
+  Vector2 v[6] = {
+    {xmi, ymi},
+    {xma, ymi},
+    {xma, yma},
+    {xmi, yma},
+    {xmi, ymi},
+  };
+  smol_mesh_gen_line_strip(mesh, v, 5, color);
+}
+
 bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t len, Color color) {
   // Todo: check if index v is inside gv->points
   size_t vn = 2*3*3;
   Vector3 cv = {color.r/255.f, color.g/255.f, color.b/255.f};
+  printf("%lu\n", len);
   for (size_t v = 0; v < ((len - 1)*vn); v += vn)
   {
     size_t c = mesh->cur_len++;
