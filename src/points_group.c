@@ -79,7 +79,6 @@ void points_group_add_test_points(points_group_t* pg_array, size_t* pg_len, size
     int l = (int)g->len;
     for(int i = 0; i < 0; ++i) {
       for(int j = 0; j < 0; ++j) {
-        printf("i = %d\n", i);
         int x = -50 + j + l;
         int y = (-50 + (i - j) + l) * (i % 2 == 0 ? 1 : -1);
         Vector2 p = {(float)x, (float)y};

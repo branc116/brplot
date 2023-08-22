@@ -34,6 +34,25 @@ static Font default_font;
 
 Vector2 graph_mouse_position;
 
+Shader sdf_font_shader_s;
+
+Font load_sdf_font() {
+  Font fontDefault = { 0 };
+  int sz = 32;
+  fontDefault.baseSize = sz;
+  fontDefault.glyphCount = 95;
+  fontDefault.glyphs = LoadFontData(default_font_data, sizeof(default_font_data), sz, 0, 95, FONT_SDF);
+  Image atlas = GenImageFontAtlas(fontDefault.glyphs, &fontDefault.recs, 95, sz, 0, 1);
+  fontDefault.texture = LoadTextureFromImage(atlas);
+  UnloadImage(atlas);
+#ifdef RELEASE 
+  sdf_font_shader_s = LoadShaderFromMemory(NULL, SHADER_FONT_SDF),
+#else
+  sdf_font_shader_s  = LoadShader(NULL, "src/desktop/shaders/sdf_font.fs");
+#endif
+  SetTextureFilter(fontDefault.texture, TEXTURE_FILTER_BILINEAR);
+  return fontDefault;
+}
 
 void graph_init(graph_values_t* gv, float width, float height) {
   *gv = (graph_values_t){
@@ -69,15 +88,15 @@ void graph_init(graph_values_t* gv, float width, float height) {
   gv->lines_mesh = smol_mesh_malloc(PTOM_COUNT, gv->linesShader);
   gv->quads_mesh = smol_mesh_malloc(PTOM_COUNT, gv->quadShader);
   q_init(&gv->commands);
-  default_font = gv->font = LoadFontFromMemory(".ttf", default_font_data,
-                        sizeof(default_font_data), 64, NULL,
-                        default_font_glyphs);
+  default_font = gv->font = load_sdf_font();
 }
 
 static void help_draw_text(const char *text, Vector2 pos, float fontSize, Color color) {
   float defaultFontSize = 10.f;
   if (fontSize < defaultFontSize) fontSize = defaultFontSize;
-  DrawTextEx(default_font, text, (Vector2){roundf(pos.x), roundf(pos.y)}, floorf(fontSize), 1.0f, color);
+  BeginShaderMode(sdf_font_shader_s);
+    DrawTextEx(default_font, text, (Vector2){roundf(pos.x), roundf(pos.y)}, floorf(fontSize), 1.0f, color);
+  EndShaderMode();
 }
 
 static float help_measure_text(const char* txt, float font_size) {

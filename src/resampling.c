@@ -50,7 +50,6 @@ size_t resampling_draw(resampling_t* res, Rectangle screen, smol_mesh_t* lines_m
       ++res->raw_count;
     } else {
       size_t s = points_group_sample_points(ps, inter->count, inter->dir, screen, res->temp_points, temp_points_count);
-      printf("tu %lu\n", s);
       if (s == 0) continue;
       smol_mesh_gen_line_strip(lines_mesh, res->temp_points, s, color);
       ret += s;
@@ -211,6 +210,12 @@ TEST_CASE(binary_search_tests) {
   TEST_EQUAL(1, ((float*)&vec2[1])[-1]); // Checking negative indicies...
   Vector2 vec3[] = {{8, 1}, {6, 1}, {4, 3}, {2, 5}, {1, 7}, {0, 9}};
   TEST_EQUAL(-4, binary_search(&vec3[5].x, &vec3[0].x, 6.f, -2).index); //lb=5, index = -4, lb[-4] == vec3[1]
+                                                                        //
+  Vector2 vecy[] = {{10, 1}, {10, 2}, {5, 3}, {15, 5}, {20, 7}, {10, 9}};
+  TEST_EQUAL(4, binary_search(&vecy[0].y, &vecy[5].y, 7.f, 2).index);
+
+  Vector2 vecy2[] = {{10, 9}, {10, 7}, {5, 5}, {15, 3}, {20, 2}, {10, 1}};
+  TEST_EQUAL(-4, binary_search(&vecy2[5].y, &vecy2[0].y, 7.f, -2).index);
 }
 
 static bool __attribute__((unused)) help_check_collision_bb_p(bb_t bb, Vector2 p) {
