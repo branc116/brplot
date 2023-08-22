@@ -21,15 +21,15 @@ CCFLAGS+= -DEXTERNAL_CONFIG_FLAGS=1 \
 CCFLAGS_LINUX= -Wl,-z,now -DLINUX -DPLATFORM_DESKTOP $(CCFLAGS)
 SHADERS= SHADER_GRID_FS:src/desktop/shaders/grid.fs SHADER_LINE_FS:src/desktop/shaders/line.fs SHADER_LINE_VS:src/desktop/shaders/line.vs SHADER_QUAD_FS:src/desktop/shaders/quad.fs SHADER_QUAD_VS:src/desktop/shaders/quad.vs
 SOURCE= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c \
-        ./src/desktop/linux/read_input.c ./src/desktop/linux/refresh_shaders.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/read_input.c src/quad_tree.c
+        ./src/desktop/linux/read_input.c ./src/desktop/linux/refresh_shaders.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/read_input.c src/resampling.c
 
 CCFLAGS_DBG = -Wconversion -Wall -Wpedantic -Wextra -g -DLINUX -DPLATFORM_DESKTOP -pg -fsanitize=address -fsanitize=leak \
 							-fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
-							-fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
-SOURCE_DBG= src/desktop/linux/refresh_shaders.c ./src/desktop/linux/read_input.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/read_input.c src/quad_tree.c 
+							-fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -DUNIT_TEST
+SOURCE_DBG= src/desktop/linux/refresh_shaders.c ./src/desktop/linux/read_input.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/read_input.c src/resampling.c
 
 SOURCE_WEB= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c \
-        src/web_specific/refresh_shaders.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/web_specific/read_input.c
+        src/web_specific/refresh_shaders.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/web_specific/read_input.c src/resampling.c
 SHADERS_WEB= SHADER_GRID_FS:src/shaders/web/grid.fs SHADER_LINE_FS:src/shaders/web/line.fs SHADER_LINE_VS:src/shaders/web/line.vs
 CCFLAGS_WASM= -DGRAPHICS_API_OPENGL_ES2 -DPLATFORM_WEB --memory-init-file 1 --closure 1 -s WASM_BIGINT -s ENVIRONMENT=web -sALLOW_MEMORY_GROWTH -s USE_GLFW=3 -s ASYNCIFY $(CCFLAGS)
 # If emscript is not in this location call: make EMSCRIPTEN=<path to your EMSCRIPTEN> ...
@@ -47,6 +47,10 @@ bin/rlplot: $(SOURCE) src/shaders.h src/plotter.h src/default_font.h
 bin/rlplot_dbg: $(SOURCE_DBG) src/plotter.h src/default_font.h
 	test -d bin || mkdir bin;
 	gcc $(CCFLAGS_DBG) -o bin/rlplot_dbg $(SOURCE_DBG) -lraylib -lm -lglfw
+
+.PHONY: test
+test: bin/rlplot_dbg
+	./bin/rlplot_dbg --unittest
 
 src/shaders.h: ./src/desktop/shaders/line.vs ./src/desktop/shaders/line.fs ./src/desktop/shaders/grid.fs ./src/desktop/shaders/quad.fs ./src/desktop/shaders/quad.vs
 	# This will break if there are `"` characters in shaders
