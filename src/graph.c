@@ -36,7 +36,7 @@ Vector2 graph_mouse_position;
 
 Shader sdf_font_shader_s;
 
-Font load_sdf_font() {
+Font load_sdf_font(void) {
   Font fontDefault = { 0 };
   int sz = 32;
   fontDefault.baseSize = sz;
@@ -77,7 +77,7 @@ void graph_init(graph_values_t* gv, float width, float height) {
     .quads_mesh = NULL,
     .follow = false,
     .shaders_dirty = false,
-    .commands = {0}
+    .commands = {0},
   };
   for (int i = 0; i < 3; ++i) {
     gv->uResolution[i] = GetShaderLocation(gv->shaders[i], "resolution");

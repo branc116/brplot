@@ -29,8 +29,8 @@ CCFLAGS_DBG = -Wconversion -Wall -Wpedantic -Wextra -g -DLINUX -DPLATFORM_DESKTO
 SOURCE_DBG= src/desktop/linux/refresh_shaders.c ./src/desktop/linux/read_input.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/read_input.c src/resampling.c
 
 SOURCE_WEB= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c \
-        src/web_specific/refresh_shaders.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/web_specific/read_input.c src/resampling.c
-SHADERS_WEB= SHADER_GRID_FS:src/shaders/web/grid.fs SHADER_LINE_FS:src/shaders/web/line.fs SHADER_LINE_VS:src/shaders/web/line.vs SHADER_FONT_SDF:src/desktop/shaders/sdf_font.fs
+        src/web/refresh_shaders.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/web/read_input.c src/resampling.c
+SHADERS_WEB= SHADER_GRID_FS:src/web/shaders/grid.fs SHADER_LINE_FS:src/web/shaders/line.fs SHADER_LINE_VS:src/web/shaders/line.vs SHADER_QUAD_VS:src/web/shaders/quad.vs SHADER_QUAD_FS:src/web/shaders/quad.fs SHADER_FONT_SDF:src/web/shaders/sdf_font.fs
 CCFLAGS_WASM= -DGRAPHICS_API_OPENGL_ES2 -DPLATFORM_WEB --memory-init-file 1 --closure 1 -s WASM_BIGINT -s ENVIRONMENT=web -sALLOW_MEMORY_GROWTH -s USE_GLFW=3 -s ASYNCIFY $(CCFLAGS)
 # If emscript is not in this location call: make EMSCRIPTEN=<path to your EMSCRIPTEN> ...
 EMSCRIPTEN?=/usr/lib/emscripten
@@ -70,7 +70,7 @@ src/default_font.h: ./fonts/PlayfairDisplayRegular-ywLOY.ttf
 www/index.wasm: $(SOURCE_WEB) src/plotter.h src/shaders_web.h
 	test -f $(EMSCRIPTEN)/emcc || (echo "Set EMSCRIPTEN variable (to directory where emcc is located) if you want to build for web" && kill -1)
 	test -d www || mkdir www;
-	$(EMSCRIPTEN)/emcc --shell-file=web_specific/minshell.html  $(CCFLAGS_WASM) -o www/index.html $(SOURCE_WEB)
+	$(EMSCRIPTEN)/emcc --shell-file=src/web/minshell.html  $(CCFLAGS_WASM) -o www/index.html $(SOURCE_WEB)
 
 src/shaders_web.h: src/web/shaders/grid.fs src/web/shaders/line.fs src/web/shaders/line.vs src/web/shaders/sdf_font.fs
 	# This will break if there are `"` characters in shaders

@@ -2,12 +2,13 @@
 precision mediump float;
 
 attribute vec3 vertexPosition;
-// This is not normal. This is dx, dy, and length of the line.
 attribute vec3 vertexColor;
+// This is not normal. This is dx, dy, and length of the line.
 attribute vec3 vertexNormal;
 
 varying vec2 normal;
 varying vec3 color;
+varying float dist;
 
 uniform vec2 offset;
 uniform vec4 resolution;
@@ -16,15 +17,10 @@ uniform vec2 screen;
 
 void main(void)
 {
+    dist = vertexPosition.z;
+    normal = vertexNormal.xy;
     color = vertexColor;
-    // TODO: make this uniform.
-    float thick = 0.09;
-    vec2 tg = vertexNormal.xy;
     vec2 position = vertexPosition.xy;
-
-    normal = -vertexPosition.z * normalize(tg.yx * zoom * vec2(-1., 1.));
-    vec2 dif = normal * thick/2.;
-    position -= dif * (min(zoom * 0.1, 20000.0));
 
     vec2 size = resolution.zw;
 

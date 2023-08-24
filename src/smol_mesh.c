@@ -149,7 +149,6 @@ bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t 
   // Todo: check if index v is inside gv->points
   size_t vn = 2*3*3;
   Vector3 cv = {color.r/255.f, color.g/255.f, color.b/255.f};
-  printf("%lu\n", len);
   for (size_t v = 0; v < ((len - 1)*vn); v += vn)
   {
     size_t c = mesh->cur_len++;
@@ -202,17 +201,6 @@ bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t 
       mesh->colors[c+i+2] = cv.z;
     }
   }
-//  for (int i = 1; i < len; ++i) {
-//    int vend = (i - 1) * 18, vstart = i * 18;
-//    merge_points(&mesh->normals[vend+3], &mesh->normals[vstart+0]);
-//    merge_points(&mesh->normals[vend+4], &mesh->normals[vstart+1]);
-//    mesh->normals[vend+12] = mesh->normals[vend+3];
-//    mesh->normals[vend+13] = mesh->normals[vend+4];
-//    merge_points(&mesh->normals[vend+15], &mesh->normals[vstart+6]);
-//    merge_points(&mesh->normals[vend+16], &mesh->normals[vstart+7]);
-//    mesh->normals[vstart+9] = mesh->normals[vstart+6];
-//    mesh->normals[vstart+10] = mesh->normals[vstart+7];
-//  }
   return true;
 }
 
