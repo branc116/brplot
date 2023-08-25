@@ -24,7 +24,6 @@ int main_gui(graph_values_t* gv) {
       graph_draw(gv);
     EndDrawing();
   }
-  CloseWindow();
   return 0;
 }
 
@@ -42,5 +41,12 @@ int main(void) {
 #endif
   read_input_main(gv);
   main_gui(gv);
+
+  // Clean up
+  read_input_stop();
+  graph_free(gv);
+  free(gv);
+  CloseWindow();
+  return 0;
 } 
 

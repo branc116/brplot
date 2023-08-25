@@ -177,6 +177,7 @@ void resampling_add_point(resampling_t* res, size_t index);
 
 extern Vector2 graph_mouse_position;
 void graph_init(graph_values_t* gv, float width, float height);
+void graph_free(graph_values_t* gv);
 void graph_draw(graph_values_t* gv);
 
 #ifndef RELEASE
@@ -186,7 +187,7 @@ void start_refreshing_shaders(graph_values_t* gv);
 #endif
 
 void read_input_main(graph_values_t* ptr);
-void add_point_callback(graph_values_t* gv, float value, int group);
+void read_input_stop(void);
 
 // Only render thread can access this functions.
 void q_init(q_commands* q);

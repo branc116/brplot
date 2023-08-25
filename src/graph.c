@@ -91,6 +91,18 @@ void graph_init(graph_values_t* gv, float width, float height) {
   default_font = gv->font = load_sdf_font();
 }
 
+void graph_free(graph_values_t* gv) {
+  for (size_t i = 0; i < sizeof(gv->shaders) / sizeof(Shader); ++i) {
+    UnloadShader(gv->shaders[i]);
+  }
+  smol_mesh_free(gv->lines_mesh);
+  smol_mesh_free(gv->quads_mesh);
+  for (size_t i = 0; i < gv->groups_len; ++i) {
+    points_group_clear_all(gv->groups, &gv->groups_len);
+  }
+  free(gv->commands.commands);
+}
+
 static void help_draw_text(const char *text, Vector2 pos, float fontSize, Color color) {
   float defaultFontSize = 10.f;
   if (fontSize < defaultFontSize) fontSize = defaultFontSize;
