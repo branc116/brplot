@@ -20,19 +20,16 @@ void read_input_main(graph_values_t* gv) {
 }
 
 void read_input_stop(void) {
-  int i = pthread_kill(thread, SIGALRM);
-  printf("SIGKILL: %d\n", i);
+  pthread_kill(thread, SIGALRM);
 }
 
 static void int_handle(int sig, siginfo_t* si, void* p) {
   pthread_t self = pthread_self();
-  fprintf(stdout, "[%lu] HANDLE SIGNAL: %d\n", self, sig);
   pthread_exit(NULL);
 }
 
 static void regirter_interupt() {
   pthread_t self = pthread_self();
-  printf("[%lu] REGISTER HANDLE\n", self);
   struct sigaction act = { 0 };
   act.sa_sigaction = int_handle;
   act.sa_flags = SA_SIGINFO;
