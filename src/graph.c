@@ -25,8 +25,9 @@
 
 static void refresh_shaders_if_dirty(graph_values_t* gv);
 static void update_resolution(graph_values_t* gv);
-static int DrawButton(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...);
-static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale);
+static int draw_button(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...);
+static void draw_left_panel(graph_values_t* gv, char *buff, float font_scale);
+static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale);
 static Rectangle graph_get_rectangle(graph_values_t* gv);
 static void graph_update_mouse_position(graph_values_t* gv);
 
@@ -45,7 +46,7 @@ Font load_sdf_font(void) {
   Image atlas = GenImageFontAtlas(fontDefault.glyphs, &fontDefault.recs, 95, sz, 0, 1);
   fontDefault.texture = LoadTextureFromImage(atlas);
   UnloadImage(atlas);
-#ifdef RELEASE 
+#ifdef RELEASE
   sdf_font_shader_s = LoadShaderFromMemory(NULL, SHADER_FONT_SDF),
 #else
   sdf_font_shader_s  = LoadShader(NULL, "src/desktop/shaders/sdf_font.fs");
@@ -118,7 +119,7 @@ static float help_measure_text(const char* txt, float font_size) {
   if (font_size < defaultFontSize) font_size = defaultFontSize;
 
   textSize = MeasureTextEx(default_font, txt, floorf(font_size), 1.0f);
- 
+
   return textSize.x;
 }
 
@@ -187,10 +188,12 @@ void graph_draw(graph_values_t* gv) {
     SetShaderValue(gv->shaders[i], gv->uScreen[i], &gv->uvScreen, SHADER_UNIFORM_VEC2);
   }
   DrawFPS(0, 0);
-  DrawLeftPanel(gv, buff, font_scale);
+  draw_left_panel(gv, buff, font_scale);
+  draw_grid_values(gv, buff, font_scale);
   BeginShaderMode(gv->gridShader);
     DrawRectangleRec(gv->graph_rect, RED);
   EndShaderMode();
+  // Todo: don't assign this every frame, no need for it. Assign it only when shaders are recompiled.
   gv->lines_mesh->active_shader = gv->linesShader;
   gv->quads_mesh->active_shader = gv->quadShader;
   points_groups_draw(gv->groups, gv->groups_len, gv->lines_mesh, gv->quads_mesh, gv->group_colors, graph_get_rectangle(gv));
@@ -216,6 +219,7 @@ void graph_draw(graph_values_t* gv) {
                             break;
       case q_command_clear_all: points_group_clear_all(gv->groups, &gv->groups_len);
                                 break;
+      default: assert(false);
     }
   }
 end: return;
@@ -224,7 +228,7 @@ end: return;
 static void graph_update_mouse_position(graph_values_t* gv) {
   Vector2 mp = GetMousePosition();
   Vector2 mp_in_graph = { mp.x - gv->graph_rect.x, mp.y - gv->graph_rect.y };
-  graph_mouse_position = (Vector2) { 
+  graph_mouse_position = (Vector2) {
     -(gv->graph_rect.width  - 2.f*mp_in_graph.x)/gv->graph_rect.height*gv->uvZoom.x/2.f + gv->uvOffset.x,
      (gv->graph_rect.height - 2.f *mp_in_graph.y)/gv->graph_rect.height*gv->uvZoom.y/2.f + gv->uvOffset.y };
 }
@@ -256,7 +260,7 @@ static void refresh_shaders_if_dirty(graph_values_t* gv) {
   }
 }
 
-static int DrawButton(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...) {
+static int draw_button(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...) {
   Vector2 mp = GetMousePosition();
   int c = 0;
   va_list args;
@@ -287,30 +291,56 @@ static Rectangle graph_get_rectangle(graph_values_t* gv) {
   return (Rectangle){-gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2.f + gv->uvOffset.x, gv->uvZoom.y/2.f + gv->uvOffset.y,
     gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x, gv->uvZoom.y};
 }
+static void help_trim_zeros(char * buff) {
+  size_t sl = strlen(buff);
+  for (int i = (int)sl; i >= 0; --i) {
+    if (buff[i] == '0' || buff[i] == (char)0) buff[i] = (char)0;
+    else if (buff[i] == '.') {
+      buff[i] = 0;
+      return;
+    }
+    else return;
+  }
+}
 
-#define StackPannel(max_height, x_offset, y_offset, y_item_offset, item_height)
-
-static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale) {
+static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale) {
   Rectangle r = graph_get_rectangle(gv);
-  DrawButton(NULL, gv->graph_rect.x - 30.f, gv->graph_rect.y - 30.f, font_scale * 10.f,
-      buff, "(%f, %f)", r.x, r.y);
-  DrawButton(NULL, gv->graph_rect.x + gv->graph_rect.width - 120.f, gv->graph_rect.y - 30.f, font_scale * 10.f,
-      buff, "(%f, %f)", r.x + r.width, r.y);
 
-  DrawButton(NULL, gv->graph_rect.x - 30.f, gv->graph_rect.y + 20.f + gv->graph_rect.height, font_scale * 10.f,
-      buff, "(%f, %f)", r.x, r.y - r.height);
-  DrawButton(NULL, gv->graph_rect.x + gv->graph_rect.width - 120.f, gv->graph_rect.y + 20.f + gv->graph_rect.height, font_scale * 10.f,
-      buff, "(%f, %f)", r.x + r.width, r.y - r.height);
+  float font_size = 25.f;
+  float base = powf(10.f, floorf(log10f(r.height / 2.f)));
+  float start = floorf(r.y / base) * base;
+  for (float c = start; c > r.y - r.height; c -= base) {
+    sprintf(buff, "%f", c);
+    help_trim_zeros(buff);
+    Vector2 sz = MeasureTextEx(default_font, buff, font_size, 1.f);
+    float y = gv->graph_rect.y + (gv->graph_rect.height / r.height) * (r.y - c);
+    y -= sz.y / 2.;
+    help_draw_text(buff, (Vector2){ .x = gv->graph_rect.x - sz.x - 2.f, .y = y }, font_size, RAYWHITE);
+  }
 
+  base = powf(10.f, floorf(log10f(r.width / 2.f)));
+  start = ceilf(r.x / base) * base;
+  float x_last_max = -INFINITY;
+  for (float c = start; c < r.x + r.width; c += base) {
+    sprintf(buff, "%f", c);
+    help_trim_zeros(buff);
+    Vector2 sz = MeasureTextEx(default_font, buff, font_size, 1.f);
+    float x = gv->graph_rect.x + (gv->graph_rect.width / r.width) * (c - r.x);
+    x -= sz.x / 2.;
+    if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
+    x_last_max = x + sz.x;
+    help_draw_text(buff, (Vector2){ .x = x, .y = gv->graph_rect.y + gv->graph_rect.height }, font_size, RAYWHITE);
+  }
+}
+
+static void draw_left_panel(graph_values_t* gv, char *buff, float font_scale) {
   int i = 0;
-  DrawButton(&gv->follow, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Follow");
-  DrawButton(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "offset: (%f, %f)", gv->uvOffset.x, gv->uvOffset.y);
-  DrawButton(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "zoom: (%f, %f)", gv->uvZoom.x, gv->uvZoom.y);
-  DrawButton(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Line groups: %d/%d", gv->groups_len, GROUP_CAP);
-  DrawButton(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Line draw calls: %d", gv->lines_mesh->draw_calls);
-  DrawButton(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Points drawn: %d", gv->lines_mesh->points_drawn);
+  draw_button(&gv->follow, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Follow");
+  draw_button(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Line groups: %d/%d", gv->groups_len, GROUP_CAP);
+  draw_button(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Line draw calls: %d", gv->lines_mesh->draw_calls);
+  draw_button(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Points drawn: %d", gv->lines_mesh->points_drawn);
   for(size_t j = 0; j < gv->groups_len; ++j) {
-    DrawButton(&gv->groups[j].is_selected, 30.f, gv->graph_rect.y + (float)(33 * (i++)), font_scale * 15.f, buff, "Group #%d: %d/%d; %ul/%ul/%ul", gv->groups[j].group_id, gv->groups[j].len, gv->groups[j].cap, gv->groups[j].resampling->intervals_count, gv->groups[j].resampling->raw_count, gv->groups[j].resampling->resampling_count);
+    draw_button(&gv->groups[j].is_selected, 30.f, gv->graph_rect.y + (float)(33 * (i++)), font_scale * 15.f, buff, "Group #%d: %d/%d; %ul/%ul/%ul", gv->groups[j].group_id, gv->groups[j].len, gv->groups[j].cap, gv->groups[j].resampling->intervals_count, gv->groups[j].resampling->raw_count, gv->groups[j].resampling->resampling_count);
   }
   gv->lines_mesh->draw_calls = 0;
   gv->lines_mesh->points_drawn = 0;
@@ -319,9 +349,9 @@ static void DrawLeftPanel(graph_values_t* gv, char *buff, float font_scale) {
 static void update_resolution(graph_values_t* gv) {
   gv->uvScreen.x = (float)GetScreenWidth();
   gv->uvScreen.y = (float)GetScreenHeight();
-  float w = gv->uvScreen.x - (float)GRAPH_LEFT_PAD - 60.f, h = gv->uvScreen.y - 120.f;
+  float w = gv->uvScreen.x - (float)GRAPH_LEFT_PAD - 20.f, h = gv->uvScreen.y - 50.f;
   gv->graph_rect.x = (float)GRAPH_LEFT_PAD;
-  gv->graph_rect.y = 60.f;
+  gv->graph_rect.y = 25.f;
   gv->graph_rect.width = w;
   gv->graph_rect.height = h;
 }

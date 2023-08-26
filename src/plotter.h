@@ -15,7 +15,7 @@ extern "C" {
 #define GROUP_CAP 32
 
 //TODO: Do something with this...
-#define GRAPH_LEFT_PAD 400
+#define GRAPH_LEFT_PAD 500
 
 #define QUAD_TREE_SPLIT_COUNT 4
 
