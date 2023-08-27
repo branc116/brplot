@@ -45,6 +45,7 @@ void smol_mesh_update(smol_mesh_t* mesh) {
   rlUpdateVertexBuffer(mesh->vboIdNormal, mesh->normals, number_of_floats, 0);
   rlUpdateVertexBuffer(mesh->vboIdColor, mesh->colors, number_of_floats, 0);
 }
+
 static float point_distance(Vector2 tg, Vector2 center, Vector2 to, Rectangle r) {
   Vector2 uv_center = { (center.x - r.x) / r.width, (center.y - r.y) / r.height};
   Vector2 uv_to = { (to.x - r.x) / r.width, (to.y - r.y) / r.height};
