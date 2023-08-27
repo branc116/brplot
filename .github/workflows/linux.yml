@@ -1,0 +1,45 @@
+name: Linux
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'src/**'
+      - 'tools/**'
+      - '.github/workflows/linux.yml'
+      - 'raylib'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Environment
+      run: | 
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev gcc
+        
+    - name: Build rlplot debug
+      run: |
+        make bin/rlplot_dbg
+
+    - name: Build and run unit tests
+      run: |
+        make tests
+        
+    - name: Build Rlplot release
+      run: |
+        make
+
+    - name: Build rlplot wasm
+      run: |
+        make www/index.wasm
+
+    - name: Build rlplot windows
+      run: |
+        make windows
