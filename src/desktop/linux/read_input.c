@@ -24,12 +24,11 @@ void read_input_stop(void) {
 }
 
 static void int_handle(int sig, siginfo_t* si, void* p) {
-  pthread_t self = pthread_self();
+  (void)(sig); (void)si; (void)p;
   pthread_exit(NULL);
 }
 
 static void regirter_interupt() {
-  pthread_t self = pthread_self();
   struct sigaction act = { 0 };
   act.sa_sigaction = int_handle;
   act.sa_flags = SA_SIGINFO;

@@ -30,29 +30,15 @@ static void draw_left_panel(graph_values_t* gv, char *buff, float font_scale);
 static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale);
 static Rectangle graph_get_rectangle(graph_values_t* gv);
 static void graph_update_mouse_position(graph_values_t* gv);
+static float help_measure_text(const char* txt, float font_size);
+static void help_draw_text(const char *text, Vector2 pos, float fontSize, Color color);
+static Font load_sdf_font(void);
 
 static Font default_font;
+static Shader sdf_font_shader_s;
 
 Vector2 graph_mouse_position;
 
-Shader sdf_font_shader_s;
-
-Font load_sdf_font(void) {
-  Font fontDefault = { 0 };
-  fontDefault.baseSize = default_font_sz;
-  fontDefault.glyphCount = default_font_gc;
-  fontDefault.glyphs = LoadFontData(default_font_data, sizeof(default_font_data), default_font_sz, 0, default_font_gc, FONT_SDF);
-  fontDefault.recs = default_font_rects;
-  Image atlas = { .width = FONT_IMAGE_WIDTH, .height = FONT_IMAGE_HEIGHT, .mipmaps = 1, .format = FONT_IMAGE_FORMAT, .data = FONT_IMAGE_DATA };
-  fontDefault.texture = LoadTextureFromImage(atlas);
-#ifdef RELEASE
-  sdf_font_shader_s = LoadShaderFromMemory(NULL, SHADER_FONT_SDF),
-#else
-  sdf_font_shader_s  = LoadShader(NULL, "src/desktop/shaders/sdf_font.fs");
-#endif
-  SetTextureFilter(fontDefault.texture, TEXTURE_FILTER_BILINEAR);
-  return fontDefault;
-}
 
 void graph_init(graph_values_t* gv, float width, float height) {
   *gv = (graph_values_t){
@@ -101,25 +87,6 @@ void graph_free(graph_values_t* gv) {
     points_group_clear_all(gv->groups, &gv->groups_len);
   }
   free(gv->commands.commands);
-}
-
-static void help_draw_text(const char *text, Vector2 pos, float fontSize, Color color) {
-  float defaultFontSize = 10.f;
-  if (fontSize < defaultFontSize) fontSize = defaultFontSize;
-  BeginShaderMode(sdf_font_shader_s);
-    DrawTextEx(default_font, text, (Vector2){roundf(pos.x), roundf(pos.y)}, floorf(fontSize), 1.0f, color);
-  EndShaderMode();
-}
-
-static float help_measure_text(const char* txt, float font_size) {
-  Vector2 textSize = { 0.0f, 0.0f };
-
-  float defaultFontSize = 10;   // Default Font chars height in pixel
-  if (font_size < defaultFontSize) font_size = defaultFontSize;
-
-  textSize = MeasureTextEx(default_font, txt, floorf(font_size), 1.0f);
-
-  return textSize.x;
 }
 
 void graph_draw(graph_values_t* gv) {
@@ -224,6 +191,25 @@ void graph_draw(graph_values_t* gv) {
 end: return;
 }
 
+static void help_draw_text(const char *text, Vector2 pos, float fontSize, Color color) {
+  float defaultFontSize = 10.f;
+  if (fontSize < defaultFontSize) fontSize = defaultFontSize;
+  BeginShaderMode(sdf_font_shader_s);
+    DrawTextEx(default_font, text, (Vector2){roundf(pos.x), roundf(pos.y)}, floorf(fontSize), 1.0f, color);
+  EndShaderMode();
+}
+
+static float help_measure_text(const char* txt, float font_size) {
+  Vector2 textSize = { 0.0f, 0.0f };
+
+  float defaultFontSize = 10;   // Default Font chars height in pixel
+  if (font_size < defaultFontSize) font_size = defaultFontSize;
+
+  textSize = MeasureTextEx(default_font, txt, floorf(font_size), 1.0f);
+
+  return textSize.x;
+}
+
 static void graph_update_mouse_position(graph_values_t* gv) {
   Vector2 mp = GetMousePosition();
   Vector2 mp_in_graph = { mp.x - gv->graph_rect.x, mp.y - gv->graph_rect.y };
@@ -290,6 +276,7 @@ static Rectangle graph_get_rectangle(graph_values_t* gv) {
   return (Rectangle){-gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2.f + gv->uvOffset.x, gv->uvZoom.y/2.f + gv->uvOffset.y,
     gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x, gv->uvZoom.y};
 }
+
 static void help_trim_zeros(char * buff) {
   size_t sl = strlen(buff);
   for (int i = (int)sl; i >= 0; --i) {
@@ -304,8 +291,7 @@ static void help_trim_zeros(char * buff) {
 
 static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale) {
   Rectangle r = graph_get_rectangle(gv);
-
-  float font_size = 25.f;
+  float font_size = 25.f * font_scale;
   float base = powf(10.f, floorf(log10f(r.height / 2.f)));
   float start = floorf(r.y / base) * base;
   for (float c = start; c > r.y - r.height; c -= base) {
@@ -355,3 +341,19 @@ static void update_resolution(graph_values_t* gv) {
   gv->graph_rect.height = h;
 }
 
+static Font load_sdf_font(void) {
+  Font fontDefault = { 0 };
+  fontDefault.baseSize = default_font_sz;
+  fontDefault.glyphCount = default_font_gc;
+  fontDefault.glyphs = LoadFontData(default_font_data, sizeof(default_font_data), default_font_sz, 0, default_font_gc, FONT_SDF);
+  fontDefault.recs = default_font_rects;
+  Image atlas = { .width = FONT_IMAGE_WIDTH, .height = FONT_IMAGE_HEIGHT, .mipmaps = 1, .format = FONT_IMAGE_FORMAT, .data = FONT_IMAGE_DATA };
+  fontDefault.texture = LoadTextureFromImage(atlas);
+#ifdef RELEASE
+  sdf_font_shader_s = LoadShaderFromMemory(NULL, SHADER_FONT_SDF),
+#else
+  sdf_font_shader_s  = LoadShader(NULL, "src/desktop/shaders/sdf_font.fs");
+#endif
+  SetTextureFilter(fontDefault.texture, TEXTURE_FILTER_BILINEAR);
+  return fontDefault;
+}
