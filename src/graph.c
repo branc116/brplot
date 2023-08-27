@@ -39,13 +39,12 @@ Shader sdf_font_shader_s;
 
 Font load_sdf_font(void) {
   Font fontDefault = { 0 };
-  int sz = 32;
-  fontDefault.baseSize = sz;
-  fontDefault.glyphCount = 95;
-  fontDefault.glyphs = LoadFontData(default_font_data, sizeof(default_font_data), sz, 0, 95, FONT_SDF);
-  Image atlas = GenImageFontAtlas(fontDefault.glyphs, &fontDefault.recs, 95, sz, 0, 1);
+  fontDefault.baseSize = default_font_sz;
+  fontDefault.glyphCount = default_font_gc;
+  fontDefault.glyphs = LoadFontData(default_font_data, sizeof(default_font_data), default_font_sz, 0, default_font_gc, FONT_SDF);
+  fontDefault.recs = default_font_rects;
+  Image atlas = { .width = FONT_IMAGE_WIDTH, .height = FONT_IMAGE_HEIGHT, .mipmaps = 1, .format = FONT_IMAGE_FORMAT, .data = FONT_IMAGE_DATA };
   fontDefault.texture = LoadTextureFromImage(atlas);
-  UnloadImage(atlas);
 #ifdef RELEASE
   sdf_font_shader_s = LoadShaderFromMemory(NULL, SHADER_FONT_SDF),
 #else
@@ -314,7 +313,7 @@ static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale) {
     help_trim_zeros(buff);
     Vector2 sz = MeasureTextEx(default_font, buff, font_size, 1.f);
     float y = gv->graph_rect.y + (gv->graph_rect.height / r.height) * (r.y - c);
-    y -= sz.y / 2.;
+    y -= sz.y / 2.f;
     help_draw_text(buff, (Vector2){ .x = gv->graph_rect.x - sz.x - 2.f, .y = y }, font_size, RAYWHITE);
   }
 
@@ -326,7 +325,7 @@ static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale) {
     help_trim_zeros(buff);
     Vector2 sz = MeasureTextEx(default_font, buff, font_size, 1.f);
     float x = gv->graph_rect.x + (gv->graph_rect.width / r.width) * (c - r.x);
-    x -= sz.x / 2.;
+    x -= sz.x / 2.f;
     if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
     x_last_max = x + sz.x;
     help_draw_text(buff, (Vector2){ .x = x, .y = gv->graph_rect.y + gv->graph_rect.height }, font_size, RAYWHITE);
