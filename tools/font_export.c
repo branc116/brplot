@@ -43,16 +43,4 @@ int main(int argc, char** argv) {
   printf("static int const default_font_sz = %d;\n", sz);
   printf("static int const default_font_gc = %d;\n", gc);
   export_font_data_as_code(data, bytesRead);
-  Font font = {0};
-  font.baseSize = sz;
-  font.glyphCount = gc;
-  font.glyphs = LoadFontData(data, bytesRead, sz, 0, gc, FONT_SDF);
-  Image atlas = GenImageFontAtlas(font.glyphs, &font.recs, gc, sz, 0, 1);
-  export_image_as_code(atlas);
-  int i = 0;
-  printf("static Rectangle default_font_rects[%d] = {\n", gc);
-  for (; i < gc-1; ++i) {
-    printf("{%ff, %ff, %ff, %ff},\n", font.recs[i].x, font.recs[i].y, font.recs[i].width, font.recs[i].height);
-  }
-  printf("{%ff, %ff, %ff, %ff}\n};\n", font.recs[i].x, font.recs[i].y, font.recs[i].width, font.recs[i].height);
 }

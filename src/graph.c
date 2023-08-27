@@ -346,8 +346,7 @@ static Font load_sdf_font(void) {
   fontDefault.baseSize = default_font_sz;
   fontDefault.glyphCount = default_font_gc;
   fontDefault.glyphs = LoadFontData(default_font_data, sizeof(default_font_data), default_font_sz, 0, default_font_gc, FONT_SDF);
-  fontDefault.recs = default_font_rects;
-  Image atlas = { .width = FONT_IMAGE_WIDTH, .height = FONT_IMAGE_HEIGHT, .mipmaps = 1, .format = FONT_IMAGE_FORMAT, .data = FONT_IMAGE_DATA };
+  Image atlas = GenImageFontAtlas(fontDefault.glyphs, &fontDefault.recs, default_font_gc, default_font_sz, 0, 1);
   fontDefault.texture = LoadTextureFromImage(atlas);
 #ifdef RELEASE
   sdf_font_shader_s = LoadShaderFromMemory(NULL, SHADER_FONT_SDF),
