@@ -4,7 +4,7 @@ const rlplot_flags = &[_][]const u8{
     "-std=gnu99",
     "-D_GNU_SOURCE",
     "-DGL_SILENCE_DEPRECATION=199309L",
-    "-fno-sanitize=undefined", // https://github.com/raysan5/raylib/issues/1891
+    "-fno-sanitize=undefined", // https://github.com/raysan5/raylib/issues/189
 };
 
 fn rlf(comptime name: []const u8) []const u8 {
@@ -31,6 +31,11 @@ pub fn addRayLib(b: *std.build.Builder, target: std.zig.CrossTarget, opt: std.bu
             raylib.linkSystemLibrary("gdi32");
             raylib.linkSystemLibrary("opengl32");
             raylib.addIncludePath("./raylib/src/external/glfw/deps/mingw");
+        },
+        .wasi => {
+            //-DGRAPHICS_API_OPENGL_ES2 -DPLATFORM_WEB --memory-init-file 1 --closure 1 -s WASM_BIGINT -s ENVIRONMENT=web -sALLOW_MEMORY_GROWTH -s USE_GLFW=3 -s ASYNCIFY $(CCFLAGS)
+            raylib.defineCMacro("PLATFORM_WEB", null);
+            raylib.defineCMacro("GRAPHICS_API_OPENGL_ES2", null);
         },
         else => {
             @panic("Unsupported OS");
@@ -62,6 +67,7 @@ fn genShaderhFile() !void {
     _ = try one_shader(file, "src/desktop/shaders/line.vs", "SHADER_LINE_VS");
     _ = try one_shader(file, "src/desktop/shaders/quad.fs", "SHADER_QUAD_FS");
     _ = try one_shader(file, "src/desktop/shaders/quad.vs", "SHADER_QUAD_VS");
+    _ = try one_shader(file, "src/desktop/shaders/sdf_font.fs", "SHADER_FONT_SDF"); // TODO: Change this to be consistent...
 }
 
 // This has been tested to work with zig master branch as of commit 87de821 or May 14 2023
@@ -72,7 +78,7 @@ pub fn addRlPlot(b: *std.build.Builder, opt: std.builtin.OptimizeMode, target: s
     rlplot.linkLibrary(raylib);
     rlplot.linkLibC();
     rlplot.addIncludePath("raylib/src");
-    rlplot.addCSourceFiles(&.{ "src/graph.c", "src/main.c", "src/points_group.c", "src/read_input.c", "src/smol_mesh.c", "src/q.c", "src/quad_tree.c" }, rlplot_flags);
+    rlplot.addCSourceFiles(&.{ "src/graph.c", "src/main.c", "src/points_group.c", "src/read_input.c", "src/smol_mesh.c", "src/q.c", "src/resampling.c" }, rlplot_flags);
     if (opt != .Debug) {
         try genShaderhFile();
         rlplot.defineCMacro("RELEASE", null);
@@ -91,6 +97,10 @@ pub fn addRlPlot(b: *std.build.Builder, opt: std.builtin.OptimizeMode, target: s
             rlplot.defineCMacro("PLATFORM_DESKTOP", null);
             rlplot.defineCMacro("_WIN32", "1");
             rlplot.addCSourceFile("./src/desktop/win/read_input.c", rlplot_flags);
+        },
+        .wasi => {
+            rlplot.defineCMacro("PLATFORM_WEB", null);
+            rlplot.defineCMacroRaw("sUSE_GLFW=3");
         },
         else => {
             @panic("Unsupported OS");
