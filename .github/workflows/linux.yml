@@ -26,18 +26,6 @@ jobs:
         sudo apt-get update -qq
         sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev gcc
 
-    - name: Setup Emscripten
-      run: |
-        git clone https://github.com/emscripten-core/emsdk.git
-        cd emsdk
-        ./emsdk install latest
-        ./emsdk activate latest
-        source ./emsdk_env.sh
-        cd ..
-
-    - name: Setup Zig
-      uses: goto-bus-stop/setup-zig@v2.1.1
-
     - name: Setup raylib
       run: |
         cd raylib
@@ -54,15 +42,27 @@ jobs:
 
     - name: Build and run unit tests
       run: |
-        make tests
+        make test
         
-    - name: Build Rlplot release
+    - name: Build rlplot release
       run: |
         make
+
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2.1.1
 
     - name: Build rlplot windows
       run: |
         make windows
+
+    - name: Setup Emscripten
+      run: |
+        git clone https://github.com/emscripten-core/emsdk.git
+        cd emsdk
+        ./emsdk install latest
+        ./emsdk activate latest
+        source ./emsdk_env.sh
+        cd ..
 
     - name: Build rlplot wasm
       run: |
