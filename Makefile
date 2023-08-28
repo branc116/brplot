@@ -53,7 +53,7 @@ bin/rlplot_dbg: $(SOURCE_DBG) src/plotter.h src/default_font.h
 
 bin/font_export: $(RAYLIB_SOURCE) tools/font_export.c
 	test -d bin || mkdir bin
-	gcc -Wl,-z,now -g -I$(RL) -DLINUX -DPLATFORM_DESKTOP -o bin/font_export $(RAYLIB_SOURCE) tools/font_export.c -lm
+	gcc -Wl,-z,now -O3 -I$(RL) -DLINUX -DPLATFORM_DESKTOP -o bin/font_export $(RAYLIB_SOURCE) tools/font_export.c -lm -lglfw
 
 .PHONY: test
 test: bin/rlplot_dbg
