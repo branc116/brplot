@@ -26,7 +26,13 @@ jobs:
         sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev gcc
 
     - name: Setup Emscripten
-      uses: lovasoa/setup-emscripten@v1
+      run: |
+        git clone https://github.com/emscripten-core/emsdk.git
+        cd emsdk
+        ./emsdk install latest
+        ./emsdk activate latest
+        source ./emsdk_env.sh
+        cd ..
 
     - name: Setup Zig
       uses: goto-bus-stop/setup-zig@v2.1.1
@@ -43,10 +49,10 @@ jobs:
       run: |
         make
 
-    - name: Build rlplot wasm
-      run: |
-        make www/index.wasm
-
     - name: Build rlplot windows
       run: |
         make windows
+
+    - name: Build rlplot wasm
+      run: |
+        make www/index.wasm

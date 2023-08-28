@@ -69,9 +69,11 @@ src/default_font.h: bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf
 	bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf > src/default_font.h
 
 www/index.wasm: $(SOURCE_WEB) src/plotter.h src/shaders_web.h
-	test -f $(EMSCRIPTEN)/emcc || (echo "Set EMSCRIPTEN variable (to directory where emcc is located) if you want to build for web" && kill -1)
+	test -f $(EMSCRIPTEN)/emcc || test -f $(which emcc) || (echo "Set EMSCRIPTEN variable (to directory where emcc is located) if you want to build for web" && kill -1)
 	test -d www || mkdir www;
-	$(EMSCRIPTEN)/emcc --shell-file=src/web/minshell.html  $(CCFLAGS_WASM) -o www/index.html $(SOURCE_WEB)
+	$(EMSCRIPTEN)/emcc --shell-file=src/web/minshell.html  $(CCFLAGS_WASM) -o www/index.html $(SOURCE_WEB) || \
+		emcc --shell-file=src/web/minshell.html  $(CCFLAGS_WASM) -o www/index.html $(SOURCE_WEB)
+
 
 src/shaders_web.h: src/web/shaders/grid.fs src/web/shaders/line.fs src/web/shaders/line.vs src/web/shaders/sdf_font.fs
 	# This will break if there are `"` characters in shaders
