@@ -11,18 +11,25 @@ on:
 
 permissions:
   contents: read
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    
+    - name: Checkout
+      uses: actions/checkout@v3.6.0
+      with:
+        submodules: true
+
     - name: Setup Environment
       run: | 
         sudo apt-get update -qq
         sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev gcc
+
+    - name: Setup Emscripten
+      use: lovasoa/setup-emscripten@v1
+
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2.1.1
         
     - name: Build rlplot debug
       run: |
