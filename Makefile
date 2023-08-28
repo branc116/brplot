@@ -25,7 +25,7 @@ SHADERS= SHADER_GRID_FS:src/desktop/shaders/grid.fs SHADER_LINE_FS:src/desktop/s
 SOURCE= $(RAYLIB_SOURCE) \
         ./src/desktop/linux/read_input.c ./src/desktop/linux/refresh_shaders.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/read_input.c src/resampling.c
 
-CCFLAGS_DBG = -Wconversion -Wall -Wpedantic -Wextra -g -DLINUX -DPLATFORM_DESKTOP -pg -fsanitize=address -fsanitize=leak \
+CCFLAGS_DBG = -I$(RL) -Wconversion -Wall -Wpedantic -Wextra -g -DLINUX -DPLATFORM_DESKTOP -pg -fsanitize=address -fsanitize=leak \
 							-fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
 							-fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -DUNIT_TEST
 SOURCE_DBG= src/desktop/linux/refresh_shaders.c ./src/desktop/linux/read_input.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/read_input.c src/resampling.c

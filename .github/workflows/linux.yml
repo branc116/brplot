@@ -37,6 +37,16 @@ jobs:
 
     - name: Setup Zig
       uses: goto-bus-stop/setup-zig@v2.1.1
+
+    - name: Setup raylib
+      run: |
+        cd raylib
+        mkdir build
+        cd build
+        cmake ..
+        make -j4
+        sudo make install
+        cd ../..
         
     - name: Build rlplot debug
       run: |
