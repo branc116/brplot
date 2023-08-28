@@ -8,6 +8,7 @@ on:
       - 'tools/**'
       - '.github/workflows/linux.yml'
       - 'raylib'
+      - 'Makefile'
 
 permissions:
   contents: read
