@@ -26,7 +26,7 @@ jobs:
         sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev gcc
 
     - name: Setup Emscripten
-      use: lovasoa/setup-emscripten@v1
+      uses: lovasoa/setup-emscripten@v1
 
     - name: Setup Zig
       uses: goto-bus-stop/setup-zig@v2.1.1
