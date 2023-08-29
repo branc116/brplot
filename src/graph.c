@@ -291,7 +291,7 @@ static void help_trim_zeros(char * buff) {
 
 static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale) {
   Rectangle r = graph_get_rectangle(gv);
-  float font_size = 25.f * font_scale;
+  float font_size = 15.f * font_scale;
   float base = powf(10.f, floorf(log10f(r.height / 2.f)));
   float start = floorf(r.y / base) * base;
   for (float c = start; c > r.y - r.height; c -= base) {
