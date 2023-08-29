@@ -115,59 +115,38 @@ static size_t points_group_sample_points(Vector2 const* points, size_t len, resa
   if (len == 0) {
     return 0;
   }
-  float step_margin = 1.0f, step_offset = 2.f;
+  resampling_dir d = dir & resampling_dir_right ? resampling_dir_right :
+                     dir & resampling_dir_left  ? resampling_dir_left  :
+                     dir & resampling_dir_up    ? resampling_dir_up    :
+                     resampling_dir_down;
+  float step_margin = 1.3f, step_offset = 30.f;
   size_t out_index = 0, i = 0;
-  if (dir & resampling_dir_right) {
-    float step = step_margin*rect.width/(float)max_number_of_points;
-    Vector2 const* lb = points, *ub = &points[len - 1];
-    while (lb != NULL && i < max_number_of_points) {
-      float cur = rect.x + step * (-step_offset + (float)(i++));
-      binary_search_res res = binary_search(&lb->x, &ub->x, cur, 2);
-      if (res.factor <= 1.f) {
-        out_points[out_index++] = (Vector2){lb[res.index].x * res.factor + lb[res.next_index].x * (1 - res.factor),
-                                            lb[res.index].y * res.factor + lb[res.next_index].y * (1 - res.factor)};
-        lb = &lb[res.index];
-      }
-    }
-  } else if (dir & resampling_dir_left) {
-    float step = step_margin*rect.width/(float)max_number_of_points;
-    Vector2 const* ub = points, *lb = &points[len - 1];
-    while (lb != NULL && i < max_number_of_points) {
-      float cur = rect.x + rect.width - step * (step_offset + (float)(i++));
-      binary_search_res res = binary_search(&lb->x, &ub->x, cur, -2);
-      if (res.factor <= 1.f) {
-        out_points[out_index++] = (Vector2){lb[res.index].x * res.factor + lb[res.next_index].x * (1 - res.factor),
-                                            lb[res.index].y * res.factor + lb[res.next_index].y * (1 - res.factor)};
-        ub = &lb[res.next_index];
-      }
-    }
-  } else if (dir & resampling_dir_up) {
-    float step = step_margin*rect.height/(float)max_number_of_points;
-    Vector2 const* lb = points, *ub = &points[len - 1];
-    while (lb != NULL && i < max_number_of_points) {
-      float cur = rect.y - rect.height + step * (-step_offset + (float)(i++));
-      binary_search_res res = binary_search(&lb->y, &ub->y, cur, 2);
-      if (res.factor <= 1.f) {
-        out_points[out_index++] = (Vector2){lb[res.index].x * res.factor + lb[res.next_index].x * (1 - res.factor),
-                                            lb[res.index].y * res.factor + lb[res.next_index].y * (1 - res.factor)};
-        lb = &lb[res.index];
-      }
-    }
-  } else if (dir & resampling_dir_down) {
-    float step = step_margin*rect.height/(float)max_number_of_points;
-    Vector2 const* ub = points, *lb = &points[len - 1];
-    while (lb != NULL && i < max_number_of_points) {
-      float cur = rect.y - step * (step_offset + (float)(i++));
-      binary_search_res res = binary_search(&lb->y, &ub->y, cur, -2);
-      if (res.factor <= 1.f) {
-        out_points[out_index++] = (Vector2){lb[res.index].x * res.factor + lb[res.next_index].x * (1 - res.factor),
-                                            lb[res.index].y * res.factor + lb[res.next_index].y * (1 - res.factor)};
-        ub = &lb[res.next_index];
-      }
-    }
-  } else {
-    assert(0);
+  float step = step_margin * (d == resampling_dir_right || d == resampling_dir_left ? rect.width : rect.height) / (float)max_number_of_points;
+  binary_search_res res;
+  Vector2 const* lb = points, *ub = &points[len - 1];
+  if (d == resampling_dir_left || d == resampling_dir_down) lb = &points[len - 1], ub = points;
+#define branch(D, field, stride, B, cur_expr) \
+  if (d == D) { \
+    Vector2 last_point = {0}; \
+    while (lb != NULL && i < max_number_of_points) { \
+      float cur = cur_expr; \
+      res = binary_search(&lb->field, &ub->field, cur, stride); \
+      Vector2 p = lb[res.index]; \
+      if (res.factor <= 1.f && (out_index == 0 || p.x != last_point.x || p.y != last_point.y)) { \
+        out_points[out_index++] = p; \
+        if (out_index + 1 < max_number_of_points) \
+          out_points[out_index++] = lb[res.next_index]; \
+        B = &lb[res.next_index]; \
+        last_point = p; \
+      } \
+    } \
   }
+  branch(resampling_dir_right, x,  2, lb, rect.x               + step * (-step_offset + (float)(i++))) else
+  branch(resampling_dir_left,  x, -2, ub, rect.x + rect.width  - step * ( step_offset + (float)(i++))) else
+  branch(resampling_dir_up,    y,  2, lb, rect.y - rect.height + step * (-step_offset + (float)(i++))) else
+  branch(resampling_dir_down,  y, -2, ub, rect.y               - step * ( step_offset + (float)(i++))) else
+  assert(false);
+#undef branch
   return out_index;
 }
 
@@ -188,6 +167,8 @@ static binary_search_res binary_search(float const* lb, float const* ub, float v
     else if (*mid > value) index_ub = index_mid;
     else break;
   }
+  index_mid = index_lb;
+  mid = &lb[index_mid * stride];
   index_mid *= signi(stride);
   float const * next = mid + stride;
   if ((stride > 0 && next <= ub && next >= lb) || (stride < 0 && next >= ub && next <= lb)) {
