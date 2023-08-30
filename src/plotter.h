@@ -184,6 +184,7 @@ void graph_draw(graph_values_t* gv);
 // Start watching shaders folder for changes and
 // mark gv->shader_dirty flag to true if there were any change to shaders.
 void start_refreshing_shaders(graph_values_t* gv);
+void zig_print_stacktrace(void);
 #endif
 
 void read_input_main(graph_values_t* ptr);

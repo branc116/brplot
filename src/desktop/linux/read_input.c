@@ -10,8 +10,12 @@ void *read_input_main_worker(void* gv);
 
 static pthread_t thread;
 static void* indirection_function(void* gv);
+static void regirter_interupt2(void);
 
 void read_input_main(graph_values_t* gv) {
+#ifndef RELEASE
+  regirter_interupt2();
+#endif
   pthread_attr_t attrs1;
   pthread_attr_init(&attrs1);
   if (pthread_create(&thread, &attrs1, indirection_function, gv)) {
@@ -28,7 +32,21 @@ static void int_handle(int sig, siginfo_t* si, void* p) {
   pthread_exit(NULL);
 }
 
-static void regirter_interupt() {
+#ifndef RELEASE
+static void int_handle2(int sig, siginfo_t* si, void* p) {
+  (void)(sig); (void)si; (void)p;
+  zig_print_stacktrace();
+}
+
+static void regirter_interupt2(void) {
+  struct sigaction act = { 0 };
+  act.sa_sigaction = int_handle2;
+  act.sa_flags = SA_SIGINFO;
+  sigaction(SIGSEGV, &act, NULL);
+}
+#endif
+
+static void regirter_interupt(void) {
   struct sigaction act = { 0 };
   act.sa_sigaction = int_handle;
   act.sa_flags = SA_SIGINFO;

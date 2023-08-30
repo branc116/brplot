@@ -27,7 +27,12 @@ int main_gui(graph_values_t* gv) {
   return 0;
 }
 
+#ifdef ZIG
+int _main(void) {
+#else
+void zig_print_stacktrace() { exit(-1); }
 int main(void) {
+#endif
 #ifdef RELEASE
   SetTraceLogLevel(LOG_ERROR);
 #endif

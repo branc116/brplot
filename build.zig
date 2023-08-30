@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const rlplot_flags = &[_][]const u8{
+    "-DZIG",
     "-std=gnu99",
     "-D_GNU_SOURCE",
     "-DGL_SILENCE_DEPRECATION=199309L",
@@ -79,6 +80,7 @@ pub fn addRlPlot(b: *std.build.Builder, opt: std.builtin.OptimizeMode, target: s
     rlplot.linkLibC();
     rlplot.addIncludePath("raylib/src");
     rlplot.addCSourceFiles(&.{ "src/graph.c", "src/main.c", "src/points_group.c", "src/read_input.c", "src/smol_mesh.c", "src/q.c", "src/resampling.c" }, rlplot_flags);
+    rlplot.addObjectFile("src/print_stacktrace.zig");
     if (opt != .Debug) {
         try genShaderhFile();
         rlplot.defineCMacro("RELEASE", null);
