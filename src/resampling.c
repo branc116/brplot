@@ -119,17 +119,16 @@ static size_t points_group_sample_points(Vector2 const* points, size_t len, resa
                      dir & resampling_dir_left  ? resampling_dir_left  :
                      dir & resampling_dir_up    ? resampling_dir_up    :
                      resampling_dir_down;
-  float step_margin = 1.3f, step_offset = 30.f;
   size_t out_index = 0, i = 0;
-  float step = step_margin * (d == resampling_dir_right || d == resampling_dir_left ? rect.width : rect.height) / (float)max_number_of_points;
+  float step = (d == resampling_dir_right || d == resampling_dir_left ? rect.width : rect.height) * 2.f / (float)max_number_of_points;
   binary_search_res res;
   Vector2 const* lb = points, *ub = &points[len - 1];
   if (d == resampling_dir_left || d == resampling_dir_down) lb = &points[len - 1], ub = points;
 #define branch(D, field, stride, B, cur_expr) \
   if (d == D) { \
     Vector2 last_point = {0}; \
-    while (lb != NULL && i < max_number_of_points) { \
-      float cur = cur_expr; \
+    while (lb != NULL && i < max_number_of_points && out_index < max_number_of_points) { \
+      float cur = cur_expr * (float)(i++); \
       res = binary_search(&lb->field, &ub->field, cur, stride); \
       Vector2 p = lb[res.index]; \
       if (res.factor <= 1.f && (out_index == 0 || p.x != last_point.x || p.y != last_point.y)) { \
@@ -141,10 +140,10 @@ static size_t points_group_sample_points(Vector2 const* points, size_t len, resa
       } \
     } \
   }
-  branch(resampling_dir_right, x,  2, lb, rect.x               + step * (-step_offset + (float)(i++))) else
-  branch(resampling_dir_left,  x, -2, ub, rect.x + rect.width  - step * ( step_offset + (float)(i++))) else
-  branch(resampling_dir_up,    y,  2, lb, rect.y - rect.height + step * (-step_offset + (float)(i++))) else
-  branch(resampling_dir_down,  y, -2, ub, rect.y               - step * ( step_offset + (float)(i++))) else
+  branch(resampling_dir_right, x,  2, lb, rect.x               + step) else
+  branch(resampling_dir_left,  x, -2, ub, rect.x + rect.width  - step) else
+  branch(resampling_dir_up,    y,  2, lb, rect.y - rect.height + step) else
+  branch(resampling_dir_down,  y, -2, ub, rect.y               - step) else
   assert(false);
 #undef branch
   return out_index;
@@ -181,22 +180,22 @@ static binary_search_res binary_search(float const* lb, float const* ub, float v
 
 TEST_CASE(binary_search_tests) {
   Vector2 vec[] = {{0, 1}, {1, 2}, {2, 3}};
-  TEST_EQUAL(1, binary_search(&vec[0].x, &vec[2].x, 1.f, 2).index);
+  TEST_EQUAL(1, binary_search(&vec[0].x, &vec[2].x, 1.1f, 2).index);
 
   Vector2 vec2[] = {{0, 1}, {1, 1}, {2, 3}, {4, 5}, {6, 7}, {8, 9}};
-  TEST_EQUAL(4, binary_search(&vec2[0].x, &vec2[5].x, 6.f, 2).index);
-  TEST_EQUAL(4, binary_search(&vec2[0].x, &vec2[5].x, 7.f, 2).index);
-  TEST_TRUE(1.f > binary_search(&vec2[0].x, &vec2[5].x, 7.f, 2).factor);
+  TEST_EQUAL(4, binary_search(&vec2[0].x, &vec2[5].x, 6.1f, 2).index);
+  TEST_EQUAL(4, binary_search(&vec2[0].x, &vec2[5].x, 7.1f, 2).index);
+  TEST_TRUE(1.f > binary_search(&vec2[0].x, &vec2[5].x, 7.1f, 2).factor);
 
   TEST_EQUAL(1, ((float*)&vec2[1])[-1]); // Checking negative indicies...
   Vector2 vec3[] = {{8, 1}, {6, 1}, {4, 3}, {2, 5}, {1, 7}, {0, 9}};
-  TEST_EQUAL(-4, binary_search(&vec3[5].x, &vec3[0].x, 6.f, -2).index); //lb=5, index = -4, lb[-4] == vec3[1]
+  TEST_EQUAL(-4, binary_search(&vec3[5].x, &vec3[0].x, 6.1f, -2).index); //lb=5, index = -4, lb[-4] == vec3[1]
                                                                         //
   Vector2 vecy[] = {{10, 1}, {10, 2}, {5, 3}, {15, 5}, {20, 7}, {10, 9}};
-  TEST_EQUAL(4, binary_search(&vecy[0].y, &vecy[5].y, 7.f, 2).index);
+  TEST_EQUAL(4, binary_search(&vecy[0].y, &vecy[5].y, 7.1f, 2).index);
 
   Vector2 vecy2[] = {{10, 9}, {10, 7}, {5, 5}, {15, 3}, {20, 2}, {10, 1}};
-  TEST_EQUAL(-4, binary_search(&vecy2[5].y, &vecy2[0].y, 7.f, -2).index);
+  TEST_EQUAL(-4, binary_search(&vecy2[5].y, &vecy2[0].y, 7.1f, -2).index);
 }
 
 static bool __attribute__((unused)) help_check_collision_bb_p(bb_t bb, Vector2 p) {
