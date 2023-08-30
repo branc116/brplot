@@ -292,10 +292,15 @@ static void help_trim_zeros(char * buff) {
 static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale) {
   Rectangle r = graph_get_rectangle(gv);
   float font_size = 15.f * font_scale;
-  float base = powf(10.f, floorf(log10f(r.height / 2.f)));
+  float exp = floorf(log10f(r.height / 2.f));
+  float base = powf(10.f, exp);
   float start = floorf(r.y / base) * base;
+  static char fmt_buf[32];
+  if (exp >= 0) strcpy(fmt_buf, "%f");
+  else sprintf(fmt_buf, "%%.%df", -(int)exp);
+
   for (float c = start; c > r.y - r.height; c -= base) {
-    sprintf(buff, "%f", c);
+    sprintf(buff, fmt_buf, c);
     help_trim_zeros(buff);
     Vector2 sz = MeasureTextEx(default_font, buff, font_size, 1.f);
     float y = gv->graph_rect.y + (gv->graph_rect.height / r.height) * (r.y - c);
@@ -307,7 +312,7 @@ static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale) {
   start = ceilf(r.x / base) * base;
   float x_last_max = -INFINITY;
   for (float c = start; c < r.x + r.width; c += base) {
-    sprintf(buff, "%f", c);
+    sprintf(buff, fmt_buf, c);
     help_trim_zeros(buff);
     Vector2 sz = MeasureTextEx(default_font, buff, font_size, 1.f);
     float x = gv->graph_rect.x + (gv->graph_rect.width / r.width) * (c - r.x);
