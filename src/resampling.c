@@ -19,9 +19,8 @@ static bool help_check_collision_bb_rec(bb_t bb, Rectangle rec);
 static Rectangle help_bb_to_rect(bb_t bb);
 static void resampling_add_interval(resampling_t* res);
 
-resampling_t* resampling_malloc(Vector2 const ** points) {
+resampling_t* resampling_malloc() {
   resampling_t* ret = (resampling_t*)malloc(sizeof(resampling_t));
-  ret->points = points;
   ret->intervals = NULL;
   ret->intervals_cap = ret->intervals_count = 0;
   ret->temp_points = malloc(temp_points_count * sizeof(Vector2));
@@ -36,22 +35,22 @@ void resampling_free(resampling_t* res) {
   free(res);
 }
 
-size_t resampling_draw(resampling_t* res, Rectangle screen, smol_mesh_t* lines_mesh, smol_mesh_t* quad_mesh, Color color) {
+size_t resampling_draw(resampling_t* res, points_group_t const* points, Rectangle screen, smol_mesh_t* lines_mesh, smol_mesh_t* quad_mesh) {
   (void)quad_mesh;
   size_t ret = res->resampling_count = res->raw_count = 0;
   for (size_t i = 0; i < res->intervals_count; ++i) {
     resamping_interval_t* inter = &res->intervals[i];
-    Vector2 const * ps = &(*res->points)[inter->from];
-    smol_mesh_gen_bb(lines_mesh, inter->bounds, color);
+    Vector2 const * ps = &(points->points)[inter->from];
+    smol_mesh_gen_bb(lines_mesh, inter->bounds, points->color);
     if (!help_check_collision_bb_rec(inter->bounds, screen)) continue;
     if (inter->count < 128) {
-      smol_mesh_gen_line_strip(lines_mesh, ps, inter->count, color);
+      smol_mesh_gen_line_strip(lines_mesh, ps, inter->count, points->color);
       ret += inter->count;
       ++res->raw_count;
     } else {
       size_t s = points_group_sample_points(ps, inter->count, inter->dir, screen, res->temp_points, temp_points_count);
       if (s == 0) continue;
-      smol_mesh_gen_line_strip(lines_mesh, res->temp_points, s, color);
+      smol_mesh_gen_line_strip(lines_mesh, res->temp_points, s, points->color);
       ret += s;
       ++res->resampling_count;
     }
@@ -59,8 +58,8 @@ size_t resampling_draw(resampling_t* res, Rectangle screen, smol_mesh_t* lines_m
   return ret;
 }
 
-void resampling_add_point(resampling_t* res, size_t index) { 
-  Vector2 const * all_points =  *res->points;
+void resampling_add_point(resampling_t* res, points_group_t const* pg, size_t index) {
+  Vector2 const * all_points =  pg->points;
   Vector2 point = all_points[index];
   if (res->intervals_count == 0)
     resampling_add_interval(res);
@@ -73,7 +72,7 @@ void resampling_add_point(resampling_t* res, size_t index) {
          is_right = point.x >= last_point.x,
          is_up    = point.y >= last_point.y,
          is_down  = point.y <= last_point.y;
-    new_dir &=  
+    new_dir &=
      (~resampling_dir_left  | (is_left  ? resampling_dir_left  : 0)) &
      (~resampling_dir_right | (is_right ? resampling_dir_right : 0)) &
      (~resampling_dir_up    | (is_up    ? resampling_dir_up    : 0)) &
@@ -83,8 +82,8 @@ void resampling_add_point(resampling_t* res, size_t index) {
   }
   if (new_dir == resampling_dir_null) {
     resampling_add_interval(res);
-    resampling_add_point(res, index - 1);
-    resampling_add_point(res, index);
+    resampling_add_point(res, pg, index - 1);
+    resampling_add_point(res, pg, index);
   } else {
     last_interval->dir = (resampling_dir)new_dir;
     if (last_interval->count == 0) {

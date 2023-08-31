@@ -8,17 +8,11 @@ extern "C" {
 
 #define SMOL_MESHES_CAP 1024
 
-// This is the size of one group of points that will be drawn with one draw call.
-// TODO: make this dynamic.
+// This is the size of buffer used to transfer points from cpu to gpu.
 #define PTOM_COUNT (1<<10)
-
-#define GROUP_CAP 32
 
 //TODO: Do something with this...
 #define GRAPH_LEFT_PAD 500
-
-#define QUAD_TREE_SPLIT_COUNT 4
-
 
 #ifdef LINUX
 #include "pthread.h"
@@ -86,10 +80,6 @@ typedef struct {
   size_t draw_calls, points_drawn;
 } smol_mesh_t;
 
-typedef struct {
-  size_t start_index;
-  size_t length;
-} quad_tree_groups_t;
 typedef struct bounding_box {
   float xmin, ymin, xmax, ymax;
 } bb_t;
@@ -109,7 +99,7 @@ typedef struct {
 } resamping_interval_t;
 
 typedef struct {
-  Vector2 const ** points;
+  int group_id;
   resamping_interval_t* intervals;
   Vector2* temp_points;
   size_t intervals_count, intervals_cap;
@@ -120,9 +110,15 @@ typedef struct {
   size_t cap, len;
   int group_id;
   bool is_selected;
+  Color color;
   Vector2* points;
   resampling_t* resampling;
 } points_group_t;
+
+typedef struct {
+  size_t cap, len;
+  points_group_t* arr;
+} points_groups_t;
 
 typedef struct {
   union {
@@ -140,11 +136,8 @@ typedef struct {
 
   Font font;
 
-  // TODO: This is too big, do something about it! 1MB
   // Only render thread can read or write to this array.
-  points_group_t groups[GROUP_CAP];
-  size_t groups_len;
-  Color group_colors[GROUP_CAP];
+  points_groups_t groups;
 
   // Any thread can write to this q, only render thread can pop
   q_commands commands;
@@ -163,17 +156,17 @@ void smol_mesh_draw(smol_mesh_t* mesh);
 void smol_mesh_update(smol_mesh_t* mesh);
 void smol_mesh_free(smol_mesh_t* mesh);
 
-void points_group_push_y(points_group_t* pg_array, size_t* pg_array_len, size_t pg_array_cap, float y, int group);
-void points_group_push_xy(points_group_t* pg_array, size_t* pg_array_len, size_t pg_array_cap, float x, float y, int group);
-void points_group_clear(points_group_t* pg_array, size_t* pg_array_len, int group_id);
-void points_group_clear_all(points_group_t* pg_array, size_t* pg_array_len);
-void points_groups_draw(points_group_t* pg_array, size_t pg_len, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Color* colors, Rectangle rect);
-void points_group_add_test_points(points_group_t* pg_array, size_t* pg_len, size_t pg_array_cap);
+void points_group_push_y(points_groups_t* pg_array, float y, int group);
+void points_group_push_xy(points_groups_t* pg_array, float x, float y, int group);
+void points_group_clear(points_groups_t* pg_array, int group_id);
+void points_groups_draw(points_groups_t const* pg_array, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Rectangle rect);
+void points_group_add_test_points(points_groups_t* pg_array);
+void points_groups_deinit(points_groups_t* pg);
 
-resampling_t* resampling_malloc(Vector2 const ** points);
+resampling_t* resampling_malloc();
 void resampling_free(resampling_t* res);
-size_t resampling_draw(resampling_t* res, Rectangle screen, smol_mesh_t* lines_mesh, smol_mesh_t* quad_mesh, Color color);
-void resampling_add_point(resampling_t* res, size_t index);
+size_t resampling_draw(resampling_t* res, points_group_t const* pg, Rectangle screen, smol_mesh_t* lines_mesh, smol_mesh_t* quad_mesh);
+void resampling_add_point(resampling_t* res, points_group_t const* pg, size_t index);
 
 extern Vector2 graph_mouse_position;
 void graph_init(graph_values_t* gv, float width, float height);

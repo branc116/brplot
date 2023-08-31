@@ -55,9 +55,7 @@ void graph_init(graph_values_t* gv, float width, float height) {
     .uvZoom = { 1., 1. },
     .uvScreen = { width, height },
     .uvDelta = { 0., 0. },
-    .groups_len = 0,
     .groups = {0},
-    .group_colors = { RED, GREEN, BLUE, LIGHTGRAY, PINK, GOLD, VIOLET, DARKPURPLE },
     .graph_rect = { GRAPH_LEFT_PAD, 50, width - GRAPH_LEFT_PAD - 60, height - 110 },
     .lines_mesh = NULL,
     .quads_mesh = NULL,
@@ -83,8 +81,8 @@ void graph_free(graph_values_t* gv) {
   }
   smol_mesh_free(gv->lines_mesh);
   smol_mesh_free(gv->quads_mesh);
-  for (size_t i = 0; i < gv->groups_len; ++i) {
-    points_group_clear_all(gv->groups, &gv->groups_len);
+  for (size_t i = 0; i < gv->groups.len; ++i) {
+    points_groups_deinit(&gv->groups);
   }
   free(gv->commands.commands);
 }
@@ -100,8 +98,8 @@ void graph_draw(graph_values_t* gv) {
   if (gv->follow) {
     Rectangle sr = graph_get_rectangle(gv);
     Vector2 middle = { sr.x + sr.width/2, sr.y - sr.height/2 };
-    for (size_t i = 0; i < gv->groups_len; ++i) {
-      points_group_t* pg = &gv->groups[i];
+    for (size_t i = 0; i < gv->groups.len; ++i) {
+      points_group_t* pg = &gv->groups.arr[i];
       size_t gl = pg->len;
       if (!pg->is_selected || gl == 0) continue;
       gv->uvDelta.x += ((middle.x - pg->points[gl - 1].x))/1000;
@@ -138,10 +136,10 @@ void graph_draw(graph_values_t* gv) {
       gv->uvOffset.x = gv->uvOffset.y = 0;
     }
     if (IsKeyPressed(KEY_C)) {
-      points_group_clear_all(gv->groups, &gv->groups_len);
+      points_groups_deinit(&gv->groups);
     }
     if (IsKeyPressed(KEY_T)) {
-      points_group_add_test_points(gv->groups, &gv->groups_len, GROUP_CAP);
+      points_group_add_test_points(&gv->groups);
     }
     if (IsKeyPressed(KEY_F)) {
       gv->follow = !gv->follow;
@@ -162,7 +160,7 @@ void graph_draw(graph_values_t* gv) {
   // Todo: don't assign this every frame, no need for it. Assign it only when shaders are recompiled.
   gv->lines_mesh->active_shader = gv->linesShader;
   gv->quads_mesh->active_shader = gv->quadShader;
-  points_groups_draw(gv->groups, gv->groups_len, gv->lines_mesh, gv->quads_mesh, gv->group_colors, graph_get_rectangle(gv));
+  points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, graph_get_rectangle(gv));
   if (is_inside) {
     float pad = 5.f;
     float fs = (10.f * font_scale);
@@ -176,14 +174,14 @@ void graph_draw(graph_values_t* gv) {
     q_command comm = q_pop(&gv->commands);
     switch (comm.type) {
       case q_command_none: goto end;
-      case q_command_push_point_y: points_group_push_y(gv->groups, &gv->groups_len, GROUP_CAP, comm.push_point_y.y, comm.push_point_y.group);
+      case q_command_push_point_y: points_group_push_y(&gv->groups, comm.push_point_y.y, comm.push_point_y.group);
                                    break;
-      case q_command_push_point_xy: points_group_push_xy(gv->groups, &gv->groups_len, GROUP_CAP, comm.push_point_xy.x, comm.push_point_xy.y, comm.push_point_xy.group);
+      case q_command_push_point_xy: points_group_push_xy(&gv->groups, comm.push_point_xy.x, comm.push_point_xy.y, comm.push_point_xy.group);
                                     break;
       case q_command_pop: break; //TODO
-      case q_command_clear: points_group_clear(gv->groups, &gv->groups_len, comm.clear.group);
+      case q_command_clear: points_group_clear(&gv->groups, comm.clear.group);
                             break;
-      case q_command_clear_all: points_group_clear_all(gv->groups, &gv->groups_len);
+      case q_command_clear_all: points_groups_deinit(&gv->groups);
                                 break;
       default: assert(false);
     }
@@ -326,11 +324,10 @@ static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale) {
 static void draw_left_panel(graph_values_t* gv, char *buff, float font_scale) {
   int i = 0;
   draw_button(&gv->follow, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Follow");
-  draw_button(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Line groups: %d/%d", gv->groups_len, GROUP_CAP);
   draw_button(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Line draw calls: %d", gv->lines_mesh->draw_calls);
   draw_button(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Points drawn: %d", gv->lines_mesh->points_drawn);
-  for(size_t j = 0; j < gv->groups_len; ++j) {
-    draw_button(&gv->groups[j].is_selected, 30.f, gv->graph_rect.y + (float)(33 * (i++)), font_scale * 15.f, buff, "Group #%d: %d/%d; %ul/%ul/%ul", gv->groups[j].group_id, gv->groups[j].len, gv->groups[j].cap, gv->groups[j].resampling->intervals_count, gv->groups[j].resampling->raw_count, gv->groups[j].resampling->resampling_count);
+  for(size_t j = 0; j < gv->groups.len; ++j) {
+    draw_button(&gv->groups.arr[j].is_selected, 30.f, gv->graph_rect.y + (float)(33 * (i++)), font_scale * 15.f, buff, "Group #%d: %d/%d; %ul/%ul/%ul", gv->groups.arr[j].group_id, gv->groups.arr[j].len, gv->groups.arr[j].cap, gv->groups.arr[j].resampling->intervals_count, gv->groups.arr[j].resampling->raw_count, gv->groups.arr[j].resampling->resampling_count);
   }
   gv->lines_mesh->draw_calls = 0;
   gv->lines_mesh->points_drawn = 0;
@@ -353,6 +350,7 @@ static Font load_sdf_font(void) {
   fontDefault.glyphs = LoadFontData(default_font_data, sizeof(default_font_data), default_font_sz, 0, default_font_gc, FONT_SDF);
   Image atlas = GenImageFontAtlas(fontDefault.glyphs, &fontDefault.recs, default_font_gc, default_font_sz, 0, 1);
   fontDefault.texture = LoadTextureFromImage(atlas);
+  UnloadImage(atlas);
 #ifdef RELEASE
   sdf_font_shader_s = LoadShaderFromMemory(NULL, SHADER_FONT_SDF),
 #else
