@@ -140,7 +140,10 @@ static inline void __attribute__((constructor(102))) run_tests(void) {
   FILE *cmdlinef = fopen("/proc/self/cmdline", "r");
   char *arg = NULL;
   int arglen;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat"
   fscanf(cmdlinef, "%ms%n", &arg, &arglen);
+#pragma GCC diagnostic pop
   fclose(cmdlinef);
 #endif
   for (char *pos = arg; pos < arg + arglen; pos += strlen(pos) + 1) {

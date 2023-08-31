@@ -115,7 +115,10 @@ static points_group_t* points_group_init(points_group_t* g, int group_id) {
   return g;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 static Color base_colors[8] = { RED, GREEN, BLUE, LIGHTGRAY, PINK, GOLD, VIOLET, DARKPURPLE };
+#pragma GCC diagnostic pop
 
 static Color color_get(int id) {
   id = abs(id);
