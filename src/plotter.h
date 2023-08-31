@@ -6,8 +6,6 @@
 extern "C" {
 #endif
 
-#define SMOL_MESHES_CAP 1024
-
 // This is the size of buffer used to transfer points from cpu to gpu.
 #define PTOM_COUNT (1<<10)
 

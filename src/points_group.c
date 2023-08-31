@@ -118,6 +118,7 @@ static points_group_t* points_group_init(points_group_t* g, int group_id) {
 static Color base_colors[8] = { RED, GREEN, BLUE, LIGHTGRAY, PINK, GOLD, VIOLET, DARKPURPLE };
 
 static Color color_get(int id) {
+  id = abs(id);
   static int base_colors_count = sizeof(base_colors)/sizeof(Color);
   float count = 2.f;
   Color c = base_colors[id%base_colors_count];
