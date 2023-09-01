@@ -6,6 +6,18 @@
 extern "C" {
 #endif
 
+#ifdef RELEASE
+
+#ifdef PLATFORM_DESKTOP
+#include "shaders.h"
+#elif PLATFORM_WEB
+#include "shaders_web.h"
+#else
+#error "Shaders for this platform arn't defined"
+#endif
+
+#endif
+
 // This is the size of buffer used to transfer points from cpu to gpu.
 #define PTOM_COUNT (1<<10)
 
@@ -132,8 +144,6 @@ typedef struct {
   smol_mesh_t* lines_mesh;
   smol_mesh_t* quads_mesh;
 
-  Font font;
-
   // Only render thread can read or write to this array.
   points_groups_t groups;
 
@@ -181,7 +191,6 @@ void zig_print_stacktrace(void);
 void read_input_main(graph_values_t* ptr);
 void read_input_stop(void);
 
-// Only render thread can access this functions.
 void q_init(q_commands* q);
 #ifdef LOCK_T
 // If you know that only one thread writes to q use q_push, else use this.
@@ -189,10 +198,25 @@ bool q_push_safe(q_commands *q, q_command command);
 #endif
 // If you know that only one thread writes to q us this, else use q_push_safe.
 bool q_push(q_commands* q, q_command command);
-// Only render thread can access this functions.
 q_command q_pop(q_commands* q);
 
+int ui_draw_button(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...);
+void ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size, char* buff);
+int ui_stack_buttons_add(bool* is_pressed, const char* str, ...);
+void ui_stack_buttons_end(void);
+
+void help_trim_zeros(char * buff);
+void help_draw_text(const char *text, Vector2 pos, float fontSize, Color color);
+Vector2 help_measure_text(const char* txt, float font_size);
+void help_load_default_sdf_font(void);
+extern Shader sdf_font_shader_s;
+extern Font default_font;
+
 static inline float maxf(float a, float b) {
+  return a > b ? a : b;
+}
+
+static inline int maxi32(int a, int b) {
   return a > b ? a : b;
 }
 

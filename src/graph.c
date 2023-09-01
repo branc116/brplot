@@ -1,17 +1,5 @@
 #include "plotter.h"
 
-#ifdef RELEASE
-
-#ifdef PLATFORM_DESKTOP
-#include "shaders.h"
-#elif PLATFORM_WEB
-#include "shaders_web.h"
-#else
-#error "Shaders for this platform arn't defined"
-#endif
-
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -25,20 +13,12 @@
 
 static void refresh_shaders_if_dirty(graph_values_t* gv);
 static void update_resolution(graph_values_t* gv);
-static int draw_button(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...);
 static void draw_left_panel(graph_values_t* gv, char *buff, float font_scale);
 static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale);
 static Rectangle graph_get_rectangle(graph_values_t* gv);
 static void graph_update_mouse_position(graph_values_t* gv);
-static float help_measure_text(const char* txt, float font_size);
-static void help_draw_text(const char *text, Vector2 pos, float fontSize, Color color);
-static Font load_sdf_font(void);
-
-static Font default_font;
-static Shader sdf_font_shader_s;
 
 Vector2 graph_mouse_position;
-
 
 void graph_init(graph_values_t* gv, float width, float height) {
   *gv = (graph_values_t){
@@ -72,7 +52,7 @@ void graph_init(graph_values_t* gv, float width, float height) {
   gv->lines_mesh = smol_mesh_malloc(PTOM_COUNT, gv->linesShader);
   gv->quads_mesh = smol_mesh_malloc(PTOM_COUNT, gv->quadShader);
   q_init(&gv->commands);
-  default_font = gv->font = load_sdf_font();
+  help_load_default_sdf_font();
 }
 
 void graph_free(graph_values_t* gv) {
@@ -166,7 +146,7 @@ void graph_draw(graph_values_t* gv) {
     float fs = (10.f * font_scale);
     Vector2 s = { 100.f, fs + 2 * pad};
     sprintf(buff, "(%.1e, %.1e)", graph_mouse_position.x, graph_mouse_position.y);
-    s.x = help_measure_text(buff, fs) + 2.f * (float)pad;
+    s.x = help_measure_text(buff, fs).y + 2.f * (float)pad;
     DrawRectangleV(mp, s, RAYWHITE);
     help_draw_text(buff, (Vector2){mp.x + pad, mp.y + pad}, fs, BLACK);
   }
@@ -187,25 +167,6 @@ void graph_draw(graph_values_t* gv) {
     }
   }
 end: return;
-}
-
-static void help_draw_text(const char *text, Vector2 pos, float fontSize, Color color) {
-  float defaultFontSize = 10.f;
-  if (fontSize < defaultFontSize) fontSize = defaultFontSize;
-  BeginShaderMode(sdf_font_shader_s);
-    DrawTextEx(default_font, text, (Vector2){roundf(pos.x), roundf(pos.y)}, floorf(fontSize), 1.0f, color);
-  EndShaderMode();
-}
-
-static float help_measure_text(const char* txt, float font_size) {
-  Vector2 textSize = { 0.0f, 0.0f };
-
-  float defaultFontSize = 10;   // Default Font chars height in pixel
-  if (font_size < defaultFontSize) font_size = defaultFontSize;
-
-  textSize = MeasureTextEx(default_font, txt, floorf(font_size), 1.0f);
-
-  return textSize.x;
 }
 
 static void graph_update_mouse_position(graph_values_t* gv) {
@@ -243,48 +204,9 @@ static void refresh_shaders_if_dirty(graph_values_t* gv) {
   }
 }
 
-static int draw_button(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...) {
-  Vector2 mp = GetMousePosition();
-  int c = 0;
-  va_list args;
-  va_start(args, str);
-  vsprintf(buff, str, args);
-  va_end(args);
-  float pad = 5.f;
-  Vector2 size = { help_measure_text(buff, font_size) + 2.f * pad, font_size + 2.f * pad };
-  Rectangle box = { x, y, size.x, size.y };
-  bool is_in = CheckCollisionPointRec(mp, box);
-  if (is_in) {
-    bool is_p = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
-    c = is_p ? 2 : 1;
-    if (is_p && is_pressed) {
-      *is_pressed = !*is_pressed;
-    }
-  }
-  if (is_pressed && *is_pressed) {
-    DrawRectangleRec(box, BLUE);
-  } else if (is_in) {
-    DrawRectangleRec(box, RED);
-  }
-  help_draw_text(buff, (Vector2){x + pad, y + pad}, font_size, WHITE);
-  return c;
-}
-
 static Rectangle graph_get_rectangle(graph_values_t* gv) {
   return (Rectangle){-gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2.f + gv->uvOffset.x, gv->uvZoom.y/2.f + gv->uvOffset.y,
     gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x, gv->uvZoom.y};
-}
-
-static void help_trim_zeros(char * buff) {
-  size_t sl = strlen(buff);
-  for (int i = (int)sl; i >= 0; --i) {
-    if (buff[i] == '0' || buff[i] == (char)0) buff[i] = (char)0;
-    else if (buff[i] == '.') {
-      buff[i] = 0;
-      return;
-    }
-    else return;
-  }
 }
 
 static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale) {
@@ -321,14 +243,16 @@ static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale) {
   }
 }
 
+static float sp = 0.f;
 static void draw_left_panel(graph_values_t* gv, char *buff, float font_scale) {
-  int i = 0;
-  draw_button(&gv->follow, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Follow");
-  draw_button(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Line draw calls: %d", gv->lines_mesh->draw_calls);
-  draw_button(NULL, 30.f, gv->graph_rect.y + (float)(33*(i++)), font_scale * 15, buff, "Points drawn: %d", gv->lines_mesh->points_drawn);
+  ui_stack_buttons_init((Vector2){.x = 30.f, .y = 25.f}, &sp, font_scale * 15, buff);
+  ui_stack_buttons_add(&gv->follow, "Follow");
+  ui_stack_buttons_add(NULL, "Line draw calls: %d", gv->lines_mesh->draw_calls);
+  ui_stack_buttons_add(NULL, "Points drawn: %d", gv->lines_mesh->points_drawn);
   for(size_t j = 0; j < gv->groups.len; ++j) {
-    draw_button(&gv->groups.arr[j].is_selected, 30.f, gv->graph_rect.y + (float)(33 * (i++)), font_scale * 15.f, buff, "Group #%d: %d/%d; %ul/%ul/%ul", gv->groups.arr[j].group_id, gv->groups.arr[j].len, gv->groups.arr[j].cap, gv->groups.arr[j].resampling->intervals_count, gv->groups.arr[j].resampling->raw_count, gv->groups.arr[j].resampling->resampling_count);
+    ui_stack_buttons_add(&gv->groups.arr[j].is_selected, "Group #%d: %d/%d; %ul/%ul/%ul", gv->groups.arr[j].group_id, gv->groups.arr[j].len, gv->groups.arr[j].cap, gv->groups.arr[j].resampling->intervals_count, gv->groups.arr[j].resampling->raw_count, gv->groups.arr[j].resampling->resampling_count);
   }
+  ui_stack_buttons_end();
   gv->lines_mesh->draw_calls = 0;
   gv->lines_mesh->points_drawn = 0;
 }
@@ -343,19 +267,3 @@ static void update_resolution(graph_values_t* gv) {
   gv->graph_rect.height = h;
 }
 
-static Font load_sdf_font(void) {
-  Font fontDefault = { 0 };
-  fontDefault.baseSize = default_font_sz;
-  fontDefault.glyphCount = default_font_gc;
-  fontDefault.glyphs = LoadFontData(default_font_data, sizeof(default_font_data), default_font_sz, 0, default_font_gc, FONT_SDF);
-  Image atlas = GenImageFontAtlas(fontDefault.glyphs, &fontDefault.recs, default_font_gc, default_font_sz, 0, 1);
-  fontDefault.texture = LoadTextureFromImage(atlas);
-  UnloadImage(atlas);
-#ifdef RELEASE
-  sdf_font_shader_s = LoadShaderFromMemory(NULL, SHADER_FONT_SDF),
-#else
-  sdf_font_shader_s  = LoadShader(NULL, "src/desktop/shaders/sdf_font.fs");
-#endif
-  SetTextureFilter(fontDefault.texture, TEXTURE_FILTER_BILINEAR);
-  return fontDefault;
-}
