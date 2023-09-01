@@ -26,12 +26,12 @@ pub fn addRayLib(b: *std.build.Builder, target: std.zig.CrossTarget, opt: std.bu
         .windows => {
             raylib.defineCMacro("PLATFORM_DESKTOP", null);
             raylib.defineCMacro("_WIN32", "1");
-            raylib.addIncludePath("./raylib/src/external/glfw/include");
-            raylib.addCSourceFile(rlf("/rglfw.c"), rlplot_flags);
+            raylib.addIncludePath(.{ .path = "./raylib/src/external/glfw/include" });
+            raylib.addCSourceFile(.{ .file = .{ .path = rlf("/rglfw.c") }, .flags = rlplot_flags });
             raylib.linkSystemLibrary("winmm");
             raylib.linkSystemLibrary("gdi32");
             raylib.linkSystemLibrary("opengl32");
-            raylib.addIncludePath("./raylib/src/external/glfw/deps/mingw");
+            raylib.addIncludePath(.{ .path = "./raylib/src/external/glfw/deps/mingw" });
         },
         .wasi => {
             //-DGRAPHICS_API_OPENGL_ES2 -DPLATFORM_WEB --memory-init-file 1 --closure 1 -s WASM_BIGINT -s ENVIRONMENT=web -sALLOW_MEMORY_GROWTH -s USE_GLFW=3 -s ASYNCIFY $(CCFLAGS)
@@ -78,27 +78,27 @@ pub fn addRlPlot(b: *std.build.Builder, opt: std.builtin.OptimizeMode, target: s
 
     rlplot.linkLibrary(raylib);
     rlplot.linkLibC();
-    rlplot.addIncludePath("raylib/src");
-    rlplot.addCSourceFiles(&.{ "src/graph.c", "src/main.c", "src/points_group.c", "src/read_input.c", "src/smol_mesh.c", "src/q.c", "src/resampling.c" }, rlplot_flags);
-    rlplot.addObjectFile("src/print_stacktrace.zig");
+    rlplot.addIncludePath(.{ .path = "raylib/src" });
+    rlplot.addCSourceFiles(&.{ "src/graph.c", "src/main.c", "src/points_group.c", "src/read_input.c", "src/smol_mesh.c", "src/q.c", "src/resampling.c", "src/ui.c", "src/help.c" }, rlplot_flags);
+    rlplot.addObjectFile(.{ .path = "src/print_stacktrace.zig" });
     if (opt != .Debug) {
         try genShaderhFile();
         rlplot.defineCMacro("RELEASE", null);
         rlplot.want_lto = true;
         raylib.want_lto = true;
     } else {
-        rlplot.addCSourceFiles(&.{"src/desktop/linux/refresh_shaders.c"}, rlplot_flags);
+        rlplot.addCSourceFile(.{ .file = .{ .path = "src/desktop/linux/refresh_shaders.c" }, .flags = rlplot_flags });
     }
 
     switch (target.getOsTag()) {
         .linux => {
             rlplot.defineCMacro("PLATFORM_DESKTOP", null);
-            rlplot.addCSourceFile("./src/desktop/linux/read_input.c", rlplot_flags);
+            rlplot.addCSourceFile(.{ .file = .{ .path = "./src/desktop/linux/read_input.c" }, .flags = rlplot_flags });
         },
         .windows => {
             rlplot.defineCMacro("PLATFORM_DESKTOP", null);
             rlplot.defineCMacro("_WIN32", "1");
-            rlplot.addCSourceFile("./src/desktop/win/read_input.c", rlplot_flags);
+            rlplot.addCSourceFile(.{ .file = .{ .path = "./src/desktop/win/read_input.c" }, .flags = rlplot_flags });
         },
         .wasi => {
             rlplot.defineCMacro("PLATFORM_WEB", null);
