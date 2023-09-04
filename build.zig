@@ -61,8 +61,9 @@ fn one_shader(f: std.fs.File, comptime name: []const u8, comptime macroName: []c
 }
 
 fn genShaderhFile() !void {
-    std.fs.cwd().deleteFile("shaders.h") catch |e| print("{}", .{e});
-    const file = try std.fs.cwd().createFile("shaders.h", .{ .read = true });
+    const shader_file_name = "src/shaders.h";
+    std.fs.cwd().deleteFile(shader_file_name) catch |e| print("{}", .{e});
+    const file = try std.fs.cwd().createFile(shader_file_name, .{ .read = true });
     _ = try one_shader(file, "src/desktop/shaders/grid.fs", "SHADER_GRID_FS");
     _ = try one_shader(file, "src/desktop/shaders/line.fs", "SHADER_LINE_FS");
     _ = try one_shader(file, "src/desktop/shaders/line.vs", "SHADER_LINE_VS");
