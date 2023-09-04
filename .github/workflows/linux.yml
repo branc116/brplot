@@ -69,6 +69,7 @@ jobs:
         make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten www/index.wasm
 
     - name: Test artefacts
+      run: |
         test -f www/index.wasm && ls -alFh www
         ls -alFh zig-out/bin/rlplot.exe
         ls -alFh bin/rlplot && strip bin/rlplot && ls -alFh bin/rlplot
