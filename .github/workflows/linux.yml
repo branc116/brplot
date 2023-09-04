@@ -39,6 +39,7 @@ jobs:
     - name: Build rlplot debug
       run: |
         make bin/rlplot_dbg
+        ls -alFh bin/rlplot_dbg
 
     - name: Build and run unit tests
       run: |
@@ -47,6 +48,7 @@ jobs:
     - name: Build rlplot release
       run: |
         make
+        ls -alFh bin/rlplot && strip bin/rlplot && ls -alFh bin/rlplot
 
     - name: Setup Zig
       uses: goto-bus-stop/setup-zig@v2.1.1
@@ -54,6 +56,7 @@ jobs:
     - name: Build rlplot windows
       run: |
         make windows
+        ls -alFh zig-out/bin/rlplot.exe
 
     - name: Setup Emscripten
       run: |
@@ -66,4 +69,5 @@ jobs:
 
     - name: Build rlplot wasm
       run: |
-        make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten
+        make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten www/index.wasm
+        test -f www/index.wasm && ls -alFh www

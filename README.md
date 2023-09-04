@@ -4,7 +4,7 @@ Smol application that plots lines that are sent to the application stdin.
 
 ## Compile
 
-Rlplot can be built using GNU make ( using gcc internlly ) or using ![Zig](https://github.com/ziglang/zig) ( zig is love ). Use whatever you like.
+Rlplot can be built using GNU make ( using gcc internlly ) or using [Zig](https://github.com/ziglang/zig) ( zig is love ). Use whatever you like.
 
 ## Using zig for linux
 
@@ -53,7 +53,7 @@ sudo rm /usr/bin/rlplot
 rlplot is designed in such a way that it plays nicely with other unix tools. You can just pipe the output of your program to rlplot and rlplot will do it's best to plot your data.
 
 ### Examples
-I think that more or less all of the examples listed on ![ttyplot examples](https://github.com/tenox7/ttyplot#examples) should work with rlplot ( just replace ttyplot with rlplot. )
+I think that more or less all of the examples listed on [ttyplot examples](https://github.com/tenox7/ttyplot#examples) should work with rlplot ( just replace ttyplot with rlplot. )
 But here are some more examples:
 
 #### Plot first 8 Fibonacci numbers from user input
