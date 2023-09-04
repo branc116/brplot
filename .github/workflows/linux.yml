@@ -66,4 +66,4 @@ jobs:
 
     - name: Build rlplot wasm
       run: |
-        make www/index.wasm
+        make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk www/index.wasm

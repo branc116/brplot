@@ -2,6 +2,7 @@ bin
 build
 www
 shaders.h
+src/shaders_web.h
 zig-out
 zig-cache
 bench
