@@ -67,6 +67,8 @@ void graph_free(graph_values_t* gv) {
   free(gv->commands.commands);
 }
 
+extern int cur_font_size;
+
 void graph_draw(graph_values_t* gv) {
   char buff[128];
   float font_scale = 1.8f;
@@ -123,6 +125,14 @@ void graph_draw(graph_values_t* gv) {
     }
     if (IsKeyPressed(KEY_F)) {
       gv->follow = !gv->follow;
+    }
+    if (IsKeyPressed(KEY_W)) { 
+      cur_font_size++;
+      help_load_default_sdf_font();
+    }
+    if (IsKeyPressed(KEY_S)) { 
+      cur_font_size--;
+      help_load_default_sdf_font();
     }
   }
   for (int i = 0; i < 3; ++i) {
@@ -245,10 +255,14 @@ static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale) {
 
 static float sp = 0.f;
 static void draw_left_panel(graph_values_t* gv, char *buff, float font_scale) {
-  ui_stack_buttons_init((Vector2){.x = 30.f, .y = 25.f}, &sp, font_scale * 15, buff);
+  ui_stack_buttons_init((Vector2){.x = 30.f, .y = 25.f}, NULL, font_scale * 15, buff);
   ui_stack_buttons_add(&gv->follow, "Follow");
   ui_stack_buttons_add(NULL, "Line draw calls: %d", gv->lines_mesh->draw_calls);
   ui_stack_buttons_add(NULL, "Points drawn: %d", gv->lines_mesh->points_drawn);
+  ui_stack_buttons_add(NULL, "Font size: %d", cur_font_size);
+  Vector2 new_pos = ui_stack_buttons_end();
+  new_pos.y += 50;
+  ui_stack_buttons_init(new_pos, &sp, font_scale * 15, buff);
   for(size_t j = 0; j < gv->groups.len; ++j) {
     ui_stack_buttons_add(&gv->groups.arr[j].is_selected, "Group #%d: %d/%d; %ul/%ul/%ul", gv->groups.arr[j].group_id, gv->groups.arr[j].len, gv->groups.arr[j].cap, gv->groups.arr[j].resampling->intervals_count, gv->groups.arr[j].resampling->raw_count, gv->groups.arr[j].resampling->resampling_count);
   }

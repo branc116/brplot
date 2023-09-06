@@ -203,7 +203,7 @@ q_command q_pop(q_commands* q);
 int ui_draw_button(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...);
 void ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size, char* buff);
 int ui_stack_buttons_add(bool* is_pressed, const char* str, ...);
-void ui_stack_buttons_end(void);
+Vector2 ui_stack_buttons_end(void);
 
 void help_trim_zeros(char * buff);
 void help_draw_text(const char *text, Vector2 pos, float fontSize, Color color);

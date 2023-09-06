@@ -39,16 +39,15 @@ int ui_draw_button(bool* is_pressed, float x, float y, float font_size, char* bu
   return ret;
 }
 
-static bool stack_is_inited = false;
-static float stack_offset;
-static Vector2 stack_button_size;
-static float stack_font_size;
 static Vector2 stack_pos;
-static char* stack_buff;
+static bool stack_is_inited = false;
 static float* stack_scroll_position;
-static Vector2 stack_maxsize;
+static Vector2 stack_button_size;
+static float stack_offset;
+static float stack_font_size;
+static char* stack_buff;
 static int stack_count;
-
+static Vector2 stack_maxsize;
 
 void ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size, char* buff) {
   assert(!stack_is_inited);
@@ -57,7 +56,7 @@ void ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size,
   stack_scroll_position = scroll_position;
   stack_button_size = help_measure_text("T", font_size);
   stack_button_size.y += 5.f;
-  stack_offset = -stack_button_size.y * (int)*scroll_position;
+  stack_offset = -stack_button_size.y * (scroll_position == NULL ? 0.f :(int)*scroll_position);
   stack_font_size = font_size;
   stack_buff = buff;
   stack_count = 0;
@@ -82,15 +81,21 @@ int ui_stack_buttons_add(bool* is_pressed, char const* str, ...) {
   return 0;
 }
 
-void ui_stack_buttons_end(void) {
+Vector2 ui_stack_buttons_end(void) {
   assert(stack_is_inited);
   stack_is_inited = false;
-  if (CheckCollisionPointRec(GetMousePosition(), (Rectangle) {.x = stack_pos.x, .y= stack_pos.y, .width = stack_maxsize.x, .height = stack_maxsize.y + stack_offset - stack_pos.y })) {
-    Vector2 mouse_scroll = GetMouseWheelMoveV();
-    *stack_scroll_position += mouse_scroll.y;
+  if (stack_count == 0) return stack_pos;
+  BoundingBox bb = {.min = {stack_pos.x, stack_pos.y, 0.f}, .max = { stack_pos.x + stack_maxsize.x, stack_pos.y + stack_maxsize.y + stack_offset - stack_button_size.y } };
+  if (stack_scroll_position != NULL) {
+    if (CheckCollisionPointRec(GetMousePosition(), (Rectangle) {.x = bb.min.x, .y = bb.min.y, .width = bb.max.x - bb.min.x, .height = bb.max.y - bb.min.y })) {
+      Vector2 mouse_scroll = GetMouseWheelMoveV();
+      *stack_scroll_position += mouse_scroll.y;
+    }
+    *stack_scroll_position = minf((float)stack_count - 3.f , *stack_scroll_position);
+    *stack_scroll_position = maxf(0.f, *stack_scroll_position);
   }
-  *stack_scroll_position = minf((float)stack_count - 3.f , *stack_scroll_position);
-  *stack_scroll_position = maxf(0.f, *stack_scroll_position);
-  DrawBoundingBox((BoundingBox){.min = {stack_pos.x, stack_pos.y, 0.f}, .max = { stack_pos.x + stack_maxsize.x, stack_maxsize.y + stack_offset } } , RAYWHITE);
+  printf("stack_pos.y: %f, stack_maysize.y: %f\n", stack_pos.y, stack_maxsize.y);
+  DrawBoundingBox(bb, RAYWHITE);
+  return (Vector2) { stack_pos.x, stack_pos.y + stack_offset };
 }
 
