@@ -155,6 +155,12 @@ typedef struct {
 
 } graph_values_t;
 
+typedef struct {
+  bool debug_bounds;
+} context_t;
+
+extern context_t context;
+
 
 smol_mesh_t* smol_mesh_malloc(size_t capacity, Shader s);
 void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 mid_point, Vector2 tangent, Color color);

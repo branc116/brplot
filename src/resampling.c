@@ -38,21 +38,43 @@ void resampling_free(resampling_t* res) {
 size_t resampling_draw(resampling_t* res, points_group_t const* points, Rectangle screen, smol_mesh_t* lines_mesh, smol_mesh_t* quad_mesh) {
   (void)quad_mesh;
   size_t ret = res->resampling_count = res->raw_count = 0;
+  Vector2 last = {0};
+  bool connect_last = false;
   for (size_t i = 0; i < res->intervals_count; ++i) {
+    size_t s = 0;
     resamping_interval_t* inter = &res->intervals[i];
     Vector2 const * ps = &(points->points)[inter->from];
-    smol_mesh_gen_bb(lines_mesh, inter->bounds, points->color);
-    if (!help_check_collision_bb_rec(inter->bounds, screen)) continue;
+    if (context.debug_bounds) smol_mesh_gen_bb(lines_mesh, inter->bounds, points->color);
+    if (!help_check_collision_bb_rec(inter->bounds, screen)) {
+      connect_last = false;
+      continue;
+    }
     if (inter->count < 128) {
       smol_mesh_gen_line_strip(lines_mesh, ps, inter->count, points->color);
       ret += inter->count;
       ++res->raw_count;
+      if (connect_last) {
+        res->temp_points[0] = ps[0];
+        res->temp_points[1] = last; 
+        smol_mesh_gen_line_strip(lines_mesh, res->temp_points, 2, points->color);
+      }
+      last = ps[inter->count - 1];
+      connect_last = true;
     } else {
-      size_t s = points_group_sample_points(ps, inter->count, inter->dir, screen, res->temp_points, temp_points_count);
-      if (s == 0) continue;
+      s = points_group_sample_points(ps, inter->count, inter->dir, screen, res->temp_points, temp_points_count);
+      if (s == 0) {
+        connect_last = false;
+        continue;
+      }
       smol_mesh_gen_line_strip(lines_mesh, res->temp_points, s, points->color);
       ret += s;
       ++res->resampling_count;
+      if (connect_last) {
+        res->temp_points[1] = res->temp_points[s - 1];
+        res->temp_points[0] = last; 
+        smol_mesh_gen_line_strip(lines_mesh, res->temp_points, 2, points->color);
+      }
+      last = res->temp_points[s - 1];
     }
   }
   return ret;
@@ -68,10 +90,10 @@ void resampling_add_point(resampling_t* res, points_group_t const* pg, size_t in
   if (last_interval->count != 0) {
     size_t last_index = last_interval->from + last_interval->count - 1;
     Vector2 last_point = all_points[last_index];
-    bool is_left  = point.x <= last_point.x,
-         is_right = point.x >= last_point.x,
-         is_up    = point.y >= last_point.y,
-         is_down  = point.y <= last_point.y;
+    bool is_left  = point.x < last_point.x,
+         is_right = point.x > last_point.x,
+         is_up    = point.y > last_point.y,
+         is_down  = point.y < last_point.y;
     new_dir &=
      (~resampling_dir_left  | (is_left  ? resampling_dir_left  : 0)) &
      (~resampling_dir_right | (is_right ? resampling_dir_right : 0)) &

@@ -17,6 +17,8 @@
 #define HEIGHT 720
 #endif
 
+context_t context;
+
 int main_gui(graph_values_t* gv) {
   while(!WindowShouldClose()) {
     BeginDrawing();
@@ -33,6 +35,9 @@ int _main(void) {
 void zig_print_stacktrace() { exit(-1); }
 int main(void) {
 #endif
+  context = (context_t) {
+    .debug_bounds = true
+  };
 #ifdef RELEASE
   SetTraceLogLevel(LOG_ERROR);
 #endif

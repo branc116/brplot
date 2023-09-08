@@ -134,6 +134,9 @@ void graph_draw(graph_values_t* gv) {
       cur_font_size--;
       help_load_default_sdf_font();
     }
+    if (IsKeyPressed(KEY_D)) {
+      context.debug_bounds = !context.debug_bounds;
+    }
   }
   for (int i = 0; i < 3; ++i) {
     SetShaderValue(gv->shaders[i], gv->uResolution[i], &gv->graph_rect, SHADER_UNIFORM_VEC4);
