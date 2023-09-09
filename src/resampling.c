@@ -4,6 +4,7 @@
 #include "stdint.h"
 #include "math.h"
 #include <raylib.h>
+#include <raymath.h>
 #include "tests.h"
 
 #define temp_points_count 1024
@@ -35,10 +36,51 @@ void resampling_free(resampling_t* res) {
   free(res);
 }
 
+void find_closes_pair(Vector2 const a[2], Vector2 const b[2], Vector2 out[2]) {
+  int closest = 0;
+  float min = Vector2DistanceSqr(a[0], b[0]);
+  float tmp = Vector2DistanceSqr(a[0], b[1]);
+  if (min > tmp) {
+    min = tmp;
+    closest = 1;
+  }
+  tmp = Vector2DistanceSqr(a[1], b[0]);
+  if (min > tmp) {
+    min = tmp;
+    closest = 2;
+  }
+  tmp = Vector2DistanceSqr(a[1], b[1]);
+  if (min > tmp) {
+    min = tmp;
+    closest = 3;
+  }
+  switch (closest) {
+    case 0:
+      out[0] = a[0];
+      out[1] = b[0];
+      return;
+    case 1:
+      out[0] = a[0];
+      out[1] = b[1];
+      return;
+    case 2:
+      out[0] = a[1];
+      out[1] = b[0];
+      return;
+    case 3:
+      out[0] = a[1];
+      out[1] = b[1];
+      return;
+    default:
+      assert(false);
+  }
+}
+
 size_t resampling_draw(resampling_t* res, points_group_t const* points, Rectangle screen, smol_mesh_t* lines_mesh, smol_mesh_t* quad_mesh) {
   (void)quad_mesh;
   size_t ret = res->resampling_count = res->raw_count = 0;
-  Vector2 last = {0};
+  Vector2 last[2] = {0};
+  Vector2 neigh[2] = {0};
   bool connect_last = false;
   for (size_t i = 0; i < res->intervals_count; ++i) {
     size_t s = 0;
@@ -54,11 +96,11 @@ size_t resampling_draw(resampling_t* res, points_group_t const* points, Rectangl
       ret += inter->count;
       ++res->raw_count;
       if (connect_last) {
-        res->temp_points[0] = ps[0];
-        res->temp_points[1] = last; 
-        smol_mesh_gen_line_strip(lines_mesh, res->temp_points, 2, points->color);
+        res->temp_points[0] = ps[0]; res->temp_points[1] = ps[inter->count - 1];
+        find_closes_pair(last, res->temp_points, neigh);
+        smol_mesh_gen_line_strip(lines_mesh, neigh, 2, points->color);
       }
-      last = ps[inter->count - 1];
+      last[0] = last[1] = ps[inter->count - 1];
       connect_last = true;
     } else {
       s = points_group_sample_points(ps, inter->count, inter->dir, screen, res->temp_points, temp_points_count);
@@ -71,10 +113,11 @@ size_t resampling_draw(resampling_t* res, points_group_t const* points, Rectangl
       ++res->resampling_count;
       if (connect_last) {
         res->temp_points[1] = res->temp_points[s - 1];
-        res->temp_points[0] = last; 
-        smol_mesh_gen_line_strip(lines_mesh, res->temp_points, 2, points->color);
+        find_closes_pair(last, res->temp_points, neigh);
+        smol_mesh_gen_line_strip(lines_mesh, neigh, 2, points->color);
       }
-      last = res->temp_points[s - 1];
+      connect_last = true;
+      last[0] = res->temp_points[0]; last[1] = res->temp_points[s - 1];
     }
   }
   return ret;
@@ -90,10 +133,10 @@ void resampling_add_point(resampling_t* res, points_group_t const* pg, size_t in
   if (last_interval->count != 0) {
     size_t last_index = last_interval->from + last_interval->count - 1;
     Vector2 last_point = all_points[last_index];
-    bool is_left  = point.x < last_point.x,
-         is_right = point.x > last_point.x,
-         is_up    = point.y > last_point.y,
-         is_down  = point.y < last_point.y;
+    bool is_left  = point.x <= last_point.x,
+         is_right = point.x >= last_point.x,
+         is_up    = point.y >= last_point.y,
+         is_down  = point.y <= last_point.y;
     new_dir &=
      (~resampling_dir_left  | (is_left  ? resampling_dir_left  : 0)) &
      (~resampling_dir_right | (is_right ? resampling_dir_right : 0)) &
@@ -131,11 +174,26 @@ static void resampling_add_interval(resampling_t* res) {
   res->intervals[new_index] = (resamping_interval_t) { .from = 0, .count = 0, .dir = 15, .bounds = {0} };
   return;
 }
+static bool check_collision_rec_line(Rectangle rec, Vector2 start, Vector2 end) {
+  if (CheckCollisionPointRec(start, rec)) return true;
+  if (CheckCollisionPointRec(end, rec)) return true;
+  if (CheckCollisionLines(start, end, (Vector2){rec.x, rec.y}, (Vector2){rec.x + rec.width, rec.y}, NULL)) return true;
+  if (CheckCollisionLines(start, end, (Vector2){rec.x, rec.y}, (Vector2){rec.x, rec.y + rec.height}, NULL)) return true;
+  if (CheckCollisionLines(start, end, (Vector2){rec.x + rec.width, rec.y}, (Vector2){rec.x + rec.width, rec.y + rec.height}, NULL)) return true;
+  if (CheckCollisionLines(start, end, (Vector2){rec.x, rec.y + rec.height}, (Vector2){rec.x + rec.width, rec.y + rec.height}, NULL)) return true;
+  return false;
+}
 
 static size_t points_group_sample_points(Vector2 const* points, size_t len, resampling_dir dir, Rectangle rect, Vector2* out_points, size_t max_number_of_points) {
   if (len == 0) {
     return 0;
   }
+  Rectangle normal_rect = rect;
+  normal_rect.y -= normal_rect.height*1.1f;
+  normal_rect.height *= 1.2f;
+  normal_rect.x -= normal_rect.height*.1f;
+  normal_rect.width *= 1.2f;
+
   resampling_dir d = dir & resampling_dir_right ? resampling_dir_right :
                      dir & resampling_dir_left  ? resampling_dir_left  :
                      dir & resampling_dir_up    ? resampling_dir_up    :
@@ -153,9 +211,11 @@ static size_t points_group_sample_points(Vector2 const* points, size_t len, resa
       res = binary_search(&lb->field, &ub->field, cur, stride); \
       Vector2 p = lb[res.index]; \
       if (res.factor <= 1.f && (out_index == 0 || p.x != last_point.x || p.y != last_point.y)) { \
-        out_points[out_index++] = p; \
-        if (out_index + 1 < max_number_of_points) \
-          out_points[out_index++] = lb[res.next_index]; \
+        if (check_collision_rec_line(normal_rect, p, lb[res.next_index])) { \
+          out_points[out_index++] = p; \
+          if (out_index + 1 < max_number_of_points) \
+            out_points[out_index++] = lb[res.next_index]; \
+        } \
         B = &lb[res.next_index]; \
         last_point = p; \
       } \

@@ -94,7 +94,6 @@ Vector2 ui_stack_buttons_end(void) {
     *stack_scroll_position = minf((float)stack_count - 3.f , *stack_scroll_position);
     *stack_scroll_position = maxf(0.f, *stack_scroll_position);
   }
-  printf("stack_pos.y: %f, stack_maysize.y: %f\n", stack_pos.y, stack_maxsize.y);
   DrawBoundingBox(bb, RAYWHITE);
   return (Vector2) { stack_pos.x, stack_pos.y + stack_offset };
 }
