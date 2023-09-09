@@ -9,13 +9,8 @@
 
 #include "raylib.h"
 
-#ifdef PLATFORM_WEB
-#define WIDTH (1280*1.6)
-#define HEIGHT (720*1.6)
-#else
 #define WIDTH 1280
 #define HEIGHT 720
-#endif
 
 context_t context;
 

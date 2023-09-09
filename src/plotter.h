@@ -177,7 +177,7 @@ void points_groups_draw(points_groups_t const* pg_array, smol_mesh_t* line_mesh,
 void points_group_add_test_points(points_groups_t* pg_array);
 void points_groups_deinit(points_groups_t* pg);
 
-resampling_t* resampling_malloc();
+resampling_t* resampling_malloc(void);
 void resampling_free(resampling_t* res);
 size_t resampling_draw(resampling_t* res, points_group_t const* pg, Rectangle screen, smol_mesh_t* lines_mesh, smol_mesh_t* quad_mesh);
 void resampling_add_point(resampling_t* res, points_group_t const* pg, size_t index);

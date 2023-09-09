@@ -254,6 +254,9 @@ static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale) {
 static float sp = 0.f;
 static void draw_left_panel(graph_values_t* gv, char *buff, float font_scale) {
   ui_stack_buttons_init((Vector2){.x = 30.f, .y = 25.f}, NULL, font_scale * 15, buff);
+  if (2 == ui_stack_buttons_add(NULL, "Add test points")) {
+    points_group_add_test_points(&gv->groups);
+  }
   ui_stack_buttons_add(&gv->follow, "Follow");
   ui_stack_buttons_add(NULL, "Line draw calls: %d", gv->lines_mesh->draw_calls);
   ui_stack_buttons_add(NULL, "Points drawn: %d", gv->lines_mesh->points_drawn);

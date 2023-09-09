@@ -20,7 +20,7 @@ static bool help_check_collision_bb_rec(bb_t bb, Rectangle rec);
 static Rectangle help_bb_to_rect(bb_t bb);
 static void resampling_add_interval(resampling_t* res);
 
-resampling_t* resampling_malloc() {
+resampling_t* resampling_malloc(void) {
   resampling_t* ret = (resampling_t*)malloc(sizeof(resampling_t));
   ret->intervals = NULL;
   ret->intervals_cap = ret->intervals_count = 0;
