@@ -69,7 +69,6 @@ fn genShaderhFile() !void {
     _ = try one_shader(file, "src/desktop/shaders/line.vs", "SHADER_LINE_VS");
     _ = try one_shader(file, "src/desktop/shaders/quad.fs", "SHADER_QUAD_FS");
     _ = try one_shader(file, "src/desktop/shaders/quad.vs", "SHADER_QUAD_VS");
-    _ = try one_shader(file, "src/desktop/shaders/sdf_font.fs", "SHADER_FONT_SDF"); // TODO: Change this to be consistent...
 }
 
 // This has been tested to work with zig master branch as of commit 87de821 or May 14 2023

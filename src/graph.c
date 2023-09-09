@@ -9,7 +9,6 @@
 
 #include "raylib.h"
 #include "rlgl.h"
-#include "default_font.h"
 
 static void refresh_shaders_if_dirty(graph_values_t* gv);
 static void update_resolution(graph_values_t* gv);
@@ -52,7 +51,7 @@ void graph_init(graph_values_t* gv, float width, float height) {
   gv->lines_mesh = smol_mesh_malloc(PTOM_COUNT, gv->linesShader);
   gv->quads_mesh = smol_mesh_malloc(PTOM_COUNT, gv->quadShader);
   q_init(&gv->commands);
-  help_load_default_sdf_font();
+  help_load_default_font();
 }
 
 void graph_free(graph_values_t* gv) {
@@ -66,8 +65,6 @@ void graph_free(graph_values_t* gv) {
   }
   free(gv->commands.commands);
 }
-
-extern int cur_font_size;
 
 void graph_draw(graph_values_t* gv) {
   char buff[128];
@@ -126,14 +123,6 @@ void graph_draw(graph_values_t* gv) {
     if (IsKeyPressed(KEY_F)) {
       gv->follow = !gv->follow;
     }
-    if (IsKeyPressed(KEY_W)) { 
-      cur_font_size++;
-      help_load_default_sdf_font();
-    }
-    if (IsKeyPressed(KEY_S)) { 
-      cur_font_size--;
-      help_load_default_sdf_font();
-    }
     if (IsKeyPressed(KEY_D)) {
       context.debug_bounds = !context.debug_bounds;
     }
@@ -144,7 +133,7 @@ void graph_draw(graph_values_t* gv) {
     SetShaderValue(gv->shaders[i], gv->uOffset[i], &gv->uvOffset, SHADER_UNIFORM_VEC2);
     SetShaderValue(gv->shaders[i], gv->uScreen[i], &gv->uvScreen, SHADER_UNIFORM_VEC2);
   }
-  DrawFPS(0, 0);
+  help_draw_fps(0, 0);
   draw_left_panel(gv, buff, font_scale);
   draw_grid_values(gv, buff, font_scale);
   BeginShaderMode(gv->gridShader);
@@ -235,7 +224,7 @@ static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale) {
   for (float c = start; c > r.y - r.height; c -= base) {
     sprintf(buff, fmt_buf, c);
     help_trim_zeros(buff);
-    Vector2 sz = MeasureTextEx(default_font, buff, font_size, 1.f);
+    Vector2 sz = help_measure_text(buff, font_size);
     float y = gv->graph_rect.y + (gv->graph_rect.height / r.height) * (r.y - c);
     y -= sz.y / 2.f;
     help_draw_text(buff, (Vector2){ .x = gv->graph_rect.x - sz.x - 2.f, .y = y }, font_size, RAYWHITE);
@@ -247,7 +236,7 @@ static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale) {
   for (float c = start; c < r.x + r.width; c += base) {
     sprintf(buff, fmt_buf, c);
     help_trim_zeros(buff);
-    Vector2 sz = MeasureTextEx(default_font, buff, font_size, 1.f);
+    Vector2 sz = help_measure_text(buff, font_size);
     float x = gv->graph_rect.x + (gv->graph_rect.width / r.width) * (c - r.x);
     x -= sz.x / 2.f;
     if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
@@ -262,7 +251,6 @@ static void draw_left_panel(graph_values_t* gv, char *buff, float font_scale) {
   ui_stack_buttons_add(&gv->follow, "Follow");
   ui_stack_buttons_add(NULL, "Line draw calls: %d", gv->lines_mesh->draw_calls);
   ui_stack_buttons_add(NULL, "Points drawn: %d", gv->lines_mesh->points_drawn);
-  ui_stack_buttons_add(NULL, "Font size: %d", cur_font_size);
   Vector2 new_pos = ui_stack_buttons_end();
   new_pos.y += 50;
   ui_stack_buttons_init(new_pos, &sp, font_scale * 15, buff);

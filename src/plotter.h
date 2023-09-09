@@ -214,9 +214,8 @@ Vector2 ui_stack_buttons_end(void);
 void help_trim_zeros(char * buff);
 void help_draw_text(const char *text, Vector2 pos, float fontSize, Color color);
 Vector2 help_measure_text(const char* txt, float font_size);
-void help_load_default_sdf_font(void);
-extern Shader sdf_font_shader_s;
-extern Font default_font;
+void help_draw_fps(int posX, int posY);
+void help_load_default_font(void);
 
 static inline float maxf(float a, float b) {
   return a > b ? a : b;
