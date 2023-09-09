@@ -3,6 +3,7 @@
 #include "string.h"
 #include "math.h"
 #include <raylib.h>
+#include <stdio.h>
 
 void help_trim_zeros(char * buff) {
   size_t sl = strlen(buff);
