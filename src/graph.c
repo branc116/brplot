@@ -10,7 +10,9 @@
 #include "raylib.h"
 #include "rlgl.h"
 
+#ifndef RELEASE
 static void refresh_shaders_if_dirty(graph_values_t* gv);
+#endif
 static void update_resolution(graph_values_t* gv);
 static void draw_left_panel(graph_values_t* gv, char *buff, float font_scale);
 static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale);
@@ -70,7 +72,9 @@ void graph_draw(graph_values_t* gv) {
   char buff[128];
   float font_scale = 1.8f;
   update_resolution(gv);
+#ifndef RELEASE
   refresh_shaders_if_dirty(gv);
+#endif
   Vector2 mp = GetMousePosition();
   graph_update_mouse_position(gv);
   bool is_inside = CheckCollisionPointRec(mp, gv->graph_rect);
@@ -179,6 +183,7 @@ static void graph_update_mouse_position(graph_values_t* gv) {
      (gv->graph_rect.height - 2.f *mp_in_graph.y)/gv->graph_rect.height*gv->uvZoom.y/2.f + gv->uvOffset.y };
 }
 
+#ifndef RELEASE
 static void refresh_shaders_if_dirty(graph_values_t* gv) {
   if (gv->shaders_dirty) {
     gv->shaders_dirty = false;
@@ -205,6 +210,7 @@ static void refresh_shaders_if_dirty(graph_values_t* gv) {
     }
   }
 }
+#endif
 
 static Rectangle graph_get_rectangle(graph_values_t* gv) {
   return (Rectangle){-gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2.f + gv->uvOffset.x, gv->uvZoom.y/2.f + gv->uvOffset.y,
