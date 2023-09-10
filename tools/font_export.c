@@ -40,7 +40,7 @@ void export_font_as_code(unsigned char* data, unsigned int len) {
         (int)'Z', (int)'a', (int)'b', (int)'c', (int)'d', (int)'e', (int)'f', (int)'g', (int)'h', (int)'i',
         (int)'j', (int)'k', (int)'l', (int)'m', (int)'n', (int)'o', (int)'p', (int)'q', (int)'r', (int)'s',
         (int)'t', (int)'u', (int)'v', (int)'w', (int)'x', (int)'y', (int)'z', (int)'"', (int)'\'', (int)' ',
-        (int)'-', (int)'/', (int)':', (int)';' };
+        (int)'-', (int)'/', (int)':', (int)';', (int)'+' };
   Font font = {0};
   font.baseSize = 46;
   font.glyphCount = sizeof(chars)/sizeof(int);
