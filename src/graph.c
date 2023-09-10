@@ -1,5 +1,6 @@
 #include "plotter.h"
 
+#include <raymath.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -152,7 +153,7 @@ void graph_draw(graph_values_t* gv) {
     float fs = (10.f * font_scale);
     Vector2 s = { 100.f, fs + 2 * pad};
     sprintf(buff, "(%.1e, %.1e)", graph_mouse_position.x, graph_mouse_position.y);
-    s.x = help_measure_text(buff, fs).y + 2.f * (float)pad;
+    s = Vector2AddValue(help_measure_text(buff, fs), 2.f * (float)pad);
     DrawRectangleV(mp, s, RAYWHITE);
     help_draw_text(buff, (Vector2){mp.x + pad, mp.y + pad}, fs, BLACK);
   }
