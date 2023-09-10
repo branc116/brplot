@@ -43,11 +43,13 @@ void points_group_clear(points_groups_t* pg, int group_id) {
 }
 
 void points_groups_deinit(points_groups_t* arr) {
+  if (arr->arr == NULL) return;
   for (size_t i = 0; i < arr->len; ++i) {
     points_group_deinit(&arr->arr[i]);
   }
   arr->len = arr->cap = 0;
   free(arr->arr);
+  arr->arr = NULL;
 }
 
 void points_group_add_test_points(points_groups_t* pg) {
