@@ -252,10 +252,9 @@ static binary_search_res binary_search(float const* lb, float const* ub, float v
   index_mid *= signi(stride);
   float const * next = mid + stride;
   if ((stride > 0 && next <= ub && next >= lb) || (stride < 0 && next >= ub && next <= lb)) {
-    float fact = (value - *mid) / (*next - *mid);
-    return (binary_search_res){index_mid, index_mid + signi(stride), 1 - fact};
+    return (binary_search_res){index_mid, index_mid + signi(stride), 0.f};
   } else {
-    return (binary_search_res){index_mid, index_mid, 1};
+    return (binary_search_res){index_mid, index_mid, 1.f};
   }
 }
 
