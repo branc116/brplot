@@ -205,6 +205,10 @@ nc -ulkp 42069 | rlplot;
   * ~~Maybe create something that does not depend on glfw and can be tested on headless servers. This would enable me to run those tests on github ci.~~
     * Implemented this. On it's own this feature is usefull, already found 1 double free.
     * This is more or less now fuzz testing. I like it.
+* Nicer UI for setting color of a line, if it's show, maybe to export data to file or stdout.
+* Stack panel improvements
+  * make it more general. So that it accepts any kind of element, not just button
+  * add like a scroll bar on the left size of a stack
 
 
 
