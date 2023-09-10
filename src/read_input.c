@@ -32,7 +32,10 @@ void *read_input_main_worker(void* gv) {
           .push_point_y = {
             .group = group,
             .y = value
-          } })) fprintf(stderr, "Q full\n");
+          } })) {
+      fprintf(stderr, "Q full\n");
+      for (volatile int i = 0; i < 1000000; ++i); // SLEEP for some time... TODO: CHANGE THIS...
+    }
   }
   return NULL;
 }
