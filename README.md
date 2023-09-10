@@ -153,7 +153,7 @@ nc -ulkp 42069 | rlplot;
 
 ### Controls
 
-* Right mouse button + Move mouse - Change offse
+* Right mouse button + Move mouse - Change offset
 * Mouse wheel - Change zoom
 * **X** + Mouse Wheel - Change zoom only in **X** axis
 * **Y** + Mouse Wheel - Change zoom only in **Y** axis
@@ -202,7 +202,9 @@ nc -ulkp 42069 | rlplot;
   * This will require, I guess some kind of rework of input handling.
     * A structure will have to be introduced that stores two function pointers. One predicate and one action. Each frame call that predicate and if true call action.
   * I saw pull request on raylib for something like that. But Ray answered that he has to look at the API more closely.
-  * Maybe create something that does not depend on glfw and can be tested on headless servers. This would enable me to run those tests on github ci.
+  * ~~Maybe create something that does not depend on glfw and can be tested on headless servers. This would enable me to run those tests on github ci.~~
+    * Implemented this. On it's own this feature is usefull, already found 1 double free.
+    * This is more or less now fuzz testing. I like it.
 
 
 
