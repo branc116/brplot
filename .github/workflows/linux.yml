@@ -74,3 +74,8 @@ jobs:
         ls -alFh zig-out/bin/rlplot.exe
         ls -alFh bin/rlplot && strip bin/rlplot && ls -alFh bin/rlplot
         ls -alFh bin/rlplot_dbg
+
+    - name: Fuzz test
+      run: |
+        make bin/rlplot_hl
+        cat /dev/random | time bin/rlplot_hl

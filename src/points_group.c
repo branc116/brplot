@@ -65,14 +65,16 @@ void points_group_add_test_points(points_groups_t* pg) {
     for (int i = 0; i < 1024; ++i)
       points_group_push_point(g, (Vector2){-(float)g->len, sinf((float)g->len/128.f)});
   }
-  for(int i = 0; i < 1024*1024; ++i) {
+  {
     int group = 5;
     points_group_t* g = points_group_get(pg, group);
-    float t = (float)(1 + g->len)*.1f;
-    float x = sqrtf(t)*cosf(log2f(t));
-    float y = sqrtf(t)*sinf(log2f(t));
-    Vector2 p = {x, y };
-    points_group_push_point(g, p);
+    for(int i = 0; i < 1024*1024; ++i) {
+      float t = (float)(1 + g->len)*.1f;
+      float x = sqrtf(t)*cosf(log2f(t));
+      float y = sqrtf(t)*sinf(log2f(t));
+      Vector2 p = {x, y };
+      points_group_push_point(g, p);
+    }
   }
   {
     points_group_t* g = points_group_get(pg, 6);

@@ -258,3 +258,12 @@ RLAPI int GetFPS(void) {
   return 69;
 }
 
+RLAPI void SetTraceLogLevel(int logLevel) {
+  printf("SetTraceLogLevel: logLevel=%d\n", logLevel);
+}
+
+RLAPI Shader LoadShaderFromMemory(const char *vsCode, const char *fsCode) {
+  printf("LoadShaderFromMemory: vsCode=%s, fsCode=%s\n", vsCode, fsCode);
+  Shader ret = { .id = LoadShader_id, .locs = malloc(sizeof(int)*16) };
+  return ret;
+}
