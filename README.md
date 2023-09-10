@@ -209,6 +209,7 @@ nc -ulkp 42069 | rlplot;
 * Stack panel improvements
   * make it more general. So that it accepts any kind of element, not just button
   * add like a scroll bar on the left size of a stack
+* Zig build doesn't build tools/font_export.c... Make zig build that also, else default_font.h can't be created.
 
 
 
