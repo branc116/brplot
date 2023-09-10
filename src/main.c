@@ -31,7 +31,7 @@ void zig_print_stacktrace() { exit(-1); }
 int main(void) {
 #endif
   context = (context_t) {
-    .debug_bounds = true
+    .debug_bounds = false
   };
 #ifdef RELEASE
   SetTraceLogLevel(LOG_ERROR);

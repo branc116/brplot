@@ -259,13 +259,20 @@ static void draw_left_panel(graph_values_t* gv, char *buff, float font_scale) {
     points_group_add_test_points(&gv->groups);
   }
   ui_stack_buttons_add(&gv->follow, "Follow");
-  ui_stack_buttons_add(NULL, "Line draw calls: %d", gv->lines_mesh->draw_calls);
-  ui_stack_buttons_add(NULL, "Points drawn: %d", gv->lines_mesh->points_drawn);
+  ui_stack_buttons_add(&context.debug_bounds, "Debug view");
+  if (context.debug_bounds) {
+    ui_stack_buttons_add(NULL, "Line draw calls: %d", gv->lines_mesh->draw_calls);
+    ui_stack_buttons_add(NULL, "Points drawn: %d", gv->lines_mesh->points_drawn);
+  }
   Vector2 new_pos = ui_stack_buttons_end();
   new_pos.y += 50;
   ui_stack_buttons_init(new_pos, &sp, font_scale * 15, buff);
   for(size_t j = 0; j < gv->groups.len; ++j) {
-    ui_stack_buttons_add(&gv->groups.arr[j].is_selected, "Group #%d: %d/%d; %ul/%ul/%ul", gv->groups.arr[j].group_id, gv->groups.arr[j].len, gv->groups.arr[j].cap, gv->groups.arr[j].resampling->intervals_count, gv->groups.arr[j].resampling->raw_count, gv->groups.arr[j].resampling->resampling_count);
+    if (context.debug_bounds) {
+      ui_stack_buttons_add(&gv->groups.arr[j].is_selected, "Line #%d: %d; %u/%u/%u", gv->groups.arr[j].group_id, gv->groups.arr[j].len, gv->groups.arr[j].resampling->intervals_count, gv->groups.arr[j].resampling->raw_count, gv->groups.arr[j].resampling->resampling_count);
+    } else {
+      ui_stack_buttons_add(&gv->groups.arr[j].is_selected, "Line #%d: %d", gv->groups.arr[j].group_id, gv->groups.arr[j].len);
+    }
   }
   ui_stack_buttons_end();
   gv->lines_mesh->draw_calls = 0;
