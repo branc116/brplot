@@ -170,25 +170,39 @@ nc -ulkp 42069 | rlplot;
   * ~~When zoomed out a lot. It becomes quite slow. ( I guess there is a lot of drawing of the same pixel.. )~~
     * Maybe combine few lines that are close when zoomed out... ( how to detect this ? )
     * This is partly fixed for plots where x values are sorted.
-    * Problem still remains if x values aren't sorted.
+    * ~~Problem still remains if x values aren't sorted.~~
+      * This is now solved by finding intervals in witch number are sorted one way or the other.
+      * But still there is a worst case when every line is in different interval, and it will cause it to once aging be slow.
   * Maybe use geometry shader ( don't generate triangles on cpu. )
   * ~~Gpu memory usage will be lower. Current gpu memory usage:~~
     * ~~(N lines)*(2 triangles per line)*(3*vertices per triangle)*((3 floats for position) + (3 float for tangents))*(4 bytes per float)~~
     * ~~If N = 64'000'000, gpu usage will be ~9GB. This seems high...~~
     * This is partly fixed. If plot values are sequential gpu memory usage can be constant with regard to number of points.
     * ~~Problem still remains if x values aren't sorted.~~
-        * This is now solved by using quad tree structure for storing data points.
-        * Still there is work to be done to make quad tree structure closer to optimal.
+        * ~~This is now solved by using quad tree structure for storing data points.~~
+        * ~~Still there is work to be done to make quad tree structure closer to optimal.~~
+        * This is now solved by finding intervals in witch number are sorted one way or the other.
 * ~~I'm not happy with the thickness of the line when zooming in and out.~~
   * ~~It's not that bad, but it's inconsistent.~~
   * Made is consistent. And now it's smooth af.
-* Quad tree rectangless are not inside one another, bounds of outer quad are smoller than that of inner quad. Fix this...
-* Text looks like shit... I don't know how to fix it...
-* Values on x,y axis should be on each horisontal and vertical line. ( Not in corners. )
+* ~~Quad tree rectangless are not inside one another, bounds of outer quad are smoller than that of inner quad. Fix this...~~
+  * I deleted everything that had anything to do with quad trees so this is not a problem any more.
+* ~~Text looks like shit... I don't know how to fix it...~~
+  * Text doesn't look like shit any more. I found a way to fix it.
+* ~~Values on x,y axis should be on each horisontal and vertical line. ( Not in corners. )~~
+  * Did this and it looks awesome.
 * Colors should be configurable. Black background is the best background but maybe there will be a need to have a white background.
-    * This will require having a configuration file ( Maybe )
-    * Or parse tty codes for changing colors... hmmm ( could be cool )
-        * does ttyplot do this ??
+  * This will require having a configuration file ( Maybe )
+  * Or parse tty codes for changing colors... hmmm ( could be cool )
+    * Does ttyplot do this ??
+* Add something to plot points. ( scatter plot )
+  * This will most likely require the use of quad tree, once again..
+* Add something for testing ui.
+  * I want to record my actions and that play that back to see if something will segfault...
+  * This will require, I guess some kind of rework of input handling.
+    * A structure will have to be introduced that stores two function pointers. One predicate and one action. Each frame call that predicate and if true call action.
+  * I saw pull request on raylib for something like that. But Ray answered that he has to look at the API more closely.
+  * Maybe create something that does not depend on glfw and can be tested on headless servers. This would enable me to run those tests on github ci.
 
 
 
