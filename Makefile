@@ -48,6 +48,10 @@ bin/rlplot_dbg: $(SOURCE_DBG) src/plotter.h src/default_font.h
 	test -d bin || mkdir bin;
 	gcc $(CCFLAGS_DBG) -o bin/rlplot_dbg $(SOURCE_DBG) -lraylib -lm -lglfw
 
+bin/rlplot_hl: $(SOURCE_DBG) src/plotter.h src/default_font.h src/raylib_headless.c
+	test -d bin || mkdir bin;
+	gcc -DNUMBER_OF_STEPS=200 $(CCFLAGS_DBG) src/raylib_headless.c $(SOURCE_DBG) -o bin/rlplot_hl -lm
+
 bin/font_export: $(RAYLIB_SOURCE) tools/font_export.c
 	test -d bin || mkdir bin
 	gcc -Wl,-z,now -g -I$(RL) -DLINUX -DPLATFORM_DESKTOP -o bin/font_export tools/font_export.c -lraylib -lm -lglfw
