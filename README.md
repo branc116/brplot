@@ -157,6 +157,8 @@ nc -ulkp 42069 | rlplot;
 * Mouse wheel - Change zoom
 * **X** + Mouse Wheel - Change zoom only in **X** axis
 * **Y** + Mouse Wheel - Change zoom only in **Y** axis
+* [**X**|**Y**] + [**LSHIFT**|**LCRTL**] - Change zoom [in|out] only in [**X**|**Y**] axis
+* [**K**|**J**] - Change recoil for follow functionality ( quite fun if >0.f )
 * **T** - Add test points
 * **C** - Clear all points
 * **R** - Reset offset and zoom to (0, 0) and (1, 1)
