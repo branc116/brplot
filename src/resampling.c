@@ -191,7 +191,7 @@ static size_t points_group_sample_points(Vector2 const* points, size_t len, resa
   Rectangle normal_rect = rect;
   normal_rect.y -= normal_rect.height*1.1f;
   normal_rect.height *= 1.2f;
-  normal_rect.x -= normal_rect.height*.1f;
+  normal_rect.x -= normal_rect.width*.1f;
   normal_rect.width *= 1.2f;
 
   resampling_dir d = dir & resampling_dir_right ? resampling_dir_right :
