@@ -69,8 +69,10 @@ void graph_free(graph_values_t* gv) {
   free(gv->commands.commands);
 }
 
+static float recoil = 0.85f;
+
 void graph_draw(graph_values_t* gv) {
-  char buff[128];
+  static char buff[128];
   float font_scale = 1.8f;
   update_resolution(gv);
 #ifndef RELEASE
@@ -91,8 +93,8 @@ void graph_draw(graph_values_t* gv) {
     }
     gv->uvOffset.x -= gv->uvDelta.x;
     gv->uvOffset.y -= gv->uvDelta.y;
-    gv->uvDelta.x *= 0.99f;
-    gv->uvDelta.y *= 0.99f;
+    gv->uvDelta.x *= recoil;
+    gv->uvDelta.y *= recoil;
   } else {
     gv->uvDelta = (Vector2){ 0, 0 };
   }
@@ -116,8 +118,8 @@ void graph_draw(graph_values_t* gv) {
     }
 
     if (IsKeyPressed(KEY_R)) {
-      gv->uvZoom.x = gv->uvZoom.y = 1;
-      gv->uvOffset.x = gv->uvOffset.y = 0;
+      if (!IsKeyDown(KEY_LEFT_CONTROL)) gv->uvZoom.x = gv->uvZoom.y = 1;
+      if (!IsKeyDown(KEY_LEFT_SHIFT)) gv->uvOffset.x = gv->uvOffset.y = 0;
     }
     if (IsKeyPressed(KEY_C)) {
       points_groups_deinit(&gv->groups);
@@ -131,6 +133,12 @@ void graph_draw(graph_values_t* gv) {
     if (IsKeyPressed(KEY_D)) {
       context.debug_bounds = !context.debug_bounds;
     }
+    if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_SHIFT)) gv->uvZoom.x *= 1.1f;
+    if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_SHIFT)) gv->uvZoom.y *= 1.1f;
+    if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_CONTROL)) gv->uvZoom.x *= .9f;
+    if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_CONTROL)) gv->uvZoom.y *= .9f;
+    if (IsKeyDown(KEY_J)) recoil -= 0.001;
+    if (IsKeyDown(KEY_K)) recoil += 0.001;
   }
   for (int i = 0; i < 3; ++i) {
     SetShaderValue(gv->shaders[i], gv->uResolution[i], &gv->graph_rect, SHADER_UNIFORM_VEC4);
@@ -255,14 +263,15 @@ static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale) {
 static float sp = 0.f;
 static void draw_left_panel(graph_values_t* gv, char *buff, float font_scale) {
   ui_stack_buttons_init((Vector2){.x = 30.f, .y = 25.f}, NULL, font_scale * 15, buff);
-  if (2 == ui_stack_buttons_add(NULL, "Add test points")) {
-    points_group_add_test_points(&gv->groups);
-  }
   ui_stack_buttons_add(&gv->follow, "Follow");
   ui_stack_buttons_add(&context.debug_bounds, "Debug view");
   if (context.debug_bounds) {
     ui_stack_buttons_add(NULL, "Line draw calls: %d", gv->lines_mesh->draw_calls);
     ui_stack_buttons_add(NULL, "Points drawn: %d", gv->lines_mesh->points_drawn);
+    ui_stack_buttons_add(NULL, "Recoil: %f", recoil);
+    if (2 == ui_stack_buttons_add(NULL, "Add test points")) {
+      points_group_add_test_points(&gv->groups);
+    }
   }
   Vector2 new_pos = ui_stack_buttons_end();
   new_pos.y += 50;
