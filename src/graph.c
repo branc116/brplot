@@ -124,6 +124,10 @@ void graph_draw(graph_values_t* gv) {
     if (IsKeyPressed(KEY_C)) {
       points_groups_deinit(&gv->groups);
     }
+    if (IsKeyPressed(KEY_H)) {
+      for (int i = 0; i < gv->groups.len; ++i)
+        gv->groups.arr[i].is_selected = false;
+    }
     if (IsKeyPressed(KEY_T)) {
       points_group_add_test_points(&gv->groups);
     }
