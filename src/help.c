@@ -11,9 +11,12 @@ void help_trim_zeros(char * buff) {
     if (buff[i] == '0' || buff[i] == (char)0) buff[i] = (char)0;
     else if (buff[i] == '.') {
       buff[i] = 0;
-      return;
+      break;
     }
-    else return;
+    else break;
+  }
+  if (buff[0] == '-' && buff[1] == '0' && buff[2] == (char)0) {
+    buff[0] = '0'; buff[1] = (char)0;
   }
 }
 
