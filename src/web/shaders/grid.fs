@@ -7,8 +7,8 @@ uniform float time;
 uniform vec2 mouse;
 uniform vec2 zoom;
 uniform vec2 offset;
+uniform vec2 screen;
 
-varying vec2 uv;
 varying vec4 color;
 
 float log10(float f) {
@@ -37,11 +37,12 @@ float map(vec2 cPos, vec2 zoom_level, vec2 offset) {
 }
 
 void main(void) {
-    vec2 fragCoord = gl_FragCoord.xy - resolution.xy;
-    vec2 uv = fragCoord.xy / resolution.zw;
+    vec2 fragCoord = gl_FragCoord.xy - (resolution.xy * vec2(1., -1.));
+    fragCoord.y -= screen.y - resolution.w;
     vec2 cPos = ( fragCoord - .5*resolution.zw ) / resolution.w;
-    gl_FragColor = vec4(0.2, 0.3, 0.5, 1.0)*vec4(map(cPos, zoom, offset));
-    if (fragCoord.y - 2. < 0. || fragCoord.y + 2. > resolution.w || fragCoord.x - 2. < 0. || (fragCoord.x + 2.) > resolution.z) {
+    if (fragCoord.y < 2. || (fragCoord.y + 2.) > resolution.w || fragCoord.x - 2. < 0. || (fragCoord.x + 2.) > resolution.z) {
       gl_FragColor = vec4(1.0);
+    } else {
+      gl_FragColor = vec4(0.2, 0.3, 0.5, 1.0)*vec4(map(cPos, zoom, offset));
     }
 }

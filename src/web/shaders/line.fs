@@ -19,6 +19,7 @@ void main()
   r.y += 2.;
   r.w -= 4.;
   gl_FragColor.rgba = (vec4(color, 1.0) * clamp(cshade, 0., 1.));
-  gl_FragColor.a = gl_FragCoord.x <= r.x || gl_FragCoord.x >= (r.x + r.z) || 
-   gl_FragCoord.y <= r.y || gl_FragCoord.y >= (r.y + r.w) ? 0. : 1.;
+  vec2 fragCoord = gl_FragCoord.xy - (resolution.xy * vec2(1., -1.));
+  fragCoord.y -= screen.y - resolution.w;
+  gl_FragColor.a = gl_FragCoord.x <= r.x || gl_FragCoord.x >= (r.x + r.z) || fragCoord.y <= 2. || fragCoord.y + 2. >= resolution.w ? 0. : 1.;
 }

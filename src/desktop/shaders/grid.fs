@@ -8,6 +8,7 @@ uniform float time;
 uniform vec2 mouse;
 uniform vec2 zoom;
 uniform vec2 offset;
+uniform vec2 screen;
 
 in vec2 uv;
 in vec4 color;
@@ -38,15 +39,15 @@ float map(vec2 cPos, vec2 zoom_level, vec2 offset) {
 
 float map_outer(vec2 fragCoord) {
     vec2 cPos = ( fragCoord - .5*resolution.zw ) / resolution.w;
-    vec2 uv = fragCoord.xy / resolution.zw;
     return map(cPos, zoom, offset);
 }
 
 #define AA 2
 
 void main(void) {
-    vec2 fragCoord = gl_FragCoord.xy - resolution.xy;
-    if (fragCoord.y - 2. < 0. || fragCoord.y + 2. > resolution.w || fragCoord.x - 2. < 0. || (fragCoord.x + 2.) > resolution.z) {
+    vec2 fragCoord = gl_FragCoord.xy - (resolution.xy * vec2(1, -1.));
+    fragCoord.y -= screen.y - resolution.w;
+    if (fragCoord.y < 2. || (fragCoord.y + 2.) > resolution.w || fragCoord.x - 2. < 0. || (fragCoord.x + 2.) > resolution.z) {
       out_color = vec4(1.0);
     } else {
       float c = AA*2+1;

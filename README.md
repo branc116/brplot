@@ -214,6 +214,7 @@ nc -ulkp 42069 | rlplot;
 * Zig build doesn't build tools/font_export.c... Make zig build that also, else default_font.h can't be created.
 * Export image with numbers.
 * ~~Fix negative zero~~
+* Zoom in on the location where the mouse is located, not on center of the screen.
 
 
 

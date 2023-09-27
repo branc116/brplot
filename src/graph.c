@@ -43,7 +43,7 @@ void graph_init(graph_values_t* gv, float width, float height) {
     .quads_mesh = NULL,
     .follow = false,
     .shaders_dirty = false,
-    .commands = {0},
+    .commands = {0}
   };
   for (int i = 0; i < 3; ++i) {
     gv->uResolution[i] = GetShaderLocation(gv->shaders[i], "resolution");
@@ -125,7 +125,7 @@ void graph_draw(graph_values_t* gv) {
       points_groups_deinit(&gv->groups);
     }
     if (IsKeyPressed(KEY_H)) {
-      for (int i = 0; i < gv->groups.len; ++i)
+      for (size_t i = 0; i < gv->groups.len; ++i)
         gv->groups.arr[i].is_selected = false;
     }
     if (IsKeyPressed(KEY_T)) {
@@ -141,8 +141,18 @@ void graph_draw(graph_values_t* gv) {
     if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_SHIFT)) gv->uvZoom.y *= 1.1f;
     if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_CONTROL)) gv->uvZoom.x *= .9f;
     if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_CONTROL)) gv->uvZoom.y *= .9f;
-    if (IsKeyDown(KEY_J)) recoil -= 0.001;
-    if (IsKeyDown(KEY_K)) recoil += 0.001;
+    if (IsKeyDown(KEY_J)) recoil -= 0.001f;
+    if (IsKeyDown(KEY_K)) recoil += 0.001f;
+    if (IsKeyPressed(KEY_S)) {
+      graph_screenshot(gv, "test.png");
+      TakeScreenshot("test2.png");
+    }
+    if (gv->jump_around) {
+      gv->graph_rect.x += 100.f * (float)sin(GetTime());
+      gv->graph_rect.y += 77.f * (float)cos(GetTime());
+      gv->graph_rect.width += 130.f * (float)sin(GetTime());
+      gv->graph_rect.height += 177.f * (float)cos(GetTime());
+    }
   }
   for (int i = 0; i < 3; ++i) {
     SetShaderValue(gv->shaders[i], gv->uResolution[i], &gv->graph_rect, SHADER_UNIFORM_VEC4);
@@ -186,6 +196,21 @@ void graph_draw(graph_values_t* gv) {
     }
   }
 end: return;
+}
+
+void graph_screenshot(graph_values_t* gv, char const * path) {
+    Vector2 scale = GetWindowScaleDPI();
+    unsigned char *imgData = rlReadScreenPixels(gv->uvScreen.x*scale.x, gv->uvScreen.y*scale.y);
+    Image image = { imgData, (int)((float)gv->uvScreen.x*scale.x), (int)((float)gv->uvScreen.y*scale.y), 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
+    ImageCrop(&image, (Rectangle) { .x = gv->graph_rect.x, .y = gv->graph_rect.y, .width = gv->graph_rect.width, .height = gv->graph_rect.height });
+
+    ExportImage(image, path);           // WARNING: Module required: rtextures
+
+#if defined(PLATFORM_WEB)
+    // Download file from MEMFS (emscripten memory filesystem)
+    // saveFileFromMEMFSToDisk() function is defined in raylib/src/shell.html
+    // emscripten_run_script(TextFormat("saveFileFromMEMFSToDisk('%s','%s')", GetFileName(path), GetFileName(path)));
+#endif
 }
 
 static void graph_update_mouse_position(graph_values_t* gv) {
@@ -268,8 +293,9 @@ static float sp = 0.f;
 static void draw_left_panel(graph_values_t* gv, char *buff, float font_scale) {
   ui_stack_buttons_init((Vector2){.x = 30.f, .y = 25.f}, NULL, font_scale * 15, buff);
   ui_stack_buttons_add(&gv->follow, "Follow");
-  ui_stack_buttons_add(&context.debug_bounds, "Debug view");
   if (context.debug_bounds) {
+    ui_stack_buttons_add(&context.debug_bounds, "Debug view");
+    ui_stack_buttons_add(&gv->jump_around, "Jump Around");
     ui_stack_buttons_add(NULL, "Line draw calls: %d", gv->lines_mesh->draw_calls);
     ui_stack_buttons_add(NULL, "Points drawn: %d", gv->lines_mesh->points_drawn);
     ui_stack_buttons_add(NULL, "Recoil: %f", recoil);
