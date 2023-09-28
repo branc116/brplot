@@ -163,22 +163,24 @@ void graph_draw(graph_values_t* gv) {
   help_draw_fps(0, 0);
   draw_left_panel(gv, buff, font_scale);
   draw_grid_values(gv, buff, font_scale);
-  BeginShaderMode(gv->gridShader);
-    DrawRectangleRec(gv->graph_rect, RED);
-  EndShaderMode();
-  // Todo: don't assign this every frame, no need for it. Assign it only when shaders are recompiled.
-  gv->lines_mesh->active_shader = gv->linesShader;
-  gv->quads_mesh->active_shader = gv->quadShader;
-  points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, graph_get_rectangle(gv));
-  if (is_inside) {
-    float pad = 5.f;
-    float fs = (10.f * font_scale);
-    Vector2 s = { 100.f, fs + 2 * pad};
-    sprintf(buff, "(%.1e, %.1e)", graph_mouse_position.x, graph_mouse_position.y);
-    s = Vector2AddValue(help_measure_text(buff, fs), 2.f * (float)pad);
-    DrawRectangleV(mp, s, RAYWHITE);
-    help_draw_text(buff, (Vector2){mp.x + pad, mp.y + pad}, fs, BLACK);
-  }
+  BeginScissorMode(gv->graph_rect.x, gv->graph_rect.y, gv->graph_rect.width, gv->graph_rect.height);
+    BeginShaderMode(gv->gridShader);
+      DrawRectangleRec(gv->graph_rect, RED);
+    EndShaderMode();
+    // Todo: don't assign this every frame, no need for it. Assign it only when shaders are recompiled.
+    gv->lines_mesh->active_shader = gv->linesShader;
+    gv->quads_mesh->active_shader = gv->quadShader;
+    points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, graph_get_rectangle(gv));
+    if (is_inside) {
+      float pad = 5.f;
+      float fs = (10.f * font_scale);
+      Vector2 s = { 100.f, fs + 2 * pad};
+      sprintf(buff, "(%.1e, %.1e)", graph_mouse_position.x, graph_mouse_position.y);
+      s = Vector2AddValue(help_measure_text(buff, fs), 2.f * (float)pad);
+      DrawRectangleV(mp, s, RAYWHITE);
+      help_draw_text(buff, (Vector2){mp.x + pad, mp.y + pad}, fs, BLACK);
+    }
+  EndScissorMode();
   while (1) {
     q_command comm = q_pop(&gv->commands);
     switch (comm.type) {

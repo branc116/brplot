@@ -17,6 +17,7 @@ static void* watch_shader_change(void* gv) {
   graph_values_t* gvt = gv;
   while(true) {
     read(fd, buff, sizeof(buff));
+    printf("DIRTY SHADERS\n");
     gvt->shaders_dirty = true;
   }
   return NULL;
