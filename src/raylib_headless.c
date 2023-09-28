@@ -267,3 +267,44 @@ RLAPI Shader LoadShaderFromMemory(const char *vsCode, const char *fsCode) {
   Shader ret = { .id = LoadShader_id, .locs = malloc(sizeof(int)*16) };
   return ret;
 }
+
+RLAPI double GetTime(void) {
+  return 69.0;
+}
+
+void BeginScissorMode(int x, int y, int width, int height) {
+  printf("BeginScissorMode: %d, %d, %d, %d\n", x, y, width, height);
+}
+
+RenderTexture2D LoadRenderTexture(int width, int height) {
+  return (RenderTexture2D){ .id = 69 };
+}
+
+void EndScissorMode(void) {
+  printf("EndScissorMode\n");
+}
+
+void BeginTextureMode(RenderTexture2D target) {
+  printf("BeginTextureMode");
+}
+
+void EndTextureMode(void) {
+  printf("EndTextureMode\n");
+}
+
+Image LoadImageFromTexture(Texture2D texture) {
+  return (Image){0};
+}
+
+RLAPI void UnloadRenderTexture(RenderTexture2D target) {
+  printf("UnloadRenderTexture");
+}
+
+void ImageFlipVertical(Image *image) {
+  printf("ImageFlipVertical\n");
+}
+
+bool ExportImage(Image image, const char *fileName) {
+  printf("ExportImage: fileName=%s", fileName);
+  return true;
+}

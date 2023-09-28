@@ -145,7 +145,6 @@ void graph_draw(graph_values_t* gv) {
     if (IsKeyDown(KEY_K)) recoil += 0.001f;
     if (IsKeyPressed(KEY_S)) {
       graph_screenshot(gv, "test.png");
-      TakeScreenshot("test2.png");
     }
     if (gv->jump_around) {
       gv->graph_rect.x += 100.f * (float)sin(GetTime());
