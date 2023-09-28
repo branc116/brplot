@@ -201,17 +201,45 @@ end: return;
 }
 
 void graph_screenshot(graph_values_t* gv, char const * path) {
-    Vector2 scale = GetWindowScaleDPI();
-    unsigned char *imgData = rlReadScreenPixels(gv->uvScreen.x*scale.x, gv->uvScreen.y*scale.y);
-    Image image = { imgData, (int)((float)gv->uvScreen.x*scale.x), (int)((float)gv->uvScreen.y*scale.y), 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
-    ImageCrop(&image, (Rectangle) { .x = gv->graph_rect.x, .y = gv->graph_rect.y, .width = gv->graph_rect.width, .height = gv->graph_rect.height });
-
-    ExportImage(image, path);           // WARNING: Module required: rtextures
-
+  static char buff[128];
+  float left_pad = 80.f;
+  float bottom_pad = 80.f;
+  Vector2 is = {1280, 720};
+    RenderTexture2D target = LoadRenderTexture(is.x, is.y); // TODO: make this values user defined.
+    Rectangle old_gr = gv->graph_rect;
+    gv->graph_rect = (Rectangle){left_pad, 0.f, is.x - left_pad, is.y - bottom_pad};
+    Vector2 old_sc = gv->uvScreen;
+    gv->uvScreen = (Vector2){is.x, is.y};
+    for (int i = 0; i < 3; ++i) {
+      SetShaderValue(gv->shaders[i], gv->uResolution[i], &gv->graph_rect, SHADER_UNIFORM_VEC4);
+      SetShaderValue(gv->shaders[i], gv->uZoom[i], &gv->uvZoom, SHADER_UNIFORM_VEC2);
+      SetShaderValue(gv->shaders[i], gv->uOffset[i], &gv->uvOffset, SHADER_UNIFORM_VEC2);
+      SetShaderValue(gv->shaders[i], gv->uScreen[i], &gv->uvScreen, SHADER_UNIFORM_VEC2);
+    }
+    BeginTextureMode(target);
+      BeginScissorMode(left_pad, 0.f, is.x - left_pad, is.y - bottom_pad);
+        BeginShaderMode(gv->gridShader);
+          DrawRectangleRec(gv->graph_rect, RED);
+        EndShaderMode();
+        // Todo: don't assign this every frame, no need for it. Assign it only when shaders are recompiled.
+        gv->lines_mesh->active_shader = gv->linesShader;
+        gv->quads_mesh->active_shader = gv->quadShader;
+        points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, graph_get_rectangle(gv));
+      EndScissorMode();
+      draw_grid_values(gv, buff, 2.0f);
+    EndTextureMode();
+    Image img = LoadImageFromTexture(target.texture);
+    ImageFlipVertical(&img);
+    ExportImage(img, path);
+    UnloadImage(img);
+    UnloadRenderTexture(target);
+    gv->uvScreen = old_sc;
+    gv->graph_rect = old_gr;
+                          
 #if defined(PLATFORM_WEB)
     // Download file from MEMFS (emscripten memory filesystem)
     // saveFileFromMEMFSToDisk() function is defined in raylib/src/shell.html
-    // emscripten_run_script(TextFormat("saveFileFromMEMFSToDisk('%s','%s')", GetFileName(path), GetFileName(path)));
+    emscripten_run_script(TextFormat("saveFileFromMEMFSToDisk('%s','%s')", GetFileName(path), GetFileName(path)));
 #endif
 }
 
