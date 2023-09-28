@@ -199,7 +199,7 @@ void graph_draw(graph_values_t* gv) {
   }
 end: return;
 }
-
+void emscripten_run_script(const char* script);
 void graph_screenshot(graph_values_t* gv, char const * path) {
   static char buff[128];
   float left_pad = 80.f;
