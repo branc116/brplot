@@ -6,28 +6,28 @@ Small application that plots lines that are sent to the application's stdin.
 
 Rlplot can be built using GNU make ( using gcc internally ) or using [Zig](https://github.com/ziglang/zig) ( zig is love ). Use whatever you like.
 
-## Using zig for linux
+### Using zig for linux
 
 ```bash
 zig build -Doptimize=ReleaseFast
 ```
 
-## Using zig for windows
+### Using zig for windows
 ```bash
 zig build -Dtarget=x86_64-windows-gnu -Doptimize=ReleaseSmall
 ```
 
-## Using make for linux ( using gcc internally )
+### Using make for linux ( using gcc internally )
 ```bash
 make
 ```
 
-## Using make for windows ( but using zig internally... )
+### Using make for windows ( but using zig internally... )
 ```bash
 make windows
 ```
 
-## Using make for web
+### Using make for web
 ```bash
 EMSCRIPTEN="path to emscripten" make www/index.wasm
 ```
@@ -70,7 +70,7 @@ seq 69 | rlplot;
 
 #### Square(Nice) Plot
 ```bash
-# Plot numbers from 1 to 69
+# Plot squeres of numbers from 1 to 69
 python -c "[print(x*x) for x in range(69)]" | rlplot;
 ```
 
@@ -158,11 +158,12 @@ nc -ulkp 42069 | rlplot;
 * **X** + Mouse Wheel - Change zoom only in **X** axis
 * **Y** + Mouse Wheel - Change zoom only in **Y** axis
 * [**X**|**Y**] + [**LSHIFT**|**LCRTL**] - Change zoom [in|out] only in [**X**|**Y**] axis
-* [**K**|**J**] - Change recoil for follow functionality ( quite fun if >0.f )
+* [**K**|**J**] - Change recoil for follow functionality ( quite fun if >1.f )
 * **T** - Add test points
 * **C** - Clear all points
 * **R** - Reset offset and zoom to (0, 0) and (1, 1)
-* **D** - Toggle quad tree debug view.
+* **D** - Toggle debug view.
+* **S** - Grab a screenshot.
 
 ### Todo
 * ~~Make drawing lines use buffers ( Don't use DrawLineStrip function by raylib. ) Maybe use DrawMesh? It's ok for plots with ~1'000'000 points, but I want more!~~
@@ -212,7 +213,11 @@ nc -ulkp 42069 | rlplot;
   * make it more general. So that it accepts any kind of element, not just button
   * add like a scroll bar on the left size of a stack
 * Zig build doesn't build tools/font_export.c... Make zig build that also, else default_font.h can't be created.
-* Export image with numbers.
+* ~~Export image with numbers.~~
+  * This now works more or less. Still needs a better UI and ability to change image resoultion. For now it's hardcoded
+  * Make screenshots work on Web
+  * Something to change screenshot resolution.
+  * Something to change screenshot name. ( Or at least directory, and then set a name to a timestamp or something... )
 * ~~Fix negative zero~~
 * Zoom in on the location where the mouse is located, not on center of the screen.
 
