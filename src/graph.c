@@ -14,13 +14,13 @@
 #ifndef RELEASE
 static void refresh_shaders_if_dirty(graph_values_t* gv);
 #endif
-static void update_resolution(graph_values_t* gv);
-static void draw_left_panel(graph_values_t* gv, char *buff, float font_scale);
-static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale);
-static Rectangle graph_get_rectangle(graph_values_t* gv);
-static void graph_update_mouse_position(graph_values_t* gv);
 
-Vector2 graph_mouse_position;
+void emscripten_run_script(const char* script);
+static void update_resolution(graph_values_t* gv);
+static void draw_left_panel(graph_values_t* gv);
+static void draw_grid_values(graph_values_t* gv);
+static void graph_update_context(graph_values_t* gv);
+static void graph_draw_grid(Shader shader, Rectangle screen_rect);
 
 void graph_init(graph_values_t* gv, float width, float height) {
   *gv = (graph_values_t){
@@ -55,6 +55,11 @@ void graph_init(graph_values_t* gv, float width, float height) {
   gv->quads_mesh = smol_mesh_malloc(PTOM_COUNT, gv->quadShader);
   q_init(&gv->commands);
   help_load_default_font();
+
+  context.font_scale = 1.8f;
+  context.mouse_inside_graph = false;
+	context.recoil = 0.85f;
+  memset(context.buff, 0, sizeof(context.buff));
 }
 
 void graph_free(graph_values_t* gv) {
@@ -68,21 +73,25 @@ void graph_free(graph_values_t* gv) {
   }
   free(gv->commands.commands);
 }
+static void update_shader_values(graph_values_t* gv) {
+  for (int i = 0; i < 3; ++i) {
+    SetShaderValue(gv->shaders[i], gv->uResolution[i], &gv->graph_rect, SHADER_UNIFORM_VEC4);
+    SetShaderValue(gv->shaders[i], gv->uZoom[i], &gv->uvZoom, SHADER_UNIFORM_VEC2);
+    SetShaderValue(gv->shaders[i], gv->uOffset[i], &gv->uvOffset, SHADER_UNIFORM_VEC2);
+    SetShaderValue(gv->shaders[i], gv->uScreen[i], &gv->uvScreen, SHADER_UNIFORM_VEC2);
+  }
+  // Todo: don't assign this every frame, no need for it. Assign it only when shaders are recompiled.
+  gv->lines_mesh->active_shader = gv->linesShader;
+  gv->quads_mesh->active_shader = gv->quadShader;
+}
 
-static float recoil = 0.85f;
-
-void graph_draw(graph_values_t* gv) {
-  static char buff[128];
-  float font_scale = 1.8f;
-  update_resolution(gv);
+static void update_variables(graph_values_t* gv) {
 #ifndef RELEASE
   refresh_shaders_if_dirty(gv);
 #endif
-  Vector2 mp = GetMousePosition();
-  graph_update_mouse_position(gv);
-  bool is_inside = CheckCollisionPointRec(mp, gv->graph_rect);
+  graph_update_context(gv);
   if (gv->follow) {
-    Rectangle sr = graph_get_rectangle(gv);
+    Rectangle sr = context.graph_rect;
     Vector2 middle = { sr.x + sr.width/2, sr.y - sr.height/2 };
     for (size_t i = 0; i < gv->groups.len; ++i) {
       points_group_t* pg = &gv->groups.arr[i];
@@ -93,13 +102,13 @@ void graph_draw(graph_values_t* gv) {
     }
     gv->uvOffset.x -= gv->uvDelta.x;
     gv->uvOffset.y -= gv->uvDelta.y;
-    gv->uvDelta.x *= recoil;
-    gv->uvDelta.y *= recoil;
+    gv->uvDelta.x *= context.recoil;
+    gv->uvDelta.y *= context.recoil;
   } else {
     gv->uvDelta = (Vector2){ 0, 0 };
   }
 
-  if (is_inside) {
+  if (context.mouse_inside_graph) {
     if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
       Vector2 delt = GetMouseDelta();
       gv->uvOffset.x -= gv->uvZoom.x*delt.x/gv->graph_rect.height;
@@ -141,8 +150,8 @@ void graph_draw(graph_values_t* gv) {
     if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_SHIFT)) gv->uvZoom.y *= 1.1f;
     if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_CONTROL)) gv->uvZoom.x *= .9f;
     if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_CONTROL)) gv->uvZoom.y *= .9f;
-    if (IsKeyDown(KEY_J)) recoil -= 0.001f;
-    if (IsKeyDown(KEY_K)) recoil += 0.001f;
+    if (IsKeyDown(KEY_J)) context.recoil -= 0.001f;
+    if (IsKeyDown(KEY_K)) context.recoil += 0.001f;
     if (IsKeyPressed(KEY_S)) {
       graph_screenshot(gv, "test.png");
     }
@@ -153,33 +162,7 @@ void graph_draw(graph_values_t* gv) {
       gv->graph_rect.height += 177.f * (float)cos(GetTime());
     }
   }
-  for (int i = 0; i < 3; ++i) {
-    SetShaderValue(gv->shaders[i], gv->uResolution[i], &gv->graph_rect, SHADER_UNIFORM_VEC4);
-    SetShaderValue(gv->shaders[i], gv->uZoom[i], &gv->uvZoom, SHADER_UNIFORM_VEC2);
-    SetShaderValue(gv->shaders[i], gv->uOffset[i], &gv->uvOffset, SHADER_UNIFORM_VEC2);
-    SetShaderValue(gv->shaders[i], gv->uScreen[i], &gv->uvScreen, SHADER_UNIFORM_VEC2);
-  }
-  help_draw_fps(0, 0);
-  draw_left_panel(gv, buff, font_scale);
-  draw_grid_values(gv, buff, font_scale);
-  BeginScissorMode(gv->graph_rect.x, gv->graph_rect.y, gv->graph_rect.width, gv->graph_rect.height);
-    BeginShaderMode(gv->gridShader);
-      DrawRectangleRec(gv->graph_rect, RED);
-    EndShaderMode();
-    // Todo: don't assign this every frame, no need for it. Assign it only when shaders are recompiled.
-    gv->lines_mesh->active_shader = gv->linesShader;
-    gv->quads_mesh->active_shader = gv->quadShader;
-    points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, graph_get_rectangle(gv));
-    if (is_inside) {
-      float pad = 5.f;
-      float fs = (10.f * font_scale);
-      Vector2 s = { 100.f, fs + 2 * pad};
-      sprintf(buff, "(%.1e, %.1e)", graph_mouse_position.x, graph_mouse_position.y);
-      s = Vector2AddValue(help_measure_text(buff, fs), 2.f * (float)pad);
-      DrawRectangleV(mp, s, RAYWHITE);
-      help_draw_text(buff, (Vector2){mp.x + pad, mp.y + pad}, fs, BLACK);
-    }
-  EndScissorMode();
+  update_shader_values(gv);
   while (1) {
     q_command comm = q_pop(&gv->commands);
     switch (comm.type) {
@@ -198,56 +181,66 @@ void graph_draw(graph_values_t* gv) {
   }
 end: return;
 }
-void emscripten_run_script(const char* script);
+
+void graph_draw(graph_values_t* gv) {
+  update_resolution(gv);
+  update_variables(gv);
+  help_draw_fps(0, 0);
+  draw_left_panel(gv);
+  draw_grid_values(gv);
+  graph_draw_grid(gv->gridShader, gv->graph_rect);
+  points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, context.graph_rect);
+}
+
+static void graph_draw_grid(Shader shader, Rectangle screen_rect) {
+  BeginScissorMode(screen_rect.x, screen_rect.y, screen_rect.width, screen_rect.height);
+    BeginShaderMode(shader);
+      DrawRectangleRec(screen_rect, RED);
+    EndShaderMode();
+  EndScissorMode();
+}
+
 void graph_screenshot(graph_values_t* gv, char const * path) {
-  static char buff[128];
   float left_pad = 80.f;
   float bottom_pad = 80.f;
   Vector2 is = {1280, 720};
-    RenderTexture2D target = LoadRenderTexture(is.x, is.y); // TODO: make this values user defined.
-    Rectangle old_gr = gv->graph_rect;
-    gv->graph_rect = (Rectangle){left_pad, 0.f, is.x - left_pad, is.y - bottom_pad};
-    Vector2 old_sc = gv->uvScreen;
-    gv->uvScreen = (Vector2){is.x, is.y};
-    for (int i = 0; i < 3; ++i) {
-      SetShaderValue(gv->shaders[i], gv->uResolution[i], &gv->graph_rect, SHADER_UNIFORM_VEC4);
-      SetShaderValue(gv->shaders[i], gv->uZoom[i], &gv->uvZoom, SHADER_UNIFORM_VEC2);
-      SetShaderValue(gv->shaders[i], gv->uOffset[i], &gv->uvOffset, SHADER_UNIFORM_VEC2);
-      SetShaderValue(gv->shaders[i], gv->uScreen[i], &gv->uvScreen, SHADER_UNIFORM_VEC2);
-    }
-    BeginTextureMode(target);
-      BeginScissorMode(left_pad, 0.f, is.x - left_pad, is.y - bottom_pad);
-        BeginShaderMode(gv->gridShader);
-          DrawRectangleRec(gv->graph_rect, RED);
-        EndShaderMode();
-        // Todo: don't assign this every frame, no need for it. Assign it only when shaders are recompiled.
-        gv->lines_mesh->active_shader = gv->linesShader;
-        gv->quads_mesh->active_shader = gv->quadShader;
-        points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, graph_get_rectangle(gv));
-      EndScissorMode();
-      draw_grid_values(gv, buff, 2.0f);
-    EndTextureMode();
-    Image img = LoadImageFromTexture(target.texture);
-    ImageFlipVertical(&img);
-    ExportImage(img, path);
-    UnloadImage(img);
-    UnloadRenderTexture(target);
-    gv->uvScreen = old_sc;
-    gv->graph_rect = old_gr;
-                          
+  RenderTexture2D target = LoadRenderTexture((int)is.x, (int)is.y); // TODO: make this values user defined.
+  //Rectangle old_gr = gv->graph_rect;
+  gv->graph_rect = (Rectangle){left_pad, 0.f, is.x - left_pad, is.y - bottom_pad};
+  //Vector2 old_sc = gv->uvScreen;
+  gv->uvScreen = (Vector2){is.x, is.y};
+  update_shader_values(gv);
+  BeginTextureMode(target);
+    graph_draw_grid(gv->gridShader, gv->graph_rect);
+    points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, context.graph_rect);
+    draw_grid_values(gv);
+  EndTextureMode();
+  Image img = LoadImageFromTexture(target.texture);
+  ImageFlipVertical(&img);
+  ExportImage(img, path);
+  UnloadImage(img);
+  UnloadRenderTexture(target);
+  //gv->uvScreen = old_sc;
+  //gv->graph_rect = old_gr;
+
 #if defined(PLATFORM_WEB)
-    // Download file from MEMFS (emscripten memory filesystem)
-    // saveFileFromMEMFSToDisk() function is defined in raylib/src/shell.html
-    emscripten_run_script(TextFormat("saveFileFromMEMFSToDisk('%s','%s')", GetFileName(path), GetFileName(path)));
+  // Download file from MEMFS (emscripten memory filesystem)
+  // saveFileFromMEMFSToDisk() function is defined in raylib/src/shell.html
+  emscripten_run_script(TextFormat("saveFileFromMEMFSToDisk('%s','%s')", GetFileName(path), GetFileName(path)));
 #endif
 }
 
-static void graph_update_mouse_position(graph_values_t* gv) {
-  Vector2 mp = GetMousePosition();
+static void graph_update_context(graph_values_t* gv) {
+  Vector2 mp = context.mouse_screen_pos = GetMousePosition();
   Vector2 mp_in_graph = { mp.x - gv->graph_rect.x, mp.y - gv->graph_rect.y };
-  graph_mouse_position = (Vector2) {
+  context.mouse_graph_pos = (Vector2) {
     -(gv->graph_rect.width  - 2.f*mp_in_graph.x)/gv->graph_rect.height*gv->uvZoom.x/2.f + gv->uvOffset.x,
      (gv->graph_rect.height - 2.f *mp_in_graph.y)/gv->graph_rect.height*gv->uvZoom.y/2.f + gv->uvOffset.y };
+  context.mouse_inside_graph = CheckCollisionPointRec(context.mouse_screen_pos, gv->graph_rect);
+  context.graph_rect = (Rectangle){-gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2.f + gv->uvOffset.x,
+    gv->uvZoom.y/2.f + gv->uvOffset.y,
+    gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x,
+    gv->uvZoom.y};
 }
 
 #ifndef RELEASE
@@ -279,65 +272,62 @@ static void refresh_shaders_if_dirty(graph_values_t* gv) {
 }
 #endif
 
-static Rectangle graph_get_rectangle(graph_values_t* gv) {
-  return (Rectangle){-gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x/2.f + gv->uvOffset.x, gv->uvZoom.y/2.f + gv->uvOffset.y,
-    gv->graph_rect.width/gv->graph_rect.height*gv->uvZoom.x, gv->uvZoom.y};
-}
-
-static void draw_grid_values(graph_values_t* gv, char *buff, float font_scale) {
-  Rectangle r = graph_get_rectangle(gv);
-  float font_size = 15.f * font_scale;
+static void draw_grid_values(graph_values_t* gv) {
+  Rectangle r = context.graph_rect;
+  float font_size = 15.f * context.font_scale;
   float exp = floorf(log10f(r.height / 2.f));
   float base = powf(10.f, exp);
   float start = floorf(r.y / base) * base;
-  static char fmt_buf[32];
-  if (exp >= 0) strcpy(fmt_buf, "%f");
-  else sprintf(fmt_buf, "%%.%df", -(int)exp);
+  char fmt[16];
+  if (exp >= 0) strcpy(fmt, "%f");
+  else sprintf(fmt, "%%.%df", -(int)exp);
 
   for (float c = start; c > r.y - r.height; c -= base) {
-    sprintf(buff, fmt_buf, c);
-    help_trim_zeros(buff);
-    Vector2 sz = help_measure_text(buff, font_size);
+    sprintf(context.buff, fmt, c);
+    help_trim_zeros(context.buff);
+    Vector2 sz = help_measure_text(context.buff, font_size);
     float y = gv->graph_rect.y + (gv->graph_rect.height / r.height) * (r.y - c);
     y -= sz.y / 2.f;
-    help_draw_text(buff, (Vector2){ .x = gv->graph_rect.x - sz.x - 2.f, .y = y }, font_size, RAYWHITE);
+    help_draw_text(context.buff, (Vector2){ .x = gv->graph_rect.x - sz.x - 2.f, .y = y }, font_size, RAYWHITE);
   }
 
   base = powf(10.f, floorf(log10f(r.width / 2.f)));
   start = ceilf(r.x / base) * base;
   float x_last_max = -INFINITY;
   for (float c = start; c < r.x + r.width; c += base) {
-    sprintf(buff, fmt_buf, c);
-    help_trim_zeros(buff);
-    Vector2 sz = help_measure_text(buff, font_size);
+    sprintf(context.buff, fmt, c);
+    help_trim_zeros(context.buff);
+    Vector2 sz = help_measure_text(context.buff, font_size);
     float x = gv->graph_rect.x + (gv->graph_rect.width / r.width) * (c - r.x);
     x -= sz.x / 2.f;
     if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
     x_last_max = x + sz.x;
-    help_draw_text(buff, (Vector2){ .x = x, .y = gv->graph_rect.y + gv->graph_rect.height }, font_size, RAYWHITE);
+    help_draw_text(context.buff, (Vector2){ .x = x, .y = gv->graph_rect.y + gv->graph_rect.height }, font_size, RAYWHITE);
   }
 }
 
 static float sp = 0.f;
-static void draw_left_panel(graph_values_t* gv, char *buff, float font_scale) {
-  ui_stack_buttons_init((Vector2){.x = 30.f, .y = 25.f}, NULL, font_scale * 15, buff);
+static void draw_left_panel(graph_values_t* gv) {
+  ui_stack_buttons_init((Vector2){.x = 30.f, .y = 25.f}, NULL, context.font_scale * 15);
   ui_stack_buttons_add(&gv->follow, "Follow");
   if (context.debug_bounds) {
     ui_stack_buttons_add(&context.debug_bounds, "Debug view");
     ui_stack_buttons_add(&gv->jump_around, "Jump Around");
     ui_stack_buttons_add(NULL, "Line draw calls: %d", gv->lines_mesh->draw_calls);
     ui_stack_buttons_add(NULL, "Points drawn: %d", gv->lines_mesh->points_drawn);
-    ui_stack_buttons_add(NULL, "Recoil: %f", recoil);
+    ui_stack_buttons_add(NULL, "Recoil: %f", context.recoil);
     if (2 == ui_stack_buttons_add(NULL, "Add test points")) {
       points_group_add_test_points(&gv->groups);
     }
   }
   Vector2 new_pos = ui_stack_buttons_end();
   new_pos.y += 50;
-  ui_stack_buttons_init(new_pos, &sp, font_scale * 15, buff);
+  ui_stack_buttons_init(new_pos, &sp, context.font_scale * 15);
   for(size_t j = 0; j < gv->groups.len; ++j) {
     if (context.debug_bounds) {
-      ui_stack_buttons_add(&gv->groups.arr[j].is_selected, "Line #%d: %d; %u/%u/%u", gv->groups.arr[j].group_id, gv->groups.arr[j].len, gv->groups.arr[j].resampling->intervals_count, gv->groups.arr[j].resampling->raw_count, gv->groups.arr[j].resampling->resampling_count);
+      ui_stack_buttons_add(&gv->groups.arr[j].is_selected, "Line #%d: %d; %u/%u/%u",
+        gv->groups.arr[j].group_id, gv->groups.arr[j].len,
+        gv->groups.arr[j].resampling->intervals_count, gv->groups.arr[j].resampling->raw_count, gv->groups.arr[j].resampling->resampling_count);
     } else {
       ui_stack_buttons_add(&gv->groups.arr[j].is_selected, "Line #%d: %d", gv->groups.arr[j].group_id, gv->groups.arr[j].len);
     }

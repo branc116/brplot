@@ -157,7 +157,15 @@ typedef struct {
 } graph_values_t;
 
 typedef struct {
+  Rectangle graph_rect;
+  Vector2 mouse_screen_pos;
+  Vector2 mouse_graph_pos;
+  float font_scale;
+  float recoil;
+  bool mouse_inside_graph;
   bool debug_bounds;
+  char buff[128];
+
 } context_t;
 
 extern context_t context;
@@ -208,8 +216,8 @@ bool q_push_safe(q_commands *q, q_command command);
 bool q_push(q_commands* q, q_command command);
 q_command q_pop(q_commands* q);
 
-int ui_draw_button(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...);
-void ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size, char* buff);
+int ui_draw_button(bool* is_pressed, float x, float y, float font_size, const char* str, ...);
+void ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size);
 int ui_stack_buttons_add(bool* is_pressed, const char* str, ...);
 Vector2 ui_stack_buttons_end(void);
 

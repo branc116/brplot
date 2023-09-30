@@ -6,15 +6,14 @@
 #include <raymath.h>
 #include <stdarg.h>
 
-static int ui_draw_button_va(bool* is_pressed, float x, float y, float font_size, char* buff, Vector2* size_out, const char* str, va_list va) {
-  Vector2 mp = GetMousePosition();
+static int ui_draw_button_va(bool* is_pressed, float x, float y, float font_size, Vector2* size_out, const char* str, va_list va) {
   int c = 0;
-  vsprintf(buff, str, va);
+  vsprintf(context.buff, str, va);
   float pad = 5.f;
-  Vector2 size = Vector2AddValue(help_measure_text(buff, font_size), 2.f * pad);
+  Vector2 size = Vector2AddValue(help_measure_text(context.buff, font_size), 2.f * pad);
   if (size_out) *size_out = size;
   Rectangle box = { x, y, size.x, size.y };
-  bool is_in = CheckCollisionPointRec(mp, box);
+  bool is_in = CheckCollisionPointRec(context.mouse_screen_pos, box);
   if (is_in) {
     bool is_p = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
     c = is_p ? 2 : 1;
@@ -27,14 +26,14 @@ static int ui_draw_button_va(bool* is_pressed, float x, float y, float font_size
   } else if (is_in) {
     DrawRectangleRec(box, RED);
   }
-  help_draw_text(buff, (Vector2){x + pad, y + pad}, font_size, WHITE);
+  help_draw_text(context.buff, (Vector2){x + pad, y + pad}, font_size, WHITE);
   return c;
 }
 
-int ui_draw_button(bool* is_pressed, float x, float y, float font_size, char* buff, const char* str, ...) {
+int ui_draw_button(bool* is_pressed, float x, float y, float font_size, const char* str, ...) {
   va_list args;
   va_start(args, str);
-  int ret = ui_draw_button_va(is_pressed, x, y, font_size, buff, NULL, str, args);
+  int ret = ui_draw_button_va(is_pressed, x, y, font_size, NULL, str, args);
   va_end(args);
   return ret;
 }
@@ -45,11 +44,10 @@ static float* stack_scroll_position;
 static Vector2 stack_button_size;
 static float stack_offset;
 static float stack_font_size;
-static char* stack_buff;
 static int stack_count;
 static Vector2 stack_maxsize;
 
-void ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size, char* buff) {
+void ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size) {
   assert(!stack_is_inited);
   stack_pos = pos;
   stack_is_inited = true;
@@ -58,7 +56,6 @@ void ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size,
   stack_button_size.y += 5.f;
   stack_offset = -stack_button_size.y * (scroll_position == NULL ? 0.f :(int)*scroll_position);
   stack_font_size = font_size;
-  stack_buff = buff;
   stack_count = 0;
   stack_maxsize = (Vector2){0};
 }
@@ -70,7 +67,7 @@ int ui_stack_buttons_add(bool* is_pressed, char const* str, ...) {
   if (stack_offset >= 0) {
     va_list args;
     va_start(args, str);
-    int ret = ui_draw_button_va(is_pressed, stack_pos.x, stack_pos.y + stack_offset, stack_font_size, stack_buff, &s, str, args);
+    int ret = ui_draw_button_va(is_pressed, stack_pos.x, stack_pos.y + stack_offset, stack_font_size, &s, str, args);
     va_end(args);
     if (s.x > stack_maxsize.x) stack_maxsize.x = s.x;
     if (s.y > stack_maxsize.y) stack_maxsize.y = s.y;

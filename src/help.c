@@ -53,8 +53,7 @@ void help_draw_fps(int posX, int posY)
     if ((fps < 30) && (fps >= 15)) color = ORANGE;  // Warning FPS
     else if (fps < 15) color = RED;             // Low FPS
 
-    char buff[16];
-    sprintf(buff, "%2i FPS", fps);
-    help_draw_text(buff, (Vector2) { (float)posX, (float)posY }, 24, color);
+    sprintf(context.buff, "%2i FPS", fps);
+    help_draw_text(context.buff, (Vector2) { (float)posX, (float)posY }, 24, color);
 }
 
