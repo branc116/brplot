@@ -113,7 +113,7 @@ typedef struct {
   resamping_interval_t* intervals;
   Vector2* temp_points;
   size_t intervals_count, intervals_cap;
-  size_t resampling_count, raw_count;
+  size_t resampling_count, raw_count; //DEBUG STUFF
 } resampling_t;
 
 typedef struct {
@@ -182,9 +182,14 @@ void smol_mesh_free(smol_mesh_t* mesh);
 void points_group_push_y(points_groups_t* pg_array, float y, int group);
 void points_group_push_xy(points_groups_t* pg_array, float x, float y, int group);
 void points_group_clear(points_groups_t* pg_array, int group_id);
+// Only remove all points from a group, don't remove the group itself.
+void points_group_empty(points_group_t* pg_array);
+
 void points_groups_draw(points_groups_t const* pg_array, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Rectangle rect);
-void points_group_add_test_points(points_groups_t* pg_array);
+void points_groups_add_test_points(points_groups_t* pg_array);
 void points_groups_deinit(points_groups_t* pg);
+// Only remove all points from all groups, don't remove groups themselfs.
+void points_groups_empty(points_groups_t* pg_array);
 
 resampling_t* resampling_malloc(void);
 void resampling_free(resampling_t* res);

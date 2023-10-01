@@ -24,6 +24,12 @@ void points_group_push_xy(points_groups_t* pg_array, float x, float y, int group
   points_group_push_point(pg, (Vector2){ .x = x, .y = y });
 }
 
+void points_group_empty(points_group_t* pg) {
+  pg->len = 0;
+  pg->resampling->intervals_count = 0;
+  pg->resampling->resampling_count = 0;
+}
+
 void points_group_clear(points_groups_t* pg, int group_id) {
   size_t len = pg->len;
   bool found = false;
@@ -52,7 +58,14 @@ void points_groups_deinit(points_groups_t* arr) {
   arr->arr = NULL;
 }
 
-void points_group_add_test_points(points_groups_t* pg) {
+void points_groups_empty(points_groups_t* pg) {
+  for (size_t i = 0; i < pg->len; ++i) {
+    points_group_empty(&pg->arr[i]);
+  }
+}
+
+
+void points_groups_add_test_points(points_groups_t* pg) {
   {
     int group = 0;
     points_group_t* g = points_group_get(pg, group);

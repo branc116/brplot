@@ -131,14 +131,20 @@ static void update_variables(graph_values_t* gv) {
       if (!IsKeyDown(KEY_LEFT_SHIFT)) gv->uvOffset.x = gv->uvOffset.y = 0;
     }
     if (IsKeyPressed(KEY_C)) {
-      points_groups_deinit(&gv->groups);
+      if (IsKeyDown(KEY_LEFT_SHIFT)) points_groups_deinit(&gv->groups);
+      else                           points_groups_empty(&gv->groups);
     }
     if (IsKeyPressed(KEY_H)) {
-      for (size_t i = 0; i < gv->groups.len; ++i)
-        gv->groups.arr[i].is_selected = false;
+      if (IsKeyDown(KEY_LEFT_SHIFT)) {
+        for (size_t i = 0; i < gv->groups.len; ++i)
+          gv->groups.arr[i].is_selected = !gv->groups.arr[i].is_selected;
+      } else {
+        for (size_t i = 0; i < gv->groups.len; ++i)
+          gv->groups.arr[i].is_selected = false;
+      }
     }
     if (IsKeyPressed(KEY_T)) {
-      points_group_add_test_points(&gv->groups);
+      points_groups_add_test_points(&gv->groups);
     }
     if (IsKeyPressed(KEY_F)) {
       gv->follow = !gv->follow;
@@ -317,19 +323,26 @@ static void draw_left_panel(graph_values_t* gv) {
     ui_stack_buttons_add(NULL, "Points drawn: %d", gv->lines_mesh->points_drawn);
     ui_stack_buttons_add(NULL, "Recoil: %f", context.recoil);
     if (2 == ui_stack_buttons_add(NULL, "Add test points")) {
-      points_group_add_test_points(&gv->groups);
+      points_groups_add_test_points(&gv->groups);
     }
   }
   Vector2 new_pos = ui_stack_buttons_end();
   new_pos.y += 50;
   ui_stack_buttons_init(new_pos, &sp, context.font_scale * 15);
   for(size_t j = 0; j < gv->groups.len; ++j) {
+    int res = 0;
     if (context.debug_bounds) {
-      ui_stack_buttons_add(&gv->groups.arr[j].is_selected, "Line #%d: %d; %u/%u/%u",
+      res = ui_stack_buttons_add(&gv->groups.arr[j].is_selected, "Line #%d: %d; %u/%u/%u",
         gv->groups.arr[j].group_id, gv->groups.arr[j].len,
         gv->groups.arr[j].resampling->intervals_count, gv->groups.arr[j].resampling->raw_count, gv->groups.arr[j].resampling->resampling_count);
     } else {
-      ui_stack_buttons_add(&gv->groups.arr[j].is_selected, "Line #%d: %d", gv->groups.arr[j].group_id, gv->groups.arr[j].len);
+      res = ui_stack_buttons_add(&gv->groups.arr[j].is_selected, "Line #%d: %d", gv->groups.arr[j].group_id, gv->groups.arr[j].len);
+    }
+    if (res > 0) {
+      if (IsKeyPressed(KEY_C)) {
+        if (IsKeyDown(KEY_LEFT_SHIFT)) points_group_clear(&gv->groups, gv->groups.arr[j].group_id);
+        else                              points_group_empty(&gv->groups.arr[j]);
+      }
     }
   }
   ui_stack_buttons_end();

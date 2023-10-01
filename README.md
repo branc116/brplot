@@ -153,17 +153,31 @@ nc -ulkp 42069 | rlplot;
 
 ### Controls
 
+#### Controls are only active when mouse is over the grap.
+
 * Right mouse button + Move mouse - Change offset
 * Mouse wheel - Change zoom
 * **X** + Mouse Wheel - Change zoom only in **X** axis
 * **Y** + Mouse Wheel - Change zoom only in **Y** axis
 * [**X**|**Y**] + [**LSHIFT**|**LCRTL**] - Change zoom [in|out] only in [**X**|**Y**] axis
+* **F** - Follow the visible lines. ( Camera will focus on the average of newest points added to each visible line. )
 * [**K**|**J**] - Change recoil for follow functionality ( quite fun if >1.f )
 * **T** - Add test points
-* **C** - Clear all points
-* **R** - Reset offset and zoom to (0, 0) and (1, 1)
+* **C** + **LSHIFT** - Clear all points
+* **C** - Empty all points
+* **R** - Reset camera offset and zoom to (0, 0) and (1, 1)
+* **R** + **LSHIFT** - Reset camera zoom to (1, 1)
+* **R** + **LCTRL** - Reset camera offest to (0, 0)
 * **D** - Toggle debug view.
 * **S** - Grab a screenshot.
+* **H** - Hide all lines.
+* **H** + **LSHIFT** - Toggle visiblity of all lines.
+
+#### Controls are only active if mouse is over element in list of graphs
+* **C** + **LSHIFT** - Clear all points in line which the mouse is over.
+* **C** - Empty all points over which the mouse is over.
+* Left mouse button - Toggle visiblity of the line over which the mouse is over
+
 
 ### Todo
 * ~~Make drawing lines use buffers ( Don't use DrawLineStrip function by raylib. ) Maybe use DrawMesh? It's ok for plots with ~1'000'000 points, but I want more!~~
