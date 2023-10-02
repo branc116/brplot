@@ -233,7 +233,8 @@ nc -ulkp 42069 | rlplot;
   * Something to change screenshot resolution.
   * Something to change screenshot name. ( Or at least directory, and then set a name to a timestamp or something... )
 * ~~Fix negative zero~~
-* Zoom in on the location where the mouse is located, not on center of the screen.
+* ~~Zoom in on the location where the mouse is located, not on center of the screen.~~
+  * Fix with the help of my favorite brother Andrija.
 
 
 
