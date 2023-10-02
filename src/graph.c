@@ -109,30 +109,34 @@ static void update_variables(graph_values_t* gv) {
   }
 
   if (context.mouse_inside_graph) {
+    // Stuff related to zoom
+    {
+      float mw = -GetMouseWheelMove();
+      Vector2 old = context.mouse_graph_pos;
+      if (mw != 0.f) {
+        float mw_scale = (1 + mw/10);
+        if (IsKeyDown(KEY_X)) {
+          gv->uvZoom.x *= mw_scale;
+        } else if (IsKeyDown(KEY_Y)) {
+          gv->uvZoom.y *= mw_scale;      
+        } else {
+          gv->uvZoom.x *= mw_scale;
+          gv->uvZoom.y *= mw_scale;
+        }
+      }
+      if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_SHIFT)) gv->uvZoom.x *= 1.1f;
+      if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_SHIFT)) gv->uvZoom.y *= 1.1f;
+      if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_CONTROL)) gv->uvZoom.x *= .9f;
+      if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_CONTROL)) gv->uvZoom.y *= .9f;
+      graph_update_context(gv);
+      Vector2 now = context.mouse_graph_pos;
+      gv->uvOffset.x -= now.x - old.x;
+      gv->uvOffset.y -= now.y - old.y; 
+    }
     if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
       Vector2 delt = GetMouseDelta();
       gv->uvOffset.x -= gv->uvZoom.x*delt.x/gv->graph_rect.width;
       gv->uvOffset.y += gv->uvZoom.y*delt.y/gv->graph_rect.height;
-    }
-
-    float mw = -GetMouseWheelMove();
-    float mw_scale = (1 + mw/10);
-    if (IsKeyDown(KEY_X)) {
-      gv->uvZoom.x *= mw_scale;
-    } else if (IsKeyDown(KEY_Y)) {
-      gv->uvZoom.y *= mw_scale;      
-    } else {
-      gv->uvZoom.x *= mw_scale;
-      gv->uvZoom.y *= mw_scale;
-      float normalized_delta_x = ((float)context.mouse_screen_pos.x - (gv->graph_rect.x + gv->graph_rect.width / 2)) / gv->graph_rect.width;
-      float normalized_delta_y = -((float)context.mouse_screen_pos.y - (gv->graph_rect.y + gv->graph_rect.height / 2)) / gv->graph_rect.height;
-
-      float graph_mouse_x = (context.mouse_graph_pos.x - (gv->graph_rect.x + gv->graph_rect.width / 2)) / gv->graph_rect.width;
-      float graph_mouse_y = (context.mouse_graph_pos.y - (gv->graph_rect.y + gv->graph_rect.height/ 2)) / gv->graph_rect.height;
-      if(mw_scale != 1) {
-        // gv->uvOffset.x = (normalized_delta_x - graph_mouse_x) * gv->uvZoom.x;
-        // gv->uvOffset.y = (normalized_delta_y - graph_mouse_y) * gv->uvZoom.y;
-      }
     }
     if (IsKeyPressed(KEY_R)) {
       if (!IsKeyDown(KEY_LEFT_CONTROL)) gv->uvZoom.x = gv->uvZoom.y = 1;
@@ -160,10 +164,6 @@ static void update_variables(graph_values_t* gv) {
     if (IsKeyPressed(KEY_D)) {
       context.debug_bounds = !context.debug_bounds;
     }
-    if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_SHIFT)) gv->uvZoom.x *= 1.1f;
-    if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_SHIFT)) gv->uvZoom.y *= 1.1f;
-    if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_CONTROL)) gv->uvZoom.x *= .9f;
-    if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_CONTROL)) gv->uvZoom.y *= .9f;
     if (IsKeyDown(KEY_J)) context.recoil -= 0.001f;
     if (IsKeyDown(KEY_K)) context.recoil += 0.001f;
     if (IsKeyPressed(KEY_S)) {
@@ -324,16 +324,6 @@ static float sp = 0.f;
 static void draw_left_panel(graph_values_t* gv) {
   ui_stack_buttons_init((Vector2){.x = 30.f, .y = 25.f}, NULL, context.font_scale * 15);
   ui_stack_buttons_add(&gv->follow, "Follow");
-  ui_stack_buttons_add(NULL, "graphMousePos: (%.2f, %.2f)", context.mouse_graph_pos.x, context.mouse_graph_pos.y);
-  ui_stack_buttons_add(NULL, "screenMousePos: (%.1f, %.1f)", context.mouse_screen_pos.x, context.mouse_screen_pos.y);
-  ui_stack_buttons_add(NULL, "offset: (%.2f, %.2f)", gv->uvOffset.x, gv->uvOffset.y);
-  ui_stack_buttons_add(NULL, "zoom: (%.2f, %.2f)", gv->uvZoom.x, gv->uvZoom.y);
-  float screen_rect_x = (context.mouse_screen_pos.x - (gv->graph_rect.x + gv->graph_rect.width/2))/gv->graph_rect.width * gv->uvZoom.x;
-  float screen_rect_y = -(context.mouse_screen_pos.y - (gv->graph_rect.y + gv->graph_rect.height/2))/gv->graph_rect.height * gv->uvZoom.y;
-  ui_stack_buttons_add(NULL, "rectPos: (%.2f, %.2f)", screen_rect_x, screen_rect_y);
-  float graph_rect_x = (context.mouse_graph_pos.x - (gv->graph_rect.x + gv->graph_rect.width / 2)) / gv->graph_rect.width;
-  float graph_rect_y = (context.mouse_graph_pos.y - (gv->graph_rect.y + gv->graph_rect.height/ 2)) / gv->graph_rect.height;
-  ui_stack_buttons_add(NULL, "graphRectPos: (%.2f, %.2f)", graph_rect_x, graph_rect_y);
   if (context.debug_bounds) {
     ui_stack_buttons_add(&context.debug_bounds, "Debug view");
     ui_stack_buttons_add(&gv->jump_around, "Jump Around");
