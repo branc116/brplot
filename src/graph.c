@@ -135,7 +135,7 @@ static void update_variables(graph_values_t* gv) {
     }
     if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
       Vector2 delt = GetMouseDelta();
-      gv->uvOffset.x -= gv->uvZoom.x*delt.x/gv->graph_rect.width;
+      gv->uvOffset.x -= gv->uvZoom.x*delt.x/gv->graph_rect.height;
       gv->uvOffset.y += gv->uvZoom.y*delt.y/gv->graph_rect.height;
     }
     if (IsKeyPressed(KEY_R)) {
