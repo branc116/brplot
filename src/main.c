@@ -27,7 +27,7 @@ int main_gui(graph_values_t* gv) {
 #ifdef ZIG
 int _main(void) {
 #else
-void zig_print_stacktrace() { exit(-1); }
+void zig_print_stacktrace(void) { exit(-1); }
 int main(void) {
 #endif
   context = (context_t) {

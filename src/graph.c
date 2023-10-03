@@ -43,7 +43,8 @@ void graph_init(graph_values_t* gv, float width, float height) {
     .quads_mesh = NULL,
     .follow = false,
     .shaders_dirty = false,
-    .commands = {0}
+    .commands = {0},
+    .getchar = getchar
   };
   for (int i = 0; i < 3; ++i) {
     gv->uResolution[i] = GetShaderLocation(gv->shaders[i], "resolution");
@@ -73,6 +74,7 @@ void graph_free(graph_values_t* gv) {
   }
   free(gv->commands.commands);
 }
+
 static void update_shader_values(graph_values_t* gv) {
   for (int i = 0; i < 3; ++i) {
     SetShaderValue(gv->shaders[i], gv->uResolution[i], &gv->graph_rect, SHADER_UNIFORM_VEC4);
@@ -207,7 +209,7 @@ void graph_draw(graph_values_t* gv) {
 }
 
 static void graph_draw_grid(Shader shader, Rectangle screen_rect) {
-  BeginScissorMode(screen_rect.x, screen_rect.y, screen_rect.width, screen_rect.height);
+  BeginScissorMode((int)screen_rect.x, (int)screen_rect.y, (int)screen_rect.width, (int)screen_rect.height);
     BeginShaderMode(shader);
       DrawRectangleRec(screen_rect, RED);
     EndShaderMode();
