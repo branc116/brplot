@@ -151,6 +151,14 @@ Start rlplot that listens to UDP port 42069:
 nc -ulkp 42069 | rlplot;
 ```
 
+### Input format
+```[[x-value],]y-value[;[line-index]]```
+
+#### Input examples
+* 10 - insert point (new_x, 10) to line group 0
+* 10;1 - insert point (new_x, 10) to line group 1
+* 10,12;2 - insert point (10, 12) to line group 2
+
 ### Controls
 
 #### Controls are only active when mouse is over the grap.
