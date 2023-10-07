@@ -149,7 +149,9 @@ typedef struct {
 
   // Any thread can write to this q, only render thread can pop
   q_commands commands;
+#ifndef RELEASE
   int (*getchar)(void);
+#endif
 
   bool shaders_dirty;
   bool follow;

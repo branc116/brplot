@@ -20,7 +20,11 @@ void *read_input_main_worker(void* gv) {
   int group = 0;
   bool is_y_set = false, is_x_set = false;
   while(1) {
+#ifdef RELEASE
+    int c = getchar();
+#else
     int c = gvt->getchar();
+#endif
     if (c == -1) {
       printf("EOF detected, stop reading stdin\n");
       return NULL;
@@ -105,6 +109,7 @@ void *read_input_main_worker(void* gv) {
   return NULL;
 }
 
+#ifndef RELEASE
 int test_str() {
   static size_t index = 0;
   const char str[] = "8.0,16.0;1 4.0;1 2.0 1;10;1;;;;";
@@ -152,4 +157,4 @@ TEST_CASE(InputTests) {
 
   free(gvt.commands.commands);
 }
-
+#endif

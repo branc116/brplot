@@ -32,6 +32,7 @@ void graph_init(graph_values_t* gv, float width, float height) {
     .gridShader = LoadShader(NULL, "src/desktop/shaders/grid.fs"),
     .linesShader = LoadShader("src/desktop/shaders/line.vs", "src/desktop/shaders/line.fs"),
     .quadShader = LoadShader("src/desktop/shaders/quad.vs", "src/desktop/shaders/quad.fs"),
+    .getchar = getchar,
 #endif
     .uvOffset = { 0., 0. },
     .uvZoom = { 1., 1. },
@@ -43,8 +44,7 @@ void graph_init(graph_values_t* gv, float width, float height) {
     .quads_mesh = NULL,
     .follow = false,
     .shaders_dirty = false,
-    .commands = {0},
-    .getchar = getchar
+    .commands = {0}
   };
   for (int i = 0; i < 3; ++i) {
     gv->uResolution[i] = GetShaderLocation(gv->shaders[i], "resolution");
