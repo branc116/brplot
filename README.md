@@ -243,6 +243,10 @@ nc -ulkp 42069 | rlplot;
 * ~~Fix negative zero~~
 * ~~Zoom in on the location where the mouse is located, not on center of the screen.~~
   * Fix with the help of my favorite brother Andrija.
+* Export of data to a text file.
+  * Export to format readable by rlplot.
+  * Export to csv.
+  * This will require some sort of file explorer to be implemented.
 
 
 
