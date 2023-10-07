@@ -13,6 +13,7 @@ static points_group_t* points_group_get(points_groups_t* pg_array, int group);
 static void points_group_push_point(points_group_t* g, Vector2 v);
 static void points_group_deinit(points_group_t* g);
 static bool points_group_realloc(points_group_t* pg, size_t new_cap);
+static Color color_get(int id);
 
 void points_group_push_y(points_groups_t* pg_array, float y, int group) {
   points_group_t* pg = points_group_get(pg_array, group);
@@ -48,6 +49,38 @@ void points_group_clear(points_groups_t* pg, int group_id) {
   }
 }
 
+void points_group_export(points_group_t const* pg, FILE* file) {
+  for (size_t i = 0; i < pg->len; ++i) {
+    Vector2 point = pg->points[i];
+    fprintf(file, "%f,%f;%d\n", point.x, point.y, pg->group_id);
+  }
+}
+
+void points_group_export_csv(points_group_t const* pg, FILE* file) {
+  fprintf(file, "group,id,x,y\n");
+  for (size_t i = 0; i < pg->len; ++i) {
+    Vector2 point = pg->points[i];
+    fprintf(file, "%d,%lu,%f,%f\n", pg->group_id, i, point.x, point.y);
+  }
+}
+
+void points_groups_export(points_groups_t const* pg_array, FILE* file) {
+  for (size_t i = 0; i < pg_array->len; ++i) {
+    points_group_export(&pg_array->arr[i], file);
+  }
+}
+
+void points_groups_export_csv(points_groups_t const* pg_array, FILE* file) {
+  fprintf(file, "group,id,x,y\n");
+  for (size_t j = 0; j < pg_array->len; ++j) {
+    points_group_t* pg = &pg_array->arr[j];
+    for (size_t i = 0; i < pg->len; ++i) {
+      Vector2 point = pg->points[i];
+      fprintf(file, "%d,%lu,%f,%f\n", pg->group_id, i, point.x, point.y);
+    }
+  }
+}
+
 void points_groups_deinit(points_groups_t* arr) {
   if (arr->arr == NULL) return;
   for (size_t i = 0; i < arr->len; ++i) {
@@ -63,7 +96,6 @@ void points_groups_empty(points_groups_t* pg) {
     points_group_empty(&pg->arr[i]);
   }
 }
-
 
 void points_groups_add_test_points(points_groups_t* pg) {
   {
@@ -119,8 +151,6 @@ void points_groups_draw(points_groups_t const* pg, smol_mesh_t* line_mesh, smol_
     smol_mesh_draw(quad_mesh);
   }
 }
-
-static Color color_get(int id);
 
 static points_group_t* points_group_init(points_group_t* g, int group_id) {
   *g = (points_group_t) { .cap = 1024, .len = 0, .group_id = group_id,
@@ -186,21 +216,21 @@ static void points_group_push_point(points_group_t* g, Vector2 v) {
 }
 
 static void points_group_deinit(points_group_t* g) {
-    // Free points
-    free(g->points);
-    resampling_free(g->resampling);
-    g->points = NULL;
-    g->len = g->cap = 0;
+  // Free points
+  free(g->points);
+  resampling_free(g->resampling);
+  g->points = NULL;
+  g->len = g->cap = 0;
 }
 
 static bool points_group_realloc(points_group_t* pg, size_t new_cap) {
-    Vector2* new_arr = realloc(pg->points, new_cap * sizeof(Vector2));
-    if (new_arr == NULL) {
-      fprintf(stderr, "Out of memory. Can't add any more lines. Buy more RAM, or close Chrome");
-      return false;
-    }
-    pg->points = new_arr;
-    pg->cap = new_cap;
-    return true;
+  Vector2* new_arr = realloc(pg->points, new_cap * sizeof(Vector2));
+  if (new_arr == NULL) {
+    fprintf(stderr, "Out of memory. Can't add any more lines. Buy more RAM, or close Chrome");
+    return false;
+  }
+  pg->points = new_arr;
+  pg->cap = new_cap;
+  return true;
 }
 

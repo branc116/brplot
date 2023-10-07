@@ -1,6 +1,7 @@
 #pragma once
 #include "raylib.h"
 #include <stddef.h>
+#include "stdio.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -182,17 +183,21 @@ void smol_mesh_draw(smol_mesh_t* mesh);
 void smol_mesh_update(smol_mesh_t* mesh);
 void smol_mesh_free(smol_mesh_t* mesh);
 
-void points_group_push_y(points_groups_t* pg_array, float y, int group);
-void points_group_push_xy(points_groups_t* pg_array, float x, float y, int group);
-void points_group_clear(points_groups_t* pg_array, int group_id);
+void points_group_push_y(points_groups_t* pg, float y, int group);
+void points_group_push_xy(points_groups_t* pg, float x, float y, int group);
+void points_group_clear(points_groups_t* pg, int group_id);
 // Only remove all points from a group, don't remove the group itself.
-void points_group_empty(points_group_t* pg_array);
+void points_group_empty(points_group_t* pg);
+void points_group_export(points_group_t const* pg, FILE* file);
+void points_group_export_csv(points_group_t const* pg, FILE* file);
 
 void points_groups_draw(points_groups_t const* pg_array, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Rectangle rect);
 void points_groups_add_test_points(points_groups_t* pg_array);
-void points_groups_deinit(points_groups_t* pg);
+void points_groups_deinit(points_groups_t* pg_array);
 // Only remove all points from all groups, don't remove groups themselfs.
 void points_groups_empty(points_groups_t* pg_array);
+void points_groups_export(points_groups_t const* pg_array, FILE* file);
+void points_groups_export_csv(points_groups_t const* pg_array, FILE* file);
 
 resampling_t* resampling_malloc(void);
 void resampling_free(resampling_t* res);
