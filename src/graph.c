@@ -291,6 +291,7 @@ static void refresh_shaders_if_dirty(graph_values_t* gv) {
 static void draw_grid_values(graph_values_t* gv) {
   Rectangle r = context.graph_rect;
   float font_size = 15.f * context.font_scale;
+
   float exp = floorf(log10f(r.height / 2.f));
   float base = powf(10.f, exp);
   float start = floorf(r.y / base) * base;
@@ -307,8 +308,11 @@ static void draw_grid_values(graph_values_t* gv) {
     help_draw_text(context.buff, (Vector2){ .x = gv->graph_rect.x - sz.x - 2.f, .y = y }, font_size, RAYWHITE);
   }
 
-  base = powf(10.f, floorf(log10f(r.width / 2.f)));
+  exp =  floorf(log10f(r.width / 2.f));
+  base = powf(10.f, exp);
   start = ceilf(r.x / base) * base;
+  if (exp >= 0) strcpy(fmt, "%f");
+  else sprintf(fmt, "%%.%df", -(int)exp);
   float x_last_max = -INFINITY;
   for (float c = start; c < r.x + r.width; c += base) {
     sprintf(context.buff, fmt, c);
