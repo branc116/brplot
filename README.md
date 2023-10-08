@@ -250,6 +250,9 @@ nc -ulkp 42069 | rlplot;
 * Export the whole graph ( That includes current offset and current zoom )
   * This will require setting current offest and zoom from stdin ( Extend input format to handle this. )
     * Maybe something like ``--setzoomx 69.0``
+* Support for touch input.
+  * Support for draging with one finger.
+  * Support for multitouch zoom.
 
 
 
