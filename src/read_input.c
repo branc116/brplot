@@ -2,117 +2,255 @@
 #include "tests.h"
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
+#include <assert.h>
+#include <math.h>
+
+#define MAX_REDUCE 6
+#define MAX_NAME 8
+#define REDUCTORS 5
+#define INPUT_TOKENS_COUNT MAX_REDUCE
+
+typedef enum {
+  input_token_any,
+  input_token_number,
+  input_token_name,
+  input_token_comma,
+  input_token_semicollon,
+  input_token_dash,
+  input_token_dashdash
+} input_token_kind_t;
+
+typedef enum {
+  input_lex_state_init,
+  input_lex_state_number,
+  input_lex_state_number_decimal,
+  input_lex_state_number_exp,
+  input_lex_state_number_reset,
+  input_lex_state_name,
+  input_lex_state_dash,
+} input_lex_state_t;
 
 typedef struct {
-  char* data;
-  size_t len;
-} string_view;
+  union {
+    struct {
+      float value_f;
+      int value_i;
+    };
+    char name[MAX_NAME];
+  };
+  input_token_kind_t kind;
+} input_token_t;
+
+typedef struct {
+  input_token_kind_t kinds[MAX_REDUCE];
+  void (*reduce_func)(graph_values_t* commands);
+} input_reduce_t;
+
+input_token_t tokens[INPUT_TOKENS_COUNT];
+size_t tokens_len = 0;
+
+static void input_reduce_y(graph_values_t* gv) {
+  q_push(&gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = 0, .y = tokens[0].value_f} });
+}
+
+static void input_reduce_xy(graph_values_t* gv) {
+  q_push(&gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = 0, .x = tokens[0].value_f, .y = tokens[2].value_f} });
+}
+
+static void input_reduce_xygroup(graph_values_t* gv) {
+  q_push(&gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = tokens[4].value_i, .x = tokens[0].value_f, .y = tokens[2].value_f } });
+}
+
+static void input_reduce_ygroup(graph_values_t* gv) {
+  q_push(&gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = tokens[2].value_i, .y = tokens[0].value_f } });
+}
+
+static void input_reduce_command(graph_values_t* gv) {
+  (void)gv;
+  printf("Execute %c%c%c...\n", tokens[1].name[0], tokens[1].name[1], tokens[1].name[2]);
+}
+
+input_reduce_t input_reductors_arr[REDUCTORS] = {
+  {{input_token_number}, input_reduce_y},
+  {{input_token_number, input_token_comma, input_token_number}, input_reduce_xy},
+  {{input_token_number, input_token_comma, input_token_number, input_token_semicollon, input_token_number}, input_reduce_xygroup},
+  {{input_token_number, input_token_semicollon, input_token_number}, input_reduce_ygroup},
+  {{input_token_dashdash, input_token_name, input_token_number}, input_reduce_command},
+};
+
+
+static void input_tokens_pop(size_t n) {
+  if (n == 0) return;
+  if (n >= INPUT_TOKENS_COUNT) {
+    memset(tokens, 0, sizeof(tokens));
+  }
+  memmove(tokens, &tokens[n], sizeof(input_token_t) * (INPUT_TOKENS_COUNT - n));
+  memset(&tokens[INPUT_TOKENS_COUNT - n], 0, sizeof(input_token_t) * n);
+  tokens_len -= n;
+}
+
+static size_t input_tokens_match_count(input_reduce_t* r) {
+  size_t i = 0;
+  for (; i < tokens_len && i < MAX_REDUCE; ++i)
+    if (tokens[i].kind != r->kinds[i] && r->kinds[i] != input_token_any) return 0;
+  return i;
+}
+
+static void input_tokens_reduce(graph_values_t* gv) {
+  if (tokens_len == 0) return;
+  int best = -1, best_c = 0, match_c = 0;
+  for (size_t i = 0; i < REDUCTORS; ++i) {
+    size_t count = input_tokens_match_count(&input_reductors_arr[i]);
+    if ((int)count > best_c) {
+      best_c = (int)count;
+      best = (int)i;
+      match_c = 1;
+    } else if ((int)count == best_c) {
+      ++match_c;
+    }
+  }
+  if (best_c == 0) input_tokens_pop(1);
+  else if ((match_c == 1 && best > -1 && input_reductors_arr[best].kinds[best_c] == input_token_any)) {
+    input_reductors_arr[best].reduce_func(gv);
+    input_tokens_pop((size_t)best_c);
+  }
+}
+
+static void lex(graph_values_t* gv) {
+  float value_f = 0;
+  int decimal = 0;
+  int value_i = 0;
+  char name[MAX_NAME] = {0};
+  size_t name_len = 0;
+  bool is_neg = false;
+  bool read_next = true;
+
+  input_lex_state_t state = input_lex_state_init;
+  int c = -1;
+  while (true) {
+    if (read_next)
+#ifdef RELEASE
+      c = getchar();
+#else
+      c = gv->getchar();
+#endif
+    else read_next = true;
+    if (c == -1) return;
+    switch (state) {
+      case input_lex_state_init:
+        input_tokens_reduce(gv);
+        if (c == '-') {
+          state = input_lex_state_dash;
+        } else if (c >= '0' && c <= '9') {
+          state = input_lex_state_number;
+          read_next = false;
+        } else if (c == '.') {
+          state = input_lex_state_number_decimal;
+        } else if (c == ',') {
+          tokens[tokens_len++] = (input_token_t) { .kind = input_token_comma };
+        } else if (c == ';') {
+          tokens[tokens_len++] = (input_token_t) { .kind = input_token_semicollon };
+        }
+        break;
+      case input_lex_state_dash:
+        if (c == '-') {
+          tokens[tokens_len++] = (input_token_t){ .kind = input_token_dashdash };
+          state = input_lex_state_init;
+        } else if (c >= '0' && c <= '9') {
+          is_neg = true;
+          state = input_lex_state_number;
+          read_next = false;
+        } else {
+          state = input_lex_state_init;
+        }
+        break;
+      case input_lex_state_number:
+        if (c >= '0' && c <= '9') {
+          value_i *= 10;
+          value_i += c - '0';
+        } else if (c == '.') {
+          state = input_lex_state_number_decimal;
+          value_f = is_neg ? (float)-value_i : (float)value_i;
+          value_i = 0;
+          is_neg = false;
+        } else if (c == 'E' || c == 'e') {
+          value_f = is_neg ? (float)-value_i : (float)value_i;
+          value_i = 0;
+          is_neg = false;
+          decimal = 0;
+          state = input_lex_state_number_exp;
+        } else {
+          tokens[tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = (float)value_i, .value_i = value_i };
+          state = input_lex_state_number_reset;
+          read_next = false;
+        }
+        break;
+      case input_lex_state_number_decimal:
+        if (c >= '0' && c <= '9') {
+          value_i *= 10;
+          value_i += c - '0';
+          --decimal;
+        } else if (c == 'E' || c == 'e') {
+          value_f += (float)value_i * powf(10.f, (float)decimal);
+          value_i = 0;
+          decimal = 0;
+          state = input_lex_state_number_exp;
+        } else {
+          value_f += (float)value_i * powf(10.f, (float)decimal);
+          tokens[tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = value_f, .value_i = value_i };
+          state = input_lex_state_number_reset;
+          read_next = false;
+        }
+        break;
+      case input_lex_state_number_exp:
+        if (c >= '0' && c <= '9') {
+          value_i *= 10;
+          value_i += c - '0';
+        } else if (c == '-') {
+          is_neg = true;
+        } else {
+          value_f *= powf(10.f, is_neg ? (float)-value_i : (float)value_i);
+          tokens[tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = value_f, .value_i = value_i };
+          state = input_lex_state_number_reset;
+          read_next = false;
+        }
+        break;
+      case input_lex_state_number_reset:
+        state = input_lex_state_init;
+        read_next = false;
+        value_f = 0.f;
+        value_i = 0;
+        decimal = 0;
+        is_neg = false;
+        break;
+      case input_lex_state_name:
+        if (name_len + 1 < MAX_NAME && c >= 'a' && c <= 'z') {
+          name[name_len++] = (char)c;
+        } else {
+          memcpy(tokens[tokens_len].name, name, name_len);
+          tokens[tokens_len].name[name_len] = (char)0;
+          tokens[tokens_len].kind = input_token_name;
+          state = input_lex_state_init;
+          read_next = false;
+        }
+        break;
+      default:
+        assert(false);
+    }
+  }
+}
 
 void *read_input_main_worker(void* gv) {
-  int cur_str_len = 0;
-  char cur_str[128];
   graph_values_t* gvt = gv;
-  memset(cur_str, 0, sizeof(cur_str));
-
-  float value_y = 0.f, value_x = 0.f;
-  int group = 0;
-  bool is_y_set = false, is_x_set = false;
-  while(1) {
-#ifdef RELEASE
-    int c = getchar();
-#else
-    int c = gvt->getchar();
-#endif
-    if (c == -1) {
-      printf("EOF detected, stop reading stdin\n");
-      return NULL;
-    } else if (c == 'e' || c == 'E' || c == '.' || (c >= '0' && c <= '9') || c == '-') {
-      cur_str[cur_str_len++] = (char)c;
-      if (cur_str_len + 1 < (int)sizeof(cur_str)) continue;
-    } else if (c == ',') {
-      if (cur_str_len > 0) {
-        if (is_x_set == false) {
-          sscanf(cur_str, "%f", &value_x);
-          memset(cur_str, 0, sizeof(cur_str));
-          cur_str_len = 0;
-          is_x_set = true;
-          continue;
-        } else {
-          sscanf(cur_str, "%f", &value_y);
-          memset(cur_str, 0, sizeof(cur_str));
-          cur_str_len = 0;
-        }
-      } else {
-        // PASS
-      }
-    } else if (c == ';') {
-      if (cur_str_len > 0) {
-        if (is_y_set == false) {
-          sscanf(cur_str, "%f", &value_y);
-          memset(cur_str, 0, sizeof(cur_str));
-          cur_str_len = 0;
-          is_y_set = true;
-          continue;
-        } else {
-          sscanf(cur_str, "%d", &group);
-        }
-      } else {
-        if (is_x_set == true) {
-          is_y_set = true;
-          is_x_set = false;
-          value_y = value_y;
-          continue;
-        } else {
-          // PASS
-        }
-      }
-    } else if (cur_str_len > 0 && is_y_set) {
-      sscanf(cur_str, "%d", &group);
-    } else if (cur_str_len > 0) {
-      sscanf(cur_str, "%f", &value_y);
-      is_y_set = true;
-    } else {
-      continue;
-    }
-    if (is_y_set && is_x_set) {
-      while (!q_push(&gvt->commands, (q_command) {
-            .type = q_command_push_point_xy,
-            .push_point_xy = {
-              .group = group,
-              .x = value_x,
-              .y = value_y
-            } })) {
-        fprintf(stderr, "Q full\n");
-        for (volatile int i = 0; i < 1000000; ++i); // SLEEP for some time... TODO: CHANGE THIS...
-      }
-    } else if (is_y_set && !is_x_set) {
-      while (!q_push(&gvt->commands, (q_command) {
-            .type = q_command_push_point_y,
-            .push_point_y = {
-              .group = group,
-              .y = value_y
-            } })) {
-        fprintf(stderr, "Q full\n");
-        for (volatile int i = 0; i < 1000000; ++i); // SLEEP for some time... TODO: CHANGE THIS...
-      }
-    } else {
-      // PASS
-    }
-    is_x_set = is_y_set = false;
-    value_y = value_x = 0.f;
-    group = 0;
-    memset(cur_str, 0, sizeof(cur_str));
-    cur_str_len = 0;
-  }
+  lex(gvt);
   return NULL;
 }
 
 #ifndef RELEASE
 int test_str() {
   static size_t index = 0;
-  const char str[] = "8.0,16.0;1 4.0;1 2.0 1;10;1;;;;";
+  const char str[] = "1;10;1;;;; 8.0,16.0;1 4.0;1 2.0 ";
   if (index >= sizeof(str))
   {
     return -1;
