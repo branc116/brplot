@@ -90,31 +90,54 @@ static void input_tokens_pop(size_t n) {
   tokens_len -= n;
 }
 
-static size_t input_tokens_match_count(input_reduce_t* r) {
+static bool input_tokens_match_count(input_reduce_t* r, size_t* match_count) {
   size_t i = 0;
   for (; i < tokens_len && i < MAX_REDUCE && r->kinds[i] != input_token_any; ++i)
-    if (tokens[i].kind != r->kinds[i]) return 0;
-  return i;
+    if (tokens[i].kind != r->kinds[i]) return false;
+  *match_count = i;
+  return r->kinds[i] == input_token_any;
 }
 
-static void input_tokens_reduce(graph_values_t* gv) {
+static void input_tokens_reduce(graph_values_t* gv, bool force_reduce) {
   if (tokens_len == 0) return;
   int best = -1;
-  size_t  best_c = 0, match_c = 0;
+  size_t best_c = 0, match_c = 0;
+
+  int best_reduce = -1;
+  size_t best_reduce_count = 0;
+  size_t match_reduce_c = 0;
   for (size_t i = 0; i < REDUCTORS; ++i) {
-    size_t count = input_tokens_match_count(&input_reductors_arr[i]);
+    size_t count = 0;
+    bool can_reduce = input_tokens_match_count(&input_reductors_arr[i], &count);
+    if (can_reduce) {
+      if (count > best_reduce_count) {
+        best_reduce_count = count;
+        match_reduce_c = 1;
+        best_reduce = (int)i;
+      } else if (count == best_reduce_count) {
+        ++match_reduce_c;
+      }
+    }
     if (count > best_c) {
       best_c = count;
-      best = (int)i;
       match_c = 1;
+      best = (int)i;
     } else if (count == best_c) {
       ++match_c;
     }
   }
-  if (best_c == 0) input_tokens_pop(1);
-  else if ((match_c == 1 && best > -1 && input_reductors_arr[best].kinds[best_c] == input_token_any)) {
-    input_reductors_arr[best].reduce_func(gv);
-    input_tokens_pop((size_t)best_c);
+  if (force_reduce == false) {
+    if (best_c == 0) input_tokens_pop(1);
+    else if ((match_c == 1 && best > -1 && input_reductors_arr[best].kinds[best_c] == input_token_any)) {
+      input_reductors_arr[best].reduce_func(gv);
+      input_tokens_pop((size_t)best_c);
+    }
+  } else {
+    if (best_reduce_count == 0) input_tokens_pop(1);
+    else if (best_reduce > -1) {
+      input_reductors_arr[best_reduce].reduce_func(gv);
+      input_tokens_pop((size_t)best_reduce_count);
+    }
   }
 }
 
@@ -137,14 +160,20 @@ static void lex(graph_values_t* gv) {
       c = gv->getchar();
 #endif
     else read_next = true;
-    if (c == -1) return;
+    if (c == -1) {
+      input_tokens_reduce(gv, true);
+      return;
+    }
     switch (state) {
       case input_lex_state_init:
-        input_tokens_reduce(gv);
+        input_tokens_reduce(gv, false);
         if (c == '-') {
           state = input_lex_state_dash;
         } else if (c >= '0' && c <= '9') {
           state = input_lex_state_number;
+          read_next = false;
+        } else if (c >= 'a' && c <= 'z') {
+          state = input_lex_state_name;
           read_next = false;
         } else if (c == '.') {
           state = input_lex_state_number_decimal;
@@ -231,7 +260,7 @@ static void lex(graph_values_t* gv) {
         } else {
           memcpy(tokens[tokens_len].name, name, name_len);
           tokens[tokens_len].name[name_len] = (char)0;
-          tokens[tokens_len].kind = input_token_name;
+          tokens[tokens_len++].kind = input_token_name;
           state = input_lex_state_init;
           read_next = false;
         }
@@ -251,7 +280,7 @@ void *read_input_main_worker(void* gv) {
 #ifndef RELEASE
 int test_str() {
   static size_t index = 0;
-  const char str[] = "8.0,16.0;1 4.0;1 2.0 1;10;1;;;;";
+  const char str[] = "8.0,16.0;1 4.0;1 2.0 1;10;1;;;; 10e10 3e38 --test 1.2 1;12";
   if (index >= sizeof(str))
   {
     return -1;
@@ -290,6 +319,21 @@ TEST_CASE(InputTests) {
   TEST_EQUAL(c.type, q_command_push_point_y);
   TEST_EQUAL(c.push_point_y.y, 1.f);
   TEST_EQUAL(c.push_point_y.group, 0);
+
+  c = q_pop(&gvt.commands);
+  TEST_EQUAL(c.type, q_command_push_point_y);
+  TEST_EQUAL(c.push_point_y.y, 10e10f);
+  TEST_EQUAL(c.push_point_y.group, 0);
+
+  c = q_pop(&gvt.commands);
+  TEST_EQUAL(c.type, q_command_push_point_y);
+  TEST_EQUAL(c.push_point_y.y, 3e38f);
+  TEST_EQUAL(c.push_point_y.group, 0);
+
+  c = q_pop(&gvt.commands);
+  TEST_EQUAL(c.type, q_command_push_point_y);
+  TEST_EQUAL(c.push_point_y.y, 1.f);
+  TEST_EQUAL(c.push_point_y.group, 12);
 
   c = q_pop(&gvt.commands);
   TEST_EQUAL(c.type, q_command_none);
