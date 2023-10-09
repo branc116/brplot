@@ -92,21 +92,22 @@ static void input_tokens_pop(size_t n) {
 
 static size_t input_tokens_match_count(input_reduce_t* r) {
   size_t i = 0;
-  for (; i < tokens_len && i < MAX_REDUCE; ++i)
-    if (tokens[i].kind != r->kinds[i] && r->kinds[i] != input_token_any) return 0;
+  for (; i < tokens_len && i < MAX_REDUCE && r->kinds[i] != input_token_any; ++i)
+    if (tokens[i].kind != r->kinds[i]) return 0;
   return i;
 }
 
 static void input_tokens_reduce(graph_values_t* gv) {
   if (tokens_len == 0) return;
-  int best = -1, best_c = 0, match_c = 0;
+  int best = -1;
+  size_t  best_c = 0, match_c = 0;
   for (size_t i = 0; i < REDUCTORS; ++i) {
     size_t count = input_tokens_match_count(&input_reductors_arr[i]);
-    if ((int)count > best_c) {
-      best_c = (int)count;
+    if (count > best_c) {
+      best_c = count;
       best = (int)i;
       match_c = 1;
-    } else if ((int)count == best_c) {
+    } else if (count == best_c) {
       ++match_c;
     }
   }
@@ -250,7 +251,7 @@ void *read_input_main_worker(void* gv) {
 #ifndef RELEASE
 int test_str() {
   static size_t index = 0;
-  const char str[] = "1;10;1;;;; 8.0,16.0;1 4.0;1 2.0 ";
+  const char str[] = "8.0,16.0;1 4.0;1 2.0 1;10;1;;;;";
   if (index >= sizeof(str))
   {
     return -1;
