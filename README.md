@@ -253,6 +253,7 @@ nc -ulkp 42069 | rlplot;
 * Support for touch input.
   * Support for draging with one finger.
   * Support for multitouch zoom.
+* There is something wrong with new tokenizer. Fix this!!
 
 
 

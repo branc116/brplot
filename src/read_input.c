@@ -262,6 +262,7 @@ static void lex(graph_values_t* gv) {
           tokens[tokens_len].name[name_len] = (char)0;
           tokens[tokens_len++].kind = input_token_name;
           state = input_lex_state_init;
+          name_len = 0;
           read_next = false;
         }
         break;
@@ -280,7 +281,7 @@ void *read_input_main_worker(void* gv) {
 #ifndef RELEASE
 int test_str() {
   static size_t index = 0;
-  const char str[] = "8.0,16.0;1 4.0;1 2.0 1;10;1;;;; 10e10 3e38 --test 1.2 1;12";
+  const char str[] = "8.0,16.0;1 8.0,16.0;1 .0;1 2.0 1;10;1;;;; 10e10 3e38 --test 1.2 --zoomx 10.0 1;12";
   if (index >= sizeof(str))
   {
     return -1;
@@ -295,6 +296,12 @@ TEST_CASE(InputTests) {
   read_input_main_worker(&gvt);
 
   q_command c = q_pop(&gvt.commands);
+  TEST_EQUAL(c.type, q_command_push_point_xy);
+  TEST_EQUAL(c.push_point_xy.x, 8.f);
+  TEST_EQUAL(c.push_point_xy.y, 16.f);
+  TEST_EQUAL(c.push_point_xy.group, 1);
+
+  c = q_pop(&gvt.commands);
   TEST_EQUAL(c.type, q_command_push_point_xy);
   TEST_EQUAL(c.push_point_xy.x, 8.f);
   TEST_EQUAL(c.push_point_xy.y, 16.f);
