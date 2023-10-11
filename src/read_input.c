@@ -147,6 +147,7 @@ static void lex(graph_values_t* gv) {
   int value_i = 0;
   char name[MAX_NAME] = {0};
   size_t name_len = 0;
+  bool is_neg_whole = false;
   bool is_neg = false;
   bool read_next = true;
 
@@ -189,6 +190,7 @@ static void lex(graph_values_t* gv) {
           state = input_lex_state_init;
         } else if (c >= '0' && c <= '9') {
           is_neg = true;
+          is_neg_whole = true;
           state = input_lex_state_number;
           read_next = false;
         } else {
@@ -201,11 +203,11 @@ static void lex(graph_values_t* gv) {
           value_i += c - '0';
         } else if (c == '.') {
           state = input_lex_state_number_decimal;
-          value_f = is_neg ? (float)-value_i : (float)value_i;
+          value_f = (float)value_i;
           value_i = 0;
           is_neg = false;
         } else if (c == 'E' || c == 'e') {
-          value_f = is_neg ? (float)-value_i : (float)value_i;
+          value_f = (float)value_i;
           value_i = 0;
           is_neg = false;
           decimal = 0;
@@ -228,7 +230,7 @@ static void lex(graph_values_t* gv) {
           state = input_lex_state_number_exp;
         } else {
           value_f += (float)value_i * powf(10.f, (float)decimal);
-          tokens[tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = value_f, .value_i = value_i };
+          tokens[tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = is_neg_whole ? -value_f : value_f, .value_i = value_i };
           state = input_lex_state_number_reset;
           read_next = false;
         }
@@ -241,7 +243,7 @@ static void lex(graph_values_t* gv) {
           is_neg = true;
         } else {
           value_f *= powf(10.f, is_neg ? (float)-value_i : (float)value_i);
-          tokens[tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = value_f, .value_i = value_i };
+          tokens[tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = is_neg_whole ? -value_f : value_f, .value_i = value_i };
           state = input_lex_state_number_reset;
           read_next = false;
         }
@@ -253,6 +255,7 @@ static void lex(graph_values_t* gv) {
         value_i = 0;
         decimal = 0;
         is_neg = false;
+        is_neg_whole = false;
         break;
       case input_lex_state_name:
         if (name_len + 1 < MAX_NAME && c >= 'a' && c <= 'z') {
@@ -281,7 +284,7 @@ void *read_input_main_worker(void* gv) {
 #ifndef RELEASE
 int test_str() {
   static size_t index = 0;
-  const char str[] = "8.0,16.0;1 8.0,16.0;1 .0;1 2.0 1;10;1;;;; 10e10 3e38 --test 1.2 --zoomx 10.0 1;12";
+  const char str[] = "8.0,-16.0;1 -0.0078,16.0;1 \n \n 4.0;1\n\n\n\n\n\n 2.0 1;10;1;;;; 10e10 3e38 --test 1.2 --zoomx 10.0 1;12";
   if (index >= sizeof(str))
   {
     return -1;
@@ -298,12 +301,12 @@ TEST_CASE(InputTests) {
   q_command c = q_pop(&gvt.commands);
   TEST_EQUAL(c.type, q_command_push_point_xy);
   TEST_EQUAL(c.push_point_xy.x, 8.f);
-  TEST_EQUAL(c.push_point_xy.y, 16.f);
+  TEST_EQUAL(c.push_point_xy.y, -16.f);
   TEST_EQUAL(c.push_point_xy.group, 1);
 
   c = q_pop(&gvt.commands);
   TEST_EQUAL(c.type, q_command_push_point_xy);
-  TEST_EQUAL(c.push_point_xy.x, 8.f);
+  TEST_EQUAL(c.push_point_xy.x, -0.0078f);
   TEST_EQUAL(c.push_point_xy.y, 16.f);
   TEST_EQUAL(c.push_point_xy.group, 1);
 
