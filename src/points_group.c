@@ -9,7 +9,7 @@
 #include <string.h>
 
 static points_group_t* points_group_init(points_group_t* g, int group_id);
-static points_group_t* points_group_get(points_groups_t* pg_array, int group);
+points_group_t* points_group_get(points_groups_t* pg_array, int group);
 static void points_group_push_point(points_group_t* g, Vector2 v);
 static void points_group_deinit(points_group_t* g);
 static bool points_group_realloc(points_group_t* pg, size_t new_cap);
@@ -183,7 +183,7 @@ static Color color_get(int id) {
   return c;
 }
 
-static points_group_t* points_group_get(points_groups_t* pg, int group) {
+points_group_t* points_group_get(points_groups_t* pg, int group) {
   assert(pg);
 
   if (pg->len == 0) {

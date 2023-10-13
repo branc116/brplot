@@ -17,7 +17,6 @@ typedef enum {
   input_token_name,
   input_token_comma,
   input_token_semicollon,
-  input_token_dash,
   input_token_dashdash
 } input_token_kind_t;
 
@@ -79,6 +78,12 @@ static void input_reduce_command(graph_values_t* gv) {
     gv->uvOffset.x = tokens[2].value_f;
   } else if (0 == strcmp("offsety", tokens[1].name)) {
     gv->uvOffset.y = tokens[2].value_f;
+  } else if (0 == strcmp("hide", tokens[1].name)) {
+    points_group_t* pg = points_group_get(&gv->groups, tokens[2].value_i);
+    pg->is_selected = false;
+  } else if (0 == strcmp("show", tokens[1].name)) {
+    points_group_t* pg = points_group_get(&gv->groups, tokens[2].value_i);
+    pg->is_selected = true;
   } else
     printf("Execute %c%c%c...\n", tokens[1].name[0], tokens[1].name[1], tokens[1].name[2]);
 }

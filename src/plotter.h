@@ -183,6 +183,7 @@ void smol_mesh_draw(smol_mesh_t* mesh);
 void smol_mesh_update(smol_mesh_t* mesh);
 void smol_mesh_free(smol_mesh_t* mesh);
 
+points_group_t* points_group_get(points_groups_t* pg_array, int group);
 void points_group_push_y(points_groups_t* pg, float y, int group);
 void points_group_push_xy(points_groups_t* pg, float x, float y, int group);
 void points_group_clear(points_groups_t* pg, int group_id);
