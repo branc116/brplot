@@ -68,7 +68,19 @@ static void input_reduce_ygroup(graph_values_t* gv) {
 
 static void input_reduce_command(graph_values_t* gv) {
   (void)gv;
-  printf("Execute %c%c%c...\n", tokens[1].name[0], tokens[1].name[1], tokens[1].name[2]);
+  if (0 == strcmp("zoomx", tokens[1].name)) {
+    gv->uvZoom.x = tokens[2].value_f;
+  } else if (0 == strcmp("zoomy", tokens[1].name)) {
+    gv->uvZoom.y = tokens[2].value_f;
+  } else if (0 == strcmp("zoom", tokens[1].name)) {
+    gv->uvZoom.y = tokens[2].value_f;
+    gv->uvZoom.x = tokens[2].value_f;
+  } else if (0 == strcmp("offsetx", tokens[1].name)) {
+    gv->uvOffset.x = tokens[2].value_f;
+  } else if (0 == strcmp("offsety", tokens[1].name)) {
+    gv->uvOffset.y = tokens[2].value_f;
+  } else
+    printf("Execute %c%c%c...\n", tokens[1].name[0], tokens[1].name[1], tokens[1].name[2]);
 }
 
 input_reduce_t input_reductors_arr[REDUCTORS] = {
