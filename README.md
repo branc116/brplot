@@ -153,38 +153,49 @@ nc -ulkp 42069 | rlplot;
 
 ### Input format
 ```[[x-value],]y-value[;[line-index]]```
+```--command value```
 
 #### Input examples
-* 10 - insert point (new_x, 10) to line group 0
-* 10;1 - insert point (new_x, 10) to line group 1
+* 10      - insert point (new_x, 10) to line group 0
+* 10,12   - insert point (10, 12) to line group 0
+* 10;1    - insert point (new_x, 10) to line group 1
 * 10,12;2 - insert point (10, 12) to line group 2
+
+#### All commands 
+* ```--zoom value```    - zoom x & y axis to value
+* ```--zoomx value```   - zoom x axis to value
+* ```--zoomy value```   - zoom y axis to value
+* ```--offsetx value``` - offset x axis to value
+* ```--offsety value``` - offset y axis to value
+* ```--show value```    - show value-th group
+* ```--hide value```    - hide value-th group
 
 ### Controls
 
 #### Controls are only active when mouse is over the grap.
 
-* Right mouse button + Move mouse - Change offset
-* Mouse wheel - Change zoom
-* **X** + Mouse Wheel - Change zoom only in **X** axis
-* **Y** + Mouse Wheel - Change zoom only in **Y** axis
+* Right mouse button + Move mouse        - Change offset
+* Mouse wheel                            - Change zoom
+* **X** + Mouse Wheel                    - Change zoom only in **X** axis
+* **Y** + Mouse Wheel                    - Change zoom only in **Y** axis
 * [**X**|**Y**] + [**LSHIFT**|**LCRTL**] - Change zoom [in|out] only in [**X**|**Y**] axis
-* **F** - Follow the visible lines. ( Camera will focus on the average of newest points added to each visible line. )
-* [**K**|**J**] - Change recoil for follow functionality ( quite fun if >1.f )
-* **T** - Add test points
-* **C** + **LSHIFT** - Clear all points
-* **C** - Empty all points
-* **R** - Reset camera offset and zoom to (0, 0) and (1, 1)
-* **R** + **LSHIFT** - Reset camera zoom to (1, 1)
-* **R** + **LCTRL** - Reset camera offest to (0, 0)
-* **D** - Toggle debug view.
-* **S** - Grab a screenshot.
-* **H** - Hide all lines.
-* **H** + **LSHIFT** - Toggle visiblity of all lines.
+* **F**                                  - Follow the visible lines. ( Camera will focus on the average of newest points added to each visible line. )
+* [**K**|**J**]                          - Change recoil for follow functionality ( quite fun if >1.f )
+* **T**                                  - Add test points
+* **C** + **LSHIFT**                     - Clear all points
+* **C**                                  - Empty all points
+* **R**                                  - Reset camera offset and zoom to (0, 0) and (1, 1)
+* **R** + **LSHIFT**                     - Reset camera zoom to (1, 1)
+* **R** + **LCTRL**                      - Reset camera offest to (0, 0)
+* **D**                                  - Toggle debug view.
+* **S**                                  - Grab a screenshot.
+* **H**                                  - Hide all lines.
+* **H** + **LSHIFT**                     - Toggle visiblity of all lines.
 
 #### Controls are only active if mouse is over element in list of graphs
 * **C** + **LSHIFT** - Clear all points in line which the mouse is over.
-* **C** - Empty all points over which the mouse is over.
-* Left mouse button - Toggle visiblity of the line over which the mouse is over
+* **C**              - Empty all points over which the mouse is over.
+* Left mouse button  - Toggle visiblity of the line over which the mouse is over
 
 
 ### Todo
@@ -249,7 +260,8 @@ nc -ulkp 42069 | rlplot;
   * This will require some sort of file explorer to be implemented.
 * Export the whole graph ( That includes current offset and current zoom )
   * This will require setting current offest and zoom from stdin ( Extend input format to handle this. )
-    * Maybe something like ``--setzoomx 69.0``
+    * ~~Maybe something like ``--setzoomx 69.0``~~
+      * Did this
 * Support for touch input.
   * Support for draging with one finger.
   * Support for multitouch zoom.
