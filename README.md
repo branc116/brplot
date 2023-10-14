@@ -258,14 +258,17 @@ nc -ulkp 42069 | rlplot;
   * ~~Export to format readable by rlplot.~~
   * ~~Export to csv.~~
   * This will require some sort of file explorer to be implemented.
-* Export the whole graph ( That includes current offset and current zoom )
-  * This will require setting current offest and zoom from stdin ( Extend input format to handle this. )
-    * ~~Maybe something like ``--setzoomx 69.0``~~
-      * Did this
+* ~~Export the whole graph ( That includes current offset and current zoom )~~
+  * ~~This will require setting current offest and zoom from stdin ( Extend input format to handle this. )~~
+    * ~~Maybe something like ``--zoomx 69.0``~~
+      * Did this.
+  * This is done.
+* Export what plots are visible and invisible.
+  * Need some file explorer.
 * Support for touch input.
   * Support for draging with one finger.
   * Support for multitouch zoom.
-* There is something wrong with new tokenizer. Fix this!!
+* ~~There is something wrong with new tokenizer. Fix this!!~~
 
 
 
