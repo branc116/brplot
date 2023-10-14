@@ -246,6 +246,16 @@ void graph_screenshot(graph_values_t* gv, char const * path) {
 #endif
 }
 
+void graph_export(graph_values_t* gv, char const * path) {
+  FILE* file = fopen(path, "w");
+  fprintf(file, "--zoomx %f\n", gv->uvZoom.x);
+  fprintf(file, "--zoomy %f\n", gv->uvZoom.y);
+  fprintf(file, "--offsetx %f\n", gv->uvOffset.x);
+  fprintf(file, "--offsety %f\n", gv->uvOffset.y);
+  points_groups_export(&gv->groups, file);
+  fclose(file);
+}
+
 static void graph_update_context(graph_values_t* gv) {
   Vector2 mp = context.mouse_screen_pos = GetMousePosition();
   Vector2 mp_in_graph = { mp.x - gv->graph_rect.x, mp.y - gv->graph_rect.y };
@@ -331,9 +341,7 @@ static void draw_left_panel(graph_values_t* gv) {
   ui_stack_buttons_init((Vector2){.x = 30.f, .y = 25.f}, NULL, context.font_scale * 15);
   ui_stack_buttons_add(&gv->follow, "Follow");
   if (ui_stack_buttons_add(NULL, "Export") == 2) {
-    FILE* file = fopen("test.plot", "w");
-    points_groups_export(&gv->groups, file);
-    fclose(file);
+    graph_export(gv, "test.plot");
   }
   if (ui_stack_buttons_add(NULL, "Export CSV") == 2) {
     FILE* file = fopen("test.csv", "w");

@@ -208,6 +208,7 @@ void resampling_add_point(resampling_t* res, points_group_t const* pg, size_t in
 extern Vector2 graph_mouse_position;
 void graph_init(graph_values_t* gv, float width, float height);
 void graph_screenshot(graph_values_t* gv, char const * path);
+void graph_export(graph_values_t* gv, char const * path);
 void graph_free(graph_values_t* gv);
 void graph_draw(graph_values_t* gv);
 
