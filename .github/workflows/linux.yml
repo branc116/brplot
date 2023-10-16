@@ -50,6 +50,9 @@ jobs:
 
     - name: Setup Zig
       uses: goto-bus-stop/setup-zig@v2.1.1
+      with:
+        version: 0.11.0
+        cache: true
 
     - name: Build rlplot windows
       run: |
