@@ -16,25 +16,25 @@ CCFLAGS+= -DEXTERNAL_CONFIG_FLAGS=1 \
   -DMAX_MESH_VERTEX_BUFFERS=7 \
 	-DSUPPORT_IMAGE_EXPORT=1 \
 	-DSUPPORT_FILEFORMAT_PNG=1 \
-	-DSUPPORT_STANDARD_FILEIO=1
-#	-DSUPPORT_TRACELOG=1 \
+	-DSUPPORT_STANDARD_FILEIO=1 \
+	-DSUPPORT_TRACELOG=1
 
 RAYLIB_SOURCE= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
 
 CCFLAGS_LINUX= -Wl,-z,now -DLINUX -DPLATFORM_DESKTOP $(CCFLAGS)
 SHADERS= SHADER_GRID_FS:src/desktop/shaders/grid.fs SHADER_LINE_FS:src/desktop/shaders/line.fs SHADER_LINE_VS:src/desktop/shaders/line.vs SHADER_QUAD_FS:src/desktop/shaders/quad.fs SHADER_QUAD_VS:src/desktop/shaders/quad.vs
 SOURCE= $(RAYLIB_SOURCE) \
-        ./src/desktop/linux/read_input.c ./src/desktop/linux/refresh_shaders.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/read_input.c src/resampling.c src/ui.c src/help.c
+        ./src/desktop/linux/read_input.c ./src/desktop/linux/refresh_shaders.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/read_input.c src/resampling.c src/ui.c src/help.c src/file_explorer.c
 
 CCFLAGS_DBG = -I$(RL) -Wconversion -Wall -Wpedantic -Wextra -g -DLINUX -DPLATFORM_DESKTOP -pg -fsanitize=address -fsanitize=leak \
 							-fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
 							-fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -DUNIT_TEST
-SOURCE_DBG= src/desktop/linux/refresh_shaders.c ./src/desktop/linux/read_input.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/read_input.c src/resampling.c src/ui.c src/help.c
+SOURCE_DBG= src/desktop/linux/refresh_shaders.c ./src/desktop/linux/read_input.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/read_input.c src/resampling.c src/ui.c src/help.c src/file_explorer.c
 
 SOURCE_WEB= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c \
-        src/web/refresh_shaders.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/web/read_input.c src/resampling.c src/ui.c src/help.c
+        src/web/refresh_shaders.c src/smol_mesh.c src/main.c src/points_group.c src/graph.c src/q.c src/web/read_input.c src/resampling.c src/ui.c src/help.c src/file_explorer.c
 SHADERS_WEB= SHADER_GRID_FS:src/web/shaders/grid.fs SHADER_LINE_FS:src/web/shaders/line.fs SHADER_LINE_VS:src/web/shaders/line.vs SHADER_QUAD_VS:src/web/shaders/quad.vs SHADER_QUAD_FS:src/web/shaders/quad.fs
-CCFLAGS_WASM= -DGRAPHICS_API_OPENGL_ES2 -DPLATFORM_WEB --memory-init-file 1 --closure 1 -s WASM_BIGINT -s ENVIRONMENT=web -sALLOW_MEMORY_GROWTH -s USE_GLFW=3 -s ASYNCIFY $(CCFLAGS)
+CCFLAGS_WASM= -DGRAPHICS_API_OPENGL_ES2 -DPLATFORM_WEB --memory-init-file 1 --closure 1  -s "EXPORTED_RUNTIME_METHODS=['FS']" -s FORCE_FILESYSTEM -s WASM_BIGINT -s ENVIRONMENT=web -sALLOW_MEMORY_GROWTH -s USE_GLFW=3 -s ASYNCIFY $(CCFLAGS)
 
 # If emscript is not in this location call: make EMSCRIPTEN=<path to your EMSCRIPTEN> ...
 EMSCRIPTEN?=/usr/lib/emscripten

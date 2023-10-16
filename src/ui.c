@@ -46,6 +46,8 @@ static float stack_offset;
 static float stack_font_size;
 static int stack_count;
 static Vector2 stack_maxsize;
+static bool stack_size_set;
+static Vector2 stack_size;
 
 void ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size) {
   assert(!stack_is_inited);
@@ -58,6 +60,7 @@ void ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size)
   stack_font_size = font_size;
   stack_count = 0;
   stack_maxsize = (Vector2){0};
+  stack_size_set = false;
 }
 
 int ui_stack_buttons_add(bool* is_pressed, char const* str, ...) {
@@ -78,6 +81,11 @@ int ui_stack_buttons_add(bool* is_pressed, char const* str, ...) {
   return 0;
 }
 
+void ui_stack_set_size(Vector2 v) {
+  stack_size = v; 
+  stack_size_set = true;
+}
+
 Vector2 ui_stack_buttons_end(void) {
   assert(stack_is_inited);
   stack_is_inited = false;
@@ -90,6 +98,10 @@ Vector2 ui_stack_buttons_end(void) {
     }
     *stack_scroll_position = minf((float)stack_count - 3.f , *stack_scroll_position);
     *stack_scroll_position = maxf(0.f, *stack_scroll_position);
+  }
+  if (stack_size_set) {
+    bb.max.x = bb.min.x + stack_size.x;
+    bb.max.y = bb.min.y + stack_size.y;
   }
   DrawBoundingBox(bb, RAYWHITE);
   return (Vector2) { stack_pos.x, stack_pos.y + stack_offset };

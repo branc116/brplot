@@ -21,6 +21,7 @@ static void draw_left_panel(graph_values_t* gv);
 static void draw_grid_values(graph_values_t* gv);
 static void graph_update_context(graph_values_t* gv);
 static void graph_draw_grid(Shader shader, Rectangle screen_rect);
+static void graph_on_save(void* arg, bool saved);
 
 void graph_init(graph_values_t* gv, float width, float height) {
   *gv = (graph_values_t){
@@ -44,6 +45,7 @@ void graph_init(graph_values_t* gv, float width, float height) {
     .quads_mesh = NULL,
     .follow = false,
     .shaders_dirty = false,
+    .fs = NULL,
     .commands = {0}
   };
   for (int i = 0; i < 3; ++i) {
@@ -169,7 +171,10 @@ static void update_variables(graph_values_t* gv) {
     if (IsKeyDown(KEY_J)) context.recoil -= 0.001f;
     if (IsKeyDown(KEY_K)) context.recoil += 0.001f;
     if (IsKeyPressed(KEY_S)) {
-      graph_screenshot(gv, "test.png");
+      gv->state = plotter_state_saving_file;
+      gv->fs = file_saver_malloc("/home", "png", "test", 35.f, &graph_on_save);
+      return;
+      //graph_screenshot(gv, "test.png");
     }
     if (gv->jump_around) {
       gv->graph_rect.x += 100.f * (float)sin(GetTime());
@@ -390,5 +395,14 @@ static void update_resolution(graph_values_t* gv) {
   gv->graph_rect.y = 25.f;
   gv->graph_rect.width = w;
   gv->graph_rect.height = h;
+}
+
+static void graph_on_save(void* arg, bool saved) {
+  graph_values_t* gv = (graph_values_t*)arg;
+  gv->state = plotter_state_default;
+  if (saved) {
+    graph_screenshot(gv, file_saver_get_full_path(gv->fs));
+  }
+  file_saver_free(gv->fs);
 }
 

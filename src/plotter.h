@@ -131,7 +131,28 @@ typedef struct {
   points_group_t* arr;
 } points_groups_t;
 
+#define CWD_MAX_SIZE 4096
+#define FILE_EXTENSION_MAX_SIZE 16
+#define CUR_NAME_MAX_SIZE 4096
+
+typedef struct file_saver_s {
+  Rectangle rect;
+  char* cwd;
+  char* file_extension;
+  char* cur_name;
+  void (*callback)(void* fs, bool success);
+  float font_size;
+  float scroll_position;
+  FilePathList paths;
+} file_saver_t;
+
+typedef enum {
+  plotter_state_default,
+  plotter_state_saving_file
+} plotter_state_t;
+
 typedef struct {
+  plotter_state_t state;
   union {
     Shader shaders[3];
     struct {
@@ -144,6 +165,8 @@ typedef struct {
   Vector2 uvZoom, uvOffset, uvScreen, uvDelta;
   smol_mesh_t* lines_mesh;
   smol_mesh_t* quads_mesh;
+  
+  file_saver_t* fs;
 
   // Only render thread can read or write to this array.
   points_groups_t groups;
@@ -157,7 +180,7 @@ typedef struct {
   bool shaders_dirty;
   bool follow;
   bool jump_around;
-
+  bool file_saver_inited;
 } graph_values_t;
 
 typedef struct {
@@ -174,6 +197,10 @@ typedef struct {
 
 extern context_t context;
 
+file_saver_t* file_saver_malloc(const char* cwd, const char* file_exension, const char* default_filename, float font_size, void (*callback)(void*, bool));
+void file_saver_free(file_saver_t* fe);
+void file_saver_draw(file_saver_t* fe);
+char const* file_saver_get_full_path(file_saver_t* fe);
 
 smol_mesh_t* smol_mesh_malloc(size_t capacity, Shader s);
 void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 mid_point, Vector2 tangent, Color color);
@@ -201,11 +228,10 @@ void points_groups_export(points_groups_t const* pg_array, FILE* file);
 void points_groups_export_csv(points_groups_t const* pg_array, FILE* file);
 
 resampling_t* resampling_malloc(void);
-void resampling_free(resampling_t* res);
-size_t resampling_draw(resampling_t* res, points_group_t const* pg, Rectangle screen, smol_mesh_t* lines_mesh, smol_mesh_t* quad_mesh);
-void resampling_add_point(resampling_t* res, points_group_t const* pg, size_t index);
+void          resampling_free(resampling_t* res);
+size_t        resampling_draw(resampling_t* res, points_group_t const* pg, Rectangle screen, smol_mesh_t* lines_mesh, smol_mesh_t* quad_mesh);
+void          resampling_add_point(resampling_t* res, points_group_t const* pg, size_t index);
 
-extern Vector2 graph_mouse_position;
 void graph_init(graph_values_t* gv, float width, float height);
 void graph_screenshot(graph_values_t* gv, char const * path);
 void graph_export(graph_values_t* gv, char const * path);
@@ -231,16 +257,17 @@ bool q_push_safe(q_commands *q, q_command command);
 bool q_push(q_commands* q, q_command command);
 q_command q_pop(q_commands* q);
 
-int ui_draw_button(bool* is_pressed, float x, float y, float font_size, const char* str, ...);
-void ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size);
-int ui_stack_buttons_add(bool* is_pressed, const char* str, ...);
+int     ui_draw_button(bool* is_pressed, float x, float y, float font_size, const char* str, ...);
+void    ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size);
+void    ui_stack_set_size(Vector2 v);
+int     ui_stack_buttons_add(bool* is_pressed, const char* str, ...);
 Vector2 ui_stack_buttons_end(void);
 
-void help_trim_zeros(char * buff);
-void help_draw_text(const char *text, Vector2 pos, float fontSize, Color color);
+void    help_trim_zeros(char * buff);
+void    help_draw_text(const char *text, Vector2 pos, float fontSize, Color color);
 Vector2 help_measure_text(const char* txt, float font_size);
-void help_draw_fps(int posX, int posY);
-void help_load_default_font(void);
+void    help_draw_fps(int posX, int posY);
+void    help_load_default_font(void);
 
 static inline float maxf(float a, float b) {
   return a > b ? a : b;

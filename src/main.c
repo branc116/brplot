@@ -18,7 +18,8 @@ int main_gui(graph_values_t* gv) {
   while(!WindowShouldClose()) {
     BeginDrawing();
       ClearBackground(BLACK);
-      graph_draw(gv);
+      if (gv->state == plotter_state_default) graph_draw(gv);
+      else if (gv->state == plotter_state_saving_file) file_saver_draw(gv->fs);
     EndDrawing();
   }
   return 0;
