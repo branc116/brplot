@@ -279,11 +279,11 @@ static inline int maxi32(int a, int b) {
   return a > b ? a : b;
 }
 
-static inline unsigned int minui32(unsigned int a, unsigned int b) {
+static inline size_t minui64(size_t a, size_t b) {
   return a < b ? a : b;
 }
 
-static inline unsigned int maxui32(unsigned int a, unsigned int b) {
+static inline size_t maxui64(size_t a, size_t b) {
   return a > b ? a : b;
 }
 

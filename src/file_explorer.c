@@ -29,6 +29,7 @@ file_saver_t* file_saver_malloc(const char* cwd, const char* file_exension, cons
 }
 
 void file_saver_free(file_saver_t* fe) {
+  UnloadDirectoryFiles(fe->paths);
   free(fe);
 }
 
@@ -74,7 +75,7 @@ static void file_saver_filter_directories(FilePathList* list) {
       --list->capacity;
     } else ++i;
   }
-  qsort(list->paths, list->count, sizeof(list->paths), strcmp);
+  qsort(list->paths, list->count, sizeof(list->paths), (int (*)(const void*, const void*))strcmp);
 }
 
 static void file_saver_change_cwd_index(file_saver_t* fs, size_t i) {
@@ -125,6 +126,6 @@ static void file_saver_handle_input(file_saver_t* fs) {
     fs->selected_index = fs->selected_index == 0 ? 0 : fs->selected_index - 1;
   }
   if (IsKeyPressed(KEY_DOWN)) {
-    fs->selected_index = minui32(fs->paths.count, fs->selected_index + 1);
+    fs->selected_index = minui64(fs->paths.count, fs->selected_index + 1);
   }
 }

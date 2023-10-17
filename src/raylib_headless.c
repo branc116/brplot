@@ -315,3 +315,10 @@ FilePathList LoadDirectoryFiles(const char *dirPath) {
 
 void UnloadDirectoryFiles(FilePathList files) {
 }
+
+bool DirectoryExists(const char *dirPath) {
+  return true;
+}
+
+void SetExitKey(int key) {
+}

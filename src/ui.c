@@ -6,9 +6,9 @@
 #include <raymath.h>
 #include <stdarg.h>
 
-int ui_draw_text_box(bool focused, float x, float y, float font_size, Vector2* size_out, char* str) {
-  return 0;
-}
+//int ui_draw_text_box(bool focused, float x, float y, float font_size, Vector2* size_out, char* str) {
+//  return 0;
+//}
 
 static int ui_draw_button_va(bool* is_pressed, float x, float y, float font_size, Vector2* size_out, const char* str, va_list va) {
   int c = 0;
@@ -65,6 +65,7 @@ void ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size)
   stack_count = 0;
   stack_maxsize = (Vector2){0};
   stack_size_set = false;
+  stack_size = (Vector2){0};
 }
 
 int ui_stack_buttons_add(bool* is_pressed, char const* str, ...) {
@@ -72,7 +73,7 @@ int ui_stack_buttons_add(bool* is_pressed, char const* str, ...) {
   Vector2 s = stack_button_size;
   ++stack_count;
   if (stack_size_set) {
-    if (stack_offset + s.y > stack_maxsize.y) return 0;
+    if (stack_offset + s.y > stack_size.y) return 0;
   }
   if (stack_offset >= 0) {
     va_list args;
@@ -89,7 +90,7 @@ int ui_stack_buttons_add(bool* is_pressed, char const* str, ...) {
 }
 
 void ui_stack_set_size(Vector2 v) {
-  stack_maxsize = v; 
+  stack_size = v; 
   stack_size_set = true;
 }
 
@@ -99,8 +100,8 @@ Vector2 ui_stack_buttons_end(void) {
   if (stack_count == 0) return stack_pos;
   BoundingBox bb = {.min = {stack_pos.x, stack_pos.y, 0.f}, .max = { stack_pos.x + stack_maxsize.x, stack_pos.y + stack_maxsize.y + stack_offset - stack_button_size.y } };
   if (stack_size_set) {
-    bb.max.x = bb.min.x + stack_maxsize.x;
-    bb.max.y = bb.min.y + stack_maxsize.y;
+    bb.max.x = bb.min.x + stack_size.x;
+    bb.max.y = bb.min.y + stack_size.y;
   }
   if (stack_scroll_position != NULL) {
     if (CheckCollisionPointRec(GetMousePosition(), (Rectangle) {.x = bb.min.x, .y = bb.min.y, .width = bb.max.x - bb.min.x, .height = bb.max.y - bb.min.y })) {
