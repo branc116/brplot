@@ -140,10 +140,12 @@ typedef struct file_saver_s {
   char* cwd;
   char* file_extension;
   char* cur_name;
-  void (*callback)(void* fs, bool success);
+  void (*callback)(void* arg, bool success);
+  void* arg;
   float font_size;
   float scroll_position;
   FilePathList paths;
+  size_t selected_index;
 } file_saver_t;
 
 typedef enum {
@@ -197,7 +199,7 @@ typedef struct {
 
 extern context_t context;
 
-file_saver_t* file_saver_malloc(const char* cwd, const char* file_exension, const char* default_filename, float font_size, void (*callback)(void*, bool));
+file_saver_t* file_saver_malloc(const char* cwd, const char* file_exension, const char* default_filename, float font_size, void (*callback)(void*, bool), void* arg);
 void file_saver_free(file_saver_t* fe);
 void file_saver_draw(file_saver_t* fe);
 char const* file_saver_get_full_path(file_saver_t* fe);
@@ -274,6 +276,14 @@ static inline float maxf(float a, float b) {
 }
 
 static inline int maxi32(int a, int b) {
+  return a > b ? a : b;
+}
+
+static inline unsigned int minui32(unsigned int a, unsigned int b) {
+  return a < b ? a : b;
+}
+
+static inline unsigned int maxui32(unsigned int a, unsigned int b) {
   return a > b ? a : b;
 }
 

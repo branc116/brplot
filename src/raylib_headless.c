@@ -308,3 +308,10 @@ bool ExportImage(Image image, const char *fileName) {
   printf("ExportImage: fileName=%s", fileName);
   return true;
 }
+
+FilePathList LoadDirectoryFiles(const char *dirPath) {
+  return (FilePathList){0};
+}
+
+void UnloadDirectoryFiles(FilePathList files) {
+}

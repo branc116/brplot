@@ -46,6 +46,7 @@ int main(void) {
   start_refreshing_shaders(gv);
 #endif
   read_input_main(gv);
+  SetExitKey(KEY_NULL);
   main_gui(gv);
 
   // Clean up
