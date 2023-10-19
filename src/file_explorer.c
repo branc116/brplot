@@ -2,6 +2,7 @@
 #include <raylib.h>
 #include <string.h>
 #include <stdlib.h>
+#include "tests.h"
 
 static float padding = 4.f;
 
@@ -9,7 +10,7 @@ static void file_saver_change_cwd_index(file_saver_t* fs, size_t i);
 static void file_saver_change_cwd_up(file_saver_t* fs);
 static void file_saver_handle_input(file_saver_t* fs);
 
-file_saver_t* file_saver_malloc(const char* cwd, const char* file_exension, const char* default_filename, float font_size, void (*callback)(void*, bool), void* arg) {
+file_saver_t* file_saver_malloc(const char* cwd, const char* default_filename, const char* file_exension, float font_size, void (*callback)(void*, bool), void* arg) {
   size_t full_size = sizeof(file_saver_t) + CWD_MAX_SIZE + FILE_EXTENSION_MAX_SIZE + CUR_NAME_MAX_SIZE;
   file_saver_t* fe = (file_saver_t*)malloc(full_size);
   memset(fe, 0, full_size);
@@ -60,8 +61,20 @@ void file_saver_draw(file_saver_t* fe) {
 }
 
 char const* file_saver_get_full_path(file_saver_t* fs) {
-  (void)fs;
-  return "TODO.png";
+  static char path[CWD_MAX_SIZE];
+  int index = 0;
+  int len_cwd = strlen(fs->cwd), len_name = strlen(fs->cur_name), len_ext = strlen(fs->file_extension);
+  memcpy(path, fs->cwd, len_cwd), index += len_cwd;
+  if (path[index - 1] != '/') path[index++] = '/';
+  memcpy(&path[index], fs->cur_name, len_name), index += len_name;
+  for (int i = index - 1, j = len_ext - 1; i >= 0 && j >= 0; --i, --j) {
+    if (fs->file_extension[j] != path[i]) {
+      memcpy(&path[index], fs->file_extension, len_ext), index += len_ext;
+      break;
+    }
+  }
+  path[index] = (char)0;
+  return path;
 }
 
 static void file_saver_filter_directories(FilePathList* list) {
@@ -128,4 +141,16 @@ static void file_saver_handle_input(file_saver_t* fs) {
   if (IsKeyPressed(KEY_DOWN)) {
     fs->selected_index = minui64(fs->paths.count, fs->selected_index + 1);
   }
+}
+
+TEST_CASE(FullNameTest) {
+  file_saver_t* fs = file_saver_malloc("/home", "test", ".png", 1.f, NULL, NULL);
+  TEST_STREQUAL(file_saver_get_full_path(fs), "/home/test.png");
+  file_saver_free(fs);
+  fs = file_saver_malloc("/home/", "test.png", ".png", 1.f, NULL, NULL);
+  TEST_STREQUAL(file_saver_get_full_path(fs), "/home/test.png");
+  file_saver_free(fs);
+  fs = file_saver_malloc("/home/", "test.pn", ".png", 1.f, NULL, NULL);
+  TEST_STREQUAL(file_saver_get_full_path(fs), "/home/test.pn.png");
+  file_saver_free(fs);
 }

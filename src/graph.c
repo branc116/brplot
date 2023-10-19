@@ -172,7 +172,7 @@ static void update_variables(graph_values_t* gv) {
     if (IsKeyDown(KEY_K)) context.recoil += 0.001f;
     if (IsKeyPressed(KEY_S)) {
       gv->state = plotter_state_saving_file;
-      gv->fs = file_saver_malloc("/home", "png", "test", 35.f, &graph_on_save, gv);
+      gv->fs = file_saver_malloc("/home", "test", ".png", 35.f, &graph_on_save, gv);
       return;
       //graph_screenshot(gv, "test.png");
     }

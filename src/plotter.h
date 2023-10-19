@@ -199,7 +199,7 @@ typedef struct {
 
 extern context_t context;
 
-file_saver_t* file_saver_malloc(const char* cwd, const char* file_exension, const char* default_filename, float font_size, void (*callback)(void*, bool), void* arg);
+file_saver_t* file_saver_malloc(const char* cwd, const char* default_filename, const char* file_exension, float font_size, void (*callback)(void*, bool), void* arg);
 void file_saver_free(file_saver_t* fe);
 void file_saver_draw(file_saver_t* fe);
 char const* file_saver_get_full_path(file_saver_t* fe);
