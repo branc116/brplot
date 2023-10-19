@@ -62,13 +62,13 @@ void file_saver_draw(file_saver_t* fe) {
 
 char const* file_saver_get_full_path(file_saver_t* fs) {
   static char path[CWD_MAX_SIZE];
-  int index = 0;
-  int len_cwd = strlen(fs->cwd), len_name = strlen(fs->cur_name), len_ext = strlen(fs->file_extension);
+  size_t index = 0;
+  size_t len_cwd = strlen(fs->cwd), len_name = strlen(fs->cur_name), len_ext = strlen(fs->file_extension);
   memcpy(path, fs->cwd, len_cwd), index += len_cwd;
   if (path[index - 1] != '/') path[index++] = '/';
   memcpy(&path[index], fs->cur_name, len_name), index += len_name;
-  for (int i = index - 1, j = len_ext - 1; i >= 0 && j >= 0; --i, --j) {
-    if (fs->file_extension[j] != path[i]) {
+  for (size_t i = index, j = len_ext; i > 0 && j > 0; --i, --j) {
+    if (fs->file_extension[j - 1] != path[i - 1]) {
       memcpy(&path[index], fs->file_extension, len_ext), index += len_ext;
       break;
     }
@@ -152,5 +152,11 @@ TEST_CASE(FullNameTest) {
   file_saver_free(fs);
   fs = file_saver_malloc("/home/", "test.pn", ".png", 1.f, NULL, NULL);
   TEST_STREQUAL(file_saver_get_full_path(fs), "/home/test.pn.png");
+  file_saver_free(fs);
+  fs = file_saver_malloc("/home/", ".png", ".png", 1.f, NULL, NULL);
+  TEST_STREQUAL(file_saver_get_full_path(fs), "/home/.png");
+  file_saver_free(fs);
+  fs = file_saver_malloc("/home/", ".png", "", 1.f, NULL, NULL);
+  TEST_STREQUAL(file_saver_get_full_path(fs), "/home/.png");
   file_saver_free(fs);
 }
