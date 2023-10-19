@@ -10,7 +10,6 @@
 
 #include "raylib.h"
 #include "rlgl.h"
-#include "shaders_dbg.h"
 
 #ifndef RELEASE
 static void refresh_shaders_if_dirty(graph_values_t* gv);
@@ -388,10 +387,10 @@ static void graph_on_save(void* arg, bool saved) {
 static rlplot_shader_t graph_load_shader(char const* vs, char const* fs) {
   Shader s = LoadShaderFromMemory(vs, fs);
   return (rlplot_shader_t) {
-    .uResolution = GetShaderLocation(gv->shaders[i], "resolution"),
-    .uZoom = GetShaderLocation(gv->shaders[i], "zoom"),
-    .uOffset = GetShaderLocation(gv->shaders[i], "offset"),
-    .uScreen = GetShaderLocation(gv->shaders[i], "screen"),
+    .uResolution = GetShaderLocation(s, "resolution"),
+    .uZoom = GetShaderLocation(s, "zoom"),
+    .uOffset = GetShaderLocation(s, "offset"),
+    .uScreen = GetShaderLocation(s, "screen"),
     .shader = s
   };
 }
