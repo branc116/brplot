@@ -17,6 +17,8 @@ extern "C" {
 #error "Shaders for this platform arn't defined"
 #endif
 
+#else
+#include "shaders_dbg.h"
 #endif
 
 // This is the size of buffer used to transfer points from cpu to gpu.
@@ -154,14 +156,25 @@ typedef enum {
 } plotter_state_t;
 
 typedef struct {
+  int uResolution;
+  int uZoom;
+  int uOffset;
+  int uScreen;
+  Shader shader;
+#ifndef RELEASE
+  const char* vs_file_name;
+  const char* fs_file_name;
+#endif
+} rlplot_shader_t;
+
+typedef struct {
   plotter_state_t state;
   union {
-    Shader shaders[3];
+    rlplot_shader_t shaders[3];
     struct {
-      Shader gridShader, linesShader, quadShader;
+      rlplot_shader_t gridShader, linesShader, quadShader;
     };
   };
-  int uResolution[3], uZoom[3], uOffset[3], uScreen[3];
 
   Rectangle graph_rect;
   Vector2 uvZoom, uvOffset, uvScreen, uvDelta;

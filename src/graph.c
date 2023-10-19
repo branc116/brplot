@@ -10,6 +10,7 @@
 
 #include "raylib.h"
 #include "rlgl.h"
+#include "shaders_dbg.h"
 
 #ifndef RELEASE
 static void refresh_shaders_if_dirty(graph_values_t* gv);
@@ -22,17 +23,14 @@ static void draw_grid_values(graph_values_t* gv);
 static void graph_update_context(graph_values_t* gv);
 static void graph_draw_grid(Shader shader, Rectangle screen_rect);
 static void graph_on_save(void* arg, bool saved);
+static rlplot_shader_t graph_load_shader(char const* vs, char const* fs);
 
 void graph_init(graph_values_t* gv, float width, float height) {
   *gv = (graph_values_t){
-#ifdef RELEASE
-    .gridShader = LoadShaderFromMemory(NULL, SHADER_GRID_FS),
-    .linesShader = LoadShaderFromMemory(SHADER_LINE_VS, SHADER_LINE_FS),
-    .quadShader = LoadShaderFromMemory(SHADER_QUAD_VS, SHADER_QUAD_FS),
-#else
-    .gridShader = LoadShader(NULL, "src/desktop/shaders/grid.fs"),
-    .linesShader = LoadShader("src/desktop/shaders/line.vs", "src/desktop/shaders/line.fs"),
-    .quadShader = LoadShader("src/desktop/shaders/quad.vs", "src/desktop/shaders/quad.fs"),
+    .gridShader = graph_load_shader(NULL, SHADER_GRID_FS),
+    .linesShader = graph_load_shader(SHADER_LINE_VS, SHADER_LINE_FS),
+    .quadShader = graph_load_shader(SHADER_QUAD_VS, SHADER_QUAD_FS),
+#ifndef RELEASE
     .getchar = getchar,
 #endif
     .uvOffset = { 0., 0. },
@@ -48,14 +46,8 @@ void graph_init(graph_values_t* gv, float width, float height) {
     .fs = NULL,
     .commands = {0}
   };
-  for (int i = 0; i < 3; ++i) {
-    gv->uResolution[i] = GetShaderLocation(gv->shaders[i], "resolution");
-    gv->uZoom[i] = GetShaderLocation(gv->shaders[i], "zoom");
-    gv->uOffset[i] = GetShaderLocation(gv->shaders[i], "offset");
-    gv->uScreen[i] = GetShaderLocation(gv->shaders[i], "screen");
-  }
-  gv->lines_mesh = smol_mesh_malloc(PTOM_COUNT, gv->linesShader);
-  gv->quads_mesh = smol_mesh_malloc(PTOM_COUNT, gv->quadShader);
+  gv->lines_mesh = smol_mesh_malloc(PTOM_COUNT, gv->linesShader.shader);
+  gv->quads_mesh = smol_mesh_malloc(PTOM_COUNT, gv->quadShader.shader);
   q_init(&gv->commands);
   help_load_default_font();
 
@@ -66,8 +58,8 @@ void graph_init(graph_values_t* gv, float width, float height) {
 }
 
 void graph_free(graph_values_t* gv) {
-  for (size_t i = 0; i < sizeof(gv->shaders) / sizeof(Shader); ++i) {
-    UnloadShader(gv->shaders[i]);
+  for (size_t i = 0; i < sizeof(gv->shaders) / sizeof(rlplot_shader_t); ++i) {
+    UnloadShader(gv->shaders[i].shader);
   }
   smol_mesh_free(gv->lines_mesh);
   smol_mesh_free(gv->quads_mesh);
@@ -78,15 +70,15 @@ void graph_free(graph_values_t* gv) {
 }
 
 static void update_shader_values(graph_values_t* gv) {
-  for (int i = 0; i < 3; ++i) {
-    SetShaderValue(gv->shaders[i], gv->uResolution[i], &gv->graph_rect, SHADER_UNIFORM_VEC4);
-    SetShaderValue(gv->shaders[i], gv->uZoom[i], &gv->uvZoom, SHADER_UNIFORM_VEC2);
-    SetShaderValue(gv->shaders[i], gv->uOffset[i], &gv->uvOffset, SHADER_UNIFORM_VEC2);
-    SetShaderValue(gv->shaders[i], gv->uScreen[i], &gv->uvScreen, SHADER_UNIFORM_VEC2);
+  for (size_t i = 0; i < sizeof(gv->shaders) / sizeof(rlplot_shader_t); ++i) {
+    SetShaderValue(gv->shaders[i].shader, gv->shaders[i].uResolution, &gv->graph_rect, SHADER_UNIFORM_VEC4);
+    SetShaderValue(gv->shaders[i].shader, gv->shaders[i].uZoom, &gv->uvZoom, SHADER_UNIFORM_VEC2);
+    SetShaderValue(gv->shaders[i].shader, gv->shaders[i].uOffset, &gv->uvOffset, SHADER_UNIFORM_VEC2);
+    SetShaderValue(gv->shaders[i].shader, gv->shaders[i].uScreen, &gv->uvScreen, SHADER_UNIFORM_VEC2);
   }
   // Todo: don't assign this every frame, no need for it. Assign it only when shaders are recompiled.
-  gv->lines_mesh->active_shader = gv->linesShader;
-  gv->quads_mesh->active_shader = gv->quadShader;
+  gv->lines_mesh->active_shader = gv->linesShader.shader;
+  gv->quads_mesh->active_shader = gv->quadShader.shader;
 }
 
 static void update_variables(graph_values_t* gv) {
@@ -209,7 +201,7 @@ void graph_draw(graph_values_t* gv) {
   help_draw_fps(0, 0);
   draw_left_panel(gv);
   draw_grid_values(gv);
-  graph_draw_grid(gv->gridShader, gv->graph_rect);
+  graph_draw_grid(gv->gridShader.shader, gv->graph_rect);
   points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, context.graph_rect);
 }
 
@@ -232,7 +224,7 @@ void graph_screenshot(graph_values_t* gv, char const * path) {
   gv->uvScreen = (Vector2){is.x, is.y};
   update_shader_values(gv);
   BeginTextureMode(target);
-    graph_draw_grid(gv->gridShader, gv->graph_rect);
+    graph_draw_grid(gv->gridShader.shader, gv->graph_rect);
     points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, context.graph_rect);
     draw_grid_values(gv);
   EndTextureMode();
@@ -278,26 +270,12 @@ static void graph_update_context(graph_values_t* gv) {
 static void refresh_shaders_if_dirty(graph_values_t* gv) {
   if (gv->shaders_dirty) {
     gv->shaders_dirty = false;
-    Shader new_line = LoadShader("./src/desktop/shaders/line.vs", "./src/desktop/shaders/line.fs");
-    if (new_line.locs != NULL) {
-      UnloadShader(gv->linesShader);
-      gv->linesShader = new_line;
-    }
-    Shader new_grid = LoadShader(NULL, "./src/desktop/shaders/grid.fs");
-    if (new_grid.locs != NULL) {
-      UnloadShader(gv->gridShader);
-      gv->gridShader = new_grid;
-    }
-    Shader new_quad = LoadShader("./src/desktop/shaders/quad.vs", "./src/desktop/shaders/quad.fs");
-    if (new_quad.locs != NULL) {
-      UnloadShader(gv->quadShader);
-      gv->quadShader = new_quad;
-    }
-    for (int i = 0; i < 3; ++i) {
-      gv->uResolution[i] = GetShaderLocation(gv->shaders[i], "resolution");
-      gv->uZoom[i] = GetShaderLocation(gv->shaders[i], "zoom");
-      gv->uOffset[i] = GetShaderLocation(gv->shaders[i], "offset");
-      gv->uScreen[i] = GetShaderLocation(gv->shaders[i], "screen");
+    for (size_t i = 0; i < sizeof(gv->shaders) / sizeof(rlplot_shader_t); ++i) {
+      rlplot_shader_t newS = graph_load_shader(gv->shaders[i].vs_file_name, gv->shaders[i].fs_file_name);
+      if (newS.shader.locs != NULL) {
+        UnloadShader(gv->shaders[i].shader);
+        gv->shaders[i] = newS;
+      }
     }
   }
 }
@@ -406,3 +384,28 @@ static void graph_on_save(void* arg, bool saved) {
   file_saver_free(gv->fs);
 }
 
+#ifdef RELEASE
+static rlplot_shader_t graph_load_shader(char const* vs, char const* fs) {
+  Shader s = LoadShaderFromMemory(vs, fs);
+  return (rlplot_shader_t) {
+    .uResolution = GetShaderLocation(gv->shaders[i], "resolution"),
+    .uZoom = GetShaderLocation(gv->shaders[i], "zoom"),
+    .uOffset = GetShaderLocation(gv->shaders[i], "offset"),
+    .uScreen = GetShaderLocation(gv->shaders[i], "screen"),
+    .shader = s
+  };
+}
+#else
+static rlplot_shader_t graph_load_shader(char const* vs, char const* fs) {
+  Shader s = LoadShader(vs, fs);
+  return (rlplot_shader_t) {
+    .uResolution = GetShaderLocation(s, "resolution"),
+    .uZoom = GetShaderLocation(s, "zoom"),
+    .uOffset = GetShaderLocation(s, "offset"),
+    .uScreen = GetShaderLocation(s, "screen"),
+    .shader = s,
+    .vs_file_name = vs,
+    .fs_file_name = fs
+  };
+}
+#endif
