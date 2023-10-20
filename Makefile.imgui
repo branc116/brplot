@@ -1,0 +1,31 @@
+RL= raylib/src
+RAYLIB_SOURCE= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
+RAYLIB_OBJS= $(patsubst %.c, build/%.o, $(RAYLIB_SOURCE))
+
+IMGUI_SOURCE= imgui/imgui.cpp imgui/imgui_demo.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp imgui/imgui_widgets.cpp imgui/backends/imgui_impl_glfw.cpp
+IMGUI_OBJS= $(patsubst %.cpp, build/%.opp, $(IMGUI_SOURCE))
+
+SOURCE= src/main_imgui.cpp
+OBJS= $(patsubst %.cpp, build/%.opp, $(IMGUI_SOURCE))
+
+
+COMMONFLAGS_DBG= -I$(RL) -Wconversion -Wall -Wpedantic -Wextra -g -DLINUX -DPLATFORM_DESKTOP -pg -fsanitize=address -fsanitize=leak \
+							-fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
+							-fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -DUNIT_TEST \
+							`pkg-config --cflags glfw3` -Iimgui
+LIBS= `pkg-config --static --libs glfw3`
+CXX= g++
+CC= gcc
+CXXFLAGS= $(COMMONFLAGS_DBG)
+CCFLAGS= $(COMMONFLAGS_DBG)
+
+
+bin/rlplot_imgui: $(IMGUI_OBJS) $(RAYLIB_OBJS) $(OBJS)
+	g++ $(COMMONFLAGS_DBG) $(LIBS) -o $@ $<
+
+build/%.opp:%.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+%.o:%.c
+	$(CC) $(CXXFLAGS) -c -o $@ $<
+
