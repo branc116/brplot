@@ -12,7 +12,7 @@
 #define WIDTH 1280
 #define HEIGHT 720
 
-context_t context;
+extern context_t context;
 
 int main_gui(graph_values_t* gv) {
   while(!WindowShouldClose()) {

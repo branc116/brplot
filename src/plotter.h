@@ -252,6 +252,7 @@ void graph_screenshot(graph_values_t* gv, char const * path);
 void graph_export(graph_values_t* gv, char const * path);
 void graph_free(graph_values_t* gv);
 void graph_draw(graph_values_t* gv);
+void graph_draw_min(graph_values_t* gv, float posx, float posy, float width, float height);
 
 #ifndef RELEASE
 // Start watching shaders folder for changes and

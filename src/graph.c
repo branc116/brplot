@@ -15,6 +15,8 @@
 static void refresh_shaders_if_dirty(graph_values_t* gv);
 #endif
 
+context_t context;
+
 void emscripten_run_script(const char* script);
 static void update_resolution(graph_values_t* gv);
 static void draw_left_panel(graph_values_t* gv);
@@ -199,6 +201,19 @@ void graph_draw(graph_values_t* gv) {
   update_variables(gv);
   help_draw_fps(0, 0);
   draw_left_panel(gv);
+  draw_grid_values(gv);
+  graph_draw_grid(gv->gridShader.shader, gv->graph_rect);
+  points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, context.graph_rect);
+}
+
+void graph_draw_min(graph_values_t* gv, float posx, float posy, float width, float height) {
+  gv->uvScreen.x = width - 50.f;
+  gv->uvScreen.y = height - 30.f;
+  gv->graph_rect.x = 50.f + posx;
+  gv->graph_rect.y = posy;
+  gv->graph_rect.width = width - 50.f;
+  gv->graph_rect.height = height - 30.f;
+  update_variables(gv);
   draw_grid_values(gv);
   graph_draw_grid(gv->gridShader.shader, gv->graph_rect);
   points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, context.graph_rect);
