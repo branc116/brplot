@@ -206,17 +206,20 @@ void graph_draw(graph_values_t* gv) {
   points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, context.graph_rect);
 }
 
-void graph_draw_min(graph_values_t* gv, float posx, float posy, float width, float height) {
-  gv->uvScreen.x = width - 50.f;
-  gv->uvScreen.y = height - 30.f;
-  gv->graph_rect.x = 50.f + posx;
-  gv->graph_rect.y = posy;
-  gv->graph_rect.width = width - 50.f;
-  gv->graph_rect.height = height - 30.f;
+void graph_draw_min(graph_values_t* gv, float posx, float posy, float width, float height, float padding) {
+  gv->uvScreen.x = (float)GetScreenWidth();
+  gv->uvScreen.y = (float)GetScreenHeight();
+  gv->graph_rect.x = 50.f + posx + padding;
+  gv->graph_rect.y = posy + padding;
+  gv->graph_rect.width = width - 50.f - 2.f * padding;
+  gv->graph_rect.height = height - 30.f - 2.f * padding;
   update_variables(gv);
-  draw_grid_values(gv);
-  graph_draw_grid(gv->gridShader.shader, gv->graph_rect);
-  points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, context.graph_rect);
+  BeginScissorMode(posx, posy, width, height);
+    DrawRectangle(posx, posy, width, height, BLACK);
+    draw_grid_values(gv);
+    graph_draw_grid(gv->gridShader.shader, gv->graph_rect);
+    points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, context.graph_rect);
+  EndScissorMode();
 }
 
 static void graph_draw_grid(Shader shader, Rectangle screen_rect) {

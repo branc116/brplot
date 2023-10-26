@@ -80,7 +80,6 @@ pub fn addRlPlot(b: *std.build.Builder, opt: std.builtin.OptimizeMode, target: s
     rlplot.linkLibC();
     rlplot.addIncludePath(.{ .path = "raylib/src" });
     rlplot.addCSourceFiles(&.{ "src/graph.c", "src/main.c", "src/points_group.c", "src/read_input.c", "src/smol_mesh.c", "src/q.c", "src/resampling.c", "src/ui.c", "src/help.c", "src/file_explorer.c" }, rlplot_flags);
-    rlplot.addObjectFile(.{ .path = "src/print_stacktrace.zig" });
     if (opt != .Debug) {
         try genShaderhFile();
         rlplot.defineCMacro("RELEASE", null);

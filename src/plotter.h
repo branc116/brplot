@@ -207,7 +207,6 @@ typedef struct {
   bool mouse_inside_graph;
   bool debug_bounds;
   char buff[128];
-
 } context_t;
 
 extern context_t context;
@@ -252,13 +251,12 @@ void graph_screenshot(graph_values_t* gv, char const * path);
 void graph_export(graph_values_t* gv, char const * path);
 void graph_free(graph_values_t* gv);
 void graph_draw(graph_values_t* gv);
-void graph_draw_min(graph_values_t* gv, float posx, float posy, float width, float height);
+void graph_draw_min(graph_values_t* gv, float posx, float posy, float width, float height, float padding);
 
 #ifndef RELEASE
 // Start watching shaders folder for changes and
 // mark gv->shader_dirty flag to true if there were any change to shaders.
 void start_refreshing_shaders(graph_values_t* gv);
-void zig_print_stacktrace(void);
 #endif
 
 void read_input_main(graph_values_t* ptr);

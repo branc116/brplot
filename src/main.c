@@ -25,15 +25,7 @@ int main_gui(graph_values_t* gv) {
   return 0;
 }
 
-#ifdef ZIG
-int _main(void) {
-#else
-void zig_print_stacktrace(void) { exit(-1); }
 int main(void) {
-#endif
-  context = (context_t) {
-    .debug_bounds = false
-  };
 #ifdef RELEASE
   SetTraceLogLevel(LOG_ERROR);
 #endif

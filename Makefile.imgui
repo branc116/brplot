@@ -6,15 +6,15 @@ IMGUI_SOURCE= imgui/imgui.cpp imgui/imgui_demo.cpp imgui/imgui_draw.cpp imgui/im
 IMGUI_OBJS= $(patsubst %.cpp, build/%.opp, $(IMGUI_SOURCE))
 
 SOURCE= src/main_imgui.cpp
-SOURCE_C= src/graph.c src/ui.c src/help.c src/file_explorer.c src/points_group.c src/resampling.c src/smol_mesh.c src/q.c
+SOURCE_C= src/graph.c src/ui.c src/help.c src/file_explorer.c src/points_group.c src/resampling.c src/smol_mesh.c src/q.c src/desktop/linux/read_input.c src/desktop/linux/refresh_shaders.c src/read_input.c
 OBJS= $(patsubst %.cpp, build/%.o, $(SOURCE))
-OBJS_C= $(patsubst %.c, build/c/%.o, $(SOURCE_C))
+OBJS_C= $(patsubst %.c, build/%.o, $(SOURCE_C))
 
 
 COMMONFLAGS_DBG= -I$(RL) -Wconversion -Wall -Wpedantic -Wextra -g -DLINUX -DPLATFORM_DESKTOP -pg -fsanitize=address -fsanitize=leak \
 							-fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
 							-fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -DUNIT_TEST \
-							`pkg-config --cflags glfw3` -Iimgui -Iimgui/backends
+							-I./imgui -I./imgui/backends
 LIBS= `pkg-config --static --libs glfw3` -lGL
 CXX= g++
 CC= gcc
@@ -28,6 +28,6 @@ bin/rlplot_imgui: $(IMGUI_OBJS) $(RAYLIB_OBJS) $(OBJS) $(OBJS_C)
 build/%.o:%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/c/%.o:%.c
+build/%.o:%.c
 	$(CC) $(CXXFLAGS) -c -o $@ $<
 

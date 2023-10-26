@@ -35,7 +35,6 @@ static void int_handle(int sig, siginfo_t* si, void* p) {
 #ifndef RELEASE
 static void int_handle2(int sig, siginfo_t* si, void* p) {
   (void)(sig); (void)si; (void)p;
-  zig_print_stacktrace();
 }
 
 static void regirter_interupt2(void) {
