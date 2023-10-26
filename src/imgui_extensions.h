@@ -1,0 +1,3 @@
+namespace ImGui {
+  bool IsWindowHidden();
+}

@@ -1,33 +1,59 @@
 RL= raylib/src
-RAYLIB_SOURCE= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
-RAYLIB_OBJS= $(patsubst %.c, build/%.o, $(RAYLIB_SOURCE))
+CONFIG= DEBUG
+SOURCE= src/main_imgui.cpp src/graph.c src/ui.c src/help.c src/file_explorer.c \
+				src/points_group.c src/resampling.c src/smol_mesh.c src/q.c \
+				src/desktop/linux/read_input.c src/desktop/linux/refresh_shaders.c src/read_input.c \
+				src/imgui_extensions.cpp \
+				$(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c \
+				imgui/imgui.cpp imgui/imgui_demo.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp \
+				imgui/imgui_widgets.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp
 
-IMGUI_SOURCE= imgui/imgui.cpp imgui/imgui_demo.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp imgui/imgui_widgets.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp
-IMGUI_OBJS= $(patsubst %.cpp, build/%.opp, $(IMGUI_SOURCE))
-
-SOURCE= src/main_imgui.cpp
-SOURCE_C= src/graph.c src/ui.c src/help.c src/file_explorer.c src/points_group.c src/resampling.c src/smol_mesh.c src/q.c src/desktop/linux/read_input.c src/desktop/linux/refresh_shaders.c src/read_input.c
-OBJS= $(patsubst %.cpp, build/%.o, $(SOURCE))
-OBJS_C= $(patsubst %.c, build/%.o, $(SOURCE_C))
-
-
-COMMONFLAGS_DBG= -I$(RL) -Wconversion -Wall -Wpedantic -Wextra -g -DLINUX -DPLATFORM_DESKTOP -pg -fsanitize=address -fsanitize=leak \
-							-fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
-							-fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -DUNIT_TEST \
-							-I./imgui -I./imgui/backends
+COMMONFLAGS= -DLINUX -DPLATFORM_DESKTOP -I$(RL) -I./imgui -I./imgui/backends
+PREFIX_BUILD= build
+ifeq ($(CONFIG), DEBUG)
+	COMMONFLAGS+= -Wconversion -Wall -Wpedantic -Wextra -g -pg -fsanitize=address -fsanitize=leak \
+							  -fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
+							  -fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -DUNIT_TEST
+	PREFIX_BUILD= build/dbg
+endif
+ifeq ($(CONFIG), RELEASE)
+	COMMONFLAGS+= -Os -flto=auto -I./imgui -I./imgui/backends -I$(RL) -DRELEASE -DEXTERNAL_CONFIG_FLAGS=1 \
+		-DSUPPORT_MODULE_RSHAPES=1 \
+		-DSUPPORT_MODULE_RTEXTURES=1 \
+		-DSUPPORT_MODULE_RTEXT=1 \
+		-DSUPPORT_MODULE_RMODELS=1 \
+		-DMAX_FILEPATH_CAPACITY=64 \
+		-DRL_DEFAULT_BATCH_BUFFERS=1 \
+		-DRL_MAX_MATRIX_STACK_SIZE=2 \
+		-DSUPPORT_FILEFORMAT_FNT=1 \
+		-DSUPPORT_FILEFORMAT_TTF=1 \
+		-DMAX_MATERIAL_MAPS=0 \
+		-DSUPPORT_IMAGE_MANIPULATION=1 \
+		-DMAX_MESH_VERTEX_BUFFERS=7 \
+		-DSUPPORT_IMAGE_EXPORT=1 \
+		-DSUPPORT_FILEFORMAT_PNG=1 \
+		-DSUPPORT_STANDARD_FILEIO=1 \
+		-DSUPPORT_TRACELOG=1 \
+		-DIMGUI_DISABLE_DEMO_WINDOWS \
+		-DIMGUI_DISABLE_DEBUG_TOOLS
+endif
+OBJSA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE))
+OBJS= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
 LIBS= `pkg-config --static --libs glfw3` -lGL
 CXX= g++
 CC= gcc
-CXXFLAGS= $(COMMONFLAGS_DBG)
-CCFLAGS= $(COMMONFLAGS_DBG)
+CXXFLAGS= $(COMMONFLAGS)
+CCFLAGS= $(COMMONFLAGS)
 
+OBJSDIR= $(sort $(dir $(OBJS)))
+$(shell $(foreach var,$(OBJSDIR), test -d $(var) || mkdir -p $(var);))
 
-bin/rlplot_imgui: $(IMGUI_OBJS) $(RAYLIB_OBJS) $(OBJS) $(OBJS_C)
-	g++ $(COMMONFLAGS_DBG) $(LIBS) -o $@ $(IMGUI_OBJS) $(RAYLIB_OBJS) $(OBJS) $(OBJS_C)
+bin/rlplot_imgui: $(OBJS)
+	g++ $(COMMONFLAGS) $(LIBS) -o $@ $(OBJS)
 
-build/%.o:%.cpp
+$(PREFIX_BUILD)/%.o:%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/%.o:%.c
+$(PREFIX_BUILD)/%.o:%.c
 	$(CC) $(CXXFLAGS) -c -o $@ $<
 

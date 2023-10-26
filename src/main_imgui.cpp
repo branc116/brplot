@@ -1,8 +1,8 @@
 #include <iostream>
 #include "imgui.h"
-#include "imgui_internal.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
+#include "imgui_extensions.h"
 #include "raylib.h"
 #include "GLFW/glfw3.h"
 #include "plotter.h"
@@ -10,11 +10,12 @@
 extern context_t context;
 
 int main() {
+  int display_w = 1280, display_h = 720;
 #ifdef RELEASE
   SetTraceLogLevel(LOG_ERROR);
 #endif
   SetWindowState(FLAG_MSAA_4X_HINT);
-  InitWindow(1280, 720, "brplot");
+  InitWindow(display_w, display_h, "brplot");
   SetWindowState(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
   SetExitKey(KEY_NULL);
 
@@ -46,25 +47,25 @@ int main() {
     ImGui_ImplGlfw_NewFrame();
     ImGui_ImplOpenGL3_NewFrame();
     ImGui::NewFrame();
-    if (show_demo_window) {
-      ImGui::SetNextWindowBgAlpha(0.7f);
-      ImGui::ShowDemoWindow(&show_demo_window);
-    }
-
-    if (ImGui::Begin("Test") && false == ImGui::GetCurrentWindowRead()->Hidden) {
+    ImGui::DockSpaceOverViewport();
+    if (ImGui::Begin("Test")) {
       ImVec2 p = ImGui::GetWindowPos();
       ImVec2 size = ImGui::GetWindowSize();
       graph_draw_min(gv, p.x, p.y, size.x, size.y, padding);
     }
     ImGui::End();
-    if (ImGui::BeginChild("Settings")) {
-      ImGui::SliderFloat("Padding", &padding, 0.f, 100.f);
-
+#ifndef RELEASE
+    if (show_demo_window) {
+      ImGui::SetNextWindowBgAlpha(0.7f);
+      ImGui::ShowDemoWindow(&show_demo_window);
     }
-    ImGui::EndChild();
+#endif
+    if (ImGui::Begin("Settings")) {
+      ImGui::SliderFloat("Padding", &padding, 0.f, 100.f);
+    }
+    ImGui::End();
 
     ImGui::Render();
-    int display_w, display_h;
     glfwGetFramebufferSize(ctx, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
     glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
@@ -72,9 +73,14 @@ int main() {
     EndDrawing();
     glClear(GL_COLOR_BUFFER_BIT);
   }
+
+  //Cleanup
+  ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
+  ImGui::DestroyContext();
   CloseWindow();
+  read_input_stop();
   graph_free(gv);
   free(gv);
-  
   return 0;
 }
