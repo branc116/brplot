@@ -9,10 +9,12 @@
 
 extern context_t context;
 
+static char buff[128];
+
 int main() {
-  int display_w = 1280, display_h = 720;
+  int display_w = 1280/2, display_h = 720/2;
 #ifdef RELEASE
-  SetTraceLogLevel(LOG_ERROR);
+  SetTraceLogLevel(LOG_TRACE);
 #endif
   SetWindowState(FLAG_MSAA_4X_HINT);
   InitWindow(display_w, display_h, "brplot");
@@ -31,7 +33,12 @@ int main() {
   ImGuiIO& io = ImGui::GetIO();
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable;
   ImGui::StyleColorsDark();
+#ifdef PLATFORM_WEB
+  const char* glsl_version = "#version 100";
+  io.IniFilename = nullptr;
+#elif PLATFORM_DESKTOP 
   const char* glsl_version = "#version 330";
+#endif
   // Setup Platform/Renderer backends
   ImGui_ImplGlfw_InitForOpenGL(ctx, true);
   ImGui_ImplOpenGL3_Init(glsl_version);
@@ -40,7 +47,7 @@ int main() {
   ImVec4 clear_color = ImVec4(.0f, .0f, .0f, 1.00f);
   ImGuiStyle& s = ImGui::GetStyle();
   s.Colors[ImGuiCol_WindowBg].w = 0.f;
-  float padding = 10.f;
+  float padding = 50.f;
 
   while (false == WindowShouldClose()) {
     BeginDrawing();
@@ -48,18 +55,25 @@ int main() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui::NewFrame();
     ImGui::DockSpaceOverViewport();
-    if (ImGui::Begin("Test")) {
-      ImVec2 p = ImGui::GetWindowPos();
-      ImVec2 size = ImGui::GetWindowSize();
-      graph_draw_min(gv, p.x, p.y, size.x, size.y, padding);
-    }
-    ImGui::End();
+//    if (ImGui::Begin("Test")) {
+//      ImVec2 p = ImGui::GetWindowPos();
+//      ImVec2 size = ImGui::GetWindowSize();
+//      graph_draw_min(gv, p.x, p.y, size.x, size.y, padding);
+//    }
+//    ImGui::End();
 #ifndef RELEASE
     if (show_demo_window) {
       ImGui::SetNextWindowBgAlpha(0.7f);
       ImGui::ShowDemoWindow(&show_demo_window);
     }
 #endif
+    if (ImGui::Begin("List of Plots")) {
+      for (size_t i = 0; i < gv->groups.len; ++i) {
+        sprintf(buff, "Plot %lu", i);
+        ImGui::Checkbox(buff, &gv->groups.arr[i].is_selected);
+      }
+    }
+    ImGui::End();
     if (ImGui::Begin("Settings")) {
       ImGui::SliderFloat("Padding", &padding, 0.f, 100.f);
     }

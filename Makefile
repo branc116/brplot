@@ -78,8 +78,7 @@ www/index.wasm: $(SOURCE_WEB) src/plotter.h src/shaders_web.h
 	test -f $(EMSCRIPTEN)/emcc || test -f $(which emcc) || (echo "Set EMSCRIPTEN variable (to directory where emcc is located) if you want to build for web" && kill -1)
 	test -d www || mkdir www;
 	$(EMSCRIPTEN)/emcc --shell-file=src/web/minshell.html  $(CCFLAGS_WASM) -o www/index.html $(SOURCE_WEB) || \
-		emcc --shell-file=src/web/minshell.html  $(CCFLAGS_WASM) -o www/index.html $(SOURCE_WEB)
-
+		emcc --shell-file=src/web/minshell.html $(CCFLAGS_WASM) -o www/index.html $(SOURCE_WEB)
 
 src/shaders_web.h: src/web/shaders/grid.fs src/web/shaders/line.fs src/web/shaders/line.vs
 	# This will break if there are `"` characters in shaders

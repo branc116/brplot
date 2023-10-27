@@ -1,20 +1,39 @@
 RL= raylib/src
 CONFIG= DEBUG
+PLATFORM= LINUX
 SOURCE= src/main_imgui.cpp src/graph.c src/ui.c src/help.c src/file_explorer.c \
 				src/points_group.c src/resampling.c src/smol_mesh.c src/q.c \
-				src/desktop/linux/read_input.c src/desktop/linux/refresh_shaders.c src/read_input.c \
+				src/read_input.c \
 				src/imgui_extensions.cpp \
 				$(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c \
-				imgui/imgui.cpp imgui/imgui_demo.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp \
+				imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp \
 				imgui/imgui_widgets.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp
 
-COMMONFLAGS= -DLINUX -DPLATFORM_DESKTOP -I$(RL) -I./imgui -I./imgui/backends
+COMMONFLAGS= -I$(RL) -I./imgui -I./imgui/backends
 PREFIX_BUILD= build
+OUTPUT= bin/rlplot_imgui
+
+ifeq ($(PLATFORM), LINUX)
+	LIBS= `pkg-config --static --libs glfw3` -lGL
+	CXX= g++
+	CC= gcc
+	COMMONFLAGS+= -DLINUX -DPLATFORM_DESKTOP
+	CONFIG= RELEASE
+	SOURCE += src/desktop/linux/read_input.c
+endif
+ifeq ($(PLATFORM), WEB)
+	SOURCE+= src/web/read_input.c
+	CXX= em++
+	CC= emcc
+	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES2 -DPLATFORM_WEB --memory-init-file 1 --closure 1  -s "EXPORTED_RUNTIME_METHODS=['FS']" -s FORCE_FILESYSTEM -s WASM_BIGINT -s ENVIRONMENT=web -sALLOW_MEMORY_GROWTH -s USE_GLFW=3 -s ASYNCIFY --shell-file=src/web/minshell.html
+	CONFIG= RELEASE
+endif
 ifeq ($(CONFIG), DEBUG)
 	COMMONFLAGS+= -Wconversion -Wall -Wpedantic -Wextra -g -pg -fsanitize=address -fsanitize=leak \
 							  -fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
 							  -fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -DUNIT_TEST
 	PREFIX_BUILD= build/dbg
+	SOURCE+= imgui/imgui_demo.cpp src/desktop/linux/refresh_shaders.c
 endif
 ifeq ($(CONFIG), RELEASE)
 	COMMONFLAGS+= -Os -flto=auto -I./imgui -I./imgui/backends -I$(RL) -DRELEASE -DEXTERNAL_CONFIG_FLAGS=1 \
@@ -36,20 +55,22 @@ ifeq ($(CONFIG), RELEASE)
 		-DSUPPORT_TRACELOG=1 \
 		-DIMGUI_DISABLE_DEMO_WINDOWS \
 		-DIMGUI_DISABLE_DEBUG_TOOLS
+	OUTPUT= bin/brplot
+endif
+ifeq ($(PLATFORM), WEB)
+	PREFIX_BUILD= build/www
+	OUTPUT= www/index.html
 endif
 OBJSA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE))
 OBJS= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
-LIBS= `pkg-config --static --libs glfw3` -lGL
-CXX= g++
-CC= gcc
 CXXFLAGS= $(COMMONFLAGS)
 CCFLAGS= $(COMMONFLAGS)
 
 OBJSDIR= $(sort $(dir $(OBJS)))
 $(shell $(foreach var,$(OBJSDIR), test -d $(var) || mkdir -p $(var);))
 
-bin/rlplot_imgui: $(OBJS)
-	g++ $(COMMONFLAGS) $(LIBS) -o $@ $(OBJS)
+$(OUTPUT): $(OBJS)
+	$(CC) $(COMMONFLAGS) $(LIBS) -o $@ $(OBJS)
 
 $(PREFIX_BUILD)/%.o:%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
