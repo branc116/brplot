@@ -38,6 +38,11 @@ extern "C" {
 #define LOCK(x)
 #endif
 
+#define BR_MALLOC br_malloc
+#define BR_REALLOC br_realloc
+#define BR_FREE br_free
+#define BR_IMGUI_MALLOC br_imgui_malloc
+#define BR_IMGUI_FREE br_imgui_free
 
 typedef enum {
   q_command_none,
@@ -206,10 +211,17 @@ typedef struct {
   float recoil;
   bool mouse_inside_graph;
   bool debug_bounds;
+  size_t alloc_size, alloc_count, alloc_total_size, alloc_total_count, alloc_max_size, alloc_max_count, free_of_unknown_memory;
   char buff[128];
 } context_t;
 
 extern context_t context;
+
+void* br_malloc(size_t size);
+void* br_realloc(void *old, size_t newS);
+void br_free(void* p);
+void* br_imgui_malloc(size_t size, void* user_data);
+void br_imgui_free(void* p, void* user_data);
 
 file_saver_t* file_saver_malloc(const char* cwd, const char* default_filename, const char* file_exension, float font_size, void (*callback)(void*, bool), void* arg);
 void file_saver_free(file_saver_t* fe);

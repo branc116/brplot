@@ -87,7 +87,7 @@ void points_groups_deinit(points_groups_t* arr) {
     points_group_deinit(&arr->arr[i]);
   }
   arr->len = arr->cap = 0;
-  free(arr->arr);
+  BR_FREE(arr->arr);
   arr->arr = NULL;
 }
 
@@ -155,7 +155,7 @@ void points_groups_draw(points_groups_t const* pg, smol_mesh_t* line_mesh, smol_
 static points_group_t* points_group_init(points_group_t* g, int group_id) {
   *g = (points_group_t) { .cap = 1024, .len = 0, .group_id = group_id,
     .is_selected = true,
-    .points = malloc(sizeof(Vector2) * 1024),
+    .points = BR_MALLOC(sizeof(Vector2) * 1024),
     .resampling = resampling_malloc(),
     .color = color_get(group_id)
   };
@@ -187,7 +187,7 @@ points_group_t* points_group_get(points_groups_t* pg, int group) {
   assert(pg);
 
   if (pg->len == 0) {
-    pg->arr = malloc(sizeof(points_group_t));
+    pg->arr = BR_MALLOC(sizeof(points_group_t));
     pg->cap = 1;
     return points_group_init(&pg->arr[pg->len++], group);
   }
@@ -200,7 +200,7 @@ points_group_t* points_group_get(points_groups_t* pg, int group) {
 
   if (pg->len >= pg->cap) {
     pg->cap *= 2;
-    pg->arr = realloc(pg->arr, sizeof(points_group_t)*pg->cap);
+    pg->arr = BR_REALLOC(pg->arr, sizeof(points_group_t)*pg->cap);
     assert(pg->arr);
   }
   return points_group_init(&pg->arr[pg->len++], group);
@@ -217,14 +217,14 @@ static void points_group_push_point(points_group_t* g, Vector2 v) {
 
 static void points_group_deinit(points_group_t* g) {
   // Free points
-  free(g->points);
+  BR_FREE(g->points);
   resampling_free(g->resampling);
   g->points = NULL;
   g->len = g->cap = 0;
 }
 
 static bool points_group_realloc(points_group_t* pg, size_t new_cap) {
-  Vector2* new_arr = realloc(pg->points, new_cap * sizeof(Vector2));
+  Vector2* new_arr = BR_REALLOC(pg->points, new_cap * sizeof(Vector2));
   if (new_arr == NULL) {
     fprintf(stderr, "Out of memory. Can't add any more lines. Buy more RAM, or close Chrome");
     return false;

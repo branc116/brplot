@@ -14,12 +14,12 @@ static size_t smol_mesh_get_vb_size(smol_mesh_t* mesh);
 static void smol_mesh_upload(smol_mesh_t* mesh, bool dynamic);
 
 smol_mesh_t* smol_mesh_malloc(size_t capacity, Shader s) {
-  smol_mesh_t* ret = malloc(sizeof(smol_mesh_t));
+  smol_mesh_t* ret = BR_MALLOC(sizeof(smol_mesh_t));
   *ret = (smol_mesh_t){
     // Maybe join this 3 mallocs into 1 malloc
-    .verticies = malloc(3*capacity*3*2*sizeof(float)),
-    .normals = malloc(3*capacity*3*2*sizeof(float)),
-    .colors = malloc(3*capacity*3*2*sizeof(float)),
+    .verticies = BR_MALLOC(3*capacity*3*2*sizeof(float)),
+    .normals = BR_MALLOC(3*capacity*3*2*sizeof(float)),
+    .colors = BR_MALLOC(3*capacity*3*2*sizeof(float)),
     .capacity = capacity,
     .cur_len = 0,
     .active_shader = s
@@ -33,10 +33,10 @@ void smol_mesh_free(smol_mesh_t* mesh) {
   rlUnloadVertexBuffer(mesh->vboIdVertex);
   rlUnloadVertexBuffer(mesh->vboIdNormal);
   rlUnloadVertexBuffer(mesh->vboIdColor);
-  free(mesh->verticies);
-  free(mesh->normals);
-  free(mesh->colors);
-  free(mesh);
+  BR_FREE(mesh->verticies);
+  BR_FREE(mesh->normals);
+  BR_FREE(mesh->colors);
+  BR_FREE(mesh);
 }
 
 void smol_mesh_update(smol_mesh_t* mesh) {

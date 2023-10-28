@@ -365,6 +365,6 @@ TEST_CASE(InputTests) {
   c = q_pop(&gvt.commands);
   TEST_EQUAL(c.type, q_command_none);
 
-  free(gvt.commands.commands);
+  BR_FREE(gvt.commands.commands);
 }
 #endif

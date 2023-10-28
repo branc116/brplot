@@ -32,7 +32,7 @@ int main(void) {
   SetWindowState(FLAG_MSAA_4X_HINT);
   InitWindow(WIDTH, HEIGHT, "rlplot");
   SetWindowState(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
-  graph_values_t* gv = malloc(sizeof(graph_values_t));
+  graph_values_t* gv = BR_MALLOC(sizeof(graph_values_t));
   graph_init(gv, WIDTH, HEIGHT);
 #ifndef RELEASE
   start_refreshing_shaders(gv);
@@ -44,7 +44,7 @@ int main(void) {
   // Clean up
   read_input_stop();
   graph_free(gv);
-  free(gv);
+  BR_FREE(gv);
   CloseWindow();
   return 0;
 } 

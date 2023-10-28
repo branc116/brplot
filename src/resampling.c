@@ -21,19 +21,19 @@ static Rectangle help_bb_to_rect(bb_t bb);
 static void resampling_add_interval(resampling_t* res);
 
 resampling_t* resampling_malloc(void) {
-  resampling_t* ret = (resampling_t*)malloc(sizeof(resampling_t));
+  resampling_t* ret = (resampling_t*)BR_MALLOC(sizeof(resampling_t));
   ret->intervals = NULL;
   ret->intervals_cap = ret->intervals_count = 0;
-  ret->temp_points = malloc(temp_points_count * sizeof(Vector2));
+  ret->temp_points = BR_MALLOC(temp_points_count * sizeof(Vector2));
   return ret;
 }
 
 void resampling_free(resampling_t* res) {
   if (res->intervals) {
-    free(res->intervals);
+    BR_FREE(res->intervals);
   }
-  free(res->temp_points);
-  free(res);
+  BR_FREE(res->temp_points);
+  BR_FREE(res);
 }
 
 void find_closes_pair(Vector2 const a[2], Vector2 const b[2], Vector2 out[2]) {
@@ -168,7 +168,7 @@ static void resampling_add_interval(resampling_t* res) {
   size_t new_index = res->intervals_count++;
   if (res->intervals_cap <= res->intervals_count) {
     size_t new_cap = res->intervals_count * 2;
-    res->intervals = res->intervals_cap == 0 ? malloc(new_cap * sizeof(resamping_interval_t)) : realloc(res->intervals, sizeof(resamping_interval_t) * new_cap);
+    res->intervals = res->intervals_cap == 0 ? BR_MALLOC(new_cap * sizeof(resamping_interval_t)) : BR_REALLOC(res->intervals, sizeof(resamping_interval_t) * new_cap);
     res->intervals_cap = new_cap;
   }
   res->intervals[new_index] = (resamping_interval_t) { .from = 0, .count = 0, .dir = 15, .bounds = {0} };

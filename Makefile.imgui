@@ -1,42 +1,71 @@
 RL= raylib/src
-CONFIG= DEBUG
-PLATFORM= LINUX
-SOURCE= src/main_imgui.cpp src/graph.c src/ui.c src/help.c src/file_explorer.c \
-				src/points_group.c src/resampling.c src/smol_mesh.c src/q.c \
-				src/read_input.c \
-				src/imgui_extensions.cpp \
-				$(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c \
-				imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp \
-				imgui/imgui_widgets.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp
+# DEBUG | RELEASE
+CONFIG?= DEBUG
+# LINUX | WEB
+PLATFORM?= LINUX
+# IMGUI | RAYLIB | HEADLESS
+GUI?= IMGUI
+
+RAYLIB_SOURCES= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
+ADDITIONAL_HEADERS= src/default_font.h
 
 COMMONFLAGS= -I$(RL) -I./imgui -I./imgui/backends
 PREFIX_BUILD= build
-OUTPUT= bin/rlplot_imgui
+
+ifeq ($(GUI), IMGUI)
+	SOURCE= imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp \
+				  imgui/imgui_widgets.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp \
+				  src/main_imgui.cpp src/imgui_extensions.cpp \
+					$(RAYLIB_SOURCES)
+else ifeq ($(GUI), RAYLIB)
+	SOURCE= src/main.c $(RAYLIB_SOURCES)
+else ifeq ($(GUI), HEADLESS)
+	SOURCE= src/main.c src/raylib_headless.c
+	PLATFORM= LINUX
+	COMMONFLAGS+= -DNUMBER_OF_STEPS=100
+else
+	echo "Valid GUI parameters are IMGUI, RAYLIB, HEADLESS" && exit -1
+endif
+	
+SOURCE+= src/graph.c src/ui.c src/help.c src/file_explorer.c \
+				 src/points_group.c src/resampling.c src/smol_mesh.c src/q.c \
+				 src/read_input.c src/br_memory.cpp
 
 ifeq ($(PLATFORM), LINUX)
 	LIBS= `pkg-config --static --libs glfw3` -lGL
 	CXX= g++
 	CC= gcc
 	COMMONFLAGS+= -DLINUX -DPLATFORM_DESKTOP
-	CONFIG= RELEASE
-	SOURCE += src/desktop/linux/read_input.c
+	SOURCE+= src/desktop/linux/read_input.c
+	SHADERS_HEADER= src/shaders.h
+	SHADERS_LIST= src/desktop/shaders/grid.fs src/desktop/shaders/line.fs src/desktop/shaders/line.vs src/desktop/shaders/quad.vs src/desktop/shaders/quad.fs
 endif
+
 ifeq ($(PLATFORM), WEB)
-	SOURCE+= src/web/read_input.c
 	CXX= em++
 	CC= emcc
 	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES2 -DPLATFORM_WEB --memory-init-file 1 --closure 1  -s "EXPORTED_RUNTIME_METHODS=['FS']" -s FORCE_FILESYSTEM -s WASM_BIGINT -s ENVIRONMENT=web -sALLOW_MEMORY_GROWTH -s USE_GLFW=3 -s ASYNCIFY --shell-file=src/web/minshell.html
-	CONFIG= RELEASE
+	SOURCE+= src/web/read_input.c
+	SHADERS_LIST= src/web/shaders/grid.fs src/web/shaders/line.fs src/web/shaders/line.vs src/web/shaders/quad.fs src/web/shaders/quad.vs
+	SHADERS_HEADER= src/shaders_web.h
+	PREFIX_BUILD= build/www
+	OUTPUT= www/index.html
 endif
+
 ifeq ($(CONFIG), DEBUG)
-	COMMONFLAGS+= -Wconversion -Wall -Wpedantic -Wextra -g -pg -fsanitize=address -fsanitize=leak \
-							  -fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
-							  -fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -DUNIT_TEST
+	COMMONFLAGS+= -g -pg 
+	MY_COMMONFLAGS= -Wconversion -Wall -Wpedantic -Wextra -fsanitize=address -fsanitize=leak \
+		-fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
+		-fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -DUNIT_TEST
 	PREFIX_BUILD= build/dbg
-	SOURCE+= imgui/imgui_demo.cpp src/desktop/linux/refresh_shaders.c
+	ifeq ($(GUI), IMGUI)
+		SOURCE+= imgui/imgui_demo.cpp
+	endif
+	SOURCE+= src/desktop/linux/refresh_shaders.c
 endif
+
 ifeq ($(CONFIG), RELEASE)
-	COMMONFLAGS+= -Os -flto=auto -I./imgui -I./imgui/backends -I$(RL) -DRELEASE -DEXTERNAL_CONFIG_FLAGS=1 \
+	COMMONFLAGS+= -Os -flto=auto -DRELEASE -DEXTERNAL_CONFIG_FLAGS=1 \
 		-DSUPPORT_MODULE_RSHAPES=1 \
 		-DSUPPORT_MODULE_RTEXTURES=1 \
 		-DSUPPORT_MODULE_RTEXT=1 \
@@ -55,26 +84,64 @@ ifeq ($(CONFIG), RELEASE)
 		-DSUPPORT_TRACELOG=1 \
 		-DIMGUI_DISABLE_DEMO_WINDOWS \
 		-DIMGUI_DISABLE_DEBUG_TOOLS
-	OUTPUT= bin/brplot
+	ADDITIONAL_HEADERS+= $(SHADERS_HEADER)
 endif
-ifeq ($(PLATFORM), WEB)
-	PREFIX_BUILD= build/www
-	OUTPUT= www/index.html
-endif
+
 OBJSA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE))
-OBJS= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
+OBJS+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
 CXXFLAGS= $(COMMONFLAGS)
 CCFLAGS= $(COMMONFLAGS)
+OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(PLATFORM)_$(CONFIG)' | sed 's/.*/\L\0/g')
 
 OBJSDIR= $(sort $(dir $(OBJS)))
 $(shell $(foreach var,$(OBJSDIR), test -d $(var) || mkdir -p $(var);))
+$(shell test -d $(dir $(OUTPUT)) || mkdir $(dir $(OUTPUT)))
+$(shell test -d bin || mkdir bin)
 
-$(OUTPUT): $(OBJS)
-	$(CC) $(COMMONFLAGS) $(LIBS) -o $@ $(OBJS)
+$(OUTPUT): $(ADDITIONAL_HEADERS) $(OBJS)
+	$(CXX) $(COMMONFLAGS) $(MY_COMMONFLAGS) $(LIBS) -o $@ $(OBJS)
+
+bin/upper: tools/upper.cpp
+	g++ -O3 -o bin/upper tools/upper.cpp
+
+bin/lower: tools/lower.cpp
+	g++ -O3 -o bin/lower tools/lower.cpp
+
+src/default_font.h: bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf
+	bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf > src/default_font.h
+
+bin/font_export: tools/font_export.c
+	gcc -o bin/font_export -lm tools/font_export.c
+
+$(SHADERS_HEADER): $(SHADERS_LIST) bin/upper bin/lower
+	echo "" > $(SHADERS_HEADER)
+	echo "#pragma once" >> $(SHADERS_HEADER)
+	echo "//This file is autogenerated" >> $(SHADERS_HEADER)
+	$(foreach s, $(SHADERS_LIST), echo "#define" | bin/lower >> $(SHADERS_HEADER) && \
+																echo 'SHADER_$(word 4, $(subst /, , $(s))) \' | sed 's/\./_/' | bin/upper >> $(SHADERS_HEADER) && \
+																cat $(s) | sed 's/\(.*\)/"\1\\n" \\/' >> $(SHADERS_HEADER) && \
+																echo "" >> $(SHADERS_HEADER) && ) echo "OKi"
+
+
+$(PREFIX_BUILD)/src/%.o:src/%.c src/plotter.h $(ADDITIONAL_HEADERS)
+	$(CC) $(CCFLAGS) $(MY_COMMONFLAGS) -c -o $@ $<
+
+$(PREFIX_BUILD)/src/%.o:src/%.cpp src/plotter.h
+	$(CC) $(CXXFLAGS) $(MY_COMMONFLAGS) -c -o $@ $<
 
 $(PREFIX_BUILD)/%.o:%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 $(PREFIX_BUILD)/%.o:%.c
-	$(CC) $(CXXFLAGS) -c -o $@ $<
+	$(CC) $(CCFLAGS) -c -o $@ $<
 
+.PHONY: clean
+clean:
+	test -d build &&  rm build -rdf || echo "done"
+	test -d bin &&  rm bin -rdf || echo "done"
+	test -d www &&  rm www -rdf || echo "done"
+	test -d zig-cache && rm zig-cache -rdf || echo "done"
+	test -d zig-out && rm zig-out -rdf || echo "done"
+	test -f src/shaders.h && rm src/shaders.h || echo "done"
+	test -f src/shaders_web.h && rm src/shaders_web.h || echo "done"
+	test -f src/default_font.h && rm src/default_font.h || echo "done"

@@ -72,7 +72,7 @@ struct test_file_metadata __attribute__((weak)) * test_file_head;
     if (strcmp(a, b) != 0) {                      \
       const char *part2 = " != " #b;              \
       size_t len = strlen(a) + strlen(part2) + 3; \
-      char *buf = malloc(len);                    \
+      char *buf = BR_MALLOC(len);                    \
       snprintf(buf, len, "\"%s\"%s", a, part2);   \
       SET_FAILURE(buf, true); \
       return;                 \
@@ -84,7 +84,7 @@ struct test_file_metadata __attribute__((weak)) * test_file_head;
     if (strncmp(a, b, len) != 0) {           \
       const char *part2 = " != " #b;         \
       size_t len2 = len + strlen(part2) + 3; \
-      char *buf = malloc(len2);              \
+      char *buf = BR_MALLOC(len2);              \
       snprintf(buf, len2, "\"%.*s\"%s", (int)len, a, part2); \
       SET_FAILURE(buf, true); \
       return;                 \
@@ -134,7 +134,7 @@ static inline void __attribute__((constructor(102))) run_tests(void) {
   char *arg = NULL;
   size_t arglen;
   sysctl(mib, sizeof(mib) / sizeof(mib[0]), NULL, &arglen, NULL, 0);
-  arg = malloc(arglen);
+  arg = BR_MALLOC(arglen);
   sysctl(mib, sizeof(mib) / sizeof(mib[0]), arg, &arglen, NULL, 0);
 #else
   FILE *cmdlinef = fopen("/proc/self/cmdline", "r");
@@ -152,7 +152,7 @@ static inline void __attribute__((constructor(102))) run_tests(void) {
       break;
     }
   }
-  free(arg);
+  BR_FREE(arg);
 
   if (!should_run) {
     return;
@@ -175,7 +175,7 @@ static inline void __attribute__((constructor(102))) run_tests(void) {
         fprintf(stderr, "failed (%s at %s:%d)\n", j->failure.message,
                 j->failure.file, j->failure.line);
         if (j->failure.owned) {
-          free((char *)j->failure.message);
+          BR_FREE((char *)j->failure.message);
           j->failure.message = NULL;
         }
         failed++;

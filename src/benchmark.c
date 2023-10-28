@@ -60,9 +60,9 @@ void insert_data_out_in(Vector2* data, size_t data_len) {
 #define len 1025*8*2
 void bench1(FILE* data_out) {
   (void)data_out;
-  Vector2 *data = malloc(sizeof(Vector2)*len);
+  Vector2 *data = BR_MALLOC(sizeof(Vector2)*len);
   gen_rand_points(data, len);
-  Vector2 *data_sin = malloc(sizeof(Vector2)*len);
+  Vector2 *data_sin = BR_MALLOC(sizeof(Vector2)*len);
   gen_sin_points(data_sin, len);
   QB_BENCH_BEGIN(stdout, 1, 1);
 //      QB_BENCH_ADD(insert_data_ordered, data, len/16);
@@ -84,8 +84,8 @@ void bench1(FILE* data_out) {
       QB_BENCH_ADD(insert_data_out_in, data_sin, len/4);
       QB_BENCH_ADD(insert_data_out_in, data_sin, len);
   QB_BENCH_END();
-  free(data);
-  free(data_sin);
+  BR_FREE(data);
+  BR_FREE(data_sin);
 }
 void fun(quad_tree_root_t* root, Vector2* data, size_t data_len) {
   for (size_t i = 0 ; i < data_len; i++) {
@@ -93,7 +93,7 @@ void fun(quad_tree_root_t* root, Vector2* data, size_t data_len) {
   }
 }
 void balanc_bench(FILE* data_out) {
-  Vector2 *data_sin = malloc(sizeof(Vector2)*len);
+  Vector2 *data_sin = BR_MALLOC(sizeof(Vector2)*len);
   fprintf(data_out, "nodes, #balanc, goodnes, depth, max_bad, max_els, min_els\n");
   QB_BENCH_BEGIN(stdout, 1, 1);
     for (int k = 20; k < 65; k+=5) {
@@ -118,7 +118,7 @@ void balanc_bench(FILE* data_out) {
       }
     }
   QB_BENCH_END();
-  free(data_sin);
+  BR_FREE(data_sin);
 }
 
 typedef void (*bench)(FILE*);

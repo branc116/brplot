@@ -3,6 +3,7 @@
 #include "raylib.h"
 #include <stdlib.h>
 #include "string.h"
+#include "plotter.h"
 
 #define RLAPI
 #pragma GCC diagnostic push
@@ -103,7 +104,7 @@ RLAPI void InitWindow(int width, int height, const char *title) {
 unsigned int LoadShader_id;
 RLAPI Shader LoadShader(const char *vsFileName, const char *fsFileName) {
   printf("LoadShader: vsFileName=%s, fsFileName=%s, ret.id=%u\n", vsFileName, fsFileName, ++LoadShader_id);
-  Shader ret = { .id = LoadShader_id, .locs = malloc(sizeof(int)*16) };
+  Shader ret = { .id = LoadShader_id, .locs = BR_MALLOC(sizeof(int)*16) };
   return ret;
 }
 
@@ -114,7 +115,7 @@ RLAPI int GetShaderLocation(Shader shader, const char *uniformName) {
 }
 
 RLAPI void UnloadShader(Shader shader) {
-  free(shader.locs);
+  BR_FREE(shader.locs);
   printf("UnloadShader: shader.id=%d\n", shader.id);
 }
 
@@ -174,6 +175,10 @@ RLAPI void BeginShaderMode(Shader shader) {
 
 RLAPI void EndShaderMode(void) {
   printf("EndShaderMode\n");
+}
+
+RLAPI void DrawRectangle(int posx, int posy, int width, int height, Color color) {
+  printf("DrawRectangleRec: rec=(%d,%d,%d,%d), color=(%u,%u,%u,%u)\n", posx, posy, width, height, color.r, color.g, color.b, color.a);
 }
 
 RLAPI void DrawRectangleRec(Rectangle rec, Color color) {
@@ -264,7 +269,7 @@ RLAPI void SetTraceLogLevel(int logLevel) {
 
 RLAPI Shader LoadShaderFromMemory(const char *vsCode, const char *fsCode) {
   printf("LoadShaderFromMemory: vsCode=%s, fsCode=%s\n", vsCode, fsCode);
-  Shader ret = { .id = LoadShader_id, .locs = malloc(sizeof(int)*16) };
+  Shader ret = { .id = LoadShader_id, .locs = BR_MALLOC(sizeof(int)*16) };
   return ret;
 }
 
@@ -321,4 +326,25 @@ bool DirectoryExists(const char *dirPath) {
 }
 
 void SetExitKey(int key) {
+}
+
+// String pointer reverse break: returns right-most occurrence of charset in s
+static const char *strprbrk(const char *s, const char *charset) {
+    const char *latestMatch = NULL;
+    for (; s = strpbrk(s, charset), s != NULL; latestMatch = s++) { }
+    return latestMatch;
+}
+
+// Get pointer to filename for a path string
+const char *GetFileName(const char *filePath) {
+    const char *fileName = NULL;
+    if (filePath != NULL) fileName = strprbrk(filePath, "\\/");
+
+    if (!fileName) return filePath;
+
+    return fileName + 1;
+}
+
+const char *TextFormat(const char *text, ...) {
+  return text;
 }

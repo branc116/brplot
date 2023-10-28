@@ -67,7 +67,7 @@ void graph_free(graph_values_t* gv) {
   for (size_t i = 0; i < gv->groups.len; ++i) {
     points_groups_deinit(&gv->groups);
   }
-  free(gv->commands.commands);
+  BR_FREE(gv->commands.commands);
 }
 
 static void update_shader_values(graph_values_t* gv) {
@@ -214,12 +214,12 @@ void graph_draw_min(graph_values_t* gv, float posx, float posy, float width, flo
   gv->graph_rect.width = width - 50.f - 2.f * padding;
   gv->graph_rect.height = height - 30.f - 2.f * padding;
   update_variables(gv);
-  BeginScissorMode(posx, posy, width, height);
+  //BeginScissorMode(posx, posy, width, height);
     DrawRectangle(posx, posy, width, height, BLACK);
     draw_grid_values(gv);
     graph_draw_grid(gv->gridShader.shader, gv->graph_rect);
     points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, context.graph_rect);
-  EndScissorMode();
+  //EndScissorMode();
 }
 
 static void graph_draw_grid(Shader shader, Rectangle screen_rect) {
