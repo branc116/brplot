@@ -10,7 +10,6 @@ RAYLIB_SOURCES= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c 
 ADDITIONAL_HEADERS= src/default_font.h
 
 COMMONFLAGS= -I$(RL) -I./imgui -I./imgui/backends
-PREFIX_BUILD= build
 
 ifeq ($(GUI), IMGUI)
 	SOURCE= imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp \
@@ -39,17 +38,30 @@ ifeq ($(PLATFORM), LINUX)
 	SOURCE+= src/desktop/linux/read_input.c
 	SHADERS_HEADER= src/shaders.h
 	SHADERS_LIST= src/desktop/shaders/grid.fs src/desktop/shaders/line.fs src/desktop/shaders/line.vs src/desktop/shaders/quad.vs src/desktop/shaders/quad.fs
-endif
 
-ifeq ($(PLATFORM), WEB)
+else ifeq ($(PLATFORM), WINDOWS)
+	LIBS= -lopengl32 -lgdi32 -lwinmm
+	CXX= x86_64-w64-mingw32-g++
+	CC= x86_64-w64-mingw32-gcc
+	COMMONFLAGS+= -Iraylib/src/external/glfw/include -DWINDOWS -DPLATFORM_DESKTOP -D_WIN32=1 \
+								-DSUPPORT_TEXT_MANIPULATION=1 \
+								-DSUPPORT_DEFAULT_FONT=1
+
+	SOURCE+= $(RL)/rglfw.c src/desktop/win/read_input.c
+	SHADERS_HEADER= src/shaders.h
+	SHADERS_LIST= src/desktop/shaders/grid.fs src/desktop/shaders/line.fs src/desktop/shaders/line.vs src/desktop/shaders/quad.vs src/desktop/shaders/quad.fs
+
+else ifeq ($(PLATFORM), WEB)
 	CXX= em++
 	CC= emcc
 	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES2 -DPLATFORM_WEB --memory-init-file 1 --closure 1  -s "EXPORTED_RUNTIME_METHODS=['FS']" -s FORCE_FILESYSTEM -s WASM_BIGINT -s ENVIRONMENT=web -sALLOW_MEMORY_GROWTH -s USE_GLFW=3 -s ASYNCIFY --shell-file=src/web/minshell.html
 	SOURCE+= src/web/read_input.c
 	SHADERS_LIST= src/web/shaders/grid.fs src/web/shaders/line.fs src/web/shaders/line.vs src/web/shaders/quad.fs src/web/shaders/quad.vs
 	SHADERS_HEADER= src/shaders_web.h
-	PREFIX_BUILD= build/www
 	OUTPUT= www/index.html
+
+else
+	echo "Valid PLATFORM parameter values are LINUX, WINDOWS, WEB" && exit -1
 endif
 
 ifeq ($(CONFIG), DEBUG)
@@ -57,7 +69,6 @@ ifeq ($(CONFIG), DEBUG)
 	MY_COMMONFLAGS= -Wconversion -Wall -Wpedantic -Wextra -fsanitize=address -fsanitize=leak \
 		-fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
 		-fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -DUNIT_TEST
-	PREFIX_BUILD= build/dbg
 	ifeq ($(GUI), IMGUI)
 		SOURCE+= imgui/imgui_demo.cpp
 	endif
@@ -87,11 +98,12 @@ ifeq ($(CONFIG), RELEASE)
 	ADDITIONAL_HEADERS+= $(SHADERS_HEADER)
 endif
 
+PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)' | tr '[A-Z]' '[a-z]')
 OBJSA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE))
 OBJS+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
 CXXFLAGS= $(COMMONFLAGS)
 CCFLAGS= $(COMMONFLAGS)
-OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(PLATFORM)_$(CONFIG)' | sed 's/.*/\L\0/g')
+OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(PLATFORM)_$(CONFIG)' | tr '[A-Z]' '[a-z]')
 
 OBJSDIR= $(sort $(dir $(OBJS)))
 $(shell $(foreach var,$(OBJSDIR), test -d $(var) || mkdir -p $(var);))
@@ -99,7 +111,7 @@ $(shell test -d $(dir $(OUTPUT)) || mkdir $(dir $(OUTPUT)))
 $(shell test -d bin || mkdir bin)
 
 $(OUTPUT): $(ADDITIONAL_HEADERS) $(OBJS)
-	$(CXX) $(COMMONFLAGS) $(MY_COMMONFLAGS) $(LIBS) -o $@ $(OBJS)
+	$(CXX) $(COMMONFLAGS) $(MY_COMMONFLAGS) -o $@ $(LIBS) $(OBJS) $(LIBS)
 
 bin/upper: tools/upper.cpp
 	g++ -O3 -o bin/upper tools/upper.cpp
