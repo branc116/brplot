@@ -29,45 +29,45 @@ jobs:
 
     - name: Build blplot linux debug imgui
       run: |
-        make PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI -B
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI -B
 
     - name: Build blplot linux debug raylib
       run: |
-        make PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB -B
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB -B
 
     - name: Build blplot linux debug headless
       run: |
-        make PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS -B
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS -B
         
     - name: Build blplot linux release imgui
       run: |
-        make PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI -B
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI -B
 
     - name: Build blplot linux release raylib
       run: |
-        make PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB -B
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB -B
 
     - name: Build blplot linux release headless
       run: |
-        make PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS -B
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS -B
 
     - name: Build blplot windows release imgui
       run: |
-        make PLATFORM=WINDOWS CONFIG=RELEASE GUI=IMGUI -B
+        make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=IMGUI -B
 
     - name: Build blplot windows release raylib
       run: |
-        make PLATFORM=WINDOWS CONFIG=RELEASE GUI=RAYLIB -B
+        make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=RAYLIB -B
 
     - name: Build blplot windows release headless
       run: |
-        make PLATFORM=WINDOWS CONFIG=RELEASE GUI=HEADLESS -B
+        make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=HEADLESS -B
 
     - name: Run unit tests
       run: |
-        make ./bin/brplot_imgui_linux_debug --unittest
-        make ./bin/brplot_raylib_linux_debug --unittest
-        make ./bin/brplot_headless_linux_debug --unittest
+        ./bin/brplot_imgui_linux_debug --unittest
+        ./bin/brplot_raylib_linux_debug --unittest
+        ./bin/brplot_headless_linux_debug --unittest
 
     - name: Setup Emscripten
       run: |
@@ -80,30 +80,30 @@ jobs:
 
     - name: Build blplot web release imgui
       run: |
-        make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=IMGUI -B
+        make -j8 EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=IMGUI -B
 
     - name: Build blplot webrelease raylib
       run: |
-        make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=RAYLIB -B
+        make -j8 EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=RAYLIB -B
 
     - name: Build blplot web release headless
       run: |
-        make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=HEADLESS -B
+        make -j8 EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=HEADLESS -B
 
     - name: Build Cache
       run: |
-        make PLATFORM=WINDOWS CONFIG=RELEASE GUI=HEADLESS
-        make PLATFORM=WINDOWS CONFIG=RELEASE GUI=RAYLIB
-        make PLATFORM=WINDOWS CONFIG=RELEASE GUI=IMGUI
-        make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=HEADLESS
-        make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=RAYLIB
-        make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=IMGUI
-        make PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS
-        make PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB
-        make PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI
-        make PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS
-        make PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB
-        make PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI
+        make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=HEADLESS
+        make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=RAYLIB
+        make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=IMGUI
+        make -j8 EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=HEADLESS
+        make -j8 EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=RAYLIB
+        make -j8 EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=IMGUI
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI
 
     - name: Test artefacts
       run: |
