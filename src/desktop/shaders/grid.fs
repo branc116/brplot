@@ -42,7 +42,7 @@ float map_outer(vec2 fragCoord) {
     return map(cPos, zoom, offset);
 }
 
-#define AA 2
+#define AA 1
 
 void main(void) {
     vec2 fragCoord = gl_FragCoord.xy - (resolution.xy * vec2(1, -1.));
