@@ -123,7 +123,7 @@ src/default_font.h: bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf
 	bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf > src/default_font.h
 
 bin/font_export: tools/font_export.c
-	gcc -o bin/font_export -lm tools/font_export.c
+	gcc -o bin/font_export tools/font_export.c -lm
 
 $(SHADERS_HEADER): $(SHADERS_LIST) bin/upper bin/lower
 	echo "" > $(SHADERS_HEADER)
