@@ -1,3 +1,7 @@
 [submodule "raylib"]
 	path = raylib
 	url = git@github.com:raysan5/raylib.git
+[submodule "imgui"]
+	path = imgui
+	url = git@github.com:ocornut/imgui.git
+	branch = docking
