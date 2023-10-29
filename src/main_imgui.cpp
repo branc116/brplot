@@ -86,7 +86,7 @@ int main() {
         float colors[4] = { ((float)c.r)/255.f, ((float)c.g)/255.f, ((float)c.b)/255.f, ((float)c.a)/255.f};
         sprintf(context.buff, "PlotColor_%lu", i);
         ImGui::ColorPicker4(context.buff, colors);
-        gv->groups.arr[i].color = { (unsigned char)(colors[0] * 256.f), (unsigned char)(colors[1] * 256.f), (unsigned char)(colors[2] * 256.f), (unsigned char)(colors[3] * 256.f) };
+        gv->groups.arr[i].color = { (unsigned char)(colors[0] * 255.f), (unsigned char)(colors[1] * 255.f), (unsigned char)(colors[2] * 255.f), (unsigned char)(colors[3] * 255.f) };
       }
     }
     ImGui::End();
