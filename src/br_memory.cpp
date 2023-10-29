@@ -35,15 +35,15 @@ extern "C" void* br_malloc(size_t size) {
 }
 
 extern "C" void* br_realloc(void *old, size_t newS) {
-  void* newP = realloc(old, newS);
   br_free_stats((size_t)old);
+  void* newP = realloc(old, newS);
   br_malloc_stats((size_t)newP, newS);
   return newP;
 }
 
 extern "C" void br_free(void* p) {
-  free(p);
   br_free_stats((size_t)p);
+  free(p);
 }
 
 extern "C" void* br_imgui_malloc(size_t size, void*) {

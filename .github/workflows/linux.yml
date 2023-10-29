@@ -8,6 +8,7 @@ on:
       - 'tools/**'
       - '.github/workflows/linux.yml'
       - 'raylib'
+      - 'imgui'
       - 'Makefile'
 
 permissions:
@@ -24,39 +25,49 @@ jobs:
     - name: Setup Environment
       run: | 
         sudo apt-get update -qq
-        sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev gcc
+        sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev gcc mingw-w64
 
-    - name: Setup raylib
+    - name: Build blplot linux debug imgui
       run: |
-        cd raylib
-        mkdir build
-        cd build
-        cmake ..
-        make -j4
-        sudo make install
-        cd ../..
+        make PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI -B
+
+    - name: Build blplot linux debug raylib
+      run: |
+        make PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB -B
+
+    - name: Build blplot linux debug headless
+      run: |
+        make PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS -B
         
-    - name: Build rlplot debug
+    - name: Build blplot linux release imgui
       run: |
-        make bin/rlplot_dbg
+        make PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI -B
 
-    - name: Build and run unit tests
+    - name: Build blplot linux release raylib
       run: |
-        make test
-        
-    - name: Build rlplot release
-      run: |
-        make
+        make PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB -B
 
-    - name: Setup Zig
-      uses: goto-bus-stop/setup-zig@v2.1.1
-      with:
-        version: 0.11.0
-        cache: true
-
-    - name: Build rlplot windows
+    - name: Build blplot linux release headless
       run: |
-        make windows
+        make PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS -B
+
+    - name: Build blplot windows release imgui
+      run: |
+        make PLATFORM=WINDOWS CONFIG=RELEASE GUI=IMGUI -B
+
+    - name: Build blplot windows release raylib
+      run: |
+        make PLATFORM=WINDOWS CONFIG=RELEASE GUI=RAYLIB -B
+
+    - name: Build blplot windows release headless
+      run: |
+        make PLATFORM=WINDOWS CONFIG=RELEASE GUI=HEADLESS -B
+
+    - name: Run unit tests
+      run: |
+        make ./bin/brplot_imgui_linux_debug --unittest
+        make ./bin/brplot_raylib_linux_debug --unittest
+        make ./bin/brplot_headless_linux_debug --unittest
 
     - name: Setup Emscripten
       run: |
@@ -67,18 +78,39 @@ jobs:
         source ./emsdk_env.sh
         cd ..
 
-    - name: Build rlplot wasm
+    - name: Build blplot web release imgui
       run: |
-        make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten www/index.wasm
+        make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=IMGUI -B
+
+    - name: Build blplot webrelease raylib
+      run: |
+        make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=RAYLIB -B
+
+    - name: Build blplot web release headless
+      run: |
+        make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=HEADLESS -B
+
+    - name: Build Cache
+      run: |
+        make PLATFORM=WINDOWS CONFIG=RELEASE GUI=HEADLESS
+        make PLATFORM=WINDOWS CONFIG=RELEASE GUI=RAYLIB
+        make PLATFORM=WINDOWS CONFIG=RELEASE GUI=IMGUI
+        make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=HEADLESS
+        make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=RAYLIB
+        make EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=IMGUI
+        make PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS
+        make PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB
+        make PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI
+        make PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS
+        make PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB
+        make PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI
 
     - name: Test artefacts
       run: |
         test -f www/index.wasm && ls -alFh www
-        ls -alFh zig-out/bin/rlplot.exe
-        ls -alFh bin/rlplot && strip bin/rlplot && ls -alFh bin/rlplot
-        ls -alFh bin/rlplot_dbg
+        ls -alFh bin && strip bin/* && ls -alFh bin
+        file bin/*
 
     - name: Fuzz test
       run: |
-        make bin/rlplot_hl
-        cat /dev/random | time bin/rlplot_hl
+        cat /dev/random | time bin/brplot_headless_linux_debug
