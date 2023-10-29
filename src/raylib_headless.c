@@ -119,8 +119,8 @@ RLAPI void UnloadShader(Shader shader) {
   printf("UnloadShader: shader.id=%d\n", shader.id);
 }
 
-static float get_rand_float() {
-  float ret = (float)random() / (float)RAND_MAX;
+static float get_rand_float(void) {
+  float ret = (float)rand() / (float)RAND_MAX;
   return ret;
 }
 
