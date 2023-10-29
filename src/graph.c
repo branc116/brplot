@@ -408,7 +408,7 @@ static void graph_on_save(void* arg, bool saved) {
 #ifdef RELEASE
 static br_shader_t graph_load_shader(char const* vs, char const* fs) {
   Shader s = LoadShaderFromMemory(vs, fs);
-  return (rlplot_shader_t) {
+  return (br_shader_t) {
     .uResolution = GetShaderLocation(s, "resolution"),
     .uZoom = GetShaderLocation(s, "zoom"),
     .uOffset = GetShaderLocation(s, "offset"),
