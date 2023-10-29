@@ -1,93 +1,46 @@
-# Rlplot
-
+# Brplot
+brplot - [b]etter [r]l[plot]
 Small application that plots lines that are sent to the application's stdin.
 
-## Compile
-
-Rlplot can be built using GNU make ( using gcc internally ) or using [Zig](https://github.com/ziglang/zig) ( zig is love ). Use whatever you like.
-
-### Using zig for linux
-
-```bash
-zig build -Doptimize=ReleaseFast
-```
-
-### Using zig for windows
-```bash
-zig build -Dtarget=x86_64-windows-gnu -Doptimize=ReleaseSmall
-```
-
-### Using make for linux ( using gcc internally )
-```bash
-make
-```
-
-### Using make for windows ( but using zig internally... )
-```bash
-make windows
-```
-
-### Using make for web
-```bash
-EMSCRIPTEN="path to emscripten" make www/index.wasm
-```
-
-## Install
-When built, rlplot is only one file and you can install it using ```install``` command. Here I'm installing it to ```/usr/bin``` directory, but this can be any other directory...
-
-```bash
-sudo install zig-out/bin/rlplot /usr/bin/rlplot
-```
-
-## Clean
-```bash
-make clean
-```
-
-## Uninstall
-```bash
-sudo rm /usr/bin/rlplot
-```
-
-## Run
-rlplot is designed in such a way that it plays nicely with other unix tools. You can just pipe the output of your program to rlplot and rlplot will do it's best to plot your data.
+## Running brplot
+brplot is designed in such a way that it plays nicely with other unix tools. You can just pipe the output of your program to brplot and brplot will do it's best to plot your data.
 
 ### Examples
-I think that more or less all the examples listed on [ttyplot examples](https://github.com/tenox7/ttyplot#examples) should work with rlplot ( just replace ttyplot with rlplot. )
+I think that more or less all the examples listed on [ttyplot examples](https://github.com/tenox7/ttyplot#examples) should work with brplot ( just replace ttyplot with brplot. )
 But here are some more examples:
 
 #### Plot the first 8 Fibonacci numbers from user input
 ```bash
-rlplot
+brplot
 1 1 2 3 5 8 13 21
 ```
 
 #### Nice Plot
 ```bash
 # Plot numbers from 1 to 69
-seq 69 | rlplot;
+seq 69 | brplot;
 ```
 
 #### Square(Nice) Plot
 ```bash
 # Plot squeres of numbers from 1 to 69
-python -c "[print(x*x) for x in range(69)]" | rlplot;
+python -c "[print(x*x) for x in range(69)]" | brplot;
 ```
 
 #### Plot from data that is streamed to an UDP socket
 ```bash
-nc -ulkp 42069 | rlplot;
+nc -ulkp 42069 | brplot;
 ```
 
 #### Plot from data that is streamed to a TCP socket
 ```bash
-nc -lkp 42069 | rlplot;
+nc -lkp 42069 | brplot;
 ```
 
 #### Plot random data
 ```bash
 # This will most likely crash
-cat /dev/random | rlplot;
+cat /dev/random | brplot;
 ```
 
 #### Plot the temperature of core 0 on your CPU.
@@ -114,14 +67,14 @@ sensors | grep 'Core 0' | awk -p '{print $3}';
 # output:
 # +52.0°C 
 
-# Step 3: Create a loop and pipe the value of core temperature to rlplot every 0.1 sec.
-while :; do echo $(sensors | grep 'Core 0' | awk -p '{print $3}'); sleep 0.1; done | rlplot
-# rlplot should not care about nonnumeric symbols So input `+52.0°C` should be fine.
+# Step 3: Create a loop and pipe the value of core temperature to brplot every 0.1 sec.
+while :; do echo $(sensors | grep 'Core 0' | awk -p '{print $3}'); sleep 0.1; done | brplot
+# brplot should not care about nonnumeric symbols So input `+52.0°C` should be fine.
 ```
 
 #### Plot temperature of all CPU core 0.
 ```bash
-while :; do echo $(sensors | grep 'Core' | awk -p '{print substr($3, 1, 4) ";" $2}'); sleep 0.1; done | rlplot
+while :; do echo $(sensors | grep 'Core' | awk -p '{print substr($3, 1, 4) ";" $2}'); sleep 0.1; done | brplot
 # substr is needed because "+52.0C;1" would be recogined as:
 # Add 52 to group 0
 # Add 1 to group 1
@@ -130,7 +83,7 @@ while :; do echo $(sensors | grep 'Core' | awk -p '{print substr($3, 1, 4) ";" $
 
 #### Plot ram usage.
 ```bash
-while :; do echo $(free | grep Mem | awk -p '{print $3/1024}'); sleep 0.01; done | ./zig-out/bin/rlplot
+while :; do echo $(free | grep Mem | awk -p '{print $3/1024}'); sleep 0.01; done | brplot
 ```
 
 #### UDP client in python
@@ -146,9 +99,9 @@ port_number = 42069 # This is a port number and it MUST be 42069
 client_socket.sendto(f"{y_value};{group_id}".encode(), ("localhost", port_number))
 ```
 
-Start rlplot that listens to UDP port 42069:
+Start brplot that listens to UDP port 42069:
 ```bash
-nc -ulkp 42069 | rlplot;
+nc -ulkp 42069 | brplot;
 ```
 
 ### Input format
@@ -198,7 +151,7 @@ nc -ulkp 42069 | rlplot;
 * Left mouse button  - Toggle visiblity of the line over which the mouse is over
 
 
-### Todo
+## Todo
 * ~~Make drawing lines use buffers ( Don't use DrawLineStrip function by raylib. ) Maybe use DrawMesh? It's ok for plots with ~1'000'000 points, but I want more!~~
   * Implemented this now. For every line, 2 triangles are created. Old points are put in buffers and are drawn like that. Plotter can now handle 30'000'000 points, easy.
 * When having many points ( 30'000'000 ), a few probles ocure:
@@ -245,7 +198,8 @@ nc -ulkp 42069 | rlplot;
 * Stack panel improvements
   * make it more general. So that it accepts any kind of element, not just button
   * add like a scroll bar on the left size of a stack
-* Zig build doesn't build tools/font_export.c... Make zig build that also, else default_font.h can't be created.
+* ~~Zig build doesn't build tools/font_export.c... Make zig build that also, else default_font.h can't be created.~~
+  * This is not needed anymore, because I no longer use zig. Zig is not ready yet.
 * ~~Export image with numbers.~~
   * This now works more or less. Still needs a better UI and ability to change image resoultion. For now it's hardcoded
   * Make screenshots work on Web
@@ -255,7 +209,7 @@ nc -ulkp 42069 | rlplot;
 * ~~Zoom in on the location where the mouse is located, not on center of the screen.~~
   * Fix with the help of my favorite brother Andrija.
 * Export of data to a text file.
-  * ~~Export to format readable by rlplot.~~
+  * ~~Export to format readable by brplot.~~
   * ~~Export to csv.~~
   * This will require some sort of file explorer to be implemented.
 * ~~Export the whole graph ( That includes current offset and current zoom )~~
@@ -271,9 +225,43 @@ nc -ulkp 42069 | rlplot;
 * ~~There is something wrong with new tokenizer. Fix this!!~~
 
 
+## Compile
 
-### Screenshot
-Here is a history of how rlplot looked over time:
+Brplot can be built using GNU make or Use whatever you like.
+Only tested on linux. Maybe will work on other OSes.
+But it can cross compile for windows and for webassm.
+
+```sh 
+make EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI
+```
+
+Here are the parameters you can change:
+
+* EMSCRIPTEN - only useful if you are building for webassm
+* PLATFORM   - LINUX | WINDOWS | WEB
+* CONFIG     - RELEASE | DEBUG
+* GUI        - IMGUI | RAYLIB | HEADLESS
+
+## Install
+When built, brplot is only one file and you can install it using ```install``` command. Here I'm installing it to ```/usr/bin``` directory, but this can be any other directory...
+
+```bash
+sudo install bin/brplot_imgui_linux_release /usr/bin/brplot
+```
+
+## Clean
+```bash
+make clean
+```
+
+## Uninstall
+```bash
+sudo rm /usr/bin/brplot
+```
+
+
+## Screenshots
+Here is a history of how brplot looked over time:
 
 ##### 2023-09-30
 ![screenshot4](media/rlplot_20230930_204431.png)
@@ -287,3 +275,4 @@ Here is a history of how rlplot looked over time:
 ### License
 
 MIT
+

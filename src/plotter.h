@@ -170,14 +170,14 @@ typedef struct {
   const char* vs_file_name;
   const char* fs_file_name;
 #endif
-} rlplot_shader_t;
+} br_shader_t;
 
 typedef struct {
   plotter_state_t state;
   union {
-    rlplot_shader_t shaders[3];
+    br_shader_t shaders[3];
     struct {
-      rlplot_shader_t gridShader, linesShader, quadShader;
+      br_shader_t gridShader, linesShader, quadShader;
     };
   };
 

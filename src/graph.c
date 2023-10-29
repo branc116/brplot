@@ -24,7 +24,7 @@ static void draw_grid_values(graph_values_t* gv);
 static void graph_update_context(graph_values_t* gv);
 static void graph_draw_grid(Shader shader, Rectangle screen_rect);
 static void graph_on_save(void* arg, bool saved);
-static rlplot_shader_t graph_load_shader(char const* vs, char const* fs);
+static br_shader_t graph_load_shader(char const* vs, char const* fs);
 
 void graph_init(graph_values_t* gv, float width, float height) {
   *gv = (graph_values_t){
@@ -59,7 +59,7 @@ void graph_init(graph_values_t* gv, float width, float height) {
 }
 
 void graph_free(graph_values_t* gv) {
-  for (size_t i = 0; i < sizeof(gv->shaders) / sizeof(rlplot_shader_t); ++i) {
+  for (size_t i = 0; i < sizeof(gv->shaders) / sizeof(br_shader_t); ++i) {
     UnloadShader(gv->shaders[i].shader);
   }
   smol_mesh_free(gv->lines_mesh);
@@ -71,7 +71,7 @@ void graph_free(graph_values_t* gv) {
 }
 
 static void update_shader_values(graph_values_t* gv) {
-  for (size_t i = 0; i < sizeof(gv->shaders) / sizeof(rlplot_shader_t); ++i) {
+  for (size_t i = 0; i < sizeof(gv->shaders) / sizeof(br_shader_t); ++i) {
     SetShaderValue(gv->shaders[i].shader, gv->shaders[i].uResolution, &gv->graph_rect, SHADER_UNIFORM_VEC4);
     SetShaderValue(gv->shaders[i].shader, gv->shaders[i].uZoom, &gv->uvZoom, SHADER_UNIFORM_VEC2);
     SetShaderValue(gv->shaders[i].shader, gv->shaders[i].uOffset, &gv->uvOffset, SHADER_UNIFORM_VEC2);
@@ -287,8 +287,8 @@ static void graph_update_context(graph_values_t* gv) {
 static void refresh_shaders_if_dirty(graph_values_t* gv) {
   if (gv->shaders_dirty) {
     gv->shaders_dirty = false;
-    for (size_t i = 0; i < sizeof(gv->shaders) / sizeof(rlplot_shader_t); ++i) {
-      rlplot_shader_t newS = graph_load_shader(gv->shaders[i].vs_file_name, gv->shaders[i].fs_file_name);
+    for (size_t i = 0; i < sizeof(gv->shaders) / sizeof(br_shader_t); ++i) {
+      br_shader_t newS = graph_load_shader(gv->shaders[i].vs_file_name, gv->shaders[i].fs_file_name);
       if (newS.shader.locs != NULL) {
         UnloadShader(gv->shaders[i].shader);
         gv->shaders[i] = newS;
@@ -406,7 +406,7 @@ static void graph_on_save(void* arg, bool saved) {
 }
 
 #ifdef RELEASE
-static rlplot_shader_t graph_load_shader(char const* vs, char const* fs) {
+static br_shader_t graph_load_shader(char const* vs, char const* fs) {
   Shader s = LoadShaderFromMemory(vs, fs);
   return (rlplot_shader_t) {
     .uResolution = GetShaderLocation(s, "resolution"),
@@ -417,9 +417,9 @@ static rlplot_shader_t graph_load_shader(char const* vs, char const* fs) {
   };
 }
 #else
-static rlplot_shader_t graph_load_shader(char const* vs, char const* fs) {
+static br_shader_t graph_load_shader(char const* vs, char const* fs) {
   Shader s = LoadShader(vs, fs);
-  return (rlplot_shader_t) {
+  return (br_shader_t) {
     .uResolution = GetShaderLocation(s, "resolution"),
     .uZoom = GetShaderLocation(s, "zoom"),
     .uOffset = GetShaderLocation(s, "offset"),
