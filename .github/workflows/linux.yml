@@ -80,24 +80,24 @@ jobs:
 
     - name: Build brplot web release imgui
       run: |
-        make -j8 EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=IMGUI -B
+        make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=IMGUI -B
 
     - name: Build brplot webrelease raylib
       run: |
-        make -j8 EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=RAYLIB -B
+        make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=RAYLIB -B
 
     - name: Build brplot web release headless
       run: |
-        make -j8 EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=HEADLESS -B
+        make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=HEADLESS -B
 
     - name: Build Cache
       run: |
         make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=HEADLESS
         make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=RAYLIB
         make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=IMGUI
-        make -j8 EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=HEADLESS
-        make -j8 EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=RAYLIB
-        make -j8 EMSCRIPTEN=/home/runner/work/rlplot/rlplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=IMGUI
+        make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=HEADLESS
+        make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=RAYLIB
+        make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=IMGUI
         make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS
         make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB
         make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI

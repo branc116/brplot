@@ -150,7 +150,6 @@ nc -ulkp 42069 | brplot;
 * **C**              - Empty all points over which the mouse is over.
 * Left mouse button  - Toggle visiblity of the line over which the mouse is over
 
-
 ## Todo
 * ~~Make drawing lines use buffers ( Don't use DrawLineStrip function by raylib. ) Maybe use DrawMesh? It's ok for plots with ~1'000'000 points, but I want more!~~
   * Implemented this now. For every line, 2 triangles are created. Old points are put in buffers and are drawn like that. Plotter can now handle 30'000'000 points, easy.
@@ -263,6 +262,8 @@ sudo rm /usr/bin/brplot
 ## Screenshots
 Here is a history of how brplot looked over time:
 
+##### 2023-10-29
+![screenshot5](media/brplot_20231029_162206.png)
 ##### 2023-09-30
 ![screenshot4](media/rlplot_20230930_204431.png)
 ##### 2023-06-16
