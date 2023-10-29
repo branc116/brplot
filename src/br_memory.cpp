@@ -1,9 +1,9 @@
 #include "plotter.h"
 #include "cstdlib"
 #include "cassert"
-#include <unordered_map>
+#include <map>
 
-std::unordered_map<size_t, size_t> alloc_sizes;
+std::map<size_t, size_t> alloc_sizes;
 
 static void br_malloc_stats(size_t mem, size_t size) {
   context.alloc_size += size;
