@@ -141,7 +141,7 @@ $(SHADERS_HEADER): $(SHADERS_LIST) bin/upper bin/lower
 $(PREFIX_BUILD)/src/%.o:src/%.c src/plotter.h $(ADDITIONAL_HEADERS)
 	$(CC) $(CCFLAGS) $(MY_COMMONFLAGS) -c -o $@ $<
 
-$(PREFIX_BUILD)/src/%.o:src/%.cpp src/plotter.h
+$(PREFIX_BUILD)/src/%.o:src/%.cpp src/plotter.h $(ADDITIONAL_HEADERS)
 	$(CC) $(CXXFLAGS) $(MY_COMMONFLAGS) -c -o $@ $<
 
 $(PREFIX_BUILD)/%.o:%.cpp
