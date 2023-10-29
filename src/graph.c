@@ -301,38 +301,42 @@ static void refresh_shaders_if_dirty(graph_values_t* gv) {
 static void draw_grid_values(graph_values_t* gv) {
   Rectangle r = context.graph_rect;
   float font_size = 15.f * context.font_scale;
+  char fmt[16];
 
   float exp = floorf(log10f(r.height / 2.f));
-  float base = powf(10.f, exp);
-  float start = floorf(r.y / base) * base;
-  char fmt[16];
-  if (exp >= 0) strcpy(fmt, "%f");
-  else sprintf(fmt, "%%.%df", -(int)exp);
+  if (false == isnanf(exp)) {
+    float base = powf(10.f, exp);
+    float start = floorf(r.y / base) * base;
+    if (exp >= 0) strcpy(fmt, "%f");
+    else sprintf(fmt, "%%.%df", -(int)exp);
 
-  for (float c = start; c > r.y - r.height; c -= base) {
-    sprintf(context.buff, fmt, c);
-    help_trim_zeros(context.buff);
-    Vector2 sz = help_measure_text(context.buff, font_size);
-    float y = gv->graph_rect.y + (gv->graph_rect.height / r.height) * (r.y - c);
-    y -= sz.y / 2.f;
-    help_draw_text(context.buff, (Vector2){ .x = gv->graph_rect.x - sz.x - 2.f, .y = y }, font_size, RAYWHITE);
+    for (float c = start; c > r.y - r.height; c -= base) {
+      sprintf(context.buff, fmt, c);
+      help_trim_zeros(context.buff);
+      Vector2 sz = help_measure_text(context.buff, font_size);
+      float y = gv->graph_rect.y + (gv->graph_rect.height / r.height) * (r.y - c);
+      y -= sz.y / 2.f;
+      help_draw_text(context.buff, (Vector2){ .x = gv->graph_rect.x - sz.x - 2.f, .y = y }, font_size, RAYWHITE);
+    }
   }
 
   exp =  floorf(log10f(r.width / 2.f));
-  base = powf(10.f, exp);
-  start = ceilf(r.x / base) * base;
-  if (exp >= 0) strcpy(fmt, "%f");
-  else sprintf(fmt, "%%.%df", -(int)exp);
-  float x_last_max = -INFINITY;
-  for (float c = start; c < r.x + r.width; c += base) {
-    sprintf(context.buff, fmt, c);
-    help_trim_zeros(context.buff);
-    Vector2 sz = help_measure_text(context.buff, font_size);
-    float x = gv->graph_rect.x + (gv->graph_rect.width / r.width) * (c - r.x);
-    x -= sz.x / 2.f;
-    if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
-    x_last_max = x + sz.x;
-    help_draw_text(context.buff, (Vector2){ .x = x, .y = gv->graph_rect.y + gv->graph_rect.height }, font_size, RAYWHITE);
+  if (false == isnanf(exp)) {
+    float base = powf(10.f, exp);
+    float start = ceilf(r.x / base) * base;
+    if (exp >= 0) strcpy(fmt, "%f");
+    else sprintf(fmt, "%%.%df", -(int)exp);
+    float x_last_max = -INFINITY;
+    for (float c = start; c < r.x + r.width; c += base) {
+      sprintf(context.buff, fmt, c);
+      help_trim_zeros(context.buff);
+      Vector2 sz = help_measure_text(context.buff, font_size);
+      float x = gv->graph_rect.x + (gv->graph_rect.width / r.width) * (c - r.x);
+      x -= sz.x / 2.f;
+      if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
+      x_last_max = x + sz.x;
+      help_draw_text(context.buff, (Vector2){ .x = x, .y = gv->graph_rect.y + gv->graph_rect.height }, font_size, RAYWHITE);
+    }
   }
 }
 
