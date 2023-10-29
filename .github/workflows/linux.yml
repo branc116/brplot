@@ -105,12 +105,13 @@ jobs:
         make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB
         make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI
 
+    - name: Fuzz test
+      run: |
+        cat /dev/random | time bin/brplot_headless_linux_debug
+
     - name: Test artefacts
       run: |
         test -f www/index.wasm && ls -alFh www
         ls -alFh bin && strip bin/* && ls -alFh bin
         file bin/*
 
-    - name: Fuzz test
-      run: |
-        cat /dev/random | time bin/brplot_headless_linux_debug
