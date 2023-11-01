@@ -125,12 +125,12 @@ typedef struct {
 } resampling_t;
 
 typedef struct {
-  size_t cap, len;
   int group_id;
-  bool is_selected;
   Color color;
+  size_t cap, len;
   Vector2* points;
   resampling_t* resampling;
+  bool is_selected;
 } points_group_t;
 
 typedef struct {
@@ -181,7 +181,7 @@ typedef struct {
     };
   };
 
-  Rectangle graph_rect;
+  Rectangle graph_rect, graph_screen_rect;
   Vector2 uvZoom, uvOffset, uvScreen, uvDelta;
   smol_mesh_t* lines_mesh;
   smol_mesh_t* quads_mesh;
@@ -196,20 +196,19 @@ typedef struct {
 #ifndef RELEASE
   int (*getchar)(void);
 #endif
+  Vector2 mouse_graph_pos;
 
+  float recoil;
   bool shaders_dirty;
   bool follow;
   bool jump_around;
   bool file_saver_inited;
+  bool mouse_inside_graph;
 } graph_values_t;
 
 typedef struct {
-  Rectangle graph_rect;
   Vector2 mouse_screen_pos;
-  Vector2 mouse_graph_pos;
   float font_scale;
-  float recoil;
-  bool mouse_inside_graph;
   bool debug_bounds;
   size_t alloc_size, alloc_count, alloc_total_size, alloc_total_count, alloc_max_size, alloc_max_count, free_of_unknown_memory;
   char buff[128];

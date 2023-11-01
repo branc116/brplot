@@ -73,7 +73,7 @@ int main() {
     ImGui::SetNextWindowBgAlpha(0.7f);
     if (ImGui::Begin("Settings")) {
       ImGui::SliderFloat("Padding", &padding, 0.f, 100.f);
-      ImGui::SliderFloat("Recoil", &context.recoil, 0.f, 1.1f);
+      ImGui::SliderFloat("Recoil", &gv->recoil, 0.f, 1.1f);
       ImGui::SliderFloat("Font scale", &context.font_scale, 0.5f, 2.5f);
 
       ImGui::Checkbox("Follow Arround", &gv->follow);
