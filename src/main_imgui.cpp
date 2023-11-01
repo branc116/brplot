@@ -100,7 +100,7 @@ int main() {
         s = sprintf(context.buff, "Max Allocations: %lu (%lu KB)", context.alloc_max_count, context.alloc_max_size >> 10); ImGui::TextUnformatted(context.buff, context.buff + s);
         s = sprintf(context.buff, "Unaccounted Allocations: >%lu", context.free_of_unknown_memory); ImGui::TextUnformatted(context.buff, context.buff + s);
       }
-      if (ImGui::CollapsingHeader("DrawDebug")) {
+      if (ImGui::CollapsingHeader("Draw Debug")) {
         int s = sprintf(context.buff, "Draw Calls: %lu (%lu lines)", gv->lines_mesh->draw_calls, gv->lines_mesh->points_drawn); ImGui::TextUnformatted(context.buff, context.buff + s);
         for (size_t i = 0; i < gv->groups.len; ++i) {
           auto& a = gv->groups.arr[i];
@@ -113,6 +113,12 @@ int main() {
             ImGui::TextUnformatted(context.buff, context.buff + s);
           }
         }
+      }
+      if (ImGui::CollapsingHeader("Queue")) {
+        auto const& qc = gv->commands;
+        int s = sprintf(context.buff, "Read  index: %lu", qc.read_index);                                                ImGui::TextUnformatted(context.buff, context.buff + s);
+            s = sprintf(context.buff, "Write index: %lu", qc.write_index);                                               ImGui::TextUnformatted(context.buff, context.buff + s);
+            s = sprintf(context.buff, "Length:      %lu", (qc.write_index - qc.read_index + qc.capacity) % qc.capacity); ImGui::TextUnformatted(context.buff, context.buff + s);
       }
     }
     ImGui::End();
