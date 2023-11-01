@@ -74,7 +74,7 @@ int main() {
     if (ImGui::Begin("Settings")) {
       ImGui::SliderFloat("Padding", &padding, 0.f, 100.f);
       ImGui::SliderFloat("Recoil", &context.recoil, 0.f, 1.1f);
-      ImGui::SliderFloat("Font scale", &context.font_scale, 0.f, 100.f);
+      ImGui::SliderFloat("Font scale", &context.font_scale, 0.5f, 2.5f);
 
       ImGui::Checkbox("Follow Arround", &gv->follow);
       ImGui::Checkbox("Debug Lines", &context.debug_bounds);
@@ -100,11 +100,24 @@ int main() {
         s = sprintf(context.buff, "Max Allocations: %lu (%lu KB)", context.alloc_max_count, context.alloc_max_size >> 10); ImGui::TextUnformatted(context.buff, context.buff + s);
         s = sprintf(context.buff, "Unaccounted Allocations: >%lu", context.free_of_unknown_memory); ImGui::TextUnformatted(context.buff, context.buff + s);
       }
-      if (ImGui::CollapsingHeader("Allocations")) {
+      if (ImGui::CollapsingHeader("DrawDebug")) {
+        int s = sprintf(context.buff, "Draw Calls: %lu (%lu lines)", gv->lines_mesh->draw_calls, gv->lines_mesh->points_drawn); ImGui::TextUnformatted(context.buff, context.buff + s);
+        for (size_t i = 0; i < gv->groups.len; ++i) {
+          auto& a = gv->groups.arr[i];
+          s = sprintf(context.buff, "Line #%d intervals(%lu):", a.group_id, a.resampling->intervals_count); ImGui::TextUnformatted(context.buff, context.buff + s);
+          for (size_t j = 0; j < a.resampling->intervals_count; ++j) {
+            auto& inter = a.resampling->intervals[j];
+            s = sprintf(context.buff, "   %lu [%lu - %lu] ", inter.count, inter.from, inter.from + inter.count);
+            help_resampling_dir_to_str(&context.buff[s], inter.dir);
+            s = (int)strlen(context.buff);
+            ImGui::TextUnformatted(context.buff, context.buff + s);
+          }
+        }
       }
     }
     ImGui::End();
 
+    graph_frame_end(gv);
     ImGui::Render();
     glfwGetFramebufferSize(ctx, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);

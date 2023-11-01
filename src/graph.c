@@ -94,41 +94,43 @@ static void update_variables(graph_values_t* gv) {
       points_group_t* pg = &gv->groups.arr[i];
       size_t gl = pg->len;
       if (!pg->is_selected || gl == 0) continue;
-      gv->uvDelta.x += ((middle.x - pg->points[gl - 1].x))/1000;
-      gv->uvDelta.y += ((middle.y - pg->points[gl - 1].y))/1000;
+      gv->uvDelta.x += ((middle.x - pg->points[gl - 1].x))/1000.f;
+      gv->uvDelta.y += ((middle.y - pg->points[gl - 1].y))/1000.f;
     }
     gv->uvOffset.x -= gv->uvDelta.x;
     gv->uvOffset.y -= gv->uvDelta.y;
     gv->uvDelta.x *= context.recoil;
     gv->uvDelta.y *= context.recoil;
   } else {
-    gv->uvDelta = (Vector2){ 0, 0 };
+    gv->uvDelta = (Vector2){ 0.f, 0.f };
   }
 
   if (context.mouse_inside_graph) {
     // Stuff related to zoom
     {
       float mw = -GetMouseWheelMove();
-      Vector2 old = context.mouse_graph_pos;
-      if (mw != 0.f) {
-        float mw_scale = (1 + mw/10);
-        if (IsKeyDown(KEY_X)) {
-          gv->uvZoom.x *= mw_scale;
-        } else if (IsKeyDown(KEY_Y)) {
-          gv->uvZoom.y *= mw_scale;      
-        } else {
-          gv->uvZoom.x *= mw_scale;
-          gv->uvZoom.y *= mw_scale;
+      if (false == help_near_zero(mw)) {
+        Vector2 old = context.mouse_graph_pos;
+        if (mw != 0.f) {
+          float mw_scale = (1 + mw/10);
+          if (IsKeyDown(KEY_X)) {
+            gv->uvZoom.x *= mw_scale;
+          } else if (IsKeyDown(KEY_Y)) {
+            gv->uvZoom.y *= mw_scale;      
+          } else {
+            gv->uvZoom.x *= mw_scale;
+            gv->uvZoom.y *= mw_scale;
+          }
         }
+        if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_SHIFT)) gv->uvZoom.x *= 1.1f;
+        if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_SHIFT)) gv->uvZoom.y *= 1.1f;
+        if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_CONTROL)) gv->uvZoom.x *= .9f;
+        if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_CONTROL)) gv->uvZoom.y *= .9f;
+        graph_update_context(gv);
+        Vector2 now = context.mouse_graph_pos;
+        gv->uvOffset.x -= now.x - old.x;
+        gv->uvOffset.y -= now.y - old.y; 
       }
-      if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_SHIFT)) gv->uvZoom.x *= 1.1f;
-      if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_SHIFT)) gv->uvZoom.y *= 1.1f;
-      if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_CONTROL)) gv->uvZoom.x *= .9f;
-      if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_CONTROL)) gv->uvZoom.y *= .9f;
-      graph_update_context(gv);
-      Vector2 now = context.mouse_graph_pos;
-      gv->uvOffset.x -= now.x - old.x;
-      gv->uvOffset.y -= now.y - old.y; 
     }
     if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
       Vector2 delt = GetMouseDelta();
@@ -206,6 +208,11 @@ void graph_draw(graph_values_t* gv) {
   points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, context.graph_rect);
 }
 
+void graph_frame_end(graph_values_t* gv) {
+  gv->lines_mesh->draw_calls = 0;
+  gv->lines_mesh->points_drawn = 0;
+}
+
 void graph_draw_min(graph_values_t* gv, float posx, float posy, float width, float height, float padding) {
   gv->uvScreen.x = (float)GetScreenWidth();
   gv->uvScreen.y = (float)GetScreenHeight();
@@ -214,12 +221,12 @@ void graph_draw_min(graph_values_t* gv, float posx, float posy, float width, flo
   gv->graph_rect.width = width - 50.f - 2.f * padding;
   gv->graph_rect.height = height - 30.f - 2.f * padding;
   update_variables(gv);
-  //BeginScissorMode(posx, posy, width, height);
-    DrawRectangle(posx, posy, width, height, BLACK);
+  BeginScissorMode((int)posx, (int)posy, (int)width, (int)height);
+    DrawRectangleRec(gv->graph_rect, BLACK);
     draw_grid_values(gv);
     graph_draw_grid(gv->gridShader.shader, gv->graph_rect);
     points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, context.graph_rect);
-  //EndScissorMode();
+  EndScissorMode();
 }
 
 static void graph_draw_grid(Shader shader, Rectangle screen_rect) {
@@ -382,8 +389,6 @@ static void draw_left_panel(graph_values_t* gv) {
     }
   }
   ui_stack_buttons_end();
-  gv->lines_mesh->draw_calls = 0;
-  gv->lines_mesh->points_drawn = 0;
 }
 
 static void update_resolution(graph_values_t* gv) {

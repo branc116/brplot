@@ -20,6 +20,7 @@ int main_gui(graph_values_t* gv) {
       ClearBackground(BLACK);
       if (gv->state == plotter_state_default) graph_draw(gv);
       else if (gv->state == plotter_state_saving_file) file_saver_draw(gv->fs);
+      graph_frame_end(gv);
     EndDrawing();
   }
   return 0;

@@ -263,6 +263,7 @@ void graph_screenshot(graph_values_t* gv, char const * path);
 void graph_export(graph_values_t* gv, char const * path);
 void graph_free(graph_values_t* gv);
 void graph_draw(graph_values_t* gv);
+void graph_frame_end(graph_values_t* gv);
 void graph_draw_min(graph_values_t* gv, float posx, float posy, float width, float height, float padding);
 
 #ifndef RELEASE
@@ -294,6 +295,7 @@ void    help_draw_text(const char *text, Vector2 pos, float fontSize, Color colo
 Vector2 help_measure_text(const char* txt, float font_size);
 void    help_draw_fps(int posX, int posY);
 void    help_load_default_font(void);
+void    help_resampling_dir_to_str(char* buff, resampling_dir r);
 
 static inline float maxf(float a, float b) {
   return a > b ? a : b;
@@ -325,6 +327,10 @@ static inline float signf(float a) {
 static inline int signi(int a) {
   return a > 0 ?  1 :
          a < 0 ? -1 : 0;
+}
+
+static inline bool help_near_zero(float value) {
+  return absf(value) < 1e-6;
 }
 
 #ifdef __cplusplus

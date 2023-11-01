@@ -57,3 +57,15 @@ void help_draw_fps(int posX, int posY)
     help_draw_text(context.buff, (Vector2) { (float)posX, (float)posY }, 24, color);
 }
 
+void help_resampling_dir_to_str(char* buff, resampling_dir r) {
+  size_t i = 0;
+  if (r == resampling_dir_null) memcpy(buff, "NODIR", sizeof("NODIR"));
+  else {
+    if (r & resampling_dir_left)  buff[i++] = 'L';
+    if (r & resampling_dir_up)    buff[i++] = 'U';
+    if (r & resampling_dir_right) buff[i++] = 'R';
+    if (r & resampling_dir_down)  buff[i++] = 'D';
+  }
+  buff[i] = (char)0;
+}
+
