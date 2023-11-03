@@ -28,7 +28,7 @@ static bool br_hotreload_compile(void) {
     return false;
   }
   if (a == 0) {
-    static char* newargv[] = { GCC, "-fpic", "--shared", "-g", "-o", "build/br_hot.o", "src/br_hot.cpp", NULL };
+    static char* newargv[] = { GCC, "-DLINUX", "-DPLATFORM_DESKTOP", "-fpic", "--shared", "-g", "-o", "build/br_hot.o", "src/br_hot.cpp", NULL };
     execvp(GCC, newargv);
   } else {
     int wstat;
@@ -50,23 +50,28 @@ void br_hotreload_link(br_hotreload_state_t* s) {
     fprintf(stderr, "%s\n", dlerror());
     return;
   }
-  s->func = (void (*)(graph_values_t*))dlsym(s->handl, "br_hot");
+  s->func_loop = (void (*)(graph_values_t*))dlsym(s->handl, "br_hot_loop");
+  s->func_init = (void (*)(graph_values_t*))dlsym(s->handl, "br_hot_init");
   char* error = dlerror();
   if (error != NULL) {
     fprintf(stderr, "%s\n", error);
     s->handl = NULL;
-    s->func = NULL;
+    s->func_loop = NULL;
+    s->func_init = NULL;
     dlclose(s->handl);
   }
+  s->is_init_called = false;
 }
 
 static void hot_reload_all(br_hotreload_state_t* state) {
   if (br_hotreload_compile()) {
-    if (state->func != NULL) {
+    if (state->func_loop != NULL) {
       pthread_mutex_lock(&state->lock);
       dlclose(state->handl);
       state->handl = NULL;
-      state->func = NULL;
+      state->func_loop = NULL;
+      state->func_init = NULL;
+      state->is_init_called = false;
       pthread_mutex_unlock(&state->lock);
     }
     br_hotreload_link(state);

@@ -34,7 +34,7 @@ void graph_init(graph_values_t* gv, float width, float height) {
     .quadShader = graph_load_shader(SHADER_QUAD_VS, SHADER_QUAD_FS),
 #ifndef RELEASE
     .getchar = getchar,
-    .hot_state = { .handl = NULL, .func = NULL, .lock = { 0 } },
+    .hot_state = { .handl = NULL, .func_loop = NULL, .func_init = NULL, .is_init_called = false, .lock = { 0 } },
 #endif
     .uvOffset = { 0., 0. },
     .uvZoom = { 1., 1. },

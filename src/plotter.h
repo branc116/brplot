@@ -175,7 +175,9 @@ typedef struct {
 struct graph_values_s;
 typedef struct {
   LOCK(lock)
-  void (*func)(struct graph_values_s* gv);
+  void (*func_loop)(struct graph_values_s* gv);
+  void (*func_init)(struct graph_values_s* gv);
+  bool is_init_called;
   void* handl;
 } br_hotreload_state_t;
 

@@ -13,6 +13,7 @@ extern context_t context;
 // ../imgui/examples/example_glfw_opengl3/main.cpp
 // ../imgui/examples/example_glfw_opengl3/Makefile.emscripten
 
+
 int main() {
   int display_w = 1280, display_h = 720;
 #ifdef RELEASE
@@ -22,8 +23,8 @@ int main() {
   InitWindow(display_w, display_h, "brplot");
   SetWindowState(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
   SetExitKey(KEY_NULL);
-
   graph_values_t* gv = (graph_values_t*)BR_MALLOC(sizeof(graph_values_t));
+
   graph_init(gv, 1, 1);
 #ifndef RELEASE
   start_refreshing_shaders(gv);
@@ -54,6 +55,16 @@ int main() {
   float padding = 50.f;
 
   while (false == WindowShouldClose()) {
+#ifndef RELEASE
+    if (gv->hot_state.is_init_called == false && gv->hot_state.func_init != nullptr) {
+      pthread_mutex_lock(&gv->hot_state.lock);
+        if (gv->hot_state.func_init != nullptr) {
+          gv->hot_state.func_init(gv);
+          gv->hot_state.is_init_called = true;
+        }
+      pthread_mutex_unlock(&gv->hot_state.lock);
+    }
+#endif
     BeginDrawing();
     ImGui_ImplGlfw_NewFrame();
     ImGui_ImplOpenGL3_NewFrame();
@@ -66,9 +77,9 @@ int main() {
     }
     ImGui::End();
 #ifndef RELEASE
-    if (gv->hot_state.func != nullptr) {
+    if (gv->hot_state.func_loop != nullptr) {
       pthread_mutex_lock(&gv->hot_state.lock);
-        if (gv->hot_state.func != nullptr) gv->hot_state.func(gv);
+        if (gv->hot_state.func_loop != nullptr) gv->hot_state.func_loop(gv);
       pthread_mutex_unlock(&gv->hot_state.lock);
     }
     if (show_demo_window) {
