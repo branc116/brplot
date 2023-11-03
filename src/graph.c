@@ -7,6 +7,7 @@
 #include <math.h>
 #include <stdarg.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "raylib.h"
 #include "rlgl.h"
@@ -33,6 +34,7 @@ void graph_init(graph_values_t* gv, float width, float height) {
     .quadShader = graph_load_shader(SHADER_QUAD_VS, SHADER_QUAD_FS),
 #ifndef RELEASE
     .getchar = getchar,
+    .hot_state = { .handl = NULL, .func = NULL, .lock = { 0 } },
 #endif
     .uvOffset = { 0., 0. },
     .uvZoom = { 1., 1. },
@@ -49,6 +51,11 @@ void graph_init(graph_values_t* gv, float width, float height) {
     .mouse_inside_graph = false,
     .recoil = 0.85f
   };
+#ifndef RELEASE
+  pthread_mutexattr_t attrs;
+  pthread_mutexattr_init(&attrs);
+  pthread_mutex_init(&gv->hot_state.lock, &attrs);
+#endif
   gv->lines_mesh = smol_mesh_malloc(PTOM_COUNT, gv->linesShader.shader);
   gv->quads_mesh = smol_mesh_malloc(PTOM_COUNT, gv->quadShader.shader);
   q_init(&gv->commands);

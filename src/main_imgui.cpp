@@ -27,6 +27,7 @@ int main() {
   graph_init(gv, 1, 1);
 #ifndef RELEASE
   start_refreshing_shaders(gv);
+  br_hotreload_start(&gv->hot_state);
 #endif
   read_input_main(gv);
 
@@ -65,6 +66,11 @@ int main() {
     }
     ImGui::End();
 #ifndef RELEASE
+    if (gv->hot_state.func != nullptr) {
+      pthread_mutex_lock(&gv->hot_state.lock);
+        if (gv->hot_state.func != nullptr) gv->hot_state.func(gv);
+      pthread_mutex_unlock(&gv->hot_state.lock);
+    }
     if (show_demo_window) {
       ImGui::SetNextWindowBgAlpha(0.7f);
       ImGui::ShowDemoWindow(&show_demo_window);

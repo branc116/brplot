@@ -66,13 +66,14 @@ endif
 
 ifeq ($(CONFIG), DEBUG)
 	COMMONFLAGS+= -g -pg 
-	MY_COMMONFLAGS= -Wconversion -Wall -Wpedantic -Wextra -fsanitize=address -fsanitize=leak \
-		-fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
-		-fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -DUNIT_TEST
+	MY_COMMONFLAGS= -Wconversion -Wall -Wpedantic -Wextra -rdynamic -fpie
+	  # -fsanitize=address -fsanitize=leak \
+		# -fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
+		# -fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -DUNIT_TEST
 	ifeq ($(GUI), IMGUI)
 		SOURCE+= imgui/imgui_demo.cpp
 	endif
-	SOURCE+= src/desktop/linux/refresh_shaders.c
+	SOURCE+= src/desktop/linux/refresh_shaders.c src/br_hotreload.c
 endif
 
 ifeq ($(CONFIG), RELEASE)

@@ -172,7 +172,14 @@ typedef struct {
 #endif
 } br_shader_t;
 
+struct graph_values_s;
 typedef struct {
+  LOCK(lock)
+  void (*func)(struct graph_values_s* gv);
+  void* handl;
+} br_hotreload_state_t;
+
+typedef struct graph_values_s {
   plotter_state_t state;
   union {
     br_shader_t shaders[3];
@@ -195,8 +202,10 @@ typedef struct {
   q_commands commands;
 #ifndef RELEASE
   int (*getchar)(void);
+  br_hotreload_state_t hot_state;
 #endif
   Vector2 mouse_graph_pos;
+
 
   float recoil;
   bool shaders_dirty;
@@ -213,6 +222,7 @@ typedef struct {
   size_t alloc_size, alloc_count, alloc_total_size, alloc_total_count, alloc_max_size, alloc_max_count, free_of_unknown_memory;
   char buff[128];
 } context_t;
+
 
 extern context_t context;
 
@@ -295,6 +305,10 @@ Vector2 help_measure_text(const char* txt, float font_size);
 void    help_draw_fps(int posX, int posY);
 void    help_load_default_font(void);
 void    help_resampling_dir_to_str(char* buff, resampling_dir r);
+
+#ifndef RELEASE
+void br_hotreload_start(br_hotreload_state_t* s);
+#endif
 
 static inline float maxf(float a, float b) {
   return a > b ? a : b;
