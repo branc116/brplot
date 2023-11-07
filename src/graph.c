@@ -324,11 +324,14 @@ static void draw_grid_values(graph_values_t* gv) {
     if (exp >= 0) strcpy(fmt, "%f");
     else sprintf(fmt, "%%.%df", -(int)exp);
 
-    for (float c = start; c > r.y - r.height; c -= base) {
-      sprintf(context.buff, fmt, c);
+    float i = 0.f;
+    while (base * i < r.height) {
+      float cur = start - base * i;
+      i += 1.f;
+      sprintf(context.buff, fmt, cur);
       help_trim_zeros(context.buff);
       Vector2 sz = help_measure_text(context.buff, font_size);
-      float y = gv->graph_screen_rect.y + (gv->graph_screen_rect.height / r.height) * (r.y - c);
+      float y = gv->graph_screen_rect.y + (gv->graph_screen_rect.height / r.height) * (r.y - cur);
       y -= sz.y / 2.f;
       help_draw_text(context.buff, (Vector2){ .x = gv->graph_screen_rect.x - sz.x - 2.f, .y = y }, font_size, RAYWHITE);
     }
@@ -337,15 +340,19 @@ static void draw_grid_values(graph_values_t* gv) {
   exp =  floorf(log10f(r.width / 2.f));
   if (false == isnanf(exp)) {
     float base = powf(10.f, exp);
+    if (isnanf(base) || isinff(base)) return;
     float start = ceilf(r.x / base) * base;
     if (exp >= 0) strcpy(fmt, "%f");
     else sprintf(fmt, "%%.%df", -(int)exp);
     float x_last_max = -INFINITY;
-    for (float c = start; c < r.x + r.width; c += base) {
-      sprintf(context.buff, fmt, c);
+    float i = 0;
+    while (base * i < r.width) {
+      float cur = start + base * i;
+      i += 1.f;
+      sprintf(context.buff, fmt, cur);
       help_trim_zeros(context.buff);
       Vector2 sz = help_measure_text(context.buff, font_size);
-      float x = gv->graph_screen_rect.x + (gv->graph_screen_rect.width / r.width) * (c - r.x);
+      float x = gv->graph_screen_rect.x + (gv->graph_screen_rect.width / r.width) * (cur - r.x);
       x -= sz.x / 2.f;
       if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
       x_last_max = x + sz.x;
