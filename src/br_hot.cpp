@@ -1,7 +1,11 @@
 #include "plotter.h"
 #include "stdio.h"
 #include "raylib.h"
+#include "cstdlib"
 #include "../imgui/imgui.h"
+#include <filesystem>
+#include <string>
+#include <vector>
 
 ImVec4 operator-(float f, ImVec4 v) {
   return ImVec4{f - v.x , f - v.y, f - v.z, f - v.w};
@@ -18,12 +22,66 @@ namespace br {
   }
 }
 
+typedef enum {
+  file_saver_state_exploring,
+  file_saver_state_accept,
+  file_saver_state_cancle
+} file_saver_state_t;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef struct {
+  std::filesystem::path last_read;
+  std::filesystem::path cwd;
+  std::vector<std::filesystem::path> cur_paths;
+  std::string name;
+} file_saver2_t;
 
-void hot_settings(graph_values_t* gv) {
+void file_saver_change_cwd_to(file_saver2_t& fs, std::filesystem::path&& p) {
+  fs.cwd = std::move(p);
+  fs.last_read = fs.cwd;
+  fs.cur_paths.clear();
+  std::filesystem::directory_iterator di(fs.cwd);
+  for (auto& d : di) {
+    if (d.is_directory()) fs.cur_paths.push_back(std::move(d));
+  }
+}
+
+void file_saver_change_cwd_up(file_saver2_t& fs) {
+  file_saver_change_cwd_to(fs, fs.cwd.parent_path());
+}
+
+file_saver_state_t hot_file_explorer(file_saver2_t* fs) {
+  ImGui::Begin("File Saver");
+  ImGui::LabelText("##CurName", "%s/%s", fs->cwd.c_str(), fs->name.c_str()); 
+  if (fs->last_read != fs->cwd) {
+    file_saver_change_cwd_to(*fs, std::move(fs->cwd));
+  }
+  if (ImGui::Button("..")) {
+    file_saver_change_cwd_up(*fs);
+  }
+  float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
+  ImGuiStyle& style = ImGui::GetStyle();
+  ImVec2 button_sz(100, 40);
+  for (size_t i = 0; i < fs->cur_paths.size(); i++)
+  {
+      ImGui::PushID(i);
+      if (ImGui::Button(fs->cur_paths[i].filename().c_str(), button_sz)) {
+        file_saver_change_cwd_to(*fs, std::move(fs->cur_paths[i]));
+      }
+      float last_button_x2 = ImGui::GetItemRectMax().x;
+      float next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_sz.x;
+      if (i + 1 < fs->cur_paths.size() && next_button_x2 < window_visible_x2)
+          ImGui::SameLine();
+      ImGui::PopID();
+  }
+  ImGui::End();
+  std::filesystem::path full_path = fs->cwd / fs->name;
+  if (std::filesystem::exists(full_path)) {
+    ImGui::LabelText("##ERROR", "Warning: File `%s` already exists", full_path.c_str());
+  }
+  return file_saver_state_exploring;
+}
+
+void hot_ui_settings(graph_values_t* gv) {
   if (ImGui::Begin("Settings 2")) {
     if (ImGui::Button("Clear all")) {
       points_groups_deinit(&gv->groups);
@@ -114,17 +172,19 @@ void hot_settings(graph_values_t* gv) {
   ImGui::End();
 }
 
-void br_hot_init(graph_values_t* gv) {
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    //io.Fonts->Clear();
-    //io.Fonts->AddFontFromFileTTF("./fonts/PlayfairDisplayRegular-ywLOY.ttf", 20);
-    fprintf(stderr, "First call\n");
+static file_saver2_t fs;
+
+extern "C" void br_hot_init(graph_values_t* gv) {
+  ImGuiIO& io = ImGui::GetIO(); (void)io;
+  fs.cwd = std::filesystem::path("/home");
+  fs.name = "test.png";
+  //io.Fonts->Clear();
+  //io.Fonts->AddFontFromFileTTF("./fonts/PlayfairDisplayRegular-ywLOY.ttf", 20);
+  fprintf(stderr, "First call\n");
 }
 
-void br_hot_loop(graph_values_t* gv) {
-  hot_settings(gv);
+extern "C" void br_hot_loop(graph_values_t* gv) {
+  hot_ui_settings(gv);
+  hot_file_explorer(&fs);
 }
 
-#ifdef __cplusplus
-}
-#endif
