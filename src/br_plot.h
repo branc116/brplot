@@ -10,15 +10,15 @@ extern "C" {
 #ifdef RELEASE
 
 #ifdef PLATFORM_DESKTOP
-#include "shaders.h"
+#include "misc/shaders.h"
 #elif PLATFORM_WEB
-#include "shaders_web.h"
+#include "misc/shaders_web.h"
 #else
 #error "Shaders for this platform arn't defined"
 #endif
 
 #else
-#include "shaders_dbg.h"
+#include "misc/shaders_dbg.h"
 
 #ifndef LINUX
 #ifdef UNIT_TEST
@@ -179,6 +179,10 @@ typedef struct br_plot_t {
     };
   };
 
+  // graph_rect is in the graph coordinates.
+  //            That is if you zoom in and out, graph_rect will change.
+  // graph_screen_rect is in the screen coordinates.
+  //                   That is if you resize the whole plot, or move the plot around the screen this value will change.
   Rectangle graph_rect, graph_screen_rect;
   Vector2 uvZoom, uvOffset, uvScreen, uvDelta;
   smol_mesh_t* lines_mesh;
@@ -313,42 +317,6 @@ typedef enum {
 
 file_saver_state_t hot_file_explorer(file_saver2_t* fs);
 #endif
-
-static inline float maxf(float a, float b) {
-  return a > b ? a : b;
-}
-
-static inline int maxi32(int a, int b) {
-  return a > b ? a : b;
-}
-
-static inline size_t minui64(size_t a, size_t b) {
-  return a < b ? a : b;
-}
-
-static inline size_t maxui64(size_t a, size_t b) {
-  return a > b ? a : b;
-}
-
-static inline float minf(float a, float b) {
-  return a > b ? b : a;
-}
-
-static inline float absf(float a) {
-  return a > 0 ? a : -a;
-}
-static inline float signf(float a) {
-  return a > 0.f ?  1.f :
-         a < 0.f ? -1.f : 0.f;
-}
-static inline int signi(int a) {
-  return a > 0 ?  1 :
-         a < 0 ? -1 : 0;
-}
-
-static inline bool help_near_zero(float value) {
-  return absf(value) < 1e-6;
-}
 
 #ifdef __cplusplus
 }

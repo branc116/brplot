@@ -1,3 +1,4 @@
+#pragma once
 #include "br_plot.h"
 
 #ifdef __cplusplus

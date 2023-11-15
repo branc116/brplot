@@ -7,19 +7,19 @@ PLATFORM?= LINUX
 GUI?= IMGUI
 
 RAYLIB_SOURCES= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
-ADDITIONAL_HEADERS= src/default_font.h
+ADDITIONAL_HEADERS= src/misc/default_font.h
 
 COMMONFLAGS= -I$(RL) -I./imgui -I./imgui/backends
 
 ifeq ($(GUI), IMGUI)
 	SOURCE= imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp \
 				  imgui/imgui_widgets.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp \
-				  src/imgui/br_gui.cpp src/imgui/imgui_extensions.cpp $(RAYLIB_SOURCES)
+				  src/imgui/gui.cpp src/imgui/imgui_extensions.cpp $(RAYLIB_SOURCES)
 	COMMONFLAGS+= -DIMGUI
 else ifeq ($(GUI), RAYLIB)
-	SOURCE= src/raylib/br_gui.c src/raylib/ui.c $(RAYLIB_SOURCES)
+	SOURCE= src/raylib/gui.c src/raylib/ui.c $(RAYLIB_SOURCES)
 else ifeq ($(GUI), HEADLESS)
-	SOURCE= src/headless/raylib_headless.c src/headless/br_gui.c
+	SOURCE= src/headless/raylib_headless.c src/headless/gui.c
 	PLATFORM= LINUX
 	COMMONFLAGS+= -DNUMBER_OF_STEPS=100
 else
@@ -28,7 +28,7 @@ endif
 	
 SOURCE+= src/main.c src/help.c \
 				 src/points_group.c src/resampling.c src/smol_mesh.c src/q.c \
-				 src/read_input.c src/br_memory.cpp src/br_gui.c src/br_keybindings.c
+				 src/read_input.c src/memory.cpp src/gui.c src/keybindings.c
 
 ifeq ($(PLATFORM), LINUX)
 	LIBS= `pkg-config --static --libs glfw3` -lGL
@@ -36,7 +36,7 @@ ifeq ($(PLATFORM), LINUX)
 	CC= gcc
 	COMMONFLAGS+= -DLINUX -DPLATFORM_DESKTOP
 	SOURCE+= src/desktop/linux/read_input.c
-	SHADERS_HEADER= src/shaders.h
+	SHADERS_HEADER= src/misc/shaders.h
 	SHADERS_LIST= src/desktop/shaders/grid.fs src/desktop/shaders/line.fs src/desktop/shaders/line.vs src/desktop/shaders/quad.vs src/desktop/shaders/quad.fs
 
 else ifeq ($(PLATFORM), WINDOWS)
@@ -48,7 +48,7 @@ else ifeq ($(PLATFORM), WINDOWS)
 								-DSUPPORT_DEFAULT_FONT=1
 
 	SOURCE+= $(RL)/rglfw.c src/desktop/win/read_input.c
-	SHADERS_HEADER= src/shaders.h
+	SHADERS_HEADER= src/misc/shaders.h
 	SHADERS_LIST= src/desktop/shaders/grid.fs src/desktop/shaders/line.fs src/desktop/shaders/line.vs src/desktop/shaders/quad.vs src/desktop/shaders/quad.fs
 
 else ifeq ($(PLATFORM), WEB)
@@ -57,7 +57,7 @@ else ifeq ($(PLATFORM), WEB)
 	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES2 -DPLATFORM_WEB --memory-init-file 1 --closure 1  -s "EXPORTED_RUNTIME_METHODS=['FS']" -s FORCE_FILESYSTEM -s WASM_BIGINT -s ENVIRONMENT=web -sALLOW_MEMORY_GROWTH -s USE_GLFW=3 -s ASYNCIFY --shell-file=src/web/minshell.html
 	SOURCE+= src/web/read_input.c
 	SHADERS_LIST= src/web/shaders/grid.fs src/web/shaders/line.fs src/web/shaders/line.vs src/web/shaders/quad.fs src/web/shaders/quad.vs
-	SHADERS_HEADER= src/shaders_web.h
+	SHADERS_HEADER= src/misc/shaders_web.h
 	OUTPUT= www/index.html
 
 else
@@ -82,7 +82,7 @@ ifeq ($(CONFIG), DEBUG)
 	ifeq ($(GUI), IMGUI)
 		SOURCE+= imgui/imgui_demo.cpp
 		ifeq ($(PLATFORM), LINUX)
-			SOURCE+= src/imgui/br_hotreload.c
+			SOURCE+= src/imgui/hotreload.c
 		endif
 	endif
 endif
@@ -133,8 +133,8 @@ bin/upper: tools/upper.cpp
 bin/lower: tools/lower.cpp
 	g++ -O3 -o bin/lower tools/lower.cpp
 
-src/default_font.h: bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf
-	bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf > src/default_font.h
+src/misc/default_font.h: bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf
+	bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf > src/misc/default_font.h
 
 bin/font_export: tools/font_export.c
 	gcc -o bin/font_export tools/font_export.c -lm
@@ -147,12 +147,12 @@ $(SHADERS_HEADER): $(SHADERS_LIST) bin/upper bin/lower
 																echo 'SHADER_$(word 4, $(subst /, , $(s))) \' | sed 's/\./_/' | bin/upper >> $(SHADERS_HEADER) && \
 																cat $(s) | sed 's/\(.*\)/"\1\\n" \\/' >> $(SHADERS_HEADER) && \
 																echo "" >> $(SHADERS_HEADER) && ) echo "OKi"
+BR_HEADERS= src/br_plot.h br_gui_internal.h br_help.h
 
-
-$(PREFIX_BUILD)/src/%.o:src/%.c src/plotter.h $(ADDITIONAL_HEADERS)
+$(PREFIX_BUILD)/src/%.o:src/%.c $(BR_HEADERS) $(ADDITIONAL_HEADERS)
 	$(CC) $(CCFLAGS) $(MY_COMMONFLAGS) -c -o $@ $<
 
-$(PREFIX_BUILD)/src/%.o:src/%.cpp src/plotter.h $(ADDITIONAL_HEADERS)
+$(PREFIX_BUILD)/src/%.o:src/%.cpp $(BR_HEADERS) $(ADDITIONAL_HEADERS)
 	$(CC) $(CXXFLAGS) $(MY_COMMONFLAGS) -c -o $@ $<
 
 $(PREFIX_BUILD)/%.o:%.cpp
@@ -168,6 +168,6 @@ clean:
 	test -d www &&  rm www -rdf || echo "done"
 	test -d zig-cache && rm zig-cache -rdf || echo "done"
 	test -d zig-out && rm zig-out -rdf || echo "done"
-	test -f src/shaders.h && rm src/shaders.h || echo "done"
-	test -f src/shaders_web.h && rm src/shaders_web.h || echo "done"
-	test -f src/default_font.h && rm src/default_font.h || echo "done"
+	test -f src/misc/shaders.h && rm src/misc/shaders.h || echo "done"
+	test -f src/misc/shaders_web.h && rm src/misc/shaders_web.h || echo "done"
+	test -f src/misc/default_font.h && rm src/misc/default_font.h || echo "done"

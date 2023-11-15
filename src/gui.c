@@ -1,5 +1,6 @@
 #include "br_plot.h"
 #include "br_gui_internal.h"
+#include "br_help.h"
 
 #include <raymath.h>
 #include <stdio.h>

@@ -1,4 +1,5 @@
 #include "br_plot.h"
+#include "br_help.h"
 #include "cstdlib"
 #include "cassert"
 #include <map>
