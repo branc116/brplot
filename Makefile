@@ -147,6 +147,7 @@ $(SHADERS_HEADER): $(SHADERS_LIST) bin/upper bin/lower
 																echo 'SHADER_$(word 4, $(subst /, , $(s))) \' | sed 's/\./_/' | bin/upper >> $(SHADERS_HEADER) && \
 																cat $(s) | sed 's/\(.*\)/"\1\\n" \\/' >> $(SHADERS_HEADER) && \
 																echo "" >> $(SHADERS_HEADER) && ) echo "OKi"
+
 BR_HEADERS= src/br_plot.h br_gui_internal.h br_help.h
 
 $(PREFIX_BUILD)/src/%.o:src/%.c $(BR_HEADERS) $(ADDITIONAL_HEADERS)
@@ -155,10 +156,10 @@ $(PREFIX_BUILD)/src/%.o:src/%.c $(BR_HEADERS) $(ADDITIONAL_HEADERS)
 $(PREFIX_BUILD)/src/%.o:src/%.cpp $(BR_HEADERS) $(ADDITIONAL_HEADERS)
 	$(CC) $(CXXFLAGS) $(MY_COMMONFLAGS) -c -o $@ $<
 
-$(PREFIX_BUILD)/%.o:%.cpp
+$(PREFIX_BUILD)/%.o:%.cpp $(ADDITIONAL_HEADERS)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-$(PREFIX_BUILD)/%.o:%.c
+$(PREFIX_BUILD)/%.o:%.c $(ADDITIONAL_HEADERS)
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
 .PHONY: clean
