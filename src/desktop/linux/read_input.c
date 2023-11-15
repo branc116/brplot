@@ -1,4 +1,4 @@
-#include "../../plotter.h"
+#include "../../br_plot.h"
 #include "pthread.h"
 #include <bits/types/siginfo_t.h>
 #include <stdio.h>
@@ -12,7 +12,7 @@ static pthread_t thread;
 static void* indirection_function(void* gv);
 static void regirter_interupt2(void);
 
-void read_input_main(graph_values_t* gv) {
+void read_input_main(br_plot_t* gv) {
 #ifndef RELEASE
   regirter_interupt2();
 #endif
