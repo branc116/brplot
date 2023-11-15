@@ -312,6 +312,20 @@ void    help_resampling_dir_to_str(char* buff, resampling_dir r);
 void br_hotreload_start(br_hotreload_state_t* s);
 #endif
 
+#ifdef IMGUI
+#ifndef file_saver2_t
+#define file_saver2_t void
+#endif
+
+typedef enum {
+  file_saver_state_exploring,
+  file_saver_state_accept,
+  file_saver_state_cancle
+} file_saver_state_t;
+
+file_saver_state_t hot_file_explorer(file_saver2_t* fs) {
+#endif
+
 static inline float maxf(float a, float b) {
   return a > b ? a : b;
 }

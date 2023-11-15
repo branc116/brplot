@@ -1,3 +1,5 @@
+#define file_saver2_t br_file_saver2_s
+
 #include "plotter.h"
 #include "stdio.h"
 #include "raylib.h"
@@ -5,11 +7,15 @@
 #include "../imgui/imgui.h"
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <vector>
+#include <algorithm>
+#include <chrono>
 
 ImVec4 operator-(float f, ImVec4 v) {
   return ImVec4{f - v.x , f - v.y, f - v.z, f - v.w};
 }
+
 namespace br {
   bool Input(const char* label, Vector2& a) {
     float* v = &a.x;
@@ -20,20 +26,31 @@ namespace br {
     float* v = &a.x;
     return ImGui::InputFloat3(label, v);
   }
+
+  Vector2 ToRaylib(ImVec2 vec) {
+    return Vector2{vec.x, vec.y};
+  }
+
+  bool IsMouseOwerWindow() {
+    auto pos = ImGui::GetWindowPos();
+    auto size = ImGui::GetWindowSize();
+    Rectangle r{pos.x, pos.y, size.x, size.y};
+    return CheckCollisionPointRec(ToRaylib(ImGui::GetMousePos()), r);
+  }
 }
 
-typedef enum {
-  file_saver_state_exploring,
-  file_saver_state_accept,
-  file_saver_state_cancle
-} file_saver_state_t;
-
-typedef struct {
+struct br_file_saver2_s {
   std::filesystem::path last_read;
   std::filesystem::path cwd;
   std::vector<std::filesystem::path> cur_paths;
   std::string name;
-} file_saver2_t;
+
+  std::string filter_string;
+  std::chrono::duration<long, std::milli> filter_timeout;
+
+  std::string title;
+};
+
 
 void file_saver_change_cwd_to(file_saver2_t& fs, std::filesystem::path&& p) {
   fs.cwd = std::move(p);
@@ -43,6 +60,7 @@ void file_saver_change_cwd_to(file_saver2_t& fs, std::filesystem::path&& p) {
   for (auto& d : di) {
     if (d.is_directory()) fs.cur_paths.push_back(std::move(d));
   }
+  std::sort(fs.cur_paths.begin(), fs.cur_paths.end(), [](auto a, auto b) { return a < b; });
 }
 
 void file_saver_change_cwd_up(file_saver2_t& fs) {
@@ -51,6 +69,25 @@ void file_saver_change_cwd_up(file_saver2_t& fs) {
 
 file_saver_state_t hot_file_explorer(file_saver2_t* fs) {
   ImGui::Begin("File Saver");
+  auto io = ImGui::GetIO();
+  if (br::IsMouseOwerWindow()) {
+    ImGui::LabelText("##CurName", "Mouse is not over"); 
+    char kp = GetCharPressed();
+    if (kp == 0 && fs->filter_timeout > std::chrono::milliseconds(0)) {
+      fs->filter_timeout -= std::chrono::milliseconds((int)(io.DeltaTime * 1000.f));
+    }
+    else if (kp == 0) {
+      fs->filter_timeout = std::chrono::milliseconds(0);
+      fs->filter_string = "";
+    }
+    else if (kp != 0 && fs->filter_timeout > std::chrono::milliseconds(0)) {
+      fs->filter_timeout = std::chrono::milliseconds(3000);
+      fs->filter_string += (char)kp;
+    } else {
+      fs->filter_timeout = std::chrono::milliseconds(3000);
+      fs->filter_string = (char)kp;
+    }
+  }
   ImGui::LabelText("##CurName", "%s/%s", fs->cwd.c_str(), fs->name.c_str()); 
   if (fs->last_read != fs->cwd) {
     file_saver_change_cwd_to(*fs, std::move(fs->cwd));
@@ -61,23 +98,24 @@ file_saver_state_t hot_file_explorer(file_saver2_t* fs) {
   float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
   ImGuiStyle& style = ImGui::GetStyle();
   ImVec2 button_sz(100, 40);
-  for (size_t i = 0; i < fs->cur_paths.size(); i++)
-  {
-      ImGui::PushID(i);
-      if (ImGui::Button(fs->cur_paths[i].filename().c_str(), button_sz)) {
-        file_saver_change_cwd_to(*fs, std::move(fs->cur_paths[i]));
-      }
-      float last_button_x2 = ImGui::GetItemRectMax().x;
-      float next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_sz.x;
-      if (i + 1 < fs->cur_paths.size() && next_button_x2 < window_visible_x2)
-          ImGui::SameLine();
-      ImGui::PopID();
+  for (size_t i = 0; i < fs->cur_paths.size(); i++) {
+    if (fs->filter_string != "" && std::string_view(fs->cur_paths[i].filename().c_str()).find(fs->filter_string) == std::string::npos) continue;
+    ImGui::PushID(i);
+    if (ImGui::Button(fs->cur_paths[i].filename().c_str(), button_sz)) {
+      file_saver_change_cwd_to(*fs, std::move(fs->cur_paths[i]));
+    }
+    float last_button_x2 = ImGui::GetItemRectMax().x;
+    float next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_sz.x;
+    if (i + 1 < fs->cur_paths.size() && next_button_x2 < window_visible_x2) ImGui::SameLine();
+    ImGui::PopID();
   }
-  ImGui::End();
+  ImGui::NewLine();
+  ImGui::InputText(".png", fs->name.data(), fs->name.capacity());
   std::filesystem::path full_path = fs->cwd / fs->name;
   if (std::filesystem::exists(full_path)) {
     ImGui::LabelText("##ERROR", "Warning: File `%s` already exists", full_path.c_str());
   }
+  ImGui::End();
   return file_saver_state_exploring;
 }
 
@@ -177,7 +215,9 @@ static file_saver2_t fs;
 extern "C" void br_hot_init(graph_values_t* gv) {
   ImGuiIO& io = ImGui::GetIO(); (void)io;
   fs.cwd = std::filesystem::path("/home");
+  fs.name = std::string(128, (char)0);
   fs.name = "test.png";
+  memcpy(fs.name.data(), "test.png", sizeof("test.png"));
   //io.Fonts->Clear();
   //io.Fonts->AddFontFromFileTTF("./fonts/PlayfairDisplayRegular-ywLOY.ttf", 20);
   fprintf(stderr, "First call\n");
