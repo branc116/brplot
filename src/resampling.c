@@ -1,11 +1,12 @@
 #include "br_plot.h"
+#include "br_help.h"
 #include "assert.h"
 #include "stdlib.h"
 #include "stdint.h"
 #include "math.h"
 #include <raylib.h>
 #include <raymath.h>
-#include "tests.h"
+#include "misc/tests.h"
 
 #define temp_points_count 1024
 

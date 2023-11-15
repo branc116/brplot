@@ -1,5 +1,6 @@
-#include "stdbool.h"
 #include "../br_plot.h"
+#include "../br_help.h"
+#include "stdbool.h"
 #include "stdio.h"
 #include "assert.h"
 #include <raylib.h>
