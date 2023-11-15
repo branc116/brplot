@@ -10,15 +10,15 @@ extern "C" {
 #ifdef RELEASE
 
 #ifdef PLATFORM_DESKTOP
-#include "misc/shaders.h"
+#include "src/misc/shaders.h"
 #elif PLATFORM_WEB
-#include "misc/shaders_web.h"
+#include "src/misc/shaders_web.h"
 #else
 #error "Shaders for this platform arn't defined"
 #endif
 
 #else
-#include "misc/shaders_dbg.h"
+#include "src/misc/shaders_dbg.h"
 
 #ifndef LINUX
 #ifdef UNIT_TEST

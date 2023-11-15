@@ -1,10 +1,10 @@
 #define file_saver2_t br_file_saver2_s
 
-#include "plotter.h"
+#include "src/br_plot.h"
 #include "stdio.h"
-#include "raylib.h"
+#include "raylib/src/raylib.h"
 #include "cstdlib"
-#include "../imgui/imgui.h"
+#include "src/imgui/imgui.h"
 #include <filesystem>
 #include <string>
 #include <string_view>

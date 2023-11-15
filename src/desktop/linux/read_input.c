@@ -1,4 +1,4 @@
-#include "../../br_plot.h"
+#include "src/br_plot.h"
 #include "pthread.h"
 #include <bits/types/siginfo_t.h>
 #include <stdio.h>

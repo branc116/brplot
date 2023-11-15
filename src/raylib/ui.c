@@ -1,5 +1,5 @@
-#include "../br_plot.h"
-#include "../br_help.h"
+#include "src/br_plot.h"
+#include "src/br_help.h"
 #include "stdbool.h"
 #include "stdio.h"
 #include "assert.h"

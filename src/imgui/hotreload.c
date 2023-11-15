@@ -1,6 +1,6 @@
 #include "dlfcn.h"
 #include "errno.h"
-#include "../br_plot.h"
+#include "src/br_plot.h"
 #include "pthread.h"
 #include "signal.h"
 #include "stdbool.h"

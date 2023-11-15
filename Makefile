@@ -9,7 +9,7 @@ GUI?= IMGUI
 RAYLIB_SOURCES= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
 ADDITIONAL_HEADERS= src/misc/default_font.h
 
-COMMONFLAGS= -I$(RL) -I./imgui -I./imgui/backends
+COMMONFLAGS= -I$(RL) -I./imgui -I./imgui/backends -I.
 
 ifeq ($(GUI), IMGUI)
 	SOURCE= imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp \
@@ -33,7 +33,7 @@ SOURCE+= src/main.c src/help.c \
 ifeq ($(PLATFORM), LINUX)
 	LIBS= `pkg-config --static --libs glfw3` -lGL
 	CXX= g++
-	CC= gcc
+	CC= gcc 
 	COMMONFLAGS+= -DLINUX -DPLATFORM_DESKTOP
 	SOURCE+= src/desktop/linux/read_input.c
 	SHADERS_HEADER= src/misc/shaders.h

@@ -1,5 +1,5 @@
 #include "br_plot.h"
-#include "misc/default_font.h"
+#include "src/misc/default_font.h"
 #include "string.h"
 #include "math.h"
 #include <raylib.h>

@@ -1,5 +1,5 @@
-#include "../br_plot.h"
-#include "../br_gui_internal.h"
+#include "src/br_plot.h"
+#include "src/br_gui_internal.h"
 #include "imgui_extensions.h"
 
 #include "imgui.h"

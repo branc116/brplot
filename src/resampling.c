@@ -6,7 +6,7 @@
 #include "math.h"
 #include <raylib.h>
 #include <raymath.h>
-#include "misc/tests.h"
+#include "src/misc/tests.h"
 
 #define temp_points_count 1024
 

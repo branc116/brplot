@@ -1,4 +1,4 @@
-#include "../../br_plot.h"
+#include "src/br_plot.h"
 #include <processthreadsapi.h>
 
 static void* thandle;
