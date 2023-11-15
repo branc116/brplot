@@ -1,6 +1,6 @@
 #include "dlfcn.h"
 #include "errno.h"
-#include "plotter.h"
+#include "../br_plot.h"
 #include "pthread.h"
 #include "signal.h"
 #include "stdbool.h"
@@ -28,7 +28,7 @@ static bool br_hotreload_compile(void) {
     return false;
   }
   if (a == 0) {
-    static char* newargv[] = { GCC, "-DLINUX", "-DPLATFORM_DESKTOP", "-fpic", "--shared", "-g", "-o", "build/br_hot.o", "src/br_hot.cpp", NULL };
+    static char* newargv[] = { GCC, "-DLINUX", "-DPLATFORM_DESKTOP", "-fpic", "--shared", "-g", "-o", "build/br_hot.o", "src/imgui/br_hot.cpp", NULL };
     execvp(GCC, newargv);
   } else {
     int wstat;
@@ -50,8 +50,8 @@ void br_hotreload_link(br_hotreload_state_t* s) {
     fprintf(stderr, "%s\n", dlerror());
     return;
   }
-  s->func_loop = (void (*)(graph_values_t*))dlsym(s->handl, "br_hot_loop");
-  s->func_init = (void (*)(graph_values_t*))dlsym(s->handl, "br_hot_init");
+  s->func_loop = (void (*)(br_plot_t*))dlsym(s->handl, "br_hot_loop");
+  s->func_init = (void (*)(br_plot_t*))dlsym(s->handl, "br_hot_init");
   char* error = dlerror();
   if (error != NULL) {
     fprintf(stderr, "%s\n", error);

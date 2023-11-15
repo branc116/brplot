@@ -1,3 +1,3 @@
-#include "../plotter.h"
+#include "../br_plot.h"
 
-void start_refreshing_shaders(graph_values_t* gv) { (void)gv; }
+void start_refreshing_shaders(br_plot_t* gv) { (void)gv; }

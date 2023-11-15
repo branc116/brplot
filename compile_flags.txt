@@ -1,6 +1,8 @@
 -Wall
+-DIMGUI
 -Wextra
 -Wpedantic
 -DPLATFORM_DESKTOP
 -DLINUX
 -Iimgui
+-DNUMBER_OF_STEPS=100

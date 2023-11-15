@@ -16,8 +16,11 @@
 void emscripten_run_script(const char* script);
 static void update_resolution(br_plot_t* gv);
 static void draw_left_panel(br_plot_t* gv);
+void br_gui_init_specifics(br_plot_t* br) {(void)br;}
 
 void graph_draw(br_plot_t* gv) {
+  BeginDrawing();
+  ClearBackground(BLACK);
   update_resolution(gv);
   update_variables(gv);
   help_draw_fps(0, 0);
@@ -25,6 +28,7 @@ void graph_draw(br_plot_t* gv) {
   draw_grid_values(gv);
   graph_draw_grid(gv->gridShader.shader, gv->graph_screen_rect);
   points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, gv->graph_rect);
+  EndDrawing();
 }
 
 static float sp = 0.f;

@@ -14,11 +14,8 @@
 
 int main_gui(br_plot_t* gv) {
   while(!WindowShouldClose()) {
-    BeginDrawing();
-      ClearBackground(BLACK);
-      graph_draw(gv);
-      graph_frame_end(gv);
-    EndDrawing();
+    graph_draw(gv);
+    graph_frame_end(gv);
   }
   return 0;
 }
@@ -28,7 +25,7 @@ int main(void) {
   SetTraceLogLevel(LOG_ERROR);
 #endif
   SetWindowState(FLAG_MSAA_4X_HINT);
-  InitWindow(WIDTH, HEIGHT, "rlplot");
+  InitWindow(WIDTH, HEIGHT, "brplot");
   SetWindowState(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
   br_plot_t* gv = BR_MALLOC(sizeof(br_plot_t));
   graph_init(gv, WIDTH, HEIGHT);

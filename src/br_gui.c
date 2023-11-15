@@ -22,15 +22,17 @@ context_t context;
 void emscripten_run_script(const char* script);
 static br_shader_t graph_load_shader(char const* vs, char const* fs);
 
-void graph_init(br_plot_t* gv, float width, float height) {
-  *gv = (br_plot_t){
+void graph_init(br_plot_t* br, float width, float height) {
+  *br = (br_plot_t){
     .gridShader = graph_load_shader(NULL, SHADER_GRID_FS),
     .linesShader = graph_load_shader(SHADER_LINE_VS, SHADER_LINE_FS),
     .quadShader = graph_load_shader(SHADER_QUAD_VS, SHADER_QUAD_FS),
 #ifndef RELEASE
     .getchar = getchar,
 #ifdef IMGUI
+#ifdef LINUX
     .hot_state = { .handl = NULL, .func_loop = NULL, .func_init = NULL, .is_init_called = false, .lock = { 0 } },
+#endif
 #endif
 #endif
     .uvOffset = { 0., 0. },
@@ -49,18 +51,21 @@ void graph_init(br_plot_t* gv, float width, float height) {
   };
 #ifdef IMGUI
 #ifndef RELEASE
+#ifdef LINUX
   pthread_mutexattr_t attrs;
   pthread_mutexattr_init(&attrs);
-  pthread_mutex_init(&gv->hot_state.lock, &attrs);
+  pthread_mutex_init(&br->hot_state.lock, &attrs);
 #endif
 #endif
-  gv->lines_mesh = smol_mesh_malloc(PTOM_COUNT, gv->linesShader.shader);
-  gv->quads_mesh = smol_mesh_malloc(PTOM_COUNT, gv->quadShader.shader);
-  q_init(&gv->commands);
+#endif
+  br->lines_mesh = smol_mesh_malloc(PTOM_COUNT, br->linesShader.shader);
+  br->quads_mesh = smol_mesh_malloc(PTOM_COUNT, br->quadShader.shader);
+  q_init(&br->commands);
   help_load_default_font();
 
   context.font_scale = 1.8f;
   memset(context.buff, 0, sizeof(context.buff));
+  br_gui_init_specifics(br);
 }
 
 void graph_free(br_plot_t* gv) {
@@ -170,22 +175,6 @@ void update_variables(br_plot_t* br) {
 void graph_frame_end(br_plot_t* gv) {
   gv->lines_mesh->draw_calls = 0;
   gv->lines_mesh->points_drawn = 0;
-}
-
-void graph_draw_min(br_plot_t* gv, float posx, float posy, float width, float height, float padding) {
-  gv->uvScreen.x = (float)GetScreenWidth();
-  gv->uvScreen.y = (float)GetScreenHeight();
-  gv->graph_screen_rect.x = 50.f + posx + padding;
-  gv->graph_screen_rect.y = posy + padding;
-  gv->graph_screen_rect.width = width - 50.f - 2.f * padding;
-  gv->graph_screen_rect.height = height - 30.f - 2.f * padding;
-  update_variables(gv);
-  BeginScissorMode((int)posx, (int)posy, (int)width, (int)height);
-    DrawRectangleRec(gv->graph_screen_rect, BLACK);
-    draw_grid_values(gv);
-    graph_draw_grid(gv->gridShader.shader, gv->graph_screen_rect);
-    points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, gv->graph_rect);
-  EndScissorMode();
 }
 
 void graph_draw_grid(Shader shader, Rectangle screen_rect) {

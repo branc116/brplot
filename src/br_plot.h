@@ -19,6 +19,14 @@ extern "C" {
 
 #else
 #include "shaders_dbg.h"
+
+#ifndef LINUX
+#ifdef UNIT_TEST
+#undef UNIT_TEST
+// IT don't work on windows....
+#endif
+#endif
+
 #endif
 
 // This is the size of buffer used to transfer points from cpu to gpu.
@@ -250,7 +258,6 @@ void graph_export(br_plot_t* gv, char const * path);
 void graph_free(br_plot_t* gv);
 void graph_draw(br_plot_t* gv);
 void graph_frame_end(br_plot_t* gv);
-void graph_draw_min(br_plot_t* gv, float posx, float posy, float width, float height, float padding);
 
 void br_keybinding_handle_keys(br_plot_t* br);
 

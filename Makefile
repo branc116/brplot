@@ -14,22 +14,19 @@ COMMONFLAGS= -I$(RL) -I./imgui -I./imgui/backends
 ifeq ($(GUI), IMGUI)
 	SOURCE= imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp \
 				  imgui/imgui_widgets.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp \
-				  src/main_imgui.cpp src/imgui_extensions.cpp \
-					$(RAYLIB_SOURCES)
+				  src/imgui/br_gui.cpp src/imgui/imgui_extensions.cpp $(RAYLIB_SOURCES)
 	COMMONFLAGS+= -DIMGUI
 else ifeq ($(GUI), RAYLIB)
-	SOURCE= src/main.c \
-					src/raylib/br_gui.c src/raylib/ui.c \
-	$(RAYLIB_SOURCES)
+	SOURCE= src/raylib/br_gui.c src/raylib/ui.c $(RAYLIB_SOURCES)
 else ifeq ($(GUI), HEADLESS)
-	SOURCE= src/main.c src/raylib_headless.c
+	SOURCE= src/headless/raylib_headless.c src/headless/br_gui.c
 	PLATFORM= LINUX
 	COMMONFLAGS+= -DNUMBER_OF_STEPS=100
 else
 	echo "Valid GUI parameters are IMGUI, RAYLIB, HEADLESS" && exit -1
 endif
 	
-SOURCE+= src/help.c \
+SOURCE+= src/main.c src/help.c \
 				 src/points_group.c src/resampling.c src/smol_mesh.c src/q.c \
 				 src/read_input.c src/br_memory.cpp src/br_gui.c src/br_keybindings.c
 
@@ -68,15 +65,26 @@ else
 endif
 
 ifeq ($(CONFIG), DEBUG)
-	COMMONFLAGS+= -g -pg 
-	MY_COMMONFLAGS= -Wconversion -Wall -Wpedantic -Wextra -rdynamic -fpie -DUNIT_TEST \
+	COMMONFLAGS+= -g -pg -Wconversion -Wall -Wpedantic -Wextra -DUNIT_TEST
+	ifeq ($(PLATFORM), LINUX)
+		SOURCE+= src/desktop/linux/refresh_shaders.c
+		COMMONFLAGS+= -rdynamic -fpie \
 	   -fsanitize=address -fsanitize=leak \
 		 -fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
 		 -fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
-	ifeq ($(GUI), IMGUI)
-		SOURCE+= imgui/imgui_demo.cpp src/br_hotreload.c
 	endif
-	SOURCE+= src/desktop/linux/refresh_shaders.c
+	ifeq ($(PLATFORM), WINDOWS)
+		SOURCE+= src/desktop/win/refresh_shaders.c
+	endif
+	ifeq ($(PLATFORM), WEB)
+		SOURCE+= src/web/refresh_shaders.c
+	endif
+	ifeq ($(GUI), IMGUI)
+		SOURCE+= imgui/imgui_demo.cpp
+		ifeq ($(PLATFORM), LINUX)
+			SOURCE+= src/imgui/br_hotreload.c
+		endif
+	endif
 endif
 
 ifeq ($(CONFIG), RELEASE)
