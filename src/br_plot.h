@@ -138,28 +138,6 @@ typedef struct {
   points_group_t* arr;
 } points_groups_t;
 
-#define CWD_MAX_SIZE 4096
-#define FILE_EXTENSION_MAX_SIZE 16
-#define CUR_NAME_MAX_SIZE 4096
-
-typedef struct file_saver_s {
-  Rectangle rect;
-  char* cwd;
-  char* file_extension;
-  char* cur_name;
-  void (*callback)(void* arg, bool success);
-  void* arg;
-  float font_size;
-  float scroll_position;
-  FilePathList paths;
-  size_t selected_index;
-} file_saver_t;
-
-typedef enum {
-  plotter_state_default,
-  plotter_state_saving_file
-} plotter_state_t;
-
 typedef struct {
   int uResolution;
   int uZoom;
@@ -172,17 +150,20 @@ typedef struct {
 #endif
 } br_shader_t;
 
-struct graph_values_s;
+struct br_plot_t;
+#ifdef IMGUI
+#ifndef RELEASE
 typedef struct {
   LOCK(lock)
-  void (*func_loop)(struct graph_values_s* gv);
-  void (*func_init)(struct graph_values_s* gv);
+  void (*func_loop)(struct br_plot_t* gv);
+  void (*func_init)(struct br_plot_t* gv);
   bool is_init_called;
   void* handl;
 } br_hotreload_state_t;
+#endif
+#endif
 
-typedef struct graph_values_s {
-  plotter_state_t state;
+typedef struct br_plot_t {
   union {
     br_shader_t shaders[3];
     struct {
@@ -194,8 +175,6 @@ typedef struct graph_values_s {
   Vector2 uvZoom, uvOffset, uvScreen, uvDelta;
   smol_mesh_t* lines_mesh;
   smol_mesh_t* quads_mesh;
-  
-  file_saver_t* fs;
 
   // Only render thread can read or write to this array.
   points_groups_t groups;
@@ -204,10 +183,11 @@ typedef struct graph_values_s {
   q_commands commands;
 #ifndef RELEASE
   int (*getchar)(void);
+#ifdef IMGUI
   br_hotreload_state_t hot_state;
 #endif
+#endif
   Vector2 mouse_graph_pos;
-
 
   float recoil;
   bool shaders_dirty;
@@ -215,7 +195,7 @@ typedef struct graph_values_s {
   bool jump_around;
   bool file_saver_inited;
   bool mouse_inside_graph;
-} graph_values_t;
+} br_plot_t;
 
 typedef struct {
   Vector2 mouse_screen_pos;
@@ -230,14 +210,9 @@ extern context_t context;
 
 void* br_malloc(size_t size);
 void* br_realloc(void *old, size_t newS);
-void br_free(void* p);
+void  br_free(void* p);
 void* br_imgui_malloc(size_t size, void* user_data);
-void br_imgui_free(void* p, void* user_data);
-
-file_saver_t* file_saver_malloc(const char* cwd, const char* default_filename, const char* file_exension, float font_size, void (*callback)(void*, bool), void* arg);
-void file_saver_free(file_saver_t* fe);
-void file_saver_draw(file_saver_t* fe);
-char const* file_saver_get_full_path(file_saver_t* fe);
+void  br_imgui_free(void* p, void* user_data);
 
 smol_mesh_t* smol_mesh_malloc(size_t capacity, Shader s);
 void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 mid_point, Vector2 tangent, Color color);
@@ -269,21 +244,23 @@ void          resampling_free(resampling_t* res);
 size_t        resampling_draw(resampling_t* res, points_group_t const* pg, Rectangle screen, smol_mesh_t* lines_mesh, smol_mesh_t* quad_mesh);
 void          resampling_add_point(resampling_t* res, points_group_t const* pg, size_t index);
 
-void graph_init(graph_values_t* gv, float width, float height);
-void graph_screenshot(graph_values_t* gv, char const * path);
-void graph_export(graph_values_t* gv, char const * path);
-void graph_free(graph_values_t* gv);
-void graph_draw(graph_values_t* gv);
-void graph_frame_end(graph_values_t* gv);
-void graph_draw_min(graph_values_t* gv, float posx, float posy, float width, float height, float padding);
+void graph_init(br_plot_t* gv, float width, float height);
+void graph_screenshot(br_plot_t* gv, char const * path);
+void graph_export(br_plot_t* gv, char const * path);
+void graph_free(br_plot_t* gv);
+void graph_draw(br_plot_t* gv);
+void graph_frame_end(br_plot_t* gv);
+void graph_draw_min(br_plot_t* gv, float posx, float posy, float width, float height, float padding);
+
+void br_keybinding_handle_keys(br_plot_t* br);
 
 #ifndef RELEASE
 // Start watching shaders folder for changes and
 // mark gv->shader_dirty flag to true if there were any change to shaders.
-void start_refreshing_shaders(graph_values_t* gv);
+void start_refreshing_shaders(br_plot_t* gv);
 #endif
 
-void read_input_main(graph_values_t* ptr);
+void read_input_main(br_plot_t* ptr);
 void read_input_stop(void);
 
 void q_init(q_commands* q);
@@ -295,11 +272,13 @@ bool q_push_safe(q_commands *q, q_command command);
 bool q_push(q_commands* q, q_command command);
 q_command q_pop(q_commands* q);
 
+#ifndef IMGUI
 int     ui_draw_button(bool* is_pressed, float x, float y, float font_size, const char* str, ...);
 void    ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size);
 void    ui_stack_set_size(Vector2 v);
 int     ui_stack_buttons_add(bool* is_pressed, const char* str, ...);
 Vector2 ui_stack_buttons_end(void);
+#endif
 
 void    help_trim_zeros(char * buff);
 void    help_draw_text(const char *text, Vector2 pos, float fontSize, Color color);
@@ -308,8 +287,10 @@ void    help_draw_fps(int posX, int posY);
 void    help_load_default_font(void);
 void    help_resampling_dir_to_str(char* buff, resampling_dir r);
 
+#ifdef IMGUI
 #ifndef RELEASE
 void br_hotreload_start(br_hotreload_state_t* s);
+#endif
 #endif
 
 #ifdef IMGUI
@@ -323,7 +304,7 @@ typedef enum {
   file_saver_state_cancle
 } file_saver_state_t;
 
-file_saver_state_t hot_file_explorer(file_saver2_t* fs) {
+file_saver_state_t hot_file_explorer(file_saver2_t* fs);
 #endif
 
 static inline float maxf(float a, float b) {

@@ -3,7 +3,7 @@
 #include "raylib.h"
 #include <stdlib.h>
 #include "string.h"
-#include "plotter.h"
+#include "br_plot.h"
 
 #define RLAPI
 #pragma GCC diagnostic push

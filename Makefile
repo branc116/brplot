@@ -16,8 +16,11 @@ ifeq ($(GUI), IMGUI)
 				  imgui/imgui_widgets.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp \
 				  src/main_imgui.cpp src/imgui_extensions.cpp \
 					$(RAYLIB_SOURCES)
+	COMMONFLAGS+= -DIMGUI
 else ifeq ($(GUI), RAYLIB)
-	SOURCE= src/main.c $(RAYLIB_SOURCES)
+	SOURCE= src/main.c \
+					src/raylib/br_gui.c src/raylib/ui.c \
+	$(RAYLIB_SOURCES)
 else ifeq ($(GUI), HEADLESS)
 	SOURCE= src/main.c src/raylib_headless.c
 	PLATFORM= LINUX
@@ -26,9 +29,9 @@ else
 	echo "Valid GUI parameters are IMGUI, RAYLIB, HEADLESS" && exit -1
 endif
 	
-SOURCE+= src/graph.c src/ui.c src/help.c src/file_explorer.c \
+SOURCE+= src/help.c \
 				 src/points_group.c src/resampling.c src/smol_mesh.c src/q.c \
-				 src/read_input.c src/br_memory.cpp
+				 src/read_input.c src/br_memory.cpp src/br_gui.c src/br_keybindings.c
 
 ifeq ($(PLATFORM), LINUX)
 	LIBS= `pkg-config --static --libs glfw3` -lGL
@@ -71,9 +74,9 @@ ifeq ($(CONFIG), DEBUG)
 		 -fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
 		 -fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
 	ifeq ($(GUI), IMGUI)
-		SOURCE+= imgui/imgui_demo.cpp
+		SOURCE+= imgui/imgui_demo.cpp src/br_hotreload.c
 	endif
-	SOURCE+= src/desktop/linux/refresh_shaders.c src/br_hotreload.c
+	SOURCE+= src/desktop/linux/refresh_shaders.c
 endif
 
 ifeq ($(CONFIG), RELEASE)
@@ -93,7 +96,6 @@ ifeq ($(CONFIG), RELEASE)
 		-DSUPPORT_IMAGE_EXPORT=1 \
 		-DSUPPORT_FILEFORMAT_PNG=1 \
 		-DSUPPORT_STANDARD_FILEIO=1 \
-		-DSUPPORT_TRACELOG=1 \
 		-DIMGUI_DISABLE_DEMO_WINDOWS \
 		-DIMGUI_DISABLE_DEBUG_TOOLS
 	ADDITIONAL_HEADERS+= $(SHADERS_HEADER)

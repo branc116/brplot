@@ -1,4 +1,4 @@
-#include "plotter.h"
+#include "br_plot.h"
 #include "tests.h"
 
 #include <stdlib.h>
@@ -43,29 +43,29 @@ typedef struct {
 
 typedef struct {
   input_token_kind_t kinds[MAX_REDUCE];
-  void (*reduce_func)(graph_values_t* commands);
+  void (*reduce_func)(br_plot_t* commands);
 } input_reduce_t;
 
 input_token_t tokens[INPUT_TOKENS_COUNT];
 size_t tokens_len = 0;
 
-static void input_reduce_y(graph_values_t* gv) {
+static void input_reduce_y(br_plot_t* gv) {
   q_push(&gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = 0, .y = tokens[0].value_f} });
 }
 
-static void input_reduce_xy(graph_values_t* gv) {
+static void input_reduce_xy(br_plot_t* gv) {
   q_push(&gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = 0, .x = tokens[0].value_f, .y = tokens[2].value_f} });
 }
 
-static void input_reduce_xygroup(graph_values_t* gv) {
+static void input_reduce_xygroup(br_plot_t* gv) {
   q_push(&gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = tokens[4].value_i, .x = tokens[0].value_f, .y = tokens[2].value_f } });
 }
 
-static void input_reduce_ygroup(graph_values_t* gv) {
+static void input_reduce_ygroup(br_plot_t* gv) {
   q_push(&gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = tokens[2].value_i, .y = tokens[0].value_f } });
 }
 
-static void input_reduce_command(graph_values_t* gv) {
+static void input_reduce_command(br_plot_t* gv) {
   (void)gv;
   if (0 == strcmp("zoomx", tokens[1].name)) {
     gv->uvZoom.x = tokens[2].value_f;
@@ -115,26 +115,21 @@ static bool input_tokens_match_count(input_reduce_t* r, size_t* match_count) {
   return r->kinds[i] == input_token_any;
 }
 
-static void input_tokens_reduce(graph_values_t* gv, bool force_reduce) {
+static void input_tokens_reduce(br_plot_t* gv, bool force_reduce) {
   if (tokens_len == 0) return;
   int best = -1;
   size_t best_c = 0, match_c = 0;
 
   int best_reduce = -1;
   size_t best_reduce_count = 0;
-  size_t match_reduce_c = 0;
   for (size_t i = 0; i < REDUCTORS; ++i) {
     size_t count = 0;
     bool can_reduce = input_tokens_match_count(&input_reductors_arr[i], &count);
     if (can_reduce) {
       if (count > best_reduce_count) {
         best_reduce_count = count;
-        match_reduce_c = 1;
         best_reduce = (int)i;
-      } else if (count == best_reduce_count) {
-        ++match_reduce_c;
-      }
-    }
+      }     }
     if (count > best_c) {
       best_c = count;
       match_c = 1;
@@ -158,7 +153,7 @@ static void input_tokens_reduce(graph_values_t* gv, bool force_reduce) {
   }
 }
 
-static void lex(graph_values_t* gv) {
+static void lex(br_plot_t* gv) {
   float value_f = 0;
   int decimal = 0;
   int value_i = 0;
@@ -293,13 +288,13 @@ static void lex(graph_values_t* gv) {
 }
 
 void *read_input_main_worker(void* gv) {
-  graph_values_t* gvt = gv;
+  br_plot_t* gvt = gv;
   lex(gvt);
   return NULL;
 }
 
 #ifndef RELEASE
-int test_str() {
+int test_str(void) {
   static size_t index = 0;
   const char str[] = "8.0,-16.0;1 -0.0078,16.0;1 \n \n 4.0;1\n\n\n\n\n\n 2.0 1;10;1;;;; 10e10 3e38 --test 1.2 --zoomx 10.0 1;12";
   if (index >= sizeof(str))
@@ -310,7 +305,7 @@ int test_str() {
 }
 
 TEST_CASE(InputTests) {
-  graph_values_t gvt;
+  br_plot_t gvt;
   gvt.getchar = test_str;
   q_init(&gvt.commands);
   read_input_main_worker(&gvt);

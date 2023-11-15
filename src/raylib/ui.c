@@ -1,5 +1,5 @@
 #include "stdbool.h"
-#include "plotter.h"
+#include "../br_plot.h"
 #include "stdio.h"
 #include "assert.h"
 #include <raylib.h>
@@ -98,7 +98,7 @@ Vector2 ui_stack_buttons_end(void) {
   assert(stack_is_inited);
   stack_is_inited = false;
   if (stack_count == 0) return stack_pos;
-  BoundingBox bb = {.min = {stack_pos.x, stack_pos.y, 0.f}, .max = { stack_pos.x + stack_maxsize.x, stack_pos.y + stack_maxsize.y + stack_offset - stack_button_size.y } };
+  BoundingBox bb = {.min = {stack_pos.x, stack_pos.y, 0.f}, .max = { stack_pos.x + stack_maxsize.x, stack_pos.y + stack_maxsize.y + stack_offset - stack_button_size.y, 0.f} };
   if (stack_size_set) {
     bb.max.x = bb.min.x + stack_size.x;
     bb.max.y = bb.min.y + stack_size.y;

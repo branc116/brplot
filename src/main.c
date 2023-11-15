@@ -1,4 +1,4 @@
-#include "plotter.h"
+#include "br_plot.h"
 
 #include <stddef.h>
 #include <assert.h>
@@ -12,14 +12,11 @@
 #define WIDTH 1280
 #define HEIGHT 720
 
-extern context_t context;
-
-int main_gui(graph_values_t* gv) {
+int main_gui(br_plot_t* gv) {
   while(!WindowShouldClose()) {
     BeginDrawing();
       ClearBackground(BLACK);
-      if (gv->state == plotter_state_default) graph_draw(gv);
-      else if (gv->state == plotter_state_saving_file) file_saver_draw(gv->fs);
+      graph_draw(gv);
       graph_frame_end(gv);
     EndDrawing();
   }
@@ -33,7 +30,7 @@ int main(void) {
   SetWindowState(FLAG_MSAA_4X_HINT);
   InitWindow(WIDTH, HEIGHT, "rlplot");
   SetWindowState(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
-  graph_values_t* gv = BR_MALLOC(sizeof(graph_values_t));
+  br_plot_t* gv = BR_MALLOC(sizeof(br_plot_t));
   graph_init(gv, WIDTH, HEIGHT);
 #ifndef RELEASE
   start_refreshing_shaders(gv);
