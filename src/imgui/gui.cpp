@@ -156,5 +156,7 @@ extern "C" void graph_draw(br_plot_t* gv) {
   glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   EndDrawing();
+#ifndef PLATFORM_WEB
   ClearBackground(BLACK);
+#endif
 }
