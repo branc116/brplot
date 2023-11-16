@@ -1,5 +1,5 @@
 #include "br_plot.h"
-#include "misc/tests.h"
+#include "src/misc/tests.h"
 
 #include <stdlib.h>
 #include <string.h>

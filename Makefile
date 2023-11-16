@@ -33,7 +33,7 @@ SOURCE+= src/main.c src/help.c \
 ifeq ($(PLATFORM), LINUX)
 	LIBS= `pkg-config --static --libs glfw3` -lGL
 	CXX= g++
-	CC= gcc 
+	CC= gcc
 	COMMONFLAGS+= -DLINUX -DPLATFORM_DESKTOP
 	SOURCE+= src/desktop/linux/read_input.c
 	SHADERS_HEADER= src/misc/shaders.h
