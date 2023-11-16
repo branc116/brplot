@@ -222,6 +222,10 @@ nc -ulkp 42069 | brplot;
   * Support for draging with one finger.
   * Support for multitouch zoom.
 * ~~There is something wrong with new tokenizer. Fix this!!~~
+* Support for exporting csv|brplot file by issuing command from stdin.
+* For Imgui make a default layout
+* For Imgui try to make the same shit with fonts as for raylib. Export only the subset of ttf font.
+* For Imgui disable default font and use the font that is used in the rest of the graph.
 
 
 ## Compile
