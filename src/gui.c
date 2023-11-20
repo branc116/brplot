@@ -222,6 +222,9 @@ void graph_export(br_plot_t* gv, char const * path) {
   fprintf(file, "--zoomy %f\n", gv->uvZoom.y);
   fprintf(file, "--offsetx %f\n", gv->uvOffset.x);
   fprintf(file, "--offsety %f\n", gv->uvOffset.y);
+  for (size_t i = 0; i < gv->groups.len; ++i) {
+    fprintf(file, gv->groups.arr[i].is_selected ? "--show %d\n" : "--hide %d\n", gv->groups.arr[i].group_id);
+  }
   points_groups_export(&gv->groups, file);
   fclose(file);
 }
