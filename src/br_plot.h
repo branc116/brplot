@@ -58,8 +58,13 @@ typedef enum {
   q_command_push_point_xy,
   q_command_pop,
   q_command_clear,
-  q_command_clear_all
+  q_command_clear_all,
+  q_command_screenshot,
+  q_command_export,
+  q_command_exportcsv,
 } q_command_type;
+
+extern char q_command_path[];
 
 typedef struct {
   q_command_type type;
@@ -78,6 +83,10 @@ typedef struct {
     struct {
       int group;
     } clear;
+    struct {
+      // Should be freed by UI thread
+      char* path;
+    } path_arg;
   };
 } q_command;
 
@@ -207,6 +216,7 @@ typedef struct br_plot_t {
   bool jump_around;
   bool file_saver_inited;
   bool mouse_inside_graph;
+  bool should_close;
 } br_plot_t;
 
 typedef struct {
@@ -256,19 +266,21 @@ void          resampling_free(resampling_t* res);
 size_t        resampling_draw(resampling_t* res, points_group_t const* pg, Rectangle screen, smol_mesh_t* lines_mesh, smol_mesh_t* quad_mesh);
 void          resampling_add_point(resampling_t* res, points_group_t const* pg, size_t index);
 
-void graph_init(br_plot_t* gv, float width, float height);
-void graph_screenshot(br_plot_t* gv, char const * path);
-void graph_export(br_plot_t* gv, char const * path);
-void graph_free(br_plot_t* gv);
-void graph_draw(br_plot_t* gv);
-void graph_frame_end(br_plot_t* gv);
+void graph_init(br_plot_t* br, float width, float height);
+void graph_screenshot(br_plot_t* br, char const* path);
+void graph_export(br_plot_t const* br, char const* path);
+void graph_export_csv(br_plot_t const* br, char const* path);
+
+void graph_free(br_plot_t* br);
+void graph_draw(br_plot_t* br);
+void graph_frame_end(br_plot_t* br);
 
 void br_keybinding_handle_keys(br_plot_t* br);
 
 #ifndef RELEASE
 // Start watching shaders folder for changes and
 // mark gv->shader_dirty flag to true if there were any change to shaders.
-void start_refreshing_shaders(br_plot_t* gv);
+void start_refreshing_shaders(br_plot_t* br);
 #endif
 
 void read_input_main(br_plot_t* ptr);

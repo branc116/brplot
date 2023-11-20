@@ -7,14 +7,22 @@
 #include <math.h>
 
 #define MAX_REDUCE 6
-#define MAX_NAME 8
-#define REDUCTORS 5
+#define MAX_NAME 64
+#define REDUCTORS 8
 #define INPUT_TOKENS_COUNT MAX_REDUCE
+#define IS_VALID_NAME(C) ((c) >= 'a' && (c) <= 'z')
+#define IS_VALID_PATH(c) (((c) >= '0' && (c) <= '1') || \
+      ((c) >= 'a' && (c) <= 'z') || \
+      ((c) >= 'a' && (c) <= 'z') || \
+      (c) == '.' || \
+      (c) == '/' || \
+      (c) == '_')
 
 typedef enum {
   input_token_any,
   input_token_number,
   input_token_name,
+  input_token_path,
   input_token_comma,
   input_token_semicollon,
   input_token_dashdash
@@ -27,6 +35,7 @@ typedef enum {
   input_lex_state_number_exp,
   input_lex_state_number_reset,
   input_lex_state_name,
+  input_lex_state_path,
   input_lex_state_dash,
 } input_lex_state_t;
 
@@ -65,6 +74,18 @@ static void input_reduce_ygroup(br_plot_t* gv) {
   q_push(&gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = tokens[2].value_i, .y = tokens[0].value_f } });
 }
 
+static void input_push_command_with_path(q_commands* commands, const char* path, q_command_type command) {
+  size_t len = strlen(path);
+  q_command cmd = {
+    .type = command,
+    .path_arg = { 
+      .path = BR_MALLOC(len + 1) 
+    }
+  };
+  memcpy(cmd.path_arg.path, path, len + 1);
+  q_push(commands, cmd);
+}
+
 static void input_reduce_command(br_plot_t* gv) {
   (void)gv;
   if (0 == strcmp("zoomx", tokens[1].name)) {
@@ -84,6 +105,15 @@ static void input_reduce_command(br_plot_t* gv) {
   } else if (0 == strcmp("show", tokens[1].name)) {
     points_group_t* pg = points_group_get(&gv->groups, tokens[2].value_i);
     pg->is_selected = true;
+  } else if (0 == strcmp("exportcsv", tokens[1].name)) {
+    input_push_command_with_path(&gv->commands, tokens[2].name, q_command_exportcsv);
+  } else if (0 == strcmp("export", tokens[1].name)) {
+    input_push_command_with_path(&gv->commands, tokens[2].name, q_command_export);
+  } else if (0 == strcmp("screenshot", tokens[1].name)) {
+    input_push_command_with_path(&gv->commands, tokens[2].name, q_command_screenshot);
+  } else if (0 == strcmp("exit", tokens[1].name)) {
+    gv->should_close = true;
+    exit(0);
   } else
     printf("Execute %c%c%c...\n", tokens[1].name[0], tokens[1].name[1], tokens[1].name[2]);
 }
@@ -94,6 +124,9 @@ input_reduce_t input_reductors_arr[REDUCTORS] = {
   {{input_token_number, input_token_comma, input_token_number, input_token_semicollon, input_token_number}, input_reduce_xygroup},
   {{input_token_number, input_token_semicollon, input_token_number}, input_reduce_ygroup},
   {{input_token_dashdash, input_token_name, input_token_number}, input_reduce_command},
+  {{input_token_dashdash, input_token_name, input_token_path}, input_reduce_command},
+  {{input_token_dashdash, input_token_name, input_token_name}, input_reduce_command},
+  {{input_token_dashdash, input_token_name}, input_reduce_command},
 };
 
 
@@ -188,6 +221,9 @@ static void lex(br_plot_t* gv) {
         } else if (c >= 'a' && c <= 'z') {
           state = input_lex_state_name;
           read_next = false;
+        } else if (IS_VALID_PATH(c)) {
+          state = input_lex_state_path;
+          read_next = false;
         } else if (c == '.') {
           state = input_lex_state_number_decimal;
         } else if (c == ',') {
@@ -272,10 +308,25 @@ static void lex(br_plot_t* gv) {
       case input_lex_state_name:
         if (name_len + 1 < MAX_NAME && c >= 'a' && c <= 'z') {
           name[name_len++] = (char)c;
+        } else if ((name_len + 1 < MAX_NAME) && IS_VALID_PATH(c)) {
+          read_next = false;
+          state = input_lex_state_path;
         } else {
           memcpy(tokens[tokens_len].name, name, name_len);
           tokens[tokens_len].name[name_len] = (char)0;
           tokens[tokens_len++].kind = input_token_name;
+          state = input_lex_state_init;
+          name_len = 0;
+          read_next = false;
+        }
+        break;
+      case input_lex_state_path:
+        if ((name_len + 1 < MAX_NAME) && IS_VALID_PATH(c)) {
+          name[name_len++] = (char)c;
+        } else {
+          memcpy(tokens[tokens_len].name, name, name_len);
+          tokens[tokens_len].name[name_len] = (char)0;
+          tokens[tokens_len++].kind = input_token_path;
           state = input_lex_state_init;
           name_len = 0;
           read_next = false;

@@ -167,6 +167,9 @@ void update_variables(br_plot_t* br) {
       case q_command_pop:           break; //TODO
       case q_command_clear:         points_group_clear(&br->groups, comm.clear.group); break;
       case q_command_clear_all:     points_groups_deinit(&br->groups); break;
+      case q_command_screenshot:    graph_screenshot(br, comm.path_arg.path); free(comm.path_arg.path); break;
+      case q_command_export:        graph_export(br, comm.path_arg.path);     free(comm.path_arg.path); break;
+      case q_command_exportcsv:     graph_export_csv(br, comm.path_arg.path); free(comm.path_arg.path); break;
       default:                      assert(false);
     }
   }
@@ -216,7 +219,7 @@ void graph_screenshot(br_plot_t* gv, char const * path) {
 #endif
 }
 
-void graph_export(br_plot_t* gv, char const * path) {
+void graph_export(br_plot_t const* gv, char const * path) {
   FILE* file = fopen(path, "w");
   fprintf(file, "--zoomx %f\n", gv->uvZoom.x);
   fprintf(file, "--zoomy %f\n", gv->uvZoom.y);
@@ -226,6 +229,14 @@ void graph_export(br_plot_t* gv, char const * path) {
     fprintf(file, gv->groups.arr[i].is_selected ? "--show %d\n" : "--hide %d\n", gv->groups.arr[i].group_id);
   }
   points_groups_export(&gv->groups, file);
+  fclose(file);
+}
+
+void graph_export_csv(br_plot_t const* br, char const * path) {
+  FILE* file = fopen(path, "w");
+  // TODO: Show user an error message
+  if (file == NULL) return;
+  points_groups_export_csv(&br->groups, file);
   fclose(file);
 }
 

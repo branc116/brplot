@@ -15,11 +15,12 @@ static void* watch_shader_change(void* gv) {
   uint32_t buff[128];
   inotify_add_watch(fd, "src/desktop/shaders", IN_MODIFY | IN_CLOSE_WRITE);
   br_plot_t* gvt = gv;
-  while(true) {
+  while(!gvt->should_close) {
     read(fd, buff, sizeof(buff));
     printf("DIRTY SHADERS\n");
     gvt->shaders_dirty = true;
   }
+  fprintf(stderr, "Stopping refresh shader thread\n");
   return NULL;
 }
 

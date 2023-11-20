@@ -216,13 +216,14 @@ nc -ulkp 42069 | brplot;
     * ~~Maybe something like ``--zoomx 69.0``~~
       * Did this.
   * This is done.
-* Export what plots are visible and invisible.
+* ~~Export what plots are visible and invisible.~~
   * Need some file explorer.
 * Support for touch input.
   * Support for draging with one finger.
   * Support for multitouch zoom.
 * ~~There is something wrong with new tokenizer. Fix this!!~~
-* Support for exporting csv|brplot file by issuing command from stdin.
+* ~~Support for exporting csv|brplot file by issuing command from stdin.~~
+  * New bug, bad numbers on x,y axis when exporting
 * For Imgui make a default layout
 * For Imgui try to make the same shit with fonts as for raylib. Export only the subset of ttf font.
 * For Imgui disable default font and use the font that is used in the rest of the graph.

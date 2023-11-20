@@ -36,12 +36,10 @@ static void draw_left_panel(br_plot_t* gv) {
   ui_stack_buttons_init((Vector2){.x = 30.f, .y = 25.f}, NULL, context.font_scale * 15);
   ui_stack_buttons_add(&gv->follow, "Follow");
   if (ui_stack_buttons_add(NULL, "Export") == 2) {
-    graph_export(gv, "test.plot");
+    graph_export(gv, "test.brp");
   }
   if (ui_stack_buttons_add(NULL, "Export CSV") == 2) {
-    FILE* file = fopen("test.csv", "w");
-    points_groups_export_csv(&gv->groups, file);
-    fclose(file);
+    graph_export_csv(gv, "test.csv");
   }
   if (context.debug_bounds) {
     ui_stack_buttons_add(&context.debug_bounds, "Debug view");

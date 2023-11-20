@@ -13,7 +13,7 @@
 #define HEIGHT 720
 
 int main_gui(br_plot_t* gv) {
-  while(!WindowShouldClose()) {
+  while(!WindowShouldClose() && !gv->should_close) {
     graph_draw(gv);
     graph_frame_end(gv);
   }
