@@ -194,10 +194,9 @@ void graph_screenshot(br_plot_t* gv, char const * path) {
   float bottom_pad = 80.f;
   Vector2 is = {1280, 720};
   RenderTexture2D target = LoadRenderTexture((int)is.x, (int)is.y); // TODO: make this values user defined.
-  //Rectangle old_gr = gv->graph_rect;
   gv->graph_screen_rect = (Rectangle){left_pad, 0.f, is.x - left_pad, is.y - bottom_pad};
-  //Vector2 old_sc = gv->uvScreen;
   gv->uvScreen = (Vector2){is.x, is.y};
+  graph_update_context(gv);
   update_shader_values(gv);
   BeginTextureMode(target);
     graph_draw_grid(gv->gridShader.shader, gv->graph_screen_rect);
@@ -209,8 +208,6 @@ void graph_screenshot(br_plot_t* gv, char const * path) {
   ExportImage(img, path);
   UnloadImage(img);
   UnloadRenderTexture(target);
-  //gv->uvScreen = old_sc;
-  //gv->graph_rect = old_gr;
 
 #if defined(PLATFORM_WEB)
   // Download file from MEMFS (emscripten memory filesystem)
