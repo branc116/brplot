@@ -15,8 +15,14 @@ typedef struct {
   float factor; // 1 => val i exactly on point, 0 => next_val is exactly on point, (0, 1) -> valid, else notfound
 } binary_search_res;
 
+typedef struct {
+  size_t size;
+  int max_index;
+  int min_index;
+} sample_points_res;
+
 static binary_search_res binary_search(float const* lb, float const* ub, float value, int stride);
-static size_t points_group_sample_points(Vector2 const* points, size_t len, resampling_dir dir, Rectangle rect, Vector2* out_points, size_t max_number_of_points);
+static size_t points_group_sample_points(Vector2 const* points, size_t len, resampling_dir dir, Rectangle rect, Rectangle normal_rect, Vector2* out_points, size_t max_number_of_points);
 static bool help_check_collision_bb_rec(bb_t bb, Rectangle rec);
 static Rectangle help_bb_to_rect(bb_t bb);
 static void resampling_add_interval(resampling_t* res);
@@ -37,88 +43,46 @@ void resampling_free(resampling_t* res) {
   BR_FREE(res);
 }
 
-void find_closes_pair(Vector2 const a[2], Vector2 const b[2], Vector2 out[2]) {
-  int closest = 0;
-  float min = Vector2DistanceSqr(a[0], b[0]);
-  float tmp = Vector2DistanceSqr(a[0], b[1]);
-  if (min > tmp) {
-    min = tmp;
-    closest = 1;
-  }
-  tmp = Vector2DistanceSqr(a[1], b[0]);
-  if (min > tmp) {
-    min = tmp;
-    closest = 2;
-  }
-  tmp = Vector2DistanceSqr(a[1], b[1]);
-  if (min > tmp) {
-    min = tmp;
-    closest = 3;
-  }
-  switch (closest) {
-    case 0:
-      out[0] = a[0];
-      out[1] = b[0];
-      return;
-    case 1:
-      out[0] = a[0];
-      out[1] = b[1];
-      return;
-    case 2:
-      out[0] = a[1];
-      out[1] = b[0];
-      return;
-    case 3:
-      out[0] = a[1];
-      out[1] = b[1];
-      return;
-    default:
-      assert(false);
-  }
-}
-
 size_t resampling_draw(resampling_t* res, points_group_t const* points, Rectangle screen, smol_mesh_t* lines_mesh, smol_mesh_t* quad_mesh) {
   (void)quad_mesh;
   size_t ret = res->resampling_count = res->raw_count = 0;
-  Vector2 last[2] = {0};
   Vector2 neigh[2] = {0};
-  bool connect_last = false;
+  Rectangle normal_screen = screen;
+  normal_screen.y -= normal_screen.height*1.1f;
+  normal_screen.height *= 1.2f;
+  normal_screen.x -= normal_screen.width*.1f;
+  normal_screen.width *= 1.2f;
+
   for (size_t i = 0; i < res->intervals_count; ++i) {
-    size_t s = 0;
+    size_t spr = 0;
     resamping_interval_t* inter = &res->intervals[i];
+    resampling_dir d = inter->dir & resampling_dir_right ? resampling_dir_right :
+                       inter->dir & resampling_dir_left  ? resampling_dir_left  :
+                       inter->dir & resampling_dir_up    ? resampling_dir_up    :
+                       resampling_dir_down;
     Vector2 const * ps = &(points->points)[inter->from];
     if (context.debug_bounds) smol_mesh_gen_bb(lines_mesh, inter->bounds, points->color);
-    if (!help_check_collision_bb_rec(inter->bounds, screen)) {
-      connect_last = false;
-      continue;
-    }
+    if (!help_check_collision_bb_rec(inter->bounds, screen)) continue;
     if (inter->count < 128) {
       smol_mesh_gen_line_strip(lines_mesh, ps, inter->count, points->color);
       ret += inter->count;
       ++res->raw_count;
-      if (connect_last) {
-        res->temp_points[0] = ps[0]; res->temp_points[1] = ps[inter->count - 1];
-        find_closes_pair(last, res->temp_points, neigh);
-        smol_mesh_gen_line_strip(lines_mesh, neigh, 2, points->color);
-      }
-      last[0] = last[1] = ps[inter->count - 1];
-      connect_last = true;
     } else {
-      s = points_group_sample_points(ps, inter->count, inter->dir, screen, res->temp_points, temp_points_count);
-      if (s == 0) {
-        connect_last = false;
-        continue;
-      }
-      smol_mesh_gen_line_strip(lines_mesh, res->temp_points, s, points->color);
-      ret += s;
+      spr = points_group_sample_points(ps, inter->count, d, screen, normal_screen, res->temp_points, temp_points_count);
+      if (spr == 0) continue;
+      smol_mesh_gen_line_strip(lines_mesh, res->temp_points, spr, points->color);
+      ret += spr;
       ++res->resampling_count;
-      if (connect_last) {
-        res->temp_points[1] = res->temp_points[s - 1];
-        find_closes_pair(last, res->temp_points, neigh);
+      if (CheckCollisionPointRec(ps[0], normal_screen)) {
+        neigh[0] = res->temp_points[0];
+        neigh[1] = ps[0];
         smol_mesh_gen_line_strip(lines_mesh, neigh, 2, points->color);
       }
-      connect_last = true;
-      last[0] = res->temp_points[0]; last[1] = res->temp_points[s - 1];
+      if (CheckCollisionPointRec(ps[inter->count - 1], normal_screen)) {
+        neigh[0] = res->temp_points[spr - 1];
+        neigh[1] = ps[inter->count - 1];
+        smol_mesh_gen_line_strip(lines_mesh, neigh, 2, points->color);
+      }
     }
   }
   return ret;
@@ -185,50 +149,42 @@ static bool check_collision_rec_line(Rectangle rec, Vector2 start, Vector2 end) 
   return false;
 }
 
-static size_t points_group_sample_points(Vector2 const* points, size_t len, resampling_dir dir, Rectangle rect, Vector2* out_points, size_t max_number_of_points) {
+static size_t points_group_sample_points(Vector2 const* points, size_t len, resampling_dir dir, Rectangle rect, Rectangle normal_rect, Vector2* out_points, size_t max_number_of_points) {
   if (len == 0) {
     return 0;
   }
-  Rectangle normal_rect = rect;
-  normal_rect.y -= normal_rect.height*1.1f;
-  normal_rect.height *= 1.2f;
-  normal_rect.x -= normal_rect.width*.1f;
-  normal_rect.width *= 1.2f;
-
-  resampling_dir d = dir & resampling_dir_right ? resampling_dir_right :
-                     dir & resampling_dir_left  ? resampling_dir_left  :
-                     dir & resampling_dir_up    ? resampling_dir_up    :
-                     resampling_dir_down;
-  size_t out_index = 0, i = 0;
-  float step = (d == resampling_dir_right || d == resampling_dir_left ? rect.width : rect.height) * 2.f / (float)max_number_of_points;
+  size_t i = 0, size = 0;
+  float step = (dir == resampling_dir_right || dir == resampling_dir_left ? rect.width : rect.height) * 2.f / (float)max_number_of_points;
   binary_search_res res;
   Vector2 const* lb = points, *ub = &points[len - 1];
-  if (d == resampling_dir_left || d == resampling_dir_down) lb = &points[len - 1], ub = points;
-#define branch(D, field, stride, B, cur_expr) \
-  if (d == D) { \
-    Vector2 last_point = {0}; \
-    while (lb != NULL && i < max_number_of_points && out_index < max_number_of_points) { \
-      float cur = cur_expr * (float)(i++); \
-      res = binary_search(&lb->field, &ub->field, cur, stride); \
-      Vector2 p = lb[res.index]; \
-      if (res.factor <= 1.f && (out_index == 0 || p.x != last_point.x || p.y != last_point.y)) { \
-        if (check_collision_rec_line(normal_rect, p, lb[res.next_index])) { \
-          out_points[out_index++] = p; \
-          if (out_index + 1 < max_number_of_points) \
-            out_points[out_index++] = lb[res.next_index]; \
-        } \
-        B = &lb[res.next_index]; \
-        last_point = p; \
-      } \
-    } \
-  }
+  if (dir == resampling_dir_left || dir == resampling_dir_down) lb = &points[len - 1], ub = points;
+
+#define branch(D, field, stride, B, cur_expr)                                                    \
+  if (dir == D) {                                                                                  \
+    Vector2 last_point = {0};                                                                    \
+    while (lb != NULL && i < max_number_of_points && size < max_number_of_points) {         \
+      float cur = cur_expr * (float)(i++);                                                       \
+      res = binary_search(&lb->field, &ub->field, cur, stride);                                  \
+      Vector2 p = lb[res.index];                                                                 \
+      if (res.factor <= 1.f && (size == 0 || p.x != last_point.x || p.y != last_point.y)) { \
+        if (check_collision_rec_line(normal_rect, p, lb[res.next_index])) {                      \
+          out_points[size++] = p;                                                           \
+          if (size + 1 < max_number_of_points)                                              \
+            out_points[size++] = lb[res.next_index];                                        \
+        }                                                                                        \
+        B = &lb[res.next_index];                                                                 \
+        last_point = p;                                                                          \
+      }                                                                                          \
+    }                                                                                            \
+  }                                                                                              \
+
   branch(resampling_dir_right, x,  2, lb, rect.x               + step) else
   branch(resampling_dir_left,  x, -2, ub, rect.x + rect.width  - step) else
   branch(resampling_dir_up,    y,  2, lb, rect.y - rect.height + step) else
   branch(resampling_dir_down,  y, -2, ub, rect.y               - step) else
   assert(false);
 #undef branch
-  return out_index;
+  return size;
 }
 
 static binary_search_res binary_search(float const* lb, float const* ub, float value, int stride) {

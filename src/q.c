@@ -5,7 +5,7 @@
 
 void q_init(q_commands* q) {
   size_t cap = 1024 * 1024;
-  q->commands = malloc(cap * sizeof(q->commands[0]));
+  q->commands = BR_MALLOC(cap * sizeof(q->commands[0]));
   q->capacity = cap;
   q->read_index = 0;
   q->write_index = 0;

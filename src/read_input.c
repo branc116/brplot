@@ -100,11 +100,9 @@ static void input_reduce_command(br_plot_t* gv) {
   } else if (0 == strcmp("offsety", tokens[1].name)) {
     gv->uvOffset.y = tokens[2].value_f;
   } else if (0 == strcmp("hide", tokens[1].name)) {
-    points_group_t* pg = points_group_get(&gv->groups, tokens[2].value_i);
-    pg->is_selected = false;
+    q_push(&gv->commands, (q_command) { .type = q_command_hide, .hide_show = { .group = tokens[2].value_i } });
   } else if (0 == strcmp("show", tokens[1].name)) {
-    points_group_t* pg = points_group_get(&gv->groups, tokens[2].value_i);
-    pg->is_selected = true;
+    q_push(&gv->commands, (q_command) { .type = q_command_show, .hide_show = { .group = tokens[2].value_i } });
   } else if (0 == strcmp("exportcsv", tokens[1].name)) {
     input_push_command_with_path(&gv->commands, tokens[2].name, q_command_exportcsv);
   } else if (0 == strcmp("export", tokens[1].name)) {

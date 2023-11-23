@@ -7,7 +7,7 @@ typedef struct {
 } br_keybinding_ctrl_shift_t;
 
 #define KEY_DOWN 1
-#define KEY_PRESS 1
+#define KEY_PRESS 2
 
 #define KEY_BINDINGS(x) \
   x(KEY_R, KEY_PRESS, br_keybinding_gui_reset) \

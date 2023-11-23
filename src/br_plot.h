@@ -47,6 +47,7 @@ extern "C" {
 #endif
 
 #define BR_MALLOC br_malloc
+#define BR_CALLOC br_calloc
 #define BR_REALLOC br_realloc
 #define BR_FREE br_free
 #define BR_IMGUI_MALLOC br_imgui_malloc
@@ -62,6 +63,8 @@ typedef enum {
   q_command_screenshot,
   q_command_export,
   q_command_exportcsv,
+  q_command_hide,
+  q_command_show,
 } q_command_type;
 
 extern char q_command_path[];
@@ -87,6 +90,9 @@ typedef struct {
       // Should be freed by UI thread
       char* path;
     } path_arg;
+    struct {
+      int group;
+    } hide_show;
   };
 } q_command;
 

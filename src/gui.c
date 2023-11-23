@@ -170,6 +170,8 @@ void update_variables(br_plot_t* br) {
       case q_command_screenshot:    graph_screenshot(br, comm.path_arg.path); free(comm.path_arg.path); break;
       case q_command_export:        graph_export(br, comm.path_arg.path);     free(comm.path_arg.path); break;
       case q_command_exportcsv:     graph_export_csv(br, comm.path_arg.path); free(comm.path_arg.path); break;
+      case q_command_hide:          points_group_get(&br->groups, comm.hide_show.group)->is_selected = false; break;
+      case q_command_show:          points_group_get(&br->groups, comm.hide_show.group)->is_selected = true;  break;
       default:                      assert(false);
     }
   }
