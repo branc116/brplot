@@ -226,6 +226,19 @@ void* br_calloc(size_t n, size_t size);
 void br_free(void* ptr);
 void* br_realloc(void* ptr, size_t newSize);
 
+#ifdef RL_MALLOC
+#undef RL_MALLOC
+#endif
+#ifdef RL_CALLOC
+#undef RL_CALLOC
+#endif
+#ifdef RL_FREE
+#undef RL_FREE
+#endif
+#ifdef RL_REALLOC
+#undef RL_REALLOC
+#endif
+
 #define RL_MALLOC br_malloc
 #define RL_CALLOC br_calloc
 #define RL_FREE br_free

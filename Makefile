@@ -9,7 +9,7 @@ GUI?= IMGUI
 RAYLIB_SOURCES= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
 ADDITIONAL_HEADERS= src/misc/default_font.h
 
-COMMONFLAGS= -I./imgui -I./imgui/backends -I. -Isrc/raylib
+COMMONFLAGS= -I./imgui -I./imgui/backends -I. -Isrc/raylib -Iraylib/src
 
 ifeq ($(GUI), IMGUI)
 	SOURCE= imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp \

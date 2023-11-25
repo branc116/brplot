@@ -4,7 +4,11 @@
 #include "cassert"
 #include <map>
 
-std::map<size_t, size_t> alloc_sizes;
+static std::map<size_t, size_t> alloc_sizes;
+
+static inline void __attribute__((constructor(100))) run_tests(void) {
+  alloc_sizes = {};
+}
 
 static void br_malloc_stats(size_t mem, size_t size) {
   context.alloc_size += size;
