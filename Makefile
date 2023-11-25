@@ -9,7 +9,7 @@ GUI?= IMGUI
 RAYLIB_SOURCES= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
 ADDITIONAL_HEADERS= src/misc/default_font.h
 
-COMMONFLAGS= -I$(RL) -I./imgui -I./imgui/backends -I.
+COMMONFLAGS= -I./imgui -I./imgui/backends -I. -Isrc/raylib
 
 ifeq ($(GUI), IMGUI)
 	SOURCE= imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp \
@@ -43,9 +43,7 @@ else ifeq ($(PLATFORM), WINDOWS)
 	LIBS= -lopengl32 -lgdi32 -lwinmm
 	CXX= x86_64-w64-mingw32-g++
 	CC= x86_64-w64-mingw32-gcc
-	COMMONFLAGS+= -Iraylib/src/external/glfw/include -DWINDOWS -DPLATFORM_DESKTOP -D_WIN32=1 \
-								-DSUPPORT_TEXT_MANIPULATION=1 \
-								-DSUPPORT_DEFAULT_FONT=1
+	COMMONFLAGS+= -Iraylib/src/external/glfw/include -DWINDOWS -DPLATFORM_DESKTOP -D_WIN32=1
 
 	SOURCE+= $(RL)/rglfw.c src/desktop/win/read_input.c
 	SHADERS_HEADER= src/misc/shaders.h
@@ -88,22 +86,7 @@ ifeq ($(CONFIG), DEBUG)
 endif
 
 ifeq ($(CONFIG), RELEASE)
-	COMMONFLAGS+= -Os -DRELEASE -DEXTERNAL_CONFIG_FLAGS=1 \
-		-DSUPPORT_MODULE_RSHAPES=1 \
-		-DSUPPORT_MODULE_RTEXTURES=1 \
-		-DSUPPORT_MODULE_RTEXT=1 \
-		-DSUPPORT_MODULE_RMODELS=1 \
-		-DMAX_FILEPATH_CAPACITY=64 \
-		-DRL_DEFAULT_BATCH_BUFFERS=1 \
-		-DRL_MAX_MATRIX_STACK_SIZE=2 \
-		-DSUPPORT_FILEFORMAT_FNT=1 \
-		-DSUPPORT_FILEFORMAT_TTF=1 \
-		-DMAX_MATERIAL_MAPS=0 \
-		-DSUPPORT_IMAGE_MANIPULATION=1 \
-		-DMAX_MESH_VERTEX_BUFFERS=7 \
-		-DSUPPORT_IMAGE_EXPORT=1 \
-		-DSUPPORT_FILEFORMAT_PNG=1 \
-		-DSUPPORT_STANDARD_FILEIO=1 \
+	COMMONFLAGS+= -Os -DRELEASE \
 		-DIMGUI_DISABLE_DEMO_WINDOWS \
 		-DIMGUI_DISABLE_DEBUG_TOOLS
 	ADDITIONAL_HEADERS+= $(SHADERS_HEADER)
@@ -112,7 +95,7 @@ ifeq ($(CONFIG), RELEASE)
 	endif
 endif
 
-PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)' | tr '[A-Z]' '[a-z]')
+PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)' | tr '[A-Z]' '[a-z]')
 OBJSA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE))
 OBJS+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
 CXXFLAGS= $(COMMONFLAGS)

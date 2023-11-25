@@ -17,6 +17,7 @@ static void br_malloc_stats(size_t mem, size_t size) {
 }
 
 static void br_free_stats(size_t mem) {
+  if (mem == 0) return;
   auto f = alloc_sizes.find(mem);
   if (f == alloc_sizes.end()) {
     ++context.free_of_unknown_memory;
@@ -32,6 +33,12 @@ static void br_free_stats(size_t mem) {
 extern "C" void* br_malloc(size_t size) {
   void* ret = malloc(size);
   br_malloc_stats((size_t)ret, size);
+  return ret;
+}
+
+extern "C" void* br_calloc(size_t n, size_t sz) {
+  void* ret = calloc(n, sz);
+  br_malloc_stats((size_t)ret, n*sz);
   return ret;
 }
 
