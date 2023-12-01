@@ -228,6 +228,15 @@ nc -ulkp 42069 | brplot;
 * For Imgui try to make the same shit with fonts as for raylib. Export only the subset of ttf font.
 * For Imgui disable default font and use the font that is used in the rest of the graph.
 * Number of draw call for RAYLIB,WEB is not corret - Fix this.
+* Add ability to lineary modify a line on the graph
+  * Should this be done in shader
+    * this will then requre to not batch different lines together...
+    * or maybe somehow add this information to the color buffer?
+  * Should be this be done during resampling
+    * This will then require to offset points before resampling
+    * This is most likely the way to go...
+  * Offset for x-y value
+  * Scale for x-y value
 
 
 ## Compile
