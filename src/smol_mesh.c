@@ -136,20 +136,24 @@ void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 center, Vecto
 
 void smol_mesh_gen_bb(smol_mesh_t* mesh, bb_t bb, Color color) {
   float xmi = bb.xmin, ymi = bb.ymin , xma = bb.xmax, yma = bb.ymax;
-  Vector2 v[6] = {
+  Vector2 v[5] = {
     {xmi, ymi},
     {xma, ymi},
     {xma, yma},
     {xmi, yma},
     {xmi, ymi},
   };
+
+  size_t old = mesh->points_drawn;
   smol_mesh_gen_line_strip(mesh, v, 5, color);
+  mesh->points_drawn = old;
 }
 
 bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t len, Color color) {
   // Todo: check if index v is inside gv->points
   size_t vn = 2*3*3;
   Vector3 cv = {color.r/255.f, color.g/255.f, color.b/255.f};
+  mesh->points_drawn += len;
   for (size_t v = 0; v < ((len - 1)*vn); v += vn)
   {
     size_t c = mesh->cur_len++;
@@ -201,6 +205,23 @@ bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t 
       mesh->colors[c+i+1] = cv.y;
       mesh->colors[c+i+2] = cv.z;
     }
+    if (context.debug_bounds) {
+      context.debug_bounds = false;
+      Vector2 size = { context.last_zoom_value.x * .01f, context.last_zoom_value.x * .01f };
+      smol_mesh_gen_bb(mesh, (bb_t){
+          .xmin = startPos.x - size.x / 2,
+          .ymin = startPos.y - size.y / 2,
+          .xmax = startPos.x + size.x / 2,
+          .ymax = startPos.y + size.y / 2,
+          }, WHITE);
+      smol_mesh_gen_bb(mesh, (bb_t){
+          .xmin = endPos.x - size.x / 2,
+          .ymin = endPos.y - size.y / 2,
+          .xmax = endPos.x + size.x / 2,
+          .ymax = endPos.y + size.y / 2,
+          }, WHITE);
+      context.debug_bounds = true;
+    }
   }
   return true;
 }
@@ -232,7 +253,6 @@ void smol_mesh_draw(smol_mesh_t* mesh) {
 
   // Disable shader program
   rlDisableShader();
-  mesh->points_drawn += mesh->cur_len;
   ++mesh->draw_calls;
   mesh->cur_len = 0;
 }

@@ -227,6 +227,7 @@ typedef struct br_plot_t {
 
 typedef struct {
   Vector2 mouse_screen_pos;
+  Vector2 last_zoom_value;
   float font_scale;
   bool debug_bounds;
   size_t alloc_size, alloc_count, alloc_total_size, alloc_total_count, alloc_max_size, alloc_max_count, free_of_unknown_memory;

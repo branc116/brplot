@@ -91,6 +91,7 @@ void update_shader_values(br_plot_t* br) {
   // TODO: don't assign this every frame, no need for it. Assign it only when shaders are recompiled.
   br->lines_mesh->active_shader = br->linesShader.shader;
   br->quads_mesh->active_shader = br->quadShader.shader;
+  context.last_zoom_value = br->uvZoom;
 }
 
 void update_variables(br_plot_t* br) {
