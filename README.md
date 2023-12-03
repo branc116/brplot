@@ -194,9 +194,12 @@ nc -ulkp 42069 | brplot;
     * Implemented this. On its own, this feature is useful, already found 1 double free.
     * This is more or less now fuzz testing. I like it.
 * Nicer UI for setting color of a line, if it's show, maybe to export data to file or stdout.
-* Stack panel improvements
+  * Started to work with imgui
+  * First iteration of this is done
+* ~~Stack panel improvements~~
   * make it more general. So that it accepts any kind of element, not just button
   * add like a scroll bar on the left size of a stack
+  * Fuck this shit. I moved to use imgui for this sort of stuff...
 * ~~Zig build doesn't build tools/font_export.c... Make zig build that also, else default_font.h can't be created.~~
   * This is not needed anymore, because I no longer use zig. Zig is not ready yet.
 * ~~Export image with numbers.~~
@@ -227,7 +230,8 @@ nc -ulkp 42069 | brplot;
 * For Imgui make a default layout
 * For Imgui try to make the same shit with fonts as for raylib. Export only the subset of ttf font.
 * For Imgui disable default font and use the font that is used in the rest of the graph.
-* Number of draw call for RAYLIB,WEB is not corret - Fix this.
+* ~~Number of draw call for RAYLIB,WEB is not corret - Fix this.~~
+  * Fixed
 * Add ability to lineary modify a line on the graph
   * Should this be done in shader
     * this will then requre to not batch different lines together...
