@@ -92,7 +92,7 @@ void resampling_add_point(resampling_t* res, points_group_t const* pg, size_t in
   if (res->intervals_count == 0)
     resampling_add_interval(res);
   resamping_interval_t* last_interval = &res->intervals[res->intervals_count - 1];
-  int new_dir = last_interval->dir;
+  int new_dir = (int)last_interval->dir;
   if (last_interval->count != 0) {
     size_t last_index = last_interval->from + last_interval->count - 1;
     Vector2 last_point = all_points[last_index];
@@ -170,7 +170,7 @@ static size_t points_group_sample_points(Vector2 const* points, size_t len, resa
   float           step         = range / (float)max_number_of_points;
   int             stride_sign  = signi(stride);
   float lowest = ((float const*)points)[field_offset];
-  i = lowest > stride_sign * start ? (size_t)((lowest - start) / (step * (float)stride_sign)) : 0;
+  i = lowest > (float)stride_sign * start ? (size_t)((lowest - start) / (step * (float)stride_sign)) : 0;
   if (i > max_number_of_points) i = 0;
   while (i < max_number_of_points && size < max_number_of_points) {
     float cur = start + step * (float)stride_sign * (float)i++;
@@ -232,13 +232,13 @@ TEST_CASE(binary_search_tests) {
 
   TEST_EQUAL(1, ((float*)&vec2[1])[-1]); // Checking negative indicies...
   Vector2 vec3[] = {{8, 1}, {6, 1}, {4, 3}, {2, 5}, {1, 7}, {0, 9}};
-  TEST_EQUAL(-4, binary_search(&vec3[5].x, &vec3[0].x, 6.1f, -2)); //lb=5, index = -4, lb[-4] == vec3[1]
+  TEST_EQUAL(4, binary_search(&vec3[5].x, &vec3[0].x, 6.1f, -2)); //lb=5, index = -4, lb[-4] == vec3[1]
                                                                         //
   Vector2 vecy[] = {{10, 1}, {10, 2}, {5, 3}, {15, 5}, {20, 7}, {10, 9}};
   TEST_EQUAL(4, binary_search(&vecy[0].y, &vecy[5].y, 7.1f, 2));
 
   Vector2 vecy2[] = {{10, 9}, {10, 7}, {5, 5}, {15, 3}, {20, 2}, {10, 1}};
-  TEST_EQUAL(-4, binary_search(&vecy2[5].y, &vecy2[0].y, 7.1f, -2));
+  TEST_EQUAL(4, binary_search(&vecy2[5].y, &vecy2[0].y, 7.1f, -2));
 }
 
 static bool __attribute__((unused)) help_check_collision_bb_p(bb_t bb, Vector2 p) {
