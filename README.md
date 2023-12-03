@@ -150,6 +150,41 @@ nc -ulkp 42069 | brplot;
 * **C**              - Empty all points over which the mouse is over.
 * Left mouse button  - Toggle visiblity of the line over which the mouse is over
 
+## Compile
+
+Brplot can be built using GNU make or Use whatever you like.
+Only tested on linux. Maybe will work on other OSes.
+But it can cross compile for windows and for webassm.
+
+```sh 
+make EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI
+```
+
+Here are the parameters you can change:
+
+* EMSCRIPTEN - only useful if you are building for webassm
+* PLATFORM   - LINUX | WINDOWS | WEB
+* CONFIG     - RELEASE | DEBUG
+* GUI        - IMGUI | RAYLIB | HEADLESS
+
+## Install
+When built, brplot is only one file and you can install it using ```install``` command. Here I'm installing it to ```/usr/bin``` directory, but this can be any other directory...
+
+```bash
+sudo install bin/brplot_imgui_linux_release /usr/bin/brplot
+```
+
+## Clean
+```bash
+make clean
+```
+
+## Uninstall
+```bash
+sudo rm /usr/bin/brplot
+```
+
+
 ## Todo
 * ~~Make drawing lines use buffers ( Don't use DrawLineStrip function by raylib. ) Maybe use DrawMesh? It's ok for plots with ~1'000'000 points, but I want more!~~
   * Implemented this now. For every line, 2 triangles are created. Old points are put in buffers and are drawn like that. Plotter can now handle 30'000'000 points, easy.
@@ -241,42 +276,8 @@ nc -ulkp 42069 | brplot;
     * This is most likely the way to go...
   * Offset for x-y value
   * Scale for x-y value
-
-
-## Compile
-
-Brplot can be built using GNU make or Use whatever you like.
-Only tested on linux. Maybe will work on other OSes.
-But it can cross compile for windows and for webassm.
-
-```sh 
-make EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI
-```
-
-Here are the parameters you can change:
-
-* EMSCRIPTEN - only useful if you are building for webassm
-* PLATFORM   - LINUX | WINDOWS | WEB
-* CONFIG     - RELEASE | DEBUG
-* GUI        - IMGUI | RAYLIB | HEADLESS
-
-## Install
-When built, brplot is only one file and you can install it using ```install``` command. Here I'm installing it to ```/usr/bin``` directory, but this can be any other directory...
-
-```bash
-sudo install bin/brplot_imgui_linux_release /usr/bin/brplot
-```
-
-## Clean
-```bash
-make clean
-```
-
-## Uninstall
-```bash
-sudo rm /usr/bin/brplot
-```
-
+* Give lines a names.
+* Show the name of the line if you hover over it.
 
 ## Screenshots
 Here is a history of how brplot looked over time:
