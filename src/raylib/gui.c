@@ -24,10 +24,10 @@ void graph_draw(br_plot_t* gv) {
   update_resolution(gv);
   update_variables(gv);
   help_draw_fps(0, 0);
-  draw_left_panel(gv);
   draw_grid_values(gv);
   graph_draw_grid(gv->gridShader.shader, gv->graph_screen_rect);
   points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, gv->graph_rect);
+  draw_left_panel(gv);
   EndDrawing();
 }
 
