@@ -6,6 +6,7 @@
 #include "math.h"
 #include <raylib.h>
 #include <raymath.h>
+#include <stddef.h>
 #include "src/misc/tests.h"
 
 #define temp_points_count 1024
@@ -21,7 +22,7 @@ typedef struct {
   int min_index;
 } sample_points_res;
 
-static binary_search_res binary_search(float const* lb, float const* ub, float value, int stride);
+static int binary_search(float const* lb, float const* ub, float value, int stride);
 static size_t points_group_sample_points(Vector2 const* points, size_t len, resampling_dir dir, Rectangle rect, Rectangle normal_rect, Vector2* out_points, size_t max_number_of_points);
 static bool help_check_collision_bb_rec(bb_t bb, Rectangle rec);
 static Rectangle help_bb_to_rect(bb_t bb);
@@ -48,10 +49,7 @@ size_t resampling_draw(resampling_t* res, points_group_t const* points, Rectangl
   size_t ret = res->resampling_count = res->raw_count = 0;
   Vector2 neigh[2] = {0};
   Rectangle normal_screen = screen;
-  normal_screen.y -= normal_screen.height*1.1f;
-  normal_screen.height *= 1.2f;
-  normal_screen.x -= normal_screen.width*.1f;
-  normal_screen.width *= 1.2f;
+  normal_screen.y -= normal_screen.height;
 
   for (size_t i = 0; i < res->intervals_count; ++i) {
     size_t spr = 0;
@@ -148,50 +146,66 @@ static bool check_collision_rec_line(Rectangle rec, Vector2 start, Vector2 end) 
   if (CheckCollisionLines(start, end, (Vector2){rec.x, rec.y + rec.height}, (Vector2){rec.x + rec.width, rec.y + rec.height}, NULL)) return true;
   return false;
 }
+#define INVALID_INDEX 0x7FFFFFFF
 
 static size_t points_group_sample_points(Vector2 const* points, size_t len, resampling_dir dir, Rectangle rect, Rectangle normal_rect, Vector2* out_points, size_t max_number_of_points) {
   if (len == 0) {
     return 0;
   }
+  bool was_any = false;
   size_t i = 0, size = 0;
-  float step = (dir == resampling_dir_right || dir == resampling_dir_left ? rect.width : rect.height) * 2.f / (float)max_number_of_points;
-  binary_search_res res;
-  Vector2 const* lb = points, *ub = &points[len - 1];
-  if (dir == resampling_dir_left || dir == resampling_dir_down) lb = &points[len - 1], ub = points;
-
-#define branch(D, field, stride, B, cur_expr)                                                    \
-  if (dir == D) {                                                                                  \
-    Vector2 last_point = {0};                                                                    \
-    while (lb != NULL && i < max_number_of_points && size < max_number_of_points) {         \
-      float cur = cur_expr * (float)(i++);                                                       \
-      res = binary_search(&lb->field, &ub->field, cur, stride);                                  \
-      Vector2 p = lb[res.index];                                                                 \
-      if (res.factor <= 1.f && (size == 0 || p.x != last_point.x || p.y != last_point.y)) { \
-        if (check_collision_rec_line(normal_rect, p, lb[res.next_index])) {                      \
-          out_points[size++] = p;                                                           \
-          if (size + 1 < max_number_of_points)                                              \
-            out_points[size++] = lb[res.next_index];                                        \
-        }                                                                                        \
-        B = &lb[res.next_index];                                                                 \
-        last_point = p;                                                                          \
-      }                                                                                          \
-    }                                                                                            \
-  }                                                                                              \
-
-  branch(resampling_dir_right, x,  2, lb, rect.x               + step) else
-  branch(resampling_dir_left,  x, -2, ub, rect.x + rect.width  - step) else
-  branch(resampling_dir_up,    y,  2, lb, rect.y - rect.height + step) else
-  branch(resampling_dir_down,  y, -2, ub, rect.y               - step) else
-  assert(false);
-#undef branch
+  int dir_index =
+    dir == resampling_dir_right ? 0 :
+    dir == resampling_dir_left  ? 1 :
+    dir == resampling_dir_up    ? 2 :
+    dir == resampling_dir_down  ? 3 : 0;
+  int is_inc = dir_index % 2;
+  int             stride       = (int[])             {2,                    -2                                                              }[is_inc];
+  Vector2         bounds       = (Vector2[])         {{normal_rect.x, normal_rect.x + normal_rect.width}, {normal_rect.y, normal_rect.y + normal_rect.height}}[dir_index / 2];
+  float           range        = (float[])           {normal_rect.width,    normal_rect.height                                              }[dir_index / 2];
+  size_t          field_offset = (size_t[])          {offsetof(Vector2, x), offsetof(Vector2, y)                                            }[dir_index / 2];
+  float           start        = (float[])           {normal_rect.x, normal_rect.x + rect.width, normal_rect.y - rect.height, normal_rect.y }[dir_index];
+  Vector2 const*  lb           = points;
+  Vector2 const*  ub           = &points[len - 1];
+  float           step         = range / (float)max_number_of_points;
+  int             stride_sign  = signi(stride);
+  float lowest = ((float const*)points)[field_offset];
+  i = lowest > stride_sign * start ? (size_t)((lowest - start) / (step * (float)stride_sign)) : 0;
+  if (i > max_number_of_points) i = 0;
+  while (i < max_number_of_points && size < max_number_of_points) {
+    float cur = start + step * (float)stride_sign * (float)i++;
+    float const* lbf = (float const*)lb + field_offset;
+    float const* ubf = (float const*)ub + field_offset;
+    long cur_len = ub - lb;
+    int res = stride_sign == 1 ? binary_search(lbf, ubf, cur, stride) : binary_search(ubf, lbf, cur, stride);
+    if (res != INVALID_INDEX) {
+      if (stride_sign == -1) res = (int)cur_len - res - 1;
+      start:;
+      Vector2 curv = out_points[size++] = lb[res];
+      float cur_f = ((float*)&curv)[field_offset];
+      Vector2 const* nexta = &lb[++res];
+      if (nexta >= points && nexta < points + len) {
+        float next_f = ((float*)nexta)[field_offset];
+        bool out_left = next_f > bounds.y;
+        bool out_right = next_f < bounds.x;
+        bool out_left_next = cur_f > bounds.y;
+        bool out_right_next = cur_f < bounds.x;
+        if ((out_left || out_right) && (out_left == out_left_next && out_right == out_right_next)) return size;
+        if ((next_f - cur_f) * (float)stride_sign > step) {
+          goto start;
+        }
+      } else return size;
+      was_any = true;
+    } else if (was_any) break;
+  }
   return size;
 }
 
-static binary_search_res binary_search(float const* lb, float const* ub, float value, int stride) {
+static int binary_search(float const* lb, float const* ub, float value, int stride) {
   if (*lb > value)
-    return (binary_search_res){0,0,69.f};
+    return INVALID_INDEX;
   if (*ub < value)
-    return (binary_search_res){0,0,69.f};
+    return INVALID_INDEX;
   assert(stride != 0);
   assert((ub - lb) % stride == 0);
   int index_lb = 0, index_ub = (int)(ub - lb) / stride, index_mid = 0;
@@ -205,34 +219,26 @@ static binary_search_res binary_search(float const* lb, float const* ub, float v
     else break;
   }
   index_mid = index_lb;
-  mid = &lb[index_mid * stride];
-  index_mid *= signi(stride);
-  float const * next = mid + stride;
-  if ((stride > 0 && next <= ub && next >= lb) || (stride < 0 && next >= ub && next <= lb)) {
-    return (binary_search_res){index_mid, index_mid + signi(stride), 0.f};
-  } else {
-    return (binary_search_res){index_mid, index_mid, 1.f};
-  }
+  return index_mid;
 }
 
 TEST_CASE(binary_search_tests) {
   Vector2 vec[] = {{0, 1}, {1, 2}, {2, 3}};
-  TEST_EQUAL(1, binary_search(&vec[0].x, &vec[2].x, 1.1f, 2).index);
+  TEST_EQUAL(1, binary_search(&vec[0].x, &vec[2].x, 1.1f, 2));
 
   Vector2 vec2[] = {{0, 1}, {1, 1}, {2, 3}, {4, 5}, {6, 7}, {8, 9}};
-  TEST_EQUAL(4, binary_search(&vec2[0].x, &vec2[5].x, 6.1f, 2).index);
-  TEST_EQUAL(4, binary_search(&vec2[0].x, &vec2[5].x, 7.1f, 2).index);
-  TEST_TRUE(1.f > binary_search(&vec2[0].x, &vec2[5].x, 7.1f, 2).factor);
+  TEST_EQUAL(4, binary_search(&vec2[0].x, &vec2[5].x, 6.1f, 2));
+  TEST_EQUAL(4, binary_search(&vec2[0].x, &vec2[5].x, 7.1f, 2));
 
   TEST_EQUAL(1, ((float*)&vec2[1])[-1]); // Checking negative indicies...
   Vector2 vec3[] = {{8, 1}, {6, 1}, {4, 3}, {2, 5}, {1, 7}, {0, 9}};
-  TEST_EQUAL(-4, binary_search(&vec3[5].x, &vec3[0].x, 6.1f, -2).index); //lb=5, index = -4, lb[-4] == vec3[1]
+  TEST_EQUAL(-4, binary_search(&vec3[5].x, &vec3[0].x, 6.1f, -2)); //lb=5, index = -4, lb[-4] == vec3[1]
                                                                         //
   Vector2 vecy[] = {{10, 1}, {10, 2}, {5, 3}, {15, 5}, {20, 7}, {10, 9}};
-  TEST_EQUAL(4, binary_search(&vecy[0].y, &vecy[5].y, 7.1f, 2).index);
+  TEST_EQUAL(4, binary_search(&vecy[0].y, &vecy[5].y, 7.1f, 2));
 
   Vector2 vecy2[] = {{10, 9}, {10, 7}, {5, 5}, {15, 3}, {20, 2}, {10, 1}};
-  TEST_EQUAL(-4, binary_search(&vecy2[5].y, &vecy2[0].y, 7.1f, -2).index);
+  TEST_EQUAL(-4, binary_search(&vecy2[5].y, &vecy2[0].y, 7.1f, -2));
 }
 
 static bool __attribute__((unused)) help_check_collision_bb_p(bb_t bb, Vector2 p) {
