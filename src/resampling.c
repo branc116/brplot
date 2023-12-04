@@ -160,11 +160,11 @@ static size_t points_group_sample_points(Vector2 const* points, size_t len, resa
     dir == resampling_dir_up    ? 2 :
     dir == resampling_dir_down  ? 3 : 0;
   int is_inc = dir_index % 2;
-  int             stride       = (int[])             {2,                    -2                                                              }[is_inc];
+  int             stride       = (int[])             {2, -2}[is_inc];
   Vector2         bounds       = (Vector2[])         {{normal_rect.x, normal_rect.x + normal_rect.width}, {normal_rect.y, normal_rect.y + normal_rect.height}}[dir_index / 2];
-  float           range        = (float[])           {normal_rect.width,    normal_rect.height                                              }[dir_index / 2];
-  size_t          field_offset = (size_t[])          {offsetof(Vector2, x), offsetof(Vector2, y)                                            }[dir_index / 2];
-  float           start        = (float[])           {normal_rect.x, normal_rect.x + rect.width, normal_rect.y - rect.height, normal_rect.y }[dir_index];
+  float           range        = (float[])           {normal_rect.width, normal_rect.height}[dir_index / 2];
+  size_t          field_offset = (size_t[])          {0, 1}[dir_index / 2];
+  float           start        = (float[])           {normal_rect.x, normal_rect.x + rect.width, normal_rect.y, normal_rect.y + rect.height}[dir_index];
   Vector2 const*  lb           = points;
   Vector2 const*  ub           = &points[len - 1];
   float           step         = range / (float)max_number_of_points;
@@ -191,7 +191,7 @@ static size_t points_group_sample_points(Vector2 const* points, size_t len, resa
         bool out_left_next = cur_f > bounds.y;
         bool out_right_next = cur_f < bounds.x;
         if ((out_left || out_right) && (out_left == out_left_next && out_right == out_right_next)) return size;
-        if ((next_f - cur_f) * (float)stride_sign > step) {
+        if ((next_f - cur_f) * (float)stride_sign > step && size < max_number_of_points) {
           goto start;
         }
       } else return size;

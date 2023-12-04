@@ -153,6 +153,7 @@ typedef struct {
   size_t cap, len;
   Vector2* points;
   resampling_t* resampling;
+  char* name;
   bool is_selected;
 } points_group_t;
 

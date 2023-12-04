@@ -278,6 +278,7 @@ sudo rm /usr/bin/brplot
   * Scale for x-y value
 * Give lines a names.
 * Show the name of the line if you hover over it.
+* Something like status bar stuff.
 
 ## Screenshots
 Here is a history of how brplot looked over time:
