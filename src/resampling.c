@@ -4,23 +4,13 @@
 #include "stdlib.h"
 #include "stdint.h"
 #include "math.h"
+#include <math.h>
 #include <raylib.h>
 #include <raymath.h>
 #include <stddef.h>
 #include "src/misc/tests.h"
 
 #define temp_points_count 1024
-
-typedef struct {
-  int index, next_index;
-  float factor; // 1 => val i exactly on point, 0 => next_val is exactly on point, (0, 1) -> valid, else notfound
-} binary_search_res;
-
-typedef struct {
-  size_t size;
-  int max_index;
-  int min_index;
-} sample_points_res;
 
 static int binary_search(float const* lb, float const* ub, float value, int stride);
 static size_t points_group_sample_points(Vector2 const* points, size_t len, resampling_dir dir, Rectangle rect, Rectangle normal_rect, Vector2* out_points, size_t max_number_of_points);
@@ -171,8 +161,9 @@ static size_t points_group_sample_points(Vector2 const* points, size_t len, resa
   float           step         = range / (float)max_number_of_points;
   int             stride_sign  = signi(stride);
   float lowest = ((float const*)points)[field_offset];
-  //i = lowest > (float)stride_sign * start ? (size_t)((lowest - start) / (step * (float)stride_sign)) : 0;
-  if (i > max_number_of_points) i = 0;
+  i = (size_t)(((stride_sign > 0 && lowest > start) || (stride_sign < 0 && lowest < start)) ? (lowest - start) / (step * (float)stride_sign) : 0);
+  if (i > max_number_of_points)
+    i = 0;
   while (size < max_number_of_points) {
     float cur = start + step * (float)stride_sign * (float)i++;
     float const* lbf = (float const*)lb + field_offset;
@@ -195,10 +186,11 @@ static size_t points_group_sample_points(Vector2 const* points, size_t len, resa
         if (absf((next_f - cur_f)) > step && size < max_number_of_points) {
           goto start;
         }
-        i = 2 + (cur_f - start) / (step * (float)stride_sign);
+        i = 2 + ceilf((cur_f - start) / (step * (float)stride_sign));
       } else return size;
       was_any = true;
     } else if (was_any) break;
+    else if (i > max_number_of_points) break;
   }
   return size;
 }
