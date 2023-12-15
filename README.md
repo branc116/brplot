@@ -279,6 +279,21 @@ sudo rm /usr/bin/brplot
 * Give lines a names.
 * Show the name of the line if you hover over it.
 * Something like status bar stuff.
+* Abitlity to make plots out of existing plots.
+  * Afine transofrm
+    * Plot3 = (Plot1.x, Plot2.y)
+      * If Plot1 = [(0, 1), (1, 2), (2, 3)] and Plot2 = [(2, 2), (3, 4), (5, 9)] then Plot3 should be [(0, 2), (1, 4), (2, 9)] 
+    * Plot2 = Plot1.x * 2
+      * If Plot1 = [(0, 1), (1, 2), (2, 3)] and Plot2 = [(0, 1), (2, 2), (4, 3)]
+    * ...
+    * This should not require allocation of new memory for each point
+    * Could be evalueted lazily
+  * Non afine transforms
+    * Plot2 = (sin(Plot1.x), cos(Plot1.y))
+    * This should require allocation of new memory
+    * This will require some sort of mechanism for calculating resulting points every frame such that high fps is not compromised. Say every frame calcuate 1'000'000 points.
+* Ability to generate plots out of expressions
+  * Say Plot1(x) = sin(x)
 
 ## Screenshots
 Here is a history of how brplot looked over time:
