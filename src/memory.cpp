@@ -6,7 +6,7 @@
 
 static std::map<size_t, size_t> alloc_sizes;
 
-static inline void __attribute__((constructor(100))) run_tests(void) {
+static inline void __attribute__((constructor(101))) run_tests(void) {
   alloc_sizes = {};
 }
 

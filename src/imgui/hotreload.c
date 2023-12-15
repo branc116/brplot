@@ -28,7 +28,7 @@ static bool br_hotreload_compile(void) {
     return false;
   }
   if (a == 0) {
-    static char* newargv[] = { GCC, "-DLINUX", "-DPLATFORM_DESKTOP", "-fpic", "--shared", "-g", "-o", "build/imgui/hot.o", "src/imgui/hot.cpp", NULL };
+    static char* newargv[] = { GCC, "-I.", "-DLINUX", "-DPLATFORM_DESKTOP", "-fpic", "--shared", "-g", "-o", "build/linux/debug/imgui/hot.o", "src/imgui/hot.cpp", NULL };
     execvp(GCC, newargv);
   } else {
     int wstat;
@@ -45,7 +45,7 @@ static bool br_hotreload_compile(void) {
 //#define RTLD_GLOBAL	0x00100
 
 void br_hotreload_link(br_hotreload_state_t* s) {
-  s->handl = dlopen("build/imgui/br_hot.o", RTLD_GLOBAL |	RTLD_LAZY);
+  s->handl = dlopen("build/linux/debug/imgui/hot.o", RTLD_GLOBAL |	RTLD_LAZY);
   if (s->handl == NULL) {
     fprintf(stderr, "%s\n", dlerror());
     return;

@@ -7,7 +7,6 @@
 #include "backends/imgui_impl_opengl3.h"
 #include "GLFW/glfw3.h"
 
-
 GLFWwindow* ctx;
 
 extern "C" void br_gui_init_specifics(br_plot_t* br) {
@@ -30,6 +29,7 @@ extern "C" void br_gui_init_specifics(br_plot_t* br) {
 
   ImGuiStyle& s = ImGui::GetStyle();
   s.Colors[ImGuiCol_WindowBg].w = 0.f;
+  br_hotreload_start(&br->hot_state);
 }
 extern "C" void br_gui_free_specifics(br_plot_t* br) {
   (void)br;
@@ -95,58 +95,8 @@ extern "C" void graph_draw(br_plot_t* gv) {
   }
 #endif
 #endif
-  ImGui::SetNextWindowBgAlpha(0.7f);
-  if (ImGui::Begin("Settings")) {
-    ImGui::SliderFloat("Padding", &padding, 0.f, 100.f);
-    ImGui::SliderFloat("Recoil", &gv->recoil, 0.f, 1.1f);
-    ImGui::SliderFloat("Font scale", &context.font_scale, 0.5f, 2.5f);
-
-    ImGui::Checkbox("Follow Arround", &gv->follow);
-    ImGui::Checkbox("Debug Lines", &context.debug_bounds);
-    ImGui::Checkbox("Jump Arround", &gv->jump_around);
-    for (size_t i = 0; i < gv->groups.len; ++i) {
-      sprintf(context.buff, "Plot %lu", i);
-      ImGui::Checkbox(context.buff, &gv->groups.arr[i].is_selected);
-      auto& c = gv->groups.arr[i].color;
-      float colors[4] = { ((float)c.r)/255.f, ((float)c.g)/255.f, ((float)c.b)/255.f, ((float)c.a)/255.f};
-      sprintf(context.buff, "PlotColor_%lu", i);
-      ImGui::ColorPicker4(context.buff, colors);
-      gv->groups.arr[i].color = { (unsigned char)(colors[0] * 255.f), (unsigned char)(colors[1] * 255.f), (unsigned char)(colors[2] * 255.f), (unsigned char)(colors[3] * 255.f) };
-    }
-  }
-  ImGui::End();
-
-  ImGui::SetNextWindowBgAlpha(0.7f);
-  if (ImGui::Begin("Info") && false == ImGui::IsWindowHidden()) {
-    //alloc_size, alloc_count, alloc_total_size, alloc_total_count, alloc_max_size, alloc_max_count, free_of_unknown_memory;
-    if (ImGui::CollapsingHeader("Allocations")) {
-      int s = sprintf(context.buff, "Allocations: %lu (%lu KB)", context.alloc_count, context.alloc_size >> 10); ImGui::TextUnformatted(context.buff, context.buff + s);
-      s = sprintf(context.buff, "Total Allocations: %lu (%lu KB)", context.alloc_total_count, context.alloc_total_size >> 10); ImGui::TextUnformatted(context.buff, context.buff + s);
-      s = sprintf(context.buff, "Max Allocations: %lu (%lu KB)", context.alloc_max_count, context.alloc_max_size >> 10); ImGui::TextUnformatted(context.buff, context.buff + s);
-      s = sprintf(context.buff, "Unaccounted Allocations: >%lu", context.free_of_unknown_memory); ImGui::TextUnformatted(context.buff, context.buff + s);
-    }
-    if (ImGui::CollapsingHeader("Draw Debug")) {
-      int s = sprintf(context.buff, "Draw Calls: %lu (%lu lines)", gv->lines_mesh->draw_calls, gv->lines_mesh->points_drawn); ImGui::TextUnformatted(context.buff, context.buff + s);
-      for (size_t i = 0; i < gv->groups.len; ++i) {
-        auto& a = gv->groups.arr[i];
-        s = sprintf(context.buff, "Line #%d intervals(%lu):", a.group_id, a.resampling->intervals_count); ImGui::TextUnformatted(context.buff, context.buff + s);
-        for (size_t j = 0; j < a.resampling->intervals_count; ++j) {
-          auto& inter = a.resampling->intervals[j];
-          s = sprintf(context.buff, "   %lu [%lu - %lu] ", inter.count, inter.from, inter.from + inter.count);
-          help_resampling_dir_to_str(&context.buff[s], inter.dir);
-          s = (int)strlen(context.buff);
-          ImGui::TextUnformatted(context.buff, context.buff + s);
-        }
-      }
-    }
-    if (ImGui::CollapsingHeader("Queue")) {
-      auto const& qc = gv->commands;
-      int s = sprintf(context.buff, "Read  index: %lu", qc.read_index);                                                ImGui::TextUnformatted(context.buff, context.buff + s);
-          s = sprintf(context.buff, "Write index: %lu", qc.write_index);                                               ImGui::TextUnformatted(context.buff, context.buff + s);
-          s = sprintf(context.buff, "Length:      %lu", (qc.write_index - qc.read_index + qc.capacity) % qc.capacity); ImGui::TextUnformatted(context.buff, context.buff + s);
-    }
-  }
-  ImGui::End();
+  br::ui_settings(gv);
+  br::ui_info(gv);
 
   graph_frame_end(gv);
   ImGui::Render();

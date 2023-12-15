@@ -137,6 +137,7 @@ static void resampling_add_interval(resampling_t* res) {
   res->intervals[new_index] = (resamping_interval_t) { .from = 0, .count = 0, .dir = 15, .bounds = {0} };
   return;
 }
+
 static bool check_collision_rec_line(Rectangle rec, Vector2 start, Vector2 end) {
   if (CheckCollisionPointRec(start, rec)) return true;
   if (CheckCollisionPointRec(end, rec)) return true;
@@ -170,9 +171,9 @@ static size_t points_group_sample_points(Vector2 const* points, size_t len, resa
   float           step         = range / (float)max_number_of_points;
   int             stride_sign  = signi(stride);
   float lowest = ((float const*)points)[field_offset];
-  i = lowest > (float)stride_sign * start ? (size_t)((lowest - start) / (step * (float)stride_sign)) : 0;
+  //i = lowest > (float)stride_sign * start ? (size_t)((lowest - start) / (step * (float)stride_sign)) : 0;
   if (i > max_number_of_points) i = 0;
-  while (i < max_number_of_points && size < max_number_of_points) {
+  while (size < max_number_of_points) {
     float cur = start + step * (float)stride_sign * (float)i++;
     float const* lbf = (float const*)lb + field_offset;
     float const* ubf = (float const*)ub + field_offset;
@@ -184,16 +185,17 @@ static size_t points_group_sample_points(Vector2 const* points, size_t len, resa
       Vector2 curv = out_points[size++] = lb[res];
       float cur_f = ((float*)&curv)[field_offset];
       Vector2 const* nexta = &lb[++res];
-      if (nexta >= points && nexta < points + len) {
+      if (nexta < points + len) {
         float next_f = ((float*)nexta)[field_offset];
         bool out_left = next_f > bounds.y;
         bool out_right = next_f < bounds.x;
         bool out_left_next = cur_f > bounds.y;
         bool out_right_next = cur_f < bounds.x;
         if ((out_left || out_right) && (out_left == out_left_next && out_right == out_right_next)) return size;
-        if ((next_f - cur_f) * (float)stride_sign > step && size < max_number_of_points) {
+        if (absf((next_f - cur_f)) > step && size < max_number_of_points) {
           goto start;
         }
+        i = 2 + (cur_f - start) / (step * (float)stride_sign);
       } else return size;
       was_any = true;
     } else if (was_any) break;

@@ -122,8 +122,8 @@ void update_variables(br_plot_t* br) {
     // Stuff related to zoom
     {
       float mw = -GetMouseWheelMove();
+      Vector2 old = br->mouse_graph_pos;
       if (false == help_near_zero(mw)) {
-        Vector2 old = br->mouse_graph_pos;
         if (mw != 0.f) {
           float mw_scale = (1 + mw/10);
           if (IsKeyDown(KEY_X)) {
@@ -135,15 +135,15 @@ void update_variables(br_plot_t* br) {
             br->uvZoom.y *= mw_scale;
           }
         }
-        if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_SHIFT)) br->uvZoom.x *= 1.1f;
-        if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_SHIFT)) br->uvZoom.y *= 1.1f;
-        if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_CONTROL)) br->uvZoom.x *= .9f;
-        if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_CONTROL)) br->uvZoom.y *= .9f;
-        graph_update_context(br);
-        Vector2 now = br->mouse_graph_pos;
-        br->uvOffset.x -= now.x - old.x;
-        br->uvOffset.y -= now.y - old.y; 
       }
+      if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_SHIFT)) br->uvZoom.x *= 1.1f;
+      if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_SHIFT)) br->uvZoom.y *= 1.1f;
+      if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_CONTROL)) br->uvZoom.x *= .9f;
+      if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_CONTROL)) br->uvZoom.y *= .9f;
+      graph_update_context(br);
+      Vector2 now = br->mouse_graph_pos;
+      br->uvOffset.x -= now.x - old.x;
+      br->uvOffset.y -= now.y - old.y; 
     }
     if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
       Vector2 delt = GetMouseDelta();
