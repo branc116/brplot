@@ -14,7 +14,7 @@ COMMONFLAGS= -I./imgui -I./imgui/backends -I. -Isrc/raylib -Iraylib/src
 ifeq ($(GUI), IMGUI)
 	SOURCE= imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp \
 				  imgui/imgui_widgets.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp \
-				  src/imgui/gui.cpp src/imgui/imgui_extensions.cpp $(RAYLIB_SOURCES)
+				  src/imgui/gui.cpp src/imgui/ui_settings.cpp src/imgui/ui_info.cpp src/imgui/imgui_extensions.cpp $(RAYLIB_SOURCES)
 	COMMONFLAGS+= -DIMGUI
 else ifeq ($(GUI), RAYLIB)
 	SOURCE= src/raylib/gui.c src/raylib/ui.c $(RAYLIB_SOURCES)
@@ -28,7 +28,7 @@ endif
 	
 SOURCE+= src/main.c src/help.c \
 				 src/points_group.c src/resampling.c src/smol_mesh.c src/q.c \
-				 src/read_input.c src/memory.cpp src/gui.c src/keybindings.c
+				 src/read_input.c src/memory.cpp src/gui.c src/keybindings.c src/str.c
 
 ifeq ($(PLATFORM), LINUX)
 	LIBS= `pkg-config --static --libs glfw3` -lGL
