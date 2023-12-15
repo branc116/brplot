@@ -148,12 +148,23 @@ typedef struct {
 } resampling_t;
 
 typedef struct {
+  char* str;
+  unsigned int len;
+  unsigned int cap;
+} br_str_t;
+
+typedef struct {
+  char* str;
+  unsigned int len;
+} br_strv_t;
+
+typedef struct {
   int group_id;
   Color color;
   size_t cap, len;
   Vector2* points;
   resampling_t* resampling;
-  char* name;
+  br_str_t name;
   bool is_selected;
 } points_group_t;
 
