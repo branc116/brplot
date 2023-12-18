@@ -329,6 +329,20 @@ void    help_draw_fps(int posX, int posY);
 void    help_load_default_font(void);
 void    help_resampling_dir_to_str(char* buff, resampling_dir r);
 
+br_str_t   br_str_malloc(size_t size);
+void       br_str_free(br_str_t str);
+void       br_str_realloc(br_str_t* s, size_t new_cap);
+void       br_str_push_char(br_str_t* s, char c);
+void       br_str_push_int(br_str_t* s, int c);
+void       br_str_push_float1(br_str_t* s, float c, int decimals);
+void       br_str_push_float(br_str_t* s, float c);
+void       br_str_push_c_str(br_str_t* s, char const* c);
+char*      br_str_to_c_str(br_str_t* s);
+void       br_str_to_c_str1(br_str_t const* s, char* out_s);
+br_strv_t  br_strv_sub(br_strv_t* s, size_t start, size_t len);
+char*      br_strv_to_c_str(br_strv_t* s);
+void       br_strv_to_c_str1(br_strv_t const* s, char* out_s);
+
 #ifdef IMGUI
 #ifndef RELEASE
 void br_hotreload_start(br_hotreload_state_t* s);

@@ -14,4 +14,5 @@ namespace br {
   bool IsMouseOwerWindow();
   void ui_settings(br_plot_t* br);
   void ui_info(br_plot_t* br);
+  void ui_textbox(const char* label, br_str_t* str);
 }

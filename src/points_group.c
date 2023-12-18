@@ -157,8 +157,11 @@ static points_group_t* points_group_init(points_group_t* g, int group_id) {
     .is_selected = true,
     .points = BR_MALLOC(sizeof(Vector2) * 1024),
     .resampling = resampling_malloc(),
-    .color = color_get(group_id)
+    .color = color_get(group_id),
+    .name = br_str_malloc(32)
   };
+  sprintf(g->name.str, "Plot #%d", group_id);
+  g->name.len = strlen(g->name.str);
   return g;
 }
 

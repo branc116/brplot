@@ -58,6 +58,7 @@ namespace br {
           br->groups.arr[i].color = { (unsigned char)(colors[0] * 255.f), (unsigned char)(colors[1] * 255.f), (unsigned char)(colors[2] * 255.f), (unsigned char)(colors[3] * 255.f) };
           sprintf(context.buff, "%lu##%lu", br->groups.arr[i].len, i);
           ImGui::LabelText(context.buff, "Number of points");
+          br::ui_textbox("Name", &br->groups.arr[i].name);
           ImGui::TreePop();
         } else ImGui::PopStyleColor(3);
         if (i != br->groups.len - 1) ImGui::Separator();
