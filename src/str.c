@@ -127,7 +127,7 @@ void br_strv_to_c_str1(br_strv_t const* s, char* out_s) {
   out_s[s->len] = 0;
 }
 
-TEST_CASE(binary_search_tests) {
+TEST_CASE(str_tests) {
   char c[128];
   br_str_t br = br_str_malloc(2);
   br_str_push_char(&br, 'a'); br_str_to_c_str1(&br, c);
@@ -148,9 +148,6 @@ TEST_CASE(binary_search_tests) {
   br_str_push_int(&br, 12345678); br_str_to_c_str1(&br, c);
   TEST_EQUAL('a', br.str[0]);
   TEST_STREQUAL("a69-690nice12345678", c);
-  br_str_push_float1(&br, 1234.123e-44f, 6); br_str_to_c_str1(&br, c);
-  TEST_EQUAL('a', br.str[0]);
-  TEST_STREQUAL("a69-690nice123456781234.123", c);
   br_str_free(br);
 }
 

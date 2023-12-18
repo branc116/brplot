@@ -8,7 +8,7 @@
 
 #define MAX_REDUCE 6
 #define MAX_NAME 64
-#define REDUCTORS 8
+#define REDUCTORS 9
 #define INPUT_TOKENS_COUNT MAX_REDUCE
 #define IS_VALID_NAME(C) ((c) >= 'a' && (c) <= 'z')
 #define IS_VALID_PATH(c) (((c) >= '0' && (c) <= '1') || \
@@ -22,6 +22,7 @@ typedef enum {
   input_token_any,
   input_token_number,
   input_token_name,
+  input_token_quoted_string,
   input_token_path,
   input_token_comma,
   input_token_semicollon,
@@ -37,6 +38,7 @@ typedef enum {
   input_lex_state_name,
   input_lex_state_path,
   input_lex_state_dash,
+  input_lex_state_quoted
 } input_lex_state_t;
 
 typedef struct {
@@ -46,6 +48,7 @@ typedef struct {
       int value_i;
     };
     char name[MAX_NAME];
+    br_str_t br_str;
   };
   input_token_kind_t kind;
 } input_token_t;
@@ -112,6 +115,16 @@ static void input_reduce_command(br_plot_t* gv) {
   } else if (0 == strcmp("exit", tokens[1].name)) {
     gv->should_close = true;
     exit(0);
+  } else if (tokens[3].kind == input_token_quoted_string && 0 == strcmp("setname", tokens[1].name)) {
+    q_command cmd = {
+      .type = q_command_set_name,
+      .set_quoted_str = {
+        .group = tokens[2].value_i,
+        .str = tokens[3].br_str
+      }
+    };
+    q_push(&gv->commands, cmd);
+
   } else
     printf("Execute %c%c%c...\n", tokens[1].name[0], tokens[1].name[1], tokens[1].name[2]);
 }
@@ -125,6 +138,7 @@ input_reduce_t input_reductors_arr[REDUCTORS] = {
   {{input_token_dashdash, input_token_name, input_token_path}, input_reduce_command},
   {{input_token_dashdash, input_token_name, input_token_name}, input_reduce_command},
   {{input_token_dashdash, input_token_name}, input_reduce_command},
+  {{input_token_dashdash, input_token_name, input_token_number, input_token_quoted_string}, input_reduce_command},
 };
 
 
@@ -144,6 +158,34 @@ static bool input_tokens_match_count(input_reduce_t* r, size_t* match_count) {
     if (tokens[i].kind != r->kinds[i]) return false;
   *match_count = i;
   return r->kinds[i] == input_token_any;
+}
+
+static bool input_tokens_can_next_be(input_token_kind_t kind) {
+  bool bad_reducor[REDUCTORS] = {0};
+  size_t j = 0;
+  bool any = false;
+  for (; j < tokens_len; ++j) {
+    any = false;
+    for (int i = 0; i < REDUCTORS; ++i) {
+      if (bad_reducor[i] == false && input_reductors_arr[i].kinds[j] != tokens[j].kind) {
+        bad_reducor[i] = true;
+      } else {
+        any = true;
+      }
+    }
+    if (any == false) return false;
+  }
+  if (kind == input_token_any) {
+    return any;
+  }
+  for (int i = 0; i < REDUCTORS; ++i) {
+    if (bad_reducor[i] == false && input_reductors_arr[i].kinds[j] != kind) {
+      bad_reducor[i] = true;
+    } else {
+      return true;
+    }
+  }
+  return false;
 }
 
 static void input_tokens_reduce(br_plot_t* gv, bool force_reduce) {
@@ -216,18 +258,24 @@ static void lex(br_plot_t* gv) {
         } else if (c >= '0' && c <= '9') {
           state = input_lex_state_number;
           read_next = false;
-        } else if (c >= 'a' && c <= 'z') {
+        } else if (c >= 'a' && c <= 'z' && input_tokens_can_next_be(input_token_name)) {
           state = input_lex_state_name;
           read_next = false;
-        } else if (IS_VALID_PATH(c)) {
+        } else if (IS_VALID_PATH(c) && input_tokens_can_next_be(input_token_path)) {
           state = input_lex_state_path;
           read_next = false;
         } else if (c == '.') {
           state = input_lex_state_number_decimal;
-        } else if (c == ',') {
+        } else if (c == ',' && input_tokens_can_next_be(input_token_comma)) {
           tokens[tokens_len++] = (input_token_t) { .kind = input_token_comma };
-        } else if (c == ';') {
+        } else if (c == ';' && input_tokens_can_next_be(input_token_semicollon)) {
           tokens[tokens_len++] = (input_token_t) { .kind = input_token_semicollon };
+        } else if (c == '"' && input_tokens_can_next_be(input_token_quoted_string)) {
+          tokens[tokens_len] = (input_token_t) {
+            .kind = input_token_quoted_string,
+            .br_str = br_str_malloc(8),
+          };
+          state = input_lex_state_quoted;
         }
         break;
       case input_lex_state_dash:
@@ -330,6 +378,13 @@ static void lex(br_plot_t* gv) {
           read_next = false;
         }
         break;
+      case input_lex_state_quoted:
+        if (c == '"') {
+          br_str_push_char(&tokens[tokens_len].br_str, (char)0);
+          ++tokens_len;
+          state = input_lex_state_init;
+        } else br_str_push_char(&tokens[tokens_len].br_str, c);
+        break;
       default:
         assert(false);
     }
@@ -345,7 +400,17 @@ void *read_input_main_worker(void* gv) {
 #ifndef RELEASE
 int test_str(void) {
   static size_t index = 0;
-  const char str[] = "8.0,-16.0;1 -0.0078,16.0;1 \n \n 4.0;1\n\n\n\n\n\n 2.0 1;10;1;;;; 10e10 3e38 --test 1.2 --zoomx 10.0 1;12";
+  const char str[] = "8.0,-16.0;1 -0.0078,16.0;1 \" \n \n 4.0;1\n\n\n\n\n\n 2.0 1;10;1;;;; 10e10 3e38 --test 1.2 --zoomx 10.0 1;12";
+  if (index >= sizeof(str))
+  {
+    return -1;
+  }
+  return str[index++];
+}
+
+int test_str2(void) {
+  static size_t index = 0;
+  const char str[] = "--setname 1 \"hihi\" --setname 2 \"hihi hihi hihi hihi\"";
   if (index >= sizeof(str))
   {
     return -1;
@@ -410,5 +475,25 @@ TEST_CASE(InputTests) {
   TEST_EQUAL(c.type, q_command_none);
 
   BR_FREE(gvt.commands.commands);
+}
+
+TEST_CASE(InputTests2) {
+  br_plot_t gvt;
+  gvt.getchar = test_str2;
+  q_init(&gvt.commands);
+  read_input_main_worker(&gvt);
+
+  q_command c = q_pop(&gvt.commands);
+  TEST_EQUAL(c.type, q_command_set_name);
+  TEST_STREQUAL(c.set_quoted_str.str.str, "hihi");
+  br_str_free(c.set_quoted_str.str);
+
+  c = q_pop(&gvt.commands);
+  TEST_EQUAL(c.type, q_command_set_name);
+  TEST_STREQUAL(c.set_quoted_str.str.str, "hihi hihi hihi hihi");
+  br_str_free(c.set_quoted_str.str);
+
+  c = q_pop(&gvt.commands);
+  TEST_EQUAL(c.type, q_command_none);
 }
 #endif

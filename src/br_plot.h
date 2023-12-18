@@ -65,9 +65,21 @@ typedef enum {
   q_command_exportcsv,
   q_command_hide,
   q_command_show,
+  q_command_set_name
 } q_command_type;
 
 extern char q_command_path[];
+
+typedef struct {
+  char* str;
+  unsigned int len;
+  unsigned int cap;
+} br_str_t;
+
+typedef struct {
+  char* str;
+  unsigned int len;
+} br_strv_t;
 
 typedef struct {
   q_command_type type;
@@ -93,6 +105,11 @@ typedef struct {
     struct {
       int group;
     } hide_show;
+    struct {
+      int group;
+      // Should be freed by UI thread
+      br_str_t str;
+    } set_quoted_str;
   };
 } q_command;
 
@@ -146,17 +163,6 @@ typedef struct {
   size_t intervals_count, intervals_cap;
   size_t resampling_count, raw_count; //DEBUG STUFF
 } resampling_t;
-
-typedef struct {
-  char* str;
-  unsigned int len;
-  unsigned int cap;
-} br_str_t;
-
-typedef struct {
-  char* str;
-  unsigned int len;
-} br_strv_t;
 
 typedef struct {
   int group_id;
@@ -264,6 +270,7 @@ void smol_mesh_update(smol_mesh_t* mesh);
 void smol_mesh_free(smol_mesh_t* mesh);
 
 points_group_t* points_group_get(points_groups_t* pg_array, int group);
+void points_group_set_name(points_groups_t* pg_array, int group, br_str_t name);
 void points_group_push_y(points_groups_t* pg, float y, int group);
 void points_group_push_xy(points_groups_t* pg, float x, float y, int group);
 void points_group_clear(points_groups_t* pg, int group_id);

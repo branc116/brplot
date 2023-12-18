@@ -209,6 +209,12 @@ points_group_t* points_group_get(points_groups_t* pg, int group) {
   return points_group_init(&pg->arr[pg->len++], group);
 }
 
+void points_group_set_name(points_groups_t* pg, int group, br_str_t name) {
+  points_group_t* g = points_group_get(pg, group);
+  br_str_free(g->name);
+  g->name = name;
+}
+
 static void points_group_push_point(points_group_t* g, Vector2 v) {
   if (g->len >= g->cap) {
     assert(points_group_realloc(g, g->cap * 2));
@@ -222,6 +228,7 @@ static void points_group_deinit(points_group_t* g) {
   // Free points
   BR_FREE(g->points);
   resampling_free(g->resampling);
+  br_str_free(g->name);
   g->points = NULL;
   g->len = g->cap = 0;
 }

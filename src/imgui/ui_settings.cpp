@@ -39,7 +39,7 @@ namespace br {
         ImVec4 imcol = {colors[0], colors[1], colors[2], 1.f};
         ImVec4 imcol_inv = 1.f - imcol;
         imcol_inv.w = 1.f;
-        sprintf(&context.buff[2], "Plot %lu", i);
+        sprintf(&context.buff[2], "Plot %d", br->groups.arr[i].group_id);
         context.buff[0] = context.buff[1] = '#';
         ImGui::Checkbox(context.buff, &br->groups.arr[i].is_selected);
         ImGui::PushStyleColor(ImGuiCol_Text, imcol);
