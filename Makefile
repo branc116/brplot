@@ -131,7 +131,7 @@ $(SHADERS_HEADER): $(SHADERS_LIST) bin/upper bin/lower
 																cat $(s) | sed 's/\(.*\)/"\1\\n" \\/' >> $(SHADERS_HEADER) && \
 																echo "" >> $(SHADERS_HEADER) && ) echo "OKi"
 
-BR_HEADERS= src/br_plot.h br_gui_internal.h br_help.h
+BR_HEADERS= src/br_plot.h src/br_gui_internal.h src/br_help.h
 
 $(PREFIX_BUILD)/src/%.o:src/%.c $(BR_HEADERS) $(ADDITIONAL_HEADERS)
 	$(CC) $(CCFLAGS) $(MY_COMMONFLAGS) -c -o $@ $<
