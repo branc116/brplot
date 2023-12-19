@@ -236,7 +236,9 @@ typedef struct br_plot_t {
 #ifndef RELEASE
   int (*getchar)(void);
 #ifdef IMGUI
+#ifdef LINUX
   br_hotreload_state_t hot_state;
+#endif
 #endif
 #endif
   Vector2 mouse_graph_pos;

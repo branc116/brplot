@@ -29,7 +29,11 @@ extern "C" void br_gui_init_specifics(br_plot_t* br) {
 
   ImGuiStyle& s = ImGui::GetStyle();
   s.Colors[ImGuiCol_WindowBg].w = 0.f;
+#ifndef RELEASE
+#ifdef LINUX
   br_hotreload_start(&br->hot_state);
+#endif
+#endif
 }
 extern "C" void br_gui_free_specifics(br_plot_t* br) {
   (void)br;
