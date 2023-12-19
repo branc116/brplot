@@ -14,10 +14,6 @@
 #include "raylib.h"
 #include "rlgl.h"
 
-#ifdef LINUX
-#include "signal.h"
-#endif
-
 #ifndef RELEASE
 static void refresh_shaders_if_dirty(br_plot_t* gv);
 #endif
@@ -181,7 +177,7 @@ void update_variables(br_plot_t* br) {
       case q_command_hide:          points_group_get(&br->groups, comm.hide_show.group)->is_selected = false; break;
       case q_command_show:          points_group_get(&br->groups, comm.hide_show.group)->is_selected = true;  break;
       case q_command_set_name:      points_group_set_name(&br->groups, comm.set_quoted_str.group, comm.set_quoted_str.str);  break;
-      default:                      raise(SIGABRT);
+      default:                      BR_ASSERT(false);
     }
   }
   end: return;

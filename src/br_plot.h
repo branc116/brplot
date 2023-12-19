@@ -52,6 +52,12 @@ extern "C" {
 #define BR_FREE br_free
 #define BR_IMGUI_MALLOC br_imgui_malloc
 #define BR_IMGUI_FREE br_imgui_free
+#ifdef LINUX
+#include "signal.h"
+#define BR_ASSERT(x) if (!x) raise(SIGABRT)
+#else
+#define BR_ASSERT(x) assert(x)
+#endif
 
 typedef enum {
   q_command_none,
