@@ -9,7 +9,12 @@ void graph_draw(br_plot_t *br) {
   help_draw_fps(0, 0);
   draw_grid_values(br);
   graph_draw_grid(br->gridShader.shader, br->graph_screen_rect);
-  points_groups_draw(&br->groups, br->lines_mesh, br->quads_mesh, br->graph_rect);
+  points_groups_draw(&br->groups, (points_groups_draw_in_t) {
+    .mouse_pos_graph = br->mouse_graph_pos,
+    .rect = br->graph_rect,
+    .line_mesh = br->lines_mesh,
+    .quad_mesh = br->quads_mesh
+  });
   ClearBackground(BLACK);
   EndDrawing();
 }

@@ -1,3 +1,4 @@
+#include "imgui/imgui.h"
 #include "src/imgui/imgui_extensions.h"
 
 ImVec4 operator-(float f, ImVec4 v) {
@@ -85,6 +86,9 @@ namespace br {
           br->uvZoom.y = newHeight;
           br->uvOffset.y += (newHeight - br->graph_rect.height) / 2.f;
         }
+        ImGui::Checkbox("Show Closest", &br->show_closest);
+        ImGui::Checkbox("Show Closest X", &br->show_x_closest);
+        ImGui::Checkbox("Show Closest Y", &br->show_y_closest);
     }
     if (ImGui::CollapsingHeader("Debug")) {
       ImGui::SliderFloat("Recoil", &br->recoil, 0.f, 1.1f);

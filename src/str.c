@@ -6,7 +6,7 @@ br_str_t br_str_malloc(size_t size) {
   br_str_t br = {
     .str = BR_MALLOC(size),
     .len = 0,
-    .cap = size
+    .cap = (unsigned int)size
   };
   memset(br.str, 0, size);
   return br;
@@ -18,7 +18,7 @@ void br_str_free(br_str_t str) {
 
 void br_str_realloc(br_str_t* s, size_t new_cap) {
   s->str = BR_REALLOC(s->str, new_cap);
-  s->cap = new_cap;
+  s->cap = (unsigned int)new_cap;
 }
 
 static inline void br_str_push_char_unsafe(br_str_t* s, char c) {
@@ -44,8 +44,8 @@ void br_str_push_int(br_str_t* s, int c) {
     cur *= 10;
   }
   while((long)cur > 0) {
-    br_str_push_char(s, '0' + (c / cur)); 
-    c %= cur;
+    br_str_push_char(s, '0' + (char)((long)c / cur));
+    c = (int)((long)c % cur);
     cur /= 10;
   }
 }
@@ -53,19 +53,19 @@ void br_str_push_int(br_str_t* s, int c) {
 void br_str_push_float1(br_str_t* s, float c, int decimals) {
   if (c < 0.f) {
     br_str_push_char(s, '-');
-    c *= -1;
+    c *= -1.f;
   }
   int a = (int)c;
   br_str_push_int(s, a);
-  c -= a;
-  if (c > 0) {
+  c -= (float)a;
+  if (c > 0.f) {
     br_str_push_char(s, '.');
   }
-  while (c > 0 && decimals--) {
-    c *= 10;
+  while (c > 0.f && decimals--) {
+    c *= 10.f;
     a = (int)c;
-    br_str_push_char(s, '0' + a); 
-    c -= a;
+    br_str_push_char(s, '0' + (char)a);
+    c -= (float)a;
   }
   while (decimals--) {
     br_str_push_char(s, '0'); 
@@ -104,14 +104,14 @@ void br_str_to_c_str1(br_str_t const* s, char* out_s) {
 br_strv_t br_str_sub(br_str_t* s, size_t start, size_t len) {
   return (br_strv_t) {
     .str = s->str + start,
-    .len = len,
+    .len = (unsigned int)len,
   };
 }
 
 br_strv_t br_strv_sub(br_strv_t* s, size_t start, size_t len) {
   return (br_strv_t) {
     .str = s->str + start,
-    .len = len,
+    .len = (unsigned int)len,
   };
 }
 

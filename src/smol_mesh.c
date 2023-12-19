@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <raylib.h>
+#include <raymath.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -149,7 +150,26 @@ void smol_mesh_gen_bb(smol_mesh_t* mesh, bb_t bb, Color color) {
   mesh->points_drawn = old;
 }
 
-bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t len, Color color) {
+void smol_mesh_gen_point(smol_mesh_t* mesh, Vector2 point, Color color) {
+  Vector2 size = { context.last_zoom_value.x * .01f, context.last_zoom_value.x * .01f };
+  smol_mesh_gen_bb(mesh, (bb_t){
+      .xmin = point.x - size.x / 2,
+      .ymin = point.y - size.y / 2,
+      .xmax = point.x + size.x / 2,
+      .ymax = point.y + size.y / 2,
+  }, color);
+}
+
+void smol_mesh_gen_point1(smol_mesh_t* mesh, Vector2 point, Vector2 size, Color color) {
+  smol_mesh_gen_bb(mesh, (bb_t){
+      .xmin = point.x - size.x / 2,
+      .ymin = point.y - size.y / 2,
+      .xmax = point.x + size.x / 2,
+      .ymax = point.y + size.y / 2,
+  }, color);
+}
+
+void smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t len, Color color) {
   // Todo: check if index v is inside gv->points
   size_t vn = 2*3*3;
   Vector3 cv = {color.r/255.f, color.g/255.f, color.b/255.f};
@@ -208,22 +228,11 @@ bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t 
     if (context.debug_bounds) {
       context.debug_bounds = false;
       Vector2 size = { context.last_zoom_value.x * .01f, context.last_zoom_value.x * .01f };
-      smol_mesh_gen_bb(mesh, (bb_t){
-          .xmin = startPos.x - size.x / 2,
-          .ymin = startPos.y - size.y / 2,
-          .xmax = startPos.x + size.x / 2,
-          .ymax = startPos.y + size.y / 2,
-          }, WHITE);
-      smol_mesh_gen_bb(mesh, (bb_t){
-          .xmin = endPos.x - size.x / 2,
-          .ymin = endPos.y - size.y / 2,
-          .xmax = endPos.x + size.x / 2,
-          .ymax = endPos.y + size.y / 2,
-          }, WHITE);
+      smol_mesh_gen_point1(mesh, startPos, size, WHITE);
+      smol_mesh_gen_point1(mesh, endPos, size, WHITE);
       context.debug_bounds = true;
     }
   }
-  return true;
 }
 
 void smol_mesh_draw(smol_mesh_t* mesh) {

@@ -117,7 +117,7 @@ void points_groups_add_test_points(points_groups_t* pg) {
       float t = (float)(1 + g->len)*.1f;
       float x = sqrtf(t)*cosf(log2f(t));
       float y = sqrtf(t)*sinf(log2f(t));
-      Vector2 p = {x, y };
+      Vector2 p = {x, y};
       points_group_push_point(g, p);
     }
   }
@@ -135,20 +135,31 @@ void points_groups_add_test_points(points_groups_t* pg) {
   }
 }
 
-void points_groups_draw(points_groups_t const* pg, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Rectangle rect) {
+void points_groups_draw(points_groups_t const* pg, points_groups_draw_in_t pgdi) {
+  Vector2 size = { context.last_zoom_value.x * .01f, context.last_zoom_value.x * .01f };
   for (size_t j = 0; j < pg->len; ++j) {
-    points_group_t * g = &pg->arr[j];
+    points_group_t* g = &pg->arr[j];
+    if (g->len == 0) continue;
     if (g->is_selected) {
-      resampling_draw(g->resampling, g, rect, line_mesh, quad_mesh);
+      resampling_draw(g->resampling, g, &pgdi);
+    }
+    if (pgdi.show_closest) {
+      smol_mesh_gen_point1(pgdi.line_mesh, g->point_closest_to_mouse.graph_point, size, WHITE);
+    }
+    if (pgdi.show_x_closest) {
+      smol_mesh_gen_point1(pgdi.line_mesh, g->point_closest_to_mouse.graph_point_x, size, WHITE);
+    }
+    if (pgdi.show_y_closest) {
+      smol_mesh_gen_point1(pgdi.line_mesh, g->point_closest_to_mouse.graph_point_y, size, WHITE);
     }
   }
-  if (line_mesh->cur_len > 0) {
-    smol_mesh_update(line_mesh);
-    smol_mesh_draw(line_mesh);
+  if (pgdi.line_mesh->cur_len > 0) {
+    smol_mesh_update(pgdi.line_mesh);
+    smol_mesh_draw(pgdi.line_mesh);
   }
-  if (quad_mesh->cur_len > 0) {
-    smol_mesh_update(quad_mesh);
-    smol_mesh_draw(quad_mesh);
+  if (pgdi.quad_mesh->cur_len > 0) {
+    smol_mesh_update(pgdi.quad_mesh);
+    smol_mesh_draw(pgdi.quad_mesh);
   }
 }
 

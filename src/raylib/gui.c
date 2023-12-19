@@ -18,16 +18,24 @@ static void update_resolution(br_plot_t* gv);
 static void draw_left_panel(br_plot_t* gv);
 void br_gui_init_specifics(br_plot_t* br) {(void)br;}
 
-void graph_draw(br_plot_t* gv) {
+void graph_draw(br_plot_t* br) {
   BeginDrawing();
   ClearBackground(BLACK);
-  update_resolution(gv);
-  update_variables(gv);
+  update_resolution(br);
+  update_variables(br);
   help_draw_fps(0, 0);
-  draw_grid_values(gv);
-  graph_draw_grid(gv->gridShader.shader, gv->graph_screen_rect);
-  points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, gv->graph_rect);
-  draw_left_panel(gv);
+  draw_grid_values(br);
+  graph_draw_grid(br->gridShader.shader, br->graph_screen_rect);
+  points_groups_draw(&br->groups, (points_groups_draw_in_t) {
+    .mouse_pos_graph = br->mouse_graph_pos,
+    .rect = br->graph_rect,
+    .line_mesh = br->lines_mesh,
+    .quad_mesh = br->quads_mesh,
+    .show_x_closest = br->show_x_closest,
+    .show_y_closest = br->show_y_closest,
+    .show_closest = br->show_closest
+  });
+  draw_left_panel(br);
   EndDrawing();
 }
 

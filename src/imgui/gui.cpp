@@ -42,19 +42,27 @@ static bool show_demo_window = true;
 static ImVec4 clear_color = ImVec4(.0f, .0f, .0f, 1.00f);
 static float padding = 50.f;
 
-void graph_draw_min(br_plot_t* gv, float posx, float posy, float width, float height, float padding) {
-  gv->uvScreen.x = (float)GetScreenWidth();
-  gv->uvScreen.y = (float)GetScreenHeight();
-  gv->graph_screen_rect.x = 50.f + posx + padding;
-  gv->graph_screen_rect.y = posy + padding;
-  gv->graph_screen_rect.width = width - 50.f - 2.f * padding;
-  gv->graph_screen_rect.height = height - 30.f - 2.f * padding;
-  update_variables(gv);
+void graph_draw_min(br_plot_t* br, float posx, float posy, float width, float height, float padding) {
+  br->uvScreen.x = (float)GetScreenWidth();
+  br->uvScreen.y = (float)GetScreenHeight();
+  br->graph_screen_rect.x = 50.f + posx + padding;
+  br->graph_screen_rect.y = posy + padding;
+  br->graph_screen_rect.width = width - 50.f - 2.f * padding;
+  br->graph_screen_rect.height = height - 30.f - 2.f * padding;
+  update_variables(br);
   BeginScissorMode((int)posx, (int)posy, (int)width, (int)height);
-    DrawRectangleRec(gv->graph_screen_rect, BLACK);
-    draw_grid_values(gv);
-    graph_draw_grid(gv->gridShader.shader, gv->graph_screen_rect);
-    points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, gv->graph_rect);
+    DrawRectangleRec(br->graph_screen_rect, BLACK);
+    draw_grid_values(br);
+    graph_draw_grid(br->gridShader.shader, br->graph_screen_rect);
+    points_groups_draw(&br->groups, {
+      .line_mesh = br->lines_mesh,
+      .quad_mesh = br->quads_mesh,
+      .rect = br->graph_rect,
+      .mouse_pos_graph = br->mouse_graph_pos,
+      .show_x_closest = br->show_x_closest,
+      .show_y_closest = br->show_y_closest,
+      .show_closest = br->show_closest
+    });
   EndScissorMode();
 }
 

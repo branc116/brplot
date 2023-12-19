@@ -34,11 +34,10 @@ void resampling_free(resampling_t* res) {
   BR_FREE(res);
 }
 
-size_t resampling_draw(resampling_t* res, points_group_t const* points, Rectangle screen, smol_mesh_t* lines_mesh, smol_mesh_t* quad_mesh) {
-  (void)quad_mesh;
-  size_t ret = res->resampling_count = res->raw_count = 0;
+void resampling_draw(resampling_t* res, points_group_t* points, points_groups_draw_in_t* pgdi) {
+  res->resampling_count = res->raw_count = 0;
   Vector2 neigh[2] = {0};
-  Rectangle normal_screen = screen;
+  Rectangle normal_screen = pgdi->rect;
   normal_screen.y -= normal_screen.height;
 
   for (size_t i = 0; i < res->intervals_count; ++i) {
@@ -49,31 +48,40 @@ size_t resampling_draw(resampling_t* res, points_group_t const* points, Rectangl
                        inter->dir & resampling_dir_up    ? resampling_dir_up    :
                        resampling_dir_down;
     Vector2 const * ps = &(points->points)[inter->from];
-    if (context.debug_bounds) smol_mesh_gen_bb(lines_mesh, inter->bounds, points->color);
-    if (!help_check_collision_bb_rec(inter->bounds, screen)) continue;
+    if (context.debug_bounds) smol_mesh_gen_bb(pgdi->line_mesh, inter->bounds, points->color);
+    if (!help_check_collision_bb_rec(inter->bounds, pgdi->rect)) continue;
     if (inter->count < 128) {
-      smol_mesh_gen_line_strip(lines_mesh, ps, inter->count, points->color);
-      ret += inter->count;
+      smol_mesh_gen_line_strip(pgdi->line_mesh, ps, inter->count, points->color);
+      if (i == 0) {
+        points->point_closest_to_mouse = min_distances_get(ps, inter->count, pgdi->mouse_pos_graph);
+      } else {
+        min_distances_get1(&points->point_closest_to_mouse, ps, inter->count, pgdi->mouse_pos_graph);
+      }
       ++res->raw_count;
     } else {
-      spr = points_group_sample_points(ps, inter->count, d, screen, normal_screen, res->temp_points, temp_points_count);
+      spr = points_group_sample_points(ps, inter->count, d, pgdi->rect, normal_screen, res->temp_points, temp_points_count);
       if (spr == 0) continue;
-      smol_mesh_gen_line_strip(lines_mesh, res->temp_points, spr, points->color);
-      ret += spr;
+      smol_mesh_gen_line_strip(pgdi->line_mesh, res->temp_points, spr, points->color);
+      if (i == 0) {
+        points->point_closest_to_mouse = min_distances_get(res->temp_points, spr, pgdi->mouse_pos_graph);
+      } else {
+        min_distances_get1(&points->point_closest_to_mouse, res->temp_points, spr, pgdi->mouse_pos_graph);
+      }
       ++res->resampling_count;
       if (CheckCollisionPointRec(ps[0], normal_screen)) {
         neigh[0] = res->temp_points[0];
         neigh[1] = ps[0];
-        smol_mesh_gen_line_strip(lines_mesh, neigh, 2, points->color);
+        smol_mesh_gen_line_strip(pgdi->line_mesh, neigh, 2, points->color);
+        min_distances_get1(&points->point_closest_to_mouse, neigh, 2, pgdi->mouse_pos_graph);
       }
       if (CheckCollisionPointRec(ps[inter->count - 1], normal_screen)) {
         neigh[0] = res->temp_points[spr - 1];
         neigh[1] = ps[inter->count - 1];
-        smol_mesh_gen_line_strip(lines_mesh, neigh, 2, points->color);
+        smol_mesh_gen_line_strip(pgdi->line_mesh, neigh, 2, points->color);
+        min_distances_get1(&points->point_closest_to_mouse, neigh, 2, pgdi->mouse_pos_graph);
       }
     }
   }
-  return ret;
 }
 
 void resampling_add_point(resampling_t* res, points_group_t const* pg, size_t index) {
@@ -186,7 +194,7 @@ static size_t points_group_sample_points(Vector2 const* points, size_t len, resa
         if (absf((next_f - cur_f)) > step && size < max_number_of_points) {
           goto start;
         }
-        i = 2 + ceilf((cur_f - start) / (step * (float)stride_sign));
+        i = 2 + (size_t)ceilf((cur_f - start) / (step * (float)stride_sign));
       } else return size;
       was_any = true;
     } else if (was_any) break;

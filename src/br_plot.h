@@ -165,12 +165,19 @@ typedef struct {
 } resampling_t;
 
 typedef struct {
+  Vector2 graph_point;
+  Vector2 graph_point_x;
+  Vector2 graph_point_y;
+} min_distances_t;
+
+typedef struct {
   int group_id;
   Color color;
   size_t cap, len;
   Vector2* points;
   resampling_t* resampling;
   br_str_t name;
+  min_distances_t point_closest_to_mouse;
   bool is_selected;
 } points_group_t;
 
@@ -241,15 +248,22 @@ typedef struct br_plot_t {
   bool file_saver_inited;
   bool mouse_inside_graph;
   bool should_close;
+
+  bool show_closest, show_x_closest, show_y_closest;
 } br_plot_t;
 
 typedef struct {
-  Vector2 mouse_screen_pos;
+  Vector2 mouse_screen_pos, mouse_graph_pos;
   Vector2 last_zoom_value;
   float font_scale;
   bool debug_bounds;
   size_t alloc_size, alloc_count, alloc_total_size, alloc_total_count, alloc_max_size, alloc_max_count, free_of_unknown_memory;
   char buff[128];
+  struct {
+    float min_dist_sqr;
+    float min_dist_loc;
+    points_group_t* closest_to;
+  } hover;
 } context_t;
 
 
@@ -260,10 +274,13 @@ void* br_realloc(void *old, size_t newS);
 void  br_free(void* p);
 void* br_imgui_malloc(size_t size, void* user_data);
 void  br_imgui_free(void* p, void* user_data);
+Vector2 br_graph_to_screen(Rectangle graph_rect, Rectangle screen_rect, Vector2 point);
 
 smol_mesh_t* smol_mesh_malloc(size_t capacity, Shader s);
 void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 mid_point, Vector2 tangent, Color color);
-bool smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t len, Color color);
+void smol_mesh_gen_point(smol_mesh_t* mesh, Vector2 point, Color color);
+void smol_mesh_gen_point1(smol_mesh_t* mesh, Vector2 point, Vector2 size, Color color);
+void smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t len, Color color);
 void smol_mesh_gen_bb(smol_mesh_t* mesh, bb_t bb, Color color);
 void smol_mesh_draw(smol_mesh_t* mesh);
 void smol_mesh_update(smol_mesh_t* mesh);
@@ -279,7 +296,17 @@ void points_group_empty(points_group_t* pg);
 void points_group_export(points_group_t const* pg, FILE* file);
 void points_group_export_csv(points_group_t const* pg, FILE* file);
 
-void points_groups_draw(points_groups_t const* pg_array, smol_mesh_t* line_mesh, smol_mesh_t* quad_mesh, Rectangle rect);
+typedef struct {
+  smol_mesh_t* line_mesh;
+  smol_mesh_t* quad_mesh;
+  Rectangle rect;
+  Vector2 mouse_pos_graph;
+  bool show_x_closest;
+  bool show_y_closest;
+  bool show_closest;
+} points_groups_draw_in_t;
+
+void points_groups_draw(points_groups_t const* pg_array, points_groups_draw_in_t pgdi);
 void points_groups_add_test_points(points_groups_t* pg_array);
 void points_groups_deinit(points_groups_t* pg_array);
 // Only remove all points from all groups, don't remove groups themselfs.
@@ -288,9 +315,9 @@ void points_groups_export(points_groups_t const* pg_array, FILE* file);
 void points_groups_export_csv(points_groups_t const* pg_array, FILE* file);
 
 resampling_t* resampling_malloc(void);
-void          resampling_free(resampling_t* res);
-size_t        resampling_draw(resampling_t* res, points_group_t const* pg, Rectangle screen, smol_mesh_t* lines_mesh, smol_mesh_t* quad_mesh);
-void          resampling_add_point(resampling_t* res, points_group_t const* pg, size_t index);
+void resampling_free(resampling_t* res);
+void resampling_draw(resampling_t* res, points_group_t* pg, points_groups_draw_in_t* rdi);
+void resampling_add_point(resampling_t* res, points_group_t const* pg, size_t index);
 
 void graph_init(br_plot_t* br, float width, float height);
 void graph_screenshot(br_plot_t* br, char const* path);
@@ -335,6 +362,8 @@ Vector2 help_measure_text(const char* txt, float font_size);
 void    help_draw_fps(int posX, int posY);
 void    help_load_default_font(void);
 void    help_resampling_dir_to_str(char* buff, resampling_dir r);
+min_distances_t min_distances_get(Vector2 const* points, size_t points_len, Vector2 to);
+void min_distances_get1(min_distances_t* m, Vector2 const* points, size_t points_len, Vector2 to);
 
 br_str_t   br_str_malloc(size_t size);
 void       br_str_free(br_str_t str);

@@ -50,8 +50,11 @@ void br_hotreload_link(br_hotreload_state_t* s) {
     fprintf(stderr, "%s\n", dlerror());
     return;
   }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
   s->func_loop = (void (*)(br_plot_t*))dlsym(s->handl, "br_hot_loop");
   s->func_init = (void (*)(br_plot_t*))dlsym(s->handl, "br_hot_init");
+#pragma GCC diagnostic pop
   char* error = dlerror();
   if (error != NULL) {
     fprintf(stderr, "%s\n", error);
@@ -96,6 +99,7 @@ static void* hot_reload_loop(void* s) {
       continue;
     hot_reload_all(state);
   }
+  return NULL;
 }
 
 void br_hotreload_start(br_hotreload_state_t* state) {

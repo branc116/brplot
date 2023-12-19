@@ -52,7 +52,10 @@ void graph_init(br_plot_t* br, float width, float height) {
     .shaders_dirty = false,
     .commands = {0},
     .mouse_inside_graph = false,
-    .recoil = 0.85f
+    .recoil = 0.85f,
+    .show_closest = true,
+    .show_x_closest = false,
+    .show_y_closest = false
   };
 #ifdef IMGUI
 #ifndef RELEASE
@@ -208,7 +211,11 @@ void graph_screenshot(br_plot_t* gv, char const * path) {
   update_shader_values(gv);
   BeginTextureMode(target);
     graph_draw_grid(gv->gridShader.shader, gv->graph_screen_rect);
-    points_groups_draw(&gv->groups, gv->lines_mesh, gv->quads_mesh, gv->graph_rect);
+    points_groups_draw(&gv->groups, (points_groups_draw_in_t) { .mouse_pos_graph = gv->mouse_graph_pos,
+        .rect = gv->graph_rect,
+        .line_mesh = gv->lines_mesh,
+        .quad_mesh = gv->quads_mesh
+    });
     draw_grid_values(gv);
   EndTextureMode();
   Image img = LoadImageFromTexture(target.texture);
@@ -248,6 +255,7 @@ void graph_export_csv(br_plot_t const* br, char const * path) {
 void graph_update_context(br_plot_t* gv) {
   Vector2 mp = context.mouse_screen_pos = GetMousePosition();
   Vector2 mp_in_graph = { mp.x - gv->graph_screen_rect.x, mp.y - gv->graph_screen_rect.y };
+  context.mouse_graph_pos =
   gv->mouse_graph_pos = (Vector2) {
     -(gv->graph_screen_rect.width  - 2.f*mp_in_graph.x)/gv->graph_screen_rect.height*gv->uvZoom.x/2.f + gv->uvOffset.x,
      (gv->graph_screen_rect.height - 2.f*mp_in_graph.y)/gv->graph_screen_rect.height*gv->uvZoom.y/2.f + gv->uvOffset.y};

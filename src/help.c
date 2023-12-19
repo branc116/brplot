@@ -1,8 +1,10 @@
 #include "br_plot.h"
+#include "src/br_help.h"
 #include "src/misc/default_font.h"
 #include "string.h"
 #include "math.h"
 #include <raylib.h>
+#include <raymath.h>
 #include <stdio.h>
 
 void help_trim_zeros(char * buff) {
@@ -67,5 +69,45 @@ void help_resampling_dir_to_str(char* buff, resampling_dir r) {
     if (r & resampling_dir_down)  buff[i++] = 'D';
   }
   buff[i] = (char)0;
+}
+
+min_distances_t min_distances_get(Vector2 const* points, size_t points_len, Vector2 to) {
+  min_distances_t m = { points[0], points[0], points[0] };
+  for (size_t i = 1; i < points_len; ++i) {
+    if (absf(m.graph_point_x.x - to.x) > absf(points[i].x - to.x)) {
+      m.graph_point_x = points[i];
+    }
+    if (absf(m.graph_point_y.y - to.y) > absf(points[i].y - to.y)) {
+      m.graph_point_y = points[i];
+    }
+    if (Vector2DistanceSqr(m.graph_point, to) > Vector2DistanceSqr(points[i], to)) {
+      m.graph_point = points[i];
+    }
+  }
+  return m;
+}
+
+void min_distances_get1(min_distances_t* m, Vector2 const* points, size_t points_len, Vector2 to) {
+  for (size_t i = 1; i < points_len; ++i) {
+    if (absf(m->graph_point_x.x - to.x) > absf(points[i].x - to.x)) {
+      m->graph_point_x = points[i];
+    }
+    if (absf(m->graph_point_y.y - to.y) > absf(points[i].y - to.y)) {
+      m->graph_point_y = points[i];
+    }
+    if (Vector2DistanceSqr(m->graph_point, to) > Vector2DistanceSqr(points[i], to)) {
+      m->graph_point = points[i];
+    }
+  }
+}
+
+Vector2 br_graph_to_screen(Rectangle graph_rect, Rectangle screen_rect, Vector2 point) {
+  graph_rect.y += graph_rect.height;
+  if (point.y > (graph_rect.y + graph_rect.height)) return (Vector2){0};
+  if (point.y < graph_rect.y) return (Vector2){0};
+  if (point.x < graph_rect.x) return (Vector2){0};
+  if (point.x > graph_rect.x + graph_rect.width) return (Vector2){0};
+  return (Vector2) { screen_rect.x + screen_rect.width * (point.x - graph_rect.x) / graph_rect.width,
+    screen_rect.y + screen_rect.height * (point.y - graph_rect.y) / graph_rect.height };
 }
 
