@@ -124,7 +124,7 @@ static void input_reduce_command(br_plot_t* gv) {
       }
     };
     q_push(&gv->commands, cmd);
-
+    tokens[3].kind = input_token_any;
   } else
     printf("Execute %c%c%c...\n", tokens[1].name[0], tokens[1].name[1], tokens[1].name[2]);
 }
@@ -144,6 +144,11 @@ input_reduce_t input_reductors_arr[REDUCTORS] = {
 
 static void input_tokens_pop(size_t n) {
   if (n == 0) return;
+  for (size_t i = 0; i < n; ++i) {
+    if (tokens[i].kind == input_token_quoted_string) {
+      br_str_free(tokens[i].br_str);
+    }
+  }
   if (n >= INPUT_TOKENS_COUNT) {
     memset(tokens, 0, sizeof(tokens));
   }
@@ -383,7 +388,7 @@ static void lex(br_plot_t* gv) {
           br_str_push_char(&tokens[tokens_len].br_str, (char)0);
           ++tokens_len;
           state = input_lex_state_init;
-        } else br_str_push_char(&tokens[tokens_len].br_str, c);
+        } else br_str_push_char(&tokens[tokens_len].br_str, (char)c);
         break;
       default:
         assert(false);
@@ -495,5 +500,6 @@ TEST_CASE(InputTests2) {
 
   c = q_pop(&gvt.commands);
   TEST_EQUAL(c.type, q_command_none);
+  BR_FREE(gvt.commands.commands);
 }
 #endif
