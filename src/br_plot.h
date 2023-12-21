@@ -46,19 +46,6 @@ extern "C" {
 #define LOCK(x)
 #endif
 
-#define BR_MALLOC br_malloc
-#define BR_CALLOC br_calloc
-#define BR_REALLOC br_realloc
-#define BR_FREE br_free
-#define BR_IMGUI_MALLOC br_imgui_malloc
-#define BR_IMGUI_FREE br_imgui_free
-#ifdef LINUX
-#include "signal.h"
-#define BR_ASSERT(x) if (!x) raise(SIGABRT)
-#else
-#define BR_ASSERT(x) assert(x)
-#endif
-
 typedef enum {
   q_command_none,
   q_command_push_point_y,
@@ -282,6 +269,27 @@ void* br_realloc(void *old, size_t newS);
 void  br_free(void* p);
 void* br_imgui_malloc(size_t size, void* user_data);
 void  br_imgui_free(void* p, void* user_data);
+
+#if !defined(RELEASE) && defined(LINUX)
+#define BR_MALLOC br_malloc
+#define BR_CALLOC br_calloc
+#define BR_REALLOC br_realloc
+#define BR_FREE br_free
+#define BR_IMGUI_MALLOC br_imgui_malloc
+#define BR_IMGUI_FREE br_imgui_free
+#include "signal.h"
+#define BR_ASSERT(x) if (!x) raise(SIGABRT)
+#else
+#include <stdlib.h>
+#define BR_ASSERT(x) assert(x)
+#define BR_MALLOC malloc
+#define BR_CALLOC calloc
+#define BR_REALLOC realloc
+#define BR_FREE free
+#define BR_IMGUI_MALLOC br_imgui_malloc
+#define BR_IMGUI_FREE br_imgui_free
+#endif
+
 Vector2 br_graph_to_screen(Rectangle graph_rect, Rectangle screen_rect, Vector2 point);
 
 smol_mesh_t* smol_mesh_malloc(size_t capacity, Shader s);

@@ -8,6 +8,28 @@
 #include "GLFW/glfw3.h"
 
 GLFWwindow* ctx;
+#define DEFAULT_INI "" \
+"[Window][DockSpaceViewport_11111111]\n" \
+"Size=1280,720\n" \
+"\n" \
+"[Window][Info]\n" \
+"Pos=1007,0\n" \
+"DockId=0x00000002,1\n" \
+"\n" \
+"[Window][Settings]\n" \
+"Pos=1007,0\n" \
+"DockId=0x00000002,0\n" \
+"\n" \
+"[Window][Plot]\n" \
+"Pos=0,0\n" \
+"Size=1005,720\n" \
+"DockId=0x00000001,0\n" \
+"\n" \
+"[Docking][Data]\n" \
+"DockSpace   ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1280,720 Split=X\n" \
+"  DockNode  ID=0x00000001 Parent=0x8B93E3BD SizeRef=1005,720\n" \
+"  DockNode  ID=0x00000002 Parent=0x8B93E3BD SizeRef=273,720\n"
+
 
 extern "C" void br_gui_init_specifics(br_plot_t* br) {
   (void)br;
@@ -33,6 +55,9 @@ extern "C" void br_gui_init_specifics(br_plot_t* br) {
 #ifdef LINUX
   br_hotreload_start(&br->hot_state);
 #endif
+#endif
+#ifdef PLATFORM_WEB
+    ImGui::LoadIniSettingsFromMemory(DEFAULT_INI);
 #endif
 }
 extern "C" void br_gui_free_specifics(br_plot_t* br) {
@@ -88,7 +113,7 @@ extern "C" void graph_draw(br_plot_t* gv) {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui::NewFrame();
   ImGui::DockSpaceOverViewport();
-  if (ImGui::Begin("Test") && false == ImGui::IsWindowHidden()) {
+  if (ImGui::Begin("Plot") && false == ImGui::IsWindowHidden()) {
     ImVec2 p = ImGui::GetWindowPos();
     ImVec2 size = ImGui::GetWindowSize();
     graph_draw_min(gv, p.x, p.y, size.x, size.y, padding);

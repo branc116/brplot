@@ -8,7 +8,7 @@ ImVec4 operator-(float f, ImVec4 v) {
 namespace br {
   void ui_settings(br_plot_t* br) {
     ImGui::SetNextWindowBgAlpha(0.7f);
-    if (ImGui::Begin("Settings 2")) {
+    if (ImGui::Begin("Settings")) {
     if (ImGui::Button("Clear all")) {
       points_groups_deinit(&br->groups);
     }

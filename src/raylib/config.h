@@ -221,27 +221,4 @@
 //------------------------------------------------------------------------------------
 #define MAX_TRACELOG_MSG_LENGTH       256       // Max length of one trace-log message
 
-void* br_malloc(size_t size);
-void* br_calloc(size_t n, size_t size);
-void br_free(void* ptr);
-void* br_realloc(void* ptr, size_t newSize);
-
-#ifdef RL_MALLOC
-#undef RL_MALLOC
-#endif
-#ifdef RL_CALLOC
-#undef RL_CALLOC
-#endif
-#ifdef RL_FREE
-#undef RL_FREE
-#endif
-#ifdef RL_REALLOC
-#undef RL_REALLOC
-#endif
-
-#define RL_MALLOC br_malloc
-#define RL_CALLOC br_calloc
-#define RL_FREE br_free
-#define RL_REALLOC br_realloc
-
 #endif // CONFIG_H

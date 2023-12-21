@@ -1,7 +1,7 @@
 RL= raylib/src
 # DEBUG | RELEASE
 CONFIG?= DEBUG
-# LINUX | WEB
+# LINUX | WEB | WINDOWS
 PLATFORM?= LINUX
 # IMGUI | RAYLIB | HEADLESS
 GUI?= IMGUI
@@ -53,10 +53,12 @@ else ifeq ($(PLATFORM), WEB)
 	CXX= $(EMSCRIPTEN)em++
 	CC= $(EMSCRIPTEN)emcc
 	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES2 -DPLATFORM_WEB --memory-init-file 1 --closure 1  -s "EXPORTED_RUNTIME_METHODS=['FS']" -s FORCE_FILESYSTEM -s WASM_BIGINT -s ENVIRONMENT=web -sALLOW_MEMORY_GROWTH -s USE_GLFW=3 -s ASYNCIFY --shell-file=src/web/minshell.html
+
 	SOURCE+= src/web/read_input.c src/web/glfw_mock.c
 	SHADERS_LIST= src/web/shaders/grid.fs src/web/shaders/line.fs src/web/shaders/line.vs src/web/shaders/quad.fs src/web/shaders/quad.vs
 	SHADERS_HEADER= src/misc/shaders_web.h
 	OUTPUT= www/index.html
+	OUTPUT= $(shell echo 'www/brplot_$(GUI)_$(CONFIG).html' | tr '[A-Z]' '[a-z]')
 
 else
 	echo "Valid PLATFORM parameter values are LINUX, WINDOWS, WEB" && exit -1

@@ -3,7 +3,6 @@
 #include "cstdlib"
 #include "cassert"
 #include <map>
-
 static thread_local std::map<size_t, size_t> alloc_sizes;
 
 static inline void __attribute__((constructor(101))) run_tests(void) {
@@ -57,7 +56,7 @@ extern "C" void br_free(void* p) {
   br_free_stats((size_t)p);
   free(p);
 }
-
+#if defined(LINUX) && !defined(RELEASE)
 extern "C" void* br_imgui_malloc(size_t size, void*) {
   return br_malloc(size);
 }
@@ -65,3 +64,12 @@ extern "C" void* br_imgui_malloc(size_t size, void*) {
 extern "C" void br_imgui_free(void* p, void*) {
   br_free(p);
 }
+#else
+extern "C" void* br_imgui_malloc(size_t size, void*) {
+  return malloc(size);
+}
+
+extern "C" void br_imgui_free(void* p, void*) {
+  free(p);
+}
+#endif
