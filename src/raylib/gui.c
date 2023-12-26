@@ -10,13 +10,12 @@
 #include <string.h>
 #include <pthread.h>
 
-#include "raylib.h"
-#include "rlgl.h"
+#include "raylib/src/raylib.h"
 
 void emscripten_run_script(const char* script);
 static void update_resolution(br_plot_t* gv);
 static void draw_left_panel(br_plot_t* gv);
-void br_gui_init_specifics(br_plot_t* br) {(void)br;}
+void br_gui_init_specifics_gui(br_plot_t* br) {(void)br;}
 
 void graph_draw(br_plot_t* br) {
   BeginDrawing();
@@ -74,7 +73,7 @@ static void draw_left_panel(br_plot_t* gv) {
     if (res > 0) {
       if (IsKeyPressed(KEY_C)) {
         if (IsKeyDown(KEY_LEFT_SHIFT)) points_group_clear(&gv->groups, gv->groups.arr[j].group_id);
-        else                              points_group_empty(&gv->groups.arr[j]);
+        else                           points_group_empty(&gv->groups.arr[j]);
       }
     }
   }

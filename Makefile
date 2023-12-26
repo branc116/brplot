@@ -6,36 +6,37 @@ PLATFORM?= LINUX
 # IMGUI | RAYLIB | HEADLESS
 GUI?= IMGUI
 
-RAYLIB_SOURCES= $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
+RAYLIB_SOURCES= $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
+SOURCE= src/main.c src/help.c src/points_group.c src/resampling.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c src/keybindings.c src/str.c
+EXTERNAL_HEADERS=
 ADDITIONAL_HEADERS= src/misc/default_font.h
-
+BR_HEADERS= src/br_plot.h src/br_gui_internal.h src/br_help.h
 COMMONFLAGS= -I./imgui -I./imgui/backends -I. -Isrc/raylib -Iraylib/src
+WARNING_FLAGS= -Wconversion -Wall -Wpedantic -Wextra 
+LD_FLAGS=
 
 ifeq ($(GUI), IMGUI)
-	SOURCE= imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp \
+	SOURCE+= imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp \
 				  imgui/imgui_widgets.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp \
 				  src/imgui/gui.cpp src/imgui/ui_settings.cpp src/imgui/ui_info.cpp src/imgui/imgui_extensions.cpp $(RAYLIB_SOURCES)
 	COMMONFLAGS+= -DIMGUI
+	BR_HEADERS+= src/imgui/imgui_extensions.h
 else ifeq ($(GUI), RAYLIB)
-	SOURCE= src/raylib/gui.c src/raylib/ui.c $(RAYLIB_SOURCES)
+	SOURCE+= src/raylib/gui.c src/raylib/ui.c $(RAYLIB_SOURCES)
 else ifeq ($(GUI), HEADLESS)
-	SOURCE= src/headless/raylib_headless.c src/headless/gui.c
+	SOURCE+= src/headless/raylib_headless.c src/headless/gui.c
 	PLATFORM= LINUX
 	COMMONFLAGS+= -DNUMBER_OF_STEPS=100
 else
 	echo "Valid GUI parameters are IMGUI, RAYLIB, HEADLESS" && exit -1
 endif
 	
-SOURCE+= src/main.c src/help.c \
-				 src/points_group.c src/resampling.c src/smol_mesh.c src/q.c \
-				 src/read_input.c src/memory.cpp src/gui.c src/keybindings.c src/str.c
-
 ifeq ($(PLATFORM), LINUX)
 	LIBS= `pkg-config --static --libs glfw3` -lGL
 	CXX= g++
 	CC= gcc
-	COMMONFLAGS+= -DLINUX -DPLATFORM_DESKTOP
-	SOURCE+= src/desktop/linux/read_input.c
+	COMMONFLAGS+= -DLINUX=1 -DPLATFORM_DESKTOP=1
+	SOURCE+= src/desktop/linux/read_input.c src/desktop/platform.c
 	SHADERS_HEADER= src/misc/shaders.h
 	SHADERS_LIST= src/desktop/shaders/grid.fs src/desktop/shaders/line.fs src/desktop/shaders/line.vs src/desktop/shaders/quad.vs src/desktop/shaders/quad.fs
 
@@ -43,21 +44,19 @@ else ifeq ($(PLATFORM), WINDOWS)
 	LIBS= -lopengl32 -lgdi32 -lwinmm
 	CXX= x86_64-w64-mingw32-g++
 	CC= x86_64-w64-mingw32-gcc
-	COMMONFLAGS+= -Iraylib/src/external/glfw/include -DWINDOWS -DPLATFORM_DESKTOP -D_WIN32=1
-
-	SOURCE+= $(RL)/rglfw.c src/desktop/win/read_input.c
+	COMMONFLAGS+= -Iraylib/src/external/glfw/include -DWINDOWS=1 -DPLATFORM_DESKTOP=1 -D_WIN32=1
+	SOURCE+= $(RL)/rglfw.c src/desktop/win/read_input.c src/desktop/platform.c
 	SHADERS_HEADER= src/misc/shaders.h
 	SHADERS_LIST= src/desktop/shaders/grid.fs src/desktop/shaders/line.fs src/desktop/shaders/line.vs src/desktop/shaders/quad.vs src/desktop/shaders/quad.fs
 
 else ifeq ($(PLATFORM), WEB)
 	CXX= $(EMSCRIPTEN)em++
 	CC= $(EMSCRIPTEN)emcc
-	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES2 -DPLATFORM_WEB --memory-init-file 1 --closure 1  -s "EXPORTED_RUNTIME_METHODS=['FS']" -s FORCE_FILESYSTEM -s WASM_BIGINT -s ENVIRONMENT=web -sALLOW_MEMORY_GROWTH -s USE_GLFW=3 -s ASYNCIFY --shell-file=src/web/minshell.html
-
-	SOURCE+= src/web/read_input.c src/web/glfw_mock.c
+	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES2=1 -DPLATFORM_WEB=1
+	LD_FLAGS= -sWASM_BIGINT -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH -sUSE_GLFW=3 -sASYNCIFY --shell-file=src/web/minshell.html
+	SOURCE+= src/web/read_input.c src/web/glfw_mock.c src/web/public_api.c
 	SHADERS_LIST= src/web/shaders/grid.fs src/web/shaders/line.fs src/web/shaders/line.vs src/web/shaders/quad.fs src/web/shaders/quad.vs
 	SHADERS_HEADER= src/misc/shaders_web.h
-	OUTPUT= www/index.html
 	OUTPUT= $(shell echo 'www/brplot_$(GUI)_$(CONFIG).html' | tr '[A-Z]' '[a-z]')
 
 else
@@ -65,10 +64,10 @@ else
 endif
 
 ifeq ($(CONFIG), DEBUG)
-	COMMONFLAGS+= -g -pg -Wconversion -Wall -Wpedantic -Wextra -DUNIT_TEST
+	COMMONFLAGS+= -g
 	ifeq ($(PLATFORM), LINUX)
-		SOURCE+= src/desktop/linux/refresh_shaders.c
-		COMMONFLAGS+= -rdynamic -fpie \
+		SOURCE+= src/desktop/linux/refresh_shaders.c src/memory.cpp
+		COMMONFLAGS+= -rdynamic -fpie -pg -DUNIT_TEST \
 	   -fsanitize=address -fsanitize=leak \
 		 -fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
 		 -fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
@@ -88,12 +87,12 @@ ifeq ($(CONFIG), DEBUG)
 endif
 
 ifeq ($(CONFIG), RELEASE)
-	COMMONFLAGS+= -Os -DRELEASE \
+	COMMONFLAGS+= -Os -DRELEASE=1 \
 		-DIMGUI_DISABLE_DEMO_WINDOWS \
 		-DIMGUI_DISABLE_DEBUG_TOOLS
 	ADDITIONAL_HEADERS+= $(SHADERS_HEADER)
-	ifneq ($(PLATFORM), WINDOWS)
-		COMMONFLAGS+= -flto=auto
+	ifeq ($(PLATFORM), LINUX)
+		LD_FLAGS+= -flto=auto
 	endif
 endif
 
@@ -108,9 +107,6 @@ OBJSDIR= $(sort $(dir $(OBJS)))
 $(shell $(foreach var,$(OBJSDIR), test -d $(var) || mkdir -p $(var);))
 $(shell test -d $(dir $(OUTPUT)) || mkdir $(dir $(OUTPUT)))
 $(shell test -d bin || mkdir bin)
-
-$(OUTPUT): $(ADDITIONAL_HEADERS) $(OBJS)
-	$(CXX) $(COMMONFLAGS) $(MY_COMMONFLAGS) -o $@ $(LIBS) $(OBJS) $(LIBS)
 
 bin/upper: tools/upper.cpp
 	g++ -O3 -o bin/upper tools/upper.cpp
@@ -133,13 +129,14 @@ $(SHADERS_HEADER): $(SHADERS_LIST) bin/upper bin/lower
 																cat $(s) | sed 's/\(.*\)/"\1\\n" \\/' >> $(SHADERS_HEADER) && \
 																echo "" >> $(SHADERS_HEADER) && ) echo "OKi"
 
-BR_HEADERS= src/br_plot.h src/br_gui_internal.h src/br_help.h
+$(OUTPUT): $(ADDITIONAL_HEADERS) $(OBJS)
+	$(CXX) $(LD_FLAGS) -o $@ $(LIBS) $(OBJS) $(LIBS)
 
 $(PREFIX_BUILD)/src/%.o:src/%.c $(BR_HEADERS) $(ADDITIONAL_HEADERS)
-	$(CC) $(CCFLAGS) $(MY_COMMONFLAGS) -c -o $@ $<
+	$(CC) $(CCFLAGS) $(WARNING_FLAGS) -c -o $@ $<
 
 $(PREFIX_BUILD)/src/%.o:src/%.cpp $(BR_HEADERS) $(ADDITIONAL_HEADERS)
-	$(CC) $(CXXFLAGS) $(MY_COMMONFLAGS) -c -o $@ $<
+	$(CC) $(CXXFLAGS) $(WARNING_FLAGS) -c -o $@ $<
 
 $(PREFIX_BUILD)/%.o:%.cpp $(ADDITIONAL_HEADERS)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<

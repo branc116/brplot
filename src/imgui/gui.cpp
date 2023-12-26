@@ -31,7 +31,7 @@ GLFWwindow* ctx;
 "  DockNode  ID=0x00000002 Parent=0x8B93E3BD SizeRef=273,720\n"
 
 
-extern "C" void br_gui_init_specifics(br_plot_t* br) {
+extern "C" void br_gui_init_specifics_gui(br_plot_t* br) {
   (void)br;
   ctx = glfwGetCurrentContext();
   ImGui::SetAllocatorFunctions(BR_IMGUI_MALLOC, BR_IMGUI_FREE, nullptr);

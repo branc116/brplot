@@ -69,7 +69,8 @@ void graph_init(br_plot_t* br, float width, float height) {
 
   context.font_scale = 1.8f;
   memset(context.buff, 0, sizeof(context.buff));
-  br_gui_init_specifics(br);
+  br_gui_init_specifics_gui(br);
+  br_gui_init_specifics_platform(br);
 }
 
 void graph_free(br_plot_t* gv) {
