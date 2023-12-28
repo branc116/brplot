@@ -5,16 +5,21 @@ CONFIG?= DEBUG
 PLATFORM?= LINUX
 # IMGUI | RAYLIB | HEADLESS
 GUI?= IMGUI
+# EXE | LIB
+TYPE?= EXE
 
 RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
-SOURCE             = src/main.c src/help.c src/points_group.c src/resampling.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c src/keybindings.c src/str.c
+SOURCE             = src/main.c src/help.c src/points_group.c src/resampling.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c src/keybindings.c src/str.c src/memory.cpp
 EXTERNAL_HEADERS   =
 ADDITIONAL_HEADERS = src/misc/default_font.h
-RAYLIB_HEADERS =  raylib/src/rcamera.h raylib/src/raymath.h raylib/src/raylib.h raylib/src/utils.h raylib/src/rlgl.h src/raylib/config.h
+RAYLIB_HEADERS     =  raylib/src/rcamera.h raylib/src/raymath.h raylib/src/raylib.h raylib/src/utils.h raylib/src/rlgl.h src/raylib/config.h
 BR_HEADERS         = src/br_plot.h src/br_gui_internal.h src/br_help.h
-COMMONFLAGS        = -I./imgui -I./imgui/backends -I. -Isrc/raylib -Iraylib/src -H
+COMMONFLAGS        = -I./imgui -I./imgui/backends -I. -Isrc/raylib -Iraylib/src
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra
 LD_FLAGS=
+
+
+# To debug include files use -H flag
 
 ifeq ($(GUI), IMGUI)
 	SOURCE+= imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp \
@@ -64,7 +69,10 @@ else ifeq ($(PLATFORM), WEB)
 	SHADERS_LIST= src/web/shaders/grid.fs src/web/shaders/line.fs src/web/shaders/line.vs src/web/shaders/quad.fs src/web/shaders/quad.vs
 	SHADERS_HEADER= src/misc/shaders_web.h
 	OUTPUT= $(shell echo 'www/brplot_$(GUI)_$(CONFIG).html' | tr '[A-Z]' '[a-z]')
-
+	ifeq ($(TYPE), LIB)
+		LD_FLAGS+=	-sMODULARIZE=1
+		OUTPUT= $(shell echo 'www/brplot_$(GUI)_$(CONFIG)_lib.js' | tr '[A-Z]' '[a-z]')
+	endif
 else
 	echo "Valid PLATFORM parameter values are LINUX, WINDOWS, WEB" && exit -1
 endif
@@ -72,7 +80,7 @@ endif
 ifeq ($(CONFIG), DEBUG)
 	COMMONFLAGS+= -g
 	ifeq ($(PLATFORM), LINUX)
-		SOURCE+= src/desktop/linux/refresh_shaders.c src/memory.cpp
+		SOURCE+= src/desktop/linux/refresh_shaders.c
 		COMMONFLAGS+= -rdynamic -fpie -pg -DUNIT_TEST \
 	   -fsanitize=address -fsanitize=leak \
 		 -fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
