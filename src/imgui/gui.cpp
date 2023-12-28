@@ -67,7 +67,6 @@ extern "C" void br_gui_free_specifics(br_plot_t* br) {
   ImGui::DestroyContext();
 }
 
-static bool show_demo_window = true;
 static ImVec4 clear_color = ImVec4(.0f, .0f, .0f, 1.00f);
 static float padding = 50.f;
 

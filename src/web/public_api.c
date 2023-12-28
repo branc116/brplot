@@ -12,6 +12,7 @@ EM_BOOL (br_resize)(int eventType, const EmscriptenUiEvent *uiEvent, void *userD
 
 
 void br_gui_init_specifics_platform(br_plot_t* br) {
+  public_context = br;
   //EMSCRIPTEN_WEBGL_CONTEXT_HANDLE a = emscripten_webgl_get_current_context();
-  emscripten_set_resize_callback("canvas", NULL, false, br_resize);
+  emscripten_set_resize_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, NULL, false, br_resize);
 }

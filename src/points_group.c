@@ -172,7 +172,7 @@ static points_group_t* points_group_init(points_group_t* g, int group_id) {
     .name = br_str_malloc(32)
   };
   sprintf(g->name.str, "Plot #%d", group_id);
-  g->name.len = strlen(g->name.str);
+  g->name.len = (unsigned int)strlen(g->name.str);
   return g;
 }
 

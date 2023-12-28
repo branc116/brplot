@@ -10,7 +10,9 @@ void *read_input_main_worker(void* gv);
 
 static pthread_t thread;
 static void* indirection_function(void* gv);
+#ifndef RELEASE
 static void regirter_interupt2(void);
+#endif
 
 void read_input_main(br_plot_t* gv) {
 #ifndef RELEASE

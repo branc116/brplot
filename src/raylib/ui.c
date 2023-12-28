@@ -61,7 +61,7 @@ void ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size)
   stack_scroll_position = scroll_position;
   stack_button_size = help_measure_text("T", font_size);
   stack_button_size.y += 5.f;
-  stack_offset = -stack_button_size.y * (scroll_position == NULL ? 0.f :(int)*scroll_position);
+  stack_offset = -stack_button_size.y * (scroll_position == NULL ? 0.f : *scroll_position);
   stack_font_size = font_size;
   stack_count = 0;
   stack_maxsize = (Vector2){0};

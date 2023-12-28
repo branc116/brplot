@@ -1,7 +1,7 @@
 #include "src/br_plot.h"
 #include "src/br_gui_internal.h"
 
-void br_gui_init_specifics(br_plot_t *br) {(void)br;}
+void br_gui_init_specifics_gui(br_plot_t *br) {(void)br;}
 
 void graph_draw(br_plot_t *br) {
   BeginDrawing();

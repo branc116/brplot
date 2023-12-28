@@ -7,11 +7,12 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include <math.h>
 #include <stdarg.h>
 #include <string.h>
 #include <pthread.h>
 
-#include "raylib.h"
+#include "raylib/src/raylib.h"
 #include "rlgl.h"
 
 #ifndef RELEASE
@@ -284,7 +285,7 @@ void draw_grid_values(br_plot_t* gv) {
   char fmt[16];
 
   float exp = floorf(log10f(r.height / 2.f));
-  if (false == isnanf(exp)) {
+  if (false == isnan(exp)) {
     float base = powf(10.f, exp);
     float start = floorf(r.y / base) * base;
     if (exp >= 0) strcpy(fmt, "%f");
@@ -304,9 +305,9 @@ void draw_grid_values(br_plot_t* gv) {
   }
 
   exp =  floorf(log10f(r.width / 2.f));
-  if (false == isnanf(exp)) {
+  if (false == isnan(exp)) {
     float base = powf(10.f, exp);
-    if (isnanf(base) || isinff(base)) return;
+    if (isnan(base) || isinf(base)) return;
     float start = ceilf(r.x / base) * base;
     if (exp >= 0) strcpy(fmt, "%f");
     else sprintf(fmt, "%%.%df", -(int)exp);
