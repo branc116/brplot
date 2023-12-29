@@ -17,7 +17,7 @@ static void update_resolution(br_plot_t* gv);
 static void draw_left_panel(br_plot_t* gv);
 void br_gui_init_specifics_gui(br_plot_t* br) {(void)br;}
 
-void graph_draw(br_plot_t* br) {
+BR_API void graph_draw(br_plot_t* br) {
   BeginDrawing();
   ClearBackground(BLACK);
   update_resolution(br);

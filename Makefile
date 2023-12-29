@@ -71,7 +71,7 @@ else ifeq ($(PLATFORM), WEB)
 	OUTPUT= $(shell echo 'www/brplot_$(GUI)_$(CONFIG).html' | tr '[A-Z]' '[a-z]')
 	ifeq ($(TYPE), LIB)
 		COMMONFLAGS+= -DLIB
-		LD_FLAGS+=	-sMODULARIZE=1
+		LD_FLAGS+= -sMODULARIZE=1 -sEXPORT_ES6=1
 		OUTPUT= $(shell echo 'www/brplot_$(GUI)_$(CONFIG)_lib.js' | tr '[A-Z]' '[a-z]')
 	endif
 else

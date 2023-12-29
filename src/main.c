@@ -25,10 +25,8 @@ int main(void) {
 #ifdef RELEASE
   SetTraceLogLevel(LOG_ERROR);
 #endif
-  SetWindowState(FLAG_MSAA_4X_HINT);
-  InitWindow(WIDTH, HEIGHT, "brplot");
-  SetWindowState(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
-  br_plot_t* gv = graph_malloc(WIDTH, HEIGHT);
+  br_plot_t* gv = graph_malloc();
+  graph_init(gv, WIDTH, HEIGHT);
 #ifndef RELEASE
   start_refreshing_shaders(gv);
 #endif

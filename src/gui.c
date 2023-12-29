@@ -24,13 +24,13 @@ context_t context;
 void emscripten_run_script(const char* script);
 static br_shader_t graph_load_shader(char const* vs, char const* fs);
 
-br_plot_t* graph_malloc(float width, float height) {
-  br_plot_t* gv = BR_MALLOC(sizeof(br_plot_t));
-  graph_init(gv, width, height);
-  return gv;
+br_plot_t* graph_malloc(void) {
+  return BR_MALLOC(sizeof(br_plot_t));
 }
 
-void graph_init(br_plot_t* br, float width, float height) {
+BR_API void graph_init(br_plot_t* br, float width, float height) {
+  InitWindow((int)width, (int)height, "brplot");
+  SetWindowState(FLAG_VSYNC_HINT);
   *br = (br_plot_t){
     .gridShader = graph_load_shader(NULL, SHADER_GRID_FS),
     .linesShader = graph_load_shader(SHADER_LINE_VS, SHADER_LINE_FS),
@@ -80,7 +80,7 @@ void graph_init(br_plot_t* br, float width, float height) {
   br_gui_init_specifics_platform(br);
 }
 
-void graph_free(br_plot_t* gv) {
+BR_API void graph_free(br_plot_t* gv) {
   for (size_t i = 0; i < sizeof(gv->shaders) / sizeof(br_shader_t); ++i) {
     UnloadShader(gv->shaders[i].shader);
   }
@@ -191,7 +191,7 @@ void update_variables(br_plot_t* br) {
   end: return;
 }
 
-void graph_frame_end(br_plot_t* gv) {
+BR_API void graph_frame_end(br_plot_t* gv) {
   gv->lines_mesh->draw_calls = 0;
   gv->lines_mesh->points_drawn = 0;
 }

@@ -3,6 +3,13 @@
 #include <stddef.h>
 #include "stdio.h"
 
+#ifdef PLATFORM_WEB
+#include <emscripten.h>
+#define BR_API EMSCRIPTEN_KEEPALIVE
+#else
+#define BR_API
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,6 +35,7 @@ extern "C" {
 #endif
 
 #endif
+
 
 // This is the size of buffer used to transfer points from cpu to gpu.
 #define PTOM_COUNT (1<<10)
@@ -338,15 +346,15 @@ void resampling_free(resampling_t* res);
 void resampling_draw(resampling_t* res, points_group_t* pg, points_groups_draw_in_t* rdi);
 void resampling_add_point(resampling_t* res, points_group_t const* pg, size_t index);
 
-br_plot_t* graph_malloc(float width, float height);
-void graph_init(br_plot_t* br, float width, float height);
+BR_API br_plot_t* graph_malloc(void);
+BR_API void graph_init(br_plot_t* br, float width, float height);
 void graph_screenshot(br_plot_t* br, char const* path);
 void graph_export(br_plot_t const* br, char const* path);
 void graph_export_csv(br_plot_t const* br, char const* path);
 
-void graph_free(br_plot_t* br);
-void graph_draw(br_plot_t* br);
-void graph_frame_end(br_plot_t* br);
+BR_API void graph_free(br_plot_t* br);
+BR_API void graph_draw(br_plot_t* br);
+BR_API void graph_frame_end(br_plot_t* br);
 
 void br_keybinding_handle_keys(br_plot_t* br);
 
