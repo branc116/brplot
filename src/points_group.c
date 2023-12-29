@@ -15,23 +15,23 @@ static void points_group_deinit(points_group_t* g);
 static bool points_group_realloc(points_group_t* pg, size_t new_cap);
 static Color color_get(int id);
 
-void points_group_push_y(points_groups_t* pg_array, float y, int group) {
+BR_API void points_group_push_y(points_groups_t* pg_array, float y, int group) {
   points_group_t* pg = points_group_get(pg_array, group);
   points_group_push_point(pg, (Vector2){ .x = (float)pg->len, .y = y });
 }
 
-void points_group_push_xy(points_groups_t* pg_array, float x, float y, int group) {
+BR_API void points_group_push_xy(points_groups_t* pg_array, float x, float y, int group) {
   points_group_t* pg = points_group_get(pg_array, group);
   points_group_push_point(pg, (Vector2){ .x = x, .y = y });
 }
 
-void points_group_empty(points_group_t* pg) {
+BR_API void points_group_empty(points_group_t* pg) {
   pg->len = 0;
   pg->resampling->intervals_count = 0;
   pg->resampling->resampling_count = 0;
 }
 
-void points_group_clear(points_groups_t* pg, int group_id) {
+BR_API void points_group_clear(points_groups_t* pg, int group_id) {
   size_t len = pg->len;
   bool found = false;
   for (size_t i = 0; i < len; ++i) {
@@ -91,7 +91,7 @@ void points_groups_deinit(points_groups_t* arr) {
   arr->arr = NULL;
 }
 
-void points_groups_empty(points_groups_t* pg) {
+BR_API void points_groups_empty(points_groups_t* pg) {
   for (size_t i = 0; i < pg->len; ++i) {
     points_group_empty(&pg->arr[i]);
   }
@@ -197,7 +197,7 @@ static Color color_get(int id) {
   return c;
 }
 
-points_group_t* points_group_get(points_groups_t* pg, int group) {
+BR_API points_group_t* points_group_get(points_groups_t* pg, int group) {
   assert(pg);
 
   if (pg->len == 0) {

@@ -80,6 +80,10 @@ BR_API void graph_init(br_plot_t* br, float width, float height) {
   br_gui_init_specifics_platform(br);
 }
 
+BR_API points_groups_t* graph_get_points_groups(br_plot_t* br) {
+  return &br->groups;
+}
+
 BR_API void graph_free(br_plot_t* gv) {
   for (size_t i = 0; i < sizeof(gv->shaders) / sizeof(br_shader_t); ++i) {
     UnloadShader(gv->shaders[i].shader);

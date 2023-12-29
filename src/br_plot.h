@@ -313,16 +313,6 @@ void smol_mesh_draw(smol_mesh_t* mesh);
 void smol_mesh_update(smol_mesh_t* mesh);
 void smol_mesh_free(smol_mesh_t* mesh);
 
-points_group_t* points_group_get(points_groups_t* pg_array, int group);
-void points_group_set_name(points_groups_t* pg_array, int group, br_str_t name);
-void points_group_push_y(points_groups_t* pg, float y, int group);
-void points_group_push_xy(points_groups_t* pg, float x, float y, int group);
-void points_group_clear(points_groups_t* pg, int group_id);
-// Only remove all points from a group, don't remove the group itself.
-void points_group_empty(points_group_t* pg);
-void points_group_export(points_group_t const* pg, FILE* file);
-void points_group_export_csv(points_group_t const* pg, FILE* file);
-
 typedef struct {
   smol_mesh_t* line_mesh;
   smol_mesh_t* quad_mesh;
@@ -333,11 +323,21 @@ typedef struct {
   bool show_closest;
 } points_groups_draw_in_t;
 
+BR_API points_group_t* points_group_get(points_groups_t* pg_array, int group);
+void points_group_set_name(points_groups_t* pg_array, int group, br_str_t name);
+BR_API void points_group_push_y(points_groups_t* pg, float y, int group);
+BR_API void points_group_push_xy(points_groups_t* pg, float x, float y, int group);
+BR_API void points_group_clear(points_groups_t* pg, int group_id);
+// Only remove all points from a group, don't remove the group itself.
+BR_API void points_group_empty(points_group_t* pg);
+void points_group_export(points_group_t const* pg, FILE* file);
+void points_group_export_csv(points_group_t const* pg, FILE* file);
+
 void points_groups_draw(points_groups_t const* pg_array, points_groups_draw_in_t pgdi);
 void points_groups_add_test_points(points_groups_t* pg_array);
 void points_groups_deinit(points_groups_t* pg_array);
 // Only remove all points from all groups, don't remove groups themselfs.
-void points_groups_empty(points_groups_t* pg_array);
+BR_API void points_groups_empty(points_groups_t* pg_array);
 void points_groups_export(points_groups_t const* pg_array, FILE* file);
 void points_groups_export_csv(points_groups_t const* pg_array, FILE* file);
 
@@ -348,6 +348,7 @@ void resampling_add_point(resampling_t* res, points_group_t const* pg, size_t in
 
 BR_API br_plot_t* graph_malloc(void);
 BR_API void graph_init(br_plot_t* br, float width, float height);
+BR_API points_groups_t* graph_get_points_groups(br_plot_t* br);
 void graph_screenshot(br_plot_t* br, char const* path);
 void graph_export(br_plot_t const* br, char const* path);
 void graph_export_csv(br_plot_t const* br, char const* path);
