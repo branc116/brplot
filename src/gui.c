@@ -24,6 +24,12 @@ context_t context;
 void emscripten_run_script(const char* script);
 static br_shader_t graph_load_shader(char const* vs, char const* fs);
 
+br_plot_t* graph_malloc(float width, float height) {
+  br_plot_t* gv = BR_MALLOC(sizeof(br_plot_t));
+  graph_init(gv, width, height);
+  return gv;
+}
+
 void graph_init(br_plot_t* br, float width, float height) {
   *br = (br_plot_t){
     .gridShader = graph_load_shader(NULL, SHADER_GRID_FS),

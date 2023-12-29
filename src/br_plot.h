@@ -338,6 +338,7 @@ void resampling_free(resampling_t* res);
 void resampling_draw(resampling_t* res, points_group_t* pg, points_groups_draw_in_t* rdi);
 void resampling_add_point(resampling_t* res, points_group_t const* pg, size_t index);
 
+br_plot_t* graph_malloc(float width, float height);
 void graph_init(br_plot_t* br, float width, float height);
 void graph_screenshot(br_plot_t* br, char const* path);
 void graph_export(br_plot_t const* br, char const* path);

@@ -1,3 +1,4 @@
+#ifndef LIB
 #include "br_plot.h"
 
 #include <stddef.h>
@@ -27,8 +28,7 @@ int main(void) {
   SetWindowState(FLAG_MSAA_4X_HINT);
   InitWindow(WIDTH, HEIGHT, "brplot");
   SetWindowState(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
-  br_plot_t* gv = BR_MALLOC(sizeof(br_plot_t));
-  graph_init(gv, WIDTH, HEIGHT);
+  br_plot_t* gv = graph_malloc(WIDTH, HEIGHT);
 #ifndef RELEASE
   start_refreshing_shaders(gv);
 #endif
@@ -43,4 +43,4 @@ int main(void) {
   CloseWindow();
   return 0;
 } 
-
+#endif

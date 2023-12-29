@@ -1,0 +1,28 @@
+{
+  "name": "brplot",
+  "version": "0.0.1",
+  "description": "Library for plotting huge amount of points.",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/branc116/brplot.git"
+  },
+  "keywords": [
+    "plot"
+  ],
+  "author": "Branimir Ričko",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/branc116/brplot/issues"
+  },
+  "homepage": "https://github.com/branc116/brplot#readme",
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  }
+}
