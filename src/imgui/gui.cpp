@@ -125,10 +125,8 @@ extern "C" void graph_draw(br_plot_t* gv) {
       if (gv->hot_state.func_loop != nullptr) gv->hot_state.func_loop(gv);
     pthread_mutex_unlock(&gv->hot_state.lock);
   }
-  if (show_demo_window) {
-    ImGui::SetNextWindowBgAlpha(0.7f);
-    ImGui::ShowDemoWindow(&show_demo_window);
-  }
+  ImGui::SetNextWindowBgAlpha(0.7f);
+  ImGui::ShowDemoWindow();
 #endif
 #endif
   br::ui_settings(gv);
