@@ -7,8 +7,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc"
   },
-  "files": [ "brplot.js", "index.js", "brplot_raylib_release_lib.wasm", "package.json" ],
+  "files": [ "brplot.js", "index.js", "brplot_raylib_release_lib.wasm", "package.json", "index.d.ts" ],
   "main": "index.js",
+  "typings": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/branc116/brplot.git"

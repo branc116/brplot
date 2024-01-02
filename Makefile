@@ -64,15 +64,20 @@ else ifeq ($(PLATFORM), WEB)
 	CXX= $(EMSCRIPTEN)em++
 	CC= $(EMSCRIPTEN)emcc
 	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES2=1 -DPLATFORM_WEB=1
-	LD_FLAGS= -sWASM_BIGINT -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH -sUSE_GLFW=3 -sASYNCIFY -sGL_ENABLE_GET_PROC_ADDRESS --shell-file=src/web/minshell.html
+	LD_FLAGS= -sWASM_BIGINT -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH -sUSE_GLFW=3 -sGL_ENABLE_GET_PROC_ADDRESS --shell-file=src/web/minshell.html
+	LD_FLAGS+= -sCHECK_NULL_WRITES=0 -sDISABLE_EXCEPTION_THROWING=1 -sFILESYSTEM=0 -sDYNAMIC_EXECUTION=0
 	SOURCE+= src/web/read_input.c src/web/glfw_mock.c src/web/public_api.c
 	SHADERS_LIST= src/web/shaders/grid.fs src/web/shaders/line.fs src/web/shaders/line.vs src/web/shaders/quad.fs src/web/shaders/quad.vs
 	SHADERS_HEADER= src/misc/shaders_web.h
-	OUTPUT= $(shell echo 'www/brplot_$(GUI)_$(CONFIG).html' | tr '[A-Z]' '[a-z]')
 	ifeq ($(TYPE), LIB)
 		COMMONFLAGS+= -DLIB
 		LD_FLAGS+= -sMODULARIZE=1 -sEXPORT_ES6=1
 		OUTPUT= $(shell echo 'www/brplot_$(GUI)_$(CONFIG)_lib.js' | tr '[A-Z]' '[a-z]')
+	else ifeq ($(TYPE), EXE)
+		OUTPUT= $(shell echo 'www/brplot_$(GUI)_$(CONFIG).html' | tr '[A-Z]' '[a-z]')
+		LD_FLAGS= -sASYNCIFY
+	else
+		echo "Valid TYPE parameter values are LIB, EXE" && exit -1
 	endif
 else
 	echo "Valid PLATFORM parameter values are LINUX, WINDOWS, WEB" && exit -1
