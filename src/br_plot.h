@@ -348,6 +348,7 @@ void resampling_add_point(resampling_t* res, points_group_t const* pg, size_t in
 
 BR_API br_plot_t* graph_malloc(void);
 BR_API void graph_init(br_plot_t* br, float width, float height);
+BR_API void graph_resize(br_plot_t* br, float width, float height);
 BR_API points_groups_t* graph_get_points_groups(br_plot_t* br);
 void graph_screenshot(br_plot_t* br, char const* path);
 void graph_export(br_plot_t const* br, char const* path);
@@ -355,6 +356,7 @@ void graph_export_csv(br_plot_t const* br, char const* path);
 
 BR_API void graph_free(br_plot_t* br);
 BR_API void graph_draw(br_plot_t* br);
+BR_API void graph_minimal(br_plot_t* br);
 BR_API void graph_frame_end(br_plot_t* br);
 
 void br_keybinding_handle_keys(br_plot_t* br);

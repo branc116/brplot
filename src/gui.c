@@ -2,6 +2,7 @@
 #include "br_gui_internal.h"
 #include "br_help.h"
 
+#include <raylib.h>
 #include <raymath.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +14,6 @@
 #include <pthread.h>
 
 #include "raylib/src/raylib.h"
-#include "rlgl.h"
 
 #ifndef RELEASE
 static void refresh_shaders_if_dirty(br_plot_t* gv);
@@ -78,6 +78,11 @@ BR_API void graph_init(br_plot_t* br, float width, float height) {
   memset(context.buff, 0, sizeof(context.buff));
   br_gui_init_specifics_gui(br);
   br_gui_init_specifics_platform(br);
+}
+
+BR_API void graph_resize(br_plot_t* br, float width, float height) {
+  (void)br;
+  SetWindowSize((int)width, (int)height);
 }
 
 BR_API points_groups_t* graph_get_points_groups(br_plot_t* br) {

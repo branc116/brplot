@@ -1,0 +1,20 @@
+<html>
+  <body>
+    <canvas width="800" height="600" id="canv"></canvas>
+  </body>
+  <script type="module">
+    import { Brplot } from "./index.js"
+    const br = new Brplot("canv");
+    await br.initializeAsync();
+    let i = 0;
+    br.setOnNewFrame(() => {
+      for (let j = 0 ; j < 100; ++j) {
+        br.pushPoint(i/1000, Math.sin(i/1000));
+        br.pushPoint(Math.sin(i/1000), i/1000, 1);
+        br.pushPoint(Math.cos(i/1000), -i/1000, 2);
+        ++i;
+      }
+    });
+    br.startDrawing();
+  </script>
+</html>

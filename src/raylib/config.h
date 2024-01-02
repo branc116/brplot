@@ -10,7 +10,7 @@
 #define SUPPORT_MODULE_RTEXTURES        1
 #define SUPPORT_MODULE_RTEXT            1       // WARNING: It requires SUPPORT_MODULE_RTEXTURES to load sprite font textures
 #define SUPPORT_MODULE_RMODELS          1
-#define SUPPORT_MODULE_RAUDIO           1
+//#define SUPPORT_MODULE_RAUDIO           1
 
 //------------------------------------------------------------------------------------
 // Module: rcore - Configuration Flags
@@ -214,7 +214,9 @@
 #define SUPPORT_STANDARD_FILEIO         1
 // Show TRACELOG() output messages
 // NOTE: By default LOG_DEBUG traces not shown
+#ifndef RELEASE
 #define SUPPORT_TRACELOG                1
+#endif
 //#define SUPPORT_TRACELOG_DEBUG          1
 
 // utils: Configuration values
