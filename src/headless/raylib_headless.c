@@ -328,6 +328,9 @@ bool DirectoryExists(const char *dirPath) {
 void SetExitKey(int key) {
 }
 
+void SetWindowSize(int width, int height) {
+}
+
 // String pointer reverse break: returns right-most occurrence of charset in s
 static const char *strprbrk(const char *s, const char *charset) {
     const char *latestMatch = NULL;
@@ -348,3 +351,4 @@ const char *GetFileName(const char *filePath) {
 const char *TextFormat(const char *text, ...) {
   return text;
 }
+
