@@ -13,15 +13,15 @@ void br::ui_info(br_plot_t* br) {
     if (ImGui::CollapsingHeader("Draw Debug")) {
       int s = sprintf(context.buff, "Draw Calls: %lu (%lu lines)", br->lines_mesh->draw_calls, br->lines_mesh->points_drawn); ImGui::TextUnformatted(context.buff, context.buff + s);
       for (size_t i = 0; i < br->groups.len; ++i) {
-        auto& a = br->groups.arr[i];
-        s = sprintf(context.buff, "Line #%d intervals(%lu):", a.group_id, a.resampling->intervals_count); ImGui::TextUnformatted(context.buff, context.buff + s);
-        for (size_t j = 0; j < a.resampling->intervals_count; ++j) {
-          auto& inter = a.resampling->intervals[j];
-          s = sprintf(context.buff, "   %lu [%lu - %lu] ", inter.count, inter.from, inter.from + inter.count);
-          help_resampling_dir_to_str(&context.buff[s], inter.dir);
-          s = (int)strlen(context.buff);
-          ImGui::TextUnformatted(context.buff, context.buff + s);
-        }
+        //auto& a = br->groups.arr[i];
+//        s = sprintf(context.buff, "Line #%d intervals(%lu):", a.group_id, a.resampling->intervals_count); ImGui::TextUnformatted(context.buff, context.buff + s);
+//        for (size_t j = 0; j < a.resampling->intervals_count; ++j) {
+//          auto& inter = a.resampling->intervals[j];
+//          s = sprintf(context.buff, "   %lu [%lu - %lu] ", inter.count, inter.from, inter.from + inter.count);
+//          help_resampling_dir_to_str(&context.buff[s], inter.dir);
+//          s = (int)strlen(context.buff);
+//          ImGui::TextUnformatted(context.buff, context.buff + s);
+//        }
       }
     }
     if (ImGui::CollapsingHeader("Queue")) {
