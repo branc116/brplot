@@ -1,8 +1,8 @@
 {
   "name": "brplot",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Library for plotting huge amount of points. (100+ million)",
-  "private": true,
+  "private": false,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc"

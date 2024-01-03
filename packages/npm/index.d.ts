@@ -18,4 +18,4 @@ declare class Brplot {
   stopDrawing(): void;
   redrawOnce(): void;
 }
-export = Brplot;
+export { Brplot };

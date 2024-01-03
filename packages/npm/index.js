@@ -33,8 +33,8 @@ export class Brplot {
 
   resize(width, height) {
     this.module._graph_resize(this.graph, width, height);
-    this.width = width;
-    this.height = height;
+    this.canvas.width = this.width = width;
+    this.canvas.height = this.height = height;
   }
 
   startDrawing() {
@@ -43,7 +43,7 @@ export class Brplot {
   }
   
   stopDrawing() {
-    this.startDrawing = false;
+    this.startedDrawing = false;
   }
 
   redrawOnce() {
@@ -54,6 +54,7 @@ export class Brplot {
     if (this.onNewFrame !== undefined) {
       this.onNewFrame(this);
     }
+    if (this.width !== this.canvas.width || this.height !== this.canvas.height) this.resize(this.canvas.width, this.canvas.height);
     this.module._graph_draw(this.graph);
   }
 
@@ -72,3 +73,4 @@ export class Brplot {
     requestAnimationFrame(this._loopRedraw);
   }
 }
+
