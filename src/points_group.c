@@ -27,8 +27,8 @@ BR_API void points_group_push_xy(points_groups_t* pg_array, float x, float y, in
 
 BR_API void points_group_empty(points_group_t* pg) {
   pg->len = 0;
-  pg->resampling->intervals_count = 0;
-  pg->resampling->resampling_count = 0;
+  //pg->resampling->intervals_count = 0;
+  //pg->resampling->resampling_count = 0;
 }
 
 BR_API void points_group_clear(points_groups_t* pg, int group_id) {
@@ -137,11 +137,12 @@ void points_groups_add_test_points(points_groups_t* pg) {
 
 void points_groups_draw(points_groups_t const* pg, points_groups_draw_in_t pgdi) {
   Vector2 size = { context.last_zoom_value.x * .01f, context.last_zoom_value.x * .01f };
+  pgdi.rect.y -= pgdi.rect.height;
   for (size_t j = 0; j < pg->len; ++j) {
     points_group_t* g = &pg->arr[j];
     if (g->len == 0) continue;
     if (g->is_selected) {
-      resampling_draw(g->resampling, g, &pgdi);
+      resampling2_draw(g->resampling, g, &pgdi);
     }
     if (pgdi.show_closest) {
       smol_mesh_gen_point1(pgdi.line_mesh, g->point_closest_to_mouse.graph_point, size, WHITE);
@@ -167,7 +168,7 @@ static points_group_t* points_group_init(points_group_t* g, int group_id) {
   *g = (points_group_t) { .cap = 1024, .len = 0, .group_id = group_id,
     .is_selected = true,
     .points = BR_MALLOC(sizeof(Vector2) * 1024),
-    .resampling = resampling_malloc(),
+    .resampling = resampling2_malloc(),
     .color = color_get(group_id),
     .name = br_str_malloc(32)
   };
@@ -231,14 +232,14 @@ static void points_group_push_point(points_group_t* g, Vector2 v) {
     assert(points_group_realloc(g, g->cap * 2));
   }
   g->points[g->len] = v;
-  resampling_add_point(g->resampling, g, g->len);
+  resampling2_add_point(g->resampling, g, g->len);
   ++g->len;
 }
 
 static void points_group_deinit(points_group_t* g) {
   // Free points
   BR_FREE(g->points);
-  resampling_free(g->resampling);
+  resampling2_free(g->resampling);
   br_str_free(g->name);
   g->points = NULL;
   g->len = g->cap = 0;

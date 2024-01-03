@@ -169,6 +169,11 @@ void smol_mesh_gen_point1(smol_mesh_t* mesh, Vector2 point, Vector2 size, Color 
   }, color);
 }
 
+void smol_mesh_gen_line(smol_mesh_t* mesh, Vector2 p1, Vector2 p2, Color color) {
+  Vector2 ps[] = { p1, p2 };
+  smol_mesh_gen_line_strip(mesh, ps, 2, color);
+}
+
 void smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t len, Color color) {
   // Todo: check if index v is inside gv->points
   size_t vn = 2*3*3;

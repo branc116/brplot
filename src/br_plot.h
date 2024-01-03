@@ -165,6 +165,9 @@ typedef struct {
   size_t resampling_count, raw_count; //DEBUG STUFF
 } resampling_t;
 
+struct resampling2_s;
+typedef struct resampling2_s resampling2_t;
+
 typedef struct {
   Vector2 graph_point;
   Vector2 graph_point_x;
@@ -176,7 +179,7 @@ typedef struct {
   Color color;
   size_t cap, len;
   Vector2* points;
-  resampling_t* resampling;
+  resampling2_t* resampling;
   br_str_t name;
   min_distances_t point_closest_to_mouse;
   bool is_selected;
@@ -276,6 +279,7 @@ extern br_plot_t* public_context;
 #endif
 
 void* br_malloc(size_t size);
+void* br_calloc(size_t n, size_t size);
 void* br_realloc(void *old, size_t newS);
 void  br_free(void* p);
 void* br_imgui_malloc(size_t size, void* user_data);
@@ -307,6 +311,7 @@ smol_mesh_t* smol_mesh_malloc(size_t capacity, Shader s);
 void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 mid_point, Vector2 tangent, Color color);
 void smol_mesh_gen_point(smol_mesh_t* mesh, Vector2 point, Color color);
 void smol_mesh_gen_point1(smol_mesh_t* mesh, Vector2 point, Vector2 size, Color color);
+void smol_mesh_gen_line(smol_mesh_t* mesh, Vector2 p1, Vector2 p2, Color color);
 void smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t len, Color color);
 void smol_mesh_gen_bb(smol_mesh_t* mesh, bb_t bb, Color color);
 void smol_mesh_draw(smol_mesh_t* mesh);
@@ -341,10 +346,10 @@ BR_API void points_groups_empty(points_groups_t* pg_array);
 void points_groups_export(points_groups_t const* pg_array, FILE* file);
 void points_groups_export_csv(points_groups_t const* pg_array, FILE* file);
 
-resampling_t* resampling_malloc(void);
-void resampling_free(resampling_t* res);
-void resampling_draw(resampling_t* res, points_group_t* pg, points_groups_draw_in_t* rdi);
-void resampling_add_point(resampling_t* res, points_group_t const* pg, size_t index);
+resampling2_t* resampling2_malloc(void);
+void resampling2_free(resampling2_t* res);
+void resampling2_draw(resampling2_t* res, points_group_t* pg, points_groups_draw_in_t* rdi);
+void resampling2_add_point(resampling2_t* res, points_group_t const* pg, size_t index);
 
 BR_API br_plot_t* graph_malloc(void);
 BR_API void graph_init(br_plot_t* br, float width, float height);

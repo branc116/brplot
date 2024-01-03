@@ -64,9 +64,8 @@ static void draw_left_panel(br_plot_t* gv) {
   for(size_t j = 0; j < gv->groups.len; ++j) {
     int res = 0;
     if (context.debug_bounds) {
-      res = ui_stack_buttons_add(&gv->groups.arr[j].is_selected, "Line #%d: %d; %u/%u/%u",
-        gv->groups.arr[j].group_id, gv->groups.arr[j].len,
-        gv->groups.arr[j].resampling->intervals_count, gv->groups.arr[j].resampling->raw_count, gv->groups.arr[j].resampling->resampling_count);
+      res = ui_stack_buttons_add(&gv->groups.arr[j].is_selected, "Line #%d: %d;",
+        gv->groups.arr[j].group_id, gv->groups.arr[j].len);
     } else {
       res = ui_stack_buttons_add(&gv->groups.arr[j].is_selected, "Line #%d: %d", gv->groups.arr[j].group_id, gv->groups.arr[j].len);
     }

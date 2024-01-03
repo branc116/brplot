@@ -9,7 +9,7 @@ GUI?= IMGUI
 TYPE?= EXE
 
 RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
-SOURCE             = src/main.c src/help.c src/points_group.c src/resampling.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c src/keybindings.c src/str.c src/memory.cpp
+SOURCE             = src/main.c src/help.c src/points_group.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c src/keybindings.c src/str.c src/memory.cpp src/resampling2.c
 EXTERNAL_HEADERS   =
 ADDITIONAL_HEADERS = src/misc/default_font.h
 RAYLIB_HEADERS     =  raylib/src/rcamera.h raylib/src/raymath.h raylib/src/raylib.h raylib/src/utils.h raylib/src/rlgl.h src/raylib/config.h
@@ -55,7 +55,7 @@ else ifeq ($(PLATFORM), WINDOWS)
 	LIBS= -lopengl32 -lgdi32 -lwinmm
 	CXX= x86_64-w64-mingw32-g++
 	CC= x86_64-w64-mingw32-gcc
-	COMMONFLAGS+= -Iraylib/src/external/glfw/include -DWINDOWS=1 -DPLATFORM_DESKTOP=1 -D_WIN32=1
+	COMMONFLAGS+= -Iraylib/src/external/glfw/include -DWINDOWS=1 -DPLATFORM_DESKTOP=1 -D_WIN32=1 -DLEAN_AND_MEAN
 	SOURCE+= $(RL)/rglfw.c src/desktop/win/read_input.c src/desktop/platform.c
 	SHADERS_HEADER= src/misc/shaders.h
 	SHADERS_LIST= src/desktop/shaders/grid.fs src/desktop/shaders/line.fs src/desktop/shaders/line.vs src/desktop/shaders/quad.vs src/desktop/shaders/quad.fs
