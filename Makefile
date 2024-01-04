@@ -75,7 +75,7 @@ else ifeq ($(PLATFORM), WEB)
 		OUTPUT= $(shell echo 'www/brplot_$(GUI)_$(CONFIG)_lib.js' | tr '[A-Z]' '[a-z]')
 	else ifeq ($(TYPE), EXE)
 		OUTPUT= $(shell echo 'www/brplot_$(GUI)_$(CONFIG).html' | tr '[A-Z]' '[a-z]')
-		LD_FLAGS= -sASYNCIFY
+		LD_FLAGS+= -sASYNCIFY
 	else
 		echo "Valid TYPE parameter values are LIB, EXE" && exit -1
 	endif
@@ -120,7 +120,7 @@ endif
 PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)' | tr '[A-Z]' '[a-z]')
 OBJSA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE))
 OBJS+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
-CXXFLAGS= $(COMMONFLAGS)
+CXXFLAGS= $(COMMONFLAGS) -fno-exceptions
 CCFLAGS= $(COMMONFLAGS)
 OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(PLATFORM)_$(CONFIG)' | tr '[A-Z]' '[a-z]')
 
@@ -136,7 +136,7 @@ $(PREFIX_BUILD)/src/%.o:src/%.c $(BR_HEADERS) $(ADDITIONAL_HEADERS)
 	$(CC) $(CCFLAGS) $(WARNING_FLAGS) -c -o $@ $<
 
 $(PREFIX_BUILD)/src/%.o:src/%.cpp $(BR_HEADERS) $(ADDITIONAL_HEADERS)
-	$(CC) $(CXXFLAGS) $(WARNING_FLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(WARNING_FLAGS) -c -o $@ $<
 
 $(PREFIX_BUILD)/%.o:%.cpp $(ADDITIONAL_HEADERS)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
