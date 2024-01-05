@@ -313,7 +313,7 @@ void smol_mesh_gen_point(smol_mesh_t* mesh, Vector2 point, Color color);
 void smol_mesh_gen_point1(smol_mesh_t* mesh, Vector2 point, Vector2 size, Color color);
 void smol_mesh_gen_line(smol_mesh_t* mesh, Vector2 p1, Vector2 p2, Color color);
 void smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t len, Color color);
-void smol_mesh_gen_line_strip_stride(smol_mesh_t* mesh, Vector2 const * points, long len, Color color, int stride);
+void smol_mesh_gen_line_strip_stride(smol_mesh_t* mesh, Vector2 const * points, ssize_t len, Color color, int stride);
 void smol_mesh_gen_bb(smol_mesh_t* mesh, bb_t bb, Color color);
 void smol_mesh_draw(smol_mesh_t* mesh);
 void smol_mesh_update(smol_mesh_t* mesh);
