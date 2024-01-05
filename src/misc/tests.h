@@ -99,7 +99,7 @@ struct test_file_metadata __attribute__((weak)) * test_file_head;
       .name = #_name,                                                               \
       .fn = __test_h_##_name,                                                       \
   };                                                                                \
-  static void __attribute__((constructor(101))) __test_h_##_name##_register(void) { \
+  static void __attribute__((constructor(1001))) __test_h_##_name##_register(void) { \
     __test_h_meta_##_name.next = __test_h_file.tests;                               \
     __test_h_file.tests = &__test_h_meta_##_name;                                   \
     if (!__test_h_file.registered) {                                                \
@@ -116,7 +116,7 @@ struct test_file_metadata __attribute__((weak)) * test_file_head;
 extern void __attribute__((weak)) (*test_h_unittest_setup)(void);
 /// Run defined tests, return true if all tests succeeds
 /// @param[out] tests_run if not NULL, set to whether tests were run
-static inline void __attribute__((constructor(102))) run_tests(void) {
+static inline void __attribute__((constructor(1002))) run_tests(void) {
   bool should_run = false;
 #ifdef USE_SYSCTL_FOR_ARGS
   int mib[] = {

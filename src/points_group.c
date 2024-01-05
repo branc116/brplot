@@ -101,13 +101,13 @@ void points_groups_add_test_points(points_groups_t* pg) {
   {
     int group = 0;
     points_group_t* g = points_group_get(pg, group);
-    for (int i = 0; i < 1024; ++i)
+    for (int i = 0; i < 10*1024; ++i)
       points_group_push_point(g, (Vector2){(float)g->len/128.f, sinf((float)g->len/128.f)});
   }
   {
     int group = 1;
     points_group_t* g = points_group_get(pg, group);
-    for (int i = 0; i < 1024; ++i)
+    for (int i = 0; i < 10*1024; ++i)
       points_group_push_point(g, (Vector2){-(float)g->len/128.f, sinf((float)g->len/128.f)});
   }
   {

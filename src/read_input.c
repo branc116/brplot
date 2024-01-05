@@ -234,7 +234,7 @@ static void input_tokens_reduce(br_plot_t* gv, bool force_reduce) {
 static void lex(br_plot_t* gv) {
   float value_f = 0;
   int decimal = 0;
-  int value_i = 0;
+  long value_i = 0;
   char name[MAX_NAME] = {0};
   size_t name_len = 0;
   bool is_neg_whole = false;
@@ -312,7 +312,7 @@ static void lex(br_plot_t* gv) {
           decimal = 0;
           state = input_lex_state_number_exp;
         } else {
-          tokens[tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = (float)value_i, .value_i = value_i };
+          tokens[tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = (float)value_i, .value_i = (int)value_i };
           state = input_lex_state_number_reset;
           read_next = false;
         }
@@ -329,7 +329,7 @@ static void lex(br_plot_t* gv) {
           state = input_lex_state_number_exp;
         } else {
           value_f += (float)value_i * powf(10.f, (float)decimal);
-          tokens[tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = is_neg_whole ? -value_f : value_f, .value_i = value_i };
+          tokens[tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = is_neg_whole ? -value_f : value_f, .value_i = (int)value_i };
           state = input_lex_state_number_reset;
           read_next = false;
         }
@@ -342,7 +342,7 @@ static void lex(br_plot_t* gv) {
           is_neg = true;
         } else {
           value_f *= powf(10.f, is_neg ? (float)-value_i : (float)value_i);
-          tokens[tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = is_neg_whole ? -value_f : value_f, .value_i = value_i };
+          tokens[tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = is_neg_whole ? -value_f : value_f, .value_i = (int)value_i };
           state = input_lex_state_number_reset;
           read_next = false;
         }

@@ -85,54 +85,54 @@ void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 center, Vecto
     mesh->colors[c+i+1] = vc.y;
     mesh->colors[c+i+2] = vc.z;
   }
-  float ld = point_distance(tangent, center, (Vector2){rect.x, rect.y}, rect)/sqrt_2,
-        rd = point_distance(tangent, center, (Vector2){rect.x + rect.width, rect.y}, rect)/sqrt_2,
-        ru = point_distance(tangent, center, (Vector2){rect.x + rect.width, rect.y + rect.height}, rect)/sqrt_2,
-        lu = point_distance(tangent, center, (Vector2){rect.x, rect.y + rect.height}, rect)/sqrt_2;
+//  float ld = point_distance(tangent, center, (Vector2){rect.x, rect.y}, rect)/sqrt_2,
+//        rd = point_distance(tangent, center, (Vector2){rect.x + rect.width, rect.y}, rect)/sqrt_2,
+//        ru = point_distance(tangent, center, (Vector2){rect.x + rect.width, rect.y + rect.height}, rect)/sqrt_2,
+//        lu = point_distance(tangent, center, (Vector2){rect.x, rect.y + rect.height}, rect)/sqrt_2;
   //float m = maxf(maxf(ld, rd), maxf(ru, lu));
   //ld /= m; rd /= m; ru /= m; lu /= m;
   //assert(CheckCollisionPointRec(tangent, rect));
   mesh->verticies[c+0] = rect.x + rect.width;
   mesh->verticies[c+1] = rect.y;
-  mesh->verticies[c+2] = rd;
+  mesh->verticies[c+2] = 0.f; //rd;
   mesh->verticies[c+3] = center.x;
   mesh->verticies[c+4] = center.y;
   mesh->verticies[c+5] = 0.f;
   mesh->verticies[c+6] = rect.x;
   mesh->verticies[c+7] = rect.y;
-  mesh->verticies[c+8] = ld;
+  mesh->verticies[c+8] = 0.f; //ld;
 
   mesh->verticies[c+9] = rect.x + rect.width;
   mesh->verticies[c+10] = rect.y + rect.height;
-  mesh->verticies[c+11] = ru;
+  mesh->verticies[c+11] = 0.f; //ru;
   mesh->verticies[c+12] = center.x;
   mesh->verticies[c+13] = center.y;
   mesh->verticies[c+14] = 0.f;
   mesh->verticies[c+15] = rect.x + rect.width;
   mesh->verticies[c+16] = rect.y;
-  mesh->verticies[c+17] = rd;
+  mesh->verticies[c+17] = 0.f; //rd;
 
   c += 18;
   mesh->cur_len++;
   mesh->verticies[c+0] = rect.x;
   mesh->verticies[c+1] = rect.y + rect.height;
-  mesh->verticies[c+2] = lu;
+  mesh->verticies[c+2] = 0.f; //lu;
   mesh->verticies[c+3] = center.x;
   mesh->verticies[c+4] = center.y;
   mesh->verticies[c+5] = 0.f;
   mesh->verticies[c+6] = rect.x + rect.width;
   mesh->verticies[c+7] = rect.y + rect.height;
-  mesh->verticies[c+8] = ru;
+  mesh->verticies[c+8] = 0.f; //ru;
 
   mesh->verticies[c+9] = rect.x;
   mesh->verticies[c+10] = rect.y;
-  mesh->verticies[c+11] = ld;
+  mesh->verticies[c+11] = 0.f; //ld;
   mesh->verticies[c+12] = center.x;
   mesh->verticies[c+13] = center.y;
   mesh->verticies[c+14] = 0.f;
   mesh->verticies[c+15] = rect.x;
   mesh->verticies[c+16] = rect.y + rect.height;
-  mesh->verticies[c+17] = lu;
+  mesh->verticies[c+17] = 0.f; //lu;
 }
 
 void smol_mesh_gen_bb(smol_mesh_t* mesh, bb_t bb, Color color) {
@@ -169,75 +169,76 @@ void smol_mesh_gen_point1(smol_mesh_t* mesh, Vector2 point, Vector2 size, Color 
   }, color);
 }
 
-void smol_mesh_gen_line(smol_mesh_t* mesh, Vector2 p1, Vector2 p2, Color color) {
-  Vector2 ps[] = { p1, p2 };
-  smol_mesh_gen_line_strip(mesh, ps, 2, color);
+void smol_mesh_gen_line(smol_mesh_t* mesh, Vector2 startPos, Vector2 endPos, Color const color) {
+  ssize_t const vn = 2*3*3;
+  Vector3 const cv = {color.r/255.f, color.g/255.f, color.b/255.f};
+  ++mesh->points_drawn;
+  size_t c = (size_t)mesh->cur_len++;
+  if (c >= mesh->capacity) {
+    smol_mesh_update(mesh);
+    smol_mesh_draw(mesh);
+    c = mesh->cur_len++;
+  }
+  c *= vn;
+  Vector2 delta = { endPos.x - startPos.x, endPos.y - startPos.y };
+  float length = sqrtf(delta.x*delta.x + delta.y*delta.y);
+
+  Vector2 strip[2] = {
+    { startPos.x, startPos.y},
+    { endPos.x, endPos.y},
+  };
+  //First triangle
+  mesh->verticies[c+0] = strip[0].x;
+  mesh->verticies[c+1] = strip[0].y;
+  mesh->verticies[c+2] = -1;
+  mesh->verticies[c+3] = strip[1].x;
+  mesh->verticies[c+4] = strip[1].y;
+  mesh->verticies[c+5] = -1;
+  mesh->verticies[c+6] = strip[0].x;
+  mesh->verticies[c+7] = strip[0].y;
+  mesh->verticies[c+8] = 1;
+  //Second triangle
+  mesh->verticies[c+9]  = strip[0].x;
+  mesh->verticies[c+10] = strip[0].y;
+  mesh->verticies[c+11] = 1;
+  mesh->verticies[c+12] = strip[1].x;
+  mesh->verticies[c+13] = strip[1].y;
+  mesh->verticies[c+14] = -1;
+  mesh->verticies[c+15] = strip[1].x;
+  mesh->verticies[c+16] = strip[1].y;
+  mesh->verticies[c+17] = 1;
+
+  for (ssize_t i = 0; i < vn; i += 3) {
+    //Not a normal, this is dx, dy, length for first triangle
+    mesh->normals[c+i+0] = delta.x;
+    mesh->normals[c+i+1] = delta.y;
+    mesh->normals[c+i+2] = length;
+  }
+
+  for (ssize_t i = 0; i < vn; i += 3) {
+    mesh->colors[c+i+0] = cv.x;
+    mesh->colors[c+i+1] = cv.y;
+    mesh->colors[c+i+2] = cv.z;
+  }
+  if (context.debug_bounds) {
+    context.debug_bounds = false;
+    Vector2 size = { context.last_zoom_value.x * .01f, context.last_zoom_value.x * .01f };
+    smol_mesh_gen_point1(mesh, startPos, size, WHITE);
+    smol_mesh_gen_point1(mesh, endPos, size, WHITE);
+    context.debug_bounds = true;
+  }
 }
 
 void smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t len, Color color) {
-  // Todo: check if index v is inside gv->points
-  size_t vn = 2*3*3;
-  Vector3 cv = {color.r/255.f, color.g/255.f, color.b/255.f};
-  mesh->points_drawn += len;
-  for (size_t v = 0; v < ((len - 1)*vn); v += vn)
-  {
-    size_t c = mesh->cur_len++;
-    if (c >= mesh->capacity) {
-      smol_mesh_update(mesh);
-      smol_mesh_draw(mesh);
-      c = mesh->cur_len++;
-    }
-    c *= vn;
-    Vector2 startPos = points[v/vn];
-    Vector2 endPos = points[v/vn + 1];
-    Vector2 delta = { endPos.x - startPos.x, endPos.y - startPos.y };
-    float length = sqrtf(delta.x*delta.x + delta.y*delta.y);
+  for (size_t v = 0; v < (len - 1); ++v) smol_mesh_gen_line(mesh, points[v], points[v + 1], color);
+}
 
-    Vector2 strip[2] = {
-      { startPos.x, startPos.y},
-      { endPos.x, endPos.y},
-    };
-    //First triangle
-    mesh->verticies[c+0] = strip[0].x;
-    mesh->verticies[c+1] = strip[0].y;
-    mesh->verticies[c+2] = -1;
-    mesh->verticies[c+3] = strip[1].x;
-    mesh->verticies[c+4] = strip[1].y;
-    mesh->verticies[c+5] = -1;
-    mesh->verticies[c+6] = strip[0].x;
-    mesh->verticies[c+7] = strip[0].y;
-    mesh->verticies[c+8] = 1;
-    //Second triangle
-    mesh->verticies[c+9]  = strip[0].x;
-    mesh->verticies[c+10] = strip[0].y;
-    mesh->verticies[c+11] = 1;
-    mesh->verticies[c+12] = strip[1].x;
-    mesh->verticies[c+13] = strip[1].y;
-    mesh->verticies[c+14] = -1;
-    mesh->verticies[c+15] = strip[1].x;
-    mesh->verticies[c+16] = strip[1].y;
-    mesh->verticies[c+17] = 1;
-
-    for (size_t i = 0; i < vn; i += 3) {
-      //Not a normal, this is dx, dy, length for first triangle
-      mesh->normals[c+i+0] = delta.x;
-      mesh->normals[c+i+1] = delta.y;
-      mesh->normals[c+i+2] = length;
-    }
-
-    for (size_t i = 0; i < vn; i += 3) {
-      mesh->colors[c+i+0] = cv.x;
-      mesh->colors[c+i+1] = cv.y;
-      mesh->colors[c+i+2] = cv.z;
-    }
-    if (context.debug_bounds) {
-      context.debug_bounds = false;
-      Vector2 size = { context.last_zoom_value.x * .01f, context.last_zoom_value.x * .01f };
-      smol_mesh_gen_point1(mesh, startPos, size, WHITE);
-      smol_mesh_gen_point1(mesh, endPos, size, WHITE);
-      context.debug_bounds = true;
-    }
+void smol_mesh_gen_line_strip_stride(smol_mesh_t* mesh, Vector2 const * points, ssize_t len, Color const color, int stride) {
+  ssize_t v = 0;
+  for (; v < (len - stride); v += stride) {
+    smol_mesh_gen_line(mesh, points[v], points[v + stride], color);
   }
+  if (v != len - 1) smol_mesh_gen_line(mesh, points[v], points[len - 1], color);
 }
 
 void smol_mesh_draw(smol_mesh_t* mesh) {
