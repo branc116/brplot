@@ -2,6 +2,7 @@
 #include "raylib/src/raylib.h"
 #include <stddef.h>
 #include "stdio.h"
+#include "stdint.h"
 
 #ifdef PLATFORM_WEB
 #include <emscripten.h>
@@ -348,9 +349,10 @@ void points_groups_export(points_groups_t const* pg_array, FILE* file);
 void points_groups_export_csv(points_groups_t const* pg_array, FILE* file);
 
 resampling2_t* resampling2_malloc(void);
+void resampling2_empty(resampling2_t* res);
 void resampling2_free(resampling2_t* res);
-void resampling2_draw(resampling2_t* res, points_group_t* pg, points_groups_draw_in_t* rdi);
-void resampling2_add_point(resampling2_t* res, points_group_t const* pg, size_t index);
+void resampling2_draw(resampling2_t* res, points_group_t const* pg, points_groups_draw_in_t* rdi);
+void resampling2_add_point(resampling2_t* res, points_group_t const* pg, uint32_t index);
 
 BR_API br_plot_t* graph_malloc(void);
 BR_API void graph_init(br_plot_t* br, float width, float height);

@@ -8,7 +8,7 @@ GUI?= IMGUI
 # EXE | LIB
 TYPE?= EXE
 # GCC | CLANG ( Only for linux build )
-COMPILER?= CLANG
+COMPILER?= GCC
 
 RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
 SOURCE             = src/main.c src/help.c src/points_group.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c src/keybindings.c src/str.c src/memory.cpp src/resampling2.c
@@ -168,6 +168,11 @@ clean:
 	test -f src/misc/shaders.h && rm src/misc/shaders.h || echo "done"
 	test -f src/misc/shaders_web.h && rm src/misc/shaders_web.h || echo "done"
 	test -f src/misc/default_font.h && rm src/misc/default_font.h || echo "done"
+
+.PHONY: fuzz
+fuzz:
+	make GUI=HEADLESS -B && \
+	time cat /dev/random | ./bin/brplot_headless_linux_debug_gcc > /dev/null && echo "Fuzz test OK"
 
 bin/upper: tools/upper.cpp
 	g++ -O3 -o bin/upper tools/upper.cpp

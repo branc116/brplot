@@ -27,8 +27,7 @@ BR_API void points_group_push_xy(points_groups_t* pg_array, float x, float y, in
 
 BR_API void points_group_empty(points_group_t* pg) {
   pg->len = 0;
-  //pg->resampling->intervals_count = 0;
-  //pg->resampling->resampling_count = 0;
+  resampling2_empty(pg->resampling);
 }
 
 BR_API void points_group_clear(points_groups_t* pg, int group_id) {
@@ -240,7 +239,7 @@ static void points_group_push_point(points_group_t* g, Vector2 v) {
     assert(points_group_realloc(g, g->cap * 2));
   }
   g->points[g->len] = v;
-  resampling2_add_point(g->resampling, g, g->len);
+  resampling2_add_point(g->resampling, g, (uint32_t)g->len);
   ++g->len;
 }
 

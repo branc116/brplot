@@ -64,6 +64,26 @@ resampling2_t* resampling2_malloc(void) {
    return r;
 }
 
+void resampling2_nodes_empty(resampling2_nodes_t* nodes) {
+  if (nodes == NULL) return;
+  resampling2_nodes_empty(nodes->parent);
+  nodes->len = 0;
+}
+
+void resampling2_empty(resampling2_t* res) {
+  for (uint32_t i = 0; i < res->roots_len; ++i) {
+    if (res->roots[i].kind != resampling2_kind_raw) {
+      resampling2_nodes_empty(&res->roots[i].x);
+    }
+  }
+  resampling2_nodes_deinit(&res->temp_root_x);
+  resampling2_nodes_deinit(&res->temp_root_y);
+  res->temp_root_x = (resampling2_nodes_t){0};
+  res->temp_root_y = (resampling2_nodes_t){0};
+  res->temp_root_raw = (resampling2_raw_node_t){0};
+  res->temp_raw_valid = res->temp_y_valid = res->temp_x_valid = true;
+}
+
 void resampling2_free(resampling2_t* r) {
   for (uint32_t i = 0; i < r->roots_len; ++i) {
     if (r->roots[i].kind != resampling2_kind_raw)
@@ -104,8 +124,8 @@ resampling2_node_t* resampling2_get_last_node(resampling2_nodes_t* nodes) {
   return &nodes->arr[nodes->len - 1];
 }
 
-static size_t powers[32] = {0};
-static size_t powers_base = 2;
+static uint32_t powers[32] = {0};
+static uint32_t powers_base = 2;
 static void __attribute__((constructor(101))) construct_powers(void) {
   powers[0] = 1;
   powers[1] = powers_base;
@@ -122,11 +142,11 @@ static void resampling2_nodesy_push_point(resampling2_nodes_t* nodes, uint32_t i
     node->max_index = index;
     node->len = 1;
     node->index_start = index;
-  } else if (node->len < (size_t)(RESAMPLING_NODE_MAX_LEN * powers[depth])) {
+  } else if (node->len < (RESAMPLING_NODE_MAX_LEN * powers[depth])) {
     if (points[node->min_index].x > points[index].x) node->min_index = index;
     if (points[node->max_index].x < points[index].x) node->max_index = index;
     ++node->len;
-  } else if (node->len == (size_t)(RESAMPLING_NODE_MAX_LEN * powers[depth])) {
+  } else if (node->len == (RESAMPLING_NODE_MAX_LEN * powers[depth])) {
     unsigned int new_cap = nodes->cap * 2;
     if (nodes->len == nodes->cap) {
       nodes->arr = BR_REALLOC(nodes->arr, sizeof(resampling2_node_t) * (new_cap));
@@ -162,11 +182,11 @@ static void resampling2_nodesx_push_point(resampling2_nodes_t* nodes, uint32_t i
     node->max_index = index;
     node->len = 1;
     node->index_start = index;
-  } else if (node->len < (size_t)(RESAMPLING_NODE_MAX_LEN * powers[depth])) {
+  } else if (node->len < (RESAMPLING_NODE_MAX_LEN * powers[depth])) {
     if (points[node->min_index].y > points[index].y) node->min_index = index;
     if (points[node->max_index].y < points[index].y) node->max_index = index;
     ++node->len;
-  } else if (node->len == (size_t)(RESAMPLING_NODE_MAX_LEN * powers[depth])) {
+  } else if (node->len == (RESAMPLING_NODE_MAX_LEN * powers[depth])) {
     unsigned int new_cap = nodes->cap * 2;
     if (nodes->len == nodes->cap) {
       nodes->arr = BR_REALLOC(nodes->arr, sizeof(resampling2_node_t) * (new_cap));
@@ -194,14 +214,14 @@ static void resampling2_nodesx_push_point(resampling2_nodes_t* nodes, uint32_t i
   if (nodes->parent != NULL) resampling2_nodesx_push_point(nodes->parent, index, points, depth + 1);
 }
 
-static bool resampling2_add_point_raw(resampling2_raw_node_t* node, size_t index) {
+static bool resampling2_add_point_raw(resampling2_raw_node_t* node, uint32_t index) {
   if (node->len == RESAMPLING_NODE_MAX_LEN) return false;
   if (node->len == 0) node->index_start = index;
   ++node->len;
   return true;
 }
 
-static bool resampling2_add_point_y(resampling2_nodes_t* nodes, const points_group_t *pg, size_t index) {
+static bool resampling2_add_point_y(resampling2_nodes_t* nodes, const points_group_t *pg, uint32_t index) {
   Vector2 p = pg->points[index];
   if (nodes->len == 0) nodes->is_rising = nodes->is_falling = true;
   if (index == 0) {
@@ -230,7 +250,7 @@ static bool resampling2_add_point_y(resampling2_nodes_t* nodes, const points_gro
   return true;
 }
 
-bool resampling2_add_point_x(resampling2_nodes_t* nodes, const points_group_t *pg, size_t index) {
+bool resampling2_add_point_x(resampling2_nodes_t* nodes, const points_group_t *pg, uint32_t index) {
   Vector2 p = pg->points[index];
   if (nodes->len == 0) nodes->is_rising = nodes->is_falling = true;
   if (index == 0) {
@@ -259,7 +279,7 @@ bool resampling2_add_point_x(resampling2_nodes_t* nodes, const points_group_t *p
   return true;
 }
 
-void resampling2_add_point(resampling2_t* r, const points_group_t *pg, size_t index) {
+void resampling2_add_point(resampling2_t* r, const points_group_t *pg, uint32_t index) {
   bool was_valid_x = r->temp_x_valid, was_valid_y = r->temp_y_valid, was_valid_raw = r->temp_raw_valid;
   if (was_valid_x)   r->temp_x_valid   = resampling2_add_point_x(&r->temp_root_x, pg, index);
   if (was_valid_y)   r->temp_y_valid   = resampling2_add_point_y(&r->temp_root_y, pg, index);
@@ -283,9 +303,9 @@ void resampling2_add_point(resampling2_t* r, const points_group_t *pg, size_t in
   resampling2_add_point(r, pg, index);
 }
 
-bool resampling2_nodex_inside_rect(resampling2_node_t* node, Vector2 const* const points, Rectangle rect) {
-  float firstx = points[node->index_start].x;
-  float lastx = points[node->index_start + node->len - 1].x;
+bool resampling2_nodex_inside_rect(resampling2_node_t node, Vector2 const* const points, Rectangle rect) {
+  float firstx = points[node.index_start].x;
+  float lastx = points[node.index_start + node.len - 1].x;
   if (lastx < firstx) {
     float tmp = firstx;
     firstx = lastx;
@@ -293,14 +313,14 @@ bool resampling2_nodex_inside_rect(resampling2_node_t* node, Vector2 const* cons
   }
   if (lastx < rect.x) return false;
   if (firstx > rect.x + rect.width) return false;
-  if (points[node->min_index].y > rect.y + rect.height) return false;
-  if (points[node->max_index].y < rect.y) return false;
+  if (points[node.min_index].y > rect.y + rect.height) return false;
+  if (points[node.max_index].y < rect.y) return false;
   return true;
 }
 
-bool resampling2_nodey_inside_rect(resampling2_node_t* node, Vector2* points, Rectangle rect) {
-  float firsty = points[node->index_start].y;
-  float lasty = points[node->index_start + node->len - 1].y;
+bool resampling2_nodey_inside_rect(resampling2_node_t node, Vector2* points, Rectangle rect) {
+  float firsty = points[node.index_start].y;
+  float lasty = points[node.index_start + node.len - 1].y;
   if (lasty < firsty) {
     float tmp = firsty;
     firsty = lasty;
@@ -308,29 +328,30 @@ bool resampling2_nodey_inside_rect(resampling2_node_t* node, Vector2* points, Re
   }
   if (lasty < rect.y) return false;
   if (firsty > rect.y + rect.height) return false;
-  if (points[node->min_index].x > rect.x + rect.width) return false;
-  if (points[node->max_index].x < rect.x) return false;
+  if (points[node.min_index].x > rect.x + rect.width) return false;
+  if (points[node.max_index].x < rect.x) return false;
   return true;
 }
 
-void resampling2_draw_raw(resampling2_raw_node_t raw, points_group_t *pg, points_groups_draw_in_t *rdi) {
+void resampling2_draw_raw(resampling2_raw_node_t raw, points_group_t const* pg, points_groups_draw_in_t *rdi) {
+  (void)raw, (void)pg, (void)rdi;
   //smol_mesh_gen_line_strip(rdi->line_mesh, &pg->points[raw.index_start], raw.len, pg->color);
 }
 
-ssize_t resampling2_get_first_insidex(resampling2_nodes_t* nodes, Vector2 const * const points, Rectangle rect, ssize_t start_index) {
+ssize_t resampling2_get_first_insidex(resampling2_nodes_t* nodes, Vector2 const * const points, Rectangle rect, uint32_t start_index) {
   while (start_index % powers_base != 0) {
     if (start_index == nodes->len) return -1;
-    if (resampling2_nodex_inside_rect(&nodes->arr[start_index], points, rect)) return start_index;
+    if (resampling2_nodex_inside_rect(nodes->arr[start_index], points, rect)) return start_index;
     ++start_index;
   }
   if (nodes->parent != NULL) {
-    start_index = resampling2_get_first_insidex(nodes->parent, points, rect, start_index / powers_base);
-    if (start_index < 0) return -1;
-    start_index *= powers_base;
+    ssize_t new_i = resampling2_get_first_insidex(nodes->parent, points, rect, start_index / powers_base);
+    if (new_i < 0) return -1;
+    start_index = ((uint32_t)new_i) * powers_base;
   }
   for (; start_index < nodes->len; ++start_index) {
-    if (resampling2_nodex_inside_rect(&nodes->arr[start_index], points, rect)) {
-      return start_index;
+    if (resampling2_nodex_inside_rect(nodes->arr[start_index], points, rect)) {
+      return (ssize_t)start_index;
     }
   }
   return -1;
@@ -343,10 +364,10 @@ int max_stride = 10;
 int raw_c = 0;
 int not_raw_c = 0;
 
-void resampling2_draw_x(resampling2_nodes_t* nodes, points_group_t *pg, points_groups_draw_in_t *rdi) {
+void resampling2_draw_x(resampling2_nodes_t* nodes, points_group_t const* pg, points_groups_draw_in_t *rdi) {
   //float step = rdi->rect.width / 1024;
   ssize_t j = 0;
-  j = resampling2_get_first_insidex(nodes, pg->points, rdi->rect, j);
+  j = resampling2_get_first_insidex(nodes, pg->points, rdi->rect, (uint32_t)j);
   while (j != -1) {
     resampling2_node_t n = nodes->arr[j];
     Vector2* ps = pg->points;
@@ -358,7 +379,7 @@ void resampling2_draw_x(resampling2_nodes_t* nodes, points_group_t *pg, points_g
       if (width_ratio > stride_after && height_ratio > stride_after) {
         smol_mesh_gen_line_strip(rdi->line_mesh, &ps[n.index_start], n.len, pg->color);
       } else {
-        int cur_stride = 1 + (int)((stride_after - fminf(width_ratio, height_ratio)) / (stride_after - something) * max_stride);
+        int cur_stride = 1 + (int)((stride_after - fminf(width_ratio, height_ratio)) / (stride_after - something) * (float)max_stride);
         smol_mesh_gen_line_strip_stride(rdi->line_mesh, &ps[n.index_start], n.len, pg->color, cur_stride);
       }
       raw_c++;
@@ -374,7 +395,7 @@ void resampling2_draw_x(resampling2_nodes_t* nodes, points_group_t *pg, points_g
         height_ratio = (ps[n.max_index].y - ps[n.min_index].y) / rdi->rect.height;
         ++depth;
       }
-      bool swp = first.x < last.x == ps[n.min_index].x < ps[n.max_index].x;
+      bool swp = (first.x < last.x) == (ps[n.min_index].x < ps[n.max_index].x);
       Vector2 pss[] = { 
         first,
         swp ? ps[n.min_index] : ps[n.max_index],
@@ -384,26 +405,26 @@ void resampling2_draw_x(resampling2_nodes_t* nodes, points_group_t *pg, points_g
       smol_mesh_gen_line_strip(rdi->line_mesh, pss, 4, pg->color);
       not_raw_c++;
     }
-    j += powers[depth];
+    j += (ssize_t)powers[depth];
     if (j < nodes->len) {
-      size_t next_index = nodes->arr[j].index_start;
+      uint32_t next_index = nodes->arr[j].index_start;
       smol_mesh_gen_line(rdi->line_mesh, last, ps[next_index], pg->color);
     }
-    j = resampling2_get_first_insidex(nodes, ps, rdi->rect, j);
+    j = resampling2_get_first_insidex(nodes, pg->points, rdi->rect, (uint32_t)j);
   }
 }
 
-void resampling2_draw_y(resampling2_nodes_t* nodes, points_group_t *pg, points_groups_draw_in_t *rdi) {
+void resampling2_draw_y(resampling2_nodes_t* nodes, points_group_t const* pg, points_groups_draw_in_t *rdi) {
   return;
   //float step = rdi->rect.width / 1024;
-  for (size_t j = 0; j < nodes->len; ++j) {
-    if (resampling2_nodey_inside_rect(&nodes->arr[j], pg->points, rdi->rect)) {
-      smol_mesh_gen_line_strip(rdi->line_mesh, &pg->points[nodes->arr[j].index_start], nodes->arr[j].len, pg->color);
+  for (uint32_t j = 0; j < nodes->len; ++j) {
+    if (resampling2_nodey_inside_rect(nodes->arr[j], pg->points, rdi->rect)) {
+      smol_mesh_gen_line_strip(rdi->line_mesh, &pg->points[nodes->arr[j].index_start], (size_t)nodes->arr[j].len, pg->color);
     }
   }
 }
 
-void resampling2_draw_r(resampling2_all_roots r, points_group_t *pg, points_groups_draw_in_t *rdi) {
+void resampling2_draw_r(resampling2_all_roots r, points_group_t const* pg, points_groups_draw_in_t *rdi) {
   if (r.kind == resampling2_kind_raw) {
     resampling2_draw_raw(r.raw, pg, rdi);
   } else if (r.kind == resampling2_kind_x) {
@@ -413,8 +434,9 @@ void resampling2_draw_r(resampling2_all_roots r, points_group_t *pg, points_grou
   }
 }
 
-void resampling2_draw(resampling2_t *res, points_group_t *pg, points_groups_draw_in_t *rdi) {
-  for (size_t i = 0; i < res->roots_len; ++i) {
+void resampling2_draw(resampling2_t *res, points_group_t const *pg, points_groups_draw_in_t *rdi) {
+  printf("last: %f,%f, len: %lu\n", pg->points[pg->len - 1].x, pg->points[pg->len - 1].y, pg->len);
+  for (uint32_t i = 0; i < res->roots_len; ++i) {
     resampling2_draw_r(res->roots[i], pg, rdi);
   }
   if (res->temp_x_valid) resampling2_draw_x(&res->temp_root_x, pg, rdi);
@@ -459,7 +481,7 @@ static void resampling2_all_nodes_debug_print(FILE* file, resampling2_all_roots*
 
 static void resampling2_debug_print(FILE* file, resampling2_t* r) {
   fprintf(file, "\nRoots len: %u, Roots cap: %u, validxyr = %d,%d,%d\n", r->roots_len, r->roots_cap, r->temp_x_valid, r->temp_y_valid, r->temp_raw_valid);
-  for (size_t i = 0; i < r->roots_len; ++i) {
+  for (uint32_t i = 0; i < r->roots_len; ++i) {
     resampling2_all_nodes_debug_print(file, &r->roots[i]);
   }
   resampling2_nodes_debug_print(file, &r->temp_root_x, 1);
@@ -505,7 +527,7 @@ TEST_CASE(resampling2) {
     .cap = N 
   };
   resampling2_t* r = resampling2_malloc();
-  for (int i = 0; i < N; ++i) resampling2_add_point(r, &pg, (size_t)i);
+  for (int i = 0; i < N; ++i) resampling2_add_point(r, &pg, (uint32_t)i);
   resampling2_debug_print(stdout, r);
   printf("\nALLOCATIONS: %lu ( %luKB ) | %lu (%luKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   resampling2_add_point(r, &pg, 3);
