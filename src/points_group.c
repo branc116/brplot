@@ -1,6 +1,6 @@
 #include "br_plot.h"
+#include "raylib/src/rlgl.h"
 
-#include "raylib.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -135,9 +135,16 @@ void points_groups_add_test_points(points_groups_t* pg) {
   }
 }
 
+// Custom Blend Modes
+#define GL_SRC_ALPHA 0x0302
+#define GL_DST_ALPHA 0x0304
+#define GL_MAX 0x8008
+
 void points_groups_draw(points_groups_t const* pg, points_groups_draw_in_t pgdi) {
   Vector2 size = { context.last_zoom_value.x * .01f, context.last_zoom_value.x * .01f };
   pgdi.rect.y -= pgdi.rect.height;
+  rlSetBlendFactors(GL_SRC_ALPHA, GL_DST_ALPHA, GL_MAX);
+  rlSetBlendMode(BLEND_CUSTOM);
   for (size_t j = 0; j < pg->len; ++j) {
     points_group_t* g = &pg->arr[j];
     if (g->len == 0) continue;
@@ -162,6 +169,7 @@ void points_groups_draw(points_groups_t const* pg, points_groups_draw_in_t pgdi)
     smol_mesh_update(pgdi.quad_mesh);
     smol_mesh_draw(pgdi.quad_mesh);
   }
+  rlSetBlendMode(BLEND_ALPHA);
 }
 
 static points_group_t* points_group_init(points_group_t* g, int group_id) {

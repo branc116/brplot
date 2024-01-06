@@ -374,6 +374,13 @@ Vector2 Vector2Add(Vector2 v1, Vector2 v2)
     return result;
 }
 
+void rlSetBlendMode(int mode) {
+  printf("rlSetBlendMode: mode=%d\n", mode);
+}
+void rlSetBlendFactors(int glSrcFactor, int glDstFactor, int glEquation) {
+  printf("rlSetBlendFactors: glSrcFactor=%d, glDstFactor=%d, glEquation=%d\n", glSrcFactor, glDstFactor, glEquation);
+}
+
 
 #include "math.h"
 Vector2 Vector2Normalize(Vector2 v)
