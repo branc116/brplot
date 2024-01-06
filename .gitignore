@@ -3,7 +3,6 @@ build
 www
 src/misc/shaders.h
 src/misc/shaders_web.h
-src/misc/shaders_dbg.h
 zig-out
 zig-cache
 bench
