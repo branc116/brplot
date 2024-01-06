@@ -1,5 +1,6 @@
 #version 330
 
+
 in vec3 vertexPosition;
 // This is not normal. This is dx, dy, and length of the line.
 in vec3 vertexColor;
@@ -17,22 +18,21 @@ void main(void)
 {
     color = vertexColor;
     // TODO: make this uniform.
-    float thick = 0.09;
+    float thick = 0.05;
     vec2 tg = vertexNormal.xy;
     vec2 position = vertexPosition.xy;
 
     normal = -vertexPosition.z * normalize(tg.yx * zoom * vec2(-1, 1));
-    vec2 dif = normal * thick/2.;
-    position -= dif * (min(zoom * 0.1, 20000.0));
+    vec2 dif = normal * thick;
+    position -= dif * max(zoom * 0.1, position / 7e5);
 
     vec2 size = resolution.zw;
 
-    //Don't know why, but this value works...
-    float magic_number = size.y / screen.y * 2;
+    float aspect = size.y / screen.y * 2;
 
     vec2 fact = screen.xy / screen.yy;
     vec2 fact2 = resolution.ww / screen.xy;
-    vec2 uv = position * magic_number;
+    vec2 uv = position * aspect;
     uv -= offset * fact2 * fact * 2;
     uv /= zoom * fact;
     uv += vec2(-1, 1.);
