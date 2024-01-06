@@ -7,6 +7,8 @@ PLATFORM?= LINUX
 GUI?= IMGUI
 # EXE | LIB
 TYPE?= EXE
+# GCC | CLANG ( Only for linux build )
+COMPILER?= CLANG
 
 RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
 SOURCE             = src/main.c src/help.c src/points_group.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c src/keybindings.c src/str.c src/memory.cpp src/resampling2.c
@@ -18,6 +20,14 @@ COMMONFLAGS        = -I./imgui -I./imgui/backends -I. -Isrc/raylib -Iraylib/src
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra
 LD_FLAGS=
 
+ifeq ($(PLATFORM)_$(COMPILER), LINUX_CLANG)
+	WARNING_FLAGS+= -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-newline-eof
+	CXX= clang++
+	CC= clang
+else ifeq ($(PLATFORM)_$(COMPILER), LINUX_GCC)
+	CXX= g++
+	CC= gcc
+endif
 
 # To debug include files use -H flag
 
@@ -44,8 +54,6 @@ endif
 	
 ifeq ($(PLATFORM), LINUX)
 	LIBS= `pkg-config --static --libs glfw3` -lGL
-	CXX= g++
-	CC= gcc
 	COMMONFLAGS+= -DLINUX=1 -DPLATFORM_DESKTOP=1
 	SOURCE+= src/desktop/linux/read_input.c src/desktop/platform.c
 	SHADERS_HEADER= src/misc/shaders.h
@@ -59,6 +67,7 @@ else ifeq ($(PLATFORM), WINDOWS)
 	SOURCE+= $(RL)/rglfw.c src/desktop/win/read_input.c src/desktop/platform.c
 	SHADERS_HEADER= src/misc/shaders.h
 	SHADERS_LIST= src/desktop/shaders/grid.fs src/desktop/shaders/line.fs src/desktop/shaders/line.vs src/desktop/shaders/quad.vs src/desktop/shaders/quad.fs
+	COMPILER= MINGW
 
 else ifeq ($(PLATFORM), WEB)
 	CXX= $(EMSCRIPTEN)em++
@@ -69,6 +78,7 @@ else ifeq ($(PLATFORM), WEB)
 	SOURCE+= src/web/read_input.c src/web/glfw_mock.c src/web/public_api.c
 	SHADERS_LIST= src/web/shaders/grid.fs src/web/shaders/line.fs src/web/shaders/line.vs src/web/shaders/quad.fs src/web/shaders/quad.vs
 	SHADERS_HEADER= src/misc/shaders_web.h
+	COMPILER= EMCC
 	ifeq ($(TYPE), LIB)
 		COMMONFLAGS+= -DLIB
 		LD_FLAGS+= -sMODULARIZE=1 -sEXPORT_ES6=1
@@ -87,9 +97,13 @@ ifeq ($(CONFIG), DEBUG)
 	COMMONFLAGS+= -g
 	ifeq ($(PLATFORM), LINUX)
 		SOURCE+= src/desktop/linux/refresh_shaders.c
-		COMMONFLAGS+= -rdynamic -fpie -pg -DUNIT_TEST \
+		ifeq ($(COMPILER), GCC)
+		  COMMONFLAGS+= -fsanitize=bounds-strict
+		endif
+		LD_FLAGS+= -rdynamic
+		COMMONFLAGS+= -fpie -pg -DUNIT_TEST \
 	   -fsanitize=address -fsanitize=leak \
-		 -fsanitize=undefined -fsanitize=bounds-strict -fsanitize=signed-integer-overflow \
+		 -fsanitize=undefined -fsanitize=signed-integer-overflow \
 		 -fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
 	endif
 	ifeq ($(PLATFORM), WINDOWS)
@@ -117,12 +131,12 @@ else
 endif
 
 
-PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)' | tr '[A-Z]' '[a-z]')
+PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
 OBJSA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE))
 OBJS+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
-CXXFLAGS= $(COMMONFLAGS) -fno-exceptions
+CXXFLAGS= $(COMMONFLAGS) -fno-exceptions -std=gnu++20
 CCFLAGS= $(COMMONFLAGS)
-OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(PLATFORM)_$(CONFIG)' | tr '[A-Z]' '[a-z]')
+OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
 
 OBJSDIR= $(sort $(dir $(OBJS)))
 $(shell $(foreach var,$(OBJSDIR), test -d $(var) || mkdir -p $(var);))

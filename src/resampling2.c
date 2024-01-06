@@ -338,7 +338,7 @@ ssize_t resampling2_get_first_insidex(resampling2_nodes_t* nodes, Vector2 const 
 
 float something = 0.02f;
 float something2 = 0.001f;
-float stride_after = 0.06;
+float stride_after = 0.06f;
 int max_stride = 10;
 int raw_c = 0;
 int not_raw_c = 0;

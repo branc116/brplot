@@ -42,8 +42,8 @@ namespace br {
         // Resize string callback
         // If for some reason we refuse the new length (BufTextLen) and/or capacity (BufSize) we need to set them back to what we want.
         IM_ASSERT(data->Buf == str->str);
-        if (data->BufTextLen + 1 >= (int)str->cap) br_str_realloc(str, 1 + maxi32(str->cap * 2, data->BufTextLen));
-        str->len = data->BufTextLen;
+        if (data->BufTextLen + 1 >= (int)str->cap) br_str_realloc(str, (1 + maxui64(str->cap * 2, (size_t)data->BufTextLen)));
+        str->len = (unsigned int)data->BufTextLen;
         data->Buf = str->str;
       } else if (data->EventFlag == ImGuiInputTextFlags_CallbackEdit) {
         //str->len = data->BufTextLen;

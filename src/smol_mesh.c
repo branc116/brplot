@@ -9,7 +9,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "rlgl.h"
+#include "raylib/src/rlgl.h"
 
 static size_t smol_mesh_get_vb_size(smol_mesh_t* mesh);
 static void smol_mesh_upload(smol_mesh_t* mesh, bool dynamic);
@@ -47,26 +47,8 @@ void smol_mesh_update(smol_mesh_t* mesh) {
   rlUpdateVertexBuffer(mesh->vboIdColor, mesh->colors, number_of_floats, 0);
 }
 
-static float point_distance(Vector2 tg, Vector2 center, Vector2 to, Rectangle r) {
-  Vector2 uv_center = { (center.x - r.x) / r.width, (center.y - r.y) / r.height};
-  Vector2 uv_to = { (to.x - r.x) / r.width, (to.y - r.y) / r.height};
-  float tg_norm = (float)sqrtf(tg.x * tg.x + tg.y * tg.y);
-  float ret;
-  if (tg_norm == tg_norm && tg_norm > 0.f) {
-    Vector2 u = { tg.y / tg_norm, -tg.x / tg_norm };
-    float b = -( u.x*uv_center.x + u.y*uv_center.y);
-    ret = (u.x*uv_to.x + u.y*uv_to.y + b);
-  } else {
-    float b = -uv_center.x;
-    ret = uv_to.x + b;
-  }
-  assert(ret == ret);
-  assert(ret > -2. && ret < 2);
-  return ret;
-}
-
 void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 center, Vector2 tangent, Color color) {
-  float sqrt_2 = sqrtf(2);
+  (void)tangent;
   size_t c = mesh->cur_len++;
   if (c + 1 >= mesh->capacity) {
     smol_mesh_update(mesh);
@@ -85,54 +67,47 @@ void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 center, Vecto
     mesh->colors[c+i+1] = vc.y;
     mesh->colors[c+i+2] = vc.z;
   }
-//  float ld = point_distance(tangent, center, (Vector2){rect.x, rect.y}, rect)/sqrt_2,
-//        rd = point_distance(tangent, center, (Vector2){rect.x + rect.width, rect.y}, rect)/sqrt_2,
-//        ru = point_distance(tangent, center, (Vector2){rect.x + rect.width, rect.y + rect.height}, rect)/sqrt_2,
-//        lu = point_distance(tangent, center, (Vector2){rect.x, rect.y + rect.height}, rect)/sqrt_2;
-  //float m = maxf(maxf(ld, rd), maxf(ru, lu));
-  //ld /= m; rd /= m; ru /= m; lu /= m;
-  //assert(CheckCollisionPointRec(tangent, rect));
   mesh->verticies[c+0] = rect.x + rect.width;
   mesh->verticies[c+1] = rect.y;
-  mesh->verticies[c+2] = 0.f; //rd;
+  mesh->verticies[c+2] = 0.f;
   mesh->verticies[c+3] = center.x;
   mesh->verticies[c+4] = center.y;
   mesh->verticies[c+5] = 0.f;
   mesh->verticies[c+6] = rect.x;
   mesh->verticies[c+7] = rect.y;
-  mesh->verticies[c+8] = 0.f; //ld;
+  mesh->verticies[c+8] = 0.f;
 
   mesh->verticies[c+9] = rect.x + rect.width;
   mesh->verticies[c+10] = rect.y + rect.height;
-  mesh->verticies[c+11] = 0.f; //ru;
+  mesh->verticies[c+11] = 0.f;
   mesh->verticies[c+12] = center.x;
   mesh->verticies[c+13] = center.y;
   mesh->verticies[c+14] = 0.f;
   mesh->verticies[c+15] = rect.x + rect.width;
   mesh->verticies[c+16] = rect.y;
-  mesh->verticies[c+17] = 0.f; //rd;
+  mesh->verticies[c+17] = 0.f;
 
   c += 18;
   mesh->cur_len++;
   mesh->verticies[c+0] = rect.x;
   mesh->verticies[c+1] = rect.y + rect.height;
-  mesh->verticies[c+2] = 0.f; //lu;
+  mesh->verticies[c+2] = 0.f;
   mesh->verticies[c+3] = center.x;
   mesh->verticies[c+4] = center.y;
   mesh->verticies[c+5] = 0.f;
   mesh->verticies[c+6] = rect.x + rect.width;
   mesh->verticies[c+7] = rect.y + rect.height;
-  mesh->verticies[c+8] = 0.f; //ru;
+  mesh->verticies[c+8] = 0.f;
 
   mesh->verticies[c+9] = rect.x;
   mesh->verticies[c+10] = rect.y;
-  mesh->verticies[c+11] = 0.f; //ld;
+  mesh->verticies[c+11] = 0.f;
   mesh->verticies[c+12] = center.x;
   mesh->verticies[c+13] = center.y;
   mesh->verticies[c+14] = 0.f;
   mesh->verticies[c+15] = rect.x;
   mesh->verticies[c+16] = rect.y + rect.height;
-  mesh->verticies[c+17] = 0.f; //lu;
+  mesh->verticies[c+17] = 0.f;
 }
 
 void smol_mesh_gen_bb(smol_mesh_t* mesh, bb_t bb, Color color) {
@@ -173,11 +148,11 @@ void smol_mesh_gen_line(smol_mesh_t* mesh, Vector2 startPos, Vector2 endPos, Col
   ssize_t const vn = 2*3*3;
   Vector3 const cv = {color.r/255.f, color.g/255.f, color.b/255.f};
   ++mesh->points_drawn;
-  size_t c = (size_t)mesh->cur_len++;
-  if (c >= mesh->capacity) {
+  ssize_t c = (ssize_t)mesh->cur_len++;
+  if (c >= (ssize_t)mesh->capacity) {
     smol_mesh_update(mesh);
     smol_mesh_draw(mesh);
-    c = mesh->cur_len++;
+    c = (ssize_t)mesh->cur_len++;
   }
   c *= vn;
   Vector2 delta = { endPos.x - startPos.x, endPos.y - startPos.y };

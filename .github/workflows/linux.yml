@@ -25,31 +25,55 @@ jobs:
     - name: Setup Environment
       run: | 
         sudo apt-get update -qq
-        sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev gcc mingw-w64
+        sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev gcc mingw-w64 clang
 
-    - name: Build brplot linux debug imgui
+    - name: Build brplot linux debug imgui gcc
       run: |
-        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI -B
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI COMPILER=GCC -B
 
-    - name: Build brplot linux debug raylib
+    - name: Build brplot linux debug raylib gcc
       run: |
-        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB -B
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB COMPILER=GCC -B
 
-    - name: Build brplot linux debug headless
+    - name: Build brplot linux debug headless gcc
       run: |
-        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS -B
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS COMPILER=GCC -B
         
-    - name: Build brplot linux release imgui
+    - name: Build brplot linux release imgui gcc
       run: |
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI -B
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI COMPILER=GCC -B
 
-    - name: Build brplot linux release raylib
+    - name: Build brplot linux release raylib gcc
       run: |
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB -B
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB COMPILER=GCC -B
 
-    - name: Build brplot linux release headless
+    - name: Build brplot linux release headless gcc
       run: |
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS -B
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS COMPILER=GCC -B
+
+    - name: Build brplot linux debug imgui clang
+      run: |
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI COMPILER=CLANG -B
+
+    - name: Build brplot linux debug raylib clang
+      run: |
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB COMPILER=CLANG -B
+
+    - name: Build brplot linux debug headless clang
+      run: |
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS COMPILER=CLANG -B
+
+    - name: Build brplot linux release imgui clang
+      run: |
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI COMPILER=CLANG -B
+
+    - name: Build brplot linux release raylib clang
+      run: |
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB COMPILER=CLANG -B
+
+    - name: Build brplot linux release headless clang
+      run: |
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS COMPILER=CLANG -B
 
     - name: Build brplot windows release imgui
       run: |
@@ -65,9 +89,12 @@ jobs:
 
     - name: Run unit tests
       run: |
-        ./bin/brplot_imgui_linux_debug --unittest
-        ./bin/brplot_raylib_linux_debug --unittest
-        ./bin/brplot_headless_linux_debug --unittest
+        ./bin/brplot_imgui_linux_debug_gcc --unittest
+        ./bin/brplot_raylib_linux_debug_gcc --unittest
+        ./bin/brplot_headless_linux_debug_gcc --unittest
+        ./bin/brplot_imgui_linux_debug_clang --unittest
+        ./bin/brplot_raylib_linux_debug_clang --unittest
+        ./bin/brplot_headless_linux_debug_clang --unittest
 
     - name: Setup Emscripten
       run: |
@@ -98,16 +125,23 @@ jobs:
         make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=HEADLESS
         make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=RAYLIB
         make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=IMGUI
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI
-        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS
-        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB
-        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS COMPILER=GCC
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB COMPILER=GCC
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI COMPILER=GCC
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS COMPILER=GCC
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB COMPILER=GCC
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI COMPILER=GCC
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS COMPILER=CLANG
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB COMPILER=CLANG
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI COMPILER=CLANG
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS COMPILER=CLANG
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB COMPILER=CLANG
+        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI COMPILER=CLANG
 
     - name: Fuzz test
       run: |
-        cat /dev/random | time bin/brplot_headless_linux_debug
+        cat /dev/random | time bin/brplot_headless_linux_debug_gcc
+        cat /dev/random | time bin/brplot_headless_linux_debug_clang
 
     - name: Test artefacts
       run: |
