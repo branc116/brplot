@@ -351,7 +351,7 @@ void points_groups_export_csv(points_groups_t const* pg_array, FILE* file);
 resampling2_t* resampling2_malloc(void);
 void resampling2_empty(resampling2_t* res);
 void resampling2_free(resampling2_t* res);
-void resampling2_draw(resampling2_t* res, points_group_t const* pg, points_groups_draw_in_t* rdi);
+void resampling2_draw(resampling2_t const* res, points_group_t const* pg, points_groups_draw_in_t* rdi);
 void resampling2_add_point(resampling2_t* res, points_group_t const* pg, uint32_t index);
 
 BR_API br_plot_t* graph_malloc(void);
