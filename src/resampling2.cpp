@@ -11,6 +11,7 @@
 #pragma GCC diagnostic pop
 
 #define RESAMPLING_NODE_MAX_LEN 128
+#define RESAMPLING_RAW_NODE_MAX_LEN (RESAMPLING_NODE_MAX_LEN * 8)
 
 typedef enum {
   resampling2_kind_x,
@@ -53,6 +54,7 @@ struct resampling2_node_t {
 
 struct resampling2_raw_node_t {
   uint32_t index_start = 0, len = 0;
+  uint32_t minx_index = 0, maxx_index = 0, miny_index = 0, maxy_index = 0;
 };
 
 typedef struct resampling2_nodes_s {
@@ -111,7 +113,7 @@ template<resampling2_node_kind_t kind>
 static ssize_t resampling2_get_first_inside(resampling2_nodes_t const* nodes, Vector2 const* points, Rectangle rect, uint32_t start_index);
 template<resampling2_node_kind_t kind>
 static void resampling2_draw(resampling2_nodes_t const* nodes, points_group_t const* pg, points_groups_draw_in_t *rdi);
-static bool resampling2_add_point_raw(resampling2_raw_node_t* node, uint32_t index);
+static bool resampling2_add_point_raw(resampling2_raw_node_t* node, Vector2 const* points, uint32_t index);
 static void resampling2_draw(resampling2_raw_node_t raw, points_group_t const* pg, points_groups_draw_in_t *rdi);
 static void resampling2_draw(resampling2_all_roots r, points_group_t const* pg, points_groups_draw_in_t *rdi);
 
@@ -150,7 +152,7 @@ extern "C" void resampling2_add_point(resampling2_t* r, const points_group_t *pg
   bool was_valid_x = r->temp_x_valid, was_valid_y = r->temp_y_valid, was_valid_raw = r->temp_raw_valid;
   if (was_valid_x)   r->temp_x_valid   = resampling2_add_point<resampling2_kind_x>(&r->temp_root_x, pg, index);
   if (was_valid_y)   r->temp_y_valid   = resampling2_add_point<resampling2_kind_y>(&r->temp_root_y, pg, index);
-  if (was_valid_raw) r->temp_raw_valid = resampling2_add_point_raw(&r->temp_root_raw, index);
+  if (was_valid_raw) r->temp_raw_valid = resampling2_add_point_raw(&r->temp_root_raw, pg->points, index);
   if (r->temp_x_valid || r->temp_y_valid || r->temp_raw_valid) return;
   if (was_valid_x) {
     resampling2_push_root(r, resampling2_all_roots(r->temp_root_x, resampling2_kind_x));
@@ -361,14 +363,26 @@ static void resampling2_draw(resampling2_nodes_t const* nodes, points_group_t co
   }
 }
 
-static bool resampling2_add_point_raw(resampling2_raw_node_t* node, uint32_t index) {
+static bool resampling2_add_point_raw(resampling2_raw_node_t* node, Vector2 const* points, uint32_t index) {
   if (node->len == RESAMPLING_NODE_MAX_LEN) return false;
-  if (node->len == 0) node->index_start = index;
+  if (node->len == 0) {
+    node->minx_index = node->maxx_index = node->miny_index = node->maxy_index = node->index_start = index;
+  } else {
+    if (points[node->minx_index].x > points[index].x) node->minx_index = index;
+    if (points[node->miny_index].y > points[index].y) node->miny_index = index;
+    if (points[node->maxx_index].x < points[index].x) node->maxx_index = index;
+    if (points[node->maxy_index].y < points[index].y) node->maxy_index = index;
+  }
   ++node->len;
   return true;
 }
 
 static void resampling2_draw(resampling2_raw_node_t raw, points_group_t const* pg, points_groups_draw_in_t *rdi) {
+  Vector2 const* ps = pg->points;
+  bool is_inside = !((ps[raw.maxy_index].y < rdi->rect.y) || (ps[raw.miny_index].y > rdi->rect.y + rdi->rect.height) ||
+                     (ps[raw.maxx_index].x < rdi->rect.x) || (ps[raw.maxx_index].x < rdi->rect.x + rdi->rect.width));
+  if (!is_inside) return;
+
   smol_mesh_gen_line_strip(rdi->line_mesh, &pg->points[raw.index_start], raw.len, pg->color);
 }
 

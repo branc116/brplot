@@ -2,7 +2,7 @@
 // Stolen from: https://github.com/yshui/test.h
 #pragma once
 
-#if 1 //def UNIT_TEST || 1
+#ifdef UNIT_TEST
 
 #include <stdbool.h>
 #include <stdio.h>

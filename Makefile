@@ -123,6 +123,7 @@ else ifeq ($(CONFIG), RELEASE)
 		-DIMGUI_DISABLE_DEMO_WINDOWS \
 		-DIMGUI_DISABLE_DEBUG_TOOLS
 	ADDITIONAL_HEADERS+= $(SHADERS_HEADER)
+	LD_FLAGS+= -fdata-sections -ffunction-sections -Wl,--gc-sections 
 	ifeq ($(PLATFORM), LINUX)
 		LD_FLAGS+= -flto=auto
 	endif
