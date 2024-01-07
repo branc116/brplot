@@ -1,4 +1,3 @@
-RL= raylib/src
 # DEBUG | RELEASE
 CONFIG?= DEBUG
 # LINUX | WEB | WINDOWS
@@ -10,6 +9,7 @@ TYPE?= EXE
 # GCC | CLANG ( Only for linux build )
 COMPILER?= GCC
 
+RL                 = raylib/src
 RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
 SOURCE             = src/main.c src/help.c src/points_group.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c src/keybindings.c src/str.c src/memory.cpp src/resampling2.c
 EXTERNAL_HEADERS   =
@@ -18,7 +18,7 @@ RAYLIB_HEADERS     =  raylib/src/rcamera.h raylib/src/raymath.h raylib/src/rayli
 BR_HEADERS         = src/br_plot.h src/br_gui_internal.h src/br_help.h
 COMMONFLAGS        = -I./imgui -I./imgui/backends -I. -Isrc/raylib -Iraylib/src
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra
-LD_FLAGS=
+LD_FLAGS           =
 
 ifeq ($(PLATFORM)_$(COMPILER), LINUX_CLANG)
 	WARNING_FLAGS+= -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-newline-eof

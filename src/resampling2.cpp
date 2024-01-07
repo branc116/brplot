@@ -2,7 +2,6 @@
 #include "br_help.h"
 #include "stdint.h"
 #include "math.h"
-#include "src/misc/tests.h"
 #include "string.h"
 #include "assert.h"
 #include "raylib/src/raymath.h"
@@ -15,31 +14,38 @@ typedef enum {
   resampling2_kind_raw
 } resampling2_node_kind_t;
 
-typedef struct {
-  uint32_t min_index, max_index;
-  uint32_t index_start, len;
-} resampling2_node_t;
+struct resampling2_node_t{
+  uint32_t min_index = 0, max_index = 0;
+  uint32_t index_start = 0, len = 0;
+};
 
-typedef struct {
-  uint32_t index_start, len;
-} resampling2_raw_node_t;
+struct resampling2_raw_node_t {
+  uint32_t index_start = 0, len = 0;
+};
 
 typedef struct resampling2_nodes_s {
-  resampling2_node_t* arr;
-  struct resampling2_nodes_s* parent;
-  uint32_t len;
-  uint32_t cap;
-  bool is_rising, is_falling;
+  resampling2_node_t* arr = NULL;
+  struct resampling2_nodes_s* parent = NULL;
+  uint32_t len = 0;
+  uint32_t cap = 0;
+  bool is_rising = true, is_falling = true;
 } resampling2_nodes_t;
 
-typedef struct {
+enum resampling2_axis : int32_t {
+  AXIS_X,
+  AXIS_Y
+};
+
+struct resampling2_all_roots{
   resampling2_node_kind_t kind;
   union {
     resampling2_nodes_t x;
     resampling2_nodes_t y;
     resampling2_raw_node_t raw;
   };
-} resampling2_all_roots;
+  constexpr resampling2_all_roots(resampling2_nodes_t nodes, resampling2_node_kind_t kind) : kind(kind), x(nodes) {}
+  constexpr resampling2_all_roots(resampling2_raw_node_t raw) : kind(resampling2_kind_raw), raw(raw) {}
+};
 
 typedef struct resampling2_s {
   resampling2_all_roots* roots;
@@ -48,7 +54,7 @@ typedef struct resampling2_s {
 
   resampling2_nodes_t temp_root_x, temp_root_y;
   resampling2_raw_node_t temp_root_raw;
-  bool temp_x_valid, temp_y_valid, temp_raw_valid;
+  bool temp_x_valid = true, temp_y_valid = true, temp_raw_valid = true;
 } resampling2_t;
 
 void resampling2_nodes_deinit(resampling2_nodes_t* nodes) {
@@ -59,7 +65,7 @@ void resampling2_nodes_deinit(resampling2_nodes_t* nodes) {
 }
 
 resampling2_t* resampling2_malloc(void) {
-   resampling2_t* r = BR_CALLOC(1, sizeof(resampling2_t));
+   resampling2_t* r = (resampling2_t*)BR_CALLOC(1, sizeof(resampling2_t));
    r->temp_x_valid = r->temp_y_valid = r->temp_raw_valid = true;
    return r;
 }
@@ -78,9 +84,9 @@ void resampling2_empty(resampling2_t* res) {
   }
   resampling2_nodes_deinit(&res->temp_root_x);
   resampling2_nodes_deinit(&res->temp_root_y);
-  res->temp_root_x = (resampling2_nodes_t){0};
-  res->temp_root_y = (resampling2_nodes_t){0};
-  res->temp_root_raw = (resampling2_raw_node_t){0};
+  res->temp_root_x = {};
+  res->temp_root_y = {};
+  res->temp_root_raw = {};
   res->temp_raw_valid = res->temp_y_valid = res->temp_x_valid = true;
 }
 
@@ -97,12 +103,12 @@ void resampling2_free(resampling2_t* r) {
 
 void resampling2_push_root(resampling2_t* r, resampling2_all_roots root) {
   if (r->roots_len == 0) {
-    r->roots = BR_MALLOC(sizeof(resampling2_all_roots));
+    r->roots = (resampling2_all_roots*)BR_MALLOC(sizeof(resampling2_all_roots));
     r->roots_cap = 1;
   }
   if (r->roots_len == r->roots_cap) {
     uint32_t new_cap = r->roots_cap * 2;
-    r->roots = BR_REALLOC(r->roots, new_cap * sizeof(resampling2_all_roots));
+    r->roots = (resampling2_all_roots*)BR_REALLOC(r->roots, new_cap * sizeof(resampling2_all_roots));
     r->roots_cap = new_cap;
   }
   r->roots[r->roots_len++] = root;
@@ -110,14 +116,14 @@ void resampling2_push_root(resampling2_t* r, resampling2_all_roots root) {
 
 resampling2_nodes_t* resampling2_nodes_get_parent(resampling2_nodes_t* nodes) {
   if (nodes->parent == NULL) {
-    nodes->parent = BR_CALLOC(1, sizeof(resampling2_nodes_t));
+    nodes->parent = (resampling2_nodes_t*)BR_CALLOC(1, sizeof(resampling2_nodes_t));
   }
   return nodes->parent;
 }
 
 resampling2_node_t* resampling2_get_last_node(resampling2_nodes_t* nodes) {
   if (nodes->len == 0) {
-    nodes->arr = BR_CALLOC(1, sizeof(resampling2_node_t));
+    nodes->arr = (resampling2_node_t*)BR_CALLOC(1, sizeof(resampling2_node_t));
     nodes->len = 1;
     nodes->cap = 1;
   }
@@ -149,17 +155,17 @@ static void resampling2_nodesy_push_point(resampling2_nodes_t* nodes, uint32_t i
   } else if (node->len == (RESAMPLING_NODE_MAX_LEN * powers[depth])) {
     unsigned int new_cap = nodes->cap * 2;
     if (nodes->len == nodes->cap) {
-      nodes->arr = BR_REALLOC(nodes->arr, sizeof(resampling2_node_t) * (new_cap));
+      nodes->arr = (resampling2_node_t*)BR_REALLOC(nodes->arr, sizeof(resampling2_node_t) * (new_cap));
       for (unsigned int i = nodes->cap; i < new_cap; ++i) {
-        nodes->arr[i] = (resampling2_node_t){0};
+        nodes->arr[i] = {};
       }
       nodes->cap = new_cap;
     }
     ++nodes->len;
     node = &nodes->arr[node_i];
     if (nodes->parent == NULL) {
-      nodes->parent = BR_CALLOC(1, sizeof(resampling2_nodes_t));
-      nodes->parent->arr = BR_CALLOC(1, sizeof(resampling2_node_t));
+      nodes->parent = (resampling2_nodes_t*)BR_CALLOC(1, sizeof(resampling2_nodes_t));
+      nodes->parent->arr = (resampling2_node_t*)BR_CALLOC(1, sizeof(resampling2_node_t));
       nodes->parent->len = 1;
       nodes->parent->cap = 1;
       memcpy(nodes->parent->arr, node, sizeof(resampling2_node_t));
@@ -189,17 +195,17 @@ static void resampling2_nodesx_push_point(resampling2_nodes_t* nodes, uint32_t i
   } else if (node->len == (RESAMPLING_NODE_MAX_LEN * powers[depth])) {
     unsigned int new_cap = nodes->cap * 2;
     if (nodes->len == nodes->cap) {
-      nodes->arr = BR_REALLOC(nodes->arr, sizeof(resampling2_node_t) * (new_cap));
+      nodes->arr = (resampling2_node_t*)BR_REALLOC(nodes->arr, sizeof(resampling2_node_t) * (new_cap));
       for (unsigned int i = nodes->cap; i < new_cap; ++i) {
-        nodes->arr[i] = (resampling2_node_t){0};
+        nodes->arr[i] = {};
       }
       nodes->cap = new_cap;
     }
     ++nodes->len;
     node = &nodes->arr[node_i];
     if (nodes->parent == NULL) {
-      nodes->parent = BR_CALLOC(1, sizeof(resampling2_nodes_t));
-      nodes->parent->arr = BR_CALLOC(1, sizeof(resampling2_node_t));
+      nodes->parent = (resampling2_nodes_t*)BR_CALLOC(1, sizeof(resampling2_nodes_t));
+      nodes->parent->arr = (resampling2_node_t*)BR_CALLOC(1, sizeof(resampling2_node_t));
       nodes->parent->len = 1;
       nodes->parent->cap = 1;
       memcpy(nodes->parent->arr, node, sizeof(resampling2_node_t));
@@ -286,19 +292,19 @@ void resampling2_add_point(resampling2_t* r, const points_group_t *pg, uint32_t 
   if (was_valid_raw) r->temp_raw_valid = resampling2_add_point_raw(&r->temp_root_raw, index);
   if (r->temp_x_valid || r->temp_y_valid || r->temp_raw_valid) return;
   if (was_valid_x) {
-    resampling2_push_root(r, (resampling2_all_roots) {.kind = resampling2_kind_x, .x = r->temp_root_x} );
+    resampling2_push_root(r, resampling2_all_roots(r->temp_root_x, resampling2_kind_x));
     resampling2_nodes_deinit(&r->temp_root_y);
   } else if (was_valid_y) {
-    resampling2_push_root(r, (resampling2_all_roots) {.kind = resampling2_kind_y, .y = r->temp_root_y} );
+    resampling2_push_root(r, resampling2_all_roots(r->temp_root_y, resampling2_kind_y));
     resampling2_nodes_deinit(&r->temp_root_x);
   } else if (was_valid_raw) {
-    resampling2_push_root(r, (resampling2_all_roots) {.kind = resampling2_kind_raw, .raw = r->temp_root_raw} );
+    resampling2_push_root(r, resampling2_all_roots(r->temp_root_raw) );
     resampling2_nodes_deinit(&r->temp_root_x);
     resampling2_nodes_deinit(&r->temp_root_y);
   } else printf("%d\n", *(int*)0);
-  r->temp_root_x = (resampling2_nodes_t){0};
-  r->temp_root_y = (resampling2_nodes_t){0};
-  r->temp_root_raw = (resampling2_raw_node_t){0};
+  r->temp_root_x = {};
+  r->temp_root_y = {};
+  r->temp_root_raw = {};
   r->temp_raw_valid = r->temp_y_valid = r->temp_x_valid = true;
   resampling2_add_point(r, pg, index);
 }
@@ -494,13 +500,15 @@ static void resampling2_debug_print(FILE* file, resampling2_t* r) {
   printf("\n%s ALLOCATIONS: %lu ( %luKB ) | %lu (%luKB)\n", prefix, \
       context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
 
+extern "C" {
+#include "src/misc/tests.h"
 TEST_CASE(resampling) {
   Vector2 points[] = { {0, 1}, {1, 2}, {2, 4}, {3, 2} };
   points_group_t pg = {
+    .cap = 4,
     .len = 4,
     .points = points,
-    .resampling = NULL,
-    .cap = 4
+    .resampling = NULL
   };
   resampling2_t* r = resampling2_malloc();
   for (int i = 0; i < 2*1024; ++i) resampling2_add_point(r, &pg, 3);
@@ -521,10 +529,10 @@ TEST_CASE(resampling2) {
     points[i].y = cosf(3.14f / 4.f * (float)i);
   }
   points_group_t pg = {
+    .cap = N,
     .len = N,
     .points = points,
-    .resampling = NULL,
-    .cap = N 
+    .resampling = NULL
   };
   resampling2_t* r = resampling2_malloc();
   for (int i = 0; i < N; ++i) resampling2_add_point(r, &pg, (uint32_t)i);
@@ -539,3 +547,4 @@ TEST_CASE(resampling2) {
   resampling2_free(r);
 }
 
+} // extern "C"

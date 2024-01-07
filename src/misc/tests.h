@@ -2,12 +2,13 @@
 // Stolen from: https://github.com/yshui/test.h
 #pragma once
 
-#ifdef UNIT_TEST
+#if 1 //def UNIT_TEST || 1
 
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "src/br_plot.h"
 
 #if defined(__DragonFly__) || defined(__FreeBSD__) || defined(__FreeBSD_kernel__) ||     \
     defined(__NetBSD__) || defined(__OpenBSD__)
@@ -44,6 +45,7 @@ struct test_file_metadata {
 };
 
 struct test_file_metadata __attribute__((weak)) * test_file_head;
+static struct test_file_metadata __test_h_file;
 
 #define SET_FAILURE(_message, _owned)                        \
   metadata->failure = (struct test_failure) {                \
@@ -94,10 +96,9 @@ struct test_file_metadata __attribute__((weak)) * test_file_head;
 #define TEST_CASE(_name)                                                            \
   static void __test_h_##_name(struct test_case_metadata *,                         \
                                struct test_file_metadata *);                        \
-  static struct test_file_metadata __test_h_file;                                   \
   static struct test_case_metadata __test_h_meta_##_name = {                        \
-      .name = #_name,                                                               \
       .fn = __test_h_##_name,                                                       \
+      .name = #_name,                                                               \
   };                                                                                \
   static void __attribute__((constructor(1001))) __test_h_##_name##_register(void) { \
     __test_h_meta_##_name.next = __test_h_file.tests;                               \
