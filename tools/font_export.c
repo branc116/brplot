@@ -210,11 +210,19 @@ GlyphInfo *LoadFontData(const unsigned char *fileData, int fontSize, int *codepo
             if (codepoints == NULL)
             {
                 codepoints = (int *)malloc(codepointCount*sizeof(int));
+                if (codepoints == NULL) {
+                  fprintf(stderr, "malloc failed");
+                  exit(EXIT_FAILURE);
+                }
                 for (int i = 0; i < codepointCount; i++) codepoints[i] = i + 32;
                 genFontChars = true;
             }
 
             chars = (GlyphInfo *)malloc(codepointCount*sizeof(GlyphInfo));
+              if (chars == NULL) {
+                fprintf(stderr, "chars null");
+                exit(EXIT_FAILURE);
+              }
 
             // NOTE: Using simple packaging, one char after another
             for (int i = 0; i < codepointCount; i++)

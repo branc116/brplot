@@ -246,6 +246,10 @@ void graph_screenshot(br_plot_t* gv, char const * path) {
 
 void graph_export(br_plot_t const* gv, char const * path) {
   FILE* file = fopen(path, "w");
+  if (file == NULL) {
+    fprintf(stderr, "Failed to open path: `%s`", path);
+    return;
+  }
   fprintf(file, "--zoomx %f\n", gv->uvZoom.x);
   fprintf(file, "--zoomy %f\n", gv->uvZoom.y);
   fprintf(file, "--offsetx %f\n", gv->uvOffset.x);

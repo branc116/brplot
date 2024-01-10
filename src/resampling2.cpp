@@ -82,12 +82,12 @@ struct resampling2_all_roots{
 };
 
 typedef struct resampling2_s {
-  resampling2_all_roots* roots;
-  uint32_t roots_len;
-  uint32_t roots_cap;
+  resampling2_all_roots* roots = nullptr;
+  uint32_t roots_len = 0;
+  uint32_t roots_cap = 0;
 
-  resampling2_nodes_t temp_root_x, temp_root_y;
-  resampling2_raw_node_t temp_root_raw;
+  resampling2_nodes_t temp_root_x = {}, temp_root_y = {};
+  resampling2_raw_node_t temp_root_raw = {};
   bool temp_x_valid = true, temp_y_valid = true, temp_raw_valid = true;
 } resampling2_t;
 

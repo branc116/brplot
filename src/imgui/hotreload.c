@@ -47,7 +47,8 @@ static bool br_hotreload_compile(void) {
 void br_hotreload_link(br_hotreload_state_t* s) {
   s->handl = dlopen("build/linux/debug/imgui/hot.o", RTLD_GLOBAL |	RTLD_LAZY);
   if (s->handl == NULL) {
-    fprintf(stderr, "%s\n", dlerror());
+    const char* err = dlerror();
+    fprintf(stderr, "dlopen failed: `%s`\n", err ? err : "NULL");
     return;
   }
 #pragma GCC diagnostic push
@@ -58,10 +59,10 @@ void br_hotreload_link(br_hotreload_state_t* s) {
   char* error = dlerror();
   if (error != NULL) {
     fprintf(stderr, "%s\n", error);
+    dlclose(s->handl);
     s->handl = NULL;
     s->func_loop = NULL;
     s->func_init = NULL;
-    dlclose(s->handl);
   }
   s->is_init_called = false;
 }
