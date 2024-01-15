@@ -276,7 +276,7 @@ sudo rm /usr/bin/brplot
     * This is most likely the way to go...
   * Offset for x-y value
   * Scale for x-y value
-* Give lines a names.
+* ~~Give lines a names.~~
 * Show the name of the line if you hover over it.
 * Something like status bar stuff.
 * Abitlity to make plots out of existing plots.

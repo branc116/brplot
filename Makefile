@@ -175,6 +175,14 @@ fuzz:
 	make GUI=HEADLESS -B && \
 	time cat /dev/random | ./bin/brplot_headless_linux_debug_gcc > /dev/null && echo "Fuzz test OK"
 
+.PHONY: npm-imgui
+npm-imgui:
+	make GUI=IMGUI CONFIG=RELEASE TYPE=LIB PLATFORM=WEB && \
+	cp ./www/brplot_imgui_release_lib.js packages/npm/brplot.js && \
+	cp ./www/brplot_imgui_release_lib.wasm packages/npm && \
+	  ((cd packages/npm && \
+	   npm publish || cd ../..) && cd ../..)
+
 bin/upper: tools/upper.cpp
 	g++ -O3 -o bin/upper tools/upper.cpp
 
