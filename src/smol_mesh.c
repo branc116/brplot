@@ -126,7 +126,7 @@ void smol_mesh_gen_bb(smol_mesh_t* mesh, bb_t bb, Color color) {
 }
 
 void smol_mesh_gen_point(smol_mesh_t* mesh, Vector2 point, Color color) {
-  Vector2 size = { context.last_zoom_value.x * .01f, context.last_zoom_value.x * .01f };
+  Vector2 size = { context.last_zoom_value.x * .01f, context.last_zoom_value.y * .01f };
   smol_mesh_gen_bb(mesh, (bb_t){
       .xmin = point.x - size.x / 2,
       .ymin = point.y - size.y / 2,
