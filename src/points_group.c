@@ -17,7 +17,14 @@ static Color color_get(int id);
 
 BR_API void points_group_push_y(points_groups_t* pg_array, float y, int group) {
   points_group_t* pg = points_group_get(pg_array, group);
-  points_group_push_point(pg, (Vector2){ .x = (float)pg->len, .y = y });
+  float x = pg->len == 0 ? 0.f : pg->points[pg->len - 1].x + 1.f;
+  points_group_push_point(pg, (Vector2){ .x = x, .y = y });
+}
+
+BR_API void points_group_push_x(points_groups_t* pg_array, float x, int group) {
+  points_group_t* pg = points_group_get(pg_array, group);
+  float y = pg->len == 0 ? 0.f : pg->points[pg->len - 1].y + 1.f;
+  points_group_push_point(pg, (Vector2){ .x = x, .y = y });
 }
 
 BR_API void points_group_push_xy(points_groups_t* pg_array, float x, float y, int group) {

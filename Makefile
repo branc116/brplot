@@ -175,6 +175,11 @@ fuzz:
 	make GUI=HEADLESS -B && \
 	time cat /dev/random | ./bin/brplot_headless_linux_debug_gcc > /dev/null && echo "Fuzz test OK"
 
+.PHONY: test
+test:
+	make GUI=HEADLESS CONFIG=DEBUG && \
+	./bin/brplot_headless_linux_debug_gcc --unittest
+
 .PHONY: npm-imgui
 npm-imgui:
 	make GUI=IMGUI CONFIG=RELEASE TYPE=LIB PLATFORM=WEB && \

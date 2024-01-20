@@ -498,10 +498,6 @@ TEST_CASE(resampling2) {
   printf("\nALLOCATIONS: %lu ( %luKB ) | %lu (%luKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   resampling2_add_point(r, &pg, 3);
   printf("\nALLOCATIONS: %lu ( %luKB ) | %lu (%luKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
-  for (int i = 0; i < 64*1024; ++i) resampling2_add_point(r, &pg, 3);
-  printf("\nALLOCATIONS: %lu ( %luKB ) | %lu (%luKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
-  for (int i = 0; i < 1024*1024; ++i) resampling2_add_point(r, &pg, 3);
-  printf("\nALLOCATIONS: %lu ( %luKB ) | %lu (%luKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   resampling2_free(r);
 }
 #pragma GCC diagnostic pop

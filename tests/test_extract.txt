@@ -1,0 +1,10 @@
+--extract 2 "*abc%x"
+--extract 3 "*cba%y"
+
+abc1
+abc2
+abc3
+cba1
+cba2
+cba3
+

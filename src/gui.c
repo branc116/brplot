@@ -183,6 +183,7 @@ void update_variables(br_plot_t* br) {
     q_command comm = q_pop(&br->commands);
     switch (comm.type) {
       case q_command_none:          goto end;
+      case q_command_push_point_x:  points_group_push_x(&br->groups, comm.push_point_x.x, comm.push_point_y.group); break;
       case q_command_push_point_y:  points_group_push_y(&br->groups, comm.push_point_y.y, comm.push_point_y.group); break;
       case q_command_push_point_xy: points_group_push_xy(&br->groups, comm.push_point_xy.x, comm.push_point_xy.y, comm.push_point_xy.group); break;
       case q_command_pop:           break; //TODO

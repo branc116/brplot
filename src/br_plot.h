@@ -57,6 +57,7 @@ extern "C" {
 
 typedef enum {
   q_command_none,
+  q_command_push_point_x,
   q_command_push_point_y,
   q_command_push_point_xy,
   q_command_pop,
@@ -79,13 +80,17 @@ typedef struct {
 } br_str_t;
 
 typedef struct {
-  char* str;
+  const char* str;
   unsigned int len;
 } br_strv_t;
 
 typedef struct {
   q_command_type type;
   union {
+    struct {
+      int group;
+      float x;
+    } push_point_x;
     struct {
       int group;
       float y;
@@ -333,6 +338,7 @@ typedef struct {
 BR_API points_group_t* points_group_get(points_groups_t* pg_array, int group);
 void points_group_set_name(points_groups_t* pg_array, int group, br_str_t name);
 BR_API void points_group_push_y(points_groups_t* pg, float y, int group);
+BR_API void points_group_push_x(points_groups_t* pg, float x, int group);
 BR_API void points_group_push_xy(points_groups_t* pg, float x, float y, int group);
 BR_API void points_group_clear(points_groups_t* pg, int group_id);
 // Only remove all points from a group, don't remove the group itself.
@@ -412,11 +418,17 @@ void       br_str_push_int(br_str_t* s, int c);
 void       br_str_push_float1(br_str_t* s, float c, int decimals);
 void       br_str_push_float(br_str_t* s, float c);
 void       br_str_push_c_str(br_str_t* s, char const* c);
-char*      br_str_to_c_str(br_str_t* s);
-void       br_str_to_c_str1(br_str_t const* s, char* out_s);
-br_strv_t  br_strv_sub(br_strv_t* s, size_t start, size_t len);
-char*      br_strv_to_c_str(br_strv_t* s);
-void       br_strv_to_c_str1(br_strv_t const* s, char* out_s);
+char*      br_str_to_c_str(br_str_t s);
+br_str_t   br_str_copy(br_str_t s);
+void       br_str_to_c_str1(br_str_t s, char* out_s);
+#define    br_str_as_view(s) ((br_strv_t) { .str = s.str, .len = s.len })
+#define    br_str_sub(s, start, new_length) ((br_strv_t) { .str = s.str + (start), .len = (new_length) })
+#define    br_str_sub1(s, start) ((br_strv_t) { .str = s.str + (start), .len = s.len - (start) })
+#define    br_strv_sub(s, start, new_length) ((br_strv_t) { .str = s.str + (start), .len = (new_length) })
+#define    br_strv_sub1(s, start) ((br_strv_t) { .str = s.str + (start), .len = s.len - (start) })
+char*      br_strv_to_c_str(br_strv_t s);
+void       br_strv_to_c_str1(br_strv_t s, char* out_s);
+#define    br_strv_from_c_str(s) ((br_strv_t) { .str = s, .len = sizeof((s)) - 1 })
 
 #ifdef IMGUI
 #ifndef RELEASE
