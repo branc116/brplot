@@ -289,7 +289,7 @@ template<resampling2_node_kind_t kind>
 static ssize_t resampling2_get_first_inside(resampling2_nodes_t const* nodes, Vector2 const * const points, Rectangle rect, uint32_t start_index) {
   while (start_index % powers_base != 0) {
     if (start_index == nodes->len) return -1;
-    if (nodes->arr[start_index].is_inside<kind>(points, rect)) return start_index;
+    if (nodes->arr[start_index].is_inside<kind>(points, rect)) return (ssize_t)start_index;
     ++start_index;
   }
   if (nodes->parent != NULL) {
@@ -332,7 +332,7 @@ static void resampling2_draw(resampling2_nodes_t const* nodes, points_group_t co
       raw_c++;
     } else {
       resampling2_nodes_t const* curn = nodes;
-      ssize_t curj = j;
+      uint32_t curj = j;
       while (curn->parent != NULL && curj % powers_base == 0 && (ratio_min < something2)) {
         curj /= powers_base;
         curn = curn->parent;

@@ -1,6 +1,8 @@
+#include "cstdlib"
+
+#if defined(LINUX) && !defined(RELEASE)
 #include "br_plot.h"
 #include "br_help.h"
-#include "cstdlib"
 #include "cassert"
 #include <map>
 static thread_local std::map<size_t, size_t> alloc_sizes;
@@ -56,7 +58,7 @@ extern "C" void br_free(void* p) {
   br_free_stats((size_t)p);
   free(p);
 }
-#if defined(LINUX) && !defined(RELEASE)
+
 extern "C" void* br_imgui_malloc(size_t size, void*) {
   return br_malloc(size);
 }

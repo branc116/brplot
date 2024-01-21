@@ -63,7 +63,7 @@ else ifeq ($(PLATFORM), WINDOWS)
 	LIBS= -lopengl32 -lgdi32 -lwinmm
 	CXX= x86_64-w64-mingw32-g++
 	CC= x86_64-w64-mingw32-gcc
-	COMMONFLAGS+= -Iraylib/src/external/glfw/include -DWINDOWS=1 -DPLATFORM_DESKTOP=1 -D_WIN32=1 -DLEAN_AND_MEAN
+	COMMONFLAGS+= -Iraylib/src/external/glfw/include -DWINDOWS=1 -DPLATFORM_DESKTOP=1 -D_WIN32=1 -DWIN32_LEAN_AND_MEAN
 	SOURCE+= $(RL)/rglfw.c src/desktop/win/read_input.c src/desktop/platform.c
 	SHADERS_HEADER= src/misc/shaders.h
 	SHADERS_LIST= src/desktop/shaders/grid.fs src/desktop/shaders/line.fs src/desktop/shaders/line.vs src/desktop/shaders/quad.vs src/desktop/shaders/quad.fs
@@ -119,7 +119,7 @@ ifeq ($(CONFIG), DEBUG)
 		endif
 	endif
 else ifeq ($(CONFIG), RELEASE)
-	COMMONFLAGS+= -Os -DRELEASE=1 \
+	COMMONFLAGS+= -fdata-sections -ffunction-sections -Os -DRELEASE=1 \
 		-DIMGUI_DISABLE_DEMO_WINDOWS \
 		-DIMGUI_DISABLE_DEBUG_TOOLS
 	ADDITIONAL_HEADERS+= $(SHADERS_HEADER)
