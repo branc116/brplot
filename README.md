@@ -115,13 +115,52 @@ nc -ulkp 42069 | brplot;
 * 10,12;2 - insert point (10, 12) to line group 2
 
 #### All commands 
-* ```--zoom value```    - zoom x & y axis to value
-* ```--zoomx value```   - zoom x axis to value
-* ```--zoomy value```   - zoom y axis to value
-* ```--offsetx value``` - offset x axis to value
-* ```--offsety value``` - offset y axis to value
-* ```--show value```    - show value-th group
-* ```--hide value```    - hide value-th group
+* ```--zoom value```               - zoom x & y axis to value
+* ```--zoomx value```              - zoom x axis to value
+* ```--zoomy value```              - zoom y axis to value
+* ```--offsetx value```            - offset x axis to value
+* ```--offsety value```            - offset y axis to value
+* ```--show value```               - show value-th group
+* ```--hide value```               - hide value-th group
+* ```--extract group "Extract-str" - Define custom extraction rules
+
+#### Extract-str
+This is a string used to define how to transform input to get the data out.
+
+Example Extract strings are:
+|extractor string|input string|out-x|out-y|
+|--------------|--------------|-----|-----|
+| ```abc%x```      | ```abc12```                          |12.f   |NULL|
+| ```abc%x```      | ```abc-12```                         |-12.f  |NULL|
+| ```a%xbc```      | ```a12.2bc```                        |12.2f  |NULL|
+| ```*%xabc```     | ```-------12e12abc```                |-12e12f|NULL|
+| ```*-%xabc```    | ```-12e12abc```                      |12e12f |NULL|
+| ```*\\\\%xabc``` | ```-------\\---\\\\12abc```          |12.f   |NULL|
+| ```*\\%a%xabc``` | ```---abs\\%a12e12---\\%a10e10abc``` |10e10f |NULL|
+| ```%y*aa%x```    | ```12a14aaaa13```                    |13.f   |12.f|
+| ```%y.%x```      | ```12.13.14.15```                    |14.15f |12.13f|
+
+Some more examples of valid and invalid extractors:
+|is valid| extractor | desc |
+|--------|-----------|------|
+|true| "abc%x"||
+|true| "a%xbc\\\\"||
+|true| "*%xabc"||
+|true| "*\\%a%xabc"||
+|true| "*\\\\%xabc"||
+|true| "%y*%x"||
+|false| "abc%a%x" |  %a is not a valid capture|
+|false| "abc%" |     % is unfinised capture|
+|false| "abc\\" |    \ is unfinished escape|
+|false| "a**bc" |    wild can't follow wild|
+|false| "a%xbc*" |   wild can't be last character|
+|false| "*\\%xabc" | Nothing is captured. %x is escaped|
+|false| "%y%x" |     Capture can't follow capture Ex. : "1234" can be x=1,y=234, x=12,y=34, ...|
+|false| "%y*%y" |    Can't have multiple captures in the expression|
+|false| "%x*%x" |    Can't have multiple captures in the expression|
+
+In the future they migh chage/be deleted.
+
 
 ### Controls
 
@@ -162,13 +201,15 @@ make EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATF
 
 Here are the parameters you can change:
 
-* EMSCRIPTEN - only useful if you are building for webassm
+* EMSCRIPTEN - only useful if you are building for webassm ( path to emscripten )
 * PLATFORM   - LINUX | WINDOWS | WEB
 * CONFIG     - RELEASE | DEBUG
 * GUI        - IMGUI | RAYLIB | HEADLESS
+* TYPE       - EXE | LIB  - ( To create executable or library. Currently only web version can be a library. )
 
 ## Install
-When built, brplot is only one file and you can install it using ```install``` command. Here I'm installing it to ```/usr/bin``` directory, but this can be any other directory...
+When built, brplot is only one file and you can install it using ```install``` command.
+Here I'm installing it to ```/usr/bin``` directory, but this can be any other directory...
 
 ```bash
 sudo install bin/brplot_imgui_linux_release /usr/bin/brplot
@@ -183,7 +224,6 @@ make clean
 ```bash
 sudo rm /usr/bin/brplot
 ```
-
 
 ## Todo
 * ~~Make drawing lines use buffers ( Don't use DrawLineStrip function by raylib. ) Maybe use DrawMesh? It's ok for plots with ~1'000'000 points, but I want more!~~
@@ -262,7 +302,8 @@ sudo rm /usr/bin/brplot
 * ~~There is something wrong with new tokenizer. Fix this!!~~
 * ~~Support for exporting csv|brplot file by issuing command from stdin.~~
   * ~~New bug, bad numbers on x,y axis when exporting~~
-* For Imgui make a default layout
+* ~~For Imgui make a default layout~~
+  * This is only applyed to web version. ( Desktop versions have ability to save stuff on disk. )
 * For Imgui try to make the same shit with fonts as for raylib. Export only the subset of ttf font.
 * For Imgui disable default font and use the font that is used in the rest of the graph.
 * ~~Number of draw call for RAYLIB,WEB is not corret - Fix this.~~
@@ -294,6 +335,11 @@ sudo rm /usr/bin/brplot
     * This will require some sort of mechanism for calculating resulting points every frame such that high fps is not compromised. Say every frame calcuate 1'000'000 points.
 * Ability to generate plots out of expressions
   * Say Plot1(x) = sin(x)
+* Small regex stuf to definine how to get points from file.
+  * ~~Something like `--extract 2 "F*oo%xB*ar%y"` - If input line is "Foasdasdo10Baasdasdar18" Then caputred point should be (10, 18)~~
+  * Maybe add multipe points per line "Foo%1x %2y %2x %1y": "Foo10 11 12 13" -> [(10, 13), (12, 11)]
+  * Current implementation is recursive, maybe think of a way to make it non recursive.
+  * Current implementation runs each extractor one by one. Think of a way to run then in lock step.
 
 ## Screenshots
 Here is a history of how brplot looked over time:
