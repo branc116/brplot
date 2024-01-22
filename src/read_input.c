@@ -219,7 +219,7 @@ static int extractor_extract_number(br_strv_t view, float* outF) {
   int decimal = 0;
   bool read_next = false;
 
-  while ((size_t)i < view.len) {
+  while ((size_t)(i + (read_next ? 1 : 0)) < view.len) {
     if (read_next) ++i;
     else read_next = true;
     char c = view.str[i];
@@ -294,6 +294,24 @@ static int extractor_extract_number(br_strv_t view, float* outF) {
         assert("Unhandled state while extracting number" && false);
         return -1;
     }
+  }
+  switch (state) {
+    case input_lex_state_init:
+      return -1;
+    case input_lex_state_number:
+      *outF = is_neg_whole ? (float)-value_i : (float)value_i;
+      return (int)view.len;
+    case input_lex_state_number_decimal:
+      value_f += (float)value_i * powf(10.f, (float)decimal);
+      *outF = is_neg_whole ? -value_f : value_f;
+      return (int)view.len;
+    case input_lex_state_number_exp:
+      value_f *= powf(10.f, is_neg ? (float)-value_i : (float)value_i);
+      *outF = is_neg_whole ? -value_f : value_f;
+      return (int)view.len;
+    default:
+      assert("Unhandled state while extracting number" && false);
+      return -1;
   }
   return -1;
 }
@@ -474,7 +492,9 @@ static bool input_tokens_can_next_be(input_token_kind_t kind) {
     }
   }
   return false;
-} static void input_tokens_reduce(br_plot_t* gv, bool force_reduce) {
+}
+
+static void input_tokens_reduce(br_plot_t* gv, bool force_reduce) {
   if (tokens_len == 0) return;
   int best = -1;
   size_t best_c = 0, match_c = 0;
@@ -532,27 +552,25 @@ static void lex(br_plot_t* gv) {
 #else
       c = gv->getchar();
 #endif
-    if (extractors.len > 0) {
-      if (c == '\n') {
-        float x, y;
-        for (size_t i = 0; i < extractors.len; ++i) {
-          int group = extractors.arr[i].group;
-          extractor_res_state_t r = extractor_extract(br_str_as_view(extractors.arr[i].ex), br_str_as_view(cur_line), &x, &y);
-          if (r == extractor_res_state_x) {
-            q_push(&gv->commands, (q_command) { .type = q_command_push_point_x, .push_point_x = { .x = x, .group = group }}); 
-          } else if (r == extractor_res_state_y) {
-            q_push(&gv->commands, (q_command) { .type = q_command_push_point_y, .push_point_y = { .y = y, .group = group }}); 
-          } else if (r == extractor_res_state_xy) {
-            q_push(&gv->commands, (q_command) { .type = q_command_push_point_xy, .push_point_xy = { .x = x, .y = y, .group = group }}); 
+      if (extractors.len > 0) {
+        if (c == '\n') {
+          float x, y;
+          for (size_t i = 0; i < extractors.len; ++i) {
+            int group = extractors.arr[i].group;
+            extractor_res_state_t r = extractor_extract(br_str_as_view(extractors.arr[i].ex), br_str_as_view(cur_line), &x, &y);
+            if (r == extractor_res_state_x) {
+              q_push(&gv->commands, (q_command) { .type = q_command_push_point_x, .push_point_x = { .x = x, .group = group }}); 
+            } else if (r == extractor_res_state_y) {
+              q_push(&gv->commands, (q_command) { .type = q_command_push_point_y, .push_point_y = { .y = y, .group = group }}); 
+            } else if (r == extractor_res_state_xy) {
+              q_push(&gv->commands, (q_command) { .type = q_command_push_point_xy, .push_point_xy = { .x = x, .y = y, .group = group }}); 
+            }
           }
           cur_line.len = 0;
+        } else {
+          br_str_push_char(&cur_line, (char)c);
         }
-      } else {
-        br_str_push_char(&cur_line, (char)c);
       }
-      input_tokens_reduce(gv, true);
-      state = input_lex_state_init;
-    }
     } else read_next = true;
 
     if (c == -1) {
@@ -807,24 +825,9 @@ TEST_CASE(InputTests2) {
   BR_FREE(gvt.commands.commands);
 }
 
-TEST_CASE(ExtractorsIsValid) {
-  fprintf(stderr, "\n");
-  TEST_EQUAL(true, extractor_is_valid((br_strv_from_c_str("abc%x"))));
-  TEST_EQUAL(true, extractor_is_valid((br_strv_from_c_str("a%xbc\\\\"))));
-  TEST_EQUAL(true, extractor_is_valid((br_strv_from_c_str("*%xabc"))));
-  TEST_EQUAL(true, extractor_is_valid((br_strv_from_c_str("*\\%a%xabc"))));
-  TEST_EQUAL(true, extractor_is_valid((br_strv_from_c_str("*\\\\%xabc"))));
-  TEST_EQUAL(true, extractor_is_valid((br_strv_from_c_str("%y*%x"))));
-  TEST_EQUAL(false, extractor_is_valid((br_strv_from_c_str("abc%a%x"))));
-  TEST_EQUAL(false, extractor_is_valid((br_strv_from_c_str("abc%"))));
-  TEST_EQUAL(false, extractor_is_valid((br_strv_from_c_str("abc\\"))));
-  TEST_EQUAL(false, extractor_is_valid((br_strv_from_c_str("a**bc"))));
-  TEST_EQUAL(false, extractor_is_valid((br_strv_from_c_str("a%xbc*"))));
-  TEST_EQUAL(false, extractor_is_valid((br_strv_from_c_str("*\\%xabc"))));
-  TEST_EQUAL(false, extractor_is_valid((br_strv_from_c_str("%y%x"))));
-  TEST_EQUAL(false, extractor_is_valid((br_strv_from_c_str("%y*%y"))));
-  TEST_EQUAL(false, extractor_is_valid((br_strv_from_c_str("%x*%x"))));
-}
+#define VAL(is_valid, ex) do { \
+  TEST_EQUAL(is_valid, extractor_is_valid(br_strv_from_c_str(ex))); \
+} while(0)
 
 #define VALX(ex, v, x) do { \
   float rx; \
@@ -832,7 +835,7 @@ TEST_CASE(ExtractorsIsValid) {
   extractor_res_state_t r = extractor_extract(br_strv_from_c_str(ex), br_strv_from_c_str(v), &rx, NULL); \
   TEST_EQUAL(r, extractor_res_state_x); \
   TEST_EQUAL(rx, x); \
-} while(false) \
+} while(false)
 
 #define VALXY(ex, v, x, y) do { \
   float rx, ry; \
@@ -841,7 +844,27 @@ TEST_CASE(ExtractorsIsValid) {
   TEST_EQUAL(r, extractor_res_state_xy); \
   TEST_EQUAL(rx, x); \
   TEST_EQUAL(ry, y); \
-} while(false) \
+} while(false)
+
+
+TEST_CASE(ExtractorsIsValid) {
+  fprintf(stderr, "\n");
+  VAL(true, ("abc%x"));
+  VAL(true, ("a%xbc\\\\"));
+  VAL(true, ("*%xabc"));
+  VAL(true, ("*\\%a%xabc"));
+  VAL(true, ("*\\\\%xabc"));
+  VAL(true, ("%y*%x"));
+  VAL(false, ("abc%a%x"));  // %a is not a valid capture
+  VAL(false, ("abc%"));     // % is unfinised capture
+  VAL(false, ("abc\\"));    // \ is unfinished escape
+  VAL(false, ("a**bc"));    // wild can't follow wild
+  VAL(false, ("a%xbc*"));   // wild can't be last character
+  VAL(false, ("*\\%xabc")); // Nothing is captured. %x is escaped
+  VAL(false, ("%y%x"));     // Capture can't follow capture Ex. : "1234" can be x=1,y=234, x=12,y=34, ...
+  VAL(false, ("%y*%y"));    // Can't have multiple captures in the expression
+  VAL(false, ("%x*%x"));    // Can't have multiple captures in the expression
+}
 
 TEST_CASE(Extractors) {
   fprintf(stderr, "\n");

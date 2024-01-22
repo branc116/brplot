@@ -332,7 +332,7 @@ static void resampling2_draw(resampling2_nodes_t const* nodes, points_group_t co
       raw_c++;
     } else {
       resampling2_nodes_t const* curn = nodes;
-      uint32_t curj = j;
+      uint32_t curj = (uint32_t)j;
       while (curn->parent != NULL && curj % powers_base == 0 && (ratio_min < something2)) {
         curj /= powers_base;
         curn = curn->parent;
