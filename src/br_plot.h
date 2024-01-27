@@ -54,6 +54,10 @@ extern "C" {
 #else
 #define LOCK(x)
 #endif
+ 
+#define LOG(...)
+#define LOGI(...) printf(__VA_ARGS__)
+
 
 typedef enum {
   q_command_none,

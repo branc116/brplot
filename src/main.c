@@ -9,6 +9,23 @@
 #include <string.h>
 
 #include "raylib.h"
+#ifdef LINUX
+#include "sys/resource.h"
+#include "errno.h"
+#ifndef RELEASE
+const char* __asan_default_options(void) {
+  return "verbosity=1:"
+    "sleep_before_dying=120:"
+    "print_stats=true:"
+    "print_scariness=true:"
+    "atexit=true:"
+    "hard_rss_limit_mb=1:"
+    "allocator_may_return_null=true:"
+    "help=true"
+    ;
+}
+#endif
+#endif
 
 #define WIDTH 1280
 #define HEIGHT 720
@@ -23,6 +40,12 @@ int main_gui(br_plot_t* gv) {
 
 int main(void) {
 #ifdef RELEASE
+#ifdef LINUX
+  const unsigned long mem_size = 1L << 31L;
+  struct rlimit rl = {mem_size, mem_size};
+  int r = setrlimit(RLIMIT_AS, &rl);
+  if (r != 0) fprintf(stderr, "setrlimit failed: %d:%s", errno, strerror(errno));
+#endif
   SetTraceLogLevel(LOG_ERROR);
 #endif
   br_plot_t* gv = graph_malloc();
@@ -40,5 +63,5 @@ int main(void) {
   BR_FREE(gv);
   CloseWindow();
   return 0;
-} 
+}
 #endif
