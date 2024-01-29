@@ -1,23 +1,18 @@
 #include "src/br_plot.h"
 #include "pthread.h"
-#include <bits/types/siginfo_t.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include "signal.h"
+#include <unistd.h>
+#include "sys/poll.h"
+#include "assert.h"
 
-void *read_input_main_worker(void* gv);
-
+static int br_pipes[2];
 static pthread_t thread;
-static void* indirection_function(void* gv);
-#ifndef RELEASE
-static void regirter_interupt2(void);
-#endif
 
-void read_input_main(br_plot_t* gv) {
-#ifndef RELEASE
-  regirter_interupt2();
-#endif
+static void* indirection_function(void* gv);
+
+void read_input_start(br_plot_t* gv) {
   pthread_attr_t attrs1;
   pthread_attr_init(&attrs1);
   if (pthread_create(&thread, &attrs1, indirection_function, gv)) {
@@ -26,37 +21,47 @@ void read_input_main(br_plot_t* gv) {
 }
 
 void read_input_stop(void) {
-  pthread_kill(thread, SIGALRM);
+  write(br_pipes[1], "", 0);
+  close(br_pipes[1]);
+  close(STDIN_FILENO);
+  /* Wait for thread to exit, or timeout after 64ms */
+  struct pollfd fds[] = { { .fd = br_pipes[0], .events = POLLHUP | 32 } };
+  fprintf(stderr, "Exit pool returned %d\n", poll(fds, 1,  64));
+  pthread_join(thread, NULL);
 }
 
-static void int_handle(int sig, siginfo_t* si, void* p) {
-  (void)(sig); (void)si; (void)p;
-  pthread_exit(NULL);
-}
+int read_input_read_next(void) {
+  struct pollfd fds[] = { { .fd = STDIN_FILENO, .events = POLLIN | POLLHUP | 32 }, { .fd = br_pipes[0], .events = POLLIN | POLLHUP | 32} };
+  do {
+    unsigned char c;
+    if (poll(fds, 2, -1) <= 0) fprintf(stderr, "Failed to pool %d:%s\n", errno, strerror(errno));
 
-#ifndef RELEASE
-static void int_handle2(int sig, siginfo_t* si, void* p) {
-  (void)(sig); (void)si; (void)p;
-}
+    if (POLLIN & fds[0].revents) {
+      read(STDIN_FILENO, &c, 1);
+      return (int)c;
+    } else if (POLLHUP & fds[0].revents) {
+      fprintf(stderr, "God POOLHUP(%d) on stdin, Stopping read_input\n", fds[0].revents);
+      close(br_pipes[0]);
+      return -1;
+    }
 
-static void regirter_interupt2(void) {
-  struct sigaction act = { 0 };
-  act.sa_sigaction = int_handle2;
-  act.sa_flags = SA_SIGINFO;
-  sigaction(SIGSEGV, &act, NULL);
-}
-#endif
-
-static void regirter_interupt(void) {
-  struct sigaction act = { 0 };
-  act.sa_sigaction = int_handle;
-  act.sa_flags = SA_SIGINFO;
-  sigaction(SIGALRM, &act, NULL);
+    if (POLLIN & fds[1].revents) {
+      if (read(br_pipes[0], &c, 1) == 0) {
+        fprintf(stderr, "Rcvd 0 on br_pipe, Stoping read_input\n");
+        close(br_pipes[0]);
+        return -1;
+      }
+    } else if ((32 | POLLHUP) & fds[1].revents) {
+      fprintf(stderr, "God POOLHUP(%d) on br_pipe, Stopping read_input\n", fds[1].revents);
+      close(br_pipes[0]);
+      return -1;
+    }
+    else if (fds[1].revents != 0) assert((0 && "Unknown event mask"));
+  } while(true);
 }
 
 static void* indirection_function(void* gv) {
-  regirter_interupt();
+  pipe(br_pipes);
   read_input_main_worker(gv);
   return NULL;
 }
-

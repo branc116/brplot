@@ -13,7 +13,7 @@ RLAPI void rlUnloadVertexBuffer(unsigned int vboId) {
 }
 
 RLAPI void rlUpdateVertexBuffer(unsigned int bufferId, const void *data, int dataSize, int offset) {
-  LOGI("rlUpdateVertexBuffer: bufferId=%u, data=%p, dataSize=%d, offset=%d\n", bufferId, data, dataSize, offset);
+  LOG("rlUpdateVertexBuffer: bufferId=%u, data=%p, dataSize=%d, offset=%d\n", bufferId, data, dataSize, offset);
 }
 
 RLAPI bool rlEnableVertexArray(unsigned int vaoId) {

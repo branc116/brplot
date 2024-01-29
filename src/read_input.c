@@ -149,7 +149,7 @@ static bool extractor_is_valid(br_strv_t ex) {
     }
     else if (is_wild) {
       if (e == '*') {
-        ERRORF("[%lu] Capture is invalid, can't have wild char next to a wild char", i);
+        ERRORF("[%zu] Capture is invalid, can't have wild char next to a wild char", i);
         return false;
       }
       is_wild = false;
@@ -158,25 +158,25 @@ static bool extractor_is_valid(br_strv_t ex) {
     else if (is_cap) {
       if (e == 'x') {
         if (x_cap == true) {
-          ERRORF("[%lu] Can't have multiple captures for X!", i);
+          ERRORF("[%zu] Can't have multiple captures for X!", i);
           return false;
         }
         x_cap = true;
       } else if (e == 'y') {
         if (y_cap == true) {
-          ERRORF("[%lu] Can't have multiple captures for Y!", i);
+          ERRORF("[%zu] Can't have multiple captures for Y!", i);
           return false;
         }
         y_cap = true;
       } else {
-        ERRORF("[%lu] You can only capture x or y! You tryed to capture `%c`", i, e);
+        ERRORF("[%zu] You can only capture x or y! You tryed to capture `%c`", i, e);
         return false;
       }
       was_last_extract = true;
       is_cap = false;
     } else if (was_last_extract) {
       if (e == '%') {
-        ERRORF("[%lu] Can't have captures one next to the other. You must have delimiter between them!", i);
+        ERRORF("[%zu] Can't have captures one next to the other. You must have delimiter between them!", i);
         return false;
       }
       was_last_extract = false;
@@ -547,11 +547,12 @@ static void lex(br_plot_t* gv) {
   int c = -1;
   while (true) {
     if (read_next) {
-#ifdef RELEASE
-      c = getchar();
-#else
-      c = gv->getchar();
-#endif
+      c = read_input_read_next();
+      if (c == -1) {
+        input_tokens_reduce(gv, true);
+        ERROR("Exiting read_input thread");
+        return;
+      }
       if (extractors.len > 0) {
         if (c == '\n') {
           float x, y;
@@ -573,10 +574,6 @@ static void lex(br_plot_t* gv) {
       }
     } else read_next = true;
 
-    if (c == -1) {
-      input_tokens_reduce(gv, true);
-      return;
-    }
     switch (state) {
       case input_lex_state_init:
         input_tokens_reduce(gv, false);
@@ -718,10 +715,8 @@ static void lex(br_plot_t* gv) {
   }
 }
 
-void *read_input_main_worker(void* gv) {
-  br_plot_t* gvt = gv;
-  lex(gvt);
-  return NULL;
+void read_input_main_worker(br_plot_t* gv) {
+  lex(gv);
 }
 
 #ifndef RELEASE

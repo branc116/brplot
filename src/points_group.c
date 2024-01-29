@@ -17,18 +17,21 @@ static Color color_get(int id);
 
 BR_API void points_group_push_y(points_groups_t* pg_array, float y, int group) {
   points_group_t* pg = points_group_get(pg_array, group);
+  if (pg == NULL) return;
   float x = pg->len == 0 ? 0.f : (pg->points[pg->len - 1].x + 1.f);
   points_group_push_point(pg, (Vector2){ .x = x, .y = y });
 }
 
 BR_API void points_group_push_x(points_groups_t* pg_array, float x, int group) {
   points_group_t* pg = points_group_get(pg_array, group);
+  if (pg == NULL) return;
   float y = pg->len == 0 ? 0.f : (pg->points[pg->len - 1].y + 1.f);
   points_group_push_point(pg, (Vector2){ .x = x, .y = y });
 }
 
 BR_API void points_group_push_xy(points_groups_t* pg_array, float x, float y, int group) {
   points_group_t* pg = points_group_get(pg_array, group);
+  if (pg == NULL) return;
   points_group_push_point(pg, (Vector2){ .x = x, .y = y });
 }
 
@@ -107,18 +110,21 @@ void points_groups_add_test_points(points_groups_t* pg) {
   {
     int group = 0;
     points_group_t* g = points_group_get(pg, group);
+    if (NULL == g) return;
     for (int i = 0; i < 10*1024; ++i)
       points_group_push_point(g, (Vector2){(float)g->len/128.f, sinf((float)g->len/128.f)});
   }
   {
     int group = 1;
     points_group_t* g = points_group_get(pg, group);
+    if (NULL == g) return;
     for (int i = 0; i < 10*1024; ++i)
       points_group_push_point(g, (Vector2){-(float)g->len/128.f, sinf((float)g->len/128.f)});
   }
   {
     int group = 5;
     points_group_t* g = points_group_get(pg, group);
+    if (NULL == g) return;
     for(int i = 0; i < 1024*1024; ++i) {
       float t = (float)(1 + g->len)*.1f;
       float x = sqrtf(t)*cosf(log2f(t));
@@ -129,6 +135,7 @@ void points_groups_add_test_points(points_groups_t* pg) {
   }
   {
     points_group_t* g = points_group_get(pg, 6);
+    if (NULL == g) return;
     int l = (int)g->len;
     for(int i = 0; i < 0; ++i) {
       for(int j = 0; j < 0; ++j) {
@@ -186,8 +193,10 @@ static points_group_t* points_group_init(points_group_t* g, int group_id) {
     .color = color_get(group_id),
     .name = br_str_malloc(32)
   };
-  sprintf(g->name.str, "Plot #%d", group_id);
-  g->name.len = (unsigned int)strlen(g->name.str);
+  if (NULL != g->name.str) {
+    sprintf(g->name.str, "Plot #%d", group_id);
+    g->name.len = (unsigned int)strlen(g->name.str);
+  }
   return g;
 }
 
@@ -217,8 +226,14 @@ BR_API points_group_t* points_group_get(points_groups_t* pg, int group) {
 
   if (pg->len == 0) {
     pg->arr = BR_MALLOC(sizeof(points_group_t));
+    if (NULL == pg->arr) return NULL;
     pg->cap = 1;
-    return points_group_init(&pg->arr[pg->len++], group);
+    points_group_t* ret = points_group_init(&pg->arr[pg->len++], group);
+    if (ret->points == NULL) {
+      --pg->len;
+      return NULL;
+    }
+    return ret;
   }
 
   for (size_t i = 0; i < pg->len; ++i) {
@@ -229,21 +244,29 @@ BR_API points_group_t* points_group_get(points_groups_t* pg, int group) {
 
   if (pg->len >= pg->cap) {
     pg->cap *= 2;
-    pg->arr = BR_REALLOC(pg->arr, sizeof(points_group_t)*pg->cap);
+    points_group_t* new_arr = BR_REALLOC(pg->arr, sizeof(points_group_t)*pg->cap);
+    if (NULL == new_arr) return NULL;
+    pg->arr = new_arr;
     assert(pg->arr);
   }
-  return points_group_init(&pg->arr[pg->len++], group);
+  points_group_t* ret = points_group_init(&pg->arr[pg->len++], group);
+  if (ret->points == NULL) {
+    --pg->len;
+    return NULL;
+  }
+  return ret;
 }
 
 void points_group_set_name(points_groups_t* pg, int group, br_str_t name) {
   points_group_t* g = points_group_get(pg, group);
+  if (pg == NULL) return;
   br_str_free(g->name);
   g->name = name;
 }
 
 static void points_group_push_point(points_group_t* g, Vector2 v) {
   if (g->len >= g->cap) {
-    assert(points_group_realloc(g, g->cap * 2));
+    if (false == points_group_realloc(g, g->cap * 2)) return;
   }
   g->points[g->len] = v;
   resampling2_add_point(g->resampling, g, (uint32_t)g->len);
@@ -262,7 +285,7 @@ static void points_group_deinit(points_group_t* g) {
 static bool points_group_realloc(points_group_t* pg, size_t new_cap) {
   Vector2* new_arr = BR_REALLOC(pg->points, new_cap * sizeof(Vector2));
   if (new_arr == NULL) {
-    fprintf(stderr, "Out of memory. Can't add any more lines. Buy more RAM, or close Chrome");
+    LOG("Out of memory. Can't add any more lines. Buy more RAM, or close Chrome\n");
     return false;
   }
   pg->points = new_arr;

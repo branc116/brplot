@@ -5,3 +5,7 @@ end)
 vim.keymap.set("n", "<F6>", function()
   vim.cmd(":GdbStart gdb -q ./bin/brplot_imgui_linux_debug");
 end)
+
+vim.keymap.set("n", "<F7>", function()
+  vim.cmd(":term sudo ./gdb_attach.sh");
+end)

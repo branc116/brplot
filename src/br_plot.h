@@ -56,7 +56,7 @@ extern "C" {
 #endif
  
 #define LOG(...)
-#define LOGI(...) printf(__VA_ARGS__)
+#define LOGI(...) fprintf(stderr, __VA_ARGS__)
 
 
 typedef enum {
@@ -296,7 +296,7 @@ void* br_imgui_malloc(size_t size, void* user_data);
 void  br_imgui_free(void* p, void* user_data);
 
 #if !defined(RELEASE) && defined(LINUX)
-#define BR_MALLOC br_malloc
+#define BR_MALLOC(size) br_malloc(size)
 #define BR_CALLOC br_calloc
 #define BR_REALLOC br_realloc
 #define BR_FREE br_free
@@ -385,7 +385,9 @@ void br_keybinding_handle_keys(br_plot_t* br);
 void start_refreshing_shaders(br_plot_t* br);
 #endif
 
-void read_input_main(br_plot_t* ptr);
+void read_input_start(br_plot_t* br);
+void read_input_main_worker(br_plot_t* br);
+int  read_input_read_next(void);
 void read_input_stop(void);
 
 void q_init(q_commands* q);
@@ -416,12 +418,12 @@ void min_distances_get1(min_distances_t* m, Vector2 const* points, size_t points
 
 br_str_t   br_str_malloc(size_t size);
 void       br_str_free(br_str_t str);
-void       br_str_realloc(br_str_t* s, size_t new_cap);
-void       br_str_push_char(br_str_t* s, char c);
-void       br_str_push_int(br_str_t* s, int c);
-void       br_str_push_float1(br_str_t* s, float c, int decimals);
-void       br_str_push_float(br_str_t* s, float c);
-void       br_str_push_c_str(br_str_t* s, char const* c);
+bool       br_str_realloc(br_str_t* s, size_t new_cap);
+bool       br_str_push_char(br_str_t* s, char c);
+bool       br_str_push_int(br_str_t* s, int c);
+bool       br_str_push_float1(br_str_t* s, float c, int decimals);
+bool       br_str_push_float(br_str_t* s, float c);
+bool       br_str_push_c_str(br_str_t* s, char const* c);
 char*      br_str_to_c_str(br_str_t s);
 br_str_t   br_str_copy(br_str_t s);
 void       br_str_to_c_str1(br_str_t s, char* out_s);

@@ -14,14 +14,11 @@
 #include "errno.h"
 #ifndef RELEASE
 const char* __asan_default_options(void) {
-  return "verbosity=1:"
+  return "verbosity=0:"
     "sleep_before_dying=120:"
-    "print_stats=true:"
     "print_scariness=true:"
-    "atexit=true:"
-    "hard_rss_limit_mb=1:"
-    "allocator_may_return_null=true:"
-    "help=true"
+    "allocator_may_return_null=1:"
+    "soft_rss_limit_mb=64"
     ;
 }
 #endif
@@ -53,12 +50,13 @@ int main(void) {
 #ifndef RELEASE
   start_refreshing_shaders(gv);
 #endif
-  read_input_main(gv);
+  read_input_start(gv);
   SetExitKey(KEY_NULL);
   main_gui(gv);
 
   // Clean up
   read_input_stop();
+  fprintf(stdin, "\1\n");
   graph_free(gv);
   BR_FREE(gv);
   CloseWindow();

@@ -103,10 +103,10 @@ static void __attribute__((constructor(101))) construct_powers(void) {
 
 static void resampling2_nodes_deinit(resampling2_nodes_t* nodes);
 static void resampling2_nodes_empty(resampling2_nodes_t* nodes);
-static void resampling2_push_root(resampling2_t* r, resampling2_all_roots root);
+static bool resampling2_push_root(resampling2_t* r, resampling2_all_roots root);
 static resampling2_node_t* resampling2_get_last_node(resampling2_nodes_t* nodes);
 template<resampling2_node_kind_t kind>
-static void resampling2_nodes_push_point(resampling2_nodes_t* nodes, uint32_t index, Vector2 const* points, uint8_t depth);
+static bool resampling2_nodes_push_point(resampling2_nodes_t* nodes, uint32_t index, Vector2 const* points, uint8_t depth);
 template<resampling2_node_kind_t kind>
 static bool resampling2_add_point(resampling2_nodes_t* nodes, points_group_t const* pg, uint32_t index);
 template<resampling2_node_kind_t kind>
@@ -119,11 +119,13 @@ static void resampling2_draw(resampling2_all_roots r, points_group_t const* pg, 
 
 resampling2_t* resampling2_malloc(void) {
    resampling2_t* r = (resampling2_t*)BR_CALLOC(1, sizeof(resampling2_t));
+   if (r == NULL) return NULL;
    r->temp_x_valid = r->temp_y_valid = r->temp_raw_valid = true;
    return r;
 }
 
 void resampling2_empty(resampling2_t* res) {
+  if (nullptr == res) return;
   for (uint32_t i = 0; i < res->roots_len; ++i) {
     if (res->roots[i].kind != resampling2_kind_raw) {
       resampling2_nodes_empty(&res->roots[i].x);
@@ -138,6 +140,7 @@ void resampling2_empty(resampling2_t* res) {
 }
 
 void resampling2_free(resampling2_t* r) {
+  if (nullptr == r) return;
   for (uint32_t i = 0; i < r->roots_len; ++i) {
     if (r->roots[i].kind != resampling2_kind_raw)
     resampling2_nodes_deinit(&r->roots[i].x);
@@ -155,10 +158,14 @@ extern "C" void resampling2_add_point(resampling2_t* r, const points_group_t *pg
   if (was_valid_raw) r->temp_raw_valid = resampling2_add_point_raw(&r->temp_root_raw, pg->points, index);
   if (r->temp_x_valid || r->temp_y_valid || r->temp_raw_valid) return;
   if (was_valid_x) {
-    resampling2_push_root(r, resampling2_all_roots(r->temp_root_x, resampling2_kind_x));
+    if (false == resampling2_push_root(r, resampling2_all_roots(r->temp_root_x, resampling2_kind_x))) {
+      resampling2_nodes_deinit(&r->temp_root_x);
+    }
     resampling2_nodes_deinit(&r->temp_root_y);
   } else if (was_valid_y) {
-    resampling2_push_root(r, resampling2_all_roots(r->temp_root_y, resampling2_kind_y));
+    if (false == resampling2_push_root(r, resampling2_all_roots(r->temp_root_y, resampling2_kind_y))) {
+      resampling2_nodes_deinit(&r->temp_root_y);
+    }
     resampling2_nodes_deinit(&r->temp_root_x);
   } else if (was_valid_raw) {
     resampling2_push_root(r, resampling2_all_roots(r->temp_root_raw) );
@@ -185,22 +192,28 @@ static void resampling2_nodes_empty(resampling2_nodes_t* nodes) {
   nodes->len = 0;
 }
 
-static void resampling2_push_root(resampling2_t* r, resampling2_all_roots root) {
+static bool resampling2_push_root(resampling2_t* r, resampling2_all_roots root) {
   if (r->roots_len == 0) {
-    r->roots = (resampling2_all_roots*)BR_MALLOC(sizeof(resampling2_all_roots));
+    resampling2_all_roots* new_roots = (resampling2_all_roots*)BR_MALLOC(sizeof(resampling2_all_roots));
+    if (new_roots == nullptr) return false;
+    r->roots = new_roots;
     r->roots_cap = 1;
   }
   if (r->roots_len == r->roots_cap) {
     uint32_t new_cap = r->roots_cap * 2;
-    r->roots = (resampling2_all_roots*)BR_REALLOC(r->roots, new_cap * sizeof(resampling2_all_roots));
+    resampling2_all_roots* new_root =  (resampling2_all_roots*)BR_REALLOC(r->roots, new_cap * sizeof(resampling2_all_roots));
+    if (new_root == nullptr) return false;
+    r->roots = new_root;
     r->roots_cap = new_cap;
   }
   r->roots[r->roots_len++] = root;
+  return true;
 }
 
 static resampling2_node_t* resampling2_get_last_node(resampling2_nodes_t* nodes) {
   if (nodes->len == 0) {
     nodes->arr = (resampling2_node_t*)BR_CALLOC(1, sizeof(resampling2_node_t));
+    if (nullptr == nodes->arr) return nullptr;
     nodes->len = 1;
     nodes->cap = 1;
   }
@@ -208,8 +221,10 @@ static resampling2_node_t* resampling2_get_last_node(resampling2_nodes_t* nodes)
 }
 
 template<resampling2_node_kind_t kind>
-static void resampling2_nodes_push_point(resampling2_nodes_t* nodes, uint32_t index, Vector2 const* points, uint8_t depth) {
+static bool resampling2_nodes_push_point(resampling2_nodes_t* nodes, uint32_t index, Vector2 const* points, uint8_t depth) {
   resampling2_node_t* node = resampling2_get_last_node(nodes);
+  if (node == nullptr) return false;
+  bool isOk = true;
   unsigned int node_i = nodes->len - 1;
   if (node->len == 0) {
     node->min_index = index;
@@ -228,7 +243,9 @@ static void resampling2_nodes_push_point(resampling2_nodes_t* nodes, uint32_t in
   } else if (node->len == (RESAMPLING_NODE_MAX_LEN * powers[depth])) {
     unsigned int new_cap = nodes->cap * 2;
     if (nodes->len == nodes->cap) {
-      nodes->arr = (resampling2_node_t*)BR_REALLOC(nodes->arr, sizeof(resampling2_node_t) * (new_cap));
+      resampling2_node_t* newArr = (resampling2_node_t*)BR_REALLOC(nodes->arr, sizeof(resampling2_node_t) * (new_cap));
+      if (newArr == nullptr) return false;
+      nodes->arr = newArr;
       for (unsigned int i = nodes->cap; i < new_cap; ++i) {
         nodes->arr[i] = {};
       }
@@ -238,17 +255,18 @@ static void resampling2_nodes_push_point(resampling2_nodes_t* nodes, uint32_t in
     node = &nodes->arr[node_i];
     if (nodes->parent == NULL) {
       nodes->parent = (resampling2_nodes_t*)BR_CALLOC(1, sizeof(resampling2_nodes_t));
+      if (nullptr == nodes->parent) return false;
       nodes->parent->arr = (resampling2_node_t*)BR_CALLOC(1, sizeof(resampling2_node_t));
+      if (nullptr == nodes->parent->arr) return false;
       nodes->parent->len = 1;
       nodes->parent->cap = 1;
       memcpy(nodes->parent->arr, node, sizeof(resampling2_node_t));
-      resampling2_nodes_push_point<kind>(nodes, index, points, depth);
-    } else {
-      resampling2_nodes_push_point<kind>(nodes, index, points, depth);
     }
-    return;
+    isOk &= resampling2_nodes_push_point<kind>(nodes, index, points, depth);
+    return isOk;
   } else assert(false);
-  if (nodes->parent != NULL) resampling2_nodes_push_point<kind>(nodes->parent, index, points, depth + 1);
+  if (nodes->parent != NULL) isOk &= resampling2_nodes_push_point<kind>(nodes->parent, index, points, depth + 1);
+  return isOk;
 }
 
 template<resampling2_node_kind_t kind>
@@ -453,7 +471,7 @@ static void resampling2_debug_print(FILE* file, resampling2_t* r) {
 }
 
 #define PRINT_ALLOCS(prefix) \
-  printf("\n%s ALLOCATIONS: %lu ( %luKB ) | %lu (%luKB)\n", prefix, \
+  printf("\n%s ALLOCATIONS: %zu ( %zuKB ) | %lu (%zuKB)\n", prefix, \
       context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
 
 extern "C" {
@@ -471,11 +489,11 @@ TEST_CASE(resampling) {
   resampling2_t* r = resampling2_malloc();
   for (int i = 0; i < 2*1024; ++i) resampling2_add_point(r, &pg, 3);
   resampling2_debug_print(stdout, r);
-  printf("\nALLOCATIONS: %lu ( %luKB ) | %lu (%luKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
+  printf("\nALLOCATIONS: %zu ( %zuKB ) | %zu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   resampling2_add_point(r, &pg, 3);
-  printf("\nALLOCATIONS: %lu ( %luKB ) | %lu (%luKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
+  printf("\nALLOCATIONS: %zu ( %zuKB ) | %zu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   for (int i = 0; i < 64*1024; ++i) resampling2_add_point(r, &pg, 3);
-  printf("\nALLOCATIONS: %lu ( %luKB ) | %lu (%luKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
+  printf("\nALLOCATIONS: %zu ( %zuKB ) | %lu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   resampling2_free(r);
 }
 
@@ -495,9 +513,9 @@ TEST_CASE(resampling2) {
   resampling2_t* r = resampling2_malloc();
   for (int i = 0; i < N; ++i) resampling2_add_point(r, &pg, (uint32_t)i);
   resampling2_debug_print(stdout, r);
-  printf("\nALLOCATIONS: %lu ( %luKB ) | %lu (%luKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
+  printf("\nALLOCATIONS: %lu ( %zuKB ) | %zu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   resampling2_add_point(r, &pg, 3);
-  printf("\nALLOCATIONS: %lu ( %luKB ) | %lu (%luKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
+  printf("\nALLOCATIONS: %zu ( %zuKB ) | %lu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   resampling2_free(r);
 }
 #pragma GCC diagnostic pop

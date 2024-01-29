@@ -172,13 +172,13 @@ clean:
 
 .PHONY: fuzz
 fuzz:
-	make GUI=HEADLESS -B && \
-	time cat /dev/random | ./bin/brplot_headless_linux_debug_gcc > /dev/null && echo "Fuzz test OK"
+	make GUI=HEADLESS && \
+	cat /dev/random | ./bin/brplot_headless_linux_debug_gcc > /dev/null && echo "Fuzz test OK"
 
 .PHONY: test
 test:
 	make GUI=HEADLESS CONFIG=DEBUG && \
-	./bin/brplot_headless_linux_debug_gcc --unittest
+	gdb -ex "r --unittest" ./bin/brplot_headless_linux_debug_gcc --tui
 
 .PHONY: npm-imgui
 npm-imgui:
