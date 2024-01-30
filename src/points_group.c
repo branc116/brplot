@@ -243,11 +243,11 @@ BR_API points_group_t* points_group_get(points_groups_t* pg, int group) {
   }
 
   if (pg->len >= pg->cap) {
-    pg->cap *= 2;
+    size_t new_cap = pg->cap * 2;
     points_group_t* new_arr = BR_REALLOC(pg->arr, sizeof(points_group_t)*pg->cap);
     if (NULL == new_arr) return NULL;
     pg->arr = new_arr;
-    assert(pg->arr);
+    pg->cap = new_cap;
   }
   points_group_t* ret = points_group_init(&pg->arr[pg->len++], group);
   if (ret->points == NULL) {
