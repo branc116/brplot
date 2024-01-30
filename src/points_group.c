@@ -227,12 +227,11 @@ BR_API points_group_t* points_group_get(points_groups_t* pg, int group) {
   if (pg->len == 0) {
     pg->arr = BR_MALLOC(sizeof(points_group_t));
     if (NULL == pg->arr) return NULL;
-    pg->cap = 1;
-    points_group_t* ret = points_group_init(&pg->arr[pg->len++], group);
+    points_group_t* ret = points_group_init(&pg->arr[0], group);
     if (ret->points == NULL) {
-      --pg->len;
       return NULL;
     }
+    pg->cap = pg->len = 1;
     return ret;
   }
 
@@ -244,7 +243,7 @@ BR_API points_group_t* points_group_get(points_groups_t* pg, int group) {
 
   if (pg->len >= pg->cap) {
     size_t new_cap = pg->cap * 2;
-    points_group_t* new_arr = BR_REALLOC(pg->arr, sizeof(points_group_t)*pg->cap);
+    points_group_t* new_arr = BR_REALLOC(pg->arr, sizeof(points_group_t)*new_cap);
     if (NULL == new_arr) return NULL;
     pg->arr = new_arr;
     pg->cap = new_cap;
