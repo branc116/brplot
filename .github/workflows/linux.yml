@@ -150,5 +150,7 @@ jobs:
         file bin/*
     - name: Local CI
       run: |
+        ln -s /home/runner/work/brplot/brplot/emsdk/upstream/emscripten/emcc /usr/bin/emcc
+        ln -s /home/runner/work/brplot/brplot/emsdk/upstream/emscripten/em++ /usr/bin/em++
         ./local_ci.sh
 
