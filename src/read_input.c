@@ -532,7 +532,7 @@ static void input_tokens_reduce(br_plot_t* gv, bool force_reduce) {
   }
 }
 
-static void lex(br_plot_t* gv) {
+static void lex(br_plot_t* br) {
   float value_f = 0;
   int decimal = 0;
   long value_i = 0;
@@ -547,9 +547,13 @@ static void lex(br_plot_t* gv) {
   int c = -1;
   while (true) {
     if (read_next) {
+#ifdef RELEASE
       c = read_input_read_next();
+#else
+      c = br->getchar();
+#endif
       if (c == -1) {
-        input_tokens_reduce(gv, true);
+        input_tokens_reduce(br, true);
         ERROR("Exiting read_input thread");
         return;
       }
@@ -560,11 +564,11 @@ static void lex(br_plot_t* gv) {
             int group = extractors.arr[i].group;
             extractor_res_state_t r = extractor_extract(br_str_as_view(extractors.arr[i].ex), br_str_as_view(cur_line), &x, &y);
             if (r == extractor_res_state_x) {
-              q_push(&gv->commands, (q_command) { .type = q_command_push_point_x, .push_point_x = { .x = x, .group = group }}); 
+              q_push(&br->commands, (q_command) { .type = q_command_push_point_x, .push_point_x = { .x = x, .group = group }});
             } else if (r == extractor_res_state_y) {
-              q_push(&gv->commands, (q_command) { .type = q_command_push_point_y, .push_point_y = { .y = y, .group = group }}); 
+              q_push(&br->commands, (q_command) { .type = q_command_push_point_y, .push_point_y = { .y = y, .group = group }});
             } else if (r == extractor_res_state_xy) {
-              q_push(&gv->commands, (q_command) { .type = q_command_push_point_xy, .push_point_xy = { .x = x, .y = y, .group = group }}); 
+              q_push(&br->commands, (q_command) { .type = q_command_push_point_xy, .push_point_xy = { .x = x, .y = y, .group = group }});
             }
           }
           cur_line.len = 0;
@@ -576,7 +580,7 @@ static void lex(br_plot_t* gv) {
 
     switch (state) {
       case input_lex_state_init:
-        input_tokens_reduce(gv, false);
+        input_tokens_reduce(br, false);
         if (c == '-') {
           state = input_lex_state_dash;
         } else if (c >= '0' && c <= '9') {
