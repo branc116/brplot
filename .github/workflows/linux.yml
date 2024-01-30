@@ -148,11 +148,7 @@ jobs:
         test -f www/index.wasm && ls -alFh www
         ls -alFh bin && strip bin/* && ls -alFh bin
         file bin/*
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Test
-        run: |
-          ls -alFh
-          tree
+    - name: Local CI
+      run: |
+        ./local_ci.sh
 
