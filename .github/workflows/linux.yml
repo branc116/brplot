@@ -151,7 +151,7 @@ jobs:
     - name: Local CI
       run: |
         echo "$PATH"
-        ln -s /home/runner/work/brplot/brplot/emsdk/upstream/emscripten/emcc /home/runner/.local/bin
-        ln -s /home/runner/work/brplot/brplot/emsdk/upstream/emscripten/em++ /home/runner/.local/bin
+        ln -s /home/runner/work/brplot/brplot/emsdk/upstream/emscripten/emcc /home/runner/.local/bin/emcc
+        ln -s /home/runner/work/brplot/brplot/emsdk/upstream/emscripten/em++ /home/runner/.local/bin/em++
         ./local_ci.sh
 
