@@ -16,7 +16,7 @@ EXTERNAL_HEADERS   =
 ADDITIONAL_HEADERS = src/misc/default_font.h
 RAYLIB_HEADERS     =  raylib/src/rcamera.h raylib/src/raymath.h raylib/src/raylib.h raylib/src/utils.h raylib/src/rlgl.h src/raylib/config.h
 BR_HEADERS         = src/br_plot.h src/br_gui_internal.h src/br_help.h
-COMMONFLAGS        = -I./imgui -I./imgui/backends -I. -Isrc/raylib -Iraylib/src
+COMMONFLAGS        = -I./imgui -I./imgui/backends -I. -Isrc/raylib -Iraylib/src -I.
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra
 LD_FLAGS           =
 
@@ -208,3 +208,43 @@ $(SHADERS_HEADER): $(SHADERS_LIST) bin/upper bin/lower
 																echo 'SHADER_$(word 4, $(subst /, , $(s))) \' | sed 's/\./_/' | bin/upper >> $(SHADERS_HEADER) && \
 																cat $(s) | sed 's/\(.*\)/"\1\\n" \\/' >> $(SHADERS_HEADER) && \
 																echo "" >> $(SHADERS_HEADER) && ) echo "OKi"
+
+HEADERS= src/br_plot.h
+COMPILE_FLAGS_JSONA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.json, $(SOURCE))
+COMPILE_FLAGS_JSON= $(patsubst %.c, $(PREFIX_BUILD)/%.json, $(COMPILE_FLAGS_JSONA))
+
+PWD= $(shell pwd)
+
+compile_commands.json: $(COMPILE_FLAGS_JSON)
+	echo "[" > compile_commands.json
+	cat $(COMPILE_FLAGS_JSON) >> compile_commands.json
+	echo "]" >> compile_commands.json
+
+$(PREFIX_BUILD)/src/%.json:src/%.c
+	echo '{' > $@ && \
+  echo '"directory": "$(PWD)",' >> $@ && \
+  echo '"command": "$(CC) $(CCFLAGS) $(WARNING_FLAGS) -c $<",' >> $@ && \
+  echo '"file": "$<"' >> $@ && \
+	echo '},' >> $@
+
+$(PREFIX_BUILD)/src/%.json:src/%.cpp
+	echo '{' > $@ && \
+  echo '"directory": "$(PWD)",' >> $@ && \
+  echo '"command": "$(CXX) $(CCFLAGS) $(WARNING_FLAGS) -c $<",' >> $@ && \
+  echo '"file": "$<"' >> $@ && \
+	echo '},' >> $@
+
+$(PREFIX_BUILD)/%.json:%.c
+	echo '{' > $@ && \
+  echo '"directory": "$(PWD)",' >> $@ && \
+  echo '"command": "$(CC) $(CCFLAGS) -c $<",' >> $@ && \
+  echo '"file": "$<"' >> $@ && \
+	echo '},' >> $@
+
+$(PREFIX_BUILD)/%.json:%.cpp
+	echo '{' > $@ && \
+  echo '"directory": "$(PWD)",' >> $@ && \
+  echo '"command": "$(CXX) $(CXXFLAGS) -c $<",' >> $@ && \
+  echo '"file": "$<"' >> $@ && \
+	echo '},' >> $@
+

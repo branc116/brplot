@@ -18,7 +18,7 @@ const char* __asan_default_options(void) {
     "sleep_before_dying=120:"
     "print_scariness=true:"
     "allocator_may_return_null=1:"
-    "soft_rss_limit_mb=64"
+    "soft_rss_limit_mb=512"
     ;
 }
 #endif

@@ -7,3 +7,5 @@ zig-out
 zig-cache
 bench
 default_font.h
+.cache
+compile_commands.json
