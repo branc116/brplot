@@ -53,9 +53,11 @@ typedef struct {
   input_token_kind_t kind;
 } input_token_t;
 
+struct lex_state_s;
+
 typedef struct {
   input_token_kind_t kinds[MAX_REDUCE];
-  void (*reduce_func)(br_plot_t* commands);
+  void (*reduce_func)(br_plot_t* commands, struct lex_state_s* s);
 } input_reduce_t;
 
 typedef struct {
@@ -69,26 +71,40 @@ typedef struct {
   size_t cap;
 } extractors_t;
 
-input_token_t tokens[INPUT_TOKENS_COUNT];
-size_t tokens_len = 0;
+typedef struct lex_state_s {
+  float value_f;
+  int decimal;
+  long value_i;
+  char name[MAX_NAME];
+  size_t name_len;
+  bool is_neg_whole;
+  bool is_neg;
+  bool read_next;
+  br_str_t cur_line;
+  input_lex_state_t state;
+  int c;
 
-static extractors_t extractors = {0};
-static bool should_push_eagre = true;
+  input_token_t tokens[INPUT_TOKENS_COUNT];
+  size_t tokens_len;
+  extractors_t extractors;
+  bool should_push_eagre;
+  input_reduce_t reductors[REDUCTORS];
+} lex_state_t;
 
-static void input_reduce_y(br_plot_t* gv) {
-  if (should_push_eagre) q_push(&gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = 0, .y = tokens[0].value_f} });
+static void input_reduce_y(br_plot_t* gv, lex_state_t* s) {
+  if (s->should_push_eagre) q_push(&gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = 0, .y = s->tokens[0].value_f} });
 }
 
-static void input_reduce_xy(br_plot_t* gv) {
-  if (should_push_eagre) q_push(&gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = 0, .x = tokens[0].value_f, .y = tokens[2].value_f} });
+static void input_reduce_xy(br_plot_t* gv, lex_state_t* s) {
+  if (s->should_push_eagre) q_push(&gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = 0, .x = s->tokens[0].value_f, .y = s->tokens[2].value_f} });
 }
 
-static void input_reduce_xygroup(br_plot_t* gv) {
-  if (should_push_eagre) q_push(&gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = tokens[4].value_i, .x = tokens[0].value_f, .y = tokens[2].value_f } });
+static void input_reduce_xygroup(br_plot_t* gv, lex_state_t* s) {
+  if (s->should_push_eagre) q_push(&gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = s->tokens[4].value_i, .x = s->tokens[0].value_f, .y = s->tokens[2].value_f } });
 }
 
-static void input_reduce_ygroup(br_plot_t* gv) {
-  if (should_push_eagre) q_push(&gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = tokens[2].value_i, .y = tokens[0].value_f } });
+static void input_reduce_ygroup(br_plot_t* gv, lex_state_t* s) {
+  if (s->should_push_eagre) q_push(&gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = s->tokens[2].value_i, .y = s->tokens[0].value_f } });
 }
 
 static void input_push_command_with_path(q_commands* commands, const char* path, q_command_type command) {
@@ -383,97 +399,84 @@ static extractor_res_state_t extractor_extract(br_strv_t ex, br_strv_t view, flo
   return ex_i < ex.len ? extractor_res_state_unfinished : res;
 }
 
-static void input_reduce_command(br_plot_t* gv) {
+static void input_reduce_command(br_plot_t* gv, lex_state_t* s) {
   (void)gv;
-  if (0 == strcmp("zoomx", tokens[1].name)) {
-    gv->uvZoom.x = tokens[2].value_f;
-  } else if (0 == strcmp("zoomy", tokens[1].name)) {
-    gv->uvZoom.y = tokens[2].value_f;
-  } else if (0 == strcmp("zoom", tokens[1].name)) {
-    gv->uvZoom.y = tokens[2].value_f;
-    gv->uvZoom.x = tokens[2].value_f;
-  } else if (0 == strcmp("offsetx", tokens[1].name)) {
-    gv->uvOffset.x = tokens[2].value_f;
-  } else if (0 == strcmp("offsety", tokens[1].name)) {
-    gv->uvOffset.y = tokens[2].value_f;
-  } else if (0 == strcmp("hide", tokens[1].name)) {
-    q_push(&gv->commands, (q_command) { .type = q_command_hide, .hide_show = { .group = tokens[2].value_i } });
-  } else if (0 == strcmp("show", tokens[1].name)) {
-    q_push(&gv->commands, (q_command) { .type = q_command_show, .hide_show = { .group = tokens[2].value_i } });
-  } else if (0 == strcmp("exportcsv", tokens[1].name)) {
-    input_push_command_with_path(&gv->commands, tokens[2].name, q_command_exportcsv);
-  } else if (0 == strcmp("export", tokens[1].name)) {
-    input_push_command_with_path(&gv->commands, tokens[2].name, q_command_export);
-  } else if (0 == strcmp("screenshot", tokens[1].name)) {
-    input_push_command_with_path(&gv->commands, tokens[2].name, q_command_screenshot);
-  } else if (0 == strcmp("exit", tokens[1].name)) {
+  if (0 == strcmp("zoomx", s->tokens[1].name)) {
+    gv->uvZoom.x = s->tokens[2].value_f;
+  } else if (0 == strcmp("zoomy", s->tokens[1].name)) {
+    gv->uvZoom.y = s->tokens[2].value_f;
+  } else if (0 == strcmp("zoom", s->tokens[1].name)) {
+    gv->uvZoom.y = s->tokens[2].value_f;
+    gv->uvZoom.x = s->tokens[2].value_f;
+  } else if (0 == strcmp("offsetx", s->tokens[1].name)) {
+    gv->uvOffset.x = s->tokens[2].value_f;
+  } else if (0 == strcmp("offsety", s->tokens[1].name)) {
+    gv->uvOffset.y = s->tokens[2].value_f;
+  } else if (0 == strcmp("hide", s->tokens[1].name)) {
+    q_push(&gv->commands, (q_command) { .type = q_command_hide, .hide_show = { .group = s->tokens[2].value_i } });
+  } else if (0 == strcmp("show", s->tokens[1].name)) {
+    q_push(&gv->commands, (q_command) { .type = q_command_show, .hide_show = { .group = s->tokens[2].value_i } });
+  } else if (0 == strcmp("exportcsv", s->tokens[1].name)) {
+    input_push_command_with_path(&gv->commands, s->tokens[2].name, q_command_exportcsv);
+  } else if (0 == strcmp("export", s->tokens[1].name)) {
+    input_push_command_with_path(&gv->commands, s->tokens[2].name, q_command_export);
+  } else if (0 == strcmp("screenshot", s->tokens[1].name)) {
+    input_push_command_with_path(&gv->commands, s->tokens[2].name, q_command_screenshot);
+  } else if (0 == strcmp("exit", s->tokens[1].name)) {
     gv->should_close = true;
     exit(0);
-  } else if (0 == strcmp("extract", tokens[1].name)) {
-    if (extractor_is_valid(br_str_as_view(tokens[3].br_str))) {
-      br_str_t s = br_str_copy(tokens[3].br_str);
-      --s.len;
-      extractors_push(&extractors, (extractor_t) { .ex =  s, .group = tokens[2].value_i });
-      should_push_eagre = false;
+  } else if (0 == strcmp("extract", s->tokens[1].name)) {
+    if (extractor_is_valid(br_str_as_view(s->tokens[3].br_str))) {
+      br_str_t str = br_str_copy(s->tokens[3].br_str);
+      --str.len;
+      extractors_push(&s->extractors, (extractor_t) { .ex =  str, .group = s->tokens[2].value_i });
+      s->should_push_eagre = false;
     }
-  } else if (tokens[3].kind == input_token_quoted_string && 0 == strcmp("setname", tokens[1].name)) {
+  } else if (s->tokens[3].kind == input_token_quoted_string && 0 == strcmp("setname", s->tokens[1].name)) {
     q_command cmd = {
       .type = q_command_set_name,
       .set_quoted_str = {
-        .group = tokens[2].value_i,
-        .str = tokens[3].br_str
+        .group = s->tokens[2].value_i,
+        .str = s->tokens[3].br_str
       }
     };
     q_push(&gv->commands, cmd);
-    tokens[3].kind = input_token_any;
+    s->tokens[3].kind = input_token_any;
   } else
-    printf("Execute %c%c%c...\n", tokens[1].name[0], tokens[1].name[1], tokens[1].name[2]);
+    printf("Execute %c%c%c...\n", s->tokens[1].name[0], s->tokens[1].name[1], s->tokens[1].name[2]);
 }
 
-input_reduce_t input_reductors_arr[REDUCTORS] = {
-  {{input_token_number}, input_reduce_y},
-  {{input_token_number, input_token_comma, input_token_number}, input_reduce_xy},
-  {{input_token_number, input_token_comma, input_token_number, input_token_semicollon, input_token_number}, input_reduce_xygroup},
-  {{input_token_number, input_token_semicollon, input_token_number}, input_reduce_ygroup},
-  {{input_token_dashdash, input_token_name, input_token_number}, input_reduce_command},
-  {{input_token_dashdash, input_token_name, input_token_path}, input_reduce_command},
-  {{input_token_dashdash, input_token_name, input_token_name}, input_reduce_command},
-  {{input_token_dashdash, input_token_name}, input_reduce_command},
-  {{input_token_dashdash, input_token_name, input_token_number, input_token_quoted_string}, input_reduce_command},
-};
-
-
-static void input_tokens_pop(size_t n) {
+static void input_tokens_pop(lex_state_t* s, size_t n) {
   if (n == 0) return;
   for (size_t i = 0; i < n; ++i) {
-    if (tokens[i].kind == input_token_quoted_string) {
-      br_str_free(tokens[i].br_str);
+    if (s->tokens[i].kind == input_token_quoted_string) {
+      br_str_free(s->tokens[i].br_str);
     }
   }
   if (n >= INPUT_TOKENS_COUNT) {
-    memset(tokens, 0, sizeof(tokens));
+    memset(s->tokens, 0, sizeof(s->tokens));
   }
-  memmove(tokens, &tokens[n], sizeof(input_token_t) * (INPUT_TOKENS_COUNT - n));
-  memset(&tokens[INPUT_TOKENS_COUNT - n], 0, sizeof(input_token_t) * n);
-  tokens_len -= n;
+  memmove(s->tokens, &s->tokens[n], sizeof(input_token_t) * (INPUT_TOKENS_COUNT - n));
+  memset(&s->tokens[INPUT_TOKENS_COUNT - n], 0, sizeof(input_token_t) * n);
+  s->tokens_len -= n;
 }
 
-static bool input_tokens_match_count(input_reduce_t* r, size_t* match_count) {
+static bool input_tokens_match_count(const lex_state_t* s, input_reduce_t* r, size_t* match_count) {
   size_t i = 0;
-  for (; i < tokens_len && i < MAX_REDUCE && r->kinds[i] != input_token_any; ++i)
-    if (tokens[i].kind != r->kinds[i]) return false;
+  for (; i < s->tokens_len && i < MAX_REDUCE && r->kinds[i] != input_token_any; ++i)
+    if (s->tokens[i].kind != r->kinds[i]) return false;
   *match_count = i;
   return r->kinds[i] == input_token_any;
 }
 
-static bool input_tokens_can_next_be(input_token_kind_t kind) {
+static bool input_tokens_can_next_be(const lex_state_t* s, input_token_kind_t kind) {
   bool bad_reducor[REDUCTORS] = {0};
   size_t j = 0;
   bool any = false;
-  for (; j < tokens_len; ++j) {
+  for (; j < s->tokens_len; ++j) {
     any = false;
     for (int i = 0; i < REDUCTORS; ++i) {
-      if (bad_reducor[i] == false && input_reductors_arr[i].kinds[j] != tokens[j].kind) {
+      if (bad_reducor[i] == false && s->reductors[i].kinds[j] != s->tokens[j].kind) {
         bad_reducor[i] = true;
       } else {
         any = true;
@@ -485,7 +488,7 @@ static bool input_tokens_can_next_be(input_token_kind_t kind) {
     return any;
   }
   for (int i = 0; i < REDUCTORS; ++i) {
-    if (bad_reducor[i] == false && input_reductors_arr[i].kinds[j] != kind) {
+    if (bad_reducor[i] == false && s->reductors[i].kinds[j] != kind) {
       bad_reducor[i] = true;
     } else {
       return true;
@@ -494,8 +497,8 @@ static bool input_tokens_can_next_be(input_token_kind_t kind) {
   return false;
 }
 
-static void input_tokens_reduce(br_plot_t* gv, bool force_reduce) {
-  if (tokens_len == 0) return;
+static void input_tokens_reduce(br_plot_t* gv, lex_state_t* s, bool force_reduce) {
+  if (s->tokens_len == 0) return;
   int best = -1;
   size_t best_c = 0, match_c = 0;
 
@@ -503,7 +506,7 @@ static void input_tokens_reduce(br_plot_t* gv, bool force_reduce) {
   size_t best_reduce_count = 0;
   for (size_t i = 0; i < REDUCTORS; ++i) {
     size_t count = 0;
-    bool can_reduce = input_tokens_match_count(&input_reductors_arr[i], &count);
+    bool can_reduce = input_tokens_match_count(s, &s->reductors[i], &count);
     if (can_reduce) {
       if (count > best_reduce_count) {
         best_reduce_count = count;
@@ -518,204 +521,219 @@ static void input_tokens_reduce(br_plot_t* gv, bool force_reduce) {
     }
   }
   if (force_reduce == false) {
-    if (best_c == 0) input_tokens_pop(1);
-    else if ((match_c == 1 && best > -1 && input_reductors_arr[best].kinds[best_c] == input_token_any)) {
-      input_reductors_arr[best].reduce_func(gv);
-      input_tokens_pop((size_t)best_c);
+    if (best_c == 0) input_tokens_pop(s, 1);
+    else if ((match_c == 1 && best > -1 && s->reductors[best].kinds[best_c] == input_token_any)) {
+      s->reductors[best].reduce_func(gv, s);
+      input_tokens_pop(s, (size_t)best_c);
     }
   } else {
-    if (best_reduce_count == 0) input_tokens_pop(1);
+    if (best_reduce_count == 0) input_tokens_pop(s, 1);
     else if (best_reduce > -1) {
-      input_reductors_arr[best_reduce].reduce_func(gv);
-      input_tokens_pop((size_t)best_reduce_count);
+      s->reductors[best_reduce].reduce_func(gv, s);
+      input_tokens_pop(s, (size_t)best_reduce_count);
+    }
+  }
+}
+
+static void lex_state_init(lex_state_t* lex_state) {
+  *lex_state = (lex_state_t){ 0,
+   .reductors = {
+    {{input_token_number}, input_reduce_y},
+    {{input_token_number, input_token_comma, input_token_number}, input_reduce_xy},
+    {{input_token_number, input_token_comma, input_token_number, input_token_semicollon, input_token_number}, input_reduce_xygroup},
+    {{input_token_number, input_token_semicollon, input_token_number}, input_reduce_ygroup},
+    {{input_token_dashdash, input_token_name, input_token_number}, input_reduce_command},
+    {{input_token_dashdash, input_token_name, input_token_path}, input_reduce_command},
+    {{input_token_dashdash, input_token_name, input_token_name}, input_reduce_command},
+    {{input_token_dashdash, input_token_name}, input_reduce_command},
+    {{input_token_dashdash, input_token_name, input_token_number, input_token_quoted_string}, input_reduce_command},
+  }};
+  lex_state->read_next = true;
+  lex_state->c = -1;
+  lex_state->should_push_eagre = true;
+}
+
+static void lex_step(br_plot_t* br, lex_state_t* s) {
+  switch (s->state) {
+    case input_lex_state_init:
+      input_tokens_reduce(br, s, false);
+      if (s->c == '-') {
+        s->state = input_lex_state_dash;
+      } else if (s->c >= '0' && s->c <= '9') {
+        s->state = input_lex_state_number;
+        s->read_next = false;
+      } else if (s->c >= 'a' && s->c <= 'z' && input_tokens_can_next_be(s, input_token_name)) {
+        s->state = input_lex_state_name;
+        s->read_next = false;
+      } else if (IS_VALID_PATH(s->c) && input_tokens_can_next_be(s, input_token_path)) {
+        s->state = input_lex_state_path;
+        s->read_next = false;
+      } else if (s->c == '.') {
+        s->state = input_lex_state_number_decimal;
+      } else if (s->c == ',' && input_tokens_can_next_be(s, input_token_comma)) {
+        s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_comma };
+      } else if (s->c == ';' && input_tokens_can_next_be(s, input_token_semicollon)) {
+        s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_semicollon };
+      } else if (s->c == '"' && input_tokens_can_next_be(s, input_token_quoted_string)) {
+        s->tokens[s->tokens_len] = (input_token_t) {
+          .kind = input_token_quoted_string,
+          .br_str = br_str_malloc(8),
+        };
+        s->state = input_lex_state_quoted;
+      }
+      break;
+    case input_lex_state_dash:
+      if (s->c == '-') {
+        s->tokens[s->tokens_len++] = (input_token_t){ .kind = input_token_dashdash };
+        s->state = input_lex_state_init;
+      } else if (s->c >= '0' && s->c <= '9') {
+        s->is_neg = true;
+        s->is_neg_whole = true;
+        s->state = input_lex_state_number;
+        s->read_next = false;
+      } else {
+        s->state = input_lex_state_init;
+      }
+      break;
+    case input_lex_state_number:
+      if (s->c >= '0' && s->c <= '9') {
+        s->value_i *= 10;
+        s->value_i += s->c - '0';
+      } else if (s->c == '.') {
+        s->state = input_lex_state_number_decimal;
+        s->value_f = (float)s->value_i;
+        s->value_i = 0;
+        s->is_neg = false;
+      } else if (s->c == 'E' || s->c == 'e') {
+        s->value_f = (float)s->value_i;
+        s->value_i = 0;
+        s->is_neg = false;
+        s->decimal = 0;
+        s->state = input_lex_state_number_exp;
+      } else {
+        s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = (float)s->value_i, .value_i = (int)s->value_i };
+        s->state = input_lex_state_number_reset;
+        s->read_next = false;
+      }
+      break;
+    case input_lex_state_number_decimal:
+      if (s->c >= '0' && s->c <= '9') {
+        s->value_i *= 10;
+        s->value_i += s->c - '0';
+        --s->decimal;
+      } else if (s->c == 'E' || s->c == 'e') {
+        s->value_f += (float)s->value_i * powf(10.f, (float)s->decimal);
+        s->value_i = 0;
+        s->decimal = 0;
+        s->state = input_lex_state_number_exp;
+      } else {
+        s->value_f += (float)s->value_i * powf(10.f, (float)s->decimal);
+        s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = s->is_neg_whole ? -s->value_f : s->value_f, .value_i = (int)s->value_i };
+        s->state = input_lex_state_number_reset;
+        s->read_next = false;
+      }
+      break;
+    case input_lex_state_number_exp:
+      if (s->c >= '0' && s->c <= '9') {
+        s->value_i *= 10;
+        s->value_i += s->c - '0';
+      } else if (s->c == '-') {
+        s->is_neg = true;
+      } else {
+        s->value_f *= powf(10.f, s->is_neg ? (float)-s->value_i : (float)s->value_i);
+        s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = s->is_neg_whole ? -s->value_f : s->value_f, .value_i = (int)s->value_i };
+        s->state = input_lex_state_number_reset;
+        s->read_next = false;
+      }
+      break;
+    case input_lex_state_number_reset:
+      s->state = input_lex_state_init;
+      s->read_next = false;
+      s->value_f = 0.f;
+      s->value_i = 0;
+      s->decimal = 0;
+      s->is_neg = false;
+      s->is_neg_whole = false;
+      break;
+    case input_lex_state_name:
+      if (s->name_len + 1 < MAX_NAME && s->c >= 'a' && s->c <= 'z') {
+        s->name[s->name_len++] = (char)s->c;
+      } else if ((s->name_len + 1 < MAX_NAME) && IS_VALID_PATH(s->c)) {
+        s->read_next = false;
+        s->state = input_lex_state_path;
+      } else {
+        memcpy(s->tokens[s->tokens_len].name, s->name, s->name_len);
+        s->tokens[s->tokens_len].name[s->name_len] = (char)0;
+        s->tokens[s->tokens_len++].kind = input_token_name;
+        s->state = input_lex_state_init;
+        s->name_len = 0;
+        s->read_next = false;
+      }
+      break;
+    case input_lex_state_path:
+      if ((s->name_len + 1 < MAX_NAME) && IS_VALID_PATH(s->c)) {
+        s->name[s->name_len++] = (char)s->c;
+      } else {
+        memcpy(s->tokens[s->tokens_len].name, s->name, s->name_len);
+        s->tokens[s->tokens_len].name[s->name_len] = (char)0;
+        s->tokens[s->tokens_len++].kind = input_token_path;
+        s->state = input_lex_state_init;
+        s->name_len = 0;
+        s->read_next = false;
+      }
+      break;
+    case input_lex_state_quoted:
+      if (s->c == '"') {
+        br_str_push_char(&s->tokens[s->tokens_len].br_str, (char)0);
+        ++s->tokens_len;
+        s->state = input_lex_state_init;
+      } else br_str_push_char(&s->tokens[s->tokens_len].br_str, (char)s->c);
+      break;
+    default:
+      assert(false);
+  }
+}
+
+static void lex_step_extractor(br_plot_t* br, lex_state_t* s) {
+  if (s->extractors.len > 0) {
+    if (s->c == '\n') {
+      float x, y;
+      for (size_t i = 0; i < s->extractors.len; ++i) {
+        int group = s->extractors.arr[i].group;
+        extractor_res_state_t r = extractor_extract(br_str_as_view(s->extractors.arr[i].ex), br_str_as_view(s->cur_line), &x, &y);
+        if (r == extractor_res_state_x) {
+          q_push(&br->commands, (q_command) { .type = q_command_push_point_x, .push_point_x = { .x = x, .group = group }});
+        } else if (r == extractor_res_state_y) {
+          q_push(&br->commands, (q_command) { .type = q_command_push_point_y, .push_point_y = { .y = y, .group = group }});
+        } else if (r == extractor_res_state_xy) {
+          q_push(&br->commands, (q_command) { .type = q_command_push_point_xy, .push_point_xy = { .x = x, .y = y, .group = group }});
+        }
+      }
+      s->cur_line.len = 0;
+    } else {
+      br_str_push_char(&s->cur_line, (char)s->c);
     }
   }
 }
 
 static void lex(br_plot_t* br) {
-  float value_f = 0;
-  int decimal = 0;
-  long value_i = 0;
-  char name[MAX_NAME] = {0};
-  size_t name_len = 0;
-  bool is_neg_whole = false;
-  bool is_neg = false;
-  bool read_next = true;
-  br_str_t cur_line = {0};
-
-  input_lex_state_t state = input_lex_state_init;
-  int c = -1;
+  lex_state_t s;
+  lex_state_init(&s);
   while (true) {
-    if (read_next) {
+    if (s.read_next) {
 #ifdef RELEASE
-      c = read_input_read_next();
+      s.c = read_input_read_next();
 #else
-      c = br->getchar();
+      s.c = br->getchar();
 #endif
-      if (c == -1) {
-        input_tokens_reduce(br, true);
+      if (s.c == -1) {
+        input_tokens_reduce(br, &s, true);
         ERROR("Exiting read_input thread");
         return;
       }
-      if (extractors.len > 0) {
-        if (c == '\n') {
-          float x, y;
-          for (size_t i = 0; i < extractors.len; ++i) {
-            int group = extractors.arr[i].group;
-            extractor_res_state_t r = extractor_extract(br_str_as_view(extractors.arr[i].ex), br_str_as_view(cur_line), &x, &y);
-            if (r == extractor_res_state_x) {
-              q_push(&br->commands, (q_command) { .type = q_command_push_point_x, .push_point_x = { .x = x, .group = group }});
-            } else if (r == extractor_res_state_y) {
-              q_push(&br->commands, (q_command) { .type = q_command_push_point_y, .push_point_y = { .y = y, .group = group }});
-            } else if (r == extractor_res_state_xy) {
-              q_push(&br->commands, (q_command) { .type = q_command_push_point_xy, .push_point_xy = { .x = x, .y = y, .group = group }});
-            }
-          }
-          cur_line.len = 0;
-        } else {
-          br_str_push_char(&cur_line, (char)c);
-        }
-      }
-    } else read_next = true;
-
-    switch (state) {
-      case input_lex_state_init:
-        input_tokens_reduce(br, false);
-        if (c == '-') {
-          state = input_lex_state_dash;
-        } else if (c >= '0' && c <= '9') {
-          state = input_lex_state_number;
-          read_next = false;
-        } else if (c >= 'a' && c <= 'z' && input_tokens_can_next_be(input_token_name)) {
-          state = input_lex_state_name;
-          read_next = false;
-        } else if (IS_VALID_PATH(c) && input_tokens_can_next_be(input_token_path)) {
-          state = input_lex_state_path;
-          read_next = false;
-        } else if (c == '.') {
-          state = input_lex_state_number_decimal;
-        } else if (c == ',' && input_tokens_can_next_be(input_token_comma)) {
-          tokens[tokens_len++] = (input_token_t) { .kind = input_token_comma };
-        } else if (c == ';' && input_tokens_can_next_be(input_token_semicollon)) {
-          tokens[tokens_len++] = (input_token_t) { .kind = input_token_semicollon };
-        } else if (c == '"' && input_tokens_can_next_be(input_token_quoted_string)) {
-          tokens[tokens_len] = (input_token_t) {
-            .kind = input_token_quoted_string,
-            .br_str = br_str_malloc(8),
-          };
-          state = input_lex_state_quoted;
-        }
-        break;
-      case input_lex_state_dash:
-        if (c == '-') {
-          tokens[tokens_len++] = (input_token_t){ .kind = input_token_dashdash };
-          state = input_lex_state_init;
-        } else if (c >= '0' && c <= '9') {
-          is_neg = true;
-          is_neg_whole = true;
-          state = input_lex_state_number;
-          read_next = false;
-        } else {
-          state = input_lex_state_init;
-        }
-        break;
-      case input_lex_state_number:
-        if (c >= '0' && c <= '9') {
-          value_i *= 10;
-          value_i += c - '0';
-        } else if (c == '.') {
-          state = input_lex_state_number_decimal;
-          value_f = (float)value_i;
-          value_i = 0;
-          is_neg = false;
-        } else if (c == 'E' || c == 'e') {
-          value_f = (float)value_i;
-          value_i = 0;
-          is_neg = false;
-          decimal = 0;
-          state = input_lex_state_number_exp;
-        } else {
-          tokens[tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = (float)value_i, .value_i = (int)value_i };
-          state = input_lex_state_number_reset;
-          read_next = false;
-        }
-        break;
-      case input_lex_state_number_decimal:
-        if (c >= '0' && c <= '9') {
-          value_i *= 10;
-          value_i += c - '0';
-          --decimal;
-        } else if (c == 'E' || c == 'e') {
-          value_f += (float)value_i * powf(10.f, (float)decimal);
-          value_i = 0;
-          decimal = 0;
-          state = input_lex_state_number_exp;
-        } else {
-          value_f += (float)value_i * powf(10.f, (float)decimal);
-          tokens[tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = is_neg_whole ? -value_f : value_f, .value_i = (int)value_i };
-          state = input_lex_state_number_reset;
-          read_next = false;
-        }
-        break;
-      case input_lex_state_number_exp:
-        if (c >= '0' && c <= '9') {
-          value_i *= 10;
-          value_i += c - '0';
-        } else if (c == '-') {
-          is_neg = true;
-        } else {
-          value_f *= powf(10.f, is_neg ? (float)-value_i : (float)value_i);
-          tokens[tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = is_neg_whole ? -value_f : value_f, .value_i = (int)value_i };
-          state = input_lex_state_number_reset;
-          read_next = false;
-        }
-        break;
-      case input_lex_state_number_reset:
-        state = input_lex_state_init;
-        read_next = false;
-        value_f = 0.f;
-        value_i = 0;
-        decimal = 0;
-        is_neg = false;
-        is_neg_whole = false;
-        break;
-      case input_lex_state_name:
-        if (name_len + 1 < MAX_NAME && c >= 'a' && c <= 'z') {
-          name[name_len++] = (char)c;
-        } else if ((name_len + 1 < MAX_NAME) && IS_VALID_PATH(c)) {
-          read_next = false;
-          state = input_lex_state_path;
-        } else {
-          memcpy(tokens[tokens_len].name, name, name_len);
-          tokens[tokens_len].name[name_len] = (char)0;
-          tokens[tokens_len++].kind = input_token_name;
-          state = input_lex_state_init;
-          name_len = 0;
-          read_next = false;
-        }
-        break;
-      case input_lex_state_path:
-        if ((name_len + 1 < MAX_NAME) && IS_VALID_PATH(c)) {
-          name[name_len++] = (char)c;
-        } else {
-          memcpy(tokens[tokens_len].name, name, name_len);
-          tokens[tokens_len].name[name_len] = (char)0;
-          tokens[tokens_len++].kind = input_token_path;
-          state = input_lex_state_init;
-          name_len = 0;
-          read_next = false;
-        }
-        break;
-      case input_lex_state_quoted:
-        if (c == '"') {
-          br_str_push_char(&tokens[tokens_len].br_str, (char)0);
-          ++tokens_len;
-          state = input_lex_state_init;
-        } else br_str_push_char(&tokens[tokens_len].br_str, (char)c);
-        break;
-      default:
-        assert(false);
-    }
+      lex_step_extractor(br, &s);
+    } else s.read_next = true;
+    lex_step(br, &s);
   }
 }
 
