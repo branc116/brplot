@@ -36,7 +36,6 @@ BR_API void graph_init(br_plot_t* br, float width, float height) {
     .linesShader = graph_load_shader(SHADER_LINE_VS, SHADER_LINE_FS),
     .quadShader = graph_load_shader(SHADER_QUAD_VS, SHADER_QUAD_FS),
 #ifndef RELEASE
-    .getchar = read_input_read_next,
 #ifdef IMGUI
 #ifdef LINUX
     .hot_state = { .handl = NULL, .func_loop = NULL, .func_init = NULL, .is_init_called = false, .lock = { 0 } },

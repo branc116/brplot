@@ -178,6 +178,11 @@ fuzz:
 .PHONY: test
 test:
 	make GUI=HEADLESS CONFIG=DEBUG && \
+	./bin/brplot_headless_linux_debug_gcc --unittest
+
+.PHONY: test-gdb
+test-gdb:
+	make GUI=HEADLESS CONFIG=DEBUG && \
 	gdb -ex "r --unittest" ./bin/brplot_headless_linux_debug_gcc --tui
 
 .PHONY: npm-imgui

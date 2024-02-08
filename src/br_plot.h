@@ -248,7 +248,6 @@ typedef struct br_plot_t {
   // Any thread can write to this q, only render thread can pop
   q_commands commands;
 #ifndef RELEASE
-  int (*getchar)(void);
 #ifdef IMGUI
 #ifdef LINUX
   br_hotreload_state_t hot_state;

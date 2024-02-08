@@ -57,6 +57,8 @@ static struct test_file_metadata __test_h_file;
   do {                                                       \
     if ((a) != (b)) {                                        \
       SET_FAILURE(#a " != " #b, false);                      \
+      int aa = (int)a, bb = (int)b;                          \
+      fprintf(stderr, "%d != %d\n", aa, bb);                   \
       return;                                                \
     }                                                        \
   } while (0)

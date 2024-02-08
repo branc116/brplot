@@ -106,10 +106,10 @@ bool br_str_push_c_str(br_str_t* s, char const* c) {
   return true;
 }
 
-char* br_str_to_c_str(br_str_t s) {
+char* br_str_to_c_str(const br_str_t s) {
   char* out_s = BR_MALLOC(s.len + 1);
   if (out_s == NULL) return NULL;
-  memcpy(s.str, out_s, s.len);
+  memcpy(out_s, s.str, s.len);
   out_s[s.len] = 0;
   return out_s;
 }

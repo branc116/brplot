@@ -553,6 +553,15 @@ static void lex_state_init(lex_state_t* lex_state) {
   lex_state->should_push_eagre = true;
 }
 
+static void lex_state_deinit(lex_state_t* s) {
+  for (size_t i = 0; i < s->tokens_len; ++i) {
+    if (s->tokens[i].kind == input_token_quoted_string) {
+      br_str_free(s->tokens[i].br_str);
+    }
+  }
+  s->tokens_len = 0;
+}
+
 static void lex_step(br_plot_t* br, lex_state_t* s) {
   switch (s->state) {
     case input_lex_state_init:
@@ -721,20 +730,17 @@ static void lex(br_plot_t* br) {
   lex_state_init(&s);
   while (true) {
     if (s.read_next) {
-#ifdef RELEASE
       s.c = read_input_read_next();
-#else
-      s.c = br->getchar();
-#endif
       if (s.c == -1) {
         input_tokens_reduce(br, &s, true);
         ERROR("Exiting read_input thread");
-        return;
+        break;
       }
       lex_step_extractor(br, &s);
     } else s.read_next = true;
     lex_step(br, &s);
   }
+  lex_state_deinit(&s);
 }
 
 void read_input_main_worker(br_plot_t* gv) {
@@ -742,104 +748,78 @@ void read_input_main_worker(br_plot_t* gv) {
 }
 
 #ifndef RELEASE
-int test_str(void) {
-  static size_t index = 0;
-  const char str[] = "8.0,-16.0;1 -0.0078,16.0;1 \" \n \n 4.0;1\n\n\n\n\n\n 2.0 1;10;1;;;; 10e10 3e38 --test 1.2 --zoomx 10.0 1;12";
-  if (index >= sizeof(str))
-  {
-    return -1;
-  }
-  return str[index++];
-}
+#define TEST_COMMAND_PUSH_POINT_Y(q, Y, GROUP) do { \
+  q_command c = q_pop(&q); \
+  TEST_EQUAL(c.type, q_command_push_point_y); \
+  TEST_EQUAL(c.push_point_y.y, Y); \
+  TEST_EQUAL(c.push_point_y.group, GROUP); \
+} while(false)
 
-int test_str2(void) {
-  static size_t index = 0;
-  const char str[] = "--setname 1 \"hihi\" --setname 2 \"hihi hihi hihi hihi\"";
-  if (index >= sizeof(str))
-  {
-    return -1;
+#define TEST_COMMAND_PUSH_POINT_XY(q, X, Y, GROUP) do { \
+  q_command c = q_pop(&q); \
+  TEST_EQUAL(c.type, q_command_push_point_xy); \
+  TEST_EQUAL(c.push_point_xy.x, X); \
+  TEST_EQUAL(c.push_point_xy.y, Y); \
+  TEST_EQUAL(c.push_point_xy.group, GROUP); \
+} while(false)
+
+#define TEST_COMMAND_END(q) do { \
+  q_command c = q_pop(&q); \
+  TEST_EQUAL(c.type, q_command_none); \
+  BR_FREE(q.commands); \
+} while(false)
+
+#define TEST_COMMAND_SET_NAME(q, GROUP, NAME) do { \
+  q_command c = q_pop(&q); \
+  TEST_EQUAL(c.type, q_command_set_name); \
+  TEST_EQUAL(c.set_quoted_str.group, GROUP); \
+  char* cstr = br_str_to_c_str(c.set_quoted_str.str); \
+  TEST_STREQUAL(cstr, NAME); \
+  BR_FREE(cstr); \
+  br_str_free(c.set_quoted_str.str); \
+} while(false)
+
+void test_input(br_plot_t* br, const char* str) {
+  lex_state_t s;
+  lex_state_init(&s);
+  q_init(&br->commands);
+  size_t str_len = strlen(str);
+  for (size_t i = 0; i < str_len;) {
+    if (s.read_next) {
+      s.c = str[i++];
+      lex_step_extractor(br, &s);
+    } else s.read_next = true;
+    lex_step(br, &s);
   }
-  return str[index++];
+  s.c = 0;
+  lex_step(br, &s);
+  input_tokens_reduce(br, &s, true);
+  lex_state_deinit(&s);
 }
 
 TEST_CASE(InputTests) {
-  br_plot_t gvt;
-  gvt.getchar = test_str;
-  q_init(&gvt.commands);
-  read_input_main_worker(&gvt);
+  br_plot_t br;
+  test_input(&br, "8.0,-16.0;1 -0.0078,16.0;1 \" \n \n 4.0;1\n\n\n\n\n\n 2.0 1;10;1;;;; 10e10 3e38 --test 1.2 --zoomx 10.0 1;12");
 
-  q_command c = q_pop(&gvt.commands);
-  TEST_EQUAL(c.type, q_command_push_point_xy);
-  TEST_EQUAL(c.push_point_xy.x, 8.f);
-  TEST_EQUAL(c.push_point_xy.y, -16.f);
-  TEST_EQUAL(c.push_point_xy.group, 1);
-
-  c = q_pop(&gvt.commands);
-  TEST_EQUAL(c.type, q_command_push_point_xy);
-  TEST_EQUAL(c.push_point_xy.x, -0.0078f);
-  TEST_EQUAL(c.push_point_xy.y, 16.f);
-  TEST_EQUAL(c.push_point_xy.group, 1);
-
-  c = q_pop(&gvt.commands);
-  TEST_EQUAL(c.type, q_command_push_point_y);
-  TEST_EQUAL(c.push_point_y.y, 4.f);
-  TEST_EQUAL(c.push_point_y.group, 1);
-
-  c = q_pop(&gvt.commands);
-  TEST_EQUAL(c.type, q_command_push_point_y);
-  TEST_EQUAL(c.push_point_y.y, 2.f);
-  TEST_EQUAL(c.push_point_y.group, 0);
-
-  c = q_pop(&gvt.commands);
-  TEST_EQUAL(c.type, q_command_push_point_y);
-  TEST_EQUAL(c.push_point_y.y, 1.f);
-  TEST_EQUAL(c.push_point_y.group, 10);
-
-  c = q_pop(&gvt.commands);
-  TEST_EQUAL(c.type, q_command_push_point_y);
-  TEST_EQUAL(c.push_point_y.y, 1.f);
-  TEST_EQUAL(c.push_point_y.group, 0);
-
-  c = q_pop(&gvt.commands);
-  TEST_EQUAL(c.type, q_command_push_point_y);
-  TEST_EQUAL(c.push_point_y.y, 10e10f);
-  TEST_EQUAL(c.push_point_y.group, 0);
-
-  c = q_pop(&gvt.commands);
-  TEST_EQUAL(c.type, q_command_push_point_y);
-  TEST_EQUAL(c.push_point_y.y, 3e38f);
-  TEST_EQUAL(c.push_point_y.group, 0);
-
-  c = q_pop(&gvt.commands);
-  TEST_EQUAL(c.type, q_command_push_point_y);
-  TEST_EQUAL(c.push_point_y.y, 1.f);
-  TEST_EQUAL(c.push_point_y.group, 12);
-
-  c = q_pop(&gvt.commands);
-  TEST_EQUAL(c.type, q_command_none);
-
-  BR_FREE(gvt.commands.commands);
+  TEST_COMMAND_PUSH_POINT_XY(br.commands, 8.f, -16.f, 1);
+  TEST_COMMAND_PUSH_POINT_XY(br.commands, -0.0078f, 16.f, 1);
+  TEST_COMMAND_PUSH_POINT_Y(br.commands, 4.f, 1);
+  TEST_COMMAND_PUSH_POINT_Y(br.commands, 2.f, 0);
+  TEST_COMMAND_PUSH_POINT_Y(br.commands, 1.f, 10);
+  TEST_COMMAND_PUSH_POINT_Y(br.commands, 1.f, 0);
+  TEST_COMMAND_PUSH_POINT_Y(br.commands, 10e10f, 0);
+  TEST_COMMAND_PUSH_POINT_Y(br.commands, 3e38f, 0);
+  TEST_COMMAND_PUSH_POINT_Y(br.commands, 1.f, 12);
+  TEST_COMMAND_END(br.commands);
 }
 
 TEST_CASE(InputTests2) {
-  br_plot_t gvt;
-  gvt.getchar = test_str2;
-  q_init(&gvt.commands);
-  read_input_main_worker(&gvt);
+  br_plot_t br;
+  test_input(&br, "--setname 1 \"hihi\" --setname 2 \"hihi hihi hihi hihi\"");
 
-  q_command c = q_pop(&gvt.commands);
-  TEST_EQUAL(c.type, q_command_set_name);
-  TEST_STREQUAL(c.set_quoted_str.str.str, "hihi");
-  br_str_free(c.set_quoted_str.str);
-
-  c = q_pop(&gvt.commands);
-  TEST_EQUAL(c.type, q_command_set_name);
-  TEST_STREQUAL(c.set_quoted_str.str.str, "hihi hihi hihi hihi");
-  br_str_free(c.set_quoted_str.str);
-
-  c = q_pop(&gvt.commands);
-  TEST_EQUAL(c.type, q_command_none);
-  BR_FREE(gvt.commands.commands);
+  TEST_COMMAND_SET_NAME(br.commands, 1, "hihi");
+  TEST_COMMAND_SET_NAME(br.commands, 2,  "hihi hihi hihi hihi");
+  TEST_COMMAND_END(br.commands);
 }
 
 #define VAL(is_valid, ex) do { \
