@@ -235,7 +235,7 @@ $(PREFIX_BUILD)/src/%.json:src/%.c
 $(PREFIX_BUILD)/src/%.json:src/%.cpp
 	echo '{' > $@ && \
   echo '"directory": "$(PWD)",' >> $@ && \
-  echo '"command": "$(CXX) $(CCFLAGS) $(WARNING_FLAGS) -c $<",' >> $@ && \
+  echo '"command": "$(CXX) $(CXXFLAGS) $(WARNING_FLAGS) -c $<",' >> $@ && \
   echo '"file": "$<"' >> $@ && \
 	echo '},' >> $@
 

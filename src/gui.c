@@ -97,6 +97,11 @@ BR_API void graph_free(br_plot_t* gv) {
   for (size_t i = 0; i < gv->groups.len; ++i) {
     points_groups_deinit(&gv->groups);
   }
+  q_command c = q_pop(&gv->commands);
+  while(c.type != q_command_none) {
+    if (c.type == q_command_set_name) br_str_free(c.set_quoted_str.str);
+    c = q_pop(&gv->commands);
+  }
   BR_FREE(gv->commands.commands);
 }
 

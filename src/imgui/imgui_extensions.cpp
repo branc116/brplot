@@ -31,6 +31,7 @@ namespace br {
     Rectangle r{pos.x, pos.y, size.x, size.y};
     return CheckCollisionPointRec(ToRaylib(ImGui::GetMousePos()), r);
   }
+
   void ui_textbox(const char* label, br_str_t *str) {
     if (str->len >= str->cap) br_str_realloc(str, str->cap * 2);
     str->str[str->len] = 0;
