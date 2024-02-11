@@ -692,7 +692,7 @@ static void lex_step(br_plot_t* br, lex_state_t* s) {
       }
       break;
     case input_lex_state_quoted:
-      if (s->c == '"') {
+      if (s->c == '"' || s->c == '\0' || s->c == -1) {
         br_str_push_char(&s->tokens[s->tokens_len].br_str, (char)0);
         ++s->tokens_len;
         s->state = input_lex_state_init;
@@ -784,7 +784,7 @@ void test_input(br_plot_t* br, const char* str) {
   lex_state_init(&s);
   q_init(&br->commands);
   size_t str_len = strlen(str);
-  for (size_t i = 0; i < str_len;) {
+  for (size_t i = 0; i <= str_len;) {
     if (s.read_next) {
       s.c = str[i++];
       lex_step_extractor(br, &s);
@@ -792,8 +792,10 @@ void test_input(br_plot_t* br, const char* str) {
     lex_step(br, &s);
   }
   s.c = 0;
-  lex_step(br, &s);
-  input_tokens_reduce(br, &s, true);
+  while (s.tokens_len > 0) {
+    lex_step(br, &s);
+    input_tokens_reduce(br, &s, true);
+  }
   lex_state_deinit(&s);
 }
 
@@ -815,10 +817,11 @@ TEST_CASE(InputTests) {
 
 TEST_CASE(InputTests2) {
   br_plot_t br;
-  test_input(&br, "--setname 1 \"hihi\" --setname 2 \"hihi hihi hihi hihi\"");
+  test_input(&br, "--setname 1 \"hihi\" --setname 2 \"hihi hihi hihi hihi\" --setname 0 \"test");
 
   TEST_COMMAND_SET_NAME(br.commands, 1, "hihi");
   TEST_COMMAND_SET_NAME(br.commands, 2,  "hihi hihi hihi hihi");
+  TEST_COMMAND_SET_NAME(br.commands, 0,  "test");
   TEST_COMMAND_END(br.commands);
 }
 
