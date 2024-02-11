@@ -65,9 +65,11 @@ extern "C" void br_gui_init_specifics_gui(br_plot_t* br) {
   br_hotreload_start(&br->hot_state);
 #endif
 #endif
-#ifdef PLATFORM_WEB
     ImGui::LoadIniSettingsFromMemory(DEFAULT_INI);
+#ifndef PLATFORM_WEB
+    ImGui::LoadIniSettingsFromDisk("imgui.ini");
 #endif
+
 }
 
 extern "C" void br_gui_free_specifics(br_plot_t* br) {

@@ -19,12 +19,6 @@ namespace br {
   void ui_settings(br_plot_t* br) {
     ImGui::SetNextWindowBgAlpha(0.7f);
     if (ImGui::Begin("Settings")) {
-      ImGui::InputFloat("Tmp", &something, 0.0f, 0.0f, "%f");
-      ImGui::InputFloat("Tmp2", &something2, 0.0f, 0.0f, "%f");
-      ImGui::InputFloat("Stride After", &stride_after, 0.f, 0.f, "%f");
-      ImGui::InputInt("Max Stride", &max_stride);
-      ImGui::LabelText("Raw", "raw: %d", raw_c);
-      ImGui::LabelText("Not Raw", "Not raw: %d", not_raw_c);
       raw_c = 0;
       not_raw_c = 0;
       if (ImGui::Button("Clear all")) {
@@ -107,6 +101,20 @@ namespace br {
           ImGui::Checkbox("Show Closest", &br->show_closest);
           ImGui::Checkbox("Show Closest X", &br->show_x_closest);
           ImGui::Checkbox("Show Closest Y", &br->show_y_closest);
+      }
+      if (ImGui::CollapsingHeader("Resampling")) {
+        ImGui::InputFloat("Max ratio bounding box/screen size", &something, 0.0f, 0.0f, "%f");
+        ImGui::SetItemTooltip("If you make this value larger, performace will improve, but visual quality will suffer.");
+        ImGui::InputFloat("Max ratio bounding box/screen size2", &something2, 0.0f, 0.0f, "%f");
+        ImGui::SetItemTooltip("If you make this value larger, performace will improve, but visual quality will suffer.");
+        ImGui::InputFloat("Stride After", &stride_after, 0.f, 0.f, "%f");
+        ImGui::SetItemTooltip("If you make this value larger, performace will improve, but visual quality will suffer."
+                          "Skip some points if the line is far away.");
+        ImGui::InputInt("Max Stride", &max_stride);
+        ImGui::SetItemTooltip("If you make this value larger, performace will improve, but visual quality will suffer."
+                          "Max points that can be skipped when line is far away.");
+        ImGui::LabelText("Raw", "raw: %d", raw_c);
+        ImGui::LabelText("Not Raw", "Not raw: %d", not_raw_c);
       }
       if (ImGui::CollapsingHeader("Debug")) {
         ImGui::SliderFloat("Recoil", &br->recoil, 0.f, 1.1f);

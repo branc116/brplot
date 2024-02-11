@@ -3,7 +3,6 @@
 #include "imgui.h"
 #include "src/br_plot.h"
 #include <algorithm>
-#include <sys/cdefs.h>
 
 namespace ImGui {
   bool IsWindowHidden();
