@@ -21,7 +21,7 @@ typedef enum {
 struct resampling2_node_t {
   template<resampling2_node_kind_t kind>
   constexpr bool is_inside(Vector2 const* points, Rectangle rect) const {
-    float minx, miny, maxx, maxy;
+    float minx = 0.f, miny = 0.f, maxx = 0.f, maxy = 0.f;
     if constexpr (kind == resampling2_kind_y) {
       miny = points[index_start].y;
       maxy = points[index_start + len - 1].y;
@@ -41,7 +41,7 @@ struct resampling2_node_t {
   template<resampling2_node_kind_t kind>
   constexpr Vector2 get_ratios(Vector2 const* points, float screen_width, float screen_height) const {
     Vector2 p1 = points[index_start], p2 = points[index_start + len - 1];
-    float xr, yr;
+    float xr = 0.f, yr = 0.f;
     if constexpr (kind == resampling2_kind_x) xr = fabsf(p1.x - p2.x) / screen_width,  yr = (points[max_index].y - points[min_index].y) / screen_height;
     else                                      yr = fabsf(p1.y - p2.y) / screen_height, xr = (points[max_index].x - points[min_index].x) / screen_width;
     return {xr, yr};
@@ -480,12 +480,12 @@ extern "C" {
 #include "src/misc/tests.h"
 TEST_CASE(resampling) {
   Vector2 points[] = { {0, 1}, {1, 2}, {2, 4}, {3, 2} };
-  points_group_t pg = {
-    .cap = 4,
-    .len = 4,
-    .points = points,
-    .resampling = NULL
-  };
+  points_group_t pg;
+  memset(&pg, 0, sizeof(pg));
+  pg.cap = 4;
+  pg.len = 4;
+  pg.points = points;
+  pg.resampling = NULL;
   resampling2_t* r = resampling2_malloc();
   for (int i = 0; i < 2*1024; ++i) resampling2_add_point(r, &pg, 3);
   resampling2_debug_print(stdout, r);
@@ -504,12 +504,12 @@ TEST_CASE(resampling2) {
     points[i].x = sinf(3.14f / 4.f * (float)i);
     points[i].y = cosf(3.14f / 4.f * (float)i);
   }
-  points_group_t pg = {
-    .cap = N,
-    .len = N,
-    .points = points,
-    .resampling = NULL
-  };
+  points_group_t pg;
+  memset(&pg, 0, sizeof(pg));
+  pg.cap = N;
+  pg.len = N;
+  pg.points = points;
+  pg.resampling = NULL;
   resampling2_t* r = resampling2_malloc();
   for (int i = 0; i < N; ++i) resampling2_add_point(r, &pg, (uint32_t)i);
   resampling2_debug_print(stdout, r);

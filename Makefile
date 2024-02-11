@@ -145,7 +145,7 @@ endif
 PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
 OBJSA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE))
 OBJS+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
-CXXFLAGS= $(COMMONFLAGS) -fno-exceptions -std=gnu++20
+CXXFLAGS= $(COMMONFLAGS) -fno-exceptions -std=gnu++17
 CCFLAGS= $(COMMONFLAGS)
 OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
 

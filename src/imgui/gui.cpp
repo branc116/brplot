@@ -91,15 +91,15 @@ void graph_draw_min(br_plot_t* br, float posx, float posy, float width, float he
     DrawRectangleRec(br->graph_screen_rect, BLACK);
     draw_grid_values(br);
     graph_draw_grid(br->gridShader.shader, br->graph_screen_rect);
-    points_groups_draw(&br->groups, {
-      .line_mesh = br->lines_mesh,
-      .quad_mesh = br->quads_mesh,
-      .rect = br->graph_rect,
-      .mouse_pos_graph = br->mouse_graph_pos,
-      .show_x_closest = br->show_x_closest,
-      .show_y_closest = br->show_y_closest,
-      .show_closest = br->show_closest
-    });
+    points_groups_draw_in_t pgdi = {};
+    pgdi.line_mesh = br->lines_mesh;
+    pgdi.quad_mesh = br->quads_mesh;
+    pgdi.rect = br->graph_rect;
+    pgdi.mouse_pos_graph = br->mouse_graph_pos;
+    pgdi.show_x_closest = br->show_x_closest;
+    pgdi.show_y_closest = br->show_y_closest;
+    pgdi.show_closest = br->show_closest;
+    points_groups_draw(&br->groups, pgdi);
   EndScissorMode();
 }
 
@@ -189,12 +189,12 @@ static void graph_screenshot_imgui(br_plot_t* br, char* path) {
   update_shader_values(br);
   BeginTextureMode(target);
     graph_draw_grid(br->gridShader.shader, br->graph_screen_rect);
-    points_groups_draw(&br->groups, {
-        .line_mesh = br->lines_mesh,
-        .quad_mesh = br->quads_mesh,
-        .rect = br->graph_rect,
-        .mouse_pos_graph = br->mouse_graph_pos,
-    });
+    points_groups_draw_in_t pgdi = {};
+    pgdi.line_mesh = br->lines_mesh;
+    pgdi.quad_mesh = br->quads_mesh;
+    pgdi.rect = br->graph_rect;
+    pgdi.mouse_pos_graph = br->mouse_graph_pos;
+    points_groups_draw(&br->groups, pgdi);
     draw_grid_values(br);
   EndTextureMode();
   Image img = LoadImageFromTexture(target.texture);

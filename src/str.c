@@ -175,6 +175,10 @@ void br_strv_to_c_str1(br_strv_t s, char* out_s) {
   out_s[s.len] = 0;
 }
 
+br_strv_t br_strv_from_c_str(const char* s) {
+  return (br_strv_t) { .str = s, .len = (unsigned int)strlen((s)) };
+}
+
 TEST_CASE(str_tests) {
   char c[128];
   br_str_t br = br_str_malloc(2);

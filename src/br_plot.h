@@ -437,7 +437,7 @@ void       br_str_to_c_str1(br_str_t s, char* out_s);
 #define    br_strv_sub1(s, start) ((br_strv_t) { .str = s.str + (start), .len = s.len - (start) })
 char*      br_strv_to_c_str(br_strv_t s);
 void       br_strv_to_c_str1(br_strv_t s, char* out_s);
-#define    br_strv_from_c_str(s) CLITERAL(br_strv_t) { .str = s, .len = (unsigned int)strlen((s)) }
+br_strv_t  br_strv_from_c_str(const char* s);
 
 #ifdef IMGUI
 #ifndef RELEASE

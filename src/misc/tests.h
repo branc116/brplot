@@ -99,8 +99,10 @@ static struct test_file_metadata __test_h_file;
   static void __test_h_##_name(struct test_case_metadata *,                         \
                                struct test_file_metadata *);                        \
   static struct test_case_metadata __test_h_meta_##_name = {                        \
-      .fn = __test_h_##_name,                                                       \
-      .name = #_name,                                                               \
+      __test_h_##_name,                                                       \
+    {0}, \
+      #_name, \
+    NULL\
   };                                                                                \
   static void __attribute__((constructor(1001))) __test_h_##_name##_register(void) { \
     __test_h_meta_##_name.next = __test_h_file.tests;                               \
