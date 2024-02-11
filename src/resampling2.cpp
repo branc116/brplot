@@ -325,9 +325,10 @@ static ssize_t resampling2_get_first_inside(resampling2_nodes_t const* nodes, Ve
 float something = 0.02f;
 float something2 = 0.001f;
 float stride_after = 0.06f;
-int max_stride = 10;
+int max_stride = 0;
 int raw_c = 0;
 int not_raw_c = 0;
+
 template<resampling2_node_kind_t kind>
 static void resampling2_draw(resampling2_nodes_t const* nodes, points_group_t const* pg, points_groups_draw_in_t *rdi) {
   ssize_t j = 0;
