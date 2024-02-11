@@ -54,7 +54,7 @@ extern "C" {
 #else
 #define LOCK(x)
 #endif
- 
+
 #define LOG(...)
 #define LOGI(...) fprintf(stderr, __VA_ARGS__)
 
@@ -423,14 +423,16 @@ bool       br_str_push_char(br_str_t* s, char c);
 bool       br_str_push_int(br_str_t* s, int c);
 bool       br_str_push_float1(br_str_t* s, float c, int decimals);
 bool       br_str_push_float(br_str_t* s, float c);
+bool       br_str_push_br_str(br_str_t* s, br_str_t const c);
 bool       br_str_push_c_str(br_str_t* s, char const* c);
 char*      br_str_to_c_str(br_str_t s);
+char*      br_str_move_to_c_str(br_str_t* s);
 br_str_t   br_str_copy(br_str_t s);
 br_str_t   br_str_from_c_str(const char* str);
 void       br_str_to_c_str1(br_str_t s, char* out_s);
-#define    br_str_as_view(s) ((br_strv_t) { .str = s.str, .len = s.len })
 #define    br_str_sub(s, start, new_length) ((br_strv_t) { .str = s.str + (start), .len = (new_length) })
 #define    br_str_sub1(s, start) ((br_strv_t) { .str = s.str + (start), .len = s.len - (start) })
+#define    br_str_as_view(s) ((br_strv_t) { .str = s.str, .len = s.len })
 #define    br_strv_sub(s, start, new_length) ((br_strv_t) { .str = s.str + (start), .len = (new_length) })
 #define    br_strv_sub1(s, start) ((br_strv_t) { .str = s.str + (start), .len = s.len - (start) })
 char*      br_strv_to_c_str(br_strv_t s);
@@ -453,6 +455,7 @@ typedef enum {
 
 br_file_saver_state_t br_file_explorer(struct br_file_saver_s* fs);
 struct br_file_saver_s* br_file_saver_malloc(const char* title, const char* location);
+void br_file_saver_get_path(struct br_file_saver_s* fs, br_str_t* path);
 void br_file_saver_free(struct br_file_saver_s* fs);
 #endif
 

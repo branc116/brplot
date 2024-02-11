@@ -1,4 +1,3 @@
-
 #include <string>
 #include <vector>
 #include <chrono>
@@ -9,24 +8,45 @@
 #include "raylib.h"
 #include "src/br_plot.h"
 
-#define file_saver2_t br_file_saver2_s
+typedef struct br_file_saver_s {
+  std::filesystem::path last_read = {};
+  std::filesystem::path cwd = {};
+  std::vector<std::filesystem::path> cur_paths = {};
+  br_str_t name;
 
-struct br_file_saver2_s {
-  std::filesystem::path last_read;
-  std::filesystem::path cwd;
-  std::vector<std::filesystem::path> cur_paths;
-  std::string name;
+  br_str_t filter_string;
+  std::chrono::duration<long, std::milli> filter_timeout = {};
 
-  std::string filter_string;
-  std::chrono::duration<long, std::milli> filter_timeout;
+  br_strv_t title;
 
-  std::string title;
-};
+  Rectangle file_list_rect;
+  ImVec2 cur_button_sz = {100, 40};
+  ImVec2 default_button_sz = {100, 40};
+} br_file_saver_t;
 
-#include "src/br_plot.h"
+static void file_saver_change_cwd_to(br_file_saver_t& fs, std::filesystem::path&& p);
 
+extern "C" br_file_saver_t* br_file_saver_malloc(const char* title, const char* location) {
+  br_file_saver_t* br = new br_file_saver_t();
+  br->title = br_strv_from_c_str(title);
+  file_saver_change_cwd_to(*br, location);
+  return br;
+}
 
-void file_saver_change_cwd_to(file_saver2_t& fs, std::filesystem::path&& p) {
+extern "C" void br_file_saver_get_path(br_file_saver_t *fs, br_str_t *path) {
+  br_str_push_c_str(path, fs->cwd.string().c_str());
+  if (path->str[path->len - 1] != '\\' || path->str[path->len - 1] != '/') br_str_push_char(path, '/');
+  br_str_push_br_str(path, fs->name);
+  br_str_push_c_str(path, ".png");
+}
+
+extern "C" void br_file_saver_free(br_file_saver_t* f) {
+  br_str_free(f->name);
+  br_str_free(f->filter_string);
+  delete f;
+}
+
+static void file_saver_change_cwd_to(br_file_saver_t& fs, std::filesystem::path&& p) {
   fs.cwd = std::move(p);
   fs.last_read = fs.cwd;
   fs.cur_paths.clear();
@@ -35,34 +55,39 @@ void file_saver_change_cwd_to(file_saver2_t& fs, std::filesystem::path&& p) {
     if (d.is_directory()) fs.cur_paths.push_back(std::move(d));
   }
   std::sort(fs.cur_paths.begin(), fs.cur_paths.end(), [](auto a, auto b) { return a < b; });
+  fs.filter_string.len = 0;
 }
 
-void file_saver_change_cwd_up(file_saver2_t& fs) {
+static void file_saver_change_cwd_up(br_file_saver_t& fs) {
   file_saver_change_cwd_to(fs, fs.cwd.parent_path());
 }
 
-file_saver_state_t hot_file_explorer(file_saver2_t* fs) {
-  ImGui::Begin("File Saver");
+void br_file_explorer_filter(br_file_saver_t* fs) {
   auto io = ImGui::GetIO();
-  if (br::IsMouseOwerWindow()) {
-    ImGui::LabelText("##CurName", "Mouse is not over"); 
-    char kp = GetCharPressed();
+  if (CheckCollisionPointRec(GetMousePosition(), fs->file_list_rect)) {
+    int kp = GetCharPressed();
     if (kp == 0 && fs->filter_timeout > std::chrono::milliseconds(0)) {
       fs->filter_timeout -= std::chrono::milliseconds((int)(io.DeltaTime * 1000.f));
     }
     else if (kp == 0) {
       fs->filter_timeout = std::chrono::milliseconds(0);
-      fs->filter_string = "";
+      fs->filter_string.len = 0;
     }
     else if (kp != 0 && fs->filter_timeout > std::chrono::milliseconds(0)) {
       fs->filter_timeout = std::chrono::milliseconds(3000);
-      fs->filter_string += (char)kp;
+      br_str_push_char(&fs->filter_string, (char)kp);
     } else {
       fs->filter_timeout = std::chrono::milliseconds(3000);
-      fs->filter_string = (char)kp;
+      fs->filter_string.len = 0;
+      br_str_push_char(&fs->filter_string, (char)kp);
     }
   }
-  ImGui::LabelText("##CurName", "%s/%s", fs->cwd.c_str(), fs->name.c_str()); 
+}
+
+br_file_saver_state_t br_file_explorer(br_file_saver_t* fs) {
+  ImGui::Begin("File Saver");
+  ImGui::LabelText("##CurName", "%s/%.*s.png", fs->cwd.c_str(), fs->name.len, fs->name.str);
+  br_file_explorer_filter(fs);
   if (fs->last_read != fs->cwd) {
     file_saver_change_cwd_to(*fs, std::move(fs->cwd));
   }
@@ -71,25 +96,41 @@ file_saver_state_t hot_file_explorer(file_saver2_t* fs) {
   }
   float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
   ImGuiStyle& style = ImGui::GetStyle();
-  ImVec2 button_sz(100, 40);
+  auto window = ImGui::GetCurrentWindowRead();
+  ImVec2 pos = window->DC.CursorPos;
+  fs->file_list_rect.x = pos.x;
+  fs->file_list_rect.y = pos.y;
+  bool any = false;
+  auto new_button_size = fs->default_button_sz;
   for (size_t i = 0; i < fs->cur_paths.size(); i++) {
-    if (fs->filter_string != "" && std::string_view(fs->cur_paths[i].filename().c_str()).find(fs->filter_string) == std::string::npos) continue;
-    ImGui::PushID(i);
-    if (ImGui::Button(fs->cur_paths[i].filename().c_str(), button_sz)) {
+    std::string_view f = std::string_view(fs->filter_string.str, fs->filter_string.len);
+    if (fs->filter_string.len != 0 && std::string_view(fs->cur_paths[i].filename().string().c_str()).find(f) == std::string::npos) continue;
+    any = true;
+    ImGui::PushID((int)i);
+    auto txt = fs->cur_paths[i].filename().string();
+    new_button_size = br::max(new_button_size, ImGui::CalcTextSize(txt.c_str()) + ImVec2{ 10.f, 0.f });
+
+    if (ImGui::Button(txt.c_str(), fs->cur_button_sz)) {
       file_saver_change_cwd_to(*fs, std::move(fs->cur_paths[i]));
     }
     float last_button_x2 = ImGui::GetItemRectMax().x;
-    float next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_sz.x;
+    float next_button_x2 = last_button_x2 + style.ItemSpacing.x + fs->cur_button_sz.x;
     if (i + 1 < fs->cur_paths.size() && next_button_x2 < window_visible_x2) ImGui::SameLine();
     ImGui::PopID();
+    pos = window->DC.CursorPos;
+    fs->file_list_rect.width = fmaxf(fs->file_list_rect.width, pos.x - fs->file_list_rect.x);
+    fs->file_list_rect.height = fmaxf(fs->file_list_rect.height, pos.y - fs->file_list_rect.y);
   }
+  fs->cur_button_sz = new_button_size;
+  if (any == false) fs->filter_string.len = 0;
   ImGui::NewLine();
-  ImGui::InputText(".png", fs->name.data(), fs->name.capacity());
-  std::filesystem::path full_path = fs->cwd / fs->name;
-  if (std::filesystem::exists(full_path)) {
-    ImGui::LabelText("##ERROR", "Warning: File `%s` already exists", full_path.c_str());
-  }
+  br::ui_textbox(".png", &fs->name);
+  auto ret = file_saver_state_exploring;
+
+  if (ImGui::Button("Save")) ret = file_saver_state_accept;
+  ImGui::SameLine();
+  if (ImGui::Button("Cancel")) ret = file_saver_state_cancle;
   ImGui::End();
-  return file_saver_state_exploring;
+  return ret;
 }
 

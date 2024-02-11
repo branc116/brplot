@@ -92,6 +92,20 @@ bool br_str_push_float(br_str_t* s, float c) {
   return br_str_push_float1(s, c, 5);
 }
 
+bool br_str_push_br_str(br_str_t* s, br_str_t const c) {
+  size_t size = c.len;
+  if (size == 0) return true;
+  if (s->len + size > s->cap) {
+    size_t pot_size_1 = s->cap * 2, pot_size_2 = s->len + size;
+    size_t new_size =  pot_size_2 > pot_size_1 ? pot_size_2 : pot_size_1;
+    if (false == br_str_realloc(s, new_size)) return false;
+  }
+  for (size_t i = 0; i < size; ++i) {
+    br_str_push_char_unsafe(s, c.str[i]);
+  }
+  return true;
+}
+
 bool br_str_push_c_str(br_str_t* s, char const* c) {
   size_t size = strlen(c);
   if (size == 0) return true;
@@ -112,6 +126,13 @@ char* br_str_to_c_str(const br_str_t s) {
   memcpy(out_s, s.str, s.len);
   out_s[s.len] = 0;
   return out_s;
+}
+
+char* br_str_move_to_c_str(br_str_t* s) {
+  br_str_push_char(s, '\0');
+  char* ret = s->str;
+  *s = (br_str_t){0};
+  return ret;
 }
 
 br_str_t br_str_copy(br_str_t s) {

@@ -1,6 +1,5 @@
 #include <algorithm>
 #include "br_plot.h"
-#include "br_help.h"
 #include "stdint.h"
 #include "math.h"
 #include "string.h"
@@ -278,7 +277,7 @@ static bool resampling2_add_point(resampling2_nodes_t* nodes, const points_group
     nodes->is_falling = true;
     resampling2_nodes_push_point<kind>(nodes, index, pg->points, 0);
     return true;
-  } 
+  }
   float new_v, old_v;
   if constexpr (kind == resampling2_kind_y) new_v = p.y, old_v = pg->points[index - 1].y;
   else                                      new_v = p.x, old_v = pg->points[index - 1].x;
@@ -363,7 +362,7 @@ static void resampling2_draw(resampling2_nodes_t const* nodes, points_group_t co
       bool swp = false;
       if constexpr (kind == resampling2_kind_x) swp = (first.x < last.x) == (ps[n.min_index].x < ps[n.max_index].x);
       else                                      swp = (first.y < last.y) == (ps[n.min_index].y < ps[n.max_index].y);
-      Vector2 pss[] = { 
+      Vector2 pss[] = {
         first,
         swp ? ps[n.min_index] : ps[n.max_index],
         swp ? ps[n.max_index] : ps[n.min_index],

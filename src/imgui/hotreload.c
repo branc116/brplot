@@ -28,7 +28,7 @@ static bool br_hotreload_compile(void) {
     return false;
   }
   if (a == 0) {
-    static char* newargv[] = { GCC, "-I.", "-DLINUX", "-DPLATFORM_DESKTOP", "-fpic", "--shared", "-g", "-o", "build/linux/debug/imgui/hot.o", "src/imgui/hot.cpp", NULL };
+    static char* newargv[] = { GCC, "-Iexternal/raylib-5.0/src", "-Iexternal/imgui-docking", "-I.", "-DLINUX", "-DPLATFORM_DESKTOP", "-fpic", "--shared", "-g", "-o", "build/linux/debug/imgui/hot.o", "src/imgui/hot.cpp", NULL };
     execvp(GCC, newargv);
   } else {
     int wstat;

@@ -153,7 +153,7 @@ void update_variables(br_plot_t* br) {
           if (IsKeyDown(KEY_X)) {
             br->uvZoom.x *= mw_scale;
           } else if (IsKeyDown(KEY_Y)) {
-            br->uvZoom.y *= mw_scale;      
+            br->uvZoom.y *= mw_scale;
           } else {
             br->uvZoom.x *= mw_scale;
             br->uvZoom.y *= mw_scale;
@@ -167,7 +167,7 @@ void update_variables(br_plot_t* br) {
       graph_update_context(br);
       Vector2 now = br->mouse_graph_pos;
       br->uvOffset.x -= now.x - old.x;
-      br->uvOffset.y -= now.y - old.y; 
+      br->uvOffset.y -= now.y - old.y;
     }
     if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
       Vector2 delt = GetMouseDelta();
@@ -216,37 +216,6 @@ void graph_draw_grid(Shader shader, Rectangle screen_rect) {
       DrawRectangleRec(screen_rect, RED);
     EndShaderMode();
   EndScissorMode();
-}
-
-void graph_screenshot(br_plot_t* gv, char const * path) {
-  float left_pad = 80.f;
-  float bottom_pad = 80.f;
-  Vector2 is = {1280, 720};
-  RenderTexture2D target = LoadRenderTexture((int)is.x, (int)is.y); // TODO: make this values user defined.
-  gv->graph_screen_rect = (Rectangle){left_pad, 0.f, is.x - left_pad, is.y - bottom_pad};
-  gv->uvScreen = (Vector2){is.x, is.y};
-  graph_update_context(gv);
-  update_shader_values(gv);
-  BeginTextureMode(target);
-    graph_draw_grid(gv->gridShader.shader, gv->graph_screen_rect);
-    points_groups_draw(&gv->groups, (points_groups_draw_in_t) { .mouse_pos_graph = gv->mouse_graph_pos,
-        .rect = gv->graph_rect,
-        .line_mesh = gv->lines_mesh,
-        .quad_mesh = gv->quads_mesh
-    });
-    draw_grid_values(gv);
-  EndTextureMode();
-  Image img = LoadImageFromTexture(target.texture);
-  ImageFlipVertical(&img);
-  ExportImage(img, path);
-  UnloadImage(img);
-  UnloadRenderTexture(target);
-
-#if defined(PLATFORM_WEB)
-  // Download file from MEMFS (emscripten memory filesystem)
-  // saveFileFromMEMFSToDisk() function is defined in raylib/src/shell.html
-  emscripten_run_script(TextFormat("saveFileFromMEMFSToDisk('%s','%s')", GetFileName(path), GetFileName(path)));
-#endif
 }
 
 void graph_export(br_plot_t const* gv, char const * path) {

@@ -89,3 +89,33 @@ static void update_resolution(br_plot_t* gv) {
   gv->graph_screen_rect.height = h;
 }
 
+void graph_screenshot(br_plot_t* gv, char const * path) {
+  float left_pad = 80.f;
+  float bottom_pad = 80.f;
+  Vector2 is = {1280, 720};
+  RenderTexture2D target = LoadRenderTexture((int)is.x, (int)is.y); // TODO: make this values user defined.
+  gv->graph_screen_rect = (Rectangle){left_pad, 0.f, is.x - left_pad, is.y - bottom_pad};
+  gv->uvScreen = (Vector2){is.x, is.y};
+  graph_update_context(gv);
+  update_shader_values(gv);
+  BeginTextureMode(target);
+    graph_draw_grid(gv->gridShader.shader, gv->graph_screen_rect);
+    points_groups_draw(&gv->groups, (points_groups_draw_in_t) { .mouse_pos_graph = gv->mouse_graph_pos,
+        .rect = gv->graph_rect,
+        .line_mesh = gv->lines_mesh,
+        .quad_mesh = gv->quads_mesh
+    });
+    draw_grid_values(gv);
+  EndTextureMode();
+  Image img = LoadImageFromTexture(target.texture);
+  ImageFlipVertical(&img);
+  ExportImage(img, path);
+  UnloadImage(img);
+  UnloadRenderTexture(target);
+
+#if defined(PLATFORM_WEB)
+  // Download file from MEMFS (emscripten memory filesystem)
+  // saveFileFromMEMFSToDisk() function is defined in raylib/src/shell.html
+  emscripten_run_script(TextFormat("saveFileFromMEMFSToDisk('%s','%s')", GetFileName(path), GetFileName(path)));
+#endif
+}

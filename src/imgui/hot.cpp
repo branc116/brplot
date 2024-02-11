@@ -2,9 +2,9 @@
 #include "src/br_plot.h"
 #include "src/imgui/imgui_extensions.h"
 #include "stdio.h"
-#include "raylib/src/raylib.h"
+#include "raylib.h"
 #include "cstdlib"
-#include "imgui/imgui.h"
+#include "imgui.h"
 #include <filesystem>
 #include <string>
 #include <string_view>
@@ -13,7 +13,7 @@
 #include <chrono>
 
 void hot_ui_settings(br_plot_t* gv) {
-  
+
 }
 
 extern "C" void br_hot_init(br_plot_t* gv) {

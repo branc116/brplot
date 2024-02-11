@@ -111,8 +111,8 @@ static void input_push_command_with_path(q_commands* commands, const char* path,
   size_t len = strlen(path);
   q_command cmd = {
     .type = command,
-    .path_arg = { 
-      .path = BR_MALLOC(len + 1) 
+    .path_arg = {
+      .path = BR_MALLOC(len + 1)
     }
   };
   memcpy(cmd.path_arg.path, path, len + 1);

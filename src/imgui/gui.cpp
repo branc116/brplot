@@ -7,7 +7,8 @@
 #include "backends/imgui_impl_opengl3.h"
 #include "GLFW/glfw3.h"
 
-GLFWwindow* ctx;
+#include <cstdlib>
+
 #define DEFAULT_INI "" \
 "[Window][DockSpaceViewport_11111111]\n" \
 "Size=1280,720\n" \
@@ -30,9 +31,17 @@ GLFWwindow* ctx;
 "  DockNode  ID=0x00000001 Parent=0x8B93E3BD SizeRef=1005,720\n" \
 "  DockNode  ID=0x00000002 Parent=0x8B93E3BD SizeRef=273,720\n"
 
+static void graph_screenshot_imgui(br_plot_t* br, char* path);
+
+static int screenshot_file_save = 0;
+static struct br_file_saver_s* fs = nullptr;
+
+static ImVec4 clear_color = ImVec4(.0f, .0f, .0f, 1.00f);
+static float padding = 50.f;
+
+static GLFWwindow* ctx;
 
 extern "C" void br_gui_init_specifics_gui(br_plot_t* br) {
-  (void)br;
   ctx = glfwGetCurrentContext();
   ImGui::SetAllocatorFunctions(BR_IMGUI_MALLOC, BR_IMGUI_FREE, nullptr);
   ImGui::CreateContext();
@@ -42,7 +51,7 @@ extern "C" void br_gui_init_specifics_gui(br_plot_t* br) {
 #ifdef PLATFORM_WEB
   const char* glsl_version = "#version 100";
   io.IniFilename = nullptr;
-#elif PLATFORM_DESKTOP 
+#elif PLATFORM_DESKTOP
   const char* glsl_version = "#version 330";
 #endif
   // Setup Platform/Renderer backends
@@ -60,15 +69,13 @@ extern "C" void br_gui_init_specifics_gui(br_plot_t* br) {
     ImGui::LoadIniSettingsFromMemory(DEFAULT_INI);
 #endif
 }
+
 extern "C" void br_gui_free_specifics(br_plot_t* br) {
   (void)br;
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
 }
-
-static ImVec4 clear_color = ImVec4(.0f, .0f, .0f, 1.00f);
-static float padding = 50.f;
 
 void graph_draw_min(br_plot_t* br, float posx, float posy, float width, float height, float padding) {
   br->uvScreen.x = (float)GetScreenWidth();
@@ -131,6 +138,25 @@ extern "C" void graph_draw(br_plot_t* gv) {
 #endif
   br::ui_settings(gv);
   br::ui_info(gv);
+  if (screenshot_file_save == 1) {
+    fs = br_file_saver_malloc("Save screenshot", std::getenv("HOME"));
+    screenshot_file_save = 2;
+  }
+  if (screenshot_file_save == 2) {
+    br_file_saver_state_t state = br_file_explorer(fs);
+    switch (state) {
+      case file_saver_state_exploring: break;
+      case file_saver_state_accept: {
+                                      br_str_t s = br_str_malloc(64);
+                                      br_file_saver_get_path(fs, &s);
+                                      graph_screenshot_imgui(gv, br_str_move_to_c_str(&s));
+                                    } // FALLTHROUGH
+      case file_saver_state_cancle: {
+                                      br_file_saver_free(fs);
+                                      screenshot_file_save = 0;
+                                    } break;
+    }
+  }
 
   graph_frame_end(gv);
   ImGui::Render();
@@ -144,3 +170,36 @@ extern "C" void graph_draw(br_plot_t* gv) {
   ClearBackground(BLACK);
 #endif
 }
+
+extern "C" void graph_screenshot(br_plot_t*, char const*) {
+  screenshot_file_save = 1;
+  return;
+}
+
+static void graph_screenshot_imgui(br_plot_t* br, char* path) {
+  float left_pad = 80.f;
+  float bottom_pad = 80.f;
+  Vector2 is = {1280, 720};
+  RenderTexture2D target = LoadRenderTexture((int)is.x, (int)is.y); // TODO: make this values user defined.
+  br->graph_screen_rect = {left_pad, 0.f, is.x - left_pad, is.y - bottom_pad};
+  br->uvScreen = {is.x, is.y};
+  graph_update_context(br);
+  update_shader_values(br);
+  BeginTextureMode(target);
+    graph_draw_grid(br->gridShader.shader, br->graph_screen_rect);
+    points_groups_draw(&br->groups, {
+        .line_mesh = br->lines_mesh,
+        .quad_mesh = br->quads_mesh,
+        .rect = br->graph_rect,
+        .mouse_pos_graph = br->mouse_graph_pos,
+    });
+    draw_grid_values(br);
+  EndTextureMode();
+  Image img = LoadImageFromTexture(target.texture);
+  ImageFlipVertical(&img);
+  ExportImage(img, path);
+  UnloadImage(img);
+  UnloadRenderTexture(target);
+  BR_FREE(path);
+}
+

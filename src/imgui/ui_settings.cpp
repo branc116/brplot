@@ -92,7 +92,7 @@ namespace br {
             float newWidth = (tr.x - bl.x);
             float newHeight = (tr.y - bl.y);
             br->uvZoom.x = br->graph_screen_rect.height / br->graph_screen_rect.width * newWidth;
-            br->uvOffset.x -= (newWidth - br->graph_rect.width) / 2.f; 
+            br->uvOffset.x -= (newWidth - br->graph_rect.width) / 2.f;
             br->uvZoom.y = newHeight;
             br->uvOffset.y -= (newHeight - br->graph_rect.height) / 2.f;
           }
