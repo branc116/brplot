@@ -9,3 +9,4 @@ bench
 default_font.h
 .cache
 compile_commands.json
+imgui.ini
