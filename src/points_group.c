@@ -1,5 +1,5 @@
 #include "br_plot.h"
-#include "raylib/src/rlgl.h"
+#include "rlgl.h"
 
 
 #include <stdio.h>

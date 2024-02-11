@@ -124,6 +124,18 @@ br_str_t br_str_copy(br_str_t s) {
   return r;
 }
 
+br_str_t br_str_from_c_str(const char* str) {
+  unsigned int len = (unsigned int)strlen(str);
+  br_str_t r = { .str = BR_MALLOC(len), .len = len, .cap = len };
+  if (r.str == NULL) {
+    r.cap = 0;
+    r.len = 0;
+    return r;
+  }
+  memcpy(r.str, str, len);
+  return r;
+}
+
 void br_str_to_c_str1(br_str_t s, char* out_s) {
   memcpy(out_s, s.str, s.len);
   out_s[s.len] = 0;

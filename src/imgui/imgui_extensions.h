@@ -1,6 +1,6 @@
 #pragma once
-#include "raylib/src/raylib.h"
-#include "imgui/imgui.h"
+#include "raylib.h"
+#include "imgui.h"
 #include "src/br_plot.h"
 
 namespace ImGui {

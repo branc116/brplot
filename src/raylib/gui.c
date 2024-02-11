@@ -10,7 +10,7 @@
 #include <string.h>
 #include <pthread.h>
 
-#include "raylib/src/raylib.h"
+#include "raylib.h"
 
 void emscripten_run_script(const char* script);
 static void update_resolution(br_plot_t* gv);

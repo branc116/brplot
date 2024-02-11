@@ -13,7 +13,7 @@
 #include <string.h>
 #include <pthread.h>
 
-#include "raylib/src/raylib.h"
+#include "raylib.h"
 
 #ifndef RELEASE
 static void refresh_shaders_if_dirty(br_plot_t* gv);

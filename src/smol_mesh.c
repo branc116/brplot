@@ -9,7 +9,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "raylib/src/rlgl.h"
+#include "rlgl.h"
 
 static size_t smol_mesh_get_vb_size(smol_mesh_t* mesh);
 static void smol_mesh_upload(smol_mesh_t* mesh, bool dynamic);

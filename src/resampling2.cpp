@@ -7,7 +7,7 @@
 #include "assert.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-#include "raylib/src/raymath.h"
+#include "raymath.h"
 #pragma GCC diagnostic pop
 
 #define RESAMPLING_NODE_MAX_LEN 128

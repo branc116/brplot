@@ -3,7 +3,7 @@
 #include "assert.h"
 #include "stdbool.h"
 #define STB_TRUETYPE_IMPLEMENTATION
-#include "../imgui/imstb_truetype.h"
+#include "../external/stb_truetype.h"
 
 // Texture pixel formats
 // NOTE: Support depends on OpenGL version

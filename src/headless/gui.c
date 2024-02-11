@@ -18,3 +18,9 @@ void graph_draw(br_plot_t *br) {
   ClearBackground(BLACK);
   EndDrawing();
 }
+
+void graph_screenshot(br_plot_t* br, const char* path) {
+  (void)br; (void)path;
+  LOGI("Grabbing screenshot in headless, NOP\n");
+  return;
+}

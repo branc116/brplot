@@ -1,5 +1,11 @@
+# This are the configuration options.
+# default configuration (calling make with 0 arguments) call is:
+# $ make CONFIG=RELEASE PLATFORM=LINUX GUI=IMGUI TYPE=EXE COMPILER=GCC
+# But you can change it by changing one param e.g. use clang:
+# $ make COMPILER=CLANG
+
 # DEBUG | RELEASE
-CONFIG?= DEBUG
+CONFIG?= RELEASE
 # LINUX | WEB | WINDOWS
 PLATFORM?= LINUX
 # IMGUI | RAYLIB | HEADLESS
@@ -9,14 +15,15 @@ TYPE?= EXE
 # GCC | CLANG ( Only for linux build )
 COMPILER?= GCC
 
-RL                 = raylib/src
+RL                 = ./external/raylib-5.0/src
+IM                 = ./external/imgui-docking
 RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
 SOURCE             = src/main.c src/help.c src/points_group.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c src/keybindings.c src/str.c src/memory.cpp src/resampling2.c
 EXTERNAL_HEADERS   =
 ADDITIONAL_HEADERS = src/misc/default_font.h
-RAYLIB_HEADERS     =  raylib/src/rcamera.h raylib/src/raymath.h raylib/src/raylib.h raylib/src/utils.h raylib/src/rlgl.h src/raylib/config.h
+RAYLIB_HEADERS     =  $(RL)/rcamera.h $(RL)/raymath.h $(RL)/raylib.h $(RL)/utils.h $(RL)/rlgl.h $(RL)/config.h
 BR_HEADERS         = src/br_plot.h src/br_gui_internal.h src/br_help.h
-COMMONFLAGS        = -I./imgui -I./imgui/backends -I. -Isrc/raylib -Iraylib/src -I.
+COMMONFLAGS        = -I.
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra
 LD_FLAGS           =
 
@@ -32,18 +39,21 @@ endif
 # To debug include files use -H flag
 
 ifeq ($(GUI), IMGUI)
-	SOURCE+= imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp \
-				  imgui/imgui_widgets.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp \
-				  src/imgui/gui.cpp src/imgui/ui_settings.cpp src/imgui/ui_info.cpp src/imgui/imgui_extensions.cpp $(RAYLIB_SOURCES)
-	COMMONFLAGS+= -DIMGUI
+	SOURCE+= $(IM)/imgui.cpp $(IM)/imgui_draw.cpp $(IM)/imgui_tables.cpp \
+				  $(IM)/imgui_widgets.cpp $(IM)/backends/imgui_impl_glfw.cpp $(IM)/backends/imgui_impl_opengl3.cpp \
+				  src/imgui/gui.cpp src/imgui/ui_settings.cpp src/imgui/ui_info.cpp src/imgui/imgui_extensions.cpp src/imgui/file_saver.cpp \
+					$(RAYLIB_SOURCES)
+	COMMONFLAGS+= -I$(IM) -I$(RL) -DIMGUI
 	BR_HEADERS+= src/imgui/imgui_extensions.h
 	ADDITIONAL_HEADERS+= $(RAYLIB_HEADERS)
 
 else ifeq ($(GUI), RAYLIB)
+	COMMONFLAGS+= -I$(RL)
 	SOURCE+= src/raylib/gui.c src/raylib/ui.c $(RAYLIB_SOURCES)
 	ADDITIONAL_HEADERS+= $(RAYLIB_HEADERS)
 
 else ifeq ($(GUI), HEADLESS)
+	COMMONFLAGS+= -I$(RL)
 	SOURCE+= src/headless/raylib_headless.c src/headless/gui.c
 	PLATFORM= LINUX
 	COMMONFLAGS+= -DNUMBER_OF_STEPS=100
@@ -63,7 +73,7 @@ else ifeq ($(PLATFORM), WINDOWS)
 	LIBS= -lopengl32 -lgdi32 -lwinmm
 	CXX= x86_64-w64-mingw32-g++
 	CC= x86_64-w64-mingw32-gcc
-	COMMONFLAGS+= -Iraylib/src/external/glfw/include -DWINDOWS=1 -DPLATFORM_DESKTOP=1 -D_WIN32=1 -DWIN32_LEAN_AND_MEAN
+	COMMONFLAGS+= -Iexternal/glfw/include -DWINDOWS=1 -DPLATFORM_DESKTOP=1 -D_WIN32=1 -DWIN32_LEAN_AND_MEAN
 	SOURCE+= $(RL)/rglfw.c src/desktop/win/read_input.c src/desktop/platform.c
 	SHADERS_HEADER= src/misc/shaders.h
 	SHADERS_LIST= src/desktop/shaders/grid.fs src/desktop/shaders/line.fs src/desktop/shaders/line.vs src/desktop/shaders/quad.vs src/desktop/shaders/quad.fs
@@ -75,7 +85,7 @@ else ifeq ($(PLATFORM), WEB)
 	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES2=1 -DPLATFORM_WEB=1
 	LD_FLAGS= -sWASM_BIGINT -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH -sUSE_GLFW=3 -sGL_ENABLE_GET_PROC_ADDRESS --shell-file=src/web/minshell.html
 	LD_FLAGS+= -sCHECK_NULL_WRITES=0 -sDISABLE_EXCEPTION_THROWING=1 -sFILESYSTEM=0 -sDYNAMIC_EXECUTION=0
-	SOURCE+= src/web/read_input.c src/web/glfw_mock.c src/web/public_api.c
+	SOURCE+= src/web/read_input.c src/web/platform.c
 	SHADERS_LIST= src/web/shaders/grid.fs src/web/shaders/line.fs src/web/shaders/line.vs src/web/shaders/quad.fs src/web/shaders/quad.vs
 	SHADERS_HEADER= src/misc/shaders_web.h
 	COMPILER= EMCC
@@ -113,7 +123,7 @@ ifeq ($(CONFIG), DEBUG)
 		SOURCE+= src/web/refresh_shaders.c
 	endif
 	ifeq ($(GUI), IMGUI)
-		SOURCE+= imgui/imgui_demo.cpp
+		SOURCE+= $(IM)/imgui_demo.cpp
 		ifeq ($(PLATFORM), LINUX)
 			SOURCE+= src/imgui/hotreload.c
 		endif

@@ -1,5 +1,5 @@
 #pragma once
-#include "raylib/src/raylib.h"
+#include "raylib.h"
 #include <stddef.h>
 #include "stdio.h"
 #include "stdint.h"
@@ -248,6 +248,7 @@ typedef struct br_plot_t {
   // Any thread can write to this q, only render thread can pop
   q_commands commands;
 #ifndef RELEASE
+  int (*getchar)(void);
 #ifdef IMGUI
 #ifdef LINUX
   br_hotreload_state_t hot_state;
@@ -392,7 +393,7 @@ void read_input_stop(void);
 void q_init(q_commands* q);
 #ifdef LOCK_T
 // If you know that only one thread writes to q use q_push, else use this.
-bool q_push_safe(q_commands *q, q_command command);
+bool q_push_safe(q_commands* q, q_command command);
 #endif
 // If you know that only one thread writes to q us this, else use q_push_safe.
 bool q_push(q_commands* q, q_command command);
@@ -406,7 +407,7 @@ int     ui_stack_buttons_add(bool* is_pressed, const char* str, ...);
 Vector2 ui_stack_buttons_end(void);
 #endif
 
-void    help_trim_zeros(char * buff);
+void    help_trim_zeros(char* buff);
 void    help_draw_text(const char *text, Vector2 pos, float fontSize, Color color);
 Vector2 help_measure_text(const char* txt, float font_size);
 void    help_draw_fps(int posX, int posY);
@@ -425,6 +426,7 @@ bool       br_str_push_float(br_str_t* s, float c);
 bool       br_str_push_c_str(br_str_t* s, char const* c);
 char*      br_str_to_c_str(br_str_t s);
 br_str_t   br_str_copy(br_str_t s);
+br_str_t   br_str_from_c_str(const char* str);
 void       br_str_to_c_str1(br_str_t s, char* out_s);
 #define    br_str_as_view(s) ((br_strv_t) { .str = s.str, .len = s.len })
 #define    br_str_sub(s, start, new_length) ((br_strv_t) { .str = s.str + (start), .len = (new_length) })
@@ -433,7 +435,7 @@ void       br_str_to_c_str1(br_str_t s, char* out_s);
 #define    br_strv_sub1(s, start) ((br_strv_t) { .str = s.str + (start), .len = s.len - (start) })
 char*      br_strv_to_c_str(br_strv_t s);
 void       br_strv_to_c_str1(br_strv_t s, char* out_s);
-#define    br_strv_from_c_str(s) ((br_strv_t) { .str = s, .len = sizeof((s)) - 1 })
+#define    br_strv_from_c_str(s) CLITERAL(br_strv_t) { .str = s, .len = (unsigned int)strlen((s)) }
 
 #ifdef IMGUI
 #ifndef RELEASE
@@ -442,17 +444,16 @@ void br_hotreload_start(br_hotreload_state_t* s);
 #endif
 
 #ifdef IMGUI
-#ifndef file_saver2_t
-#define file_saver2_t void
-#endif
-
+struct br_file_saver_s;
 typedef enum {
   file_saver_state_exploring,
   file_saver_state_accept,
   file_saver_state_cancle
-} file_saver_state_t;
+} br_file_saver_state_t;
 
-file_saver_state_t hot_file_explorer(file_saver2_t* fs);
+br_file_saver_state_t br_file_explorer(struct br_file_saver_s* fs);
+struct br_file_saver_s* br_file_saver_malloc(const char* title, const char* location);
+void br_file_saver_free(struct br_file_saver_s* fs);
 #endif
 
 #ifdef __cplusplus
