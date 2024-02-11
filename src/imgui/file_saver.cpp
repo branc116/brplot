@@ -3,8 +3,11 @@
 #include <vector>
 #include <chrono>
 #include <filesystem>
-#include "imgui/imgui.h"
+#include "imgui.h"
+#include "imgui_internal.h"
 #include "src/imgui/imgui_extensions.h"
+#include "raylib.h"
+#include "src/br_plot.h"
 
 #define file_saver2_t br_file_saver2_s
 
