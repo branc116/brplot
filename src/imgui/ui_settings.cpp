@@ -1,4 +1,5 @@
 #include "imgui.h"
+#include "src/br_plot.h"
 #include "src/imgui/imgui_extensions.h"
 
 ImVec4 operator-(float f, ImVec4 v) {
@@ -82,22 +83,8 @@ namespace br {
           br::Input("Scene Center", br->uvOffset);
           Vector2 tr{br->graph_rect.x + br->graph_rect.width, br->graph_rect.y};
           Vector2 bl{br->graph_rect.x, br->graph_rect.y - br->graph_rect.height};
-          if (br::Input("Bottom Left", bl)) {
-            float newWidth = (tr.x - bl.x);
-            float newHeight = (tr.y - bl.y);
-            br->uvZoom.x = br->graph_screen_rect.height / br->graph_screen_rect.width * newWidth;
-            br->uvOffset.x -= (newWidth - br->graph_rect.width) / 2.f;
-            br->uvZoom.y = newHeight;
-            br->uvOffset.y -= (newHeight - br->graph_rect.height) / 2.f;
-          }
-          if (br::Input("Top Right", tr)) {
-            float newWidth = (tr.x - bl.x);
-            float newHeight = (tr.y - bl.y);
-            br->uvZoom.x = br->graph_screen_rect.height / br->graph_screen_rect.width * newWidth;
-            br->uvOffset.x += (newWidth - br->graph_rect.width) / 2.f;
-            br->uvZoom.y = newHeight;
-            br->uvOffset.y += (newHeight - br->graph_rect.height) / 2.f;
-          }
+          if (br::Input("Bottom Left", bl)) graph_set_bottom_left(br, bl.x, bl.y);
+          if (br::Input("Top Right", tr)) graph_set_top_right(br, tr.x, tr.y);
           ImGui::Checkbox("Show Closest", &br->show_closest);
           ImGui::Checkbox("Show Closest X", &br->show_x_closest);
           ImGui::Checkbox("Show Closest Y", &br->show_y_closest);

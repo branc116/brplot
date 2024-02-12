@@ -24,7 +24,7 @@ context_t context;
 void emscripten_run_script(const char* script);
 static br_shader_t graph_load_shader(char const* vs, char const* fs);
 
-br_plot_t* graph_malloc(void) {
+BR_API br_plot_t* graph_malloc(void) {
   return BR_MALLOC(sizeof(br_plot_t));
 }
 
@@ -86,6 +86,28 @@ BR_API void graph_resize(br_plot_t* br, float width, float height) {
 
 BR_API points_groups_t* graph_get_points_groups(br_plot_t* br) {
   return &br->groups;
+}
+
+BR_API void graph_set_bottom_left(br_plot_t* br, float left, float bottom) {
+  Vector2 bl = {left, bottom};
+  Vector2 tr = {br->graph_rect.x + br->graph_rect.width, br->graph_rect.y};
+  float newWidth = (tr.x - bl.x);
+  float newHeight = (tr.y - bl.y);
+  br->uvZoom.x = br->graph_screen_rect.height / br->graph_screen_rect.width * newWidth;
+  br->uvOffset.x -= (newWidth - br->graph_rect.width) / 2.f;
+  br->uvZoom.y = newHeight;
+  br->uvOffset.y -= (newHeight - br->graph_rect.height) / 2.f;
+}
+
+BR_API void graph_set_top_right(br_plot_t* br, float right, float top) {
+  Vector2 tr = {right, top};
+  Vector2 bl = {br->graph_rect.x, br->graph_rect.y - br->graph_rect.height};
+  float newWidth = (tr.x - bl.x);
+  float newHeight = (tr.y - bl.y);
+  br->uvZoom.x = br->graph_screen_rect.height / br->graph_screen_rect.width * newWidth;
+  br->uvOffset.x += (newWidth - br->graph_rect.width) / 2.f;
+  br->uvZoom.y = newHeight;
+  br->uvOffset.y += (newHeight - br->graph_rect.height) / 2.f;
 }
 
 BR_API void graph_free(br_plot_t* gv) {

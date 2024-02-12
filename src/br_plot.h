@@ -368,6 +368,8 @@ BR_API br_plot_t* graph_malloc(void);
 BR_API void graph_init(br_plot_t* br, float width, float height);
 BR_API void graph_resize(br_plot_t* br, float width, float height);
 BR_API points_groups_t* graph_get_points_groups(br_plot_t* br);
+BR_API void graph_set_bottom_left(br_plot_t* br, float left, float bottom);
+BR_API void graph_set_top_right(br_plot_t* br, float right, float top);
 void graph_screenshot(br_plot_t* br, char const* path);
 void graph_export(br_plot_t const* br, char const* path);
 void graph_export_csv(br_plot_t const* br, char const* path);
