@@ -197,7 +197,7 @@ void smol_mesh_gen_line(smol_mesh_t* mesh, Vector2 startPos, Vector2 endPos, Col
   }
   if (context.debug_bounds) {
     context.debug_bounds = false;
-    Vector2 size = { context.last_zoom_value.x * .01f, context.last_zoom_value.x * .01f };
+    Vector2 size = { context.last_zoom_value.x * .01f, context.last_zoom_value.y * .01f };
     smol_mesh_gen_point1(mesh, startPos, size, WHITE);
     smol_mesh_gen_point1(mesh, endPos, size, WHITE);
     context.debug_bounds = true;

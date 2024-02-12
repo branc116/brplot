@@ -154,7 +154,7 @@ void points_groups_add_test_points(points_groups_t* pg) {
 #define GL_MAX 0x8008
 
 void points_groups_draw(points_groups_t const* pg, points_groups_draw_in_t pgdi) {
-  Vector2 size = { context.last_zoom_value.x * .01f, context.last_zoom_value.x * .01f };
+  Vector2 size = { context.last_zoom_value.x * .01f, context.last_zoom_value.y * .01f };
   pgdi.rect.y -= pgdi.rect.height;
   rlSetBlendFactors(GL_SRC_ALPHA, GL_DST_ALPHA, GL_MAX);
   rlSetBlendMode(BLEND_CUSTOM);
