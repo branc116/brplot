@@ -742,6 +742,11 @@ static void lex(br_plot_t* br) {
     } else s.read_next = true;
     lex_step(br, &s);
   }
+  s.c = 0;
+  while (s.tokens_len > 0) {
+    lex_step(br, &s);
+    input_tokens_reduce(br, &s, true);
+  }
   lex_state_deinit(&s);
   q_push(&br->commands, (q_command) { .type = q_command_focus });
 }
