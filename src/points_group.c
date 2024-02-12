@@ -14,6 +14,8 @@ static void points_group_push_point(points_group_t* g, Vector2 v);
 static void points_group_deinit(points_group_t* g);
 static bool points_group_realloc(points_group_t* pg, size_t new_cap);
 static Color color_get(int id);
+static void br_bb_expand_with_point(bb_t* bb, Vector2 v);
+
 
 BR_API void points_group_push_y(points_groups_t* pg_array, float y, int group) {
   points_group_t* pg = points_group_get(pg_array, group);
@@ -264,9 +266,9 @@ void points_group_set_name(points_groups_t* pg, int group, br_str_t name) {
 }
 
 static void points_group_push_point(points_group_t* g, Vector2 v) {
-  if (g->len >= g->cap) {
-    if (false == points_group_realloc(g, g->cap * 2)) return;
-  }
+  if (g->len >= g->cap && false == points_group_realloc(g, g->cap * 2)) return;
+  if (g->len == 0) g->bounding_box = (bb_t) { v.x, v.y, v.x, v.y };
+  else             br_bb_expand_with_point(&g->bounding_box, v);
   g->points[g->len] = v;
   resampling2_add_point(g->resampling, g, (uint32_t)g->len);
   ++g->len;
@@ -292,3 +294,9 @@ static bool points_group_realloc(points_group_t* pg, size_t new_cap) {
   return true;
 }
 
+static void br_bb_expand_with_point(bb_t* bb, Vector2 v) {
+  bb->xmax = fmaxf(bb->xmax, v.x);
+  bb->xmin = fminf(bb->xmin, v.x);
+  bb->ymax = fmaxf(bb->ymax, v.y);
+  bb->ymin = fminf(bb->ymin, v.y);
+}

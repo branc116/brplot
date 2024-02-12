@@ -72,7 +72,8 @@ typedef enum {
   q_command_exportcsv,
   q_command_hide,
   q_command_show,
-  q_command_set_name
+  q_command_set_name,
+  q_command_focus
 } q_command_type;
 
 extern char q_command_path[];
@@ -192,6 +193,7 @@ typedef struct {
   resampling2_t* resampling;
   br_str_t name;
   min_distances_t point_closest_to_mouse;
+  bb_t bounding_box;
   bool is_selected;
 } points_group_t;
 
@@ -370,6 +372,7 @@ BR_API void graph_resize(br_plot_t* br, float width, float height);
 BR_API points_groups_t* graph_get_points_groups(br_plot_t* br);
 BR_API void graph_set_bottom_left(br_plot_t* br, float left, float bottom);
 BR_API void graph_set_top_right(br_plot_t* br, float right, float top);
+BR_API void graph_focus_visible(br_plot_t* br);
 void graph_screenshot(br_plot_t* br, char const* path);
 void graph_export(br_plot_t const* br, char const* path);
 void graph_export_csv(br_plot_t const* br, char const* path);

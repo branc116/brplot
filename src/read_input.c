@@ -403,6 +403,8 @@ static void input_reduce_command(br_plot_t* gv, lex_state_t* s) {
   (void)gv;
   if (0 == strcmp("zoomx", s->tokens[1].name)) {
     gv->uvZoom.x = s->tokens[2].value_f;
+  } else if (0 == strcmp("focus", s->tokens[1].name)) {
+    graph_focus_visible(gv);
   } else if (0 == strcmp("zoomy", s->tokens[1].name)) {
     gv->uvZoom.y = s->tokens[2].value_f;
   } else if (0 == strcmp("zoom", s->tokens[1].name)) {
@@ -741,6 +743,7 @@ static void lex(br_plot_t* br) {
     lex_step(br, &s);
   }
   lex_state_deinit(&s);
+  q_push(&br->commands, (q_command) { .type = q_command_focus });
 }
 
 void read_input_main_worker(br_plot_t* gv) {
