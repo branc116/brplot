@@ -54,6 +54,14 @@ struct resampling2_node_t {
 struct resampling2_raw_node_t {
   uint32_t index_start = 0, len = 0;
   uint32_t minx_index = 0, maxx_index = 0, miny_index = 0, maxy_index = 0;
+  int64_t get_last_point() const {
+    if (len == 0) return -1;
+    return index_start + len - 1;
+  }
+  int64_t get_first_point() const {
+    if (len == 0) return -1;
+    return index_start;
+  }
 };
 
 typedef struct resampling2_nodes_s {
@@ -62,6 +70,16 @@ typedef struct resampling2_nodes_s {
   uint32_t len = 0;
   uint32_t cap = 0;
   bool is_rising = true, is_falling = true;
+  int64_t get_last_point() const {
+    resampling2_nodes_s const* c = this;
+    while (c->parent != NULL) c = c->parent;
+    if (c->arr->len == 0) return -1;
+    return c->arr->index_start + c->arr->len - 1;
+  }
+  int64_t get_first_point() const {
+    if (arr == nullptr || arr->len == 0) return -1;
+    return arr->index_start;
+  }
 } resampling2_nodes_t;
 
 enum resampling2_axis : int32_t {
@@ -78,6 +96,20 @@ struct resampling2_all_roots{
   };
   constexpr resampling2_all_roots(resampling2_nodes_t nodes, resampling2_node_kind_t kind) : kind(kind), x(nodes) {}
   constexpr resampling2_all_roots(resampling2_raw_node_t raw) : kind(resampling2_kind_raw), raw(raw) {}
+  constexpr int64_t get_last_point() const {
+    switch (kind) {
+      case resampling2_kind_raw: return raw.get_last_point();
+      case resampling2_kind_y:   return y.get_last_point();
+      case resampling2_kind_x:   return x.get_last_point();
+    }
+  }
+  constexpr int64_t get_first_point() const {
+    switch (kind) {
+      case resampling2_kind_raw: return raw.get_first_point();
+      case resampling2_kind_y:   return y.get_first_point();
+      case resampling2_kind_x:   return x.get_first_point();
+    }
+  }
 };
 
 typedef struct resampling2_s {
@@ -398,29 +430,50 @@ static bool resampling2_add_point_raw(resampling2_raw_node_t* node, Vector2 cons
 static void resampling2_draw(resampling2_raw_node_t raw, points_group_t const* pg, points_groups_draw_in_t *rdi) {
   Vector2 const* ps = pg->points;
   bool is_inside = !((ps[raw.maxy_index].y < rdi->rect.y) || (ps[raw.miny_index].y > rdi->rect.y + rdi->rect.height) ||
-                     (ps[raw.maxx_index].x < rdi->rect.x) || (ps[raw.maxx_index].x < rdi->rect.x + rdi->rect.width));
+                     (ps[raw.maxx_index].x < rdi->rect.x) || (ps[raw.miny_index].x > rdi->rect.x + rdi->rect.width));
   if (!is_inside) return;
 
   smol_mesh_gen_line_strip(rdi->line_mesh, &pg->points[raw.index_start], raw.len, pg->color);
 }
 
 static void resampling2_draw(resampling2_all_roots r, points_group_t const* pg, points_groups_draw_in_t *rdi) {
-  if (r.kind == resampling2_kind_raw) {
-    resampling2_draw(r.raw, pg, rdi);
-  } else if (r.kind == resampling2_kind_x) {
-    resampling2_draw<resampling2_kind_x>(&r.x, pg, rdi);
-  } else if (r.kind == resampling2_kind_y) {
-    resampling2_draw<resampling2_kind_y>(&r.y, pg, rdi);
-  }
+  if      (r.kind == resampling2_kind_raw) resampling2_draw(r.raw, pg, rdi);
+  else if (r.kind == resampling2_kind_x)   resampling2_draw<resampling2_kind_x>(&r.x, pg, rdi);
+  else if (r.kind == resampling2_kind_y)   resampling2_draw<resampling2_kind_y>(&r.y, pg, rdi);
 }
 
 void resampling2_draw(resampling2_t const* res, points_group_t const *pg, points_groups_draw_in_t *rdi) {
+  auto draw_if_inside = [pg, rdi](int64_t li, int64_t ci) {
+    if (li >= 0 && ci >= 0) {
+      Vector2 from = pg->points[li];
+      Vector2 to = pg->points[ci];
+      float min_y = fminf(from.y, to.y), max_y = fmax(from.y, to.y),
+            min_x = fminf(from.x, to.x), max_x = fmax(from.x, to.x);
+      bool is_inside = !((max_y < rdi->rect.y) || (min_y > rdi->rect.y + rdi->rect.height) ||
+                         (max_x < rdi->rect.x) || (min_x > rdi->rect.x + rdi->rect.width));
+      if (is_inside) smol_mesh_gen_line(rdi->line_mesh, from, to, pg->color);
+    }
+  };
+
+  int64_t last_index = -1, cur_index = -1;
   for (uint32_t i = 0; i < res->roots_len; ++i) {
     resampling2_draw(res->roots[i], pg, rdi);
+    draw_if_inside(last_index, res->roots[i].get_first_point());
+    last_index = res->roots[i].get_last_point();
   }
-  if (res->temp_x_valid) resampling2_draw<resampling2_kind_x>(&res->temp_root_x, pg, rdi);
-  else if (res->temp_y_valid) resampling2_draw<resampling2_kind_y>(&res->temp_root_y, pg, rdi);
-  else resampling2_draw(res->temp_root_raw, pg, rdi);
+  if (res->temp_x_valid) {
+    resampling2_draw<resampling2_kind_x>(&res->temp_root_x, pg, rdi);
+    cur_index = res->temp_root_x.get_first_point();
+  }
+  else if (res->temp_y_valid) {
+    resampling2_draw<resampling2_kind_y>(&res->temp_root_y, pg, rdi);
+    cur_index = res->temp_root_y.get_first_point();
+  }
+  else {
+    resampling2_draw(res->temp_root_raw, pg, rdi);
+    cur_index = res->temp_root_raw.get_first_point();
+  }
+  draw_if_inside(last_index, cur_index);
 }
 
 
