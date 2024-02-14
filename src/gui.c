@@ -55,7 +55,7 @@ BR_API void graph_init(br_plot_t* br, float width, float height) {
     .commands = {0},
     .mouse_inside_graph = false,
     .recoil = 0.85f,
-    .show_closest = true,
+    .show_closest = false,
     .show_x_closest = false,
     .show_y_closest = false
   };
@@ -208,27 +208,29 @@ void update_variables(br_plot_t* br) {
     {
       float mw = -GetMouseWheelMove();
       Vector2 old = br->mouse_graph_pos;
+      bool any = false;
       if (false == help_near_zero(mw)) {
-        if (mw != 0.f) {
-          float mw_scale = (1 + mw/10);
-          if (IsKeyDown(KEY_X)) {
-            br->uvZoom.x *= mw_scale;
-          } else if (IsKeyDown(KEY_Y)) {
-            br->uvZoom.y *= mw_scale;
-          } else {
-            br->uvZoom.x *= mw_scale;
-            br->uvZoom.y *= mw_scale;
-          }
+        float mw_scale = (1 + mw/10);
+        if (IsKeyDown(KEY_X)) {
+          br->uvZoom.x *= mw_scale;
+        } else if (IsKeyDown(KEY_Y)) {
+          br->uvZoom.y *= mw_scale;
+        } else {
+          br->uvZoom.x *= mw_scale;
+          br->uvZoom.y *= mw_scale;
         }
+        any = true;
       }
-      if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_SHIFT)) br->uvZoom.x *= 1.1f;
-      if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_SHIFT)) br->uvZoom.y *= 1.1f;
-      if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_CONTROL)) br->uvZoom.x *= .9f;
-      if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_CONTROL)) br->uvZoom.y *= .9f;
-      graph_update_context(br);
-      Vector2 now = br->mouse_graph_pos;
-      br->uvOffset.x -= now.x - old.x;
-      br->uvOffset.y -= now.y - old.y;
+      if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_SHIFT)) any = true,   br->uvZoom.x *= 1.1f;
+      if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_SHIFT)) any = true,   br->uvZoom.y *= 1.1f;
+      if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_CONTROL)) any = true, br->uvZoom.x *= .9f;
+      if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_CONTROL)) any = true, br->uvZoom.y *= .9f;
+      if (any) {
+        graph_update_context(br);
+        Vector2 now = br->mouse_graph_pos;
+        br->uvOffset.x -= now.x - old.x;
+        br->uvOffset.y -= now.y - old.y;
+      }
     }
     if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
       Vector2 delt = GetMouseDelta();

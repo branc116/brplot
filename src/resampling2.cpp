@@ -101,6 +101,10 @@ struct resampling2_all_roots{
       case resampling2_kind_raw: return raw.get_last_point();
       case resampling2_kind_y:   return y.get_last_point();
       case resampling2_kind_x:   return x.get_last_point();
+      default: {
+                 assert("Unhandled kind" && false);
+                 return -1;
+               }
     }
   }
   constexpr int64_t get_first_point() const {
@@ -108,6 +112,10 @@ struct resampling2_all_roots{
       case resampling2_kind_raw: return raw.get_first_point();
       case resampling2_kind_y:   return y.get_first_point();
       case resampling2_kind_x:   return x.get_first_point();
+      default: {
+                 assert("Unhandled kind" && false);
+                 return -1;
+               }
     }
   }
 };

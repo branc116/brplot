@@ -54,6 +54,7 @@ static inline void br_keybinding_test_points(br_plot_t* br, br_keybinding_ctrl_s
 static inline void br_keybinding_follow(br_plot_t* br, br_keybinding_ctrl_shift_t cs) {
   (void)cs;
   br->follow = !br->follow;
+  if (br->follow) graph_focus_visible(br);
 }
 
 static inline void br_keybinding_debug(br_plot_t* br, br_keybinding_ctrl_shift_t cs) {
