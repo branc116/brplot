@@ -14,6 +14,8 @@ GUI?= IMGUI
 TYPE?= EXE
 # GCC | CLANG ( Only for linux build )
 COMPILER?= GCC
+# YES | NO
+COVERAGE?= NO
 
 RL                 = ./external/raylib-5.0/src
 IM                 = ./external/imgui-docking
@@ -28,6 +30,9 @@ WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra
 LD_FLAGS           =
 
 ifeq ($(PLATFORM)_$(COMPILER), LINUX_CLANG)
+	ifeq ($(COVERAGE), YES)
+		COMMONFLAGS+= -fprofile-instr-generate -fcoverage-mapping -mllvm -runtime-counter-relocation
+	endif
 	WARNING_FLAGS+= -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-newline-eof
 	CXX= clang++
 	CC= clang
@@ -107,14 +112,17 @@ ifeq ($(CONFIG), DEBUG)
 	COMMONFLAGS+= -g
 	ifeq ($(PLATFORM), LINUX)
 		SOURCE+= src/desktop/linux/refresh_shaders.c
+		COMMONFLAGS+= -DUNIT_TEST
 		ifeq ($(COMPILER), GCC)
 		  COMMONFLAGS+= -fsanitize=bounds-strict
 		endif
-		LD_FLAGS+= -rdynamic
-		COMMONFLAGS+= -fpie -pg -DUNIT_TEST \
-	   -fsanitize=address -fsanitize=leak \
-		 -fsanitize=undefined -fsanitize=signed-integer-overflow \
-		 -fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
+		ifeq ($(COVERAGE), NO)
+			LD_FLAGS+= -rdynamic
+			COMMONFLAGS+= -fpie -pg \
+			 -fsanitize=address -fsanitize=leak \
+			 -fsanitize=undefined -fsanitize=signed-integer-overflow \
+			 -fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
+		endif
 	endif
 	ifeq ($(PLATFORM), WINDOWS)
 		SOURCE+= src/desktop/win/refresh_shaders.c

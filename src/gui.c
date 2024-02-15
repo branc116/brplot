@@ -114,7 +114,7 @@ BR_API void graph_set_top_right(br_plot_t* br, float right, float top) {
 BR_API void graph_focus_visible(br_plot_t* br) {
   if (br->groups.len == 0) return;
   size_t i = 0;
-  while ((i < br->groups.len && br->groups.arr[i].len == 0) || false == br->groups.arr[i].is_selected) ++i;
+  while (i < br->groups.len && (br->groups.arr[i].len == 0 || false == br->groups.arr[i].is_selected)) ++i;
   if (i >= br->groups.len) return;
 
   bb_t bb = br->groups.arr[i++].bounding_box;
