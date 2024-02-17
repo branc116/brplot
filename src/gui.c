@@ -116,6 +116,8 @@ BR_API void graph_free(br_plot_t* gv) {
   }
   smol_mesh_free(gv->lines_mesh);
   smol_mesh_free(gv->quads_mesh);
+  smol_mesh_3d_free(gv->lines_mesh_3d);
+  smol_mesh_free(gv->graph_mesh_3d);
   for (size_t i = 0; i < gv->groups.len; ++i) {
     points_groups_deinit(&gv->groups);
   }

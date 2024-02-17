@@ -56,6 +56,18 @@ void smol_mesh_free(smol_mesh_t* mesh) {
   BR_FREE(mesh);
 }
 
+void smol_mesh_3d_free(smol_mesh_3d_t* mesh) {
+  rlUnloadVertexArray(mesh->vaoId);
+  rlUnloadVertexBuffer(mesh->vboIdVertex);
+  rlUnloadVertexBuffer(mesh->vboIdNormal);
+  rlUnloadVertexBuffer(mesh->vboIdColor);
+  BR_FREE(mesh->verticies);
+  BR_FREE(mesh->normals);
+  BR_FREE(mesh->colors);
+  BR_FREE(mesh);
+
+}
+
 void smol_mesh_update(smol_mesh_t* mesh) {
   int number_of_floats = (int)smol_mesh_get_vb_size(mesh);
   rlUpdateVertexBuffer(mesh->vboIdVertex, mesh->verticies, number_of_floats, 0);

@@ -279,6 +279,7 @@ typedef struct br_plot_t {
   smol_mesh_t* lines_mesh;
   smol_mesh_t* quads_mesh;
   smol_mesh_3d_t* lines_mesh_3d;
+  // TODO: rename this to grid_mesh_3d
   smol_mesh_t* graph_mesh_3d;
 
   // Only render thread can read or write to this array.
@@ -375,7 +376,7 @@ smol_mesh_3d_t* smol_mesh_3d_malloc(size_t capacity, Shader s);
 void smol_mesh_3d_gen_line(smol_mesh_3d_t* mesh, Vector3 p1, Vector3 p2, Color color);
 void smol_mesh_3d_draw(smol_mesh_3d_t* mesh);
 void smol_mesh_3d_update(smol_mesh_3d_t* mesh);
-void smol_mesh_3d_free(smol_mesh_t* mesh);
+void smol_mesh_3d_free(smol_mesh_3d_t* mesh);
 
 typedef struct {
   smol_mesh_t* line_mesh;
