@@ -756,6 +756,27 @@ void read_input_main_worker(br_plot_t* gv) {
 }
 
 #ifndef RELEASE
+
+int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
+  lex_state_t s;
+  br_plot_t br = {0};
+  q_init(&br.commands);
+  for (size_t i = 0; i < str_len;) {
+    if (s.read_next) {
+      s.c = str[i++];
+      lex_step_extractor(&br, &s);
+    } else s.read_next = true;
+    lex_step(&br, &s);
+  }
+  s.c = 0;
+  while (s.tokens_len > 0) {
+    lex_step(&br, &s);
+    input_tokens_reduce(&br, &s, true);
+  }
+  free(br.commands.commands);
+  return 0;  // Values other than 0 and -1 are reserved for future use.
+}
+
 #define TEST_COMMAND_PUSH_POINT_Y(q, Y, GROUP) do { \
   q_command c = q_pop(&q); \
   TEST_EQUAL(c.type, q_command_push_point_y); \

@@ -16,11 +16,13 @@ TYPE?= EXE
 COMPILER?= GCC
 # YES | NO
 COVERAGE?= NO
+# YES | NO
+FUZZ?= NO
 
 RL                 = ./external/raylib-5.0/src
 IM                 = ./external/imgui-docking
 RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
-SOURCE             = src/main.c src/help.c src/points_group.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c src/keybindings.c src/str.c src/memory.cpp src/resampling2.c
+SOURCE             = src/main.c src/help.c src/points_group.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c src/keybindings.c src/str.c src/memory.cpp src/resampling2.c src/graph_utils.c
 EXTERNAL_HEADERS   =
 ADDITIONAL_HEADERS = src/misc/default_font.h
 RAYLIB_HEADERS     =  $(RL)/rcamera.h $(RL)/raymath.h $(RL)/raylib.h $(RL)/utils.h $(RL)/rlgl.h $(RL)/config.h
@@ -32,6 +34,9 @@ LD_FLAGS           =
 ifeq ($(PLATFORM)_$(COMPILER), LINUX_CLANG)
 	ifeq ($(COVERAGE), YES)
 		COMMONFLAGS+= -fprofile-instr-generate -fcoverage-mapping -mllvm -runtime-counter-relocation
+	endif
+	ifeq ($(FUZZ), YES)
+		COMMONFLAGS+= -fsanitize=fuzzer
 	endif
 	WARNING_FLAGS+= -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-newline-eof
 	CXX= clang++
