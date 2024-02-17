@@ -376,10 +376,29 @@ Vector2 Vector2Add(Vector2 v1, Vector2 v2)
 void rlSetBlendMode(int mode) {
   LOG("rlSetBlendMode: mode=%d\n", mode);
 }
+
 void rlSetBlendFactors(int glSrcFactor, int glDstFactor, int glEquation) {
   LOG("rlSetBlendFactors: glSrcFactor=%d, glDstFactor=%d, glEquation=%d\n", glSrcFactor, glDstFactor, glEquation);
 }
 
+float GetFrameTime(void) {
+  return 0.16f;
+}
+
+Matrix MatrixPerspective(double fovY, double aspect, double nearPlane, double farPlane) {
+  return (Matrix) {0};
+}
+
+Matrix MatrixLookAt(Vector3 eye, Vector3 target, Vector3 up) {
+  return (Matrix) {0};
+}
+
+Matrix MatrixMultiply(Matrix left, Matrix right) {
+  return (Matrix) {0};
+}
+
+void rlSetUniformMatrix(int locIndex, Matrix mat) {
+}
 
 #include "math.h"
 Vector2 Vector2Normalize(Vector2 v)

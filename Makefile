@@ -30,6 +30,7 @@ BR_HEADERS         = src/br_plot.h src/br_gui_internal.h src/br_help.h
 COMMONFLAGS        = -I.
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra
 LD_FLAGS           =
+SHADERS_FOLDER     =
 
 ifeq ($(PLATFORM)_$(COMPILER), LINUX_CLANG)
 	ifeq ($(COVERAGE), YES)
@@ -71,13 +72,13 @@ else ifeq ($(GUI), HEADLESS)
 else
 	echo "Valid GUI parameters are IMGUI, RAYLIB, HEADLESS" && exit -1
 endif
-	
+
 ifeq ($(PLATFORM), LINUX)
 	LIBS= `pkg-config --static --libs glfw3` -lGL
 	COMMONFLAGS+= -DLINUX=1 -DPLATFORM_DESKTOP=1
 	SOURCE+= src/desktop/linux/read_input.c src/desktop/platform.c
 	SHADERS_HEADER= src/misc/shaders.h
-	SHADERS_LIST= src/desktop/shaders/grid.fs src/desktop/shaders/line.fs src/desktop/shaders/line.vs src/desktop/shaders/quad.vs src/desktop/shaders/quad.fs
+	SHADERS_FOLDER= src/desktop/shaders
 
 else ifeq ($(PLATFORM), WINDOWS)
 	LIBS= -lopengl32 -lgdi32 -lwinmm
@@ -86,7 +87,7 @@ else ifeq ($(PLATFORM), WINDOWS)
 	COMMONFLAGS+= -Iexternal/glfw/include -DWINDOWS=1 -DPLATFORM_DESKTOP=1 -D_WIN32=1 -DWIN32_LEAN_AND_MEAN
 	SOURCE+= $(RL)/rglfw.c src/desktop/win/read_input.c src/desktop/platform.c
 	SHADERS_HEADER= src/misc/shaders.h
-	SHADERS_LIST= src/desktop/shaders/grid.fs src/desktop/shaders/line.fs src/desktop/shaders/line.vs src/desktop/shaders/quad.vs src/desktop/shaders/quad.fs
+	SHADERS_FOLDER= src/desktop/shaders
 	COMPILER= MINGW
 
 else ifeq ($(PLATFORM), WEB)
@@ -96,7 +97,7 @@ else ifeq ($(PLATFORM), WEB)
 	LD_FLAGS= -sWASM_BIGINT -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH -sUSE_GLFW=3 -sGL_ENABLE_GET_PROC_ADDRESS --shell-file=src/web/minshell.html
 	LD_FLAGS+= -sCHECK_NULL_WRITES=0 -sDISABLE_EXCEPTION_THROWING=1 -sFILESYSTEM=0 -sDYNAMIC_EXECUTION=0
 	SOURCE+= src/web/read_input.c src/web/platform.c
-	SHADERS_LIST= src/web/shaders/grid.fs src/web/shaders/line.fs src/web/shaders/line.vs src/web/shaders/quad.fs src/web/shaders/quad.vs
+	SHADERS_FOLDER= src/web/shaders
 	SHADERS_HEADER= src/misc/shaders_web.h
 	COMPILER= EMCC
 	ifeq ($(TYPE), LIB)
@@ -155,6 +156,7 @@ else
 endif
 
 
+
 PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
 OBJSA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE))
 OBJS+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
@@ -166,6 +168,10 @@ OBJSDIR= $(sort $(dir $(OBJS)))
 $(shell $(foreach var,$(OBJSDIR), test -d $(var) || mkdir -p $(var);))
 $(shell test -d $(dir $(OUTPUT)) || mkdir $(dir $(OUTPUT)))
 $(shell test -d bin || mkdir bin)
+
+SHADERS_LIST = $(SHADERS_FOLDER)/grid_3d.fs $(SHADERS_FOLDER)/grid_3d.vs $(SHADERS_FOLDER)/line_3d.fs $(SHADERS_FOLDER)/line_3d.vs \
+	$(SHADERS_FOLDER)/grid.fs $(SHADERS_FOLDER)/line.fs $(SHADERS_FOLDER)/line.vs \
+	$(SHADERS_FOLDER)/quad.fs $(SHADERS_FOLDER)/quad.vs
 
 $(OUTPUT): $(ADDITIONAL_HEADERS) $(OBJS)
 	$(CXX) $(COMMONFLAGS) $(LD_FLAGS) -o $@ $(LIBS) $(OBJS) $(LIBS)
