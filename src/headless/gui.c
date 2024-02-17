@@ -13,7 +13,8 @@ void graph_draw(br_plot_t *br) {
     .mouse_pos_graph = br->mouse_graph_pos,
     .rect = br->graph_rect,
     .line_mesh = br->lines_mesh,
-    .quad_mesh = br->quads_mesh
+    .quad_mesh = br->quads_mesh,
+    .line_mesh_3d = br->lines_mesh_3d
   });
   ClearBackground(BLACK);
   EndDrawing();

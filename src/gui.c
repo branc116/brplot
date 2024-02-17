@@ -153,11 +153,11 @@ void update_variables(br_plot_t* br) {
 #ifndef RELEASE
   refresh_shaders_if_dirty(br);
 #endif
+  graph_update_context(br);
   br->uvTime += GetFrameTime();
   br->uvMatProjection = MatrixPerspective(br->fov_y, br->graph_rect.y / br->graph_rect.x, br->near_plane, br->far_plane);
   br->uvMatView = MatrixLookAt(br->eye, br->target, br->up);
   br->uvMvp = MatrixMultiply(br->uvMatView, br->uvMatProjection);
-  graph_update_context(br);
   if (br->follow) {
     Rectangle sr = br->graph_rect;
     Vector2 middle = { sr.x + sr.width/2, sr.y - sr.height/2 };

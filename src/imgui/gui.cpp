@@ -193,6 +193,7 @@ static void graph_screenshot_imgui(br_plot_t* br, char* path) {
     points_groups_draw_in_t pgdi = {};
     pgdi.line_mesh = br->lines_mesh;
     pgdi.quad_mesh = br->quads_mesh;
+    pgdi.line_mesh_3d = br->lines_mesh_3d;
     pgdi.rect = br->graph_rect;
     pgdi.mouse_pos_graph = br->mouse_graph_pos;
     points_groups_draw(&br->groups, pgdi);

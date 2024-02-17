@@ -30,6 +30,7 @@ BR_API void graph_draw(br_plot_t* br) {
     .rect = br->graph_rect,
     .line_mesh = br->lines_mesh,
     .quad_mesh = br->quads_mesh,
+    .line_mesh_3d = br->lines_mesh_3d,
     .show_x_closest = br->show_x_closest,
     .show_y_closest = br->show_y_closest,
     .show_closest = br->show_closest
@@ -103,7 +104,8 @@ void graph_screenshot(br_plot_t* gv, char const * path) {
     points_groups_draw(&gv->groups, (points_groups_draw_in_t) { .mouse_pos_graph = gv->mouse_graph_pos,
         .rect = gv->graph_rect,
         .line_mesh = gv->lines_mesh,
-        .quad_mesh = gv->quads_mesh
+        .quad_mesh = gv->quads_mesh,
+        .line_mesh_3d = gv->lines_mesh_3d
     });
     draw_grid_values(gv);
   EndTextureMode();
