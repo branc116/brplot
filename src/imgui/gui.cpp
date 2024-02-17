@@ -94,6 +94,7 @@ void graph_draw_min(br_plot_t* br, float posx, float posy, float width, float he
     points_groups_draw_in_t pgdi = {};
     pgdi.line_mesh = br->lines_mesh;
     pgdi.quad_mesh = br->quads_mesh;
+    pgdi.line_mesh_3d = br->lines_mesh_3d;
     pgdi.rect = br->graph_rect;
     pgdi.mouse_pos_graph = br->mouse_graph_pos;
     pgdi.show_x_closest = br->show_x_closest;

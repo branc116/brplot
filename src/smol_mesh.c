@@ -13,6 +13,7 @@
 
 static size_t smol_mesh_get_vb_size(smol_mesh_t* mesh);
 static void smol_mesh_upload(smol_mesh_t* mesh, bool dynamic);
+static void smol_mesh_3d_upload(smol_mesh_3d_t* mesh, bool dynamic);
 
 smol_mesh_t* smol_mesh_malloc(size_t capacity, Shader s) {
   smol_mesh_t* ret = BR_MALLOC(sizeof(smol_mesh_t));
@@ -26,6 +27,21 @@ smol_mesh_t* smol_mesh_malloc(size_t capacity, Shader s) {
     .active_shader = s
   };
   smol_mesh_upload(ret, true);
+  return ret;
+}
+
+smol_mesh_3d_t* smol_mesh_3d_malloc(size_t capacity, Shader s) {
+  smol_mesh_3d_t* ret = BR_MALLOC(sizeof(smol_mesh_3d_t));
+  *ret = (smol_mesh_3d_t){
+    // Maybe join this 3 mallocs into 1 malloc
+    .verticies = BR_MALLOC(3*capacity*3*2*sizeof(float)),
+    .normals = BR_MALLOC(3*capacity*3*2*sizeof(float)),
+    .colors = BR_MALLOC(3*capacity*3*2*sizeof(float)),
+    .capacity = capacity,
+    .cur_len = 0,
+    .active_shader = s
+  };
+  smol_mesh_3d_upload(ret, true);
   return ret;
 }
 
@@ -45,6 +61,48 @@ void smol_mesh_update(smol_mesh_t* mesh) {
   rlUpdateVertexBuffer(mesh->vboIdVertex, mesh->verticies, number_of_floats, 0);
   rlUpdateVertexBuffer(mesh->vboIdNormal, mesh->normals, number_of_floats, 0);
   rlUpdateVertexBuffer(mesh->vboIdColor, mesh->colors, number_of_floats, 0);
+}
+
+void smol_mesh_3d_update(smol_mesh_3d_t* mesh) {
+  int number_of_floats = (int)mesh->capacity * 3 * 2 * 3 * (int)sizeof(float);
+  rlUpdateVertexBuffer(mesh->vboIdVertex, mesh->verticies, number_of_floats, 0);
+  rlUpdateVertexBuffer(mesh->vboIdNormal, mesh->normals, number_of_floats, 0);
+  rlUpdateVertexBuffer(mesh->vboIdColor, mesh->colors, number_of_floats, 0);
+}
+
+void smol_mesh_gen_quad_simple(smol_mesh_t* mesh, Rectangle rect, Color color) {
+  size_t c = mesh->cur_len++;
+  if (c >= mesh->capacity) {
+    smol_mesh_update(mesh);
+    smol_mesh_draw(mesh);
+    c = mesh->cur_len++;
+  }
+  c*=18;
+  Vector3 vc = {color.r/255.f, color.g/255.f, color.b/255.f};
+  for (size_t i = 0; i < 18; i += 3) {
+    mesh->colors[c+i+0] = vc.x;
+    mesh->colors[c+i+1] = vc.y;
+    mesh->colors[c+i+2] = vc.z;
+  }
+  mesh->verticies[c+0] = rect.x;
+  mesh->verticies[c+1] = rect.y;
+  mesh->verticies[c+2] = 0.f;
+  mesh->verticies[c+3] = rect.x + rect.width;
+  mesh->verticies[c+4] = rect.y;
+  mesh->verticies[c+5] = 0.f;
+  mesh->verticies[c+6] = rect.x + rect.width;
+  mesh->verticies[c+7] = rect.y + rect.height;
+  mesh->verticies[c+8] = 0.f;
+
+  mesh->verticies[c+9] = rect.x + rect.width;
+  mesh->verticies[c+10] = rect.y + rect.height;
+  mesh->verticies[c+11] = 0.f;
+  mesh->verticies[c+12] = rect.x;
+  mesh->verticies[c+13] = rect.y + rect.height;
+  mesh->verticies[c+14] = 0.f;
+  mesh->verticies[c+15] = rect.x;
+  mesh->verticies[c+16] = rect.y;
+  mesh->verticies[c+17] = 0.f;
 }
 
 void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 center, Vector2 tangent, Color color) {
@@ -257,6 +315,60 @@ static void smol_mesh_upload(smol_mesh_t* mesh, bool dynamic) {
     mesh->vboIdVertex = 0;
     mesh->vboIdNormal = 0;
     int cap = (int)smol_mesh_get_vb_size(mesh);
+
+    mesh->vaoId = rlLoadVertexArray();
+    rlEnableVertexArray(mesh->vaoId);
+
+    mesh->vboIdVertex = rlLoadVertexBuffer(mesh->verticies, cap, dynamic);
+    rlSetVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_POSITION], 3, RL_FLOAT, 0, 0, 0);
+
+    mesh->vboIdNormal = rlLoadVertexBuffer(mesh->normals, cap, dynamic);
+    rlSetVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_NORMAL], 3, RL_FLOAT, 0, 0, 0);
+
+    mesh->vboIdColor = rlLoadVertexBuffer(mesh->colors, cap, dynamic);
+    rlSetVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_COLOR], 3, RL_FLOAT, 0, 0, 0);
+
+    rlDisableVertexArray();
+}
+
+void smol_mesh_3d_draw(smol_mesh_3d_t* mesh) {
+  // Bind shader program
+  rlEnableShader(mesh->active_shader.id);
+
+  rlEnableVertexArray(mesh->vaoId);
+  // Bind mesh VBO data: vertex position (shader-location = 0)
+  rlEnableVertexBuffer(mesh->vboIdVertex);
+  rlSetVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_POSITION], 3, RL_FLOAT, 0, 0, 0);
+  rlEnableVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_POSITION]);
+
+  rlEnableVertexBuffer(mesh->vboIdNormal);
+  rlSetVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_NORMAL], 3, RL_FLOAT, 0, 0, 0);
+  rlEnableVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_NORMAL]);
+
+  rlEnableVertexBuffer(mesh->vboIdColor);
+  rlSetVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_COLOR], 3, RL_FLOAT, 0, 0, 0);
+  rlEnableVertexAttribute((uint32_t)mesh->active_shader.locs[SHADER_LOC_VERTEX_COLOR]);
+
+  // Bind mesh VBO data: vertex colors (shader-location = 3, if available)
+  rlDrawVertexArray(0, (int)mesh->cur_len*2*3);
+  // Disable all possible vertex array objects (or VBOs)
+  rlDisableVertexArray();
+  rlDisableVertexBuffer();
+  rlDisableVertexBufferElement();
+
+  // Disable shader program
+  rlDisableShader();
+  ++mesh->draw_calls;
+  mesh->cur_len = 0;
+}
+
+
+static void smol_mesh_3d_upload(smol_mesh_3d_t* mesh, bool dynamic) {
+    mesh->vaoId = 0;
+    mesh->vboIdVertex = 0;
+    mesh->vboIdNormal = 0;
+  
+    int cap = (int)mesh->capacity * 3 * 2 * 3 * (int)sizeof(float);
 
     mesh->vaoId = rlLoadVertexArray();
     rlEnableVertexArray(mesh->vaoId);

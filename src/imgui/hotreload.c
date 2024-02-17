@@ -86,7 +86,7 @@ static void* hot_reload_loop(void* s) {
   br_hotreload_state_t* state = (br_hotreload_state_t*)s;
   int fd = inotify_init();
   static uint32_t buff[512];
-  int wd = inotify_add_watch(fd, "src", IN_MODIFY);
+  int wd = inotify_add_watch(fd, "src/imgui", IN_MODIFY);
   if (wd < 0) {
     perror("INIT NOTIFY ERROR");
   }

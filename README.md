@@ -115,14 +115,14 @@ nc -ulkp 42069 | brplot;
 * 10,12;2 - insert point (10, 12) to line group 2
 
 #### All commands 
-* ```--zoom value```               - zoom x & y axis to value
-* ```--zoomx value```              - zoom x axis to value
-* ```--zoomy value```              - zoom y axis to value
-* ```--offsetx value```            - offset x axis to value
-* ```--offsety value```            - offset y axis to value
-* ```--show value```               - show value-th group
-* ```--hide value```               - hide value-th group
-* ```--extract group "Extract-str" - Define custom extraction rules
+* ```--zoom value```                  - zoom x & y axis to value
+* ```--zoomx value```                 - zoom x axis to value
+* ```--zoomy value```                 - zoom y axis to value
+* ```--offsetx value```               - offset x axis to value
+* ```--offsety value```               - offset y axis to value
+* ```--show value```                  - show value-th group
+* ```--hide value```                  - hide value-th group
+* ```--extract group "Extract-str"``` - Define custom extraction rules
 
 #### Extract-str
 This is a string used to define how to transform input to get the data out.

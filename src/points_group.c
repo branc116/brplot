@@ -180,6 +180,10 @@ void points_groups_draw(points_groups_t const* pg, points_groups_draw_in_t pgdi)
     smol_mesh_update(pgdi.line_mesh);
     smol_mesh_draw(pgdi.line_mesh);
   }
+  if (pgdi.line_mesh_3d->cur_len > 0) {
+    smol_mesh_3d_update(pgdi.line_mesh_3d);
+    smol_mesh_3d_draw(pgdi.line_mesh_3d);
+  }
   if (pgdi.quad_mesh->cur_len > 0) {
     smol_mesh_update(pgdi.quad_mesh);
     smol_mesh_draw(pgdi.quad_mesh);
@@ -258,7 +262,7 @@ BR_API points_group_t* points_group_get(points_groups_t* pg, int group) {
   return ret;
 }
 
-void points_group_set_name(points_groups_t* pg, int group, br_str_t name) {
+BR_API void points_group_set_name(points_groups_t* pg, int group, br_str_t name) {
   points_group_t* g = points_group_get(pg, group);
   if (pg == NULL) return;
   br_str_free(g->name);

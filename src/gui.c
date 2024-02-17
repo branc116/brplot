@@ -32,9 +32,11 @@ BR_API void graph_init(br_plot_t* br, float width, float height) {
   InitWindow((int)width, (int)height, "brplot");
   SetWindowState(FLAG_VSYNC_HINT);
   *br = (br_plot_t){
-    .gridShader = graph_load_shader(NULL, SHADER_GRID_FS),
-    .linesShader = graph_load_shader(SHADER_LINE_VS, SHADER_LINE_FS),
-    .quadShader = graph_load_shader(SHADER_QUAD_VS, SHADER_QUAD_FS),
+    .gridShader    = graph_load_shader(NULL, SHADER_GRID_FS),
+    .linesShader   = graph_load_shader(SHADER_LINE_VS, SHADER_LINE_FS),
+    .quadShader    = graph_load_shader(SHADER_QUAD_VS, SHADER_QUAD_FS),
+    .grid3dShader  = graph_load_shader(SHADER_GRID_3D_VS, SHADER_GRID_3D_FS),
+    .lines3dShader = graph_load_shader(SHADER_LINE_3D_VS, SHADER_LINE_3D_FS),
 #ifndef RELEASE
 #ifdef IMGUI
 #ifdef LINUX
@@ -43,13 +45,31 @@ BR_API void graph_init(br_plot_t* br, float width, float height) {
 #endif
 #endif
     .uvOffset = { 0., 0. },
-    .uvZoom = { 1., 1. },
+    .uvZoom   = { 1., 1. },
     .uvScreen = { width, height },
-    .uvDelta = { 0., 0. },
+    .uvDelta  = { 0., 0. },
+
+    // 3D stuff
+    .uvMvp           = {0},
+    .uvMatView       = {0},
+    .uvMatProjection = {0},
+    .eye             = { 0.f, 0.f, -1.f},
+    .target          = { 0.f, 0.f, 0.f},
+    .up              = { 0.f, 1.f, 0.f },
+    .fov_y           = PI / 2.f,
+    .near_plane      = 0.1f,
+    .far_plane       = 1000.f,
+
     .groups = {0},
+    .groups_3d = {0},
+
     .graph_screen_rect = { GRAPH_LEFT_PAD, 50, width - GRAPH_LEFT_PAD - 60, height - 110 },
+
     .lines_mesh = NULL,
     .quads_mesh = NULL,
+    .lines_mesh_3d = NULL,
+    .graph_mesh_3d = NULL,
+
     .follow = false,
     .shaders_dirty = false,
     .commands = {0},
@@ -70,6 +90,8 @@ BR_API void graph_init(br_plot_t* br, float width, float height) {
 #endif
   br->lines_mesh = smol_mesh_malloc(PTOM_COUNT, br->linesShader.shader);
   br->quads_mesh = smol_mesh_malloc(PTOM_COUNT, br->quadShader.shader);
+  br->lines_mesh_3d = smol_mesh_3d_malloc(PTOM_COUNT, br->lines3dShader.shader);
+  br->graph_mesh_3d = smol_mesh_malloc(1, br->grid3dShader.shader);
   q_init(&br->commands);
   help_load_default_font();
 
@@ -86,67 +108,6 @@ BR_API void graph_resize(br_plot_t* br, float width, float height) {
 
 BR_API points_groups_t* graph_get_points_groups(br_plot_t* br) {
   return &br->groups;
-}
-
-BR_API void graph_set_bottom_left(br_plot_t* br, float left, float bottom) {
-  Vector2 bl = {left, bottom};
-  Vector2 tr = {br->graph_rect.x + br->graph_rect.width, br->graph_rect.y};
-  float newWidth = (tr.x - bl.x);
-  float newHeight = (tr.y - bl.y);
-  br->uvZoom.x = br->graph_screen_rect.height / br->graph_screen_rect.width * newWidth;
-  br->uvOffset.x -= (newWidth - br->graph_rect.width) / 2.f;
-  br->uvZoom.y = newHeight;
-  br->uvOffset.y -= (newHeight - br->graph_rect.height) / 2.f;
-
-}
-
-BR_API void graph_set_top_right(br_plot_t* br, float right, float top) {
-  Vector2 tr = {right, top};
-  Vector2 bl = {br->graph_rect.x, br->graph_rect.y - br->graph_rect.height};
-  float newWidth = (tr.x - bl.x);
-  float newHeight = (tr.y - bl.y);
-  br->uvZoom.x = br->graph_screen_rect.height / br->graph_screen_rect.width * newWidth;
-  br->uvOffset.x += (newWidth - br->graph_rect.width) / 2.f;
-  br->uvZoom.y = newHeight;
-  br->uvOffset.y += (newHeight - br->graph_rect.height) / 2.f;
-}
-
-BR_API void graph_focus_visible(br_plot_t* br) {
-  if (br->groups.len == 0) return;
-  size_t i = 0;
-  while (i < br->groups.len && (br->groups.arr[i].len == 0 || false == br->groups.arr[i].is_selected)) ++i;
-  if (i >= br->groups.len) return;
-
-  bb_t bb = br->groups.arr[i++].bounding_box;
-  for (; i < br->groups.len; ++i) {
-    if (br->groups.arr[i].len == 0 || false == br->groups.arr[i].is_selected) continue;
-    bb_t cur_bb = br->groups.arr[i].bounding_box;
-    bb = (bb_t) {
-      .xmin = fminf(bb.xmin, cur_bb.xmin),
-      .ymin = fminf(bb.ymin, cur_bb.ymin),
-      .xmax = fmaxf(bb.xmax, cur_bb.xmax),
-      .ymax = fmaxf(bb.ymax, cur_bb.ymax),
-    };
-  }
-
-  float newWidth = (bb.xmax - bb.xmin);
-  float newHeight = (bb.ymax - bb.ymin);
-  bb.xmax += newWidth * 0.1f;
-  bb.ymax += newHeight * 0.1f;
-  bb.xmin -= newWidth * 0.1f;
-  bb.ymin -= newHeight * 0.1f;
-  newWidth = (bb.xmax - bb.xmin);
-  newHeight = (bb.ymax - bb.ymin);
-  Vector2 bl = {bb.xmin, bb.ymin};
-  float maxSize = fmaxf(newWidth, newHeight);
-  br->uvZoom.x = br->graph_screen_rect.height / br->graph_screen_rect.width * maxSize; 
-  br->uvOffset.x = bl.x + maxSize / 2.f;
-  br->uvZoom.y = newHeight;
-  br->uvOffset.y = bl.y + maxSize / 2.f;
-
-//  graph_set_bottom_left(br, bb.xmin - (width * 0.1f), bb.ymin - (height * 0.1f));
-//  graph_update_context(br);
-//  graph_set_top_right  (br, bb.xmin + (width * 0.1f), bb.ymax + (height * 0.1f));
 }
 
 BR_API void graph_free(br_plot_t* gv) {
@@ -166,16 +127,25 @@ BR_API void graph_free(br_plot_t* gv) {
   BR_FREE(gv->commands.commands);
 }
 
+#include "rlgl.h"
+
 void update_shader_values(br_plot_t* br) {
   for (size_t i = 0; i < sizeof(br->shaders) / sizeof(br_shader_t); ++i) {
     SetShaderValue(br->shaders[i].shader, br->shaders[i].uResolution, &br->graph_screen_rect, SHADER_UNIFORM_VEC4);
     SetShaderValue(br->shaders[i].shader, br->shaders[i].uZoom, &br->uvZoom, SHADER_UNIFORM_VEC2);
     SetShaderValue(br->shaders[i].shader, br->shaders[i].uOffset, &br->uvOffset, SHADER_UNIFORM_VEC2);
     SetShaderValue(br->shaders[i].shader, br->shaders[i].uScreen, &br->uvScreen, SHADER_UNIFORM_VEC2);
+    SetShaderValue(br->shaders[i].shader, br->shaders[i].uTime, &br->uvTime, SHADER_UNIFORM_FLOAT);
+    rlSetUniformMatrix(br->shaders[i].uMvp, br->uvMvp);
+    rlSetUniformMatrix(br->shaders[i].uMatView, br->uvMatView);
+    rlSetUniformMatrix(br->shaders[i].uMatProjection, br->uvMatProjection);
   }
   // TODO: don't assign this every frame, no need for it. Assign it only when shaders are recompiled.
   br->lines_mesh->active_shader = br->linesShader.shader;
   br->quads_mesh->active_shader = br->quadShader.shader;
+  br->lines_mesh_3d->active_shader = br->lines3dShader.shader;
+  br->graph_mesh_3d->active_shader = br->grid3dShader.shader;
+
   context.last_zoom_value = br->uvZoom;
 }
 
@@ -183,6 +153,10 @@ void update_variables(br_plot_t* br) {
 #ifndef RELEASE
   refresh_shaders_if_dirty(br);
 #endif
+  br->uvTime += GetFrameTime();
+  br->uvMatProjection = MatrixPerspective(br->fov_y, br->graph_rect.y / br->graph_rect.x, br->near_plane, br->far_plane);
+  br->uvMatView = MatrixLookAt(br->eye, br->target, br->up);
+  br->uvMvp = MatrixMultiply(br->uvMatView, br->uvMatProjection);
   graph_update_context(br);
   if (br->follow) {
     Rectangle sr = br->graph_rect;
@@ -234,10 +208,13 @@ void update_variables(br_plot_t* br) {
     }
     if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
       Vector2 delt = GetMouseDelta();
+      //float speed = 1.f;
+      if (IsKeyDown(KEY_W)) {
+        //Vector3 diff = Vector3Subtract(br->eye, br->target);
+      }
       br->uvOffset.x -= br->uvZoom.x*delt.x/br->graph_screen_rect.height;
       br->uvOffset.y += br->uvZoom.y*delt.y/br->graph_screen_rect.height;
-    }
-    br_keybinding_handle_keys(br);
+    } else br_keybinding_handle_keys(br);
     if (br->jump_around) {
       br->graph_screen_rect.x += 100.f * (float)sin(GetTime());
       br->graph_screen_rect.y += 77.f * (float)cos(GetTime());
@@ -393,6 +370,10 @@ static br_shader_t graph_load_shader(char const* vs, char const* fs) {
     .uZoom = GetShaderLocation(s, "zoom"),
     .uOffset = GetShaderLocation(s, "offset"),
     .uScreen = GetShaderLocation(s, "screen"),
+    .uTime = GetShaderLocation(s, "time"),
+    .uMvp = GetShaderLocation(s, "m_mvp"),
+    .uMatView = GetShaderLocation(s, "m_view"),
+    .uMatProjection = GetShaderLocation(s, "m_projection"),
     .shader = s
   };
 }
@@ -404,6 +385,10 @@ static br_shader_t graph_load_shader(char const* vs, char const* fs) {
     .uZoom = GetShaderLocation(s, "zoom"),
     .uOffset = GetShaderLocation(s, "offset"),
     .uScreen = GetShaderLocation(s, "screen"),
+    .uTime = GetShaderLocation(s, "time"),
+    .uMvp = GetShaderLocation(s, "m_mvp"),
+    .uMatView = GetShaderLocation(s, "m_view"),
+    .uMatProjection = GetShaderLocation(s, "m_projection"),
     .shader = s,
     .vs_file_name = vs,
     .fs_file_name = fs
