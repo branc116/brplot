@@ -7,8 +7,7 @@ on:
       - 'src/**'
       - 'tools/**'
       - '.github/workflows/linux.yml'
-      - 'raylib'
-      - 'imgui'
+      - 'external/**'
       - 'Makefile'
 
 permissions:
@@ -143,12 +142,13 @@ jobs:
         cat /dev/random | time bin/brplot_headless_linux_debug_gcc
         cat /dev/random | time bin/brplot_headless_linux_debug_clang
 
+    - name: Local CI
+      run: |
+        EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ ./tools/local_ci.sh
+
     - name: Test artefacts
       run: |
         test -f www/index.wasm && ls -alFh www
         ls -alFh bin && strip bin/* && ls -alFh bin
         file bin/*
-    - name: Local CI
-      run: |
-        EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ ./local_ci.sh
 
