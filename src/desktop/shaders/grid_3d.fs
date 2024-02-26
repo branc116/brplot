@@ -16,9 +16,9 @@ uniform mat4 m_mvp;
 uniform mat4 m_view;
 uniform mat4 m_projection;
 
-in vec2 uv;
 in vec4 color;
-in vec2 fragTexCoord;
+in vec3 fragTexCoord;
+in vec3 normal;
 
 out vec4 out_color;
 
@@ -38,33 +38,28 @@ float map(vec2 cPos, vec2 zoom_level) {
     vec2 mcPosd = mod(cPos + divs/2., divs) - divs/2.;
     vec2 mcPosdM = mod(cPos + divsMajor/2., divsMajor) - divsMajor/2.;
 
-    vec2 to = divs/(80. * (1. + 5.*(1. - 1.*fr)));
-    vec2 d = 1. - smoothstep(abs(mcPosd), vec2(0.0), to);
-    vec2 dM = 1. - smoothstep(abs(mcPosdM), vec2(0.0), to*4);
+    vec2 to = divs/(80. * (1. + 10.*(1. - 1.*fr)));
+    //float f = 1.0 + length(cPos - eye.xy) / abs(eye.z) / 1.0;
+    vec2 f = normal.z > normal.y ?
+       1.0 + abs(cPos - eye.xy) / abs(eye.z) / 1.0 :
+       1.0 + abs(cPos - eye.xz) / abs(eye.y) / 1.0;
+    vec2 d = 1. - smoothstep(abs(mcPosd), vec2(0.0), to * f * 2.1);
+    vec2 dM = 1. - smoothstep(abs(mcPosdM), vec2(0.0), to * 4 * f);
     float k = 20.;
 
     return max(max(d.x, d.y), max(dM.x, dM.y));
 }
 
-vec2 map_outer(vec2 fragCoord) {
-    vec2 cPos = fragCoord.xy;
-    vec4 p = vec4(cPos, .0, 1.0);
-    p = m_mvp * p;
-    if (p.z < 0.) return vec2(0.0);
-    p /= p.w;
-    if (p.z < 0.001) return vec2(0);
-    vec3 diff = p.xyz - offset;
-    p.xyz += offset;
-    if (length(p.xy) < 0.1) return vec2(p.z, 200.0);
-    return vec2(p.z, map(p.xy, vec2(length(diff.xyz))));
+float map_outer(vec2 fragCoord) {
+    return map(fragCoord, vec2(.5 * length(eye.xyz - fragTexCoord)));
 }
 
-#define AA 1
-
 void main(void) {
-  vec2 uv = (gl_FragCoord.xy - resolution.xy - resolution.zw*0.5)/screen.yy;
-  vec2 res = map_outer(uv);
-  //out_color = vec4(0.2, 0.3, 0.5, 1.0)*res;
-  out_color = vec4(res.x/100., res.y, 0., 1.0);
+  if (gl_FragCoord.x < resolution.x || gl_FragCoord.y > resolution.y) {
+    out_color = vec4(0.0);
+    return;
+  }
+  float res = normal.z > normal.y ? map_outer(fragTexCoord.xy) : map_outer(fragTexCoord.xz);
+  out_color = (normal.z > normal.y ? vec4(0.2, 0.3, 0.5, 1.0) : vec4(0.5, 0.3, 0.2, 1.0))*res;
 }
 

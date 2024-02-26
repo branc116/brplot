@@ -2,8 +2,11 @@
 in vec3 vertexPosition;
 in vec2 vertexTexCoord;
 in vec4 vertexColor;
-out vec2 fragTexCoord;
+
+out vec3 fragTexCoord;
 out vec4 fragColor;
+out vec3 normal;
+
 uniform mat4 mvp;
 uniform mat4 m_mvp;
 uniform mat4 m_view;
@@ -13,7 +16,8 @@ uniform vec2 screen;
 uniform float time;
 void main()
 {
-    fragTexCoord = vertexPosition.zz;
+    fragTexCoord = vertexPosition.xyz;
     fragColor = vertexColor;
-    gl_Position = vec4(vertexPosition.xy, 0.0, 1.0);
+    normal = vertexColor.xyz;
+    gl_Position = m_mvp * vec4(vertexPosition.xyz, 1.0);
 }
