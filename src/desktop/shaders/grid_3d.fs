@@ -41,17 +41,17 @@ float map(vec2 cPos, vec2 zoom_level) {
     vec2 to = divs/(80. * (1. + 10.*(1. - 1.*fr)));
     //float f = 1.0 + length(cPos - eye.xy) / abs(eye.z) / 1.0;
     vec2 f = normal.z > normal.y ?
-       1.0 + abs(cPos - eye.xy) / abs(eye.z) / 1.0 :
-       1.0 + abs(cPos - eye.xz) / abs(eye.y) / 1.0;
-    vec2 d = 1. - smoothstep(abs(mcPosd), vec2(0.0), to * f * 2.1);
-    vec2 dM = 1. - smoothstep(abs(mcPosdM), vec2(0.0), to * 4 * f);
+       1.0 + abs(cPos - eye.xy) / abs(eye.z) :
+       1.0 + abs(cPos - eye.xz) / abs(eye.y);
+    vec2 d = 1. - smoothstep(abs(mcPosd), vec2(0.0), to * f);
+    vec2 dM = 1. - smoothstep(abs(mcPosdM), vec2(0.0), to * 3. * f);
     float k = 20.;
 
     return max(max(d.x, d.y), max(dM.x, dM.y));
 }
 
 float map_outer(vec2 fragCoord) {
-    return map(fragCoord, vec2(.5 * length(eye.xyz - fragTexCoord)));
+    return map(fragCoord, vec2(2.5 * length(eye.xyz - fragTexCoord)));
 }
 
 void main(void) {

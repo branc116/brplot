@@ -52,6 +52,85 @@ void smol_mesh_gen_quad_3d_simple(smol_mesh_t* mesh, Vector3 p1, Vector3 p2, Vec
   points[5] = p1;
 }
 
+void smol_mesh_3d_gen_line_eye2(smol_mesh_3d_t* mesh, Vector3 p1, Vector3 p2, Vector3 eye, Color color) {
+  Vector3 const cv = {color.r/255.f, color.g/255.f, color.b/255.f};
+  Vector3 mid   = Vector3MultiplyValue(Vector3Add(p1, p2), 0.5f);
+  Vector3 diff  = Vector3Normalize(Vector3Subtract(p2, p1));
+  Vector3 norm = { diff.z, -diff.x, diff.y }; 
+  norm = Vector3Perpendicular(diff);
+  Vector3Angle(p1, p2);
+  int n = 12;
+  float dist1 = 0.01f * Vector3Distance(eye, p1);
+  float dist2 = 0.01f * Vector3Distance(eye, p2);
+  for (int k = 0; k <= n; ++k) {
+    Vector3 next = Vector3Normalize(Vector3RotateByAxisAngle(norm, diff, (float)PI * 2 / (float)n));
+    size_t i = mesh->cur_len++;
+    if (i >= mesh->capacity) {
+      smol_mesh_3d_update(mesh);
+      smol_mesh_3d_draw(mesh);
+      i = mesh->cur_len++;
+    }
+    Vector3* vecs = (Vector3*) &mesh->verticies[i*18];
+    Vector3* colors = (Vector3*) &mesh->colors[i*18];
+    Vector3* normals = (Vector3*) &mesh->normals[i*18];
+    normals[0] = norm;
+    normals[1] = next;
+    normals[2] = norm;
+
+    normals[3] = norm;
+    normals[4] = next;
+    normals[5] = next;
+
+    vecs[0] = Vector3Add(p1, normals[0]);
+    vecs[1] = Vector3Add(p1, normals[1]);
+    vecs[2] = Vector3Add(p2, normals[2]);
+
+    vecs[3] = Vector3Add(p2, normals[3]);
+    vecs[4] = Vector3Add(p2, normals[4]);
+    vecs[5] = Vector3Add(p1, normals[5]);
+
+    for (int j = 0; j < 6; ++j) colors[j] = cv;
+    norm = next;
+  }
+}
+
+void smol_mesh_3d_gen_line_eye(smol_mesh_3d_t* mesh, Vector3 p1, Vector3 p2, Vector3 eye, Color color) {
+  size_t i = mesh->cur_len++;
+  if (i >= mesh->capacity) {
+    smol_mesh_3d_update(mesh);
+    smol_mesh_3d_draw(mesh);
+    i = mesh->cur_len++;
+  }
+  Vector3* vecs = (Vector3*) &mesh->verticies[i*18];
+  Vector3* colors = (Vector3*) &mesh->colors[i*18];
+  Vector3* normals = (Vector3*) &mesh->normals[i*18];
+  Vector3 const cv = {color.r/255.f, color.g/255.f, color.b/255.f};
+  Vector3 mid = Vector3MultiplyValue(Vector3Add(p1, p2), 0.5f);
+  Vector3 diff = Vector3Normalize(Vector3Subtract(p2, p1));
+  float dist1 = 0.01f * Vector3Distance(eye, p1);
+  float dist2 = 0.01f * Vector3Distance(eye, p2);
+  dist1 = dist2 = (dist1 + dist2) * .5f;
+  Vector3 right1 = Vector3CrossProduct(Vector3Normalize(Vector3Subtract(eye, p1)), diff);
+  Vector3 right2 = Vector3CrossProduct(Vector3Normalize(Vector3Subtract(eye, p2)), diff);
+  normals[0] = Vector3MultiplyValue(right1, -dist1);
+  normals[1] = Vector3MultiplyValue(right1, dist1);
+  normals[2] = Vector3MultiplyValue(right2, dist2);
+
+  normals[3] = Vector3MultiplyValue(right2, dist2);
+  normals[4] = Vector3MultiplyValue(right2, -dist2);
+  normals[5] = Vector3MultiplyValue(right1, -dist1);
+
+  vecs[0] = Vector3Add(p1, normals[0]);
+  vecs[1] = Vector3Add(p1, normals[1]);
+  vecs[2] = Vector3Add(p2, normals[2]);
+
+  vecs[3] = Vector3Add(p2, normals[3]);
+  vecs[4] = Vector3Add(p2, normals[4]);
+  vecs[5] = Vector3Add(p1, normals[5]);
+
+  for (int j = 0; j < 6; ++j) colors[j] = cv;
+}
+
 bool focused = false;
 float translate_speed = 1.0f;
 
@@ -140,7 +219,6 @@ extern "C" void br_hot_loop(br_plot_t* gv) {
          gv->target = Vector3Add(gv->target, diff);
          gv->eye = Vector3Add(gv->eye, diff);
       }
-      
 
       if (IsKeyDown(KEY_J)) {
         Vector3 diff = Vector3Subtract(gv->target, gv->eye);
@@ -191,6 +269,19 @@ extern "C" void br_hot_loop(br_plot_t* gv) {
     smol_mesh_gen_quad_3d_simple(gv->graph_mesh_3d, Vector3 { -sz, 0, -sz }, Vector3 { sz, 0, -sz }, Vector3 { sz, 0, sz }, Vector3 { -sz, 0, sz }, Color {0, 1, 0, 0});
     smol_mesh_update(gv->graph_mesh_3d);
     smol_mesh_draw(gv->graph_mesh_3d);
+
+    glUseProgram(gv->lines3dShader.shader.id);
+    loc = GetShaderLocation(gv->lines3dShader.shader, "eye");
+    rlSetUniformMatrix(gv->lines3dShader.uMvp, gv->uvMvp);
+    rlSetUniform(loc, &gv->eye, RL_SHADER_UNIFORM_VEC3, 1);
+
+    rlEnableDepthTest();
+    smol_mesh_3d_gen_line_eye(gv->lines_mesh_3d, Vector3 { 0, 0, 0 }, Vector3 { 10, 10, 0 }, gv->eye, GREEN);
+    smol_mesh_3d_gen_line_eye(gv->lines_mesh_3d, Vector3 { 0, 0, 0 }, Vector3 { 10, 10, 10 }, gv->eye, GREEN);
+    smol_mesh_3d_gen_line_eye(gv->lines_mesh_3d, Vector3 { 0, 0, 0 }, Vector3 { 10, 0, 0 }, gv->eye, BLUE);
+    smol_mesh_3d_update(gv->lines_mesh_3d);
+    smol_mesh_3d_draw(gv->lines_mesh_3d);
+    rlDisableDepthTest();
   }
   ImGui::End();
 }
