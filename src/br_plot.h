@@ -215,6 +215,7 @@ typedef struct {
   Vector2 mouse_pos;
   Vector2 zoom;
   Vector2 offset;
+  Vector2 delta;
   bool show_closest, show_x_closest, show_y_closest;
 } br_plot_instance_2d_t;
 
@@ -238,6 +239,7 @@ typedef struct {
   // graph_screen_rect is in the screen coordinates.
   //                   That is if you resize the whole plot, or move the plot around the screen this value will change.
   Rectangle graph_screen_rect;
+  Vector2 resolution;
   bool follow;
   bool jump_around;
   bool mouse_inside_graph;
@@ -330,6 +332,7 @@ void smol_mesh_gen_line(br_shader_line_t* mesh, Vector2 p1, Vector2 p2, Color co
 void smol_mesh_gen_line_strip(br_shader_line_t* mesh, Vector2 const * points, size_t len, Color color);
 void smol_mesh_gen_line_strip_stride(br_shader_line_t* mesh, Vector2 const * points, ssize_t len, Color color, int stride);
 void smol_mesh_gen_bb(br_shader_line_t* mesh, bb_t bb, Color color);
+void smol_mesh_grid_draw(br_plot_instance_t* plot);
 
 void smol_mesh_3d_gen_line(br_shader_line_3d_t* mesh, Vector3 p1, Vector3 p2, Color color);
 
@@ -343,7 +346,7 @@ BR_API void points_group_clear(points_groups_t* pg, int group_id);
 BR_API void points_group_empty(points_group_t* pg);
 void points_group_export(points_group_t const* pg, FILE* file);
 void points_group_export_csv(points_group_t const* pg, FILE* file);
-void points_groups_draw(points_groups_t const* pg_array, br_plot_instance_t* shader);
+void points_groups_draw(points_groups_t pg_array, br_plot_instance_t* shader);
 void points_groups_add_test_points(points_groups_t* pg_array);
 void points_groups_deinit(points_groups_t* pg_array);
 // Only remove all points from all groups, don't remove groups themselfs.
@@ -365,10 +368,10 @@ BR_API br_plotter_t* br_plotter_malloc(void);
 BR_API void br_plotter_init(br_plotter_t* br, float width, float height);
 BR_API void br_plotter_resize(br_plotter_t* br, float width, float height);
 BR_API points_groups_t* br_plotter_get_points_groups(br_plotter_t* br);
-BR_API void br_plotter_set_bottom_left(br_plot_instance_t* br, float left, float bottom);
-BR_API void br_plotter_set_top_right(br_plot_instance_t* br, float right, float top);
-BR_API void br_plotter_focus_visible(br_plot_instance_t* br);
-void br_plotter_screenshot(br_plotter_t* br, char const* path);
+BR_API void br_plotter_set_bottom_left(br_plot_instance_t* plot, float left, float bottom);
+BR_API void br_plotter_set_top_right(br_plot_instance_t* plot, float right, float top);
+BR_API void br_plotter_focus_visible(br_plot_instance_t* plot, points_groups_t groups);
+void br_plot_instance_screenshot(br_plot_instance_t* br, points_groups_t groups, char const* path);
 void br_plotter_export(br_plotter_t const* br, char const* path);
 void br_plotter_export_csv(br_plotter_t const* br, char const* path);
 BR_API void br_plotter_free(br_plotter_t* br);

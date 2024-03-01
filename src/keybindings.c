@@ -62,7 +62,7 @@ static inline void br_keybinding_test_points(br_plotter_t* br, br_plot_instance_
 static inline void br_keybinding_follow(br_plotter_t* br, br_plot_instance_t* plot, br_keybinding_ctrl_shift_t cs) {
   (void)br; (void)cs;
   plot->follow = !plot->follow;
-  if (plot->follow) br_plotter_focus_visible(plot);
+  if (plot->follow) br_plotter_focus_visible(plot, br->groups);
 }
 
 static inline void br_keybinding_debug(br_plotter_t* br, br_plot_instance_t* plot, br_keybinding_ctrl_shift_t cs) {
@@ -80,7 +80,7 @@ static inline void br_keybinding_recoil_big(br_plotter_t* br, br_plot_instance_t
 }
 
 static inline void br_keybinding_screenshot(br_plotter_t* br, br_plot_instance_t* plot, br_keybinding_ctrl_shift_t cs) {
-  (void)cs; (void)plot;
-  br_plotter_screenshot(br, "test.png"); // TODO set a sensible name
+  (void)cs; (void)br;
+  br_plot_instance_screenshot(plot, br->groups, "test.png"); // TODO set a sensible name
 }
 

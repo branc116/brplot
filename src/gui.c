@@ -2,23 +2,12 @@
 #include "br_gui_internal.h"
 #include "br_help.h"
 
-#include <raylib.h>
-#include <raymath.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <assert.h>
 #include <math.h>
-#include <math.h>
-#include <stdarg.h>
 #include <string.h>
-#include <pthread.h>
 
 #include "raylib.h"
 #include "rlgl.h"
-
-#ifndef RELEASE
-static void refresh_shaders_if_dirty(br_plotter_t* gv);
-#endif
 
 context_t context;
 
@@ -37,9 +26,6 @@ BR_API void br_plotter_init(br_plotter_t* br, float width, float height) {
     .plots = {0},
     .shaders = {0},
     .commands = {0},
-
-    //.graph_screen_rect = { GRAPH_LEFT_PAD, 50, width - GRAPH_LEFT_PAD - 60, height - 110 },
-
     .shaders_dirty = false,
   };
 #ifdef IMGUI
@@ -82,11 +68,11 @@ BR_API void br_plotter_free(br_plotter_t* gv) {
     c = q_pop(&gv->commands);
   }
   BR_FREE(gv->commands.commands);
+  BR_FREE(gv->plots.arr);
 }
 
 static bool br_plot_instance_update_variables_2d(br_plot_instance_t* plot, points_groups_t const groups, Vector2 mouse_pos) {
   assert(plot->kind == br_plot_instance_kind_2d);
-  Vector2 delta;
   if (plot->follow) {
     Rectangle sr = plot->dd.graph_rect;
     Vector2 middle = { sr.x + sr.width/2, sr.y - sr.height/2 };
@@ -94,15 +80,15 @@ static bool br_plot_instance_update_variables_2d(br_plot_instance_t* plot, point
       points_group_t* pg = &groups.arr[i];
       size_t gl = pg->len;
       if (!pg->is_selected || gl == 0) continue;
-      delta.x += ((middle.x - pg->points[gl - 1].x))/1000.f;
-      delta.y += ((middle.y - pg->points[gl - 1].y))/1000.f;
+      plot->dd.delta.x += ((middle.x - pg->points[gl - 1].x))/1000.f;
+      plot->dd.delta.y += ((middle.y - pg->points[gl - 1].y))/1000.f;
     }
-    plot->dd.offset.x -= delta.x;
-    plot->dd.offset.y -= delta.y;
-    delta.x *= plot->dd.recoil;
-    delta.y *= plot->dd.recoil;
+    plot->dd.offset.x -= plot->dd.delta.x;
+    plot->dd.offset.y -= plot->dd.delta.y;
+    plot->dd.delta.x *= plot->dd.recoil;
+    plot->dd.delta.y *= plot->dd.recoil;
   } else {
-    delta = (Vector2){ 0.f, 0.f };
+    plot->dd.delta = (Vector2){ 0.f, 0.f };
   }
   if (plot->mouse_inside_graph) {
     // TODO: Move this to br_keybindings.c
@@ -169,15 +155,7 @@ void br_plotter_update_variables(br_plotter_t* br) {
     assert(plot->kind == br_plot_instance_kind_2d);
     if (br_plot_instance_update_variables_2d(plot, br->groups, mouse_pos))
       br_keybinding_handle_keys(br, plot);
-
-    plot->dd.grid_shader->uvs.zoom_uv = plot->dd.zoom;
-    plot->dd.grid_shader->uvs.offset_uv = plot->dd.offset;
-    plot->dd.grid_shader->uvs.screen_uv = (Vector2) { .x = plot->graph_screen_rect.width, .y = plot->graph_screen_rect.height };
-
-    plot->dd.line_shader->uvs.zoom_uv = plot->dd.zoom;
-    plot->dd.line_shader->uvs.offset_uv = plot->dd.offset;
-    plot->dd.line_shader->uvs.screen_uv = (Vector2) { .x = (float)GetScreenWidth(), .y = (float)GetScreenHeight() };
-    plot->dd.line_shader->uvs.resolution_uv = *(Vector4*)&plot->graph_screen_rect;
+    br_plot_instance_update_shader_values(plot);
   }
 
   while (1) {
@@ -190,41 +168,33 @@ void br_plotter_update_variables(br_plotter_t* br) {
       case q_command_pop:           break; //TODO
       case q_command_clear:         points_group_clear(&br->groups, comm.clear.group); break;
       case q_command_clear_all:     points_groups_deinit(&br->groups); break;
-      case q_command_screenshot:    br_plotter_screenshot(br, comm.path_arg.path); free(comm.path_arg.path); break;
+      case q_command_screenshot:    br_plot_instance_screenshot(&br->plots.arr[0], br->groups, comm.path_arg.path); free(comm.path_arg.path); break;
       case q_command_export:        br_plotter_export(br, comm.path_arg.path);     free(comm.path_arg.path); break;
       case q_command_exportcsv:     br_plotter_export_csv(br, comm.path_arg.path); free(comm.path_arg.path); break;
       case q_command_hide:          points_group_get(&br->groups, comm.hide_show.group)->is_selected = false; break;
       case q_command_show:          points_group_get(&br->groups, comm.hide_show.group)->is_selected = true;  break;
       case q_command_set_name:      points_group_set_name(&br->groups, comm.set_quoted_str.group, comm.set_quoted_str.str);  break;
-      case q_command_focus:         br_plotter_focus_visible(&br->plots.arr[0]); break;
+      case q_command_focus:         br_plotter_focus_visible(&br->plots.arr[0], br->groups); break;
       default:                      BR_ASSERT(false);
     }
   }
   end: return;
 }
+void br_plot_instance_update_shader_values(br_plot_instance_t* plot) {
+    plot->dd.grid_shader->uvs.zoom_uv = plot->dd.zoom;
+    plot->dd.grid_shader->uvs.offset_uv = plot->dd.offset;
+    plot->dd.grid_shader->uvs.screen_uv = (Vector2) { .x = plot->graph_screen_rect.width, .y = plot->graph_screen_rect.height };
 
-BR_API void br_plotter_frame_end(br_plotter_t* gv) {
-  //gv->lines_mesh->draw_calls = 0;
-  //gv->lines_mesh->points_drawn = 0;
+    plot->dd.line_shader->uvs.zoom_uv = plot->dd.zoom;
+    plot->dd.line_shader->uvs.offset_uv = plot->dd.offset;
+    plot->dd.line_shader->uvs.screen_uv = plot->resolution;
+    plot->dd.line_shader->uvs.resolution_uv = *(Vector4*)&plot->graph_screen_rect;
 }
 
-// TODO 2D/3D
-void br_plotter_draw_grid(br_plot_instance_t* plot) {
-  assert(plot->kind == br_plot_instance_kind_2d);
-  br_shader_grid_t* grid = plot->dd.grid_shader;
-  assert(grid->len == 0);
-  Vector2* p = (Vector2*)grid->vertexPosition_vbo;
-  p[0] = (Vector2) { .x = -1, .y = -1 };
-  p[1] = (Vector2) { .x = 1, .y = -1 };
-  p[2] = (Vector2) { .x = 1, .y = 1 };
-  p[3] = (Vector2) { .x = -1, .y = -1 };
-  p[4] = (Vector2) { .x = 1, .y = 1 };
-  p[5] = (Vector2) { .x = -1, .y = 1 };
-  grid->len = 2;
-  rlViewport((int)plot->graph_screen_rect.x, (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, (int)plot->graph_screen_rect.height);
-  br_shader_grid_draw(grid);
-  grid->len = 0;
-  rlViewport(0, 0, GetScreenWidth(), GetScreenHeight());
+BR_API void br_plotter_frame_end(br_plotter_t* gv) {
+  (void)gv;
+  //gv->lines_mesh->draw_calls = 0;
+  //gv->lines_mesh->points_drawn = 0;
 }
 
 void br_plotter_export(br_plotter_t const* gv, char const * path) {
@@ -267,6 +237,7 @@ void br_plot_instance_update_context(br_plot_instance_t* plot, Vector2 mouse_pos
       plot->graph_screen_rect.width/plot->graph_screen_rect.height*plot->dd.zoom.x,
       plot->dd.zoom.y};
   } else {
+    // TODO 2D/3D
     assert(false);
   }
 }
@@ -276,7 +247,7 @@ void br_plotter_update_context(br_plotter_t* br, Vector2 mouse_pos) {
   for (int i = 0; i < br->plots.len; ++i) br_plot_instance_update_context(&br->plots.arr[i], mouse_pos);
 }
 
-void draw_grid_values(br_plot_instance_t* plot) {
+void draw_grid_numbers(br_plot_instance_t* plot) {
   assert(plot->kind == br_plot_instance_kind_2d);
 
   Rectangle r = plot->dd.graph_rect;

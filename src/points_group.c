@@ -155,14 +155,14 @@ void points_groups_add_test_points(points_groups_t* pg) {
 #define GL_DST_ALPHA 0x0304
 #define GL_MAX 0x8008
 
-void points_groups_draw(points_groups_t const* pg, br_plot_instance_t* plot) {
+void points_groups_draw(points_groups_t pg, br_plot_instance_t* plot) {
   if (plot->kind == br_plot_instance_kind_2d) {
 //    br_shader_line_uvs_t uvs = plot->dd.line_shader->uvs;
 //    Vector2 size = {  uvs.zoom_uv.x * .01f, uvs.zoom_uv.y * .01f };
     rlSetBlendFactors(GL_SRC_ALPHA, GL_DST_ALPHA, GL_MAX);
     rlSetBlendMode(BLEND_CUSTOM);
-    for (size_t j = 0; j < pg->len; ++j) {
-      points_group_t* g = &pg->arr[j];
+    for (size_t j = 0; j < pg.len; ++j) {
+      points_group_t const* g = &pg.arr[j];
       if (g->len == 0) continue;
       if (g->is_selected) {
         resampling2_draw(g->resampling, g, plot);
@@ -182,6 +182,7 @@ void points_groups_draw(points_groups_t const* pg, br_plot_instance_t* plot) {
     }
     rlSetBlendMode(BLEND_ALPHA);
   } else {
+    assert(false);
     // TODO
   }
 }
@@ -225,13 +226,12 @@ static Color color_get(int id) {
 BR_API points_group_t* points_group_get(points_groups_t* pg, int group) {
   assert(pg);
 
+  // TODO: da
   if (pg->len == 0) {
     pg->arr = BR_MALLOC(sizeof(points_group_t));
     if (NULL == pg->arr) return NULL;
     points_group_t* ret = points_group_init(&pg->arr[0], group);
-    if (ret->points == NULL) {
-      return NULL;
-    }
+    if (ret->points == NULL) return NULL;
     pg->cap = pg->len = 1;
     return ret;
   }
@@ -299,3 +299,4 @@ static void br_bb_expand_with_point(bb_t* bb, Vector2 v) {
   bb->ymax = fmaxf(bb->ymax, v.y);
   bb->ymin = fminf(bb->ymin, v.y);
 }
+

@@ -404,7 +404,7 @@ static void input_reduce_command(br_plotter_t* gv, lex_state_t* s) {
   if (0 == strcmp("zoomx", s->tokens[1].name)) {
     q_push(&gv->commands, (q_command) { .type = q_command_set_zoom_x, .value = s->tokens[2].value_f});
   } else if (0 == strcmp("focus", s->tokens[1].name)) {
-    br_plotter_focus_visible(gv);
+    q_push(&gv->commands, (q_command) { .type = q_command_focus });
   } else if (0 == strcmp("zoomy", s->tokens[1].name)) {
     q_push(&gv->commands, (q_command) { .type = q_command_set_zoom_y, .value = s->tokens[2].value_f});
   } else if (0 == strcmp("zoom", s->tokens[1].name)) {

@@ -22,9 +22,9 @@ FUZZ?= NO
 RL                 = ./external/raylib-5.0/src
 IM                 = ./external/imgui-docking
 RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
-SOURCE             = src/main.c src/help.c src/points_group.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c src/keybindings.c src/str.c src/memory.cpp src/resampling2.c src/graph_utils.c
+SOURCE             = src/main.c src/help.c src/points_group.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c src/keybindings.c src/str.c src/memory.cpp src/resampling2.c src/graph_utils.c src/br_shaders.c
 EXTERNAL_HEADERS   =
-ADDITIONAL_HEADERS = src/misc/default_font.h
+ADDITIONAL_HEADERS = src/misc/default_font.h src/br_shaders.h
 RAYLIB_HEADERS     =  $(RL)/rcamera.h $(RL)/raymath.h $(RL)/raylib.h $(RL)/utils.h $(RL)/rlgl.h $(RL)/config.h
 BR_HEADERS         = src/br_plot.h src/br_gui_internal.h src/br_help.h
 COMMONFLAGS        = -I.
@@ -82,8 +82,8 @@ ifeq ($(PLATFORM), LINUX)
 
 else ifeq ($(PLATFORM), WINDOWS)
 	LIBS= -lopengl32 -lgdi32 -lwinmm
-	CXX= x86_64-w64-mingw32-g++
-	CC= x86_64-w64-mingw32-gcc
+	CXX= g++
+	CC= gcc
 	COMMONFLAGS+= -Iexternal/glfw/include -DWINDOWS=1 -DPLATFORM_DESKTOP=1 -D_WIN32=1 -DWIN32_LEAN_AND_MEAN
 	SOURCE+= $(RL)/rglfw.c src/desktop/win/read_input.c src/desktop/platform.c
 	SHADERS_HEADER= src/misc/shaders.h

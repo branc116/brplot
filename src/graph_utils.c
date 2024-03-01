@@ -2,46 +2,44 @@
 #include "math.h"
 #include "assert.h"
 
-BR_API void br_plotter_set_bottom_left(br_plot_instance_t* br, float left, float bottom) {
-  assert(false);
-#if 0
+BR_API void br_plotter_set_bottom_left(br_plot_instance_t* plot, float left, float bottom) {
+  // TODO 2D/3D
+  assert(plot->kind == br_plot_instance_kind_2d);
   Vector2 bl = {left, bottom};
-  Vector2 tr = {br->graph_rect.x + br->graph_rect.width, br->graph_rect.y};
+  Vector2 tr = {plot->dd.graph_rect.x + plot->dd.graph_rect.width, plot->dd.graph_rect.y};
   float newWidth = (tr.x - bl.x);
   float newHeight = (tr.y - bl.y);
-  br->uvZoom.x = br->graph_screen_rect.height / br->graph_screen_rect.width * newWidth;
-  br->uvOffset.x -= (newWidth - br->graph_rect.width) / 2.f;
-  br->uvZoom.y = newHeight;
-  br->uvOffset.y -= (newHeight - br->graph_rect.height) / 2.f;
-#endif
+  plot->dd.zoom.x = plot->graph_screen_rect.height / plot->graph_screen_rect.width * newWidth;
+  plot->dd.offset.x -= (newWidth - plot->dd.graph_rect.width) / 2.f;
+  plot->dd.zoom.y = newHeight;
+  plot->dd.offset.y -= (newHeight - plot->dd.graph_rect.height) / 2.f;
 }
 
-BR_API void br_plotter_set_top_right(br_plot_instance_t* br, float right, float top) {
-  assert(false);
-#if 0
+BR_API void br_plotter_set_top_right(br_plot_instance_t* plot, float right, float top) {
+  // TODO 2D/3D
+  assert(plot->kind == br_plot_instance_kind_2d);
   Vector2 tr = {right, top};
-  Vector2 bl = {br->graph_rect.x, br->graph_rect.y - br->graph_rect.height};
+  Vector2 bl = {plot->dd.graph_rect.x, plot->dd.graph_rect.y - plot->dd.graph_rect.height};
   float newWidth = (tr.x - bl.x);
   float newHeight = (tr.y - bl.y);
-  br->uvZoom.x = br->graph_screen_rect.height / br->graph_screen_rect.width * newWidth;
-  br->uvOffset.x += (newWidth - br->graph_rect.width) / 2.f;
-  br->uvZoom.y = newHeight;
-  br->uvOffset.y += (newHeight - br->graph_rect.height) / 2.f;
-#endif
+  plot->dd.zoom.x = plot->graph_screen_rect.height / plot->graph_screen_rect.width * newWidth;
+  plot->dd.offset.x += (newWidth - plot->dd.graph_rect.width) / 2.f;
+  plot->dd.zoom.y = newHeight;
+  plot->dd.offset.y += (newHeight - plot->dd.graph_rect.height) / 2.f;
 }
 
-BR_API void br_plotter_focus_visible(br_plot_instance_t* br) {
-  assert(false);
-#if 0
-  if (br->groups.len == 0) return;
+BR_API void br_plotter_focus_visible(br_plot_instance_t* plot, points_groups_t const groups) {
+  // TODO 2D/3D
+  assert(plot->kind == br_plot_instance_kind_2d);
+  if (groups.len == 0) return;
   size_t i = 0;
-  while (i < br->groups.len && (br->groups.arr[i].len == 0 || false == br->groups.arr[i].is_selected)) ++i;
-  if (i >= br->groups.len) return;
+  while (i < groups.len && (groups.arr[i].len == 0 || false == groups.arr[i].is_selected)) ++i;
+  if (i >= groups.len) return;
 
-  bb_t bb = br->groups.arr[i++].bounding_box;
-  for (; i < br->groups.len; ++i) {
-    if (br->groups.arr[i].len == 0 || false == br->groups.arr[i].is_selected) continue;
-    bb_t cur_bb = br->groups.arr[i].bounding_box;
+  bb_t bb = groups.arr[i++].bounding_box;
+  for (; i < groups.len; ++i) {
+    if (groups.arr[i].len == 0 || false == groups.arr[i].is_selected) continue;
+    bb_t cur_bb = groups.arr[i].bounding_box;
     bb = (bb_t) {
       .xmin = fminf(bb.xmin, cur_bb.xmin),
       .ymin = fminf(bb.ymin, cur_bb.ymin),
@@ -60,14 +58,9 @@ BR_API void br_plotter_focus_visible(br_plot_instance_t* br) {
   newHeight = (bb.ymax - bb.ymin);
   Vector2 bl = {bb.xmin, bb.ymin};
   float maxSize = fmaxf(newWidth, newHeight);
-  br->uvZoom.x = br->graph_screen_rect.height / br->graph_screen_rect.width * maxSize; 
-  br->uvOffset.x = bl.x + maxSize / 2.f;
-  br->uvZoom.y = newHeight;
-  br->uvOffset.y = bl.y + maxSize / 2.f;
-#endif
-
-//  graph_set_bottom_left(br, bb.xmin - (width * 0.1f), bb.ymin - (height * 0.1f));
-//  graph_update_context(br);
-//  graph_set_top_right  (br, bb.xmin + (width * 0.1f), bb.ymax + (height * 0.1f));
+  plot->dd.zoom.x = plot->graph_screen_rect.height / plot->graph_screen_rect.width * maxSize; 
+  plot->dd.offset.x = bl.x + maxSize / 2.f;
+  plot->dd.zoom.y = newHeight;
+  plot->dd.offset.y = bl.y + maxSize / 2.f;
 }
 

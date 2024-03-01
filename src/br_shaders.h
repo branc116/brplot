@@ -1,7 +1,9 @@
 #pragma once
+#ifndef DEBUG_MACROS
 #include "raylib.h"
 #include "rlgl.h"
 #include "stdlib.h"
+#endif
 
 #define NOP2(N, M)
 

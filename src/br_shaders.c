@@ -1,5 +1,8 @@
 #include "br_shaders.h"
+// cpp -I. -DDEBUG_MACROS -E ./src/br_shaders.c | sed 's/^#/\/\//' | clang-format
+#ifndef DEBUG_MACROS
 #include "br_plot.h"
+#endif
 
 #ifdef RELEASE
 #  ifdef PLATFORM_DESKTOP
@@ -70,26 +73,35 @@ BR_ALL_SHADERS(X, NOP2, X_BUF)
 #define X_BUF(NAME, LEN) \
   rlUnloadVertexBuffer((uint32_t)shader->NAME ## _vbo_id); \
   BR_FREE(shader->NAME ## _vbo);
+#define X_VEC(NAME, LEN) rlUnloadShaderProgram(shader->id);
 #define X(NAME, CAP, U_VEC, BUFF) \
   inline static void br_shader_ ## NAME ## _free(br_shader_ ## NAME ## _t* shader) { \
     rlUnloadVertexArray((uint32_t)shader->vao_id); \
     BUFF \
+    U_VEC \
     BR_FREE(shader); \
   }
-BR_ALL_SHADERS(X, NOP2, X_BUF)
+BR_ALL_SHADERS(X, X_VEC, X_BUF)
 #undef X
+#undef X_VEC
 #undef X_BUF
 
 #ifdef RELEASE
 #  define READ_FILE(file_name) file_name
+#  define FREE_FILE_CONTENT(file)
 #else
 #  define READ_FILE(file_name) LoadFileText(file_name)
+#  define FREE_FILE_CONTENT(file) BR_FREE(file)
 #endif
 #define X_BUF(NAME, LEN) shader->NAME ## _loc = rlGetLocationAttrib(shader->id, #NAME);
 #define X_VEC(NAME, LEN) shader->NAME ## _u = rlGetLocationUniform(shader->id, #NAME);
 #define X(NAME, CAP, VEC, BUFF) \
   inline static void br_shader_ ## NAME ## _compile(br_shader_ ## NAME ## _t* shader) { \
-    shader->id = rlLoadShaderCode(READ_FILE(NAME ## _VS), READ_FILE(NAME ## _FS)); \
+    char* vs = READ_FILE(NAME ## _VS); \
+    char* fs = READ_FILE(NAME ## _FS); \
+    shader->id = rlLoadShaderCode(vs, fs); \
+    FREE_FILE_CONTENT(fs); \
+    FREE_FILE_CONTENT(vs); \
     BUFF \
     VEC \
   }
@@ -97,7 +109,6 @@ BR_ALL_SHADERS(X, X_VEC, X_BUF)
 #undef X
 #undef X_VEC
 #undef X_BUF
-#undef READ_FILE
 
 #define SET_VEC16(NAME) rlSetUniformMatrix(shader->NAME ## _u, shader->uvs.NAME ## _uv)
 #define SET_VEC4(NAME)  rlSetUniform(shader->NAME ## _u, &shader->uvs.NAME ## _uv, RL_SHADER_UNIFORM_VEC4, 1)
@@ -155,28 +166,26 @@ void br_shaders_free(br_shaders_t shaders) {
 
 #ifndef RELEASE
 void br_shaders_refresh(br_shaders_t shaders) {
-#  ifdef RELEASE
-#    define READ_FILE(file_name) file_name
-#  else
-#    define READ_FILE(file_name) LoadFileText(file_name)
-#  endif
 #  define X_BUF(NAME, LEN) shader->NAME ## _loc = rlGetLocationAttrib(shader->id, #NAME);
 #  define X_VEC(NAME, LEN) shader->NAME ## _u = rlGetLocationUniform(shader->id, #NAME);
-#  define X(NAME, CAP, VEC, BUFF) \
-     {                                                                                                \
-       unsigned int new_shader_id = rlLoadShaderCode(READ_FILE(NAME ## _VS), READ_FILE(NAME ## _FS)); \
-       if (new_shader_id > 0) {                                                                       \
-         br_shader_ ## NAME ## _t* shader = shaders.NAME;                                             \
-         shader->id = new_shader_id;                                                                  \
-         BUFF                                                                                         \
-         VEC                                                                                          \
-       }                                                                                              \
+#  define X(NAME, CAP, VEC, BUFF)                             \
+     {                                                        \
+       char* vs = READ_FILE(NAME ## _VS);                     \
+       char* fs = READ_FILE(NAME ## _FS);                     \
+       unsigned int new_shader_id = rlLoadShaderCode(vs, fs); \
+       if (new_shader_id > 0) {                               \
+         br_shader_ ## NAME ## _t* shader = shaders.NAME;     \
+         shader->id = new_shader_id;                          \
+         BUFF                                                 \
+         VEC                                                  \
+       }                                                      \
+       FREE_FILE_CONTENT(fs);                                 \
+       FREE_FILE_CONTENT(vs);                                 \
      }
    BR_ALL_SHADERS(X, X_VEC, X_BUF)
 #  undef X
 #  undef X_VEC
 #  undef X_BUF
-#  undef READ_FILE
 }
 #endif
 

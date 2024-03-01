@@ -1,5 +1,6 @@
 #include "br_plot.h"
 #include <math.h>
+#include <assert.h>
 
 void smol_mesh_gen_bb(br_shader_line_t* shader, bb_t bb, Color color) {
   float xmi = bb.xmin, ymi = bb.ymin , xma = bb.xmax, yma = bb.ymax;
@@ -103,5 +104,26 @@ void smol_mesh_gen_line_strip_stride(br_shader_line_t* shader, Vector2 const * p
     smol_mesh_gen_line(shader, points[v], points[v + stride], color);
   }
   if (v != len - 1) smol_mesh_gen_line(shader, points[v], points[len - 1], color);
+}
+
+// TODO: This should be split to _gen and _draw
+void smol_mesh_grid_draw(br_plot_instance_t* plot) {
+  // TODO 2D/3D
+  assert(plot->kind == br_plot_instance_kind_2d);
+  br_shader_grid_t* grid = plot->dd.grid_shader;
+  assert(grid->len == 0);
+  Vector2* p = (Vector2*)grid->vertexPosition_vbo;
+  p[0] = (Vector2) { .x = -1, .y = -1 };
+  p[1] = (Vector2) { .x = 1,  .y = -1 };
+  p[2] = (Vector2) { .x = 1,  .y = 1 };
+  p[3] = (Vector2) { .x = -1, .y = -1 };
+  p[4] = (Vector2) { .x = 1,  .y = 1 };
+  p[5] = (Vector2) { .x = -1, .y = 1 };
+  grid->len = 2;
+  int h = (int)plot->graph_screen_rect.height;
+  rlViewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
+  br_shader_grid_draw(grid);
+  grid->len = 0;
+  rlViewport(0, 0, (int)plot->resolution.x, (int)plot->resolution.y);
 }
 
