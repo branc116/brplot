@@ -9,3 +9,10 @@ end)
 vim.keymap.set("n", "<F7>", function()
   vim.cmd(":term sudo ./gdb_attach.sh");
 end)
+
+vim.opt.smartindent = true
+vim.opt.tabstop = 2
+vim.opt.shiftwidth = 2
+vim.opt.expandtab = true
+vim.opt.nu = true
+vim.opt.relativenumber = true
