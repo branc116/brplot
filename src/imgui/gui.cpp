@@ -31,7 +31,7 @@
 "  DockNode  ID=0x00000001 Parent=0x8B93E3BD SizeRef=1005,720\n" \
 "  DockNode  ID=0x00000002 Parent=0x8B93E3BD SizeRef=273,720\n"
 
-static void graph_screenshot_imgui(br_plot_t* br, char* path);
+static void graph_screenshot_imgui(br_plotter_t* br, char* path);
 
 static int screenshot_file_save = 0;
 static struct br_file_saver_s* fs = nullptr;
@@ -41,7 +41,7 @@ static float padding = 50.f;
 
 static GLFWwindow* ctx;
 
-extern "C" void br_gui_init_specifics_gui(br_plot_t* br) {
+extern "C" void br_gui_init_specifics_gui(br_plotter_t* br) {
   ctx = glfwGetCurrentContext();
   ImGui::SetAllocatorFunctions(BR_IMGUI_MALLOC, BR_IMGUI_FREE, nullptr);
   ImGui::CreateContext();
@@ -72,14 +72,16 @@ extern "C" void br_gui_init_specifics_gui(br_plot_t* br) {
 
 }
 
-extern "C" void br_gui_free_specifics(br_plot_t* br) {
+extern "C" void br_gui_free_specifics(br_plotter_t* br) {
   (void)br;
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
 }
 
-void graph_draw_min(br_plot_t* br, float posx, float posy, float width, float height, float padding) {
+void graph_draw_min(br_plotter_t* br, float posx, float posy, float width, float height, float padding) {
+  assert(false);
+#if 0
   br->uvScreen.x = (float)GetScreenWidth();
   br->uvScreen.y = (float)GetScreenHeight();
   br->graph_screen_rect.x = 50.f + posx + padding;
@@ -102,9 +104,10 @@ void graph_draw_min(br_plot_t* br, float posx, float posy, float width, float he
     pgdi.show_closest = br->show_closest;
     points_groups_draw(&br->groups, pgdi);
   EndScissorMode();
+#endif
 }
 
-extern "C" void graph_draw(br_plot_t* gv) {
+extern "C" void br_plotter_draw(br_plotter_t* gv) {
 #ifndef RELEASE
 #ifdef LINUX
   if (gv->hot_state.is_init_called == false && gv->hot_state.func_init != nullptr) {
@@ -161,7 +164,7 @@ extern "C" void graph_draw(br_plot_t* gv) {
     }
   }
 
-  graph_frame_end(gv);
+  br_plotter_frame_end(gv);
   ImGui::Render();
   int display_h = 0, display_w = 0;
   glfwGetFramebufferSize(ctx, &display_w, &display_h);
@@ -174,12 +177,14 @@ extern "C" void graph_draw(br_plot_t* gv) {
 #endif
 }
 
-extern "C" void graph_screenshot(br_plot_t*, char const*) {
+extern "C" void graph_screenshot(br_plotter_t*, char const*) {
   screenshot_file_save = 1;
   return;
 }
 
-static void graph_screenshot_imgui(br_plot_t* br, char* path) {
+static void graph_screenshot_imgui(br_plotter_t* br, char* path) {
+  assert(false);
+#if 0
   float left_pad = 80.f;
   float bottom_pad = 80.f;
   Vector2 is = {1280, 720};
@@ -205,5 +210,6 @@ static void graph_screenshot_imgui(br_plot_t* br, char* path) {
   UnloadImage(img);
   UnloadRenderTexture(target);
   BR_FREE(path);
+#endif
 }
 

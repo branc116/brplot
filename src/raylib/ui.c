@@ -18,7 +18,7 @@ static int ui_draw_button_va(bool* is_pressed, float x, float y, float font_size
   Vector2 size = Vector2AddValue(help_measure_text(context.buff, font_size), 2.f * pad);
   if (size_out) *size_out = size;
   Rectangle box = { x, y, size.x, size.y };
-  bool is_in = CheckCollisionPointRec(context.mouse_screen_pos, box);
+  bool is_in = CheckCollisionPointRec(GetMousePosition(), box);
   if (is_in) {
     bool is_p = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
     c = is_p ? 2 : 1;

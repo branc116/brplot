@@ -155,40 +155,35 @@ void points_groups_add_test_points(points_groups_t* pg) {
 #define GL_DST_ALPHA 0x0304
 #define GL_MAX 0x8008
 
-void points_groups_draw(points_groups_t const* pg, points_groups_draw_in_t pgdi) {
-  Vector2 size = { context.last_zoom_value.x * .01f, context.last_zoom_value.y * .01f };
-  pgdi.rect.y -= pgdi.rect.height;
-  rlSetBlendFactors(GL_SRC_ALPHA, GL_DST_ALPHA, GL_MAX);
-  rlSetBlendMode(BLEND_CUSTOM);
-  for (size_t j = 0; j < pg->len; ++j) {
-    points_group_t* g = &pg->arr[j];
-    if (g->len == 0) continue;
-    if (g->is_selected) {
-      resampling2_draw(g->resampling, g, &pgdi);
+void points_groups_draw(points_groups_t const* pg, br_plot_instance_t* plot) {
+  if (plot->kind == br_plot_instance_kind_2d) {
+//    br_shader_line_uvs_t uvs = plot->dd.line_shader->uvs;
+//    Vector2 size = {  uvs.zoom_uv.x * .01f, uvs.zoom_uv.y * .01f };
+    rlSetBlendFactors(GL_SRC_ALPHA, GL_DST_ALPHA, GL_MAX);
+    rlSetBlendMode(BLEND_CUSTOM);
+    for (size_t j = 0; j < pg->len; ++j) {
+      points_group_t* g = &pg->arr[j];
+      if (g->len == 0) continue;
+      if (g->is_selected) {
+        resampling2_draw(g->resampling, g, plot);
+      }
+//      if (pgdi.show_closest) {
+//        smol_mesh_gen_point1(pgdi.line_mesh, g->point_closest_to_mouse.graph_point, size, WHITE);
+//      }
+//      if (pgdi.show_x_closest) {
+//        smol_mesh_gen_point1(pgdi.line_mesh, g->point_closest_to_mouse.graph_point_x, size, WHITE);
+//      }
+//      if (pgdi.show_y_closest) {
+//        smol_mesh_gen_point1(pgdi.line_mesh, g->point_closest_to_mouse.graph_point_y, size, WHITE);
+//      }
     }
-    if (pgdi.show_closest) {
-      smol_mesh_gen_point1(pgdi.line_mesh, g->point_closest_to_mouse.graph_point, size, WHITE);
+    if (plot->dd.line_shader->len > 0) {
+      br_shader_line_draw(plot->dd.line_shader);
     }
-    if (pgdi.show_x_closest) {
-      smol_mesh_gen_point1(pgdi.line_mesh, g->point_closest_to_mouse.graph_point_x, size, WHITE);
-    }
-    if (pgdi.show_y_closest) {
-      smol_mesh_gen_point1(pgdi.line_mesh, g->point_closest_to_mouse.graph_point_y, size, WHITE);
-    }
+    rlSetBlendMode(BLEND_ALPHA);
+  } else {
+    // TODO
   }
-  if (pgdi.line_mesh->cur_len > 0) {
-    smol_mesh_update(pgdi.line_mesh);
-    smol_mesh_draw(pgdi.line_mesh);
-  }
-  if (pgdi.line_mesh_3d->cur_len > 0) {
-    smol_mesh_3d_update(pgdi.line_mesh_3d);
-    smol_mesh_3d_draw(pgdi.line_mesh_3d);
-  }
-  if (pgdi.quad_mesh->cur_len > 0) {
-    smol_mesh_update(pgdi.quad_mesh);
-    smol_mesh_draw(pgdi.quad_mesh);
-  }
-  rlSetBlendMode(BLEND_ALPHA);
 }
 
 static points_group_t* points_group_init(points_group_t* g, int group_id) {

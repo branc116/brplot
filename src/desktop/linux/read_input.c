@@ -12,7 +12,7 @@ static pthread_t thread;
 
 static void* indirection_function(void* gv);
 
-void read_input_start(br_plot_t* gv) {
+void read_input_start(br_plotter_t* gv) {
   pthread_attr_t attrs1;
   pthread_attr_init(&attrs1);
   if (pthread_create(&thread, &attrs1, indirection_function, gv)) {

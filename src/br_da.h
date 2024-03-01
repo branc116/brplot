@@ -3,7 +3,7 @@
 #include "br_plot.h"
 #include "assert.h"
 
-#define br_da_push(ARR, VALUE) do {                                    \
+#define br_da_push_t(SIZE_T, ARR, VALUE) do {                          \
   if (ARR.cap == 0) {                                                  \
     ARR.arr = BR_MALLOC(sizeof(*ARR.arr));                             \
     if (ARR.arr != NULL) {                                             \
@@ -13,11 +13,11 @@
   }                                                                    \
   else if (ARR.len < ARR.cap) ARR.arr[ARR.len++] = (VALUE);            \
   else {                                                               \
-    size_t cap_diff = ARR.cap;                                         \
+    SIZE_T cap_diff = ARR.cap;                                         \
     bool is_ok = false;                                                \
     while (!is_ok && cap_diff > 0) {                                   \
-      size_t new_cap =  ARR.cap + cap_diff;                            \
-      void* new_arr = BR_REALLOC(ARR.arr, new_cap * sizeof(*ARR.arr)); \
+      SIZE_T new_cap =  ARR.cap + cap_diff;                            \
+      void* new_arr = BR_REALLOC(ARR.arr, (size_t)new_cap * sizeof(*ARR.arr)); \
       if (new_arr) {                                                   \
         ARR.arr = new_arr;                                             \
         ARR.cap = new_cap;                                             \
@@ -28,6 +28,8 @@
     }                                                                  \
   }                                                                    \
 } while(0)                                                             \
+
+#define br_da_push(ARR, VALUE) br_da_push_t(size_t, ARR, VALUE)
 
 #define br_da_free(ARR) do { \
   BR_FREE(ARR.arr);          \

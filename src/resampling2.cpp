@@ -35,7 +35,7 @@ struct resampling2_node_t {
       maxy = points[max_index].y;
       if (maxx < minx) std::swap(maxx, minx);
     }
-    return !((maxy < rect.y) || (miny > rect.y + rect.height) || (minx > rect.x + rect.width) || (maxx < rect.x));
+    return !((miny > rect.y) || (maxy < rect.y - rect.height) || (minx > rect.x + rect.width) || (maxx < rect.x));
   }
 
   template<resampling2_node_kind_t kind>
@@ -151,10 +151,10 @@ static bool resampling2_add_point(resampling2_nodes_t* nodes, points_group_t con
 template<resampling2_node_kind_t kind>
 static ssize_t resampling2_get_first_inside(resampling2_nodes_t const* nodes, Vector2 const* points, Rectangle rect, uint32_t start_index);
 template<resampling2_node_kind_t kind>
-static void resampling2_draw(resampling2_nodes_t const* nodes, points_group_t const* pg, points_groups_draw_in_t *rdi);
+static void resampling2_draw(resampling2_nodes_t const* nodes, points_group_t const* pg, br_plot_instance_t* rdi);
 static bool resampling2_add_point_raw(resampling2_raw_node_t* node, Vector2 const* points, uint32_t index);
-static void resampling2_draw(resampling2_raw_node_t raw, points_group_t const* pg, points_groups_draw_in_t *rdi);
-static void resampling2_draw(resampling2_all_roots r, points_group_t const* pg, points_groups_draw_in_t *rdi);
+static void resampling2_draw(resampling2_raw_node_t raw, points_group_t const* pg, br_plot_instance_t* rdi);
+static void resampling2_draw(resampling2_all_roots r, points_group_t const* pg, br_plot_instance_t* rdi);
 
 resampling2_t* resampling2_malloc(void) {
    resampling2_t* r = (resampling2_t*)BR_CALLOC(1, sizeof(resampling2_t));
@@ -370,22 +370,24 @@ int raw_c = 0;
 int not_raw_c = 0;
 
 template<resampling2_node_kind_t kind>
-static void resampling2_draw(resampling2_nodes_t const* nodes, points_group_t const* pg, points_groups_draw_in_t *rdi) {
+static void resampling2_draw(resampling2_nodes_t const* nodes, points_group_t const* pg, br_plot_instance_t* plot) {
+  assert(plot->kind == br_plot_instance_kind_2d);
   ssize_t j = 0;
-  j = resampling2_get_first_inside<kind>(nodes, pg->points, rdi->rect, (uint32_t)j);
+  Rectangle rect = plot->dd.graph_rect;
+  j = resampling2_get_first_inside<kind>(nodes, pg->points, rect, (uint32_t)j);
   while (j != -1) {
     resampling2_node_t n = nodes->arr[j];
     Vector2 const* ps = pg->points;
     Vector2 first = ps[n.index_start], last = ps[n.index_start + n.len - 1];
-    Vector2 ratios = n.get_ratios<kind>(ps, rdi->rect.width, rdi->rect.height);
+    Vector2 ratios = n.get_ratios<kind>(ps, rect.width, rect.height);
     float ratio_min = fminf(ratios.x, ratios.y);
     int depth = 0;
     if (ratio_min > something) {
       if (ratio_min > stride_after) {
-        smol_mesh_gen_line_strip(rdi->line_mesh, &ps[n.index_start], n.len, pg->color);
+        smol_mesh_gen_line_strip(plot->dd.line_shader, &ps[n.index_start], n.len, pg->color);
       } else {
         int cur_stride = 1 + (int)((stride_after - ratio_min) / (stride_after - something) * (float)max_stride);
-        smol_mesh_gen_line_strip_stride(rdi->line_mesh, &ps[n.index_start], n.len, pg->color, cur_stride);
+        smol_mesh_gen_line_strip_stride(plot->dd.line_shader, &ps[n.index_start], n.len, pg->color, cur_stride);
       }
       raw_c++;
     } else {
@@ -396,7 +398,7 @@ static void resampling2_draw(resampling2_nodes_t const* nodes, points_group_t co
         curn = curn->parent;
         n = curn->arr[curj];
         first = ps[n.index_start], last = ps[n.index_start + n.len - 1];
-        ratios = n.get_ratios<kind>(ps, rdi->rect.width, rdi->rect.height);
+        ratios = n.get_ratios<kind>(ps, rect.width, rect.height);
         ratio_min = fminf(ratios.x, ratios.y);
         ++depth;
       }
@@ -409,15 +411,15 @@ static void resampling2_draw(resampling2_nodes_t const* nodes, points_group_t co
         swp ? ps[n.max_index] : ps[n.min_index],
         last
       };
-      smol_mesh_gen_line_strip(rdi->line_mesh, pss, 4, pg->color);
+      smol_mesh_gen_line_strip(plot->dd.line_shader, pss, 4, pg->color);
       not_raw_c++;
     }
     j += (ssize_t)powers[depth];
     if (j < nodes->len) {
       uint32_t next_index = nodes->arr[j].index_start;
-      smol_mesh_gen_line(rdi->line_mesh, last, ps[next_index], pg->color);
+      smol_mesh_gen_line(plot->dd.line_shader, last, ps[next_index], pg->color);
     }
-    j = resampling2_get_first_inside<kind>(nodes, pg->points, rdi->rect, (uint32_t)j);
+    j = resampling2_get_first_inside<kind>(nodes, pg->points, rect, (uint32_t)j);
   }
 }
 
@@ -435,50 +437,54 @@ static bool resampling2_add_point_raw(resampling2_raw_node_t* node, Vector2 cons
   return true;
 }
 
-static void resampling2_draw(resampling2_raw_node_t raw, points_group_t const* pg, points_groups_draw_in_t *rdi) {
+static void resampling2_draw(resampling2_raw_node_t raw, points_group_t const* pg, br_plot_instance_t* plot) {
+  assert(plot->kind == br_plot_instance_kind_2d);
   Vector2 const* ps = pg->points;
-  bool is_inside = !((ps[raw.maxy_index].y < rdi->rect.y) || (ps[raw.miny_index].y > rdi->rect.y + rdi->rect.height) ||
-                     (ps[raw.maxx_index].x < rdi->rect.x) || (ps[raw.miny_index].x > rdi->rect.x + rdi->rect.width));
+  Rectangle rect = plot->dd.graph_rect;
+  bool is_inside = !((ps[raw.miny_index].y > rect.y) || (ps[raw.maxy_index].y < rect.y - rect.height) ||
+                     (ps[raw.maxx_index].x < rect.x) || (ps[raw.miny_index].x > rect.x + rect.width));
   if (!is_inside) return;
 
-  smol_mesh_gen_line_strip(rdi->line_mesh, &pg->points[raw.index_start], raw.len, pg->color);
+  smol_mesh_gen_line_strip(plot->dd.line_shader, &pg->points[raw.index_start], raw.len, pg->color);
 }
 
-static void resampling2_draw(resampling2_all_roots r, points_group_t const* pg, points_groups_draw_in_t *rdi) {
+static void resampling2_draw(resampling2_all_roots r, points_group_t const* pg, br_plot_instance_t *rdi) {
   if      (r.kind == resampling2_kind_raw) resampling2_draw(r.raw, pg, rdi);
   else if (r.kind == resampling2_kind_x)   resampling2_draw<resampling2_kind_x>(&r.x, pg, rdi);
   else if (r.kind == resampling2_kind_y)   resampling2_draw<resampling2_kind_y>(&r.y, pg, rdi);
 }
 
-void resampling2_draw(resampling2_t const* res, points_group_t const *pg, points_groups_draw_in_t *rdi) {
-  auto draw_if_inside = [pg, rdi](int64_t li, int64_t ci) {
+void resampling2_draw(resampling2_t const* res, points_group_t const* pg, br_plot_instance_t* plot) {
+  assert(plot->kind == br_plot_instance_kind_2d);
+  Rectangle rect = plot->dd.graph_rect;
+  auto draw_if_inside = [pg, rect, plot](int64_t li, int64_t ci) {
     if (li >= 0 && ci >= 0) {
       Vector2 from = pg->points[li];
       Vector2 to = pg->points[ci];
       float min_y = fminf(from.y, to.y), max_y = fmax(from.y, to.y),
             min_x = fminf(from.x, to.x), max_x = fmax(from.x, to.x);
-      bool is_inside = !((max_y < rdi->rect.y) || (min_y > rdi->rect.y + rdi->rect.height) ||
-                         (max_x < rdi->rect.x) || (min_x > rdi->rect.x + rdi->rect.width));
-      if (is_inside) smol_mesh_gen_line(rdi->line_mesh, from, to, pg->color);
+      bool is_inside = !((min_y > rect.y) || (max_y < rect.y - rect.height) ||
+                         (max_x < rect.x) || (min_x > rect.x + rect.width));
+      if (is_inside) smol_mesh_gen_line(plot->dd.line_shader, from, to, pg->color);
     }
   };
 
   int64_t last_index = -1, cur_index = -1;
   for (uint32_t i = 0; i < res->roots_len; ++i) {
-    resampling2_draw(res->roots[i], pg, rdi);
+    resampling2_draw(res->roots[i], pg, plot);
     draw_if_inside(last_index, res->roots[i].get_first_point());
     last_index = res->roots[i].get_last_point();
   }
   if (res->temp_x_valid) {
-    resampling2_draw<resampling2_kind_x>(&res->temp_root_x, pg, rdi);
+    resampling2_draw<resampling2_kind_x>(&res->temp_root_x, pg, plot);
     cur_index = res->temp_root_x.get_first_point();
   }
   else if (res->temp_y_valid) {
-    resampling2_draw<resampling2_kind_y>(&res->temp_root_y, pg, rdi);
+    resampling2_draw<resampling2_kind_y>(&res->temp_root_y, pg, plot);
     cur_index = res->temp_root_y.get_first_point();
   }
   else {
-    resampling2_draw(res->temp_root_raw, pg, rdi);
+    resampling2_draw(res->temp_root_raw, pg, plot);
     cur_index = res->temp_root_raw.get_first_point();
   }
   draw_if_inside(last_index, cur_index);

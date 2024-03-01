@@ -4,17 +4,7 @@ precision mediump float;
 
 //x, y, width, height
 uniform vec4 resolution;
-uniform float time;
-uniform vec2 mouse;
-uniform vec2 zoom;
-uniform vec3 offset;
-uniform vec2 screen;
-
 uniform vec3 eye;
-
-uniform mat4 m_mvp;
-uniform mat4 m_view;
-uniform mat4 m_projection;
 
 in vec4 color;
 in vec3 fragTexCoord;
@@ -33,8 +23,6 @@ float map(vec2 cPos, vec2 zoom_level) {
     vec2 baseMajor = baseMinor + 1;
     vec2 divs = pow(vec2(10), baseMinor);
     vec2 divsMajor = pow(vec2(10), baseMajor);
-    //cPos *= zoom_level;
-    //cPos += offset.xy;
     vec2 mcPosd = mod(cPos + divs/2., divs) - divs/2.;
     vec2 mcPosdM = mod(cPos + divsMajor/2., divsMajor) - divsMajor/2.;
 

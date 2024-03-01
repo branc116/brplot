@@ -57,7 +57,7 @@ struct lex_state_s;
 
 typedef struct {
   input_token_kind_t kinds[MAX_REDUCE];
-  void (*reduce_func)(br_plot_t* commands, struct lex_state_s* s);
+  void (*reduce_func)(br_plotter_t* commands, struct lex_state_s* s);
 } input_reduce_t;
 
 typedef struct {
@@ -91,19 +91,19 @@ typedef struct lex_state_s {
   input_reduce_t reductors[REDUCTORS];
 } lex_state_t;
 
-static void input_reduce_y(br_plot_t* gv, lex_state_t* s) {
+static void input_reduce_y(br_plotter_t* gv, lex_state_t* s) {
   if (s->should_push_eagre) q_push(&gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = 0, .y = s->tokens[0].value_f} });
 }
 
-static void input_reduce_xy(br_plot_t* gv, lex_state_t* s) {
+static void input_reduce_xy(br_plotter_t* gv, lex_state_t* s) {
   if (s->should_push_eagre) q_push(&gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = 0, .x = s->tokens[0].value_f, .y = s->tokens[2].value_f} });
 }
 
-static void input_reduce_xygroup(br_plot_t* gv, lex_state_t* s) {
+static void input_reduce_xygroup(br_plotter_t* gv, lex_state_t* s) {
   if (s->should_push_eagre) q_push(&gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = s->tokens[4].value_i, .x = s->tokens[0].value_f, .y = s->tokens[2].value_f } });
 }
 
-static void input_reduce_ygroup(br_plot_t* gv, lex_state_t* s) {
+static void input_reduce_ygroup(br_plotter_t* gv, lex_state_t* s) {
   if (s->should_push_eagre) q_push(&gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = s->tokens[2].value_i, .y = s->tokens[0].value_f } });
 }
 
@@ -399,21 +399,21 @@ static extractor_res_state_t extractor_extract(br_strv_t ex, br_strv_t view, flo
   return ex_i < ex.len ? extractor_res_state_unfinished : res;
 }
 
-static void input_reduce_command(br_plot_t* gv, lex_state_t* s) {
+static void input_reduce_command(br_plotter_t* gv, lex_state_t* s) {
   (void)gv;
   if (0 == strcmp("zoomx", s->tokens[1].name)) {
-    gv->uvZoom.x = s->tokens[2].value_f;
+    q_push(&gv->commands, (q_command) { .type = q_command_set_zoom_x, .value = s->tokens[2].value_f});
   } else if (0 == strcmp("focus", s->tokens[1].name)) {
-    graph_focus_visible(gv);
+    br_plotter_focus_visible(gv);
   } else if (0 == strcmp("zoomy", s->tokens[1].name)) {
-    gv->uvZoom.y = s->tokens[2].value_f;
+    q_push(&gv->commands, (q_command) { .type = q_command_set_zoom_y, .value = s->tokens[2].value_f});
   } else if (0 == strcmp("zoom", s->tokens[1].name)) {
-    gv->uvZoom.y = s->tokens[2].value_f;
-    gv->uvZoom.x = s->tokens[2].value_f;
+    q_push(&gv->commands, (q_command) { .type = q_command_set_zoom_x, .value = s->tokens[2].value_f});
+    q_push(&gv->commands, (q_command) { .type = q_command_set_zoom_y, .value = s->tokens[2].value_f});
   } else if (0 == strcmp("offsetx", s->tokens[1].name)) {
-    gv->uvOffset.x = s->tokens[2].value_f;
+    q_push(&gv->commands, (q_command) { .type = q_command_set_offset_x, .value = s->tokens[2].value_f});
   } else if (0 == strcmp("offsety", s->tokens[1].name)) {
-    gv->uvOffset.y = s->tokens[2].value_f;
+    q_push(&gv->commands, (q_command) { .type = q_command_set_offset_y, .value = s->tokens[2].value_f});
   } else if (0 == strcmp("hide", s->tokens[1].name)) {
     q_push(&gv->commands, (q_command) { .type = q_command_hide, .hide_show = { .group = s->tokens[2].value_i } });
   } else if (0 == strcmp("show", s->tokens[1].name)) {
@@ -499,7 +499,7 @@ static bool input_tokens_can_next_be(const lex_state_t* s, input_token_kind_t ki
   return false;
 }
 
-static void input_tokens_reduce(br_plot_t* gv, lex_state_t* s, bool force_reduce) {
+static void input_tokens_reduce(br_plotter_t* gv, lex_state_t* s, bool force_reduce) {
   if (s->tokens_len == 0) return;
   int best = -1;
   size_t best_c = 0, match_c = 0;
@@ -564,7 +564,7 @@ static void lex_state_deinit(lex_state_t* s) {
   s->tokens_len = 0;
 }
 
-static void lex_step(br_plot_t* br, lex_state_t* s) {
+static void lex_step(br_plotter_t* br, lex_state_t* s) {
   switch (s->state) {
     case input_lex_state_init:
       input_tokens_reduce(br, s, false);
@@ -705,7 +705,7 @@ static void lex_step(br_plot_t* br, lex_state_t* s) {
   }
 }
 
-static void lex_step_extractor(br_plot_t* br, lex_state_t* s) {
+static void lex_step_extractor(br_plotter_t* br, lex_state_t* s) {
   if (s->extractors.len > 0) {
     if (s->c == '\n') {
       float x, y;
@@ -727,7 +727,7 @@ static void lex_step_extractor(br_plot_t* br, lex_state_t* s) {
   }
 }
 
-static void lex(br_plot_t* br) {
+static void lex(br_plotter_t* br) {
   lex_state_t s;
   lex_state_init(&s);
   while (true) {
@@ -751,7 +751,7 @@ static void lex(br_plot_t* br) {
   q_push(&br->commands, (q_command) { .type = q_command_focus });
 }
 
-void read_input_main_worker(br_plot_t* gv) {
+void read_input_main_worker(br_plotter_t* gv) {
   lex(gv);
 }
 
@@ -759,7 +759,7 @@ void read_input_main_worker(br_plot_t* gv) {
 
 int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
   lex_state_t s;
-  br_plot_t br = {0};
+  br_plotter_t br = {0};
   q_init(&br.commands);
   for (size_t i = 0; i < str_len;) {
     if (s.read_next) {
@@ -808,7 +808,7 @@ int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
   br_str_free(c.set_quoted_str.str); \
 } while(false)
 
-void test_input(br_plot_t* br, const char* str) {
+void test_input(br_plotter_t* br, const char* str) {
   lex_state_t s;
   lex_state_init(&s);
   q_init(&br->commands);
@@ -829,7 +829,7 @@ void test_input(br_plot_t* br, const char* str) {
 }
 
 TEST_CASE(InputTests) {
-  br_plot_t br;
+  br_plotter_t br;
   test_input(&br, "8.0,-16.0;1 -0.0078,16.0;1 \" \n \n 4.0;1\n\n\n\n\n\n 2.0 1;10;1;;;; 10e10 3e38 --test 1.2 --zoomx 10.0 1;12");
 
   TEST_COMMAND_PUSH_POINT_XY(br.commands, 8.f, -16.f, 1);
@@ -845,7 +845,7 @@ TEST_CASE(InputTests) {
 }
 
 TEST_CASE(InputTests2) {
-  br_plot_t br;
+  br_plotter_t br;
   test_input(&br, "--setname 1 \"hihi\" --setname 2 \"hihi hihi hihi hihi\" --setname 0 \"test");
 
   TEST_COMMAND_SET_NAME(br.commands, 1, "hihi");
@@ -906,7 +906,6 @@ TEST_CASE(Extractors) {
   VALX("*\\%a%xabc", "---abs\\%a12e12---\\%a10e10abc", 10e10f);
   VALXY("%y*aa%x", "12a14aaaa13", 13.f, 12.f);
   VALXY("%y.%x", "12.13.14.15", 14.15f, 12.13f);
-  //TEST_EQUAL(true, extractor_is_valid((br_strv_from_c_str("*\\\\%xabc"))));
 }
 
 #endif

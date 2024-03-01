@@ -3,8 +3,6 @@ precision mediump float;
 
 //x, y, width, height
 uniform vec4 resolution;
-uniform float time;
-uniform vec2 mouse;
 uniform vec2 zoom;
 uniform vec2 offset;
 uniform vec2 screen;

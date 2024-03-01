@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include "stdio.h"
 #include "stdint.h"
+#include "br_shaders.h"
 
 #ifdef PLATFORM_WEB
 #include <emscripten.h>
@@ -15,18 +16,7 @@
 extern "C" {
 #endif
 
-#ifdef RELEASE
-
-#ifdef PLATFORM_DESKTOP
-#include "src/misc/shaders.h"
-#elif PLATFORM_WEB
-#include "src/misc/shaders_web.h"
-#else
-#error "Shaders for this platform arn't defined"
-#endif
-
-#else
-#include "src/misc/shaders_dbg.h"
+#ifndef RELEASE
 
 #ifndef LINUX
 #ifdef UNIT_TEST
@@ -58,9 +48,16 @@ extern "C" {
 #define LOG(...)
 #define LOGI(...) fprintf(stderr, __VA_ARGS__)
 
+#ifdef WINDOWS
+typedef int64_t ssize_t;
+#endif
 
 typedef enum {
   q_command_none,
+  q_command_set_zoom_x,
+  q_command_set_zoom_y,
+  q_command_set_offset_x,
+  q_command_set_offset_y,
   q_command_push_point_x,
   q_command_push_point_y,
   q_command_push_point_xy,
@@ -92,13 +89,14 @@ typedef struct {
 typedef struct {
   q_command_type type;
   union {
+    float value;
     struct {
-      int group;
       float x;
+      int group;
     } push_point_x;
     struct {
-      int group;
       float y;
+      int group;
     } push_point_y;
     struct {
       int group;
@@ -131,24 +129,6 @@ typedef struct {
   q_command* commands;
   LOCK(push_mutex)
 } q_commands;
-
-typedef struct {
-  unsigned int vaoId;     // OpenGL Vertex Array Object id
-  union {
-    unsigned int vboId[3];
-    struct {
-      unsigned int vboIdVertex, vboIdNormal, vboIdColor;
-    };
-  };
-  float* verticies;
-  float* normals;
-  float* colors;
-  Shader active_shader;
-  size_t cur_len;
-  // Max Number of points and only number of points.
-  size_t capacity;
-  size_t draw_calls, points_drawn;
-} smol_mesh_t;
 
 typedef struct bounding_box {
   float xmin, ymin, xmax, ymax;
@@ -188,24 +168,6 @@ typedef struct {
 } points_groups_t;
 
 typedef struct {
-  unsigned int vaoId;     // OpenGL Vertex Array Object id
-  union {
-    unsigned int vboId[3];
-    struct {
-      unsigned int vboIdVertex, vboIdNormal, vboIdColor;
-    };
-  };
-  float* verticies;
-  float* normals;
-  float* colors;
-  Shader active_shader;
-  size_t cur_len;
-  // Max Number of points and only number of points.
-  size_t capacity;
-  size_t draw_calls, points_drawn;
-} smol_mesh_3d_t;
-
-typedef struct {
   float xmin, ymin, zmin, xmax, ymax, zmax;
 } bb_3d_t;
 
@@ -225,72 +187,82 @@ typedef struct {
   points_group_3d_t* arr;
 } points_groups_3d_t;
 
-typedef struct {
-  int uResolution;
-  int uZoom;
-  int uOffset;
-  int uScreen;
-  int uTime;
-  int uMvp;
-  int uMatView;
-  int uMatProjection;
-  int matModel;
-  Shader shader;
-#ifndef RELEASE
-  const char* vs_file_name;
-  const char* fs_file_name;
-#endif
-} br_shader_t;
-
-struct br_plot_t;
+struct br_plotter_t;
 #ifdef IMGUI
 #ifndef RELEASE
 typedef struct {
   LOCK(lock)
-  void (*func_loop)(struct br_plot_t* gv);
-  void (*func_init)(struct br_plot_t* gv);
+  void (*func_loop)(struct br_plotter_t* gv);
+  void (*func_init)(struct br_plotter_t* gv);
   bool is_init_called;
   void* handl;
 } br_hotreload_state_t;
 #endif
 #endif
 
-typedef struct br_plot_t {
-  union {
-    br_shader_t shaders[5];
-    struct {
-      br_shader_t gridShader, grid3dShader, linesShader, lines3dShader, quadShader;
-    };
-  };
+typedef enum {
+  br_plot_instance_kind_2d,
+  br_plot_instance_kind_3d
+} br_plot_instance_kind_t;
 
+typedef struct {
+  br_shader_line_t* line_shader;
+  br_shader_grid_t* grid_shader;
   // graph_rect is in the graph coordinates.
   //            That is if you zoom in and out, graph_rect will change.
-  // graph_screen_rect is in the screen coordinates.
-  //                   That is if you resize the whole plot, or move the plot around the screen this value will change.
-  Rectangle graph_rect, graph_screen_rect;
-  Vector2 uvZoom, uvOffset, uvScreen, uvDelta;
-  float uvTime;
+  Rectangle graph_rect;
+  float recoil;
+  Vector2 mouse_pos;
+  Vector2 zoom;
+  Vector2 offset;
+  bool show_closest, show_x_closest, show_y_closest;
+} br_plot_instance_2d_t;
 
-  // 3D stuff
-  Matrix uvMvp, uvMatView, uvMatProjection;
+typedef struct {
+  br_shader_grid_3d_t* grid_shader;
+  br_shader_line_3d_t* line_shader;
+  br_shader_line_3d_simple_t* line_simple_shader;
   Vector3 eye, target, up;
   float fov_y, near_plane, far_plane;
+  struct {
+    int* arr;
+    int len, cap; 
+  } groups_3d_to_show;
+} br_plot_instance_3d_t;
 
-  smol_mesh_t* lines_mesh;
-  smol_mesh_t* quads_mesh;
-  smol_mesh_3d_t* lines_mesh_3d;
-  // TODO: rename this to grid_mesh_3d
-  smol_mesh_t* graph_mesh_3d;
+typedef struct {
+  struct {
+    int* arr;
+    int len, cap; 
+  } groups_to_show;
+  // graph_screen_rect is in the screen coordinates.
+  //                   That is if you resize the whole plot, or move the plot around the screen this value will change.
+  Rectangle graph_screen_rect;
+  bool follow;
+  bool jump_around;
+  bool mouse_inside_graph;
 
-  // Only render thread can read or write to this array.
+  br_plot_instance_kind_t kind;
+  union {
+    br_plot_instance_2d_t dd;
+    br_plot_instance_3d_t ddd;
+  };
+} br_plot_instance_t;
+
+typedef struct {
+  br_plot_instance_t* arr;
+  int len, cap;
+} br_plot_instancies_t;
+
+typedef struct br_plotter_t {
   points_groups_t groups;
-
   points_groups_3d_t groups_3d;
+  br_plot_instancies_t plots;
+  br_shaders_t shaders;
 
   // Any thread can write to this q, only render thread can pop
   q_commands commands;
 #ifndef RELEASE
-  int (*getchar)(void);
 #ifdef IMGUI
 #ifdef LINUX
   br_hotreload_state_t hot_state;
@@ -299,20 +271,12 @@ typedef struct br_plot_t {
 #endif
   Vector2 mouse_graph_pos;
 
-  float recoil;
   bool shaders_dirty;
-  bool follow;
-  bool jump_around;
   bool file_saver_inited;
-  bool mouse_inside_graph;
   bool should_close;
-
-  bool show_closest, show_x_closest, show_y_closest;
-} br_plot_t;
+} br_plotter_t;
 
 typedef struct {
-  Vector2 mouse_screen_pos, mouse_graph_pos;
-  Vector2 last_zoom_value;
   float font_scale;
   bool debug_bounds;
   size_t alloc_size, alloc_count, alloc_total_size, alloc_total_count, alloc_max_size, alloc_max_count, free_of_unknown_memory;
@@ -323,7 +287,6 @@ typedef struct {
     points_group_t* closest_to;
   } hover;
 } context_t;
-
 
 extern context_t context;
 #ifdef PLATFORM_WEB
@@ -359,35 +322,16 @@ void  br_imgui_free(void* p, void* user_data);
 
 Vector2 br_graph_to_screen(Rectangle graph_rect, Rectangle screen_rect, Vector2 point);
 
-smol_mesh_t* smol_mesh_malloc(size_t capacity, Shader s);
-void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 mid_point, Vector2 tangent, Color color);
-void smol_mesh_gen_quad_simple(smol_mesh_t* mesh, Rectangle rect, Color color);
-void smol_mesh_gen_point(smol_mesh_t* mesh, Vector2 point, Color color);
-void smol_mesh_gen_point1(smol_mesh_t* mesh, Vector2 point, Vector2 size, Color color);
-void smol_mesh_gen_line(smol_mesh_t* mesh, Vector2 p1, Vector2 p2, Color color);
-void smol_mesh_gen_line_strip(smol_mesh_t* mesh, Vector2 const * points, size_t len, Color color);
-void smol_mesh_gen_line_strip_stride(smol_mesh_t* mesh, Vector2 const * points, ssize_t len, Color color, int stride);
-void smol_mesh_gen_bb(smol_mesh_t* mesh, bb_t bb, Color color);
-void smol_mesh_draw(smol_mesh_t* mesh);
-void smol_mesh_update(smol_mesh_t* mesh);
-void smol_mesh_free(smol_mesh_t* mesh);
+//void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 mid_point, Vector2 tangent, Color color);
+//void smol_mesh_gen_quad_simple(smol_mesh_t* mesh, Rectangle rect, Color color);
+void smol_mesh_gen_point(br_shader_line_t* mesh, Vector2 point, Color color);
+void smol_mesh_gen_point1(br_shader_line_t* mesh, Vector2 point, Vector2 size, Color color);
+void smol_mesh_gen_line(br_shader_line_t* mesh, Vector2 p1, Vector2 p2, Color color);
+void smol_mesh_gen_line_strip(br_shader_line_t* mesh, Vector2 const * points, size_t len, Color color);
+void smol_mesh_gen_line_strip_stride(br_shader_line_t* mesh, Vector2 const * points, ssize_t len, Color color, int stride);
+void smol_mesh_gen_bb(br_shader_line_t* mesh, bb_t bb, Color color);
 
-smol_mesh_3d_t* smol_mesh_3d_malloc(size_t capacity, Shader s);
-void smol_mesh_3d_gen_line(smol_mesh_3d_t* mesh, Vector3 p1, Vector3 p2, Color color);
-void smol_mesh_3d_draw(smol_mesh_3d_t* mesh);
-void smol_mesh_3d_update(smol_mesh_3d_t* mesh);
-void smol_mesh_3d_free(smol_mesh_3d_t* mesh);
-
-typedef struct {
-  smol_mesh_t* line_mesh;
-  smol_mesh_t* quad_mesh;
-  smol_mesh_3d_t* line_mesh_3d;
-  Rectangle rect;
-  Vector2 mouse_pos_graph;
-  bool show_x_closest;
-  bool show_y_closest;
-  bool show_closest;
-} points_groups_draw_in_t;
+void smol_mesh_3d_gen_line(br_shader_line_3d_t* mesh, Vector3 p1, Vector3 p2, Color color);
 
 BR_API points_group_t* points_group_get(points_groups_t* pg_array, int group);
 BR_API void points_group_set_name(points_groups_t* pg_array, int group, br_str_t name);
@@ -399,7 +343,7 @@ BR_API void points_group_clear(points_groups_t* pg, int group_id);
 BR_API void points_group_empty(points_group_t* pg);
 void points_group_export(points_group_t const* pg, FILE* file);
 void points_group_export_csv(points_group_t const* pg, FILE* file);
-void points_groups_draw(points_groups_t const* pg_array, points_groups_draw_in_t pgdi);
+void points_groups_draw(points_groups_t const* pg_array, br_plot_instance_t* shader);
 void points_groups_add_test_points(points_groups_t* pg_array);
 void points_groups_deinit(points_groups_t* pg_array);
 // Only remove all points from all groups, don't remove groups themselfs.
@@ -414,34 +358,34 @@ BR_API points_group_t* points_group_3d_get(points_groups_3d_t* pg_array, int gro
 resampling2_t* resampling2_malloc(void);
 void resampling2_empty(resampling2_t* res);
 void resampling2_free(resampling2_t* res);
-void resampling2_draw(resampling2_t const* res, points_group_t const* pg, points_groups_draw_in_t* rdi);
+void resampling2_draw(resampling2_t const* res, points_group_t const* pg, br_plot_instance_t* rdi);
 void resampling2_add_point(resampling2_t* res, points_group_t const* pg, uint32_t index);
 
-BR_API br_plot_t* graph_malloc(void);
-BR_API void graph_init(br_plot_t* br, float width, float height);
-BR_API void graph_resize(br_plot_t* br, float width, float height);
-BR_API points_groups_t* graph_get_points_groups(br_plot_t* br);
-BR_API void graph_set_bottom_left(br_plot_t* br, float left, float bottom);
-BR_API void graph_set_top_right(br_plot_t* br, float right, float top);
-BR_API void graph_focus_visible(br_plot_t* br);
-void graph_screenshot(br_plot_t* br, char const* path);
-void graph_export(br_plot_t const* br, char const* path);
-void graph_export_csv(br_plot_t const* br, char const* path);
-BR_API void graph_free(br_plot_t* br);
-BR_API void graph_draw(br_plot_t* br);
-BR_API void graph_minimal(br_plot_t* br);
-BR_API void graph_frame_end(br_plot_t* br);
+BR_API br_plotter_t* br_plotter_malloc(void);
+BR_API void br_plotter_init(br_plotter_t* br, float width, float height);
+BR_API void br_plotter_resize(br_plotter_t* br, float width, float height);
+BR_API points_groups_t* br_plotter_get_points_groups(br_plotter_t* br);
+BR_API void br_plotter_set_bottom_left(br_plot_instance_t* br, float left, float bottom);
+BR_API void br_plotter_set_top_right(br_plot_instance_t* br, float right, float top);
+BR_API void br_plotter_focus_visible(br_plot_instance_t* br);
+void br_plotter_screenshot(br_plotter_t* br, char const* path);
+void br_plotter_export(br_plotter_t const* br, char const* path);
+void br_plotter_export_csv(br_plotter_t const* br, char const* path);
+BR_API void br_plotter_free(br_plotter_t* br);
+BR_API void br_plotter_draw(br_plotter_t* br);
+BR_API void br_plotter_minimal(br_plotter_t* br);
+BR_API void br_plotter_frame_end(br_plotter_t* br);
 
-void br_keybinding_handle_keys(br_plot_t* br);
+void br_keybinding_handle_keys(br_plotter_t* br, br_plot_instance_t* plot);
 
 #ifndef RELEASE
 // Start watching shaders folder for changes and
 // mark gv->shader_dirty flag to true if there were any change to shaders.
-void start_refreshing_shaders(br_plot_t* br);
+void start_refreshing_shaders(br_plotter_t* br);
 #endif
 
-void read_input_start(br_plot_t* br);
-void read_input_main_worker(br_plot_t* br);
+void read_input_start(br_plotter_t* br);
+void read_input_main_worker(br_plotter_t* br);
 int  read_input_read_next(void);
 void read_input_stop(void);
 

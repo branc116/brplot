@@ -1,7 +1,10 @@
 #include "br_plot.h"
 #include "math.h"
+#include "assert.h"
 
-BR_API void graph_set_bottom_left(br_plot_t* br, float left, float bottom) {
+BR_API void br_plotter_set_bottom_left(br_plot_instance_t* br, float left, float bottom) {
+  assert(false);
+#if 0
   Vector2 bl = {left, bottom};
   Vector2 tr = {br->graph_rect.x + br->graph_rect.width, br->graph_rect.y};
   float newWidth = (tr.x - bl.x);
@@ -10,9 +13,12 @@ BR_API void graph_set_bottom_left(br_plot_t* br, float left, float bottom) {
   br->uvOffset.x -= (newWidth - br->graph_rect.width) / 2.f;
   br->uvZoom.y = newHeight;
   br->uvOffset.y -= (newHeight - br->graph_rect.height) / 2.f;
+#endif
 }
 
-BR_API void graph_set_top_right(br_plot_t* br, float right, float top) {
+BR_API void br_plotter_set_top_right(br_plot_instance_t* br, float right, float top) {
+  assert(false);
+#if 0
   Vector2 tr = {right, top};
   Vector2 bl = {br->graph_rect.x, br->graph_rect.y - br->graph_rect.height};
   float newWidth = (tr.x - bl.x);
@@ -21,9 +27,12 @@ BR_API void graph_set_top_right(br_plot_t* br, float right, float top) {
   br->uvOffset.x += (newWidth - br->graph_rect.width) / 2.f;
   br->uvZoom.y = newHeight;
   br->uvOffset.y += (newHeight - br->graph_rect.height) / 2.f;
+#endif
 }
 
-BR_API void graph_focus_visible(br_plot_t* br) {
+BR_API void br_plotter_focus_visible(br_plot_instance_t* br) {
+  assert(false);
+#if 0
   if (br->groups.len == 0) return;
   size_t i = 0;
   while (i < br->groups.len && (br->groups.arr[i].len == 0 || false == br->groups.arr[i].is_selected)) ++i;
@@ -55,6 +64,7 @@ BR_API void graph_focus_visible(br_plot_t* br) {
   br->uvOffset.x = bl.x + maxSize / 2.f;
   br->uvZoom.y = newHeight;
   br->uvOffset.y = bl.y + maxSize / 2.f;
+#endif
 
 //  graph_set_bottom_left(br, bb.xmin - (width * 0.1f), bb.ymin - (height * 0.1f));
 //  graph_update_context(br);

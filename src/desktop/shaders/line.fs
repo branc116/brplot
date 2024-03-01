@@ -4,9 +4,9 @@ in vec3 color;
 
 out vec4 finalColor;
 
-uniform vec2 screen;
 uniform vec4 resolution;
 uniform vec2 zoom;
+uniform vec2 screen;
 
 void main()
 {
