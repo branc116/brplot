@@ -82,8 +82,8 @@ ifeq ($(PLATFORM), LINUX)
 
 else ifeq ($(PLATFORM), WINDOWS)
 	LIBS= -lopengl32 -lgdi32 -lwinmm
-	CXX= g++
-	CC= gcc
+	CXX= x86_64-w64-mingw32-g++
+	CC= x86_64-w64-mingw32-gcc
 	COMMONFLAGS+= -Iexternal/glfw/include -DWINDOWS=1 -DPLATFORM_DESKTOP=1 -D_WIN32=1 -DWIN32_LEAN_AND_MEAN
 	SOURCE+= $(RL)/rglfw.c src/desktop/win/read_input.c src/desktop/platform.c
 	SHADERS_HEADER= src/misc/shaders.h
@@ -169,9 +169,12 @@ $(shell $(foreach var,$(OBJSDIR), test -d $(var) || mkdir -p $(var);))
 $(shell test -d $(dir $(OUTPUT)) || mkdir $(dir $(OUTPUT)))
 $(shell test -d bin || mkdir bin)
 
-SHADERS_LIST= $(SHADERS_FOLDER)/grid_3d.fs $(SHADERS_FOLDER)/grid_3d.vs $(SHADERS_FOLDER)/line_3d.fs $(SHADERS_FOLDER)/line_3d.vs \
-	$(SHADERS_FOLDER)/grid.fs $(SHADERS_FOLDER)/grid.vs $(SHADERS_FOLDER)/line.fs $(SHADERS_FOLDER)/line.vs \
-	$(SHADERS_FOLDER)/quad.fs $(SHADERS_FOLDER)/quad.vs
+SHADERS_LIST= $(SHADERS_FOLDER)/grid_3d.fs $(SHADERS_FOLDER)/grid_3d.vs \
+							$(SHADERS_FOLDER)/line_3d.fs $(SHADERS_FOLDER)/line_3d.vs \
+							$(SHADERS_FOLDER)/line_3d_simple.fs $(SHADERS_FOLDER)/line_3d_simple.vs \
+	            $(SHADERS_FOLDER)/grid.fs $(SHADERS_FOLDER)/grid.vs \
+							$(SHADERS_FOLDER)/line.fs $(SHADERS_FOLDER)/line.vs \
+	            $(SHADERS_FOLDER)/quad.fs $(SHADERS_FOLDER)/quad.vs
 
 $(OUTPUT): $(ADDITIONAL_HEADERS) $(OBJS)
 	$(CXX) $(COMMONFLAGS) $(LD_FLAGS) -o $@ $(LIBS) $(OBJS) $(LIBS)

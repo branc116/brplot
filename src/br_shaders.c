@@ -89,16 +89,18 @@ BR_ALL_SHADERS(X, X_VEC, X_BUF)
 #ifdef RELEASE
 #  define READ_FILE(file_name) file_name
 #  define FREE_FILE_CONTENT(file)
+#  define FILE_CONTNET_TYPE const char*
 #else
 #  define READ_FILE(file_name) LoadFileText(file_name)
 #  define FREE_FILE_CONTENT(file) BR_FREE(file)
+#  define FILE_CONTNET_TYPE char*
 #endif
 #define X_BUF(NAME, LEN) shader->NAME ## _loc = rlGetLocationAttrib(shader->id, #NAME);
 #define X_VEC(NAME, LEN) shader->NAME ## _u = rlGetLocationUniform(shader->id, #NAME);
 #define X(NAME, CAP, VEC, BUFF) \
   inline static void br_shader_ ## NAME ## _compile(br_shader_ ## NAME ## _t* shader) { \
-    char* vs = READ_FILE(NAME ## _VS); \
-    char* fs = READ_FILE(NAME ## _FS); \
+    FILE_CONTNET_TYPE vs = READ_FILE(NAME ## _VS); \
+    FILE_CONTNET_TYPE fs = READ_FILE(NAME ## _FS); \
     shader->id = rlLoadShaderCode(vs, fs); \
     FREE_FILE_CONTENT(fs); \
     FREE_FILE_CONTENT(vs); \
@@ -170,8 +172,8 @@ void br_shaders_refresh(br_shaders_t shaders) {
 #  define X_VEC(NAME, LEN) shader->NAME ## _u = rlGetLocationUniform(shader->id, #NAME);
 #  define X(NAME, CAP, VEC, BUFF)                             \
      {                                                        \
-       char* vs = READ_FILE(NAME ## _VS);                     \
-       char* fs = READ_FILE(NAME ## _FS);                     \
+       FILE_CONTNET_TYPE vs = READ_FILE(NAME ## _VS);         \
+       FILE_CONTNET_TYPE fs = READ_FILE(NAME ## _FS);         \
        unsigned int new_shader_id = rlLoadShaderCode(vs, fs); \
        if (new_shader_id > 0) {                               \
          br_shader_ ## NAME ## _t* shader = shaders.NAME;     \
