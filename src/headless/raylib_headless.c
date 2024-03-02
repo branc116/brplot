@@ -400,6 +400,33 @@ Matrix MatrixMultiply(Matrix left, Matrix right) {
 void rlSetUniformMatrix(int locIndex, Matrix mat) {
 }
 
+int rlGetLocationUniform(unsigned int shaderId, const char *uniformName) {
+  return 69;
+}
+
+int rlGetLocationAttrib(unsigned int shaderId, const char *attribName) {
+  return 69;
+}
+
+unsigned int rlLoadShaderCode(const char *vsCode, const char *fsCode) {
+  return 69;
+}
+
+char *LoadFileText(const char *fileName) {
+  return NULL;
+}
+
+void rlSetUniform(int locIndex, const void *value, int uniformType, int count) {
+  return;
+}
+
+void rlUnloadShaderProgram(unsigned int id) {
+  return;
+}
+
+void rlViewport(int x, int y, int width, int height) {
+}
+
 #include "math.h"
 Vector2 Vector2Normalize(Vector2 v)
 {

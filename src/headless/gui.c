@@ -1,27 +1,22 @@
 #include "src/br_plot.h"
 #include "src/br_gui_internal.h"
 
-void br_gui_init_specifics_gui(br_plot_t *br) {(void)br;}
+void br_gui_init_specifics_gui(br_plotter_t* br) {(void)br;}
 
-void graph_draw(br_plot_t *br) {
+void br_plotter_draw(br_plotter_t* br) {
+  br_plot_instance_t* plot = &br->plots.arr[0];
   BeginDrawing();
-  update_variables(br);
+  br_plotter_update_variables(br);
   help_draw_fps(0, 0);
-  draw_grid_values(br);
-  graph_draw_grid(br->gridShader.shader, br->graph_screen_rect);
-  points_groups_draw(&br->groups, (points_groups_draw_in_t) {
-    .mouse_pos_graph = br->mouse_graph_pos,
-    .rect = br->graph_rect,
-    .line_mesh = br->lines_mesh,
-    .quad_mesh = br->quads_mesh,
-    .line_mesh_3d = br->lines_mesh_3d
-  });
+  draw_grid_numbers(plot);
+  smol_mesh_grid_draw(plot);
+  points_groups_draw(br->groups, plot);
   ClearBackground(BLACK);
   EndDrawing();
 }
 
-void graph_screenshot(br_plot_t* br, const char* path) {
-  (void)br; (void)path;
+void br_plot_instance_screenshot(br_plot_instance_t* br, points_groups_t groups, const char* path) {
+  (void)br; (void)path; (void)groups;
   LOGI("Grabbing screenshot in headless, NOP\n");
   return;
 }

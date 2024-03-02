@@ -169,8 +169,8 @@ $(shell $(foreach var,$(OBJSDIR), test -d $(var) || mkdir -p $(var);))
 $(shell test -d $(dir $(OUTPUT)) || mkdir $(dir $(OUTPUT)))
 $(shell test -d bin || mkdir bin)
 
-SHADERS_LIST = $(SHADERS_FOLDER)/grid_3d.fs $(SHADERS_FOLDER)/grid_3d.vs $(SHADERS_FOLDER)/line_3d.fs $(SHADERS_FOLDER)/line_3d.vs \
-	$(SHADERS_FOLDER)/grid.fs $(SHADERS_FOLDER)/line.fs $(SHADERS_FOLDER)/line.vs \
+SHADERS_LIST= $(SHADERS_FOLDER)/grid_3d.fs $(SHADERS_FOLDER)/grid_3d.vs $(SHADERS_FOLDER)/line_3d.fs $(SHADERS_FOLDER)/line_3d.vs \
+	$(SHADERS_FOLDER)/grid.fs $(SHADERS_FOLDER)/grid.vs $(SHADERS_FOLDER)/line.fs $(SHADERS_FOLDER)/line.vs \
 	$(SHADERS_FOLDER)/quad.fs $(SHADERS_FOLDER)/quad.vs
 
 $(OUTPUT): $(ADDITIONAL_HEADERS) $(OBJS)
