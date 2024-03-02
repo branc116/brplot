@@ -2,6 +2,7 @@
 #include "math.h"
 #include "assert.h"
 
+// TODO: rename to br_plot_instance_
 BR_API void br_plotter_set_bottom_left(br_plot_instance_t* plot, float left, float bottom) {
   // TODO 2D/3D
   assert(plot->kind == br_plot_instance_kind_2d);

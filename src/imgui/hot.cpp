@@ -18,17 +18,19 @@ void ShowMatrix(const char* name, Matrix m) {
   ImGui::PopID();
 }
 
-
-extern "C" void br_hot_init(br_plot_t* gv) {
+extern "C" void br_hot_init(br_plotter_t* gv) {
   fprintf(stderr, "First call\n");
+#if 0
   rlDisableBackfaceCulling();
+#endif
 }
 
 Vector3 Vector3MultiplyValue(Vector3 v, float s) {
   return Vector3 { v.x * s, v.y * s, v.z * s };
 }
 
-void smol_mesh_gen_quad_3d_simple(smol_mesh_t* mesh, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, Color color) {
+void smol_mesh_gen_quad_3d_simple(br_shader_grid_3d_t* mesh, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, Color color) {
+#if 0
   size_t c = mesh->cur_len++;
   if (c >= mesh->capacity) {
     smol_mesh_update(mesh);
@@ -50,9 +52,11 @@ void smol_mesh_gen_quad_3d_simple(smol_mesh_t* mesh, Vector3 p1, Vector3 p2, Vec
   points[3] = p3;
   points[4] = p4;
   points[5] = p1;
+#endif
 }
 
-void smol_mesh_3d_gen_line_eye2(smol_mesh_3d_t* mesh, Vector3 p1, Vector3 p2, Vector3 eye, Color color) {
+void smol_mesh_3d_gen_line_eye2(br_shader_line_t* mesh, Vector3 p1, Vector3 p2, Vector3 eye, Color color) {
+#if 0
   Vector3 const cv = {color.r/255.f, color.g/255.f, color.b/255.f};
   Vector3 mid   = Vector3MultiplyValue(Vector3Add(p1, p2), 0.5f);
   Vector3 diff  = Vector3Normalize(Vector3Subtract(p2, p1));
@@ -92,9 +96,11 @@ void smol_mesh_3d_gen_line_eye2(smol_mesh_3d_t* mesh, Vector3 p1, Vector3 p2, Ve
     for (int j = 0; j < 6; ++j) colors[j] = cv;
     norm = next;
   }
+#endif
 }
 
-void smol_mesh_3d_gen_line_eye(smol_mesh_3d_t* mesh, Vector3 p1, Vector3 p2, Vector3 eye, Color color) {
+void smol_mesh_3d_gen_line_eye(br_shader_line_t* mesh, Vector3 p1, Vector3 p2, Vector3 eye, Color color) {
+#if 0
   size_t i = mesh->cur_len++;
   if (i >= mesh->capacity) {
     smol_mesh_3d_update(mesh);
@@ -129,12 +135,14 @@ void smol_mesh_3d_gen_line_eye(smol_mesh_3d_t* mesh, Vector3 p1, Vector3 p2, Vec
   vecs[5] = Vector3Add(p1, normals[5]);
 
   for (int j = 0; j < 6; ++j) colors[j] = cv;
+#endif
 }
 
 bool focused = false;
 float translate_speed = 1.0f;
 
-extern "C" void br_hot_loop(br_plot_t* gv) {
+extern "C" void br_hot_loop(br_plotter_t* gv) {
+#if 0
   ImGui::Begin("3d");
   br::Input("Eyes", gv->eye);
   br::Input("Target", gv->target);
@@ -284,5 +292,6 @@ extern "C" void br_hot_loop(br_plot_t* gv) {
     rlDisableDepthTest();
   }
   ImGui::End();
+#endif
 }
 

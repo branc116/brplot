@@ -31,7 +31,7 @@ BR_API void br_plotter_init(br_plotter_t* br, float width, float height) {
 #ifdef IMGUI
 #ifndef RELEASE
 #ifdef LINUX
-  br->hot_state = { .handl = NULL, .func_loop = NULL, .func_init = NULL, .is_init_called = false, .lock = { 0 } };
+  br->hot_state = (br_hotreload_state_t) { .handl = NULL, .func_loop = NULL, .func_init = NULL, .is_init_called = false, .lock = { 0 } };
   pthread_mutexattr_t attrs;
   pthread_mutexattr_init(&attrs);
   pthread_mutex_init(&br->hot_state.lock, &attrs);
@@ -71,7 +71,7 @@ BR_API void br_plotter_free(br_plotter_t* gv) {
   BR_FREE(gv->plots.arr);
 }
 
-static bool br_plot_instance_update_variables_2d(br_plot_instance_t* plot, points_groups_t const groups, Vector2 mouse_pos) {
+bool br_plot_instance_update_variables_2d(br_plot_instance_t* plot, points_groups_t const groups, Vector2 mouse_pos) {
   assert(plot->kind == br_plot_instance_kind_2d);
   if (plot->follow) {
     Rectangle sr = plot->dd.graph_rect;

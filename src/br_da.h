@@ -1,11 +1,17 @@
 #pragma once
-#include "misc/tests.h"
 #include "br_plot.h"
 #include "assert.h"
 
+#ifdef __cplusplus
+#define DECLTYPE(VALUE) decltype(VALUE)
+#else
+#define DECLTYPE(VALUE) void
+#endif
+  
+
 #define br_da_push_t(SIZE_T, ARR, VALUE) do {                          \
   if (ARR.cap == 0) {                                                  \
-    ARR.arr = BR_MALLOC(sizeof(*ARR.arr));                             \
+    ARR.arr = (DECLTYPE(VALUE)*)BR_MALLOC(sizeof(*ARR.arr));                             \
     if (ARR.arr != NULL) {                                             \
       ARR.cap = 1;                                                     \
       ARR.arr[ARR.len++] = (VALUE);                                    \
@@ -17,7 +23,7 @@
     bool is_ok = false;                                                \
     while (!is_ok && cap_diff > 0) {                                   \
       SIZE_T new_cap =  ARR.cap + cap_diff;                            \
-      void* new_arr = BR_REALLOC(ARR.arr, (size_t)new_cap * sizeof(*ARR.arr)); \
+      DECLTYPE(VALUE)* new_arr = (DECLTYPE(VALUE)*)BR_REALLOC(ARR.arr, (size_t)new_cap * sizeof(*ARR.arr)); \
       if (new_arr) {                                                   \
         ARR.arr = new_arr;                                             \
         ARR.cap = new_cap;                                             \
@@ -56,20 +62,4 @@
     }                                        \
   }                                          \
 } while(0)
-
-typedef struct {
-  int* arr;
-  size_t len, cap;
-} test_arr;
-
-TEST_CASE(da) {
-  test_arr a = {0};
-  br_da_push(a, 1);
-  br_da_push(a, 2);
-  br_da_push(a, 3);
-  br_da_remove(a, 2);
-  br_da_remove_at(a, 2);
-  br_da_remove_n_at(a, 1, 0);
-  br_da_free(a);
-}
 

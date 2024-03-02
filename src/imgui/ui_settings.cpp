@@ -17,7 +17,7 @@ extern int raw_c;
 extern int not_raw_c;
 
 namespace br {
-  void ui_settings(br_plot_t* br) {
+  void ui_settings(br_plotter_t* br) {
     ImGui::SetNextWindowBgAlpha(0.7f);
     if (ImGui::Begin("Settings")) {
       raw_c = 0;
@@ -79,15 +79,17 @@ namespace br {
         }
       }
       if (ImGui::CollapsingHeader("Scene")) {
-          br::Input("Size", br->uvZoom);
-          br::Input("Scene Center", br->uvOffset);
-          Vector2 tr{br->graph_rect.x + br->graph_rect.width, br->graph_rect.y};
-          Vector2 bl{br->graph_rect.x, br->graph_rect.y - br->graph_rect.height};
-          if (br::Input("Bottom Left", bl)) graph_set_bottom_left(br, bl.x, bl.y);
-          if (br::Input("Top Right", tr)) graph_set_top_right(br, tr.x, tr.y);
-          ImGui::Checkbox("Show Closest", &br->show_closest);
-          ImGui::Checkbox("Show Closest X", &br->show_x_closest);
-          ImGui::Checkbox("Show Closest Y", &br->show_y_closest);
+        br_plot_instance_t* plot = &br->plots.arr[0];
+        assert(plot->kind == br_plot_instance_kind_2d);
+        br::Input("Size", plot->dd.zoom);
+        br::Input("Scene Center", plot->dd.offset);
+        Vector2 tr{plot->dd.graph_rect.x + plot->dd.graph_rect.width, plot->dd.graph_rect.y};
+        Vector2 bl{plot->dd.graph_rect.x, plot->dd.graph_rect.y - plot->dd.graph_rect.height};
+        if (br::Input("Bottom Left", bl)) br_plotter_set_bottom_left(plot, bl.x, bl.y);
+        if (br::Input("Top Right", tr)) br_plotter_set_top_right(plot, tr.x, tr.y);
+        ImGui::Checkbox("Show Closest", &plot->dd.show_closest);
+        ImGui::Checkbox("Show Closest X", &plot->dd.show_x_closest);
+        ImGui::Checkbox("Show Closest Y", &plot->dd.show_y_closest);
       }
       if (ImGui::CollapsingHeader("Resampling")) {
         ImGui::InputFloat("Max ratio bounding box/screen size", &something, 0.0f, 0.0f, "%f");
@@ -104,12 +106,14 @@ namespace br {
         ImGui::LabelText("Not Raw", "Not raw: %d", not_raw_c);
       }
       if (ImGui::CollapsingHeader("Debug")) {
-        ImGui::SliderFloat("Recoil", &br->recoil, 0.f, 1.1f);
+        br_plot_instance_t* plot = &br->plots.arr[0];
+        assert(plot->kind == br_plot_instance_kind_2d);
+        ImGui::SliderFloat("Recoil", &plot->dd.recoil, 0.f, 1.1f);
         ImGui::SliderFloat("Font scale", &context.font_scale, 0.5f, 2.5f);
         ImGui::SliderFloat("Font scale", &context.font_scale, 0.5f, 2.5f);
-        ImGui::Checkbox("Follow", &br->follow);
+        ImGui::Checkbox("Follow", &plot->follow);
         ImGui::Checkbox("Debug Lines", &context.debug_bounds);
-        ImGui::Checkbox("Jump Arround", &br->jump_around);
+        ImGui::Checkbox("Jump Arround", &plot->jump_around);
       }
     }
     ImGui::End();

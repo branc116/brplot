@@ -1,7 +1,7 @@
 #include "src/br_plot.h"
 #include "src/imgui/imgui_extensions.h"
 
-void br::ui_info(br_plot_t* br) {
+void br::ui_info(br_plotter_t* br) {
   ImGui::SetNextWindowBgAlpha(0.7f);
   if (ImGui::Begin("Info") && false == ImGui::IsWindowHidden()) {
     if (ImGui::CollapsingHeader("Allocations")) {
@@ -11,7 +11,7 @@ void br::ui_info(br_plot_t* br) {
       s = sprintf(context.buff, "Unaccounted Allocations: >%lu", context.free_of_unknown_memory); ImGui::TextUnformatted(context.buff, context.buff + s);
     }
     if (ImGui::CollapsingHeader("Draw Debug")) {
-      int s = sprintf(context.buff, "Draw Calls: %lu (%lu lines)", br->lines_mesh->draw_calls, br->lines_mesh->points_drawn); ImGui::TextUnformatted(context.buff, context.buff + s);
+      //int s = sprintf(context.buff, "Draw Calls: %lu (%lu lines)", br->lines_mesh->draw_calls, br->lines_mesh->points_drawn); ImGui::TextUnformatted(context.buff, context.buff + s);
       for (size_t i = 0; i < br->groups.len; ++i) {
         //auto& a = br->groups.arr[i];
 //        s = sprintf(context.buff, "Line #%d intervals(%lu):", a.group_id, a.resampling->intervals_count); ImGui::TextUnformatted(context.buff, context.buff + s);
