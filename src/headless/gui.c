@@ -1,7 +1,22 @@
+#include "raylib.h"
+#include "src/br_da.h"
 #include "src/br_plot.h"
 #include "src/br_gui_internal.h"
 
-void br_gui_init_specifics_gui(br_plotter_t* br) {(void)br;}
+void br_gui_init_specifics_gui(br_plotter_t* br) {
+  br_plot_instance_t plot = { 
+    .kind = br_plot_instance_kind_2d,
+    .resolution = { 1280, 720 },
+    .graph_screen_rect = { 0, 0, 1280, 720 },
+    .dd = (br_plot_instance_2d_t) {
+      .zoom = { 1, 1},
+      .offset = { 0 },
+      .line_shader = br->shaders.line,
+      .grid_shader = br->shaders.grid
+    }
+  };
+  br_da_push_t(int, br->plots, plot);
+}
 
 void br_plotter_draw(br_plotter_t* br) {
   br_plot_instance_t* plot = &br->plots.arr[0];

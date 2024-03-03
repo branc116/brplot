@@ -291,9 +291,6 @@ typedef struct {
 } context_t;
 
 extern context_t context;
-#ifdef PLATFORM_WEB
-extern br_plot_t* public_context;
-#endif
 
 void* br_malloc(size_t size);
 void* br_calloc(size_t n, size_t size);

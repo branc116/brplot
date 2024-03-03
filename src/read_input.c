@@ -777,6 +777,12 @@ int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
   return 0;  // Values other than 0 and -1 are reserved for future use.
 }
 
+#define TEST_COMMAND_SET_ZOOM(q, AXIS, VALUE) do { \
+  q_command c = q_pop(&q); \
+  TEST_EQUAL(c.type, q_command_set_zoom_ ## AXIS); \
+  TEST_EQUAL(c.value, VALUE); \
+} while(false)
+
 #define TEST_COMMAND_PUSH_POINT_Y(q, Y, GROUP) do { \
   q_command c = q_pop(&q); \
   TEST_EQUAL(c.type, q_command_push_point_y); \
@@ -840,6 +846,7 @@ TEST_CASE(InputTests) {
   TEST_COMMAND_PUSH_POINT_Y(br.commands, 1.f, 0);
   TEST_COMMAND_PUSH_POINT_Y(br.commands, 10e10f, 0);
   TEST_COMMAND_PUSH_POINT_Y(br.commands, 3e38f, 0);
+  TEST_COMMAND_SET_ZOOM(br.commands, x, 10.0f);
   TEST_COMMAND_PUSH_POINT_Y(br.commands, 1.f, 12);
   TEST_COMMAND_END(br.commands);
 }
