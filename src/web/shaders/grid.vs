@@ -1,8 +1,8 @@
-#version 100
-attribute vec2 vertexPosition;
+#version 300 es
+in vec2 vertexPosition;
 
-varying vec2 fragTexCoord;
-varying vec2 glCoord;
+out vec2 fragTexCoord;
+out vec2 glCoord;
 uniform vec2 screen;
 
 void main()

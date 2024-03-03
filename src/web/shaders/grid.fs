@@ -1,46 +1,42 @@
-#version 100
+#version 300 es
 precision mediump float;
 
 //x, y, width, height
-uniform vec4 resolution;
 uniform vec2 zoom;
 uniform vec2 offset;
-uniform vec2 screen;
 
-varying vec4 color;
+in vec2 fragTexCoord;
+in vec2 glCoord;
 
-float log10(float f) {
+out vec4 out_color;
+vec2 log10(vec2 f) {
     return log(f) / log(10.0);
 }
 
 float map(vec2 cPos, vec2 zoom_level, vec2 offset) {
-    vec2 fact = vec2(log10(zoom_level.x * 4.5), log10(zoom_level.y * 4.5));
-    vec2 fr = vec2(fract(fact.x), fract(fact.y));
-    vec2 baseMinor = floor(fact) - 1.0;
-    vec2 baseMajor = baseMinor + 1.;
-    vec2 divs = vec2(pow(10., baseMinor.x), pow(10., baseMinor.y));
-    vec2 divsMajor = vec2(pow(10., baseMajor.x), pow(10., baseMajor.y));
-    cPos *= zoom_level;
-    cPos += offset;
-    vec2 mcPosd = mod(cPos + divs/2., divs) - divs/2.;
-    vec2 mcPosdM = mod(cPos + divsMajor/2., divsMajor) - divsMajor/2.;
-
-    vec2 to = divs/(80. * (1. + 5.*(1. - 1.*fr)));
-    float yd = 1. - smoothstep(abs(mcPosd.y), 0.0, to.y);
-    float xd = 1. - smoothstep(abs(mcPosd.x), 0.0, to.x);
-    float ydM = 1. - smoothstep(abs(mcPosdM.y), 0.0, to.y*4.);
-    float xdM = 1. - smoothstep(abs(mcPosdM.x), 0.0, to.x*4.);
-    float k = 20.;
-    return max(max(yd, xd), max(ydM, xdM));
+  vec2 fact = log10(zoom_level * 5.5);
+  vec2 fr = fract(fact);
+  vec2 baseMinor = floor(fact) - 1.0;
+  vec2 baseMajor = baseMinor + 1.;
+  vec2 divs = pow(vec2(10.), baseMinor);
+  vec2 divsMajor = pow(vec2(10.), baseMajor);
+  cPos *= zoom_level;
+  cPos += offset;
+  vec2 mcPosd = mod(cPos + divs/2., divs) - divs/2.;
+  vec2 mcPosdM = mod(cPos + divsMajor/2., divsMajor) - divsMajor/2.;
+  float thick = 1.3;
+  vec2 to = divs/(80. * (1. + 10.0*(1. - fr)));
+  vec2 d = 1. - smoothstep(abs(mcPosd), vec2(0.0), thick*to);
+  vec2 dM = 1. - smoothstep(abs(mcPosdM), vec2(0.0), thick*to*4.);
+  float k = 20.;
+  return max(max(d.x, d.y), max(dM.x, dM.y));
 }
 
 void main(void) {
-    vec2 fragCoord = gl_FragCoord.xy - (resolution.xy * vec2(1., -1.));
-    fragCoord.y -= screen.y - resolution.w;
-    vec2 cPos = ( fragCoord - .5*resolution.zw ) / resolution.w;
-    if (fragCoord.y < 2. || (fragCoord.y + 2.) > resolution.w || fragCoord.x - 2. < 0. || (fragCoord.x + 2.) > resolution.z) {
-      gl_FragColor = vec4(1.0);
-    } else {
-      gl_FragColor = vec4(0.2, 0.3, 0.5, 1.0)*vec4(map(cPos, zoom, offset));
-    }
+  vec2 glMax = abs(glCoord);
+  float glM = glMax.x > glMax.y ? glMax.x : glMax.y;
+  float res = map(fragTexCoord * 0.5, zoom, offset);
+  res += smoothstep(0.7, 1., fwidth(res));
+  out_color = vec4(0.2, 0.3, 0.5, 1.0) * clamp(res, 0., 1.);
+  out_color += smoothstep(0.9, 1.0, pow(glM, 6.));
 }

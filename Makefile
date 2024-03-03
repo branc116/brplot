@@ -24,10 +24,7 @@ IM                 = ./external/imgui-docking
 RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
 SOURCE             = src/main.c src/help.c src/points_group.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c src/keybindings.c src/str.c src/memory.cpp src/resampling2.c src/graph_utils.c src/br_shaders.c
 EXTERNAL_HEADERS   =
-ADDITIONAL_HEADERS = src/misc/default_font.h src/br_shaders.h
-RAYLIB_HEADERS     =  $(RL)/rcamera.h $(RL)/raymath.h $(RL)/raylib.h $(RL)/utils.h $(RL)/rlgl.h $(RL)/config.h
-BR_HEADERS         = src/br_plot.h src/br_gui_internal.h src/br_help.h
-COMMONFLAGS        = -I.
+COMMONFLAGS        = -I. -MMD -MP
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra
 LD_FLAGS           =
 SHADERS_FOLDER     =
@@ -55,13 +52,10 @@ ifeq ($(GUI), IMGUI)
 				  src/imgui/gui.cpp src/imgui/ui_settings.cpp src/imgui/ui_info.cpp src/imgui/imgui_extensions.cpp src/imgui/file_saver.cpp \
 					$(RAYLIB_SOURCES)
 	COMMONFLAGS+= -I$(IM) -I$(RL) -DIMGUI
-	BR_HEADERS+= src/imgui/imgui_extensions.h
-	ADDITIONAL_HEADERS+= $(RAYLIB_HEADERS)
 
 else ifeq ($(GUI), RAYLIB)
 	COMMONFLAGS+= -I$(RL)
 	SOURCE+= src/raylib/gui.c src/raylib/ui.c $(RAYLIB_SOURCES)
-	ADDITIONAL_HEADERS+= $(RAYLIB_HEADERS)
 
 else ifeq ($(GUI), HEADLESS)
 	COMMONFLAGS+= -I$(RL)
@@ -93,8 +87,8 @@ else ifeq ($(PLATFORM), WINDOWS)
 else ifeq ($(PLATFORM), WEB)
 	CXX= $(EMSCRIPTEN)em++
 	CC= $(EMSCRIPTEN)emcc
-	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES2=1 -DPLATFORM_WEB=1
-	LD_FLAGS= -sWASM_BIGINT -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH -sUSE_GLFW=3 -sGL_ENABLE_GET_PROC_ADDRESS --shell-file=src/web/minshell.html
+	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES3=1 -DPLATFORM_WEB=1
+	LD_FLAGS= -sWASM_BIGINT -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH -sUSE_GLFW=3 -sUSE_WEBGL2=1 -sGL_ENABLE_GET_PROC_ADDRESS --shell-file=src/web/minshell.html
 	LD_FLAGS+= -sCHECK_NULL_WRITES=0 -sDISABLE_EXCEPTION_THROWING=1 -sFILESYSTEM=0 -sDYNAMIC_EXECUTION=0
 	SOURCE+= src/web/read_input.c src/web/platform.c
 	SHADERS_FOLDER= src/web/shaders
@@ -146,7 +140,6 @@ else ifeq ($(CONFIG), RELEASE)
 	COMMONFLAGS+= -fdata-sections -ffunction-sections -Os -DRELEASE=1 \
 		-DIMGUI_DISABLE_DEMO_WINDOWS \
 		-DIMGUI_DISABLE_DEBUG_TOOLS
-	ADDITIONAL_HEADERS+= $(SHADERS_HEADER)
 	LD_FLAGS+= -fdata-sections -ffunction-sections -Wl,--gc-sections 
 	ifeq ($(PLATFORM), LINUX)
 		LD_FLAGS+= -flto=auto
@@ -160,6 +153,7 @@ endif
 PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
 OBJSA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE))
 OBJS+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
+MAKE_INCLUDES= $(patsubst %.o, %.d, $(OBJS))
 CXXFLAGS= $(COMMONFLAGS) -fno-exceptions -std=gnu++17
 CCFLAGS= $(COMMONFLAGS)
 OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
@@ -176,19 +170,19 @@ SHADERS_LIST= $(SHADERS_FOLDER)/grid_3d.fs $(SHADERS_FOLDER)/grid_3d.vs \
 							$(SHADERS_FOLDER)/line.fs $(SHADERS_FOLDER)/line.vs \
 	            $(SHADERS_FOLDER)/quad.fs $(SHADERS_FOLDER)/quad.vs
 
-$(OUTPUT): $(ADDITIONAL_HEADERS) $(OBJS)
+$(OUTPUT): $(OBJS)
 	$(CXX) $(COMMONFLAGS) $(LD_FLAGS) -o $@ $(LIBS) $(OBJS) $(LIBS)
 
-$(PREFIX_BUILD)/src/%.o:src/%.c $(BR_HEADERS) $(ADDITIONAL_HEADERS)
+$(PREFIX_BUILD)/src/%.o:src/%.c
 	$(CC) $(CCFLAGS) $(WARNING_FLAGS) -c -o $@ $<
 
-$(PREFIX_BUILD)/src/%.o:src/%.cpp $(BR_HEADERS) $(ADDITIONAL_HEADERS)
+$(PREFIX_BUILD)/src/%.o:src/%.cpp
 	$(CXX) $(CXXFLAGS) $(WARNING_FLAGS) -c -o $@ $<
 
-$(PREFIX_BUILD)/%.o:%.cpp $(ADDITIONAL_HEADERS)
+$(PREFIX_BUILD)/%.o:%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-$(PREFIX_BUILD)/%.o:%.c $(ADDITIONAL_HEADERS)
+$(PREFIX_BUILD)/%.o:%.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
 .PHONY: clean
@@ -246,7 +240,6 @@ $(SHADERS_HEADER): $(SHADERS_LIST) bin/upper bin/lower
 																cat $(s) | sed 's/\(.*\)/"\1\\n" \\/' >> $(SHADERS_HEADER) && \
 																echo "" >> $(SHADERS_HEADER) && ) echo "OKi"
 
-HEADERS= src/br_plot.h
 COMPILE_FLAGS_JSONA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.json, $(SOURCE))
 COMPILE_FLAGS_JSON= $(patsubst %.c, $(PREFIX_BUILD)/%.json, $(COMPILE_FLAGS_JSONA))
 
@@ -285,3 +278,4 @@ $(PREFIX_BUILD)/%.json:%.cpp
   echo '"file": "$<"' >> $@ && \
 	echo '},' >> $@
 
+-include $(MAKE_INCLUDES)
