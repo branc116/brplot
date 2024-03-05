@@ -189,5 +189,5 @@ void br_shaders_refresh(br_shaders_t shaders) {
 #  undef X_VEC
 #  undef X_BUF
 }
-#endif
+#endif // RELEASE
 

@@ -28,6 +28,7 @@
         ARR.arr = new_arr;                                             \
         ARR.cap = new_cap;                                             \
         ARR.arr[ARR.len++] = (VALUE);                                  \
+        is_ok = true; \
       } else {                                                         \
         cap_diff >>= 1;                                                \
       }                                                                \
