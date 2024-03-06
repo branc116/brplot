@@ -21,22 +21,22 @@ void main(void)
     vec2 tg = vertexNormal.xy;
     vec2 position = vertexPosition.xy;
 
-    normal = -vertexPosition.z * normalize(tg.yx * zoom * vec2(-1, 1));
+    normal = -vertexPosition.z * normalize(tg.yx * zoom * vec2(-1.0, 1.0));
     vec2 dif = normal * thick;
     position -= dif * max(zoom * 0.1, position / 7e5);
 
     vec2 size = resolution.zw;
 
-    float aspect = size.y / screen.y * 2;
+    float aspect = size.y / screen.y * 2.0;
 
     vec2 fact = screen.xy / screen.yy;
     vec2 fact2 = resolution.ww / screen.xy;
     vec2 uv = position * aspect;
-    uv -= offset * fact2 * fact * 2;
+    uv -= offset * fact2 * fact * 2.;
     uv /= zoom * fact;
-    uv += vec2(-1, 1.);
-    uv += resolution.xy/screen.xy*vec2(2, -2);
-    uv += resolution.zw/screen.xy*vec2(1, -1);
-    gl_Position = vec4(uv, 0, 1.0);
+    uv += vec2(-1., 1.);
+    uv += resolution.xy/screen.xy*vec2(2., -2.);
+    uv += resolution.zw/screen.xy*vec2(1., -1.);
+    gl_Position = vec4(uv, 0., 1.0);
 }
 

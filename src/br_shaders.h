@@ -9,7 +9,6 @@
 
 #define BR_ALL_SHADERS(X, X_VEC, X_BUF) \
   X(line_3d_simple, 1024,               \
-      X_VEC(eye, 3)                     \
       X_VEC(m_mvp, 16),                 \
                                         \
       X_BUF(vertexPosition, 3)          \
@@ -30,7 +29,6 @@
       X_VEC(resolution, 4),             \
                                         \
       X_BUF(vertexPosition, 3)          \
-      X_BUF(vertexNormal, 3)            \
       X_BUF(vertexColor, 3)             \
     )                                   \
   X(line, 1024,                         \
@@ -44,7 +42,6 @@
       X_BUF(vertexColor, 3)             \
     )                                   \
   X(grid, 2,                            \
-      X_VEC(resolution, 4)              \
       X_VEC(zoom, 2)                    \
       X_VEC(offset, 2)                  \
       X_VEC(screen, 2),                 \

@@ -4,6 +4,7 @@
 #include "src/br_shaders.h"
 #include "src/br_plot.h"
 #include "src/br_da.h"
+#include <assert.h>
 
 #define grid_fs "src/desktop/shaders/grid.fs"
 #define grid_vs "src/desktop/shaders/grid.vs"
@@ -22,6 +23,10 @@
 #define IS_SPECIAL_TOKEN(c) ((c) == '\n' || (c) == '\r' || (c) == '.' || (c) == ',' || (c) == '{' || (c) == '}' || (c) == ' ')
 #define IS_NUMBER_TOKEN(c) ((c) >= '0' && (c) <= '9')
 #define IS_ALPHA_TOKEN(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
+#define FATAL(shader, line, offset, msg, ...) do { \
+  fprintf(stderr, "|%s:%d:%d|ERROR: "msg"\n", br_str_to_c_str(shader->path), line, offset, __VA_ARGS__); \
+  assert(0); \
+} while(0)
 
 #define TOKENS(X) \
   X(token_kind_preprocess) \
@@ -36,6 +41,11 @@
   X(token_kind_dot) \
   X(token_kind_equals) \
   X(token_kind_equals_equals) \
+  X(token_kind_lt) \
+  X(token_kind_gt) \
+  X(token_kind_or) \
+  X(token_kind_question_mark) \
+  X(token_kind_simic) \
   X(token_kind_plus) \
   X(token_kind_minus) \
   X(token_kind_times) \
@@ -55,6 +65,12 @@ typedef enum {
   variable_type_mat4 = 16,
 } variable_type_t;
 
+typedef enum {
+  variable_attr_in,
+  variable_attr_out,
+  variable_attr_uniform
+} variable_attr_t;
+
 typedef struct {
   token_kind_t kind;
   int line, start;
@@ -67,8 +83,8 @@ typedef struct {
 } tokens_t;
 
 typedef struct {
-  bool is_uniform;
-  br_str_t name;
+  variable_attr_t attr;
+  br_strv_t name;
   variable_type_t type;
 } variable_t;
 
@@ -82,6 +98,8 @@ typedef struct {
   br_str_t content;
   variables_t variables;
   tokens_t tokens;
+
+  variables_t source_vars;
 } shader_t;
 
 typedef struct {
@@ -124,12 +142,12 @@ br_str_t read_entire_file(br_str_t path) {
 programs_t get_programs(void) {
   programs_t ret = { 0 };
 # define X_U(NAME, SIZE) { \
-    variable_t var = { .is_uniform = true, .name = br_str_from_c_str(#NAME), .type = (variable_type_t)SIZE}; \
+    variable_t var = { .attr = variable_attr_uniform, .name = br_strv_from_c_str(#NAME), .type = (variable_type_t)SIZE}; \
     br_da_push(variables_vertex, var); \
     br_da_push(variables_fragment, var); \
   }
 # define X_B(NAME, SIZE) { \
-    variable_t var = { .is_uniform = false, .name = br_str_from_c_str(#NAME), .type = (variable_type_t)SIZE}; \
+    variable_t var = { .attr = variable_attr_in, .name = br_strv_from_c_str(#NAME), .type = (variable_type_t)SIZE}; \
     br_da_push(variables_vertex, var); \
   }
 # define X(NAME, CAP, VERT, BUFF) do { \
@@ -141,12 +159,14 @@ programs_t get_programs(void) {
       .fragment = { \
         .path = br_str_from_c_str(NAME ## _fs), \
         .content = { 0 }, \
-        .variables = { 0 } \
+        .variables = variables_fragment, \
+        .source_vars = { 0 } \
       }, \
       .vertex = { \
         .path = br_str_from_c_str(NAME ## _vs), \
         .content = { 0 }, \
-        .variables = { 0 } \
+        .variables = variables_vertex, \
+        .source_vars = { 0 } \
       }, \
       .name = br_str_from_c_str(#NAME), \
     }; \
@@ -157,10 +177,64 @@ programs_t get_programs(void) {
 # undef X_B
 # undef X_U
   for (size_t i = 0; i < ret.len; ++i) {
-    ret.arr[i].fragment.content = read_entire_file(ret.arr[i].vertex.path);
+    ret.arr[i].fragment.content = read_entire_file(ret.arr[i].fragment.path);
     ret.arr[i].vertex.content = read_entire_file(ret.arr[i].vertex.path);
   }
   return ret;
+}
+
+variable_type_t get_variable_type(shader_t const* shader, size_t token_index) {
+  token_t t = shader->tokens.arr[token_index];
+  const char* s = br_strv_to_c_str(t.view);
+  if (t.view.len == 4) {
+    if (s[0] == 'v' && s[1] == 'e' && s[2] == 'c') {
+      switch (s[3]) {
+        case '2': return variable_type_vec2;
+        case '3': return variable_type_vec3;
+        case '4': return variable_type_vec4;
+        default: FATAL(shader, t.line, t.start, "Unknown variable type: %s", s);
+      }
+    } else if (s[0] == 'm' && s[1] == 'a' && s[2] == 't') {
+      switch (s[3]) {
+        case '4': return variable_type_mat4;
+        default: FATAL(shader, t.line, t.start, "Unknown variable type: %s", s);
+      }
+    } 
+  } else if (strcmp(s, "float") == 0) return variable_type_float;
+  FATAL(shader, t.line, t.start, "Unknown variable type: %s", s);
+}
+
+void get_shader_variables(shader_t* shader) {
+  int depth_curly = 0;
+  for (size_t i = 0; i < shader->tokens.len; ++i) {
+    token_t t = shader->tokens.arr[i];
+    char* v = br_strv_to_c_str(t.view);
+    bool any = true;
+    variable_attr_t attr;
+    if (t.kind != token_kind_identifier) continue;
+    if (0 == strcmp(v, "in")) attr = variable_attr_in;
+    else if (0 == strcmp(v, "out")) attr = variable_attr_out;
+    else if (0 == strcmp(v, "uniform")) attr = variable_attr_uniform;
+    else any = false;
+    if (any) {
+      variable_type_t type = get_variable_type(shader, i + 1);
+      br_strv_t name = shader->tokens.arr[i + 2].view;
+      variable_t var = {
+        .attr = attr,
+        .name = name,
+        .type = type
+      };
+      br_da_push(shader->source_vars, var);
+    }
+    BR_FREE(v);
+  }
+}
+
+void get_program_variables(programs_t programs) {
+  for (size_t i = 0; i < programs.len; ++i) {
+    get_shader_variables(&programs.arr[i].vertex);
+    get_shader_variables(&programs.arr[i].fragment);
+  }
 }
 
 void embed(br_str_t name, br_str_t name_postfix, br_str_t content) {
@@ -254,6 +328,26 @@ void get_tokens(shader_t* shader) {
         ++i;
         br_da_push(shader->tokens, equals);
       }
+    } else if (cur == '<') {
+      token_t token = init_token(token_kind_lt, line, offset, &shader->content.str[i]);
+      ++offset;
+      br_da_push(shader->tokens, token);
+    } else if (cur == '>') {
+      token_t token = init_token(token_kind_gt, line, offset, &shader->content.str[i]);
+      ++offset;
+      br_da_push(shader->tokens, token);
+    } else if (cur == '|') {
+      token_t token = init_token(token_kind_or, line, offset, &shader->content.str[i]);
+      ++offset;
+      br_da_push(shader->tokens, token);
+    } else if (cur == '?') {
+      token_t token = init_token(token_kind_question_mark, line, offset, &shader->content.str[i]);
+      ++offset;
+      br_da_push(shader->tokens, token);
+    } else if (cur == ':') {
+      token_t token = init_token(token_kind_simic, line, offset, &shader->content.str[i]);
+      ++offset;
+      br_da_push(shader->tokens, token);
     } else if (cur == ',') {
       token_t comma = init_token(token_kind_comma, line, offset, &shader->content.str[i]);
       ++offset;
@@ -291,9 +385,7 @@ void get_tokens(shader_t* shader) {
           ++line;
           offset = 0;
         } else if (next == '*') {
-          fprintf(stderr, "|%s:%d:%d|ERROR: Multiline comment not implemented",
-              br_str_to_c_str(shader->path), line, offset);
-          assert(false);
+          FATAL(shader, line, offset, "Multiline comments aren't implemented %d", 69);
         } else {
           token_t div = init_token(token_kind_div, line, offset, &shader->content.str[i]);
           ++offset;
@@ -306,8 +398,145 @@ void get_tokens(shader_t* shader) {
     } else if (cur == ' ') {
       ++offset;
     } else {
-      fprintf(stderr, "|%s:%d:%d|ERROR: unknown start of token: `%c`(%d)", br_str_to_c_str(shader->path), line, offset, cur, cur);
-      assert(false);
+      FATAL(shader, line, offset, "Unknown start of token: `%c`(%d)", cur, cur);
+    }
+  }
+}
+
+#define BAD_TOKEN(SHADER, EXPECTED, ACTUAL) \
+  FATAL(shader, token.line, token.start, "Expected token %s but got %s", \
+    token_kind_to_str(EXPECTED), token_kind_to_str(ACTUAL)) \
+
+#define EXPECT_TOKEN_K(SHADER, TOKEN_INDEX, KIND) \
+  do { \
+    token_t token = SHADER->tokens.arr[TOKEN_INDEX]; \
+    if (token.kind != KIND) { \
+      BAD_TOKEN(SHADER, KIND, token.kind); \
+    } \
+  } while(0);
+
+#define EXPECT_TOKEN_KS(SHADER, TOKEN_INDEX, KIND, VALUE) \
+  do { \
+    token_t token = SHADER->tokens.arr[TOKEN_INDEX]; \
+    char* cur_val = br_strv_to_c_str(token.view); \
+    if (SHADER->tokens.arr[TOKEN_INDEX].kind != KIND || 0 != strcmp(VALUE, cur_val)) { \
+      FATAL(SHADER, token.line, token.start, "Expected token %s[%s] but got %s[%s]", \
+          token_kind_to_str(KIND), VALUE, token_kind_to_str(token.kind), br_strv_to_c_str(token.view)); \
+    } \
+    BR_FREE(cur_val); \
+  } while(0);
+
+#define ALL_CHECKS(X) \
+  X(check_version) \
+  X(check_numbers) \
+  X(check_used_variables)
+
+void check_numbers(shader_t const* shader) {
+  for (size_t i = 3; i < shader->tokens.len; ++i) {
+    if (shader->tokens.arr[i].kind == token_kind_number) {
+      token_t t1 = shader->tokens.arr[i + 1];
+      if (t1.kind == token_kind_identifier && t1.view.str[0] == 'e') continue;
+      if (t1.kind == token_kind_dot) {
+      } else {
+        EXPECT_TOKEN_K(shader, i + 1, token_kind_dot);
+      }
+      token_t t2 = shader->tokens.arr[i + 2];
+      if (t2.kind == token_kind_number) i+=2;
+      else ++i;
+    }
+  }
+}
+
+void check_version(shader_t const* shader) {
+  if (shader->tokens.len <= 3) {
+    FATAL(shader, 0, 0, "Expected shader to have more than 2 tokens, found only %lu.\n", shader->tokens.len);
+  }
+  EXPECT_TOKEN_K(shader, 0, token_kind_preprocess);
+  EXPECT_TOKEN_KS(shader, 1, token_kind_identifier, "version");
+  EXPECT_TOKEN_KS(shader, 2, token_kind_number, "330");
+}
+
+void check_used_variables(shader_t const* shader) {
+  for (size_t i = 0; i < shader->source_vars.len; ++i) {
+    int n = 0;
+    br_strv_t name = shader->source_vars.arr[i].name;
+    for (size_t j = 0; j < shader->tokens.len; ++j) {
+      if (shader->tokens.arr[j].kind != token_kind_identifier) continue;
+      if (!br_strv_eq(shader->tokens.arr[j].view, name)) continue;
+      if (++n == 2) break;
+    }
+    printf("%s %s %d\n", br_str_to_c_str(shader->path), br_strv_to_c_str(name), n);
+    if (n < 2) FATAL(shader, 0, 0, "Unused variable `%s`", br_strv_to_c_str(name));
+  }
+}
+
+void check_programs(programs_t programs) {
+  for (size_t i = 0; i < programs.len; ++i) {
+#define X(name) name(&programs.arr[i].vertex); \
+    name(&programs.arr[i].fragment);
+    ALL_CHECKS(X)
+#undef X
+    shader_t* vs = &programs.arr[i].vertex;
+    shader_t* fs = &programs.arr[i].fragment;
+    variables_t vars = vs->variables;
+    for (size_t j = 0; j < vars.len; ++j) {
+      variable_t v = vars.arr[j];
+      if (v.attr == variable_attr_in) {
+        variables_t srcvs = vs->source_vars;
+        for (size_t k = 0; k < srcvs.len; ++k) {
+          variable_t srcv = srcvs.arr[k];
+          if (false == br_strv_eq(srcv.name, v.name)) continue;
+          if (srcv.type != v.type) {
+            FATAL(vs, 0, 0, "U said `%s` is of type %d but it's of type %d...", br_strv_to_c_str(v.name), v.type, srcv.type);
+          }
+          if (srcv.attr == v.attr) goto ok;
+          FATAL(vs, 0, 0, "U said `%s` is `in` but it's not...", br_strv_to_c_str(v.name));
+        }
+        FATAL(vs, 0, 0, "U said `%s` vertex buffer object of type %d should be in this shader, but it's not...", br_strv_to_c_str(v.name), v.type);
+      } else if (v.attr == variable_attr_uniform) {
+        variables_t srcvs = vs->source_vars;
+        for (size_t k = 0; k < srcvs.len; ++k) {
+          variable_t srcv = srcvs.arr[k];
+          if (false == br_strv_eq(srcv.name, v.name)) continue;
+          if (srcv.type != v.type) {
+            FATAL(vs, 0, 0, "U said `%s` is of type %d but it's of type %d...", br_strv_to_c_str(v.name), v.type, srcv.type);
+          }
+          if (srcv.attr == v.attr) goto ok;
+          FATAL(vs, 0, 0, "U said `%s` is `uniform` but it's not...", br_strv_to_c_str(v.name));
+        }
+        srcvs = fs->source_vars;
+        for (size_t k = 0; k < srcvs.len; ++k) {
+          variable_t srcv = srcvs.arr[k];
+          if (false == br_strv_eq(srcv.name, v.name)) continue;
+          if (srcv.type != v.type) {
+            FATAL(fs, 0, 0, "U said `%s` is of type %d but it's of type %d...", br_strv_to_c_str(v.name), v.type, srcv.type);
+          }
+          if (srcv.attr == v.attr) goto ok;
+          FATAL(fs, 0, 0, "U said `%s` is `uniform` but it's not...", br_strv_to_c_str(v.name));
+        }
+        FATAL(vs, 0, 0, "U said `%s` uniform of type %d should be in this shader, but it's not...", br_strv_to_c_str(v.name), v.type);
+      }
+      ok:;
+    }
+    for (size_t j = 0; j < fs->source_vars.len; ++j) {
+      variable_t var = fs->source_vars.arr[j];
+      if (var.attr == variable_attr_uniform) {
+        for (size_t k = 0; k < vars.len; ++k) {
+          if (br_strv_eq(vars.arr[k].name, var.name)) goto ok1;
+        }
+        FATAL(fs, 0, 0, "Shader requires `%s` but it's not provided", br_strv_to_c_str(var.name));
+        ok1:;
+      }
+    }
+    for (size_t j = 0; j < vs->source_vars.len; ++j) {
+      variable_t var = vs->source_vars.arr[j];
+      if (var.attr != variable_attr_out) {
+        for (size_t k = 0; k < vars.len; ++k) {
+          if (br_strv_eq(vars.arr[k].name, var.name)) goto ok2;
+        }
+        FATAL(vs, 0, 0, "Shader requires `%s` but it's not provided", br_strv_to_c_str(var.name));
+        ok2:;
+      }
     }
   }
 }
@@ -318,6 +547,9 @@ int main(void) {
     get_tokens(&programs.arr[i].vertex);
     get_tokens(&programs.arr[i].fragment);
   }
+  get_program_variables(programs);
+  check_programs(programs);
+  /*
   {
     tokens_t tokens = programs.arr[0].vertex.tokens;
     for (int i = 0; i < tokens.len; ++i) {
@@ -330,6 +562,7 @@ int main(void) {
       printf("%s<%s>\n", token_kind_to_str(tokens.arr[i].kind), br_strv_to_c_str(tokens.arr[i].view));
     }
   }
+  */
   return 0;
   
   for (size_t i = 0; i < programs.len; ++i) {

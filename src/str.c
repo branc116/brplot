@@ -120,6 +120,13 @@ bool br_str_push_c_str(br_str_t* s, char const* c) {
   return true;
 }
 
+bool br_strv_eq(br_strv_t s1, br_strv_t s2) {
+  if (s1.len != s2.len) return false;
+  for (unsigned int i = 0; i < s1.len; ++i)
+    if (s1.str[i] != s2.str[i]) return false;
+  return true;
+}
+
 char* br_str_to_c_str(const br_str_t s) {
   char* out_s = BR_MALLOC(s.len + 1);
   if (out_s == NULL) return NULL;

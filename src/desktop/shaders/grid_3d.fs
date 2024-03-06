@@ -6,7 +6,6 @@ precision mediump float;
 uniform vec4 resolution;
 uniform vec3 eye;
 
-in vec4 color;
 in vec3 fragTexCoord;
 in vec3 normal;
 
@@ -20,9 +19,9 @@ float map(vec2 cPos, vec2 zoom_level) {
     vec2 fact = log10(zoom_level * 4.5);
     vec2 fr = fract(fact);
     vec2 baseMinor = floor(fact) - 1.0;
-    vec2 baseMajor = baseMinor + 1;
-    vec2 divs = pow(vec2(10), baseMinor);
-    vec2 divsMajor = pow(vec2(10), baseMajor);
+    vec2 baseMajor = baseMinor + 1.;
+    vec2 divs = pow(vec2(10.), baseMinor);
+    vec2 divsMajor = pow(vec2(10.), baseMajor);
     vec2 mcPosd = mod(cPos + divs/2., divs) - divs/2.;
     vec2 mcPosdM = mod(cPos + divsMajor/2., divsMajor) - divsMajor/2.;
 
