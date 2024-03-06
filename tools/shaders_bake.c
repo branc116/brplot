@@ -36,8 +36,10 @@
   X(token_kind_dot) \
   X(token_kind_equals) \
   X(token_kind_equals_equals) \
+  X(token_kind_plus) \
   X(token_kind_minus) \
   X(token_kind_times) \
+  X(token_kind_div) \
 
 typedef enum {
 #define X(NAME) NAME,
@@ -202,7 +204,7 @@ void get_tokens(shader_t* shader) {
       int len = 0;
       do {
         cur = shader->content.str[i + ++len];
-      } while ((IS_ALPHA_TOKEN(cur) || cur == '_') && i + len < shader->content.len);
+      } while ((IS_ALPHA_TOKEN(cur) || IS_NUMBER_TOKEN(cur) || cur == '_') && i + len < shader->content.len);
       ident.view.len = len;
       i += len;
       offset += len;
@@ -264,10 +266,40 @@ void get_tokens(shader_t* shader) {
       token_t minus = init_token(token_kind_minus, line, offset, &shader->content.str[i]);
       ++offset;
       br_da_push(shader->tokens, minus);
+    } else if (cur == '+') {
+      token_t plus = init_token(token_kind_plus, line, offset, &shader->content.str[i]);
+      ++offset;
+      br_da_push(shader->tokens, plus);
     } else if (cur == '*') {
       token_t times = init_token(token_kind_times, line, offset, &shader->content.str[i]);
       ++offset;
       br_da_push(shader->tokens, times);
+    } else if (cur == '/') {
+      if (i + 1 >= shader->content.len) {
+        token_t div = init_token(token_kind_div, line, offset, &shader->content.str[i]);
+        ++offset;
+        br_da_push(shader->tokens, div);
+      } else {
+        char next = shader->content.str[i + 1];
+        if (next == '/') {
+          char cur = shader->content.str[i];
+          int len = 0;
+          do {
+            cur = shader->content.str[i + ++len];
+          } while (cur != '\n' && i + len < shader->content.len);
+          i += len;
+          ++line;
+          offset = 0;
+        } else if (next == '*') {
+          fprintf(stderr, "|%s:%d:%d|ERROR: Multiline comment not implemented",
+              br_str_to_c_str(shader->path), line, offset);
+          assert(false);
+        } else {
+          token_t div = init_token(token_kind_div, line, offset, &shader->content.str[i]);
+          ++offset;
+          br_da_push(shader->tokens, div);
+        }
+      }
     } else if (cur == '\n') {
       ++line;
       offset = 0;
@@ -282,18 +314,20 @@ void get_tokens(shader_t* shader) {
 
 int main(void) {
   programs_t programs = get_programs();
+  for (size_t i = 0; i < programs.len; ++i) {
+    get_tokens(&programs.arr[i].vertex);
+    get_tokens(&programs.arr[i].fragment);
+  }
   {
-    shader_t* shader = &programs.arr[0].vertex;
-    get_tokens(shader);
-    for (int i = 0; i < shader->tokens.len; ++i) {
-      printf("%s<%s>\n", token_kind_to_str(shader->tokens.arr[i].kind), br_strv_to_c_str(shader->tokens.arr[i].view));
+    tokens_t tokens = programs.arr[0].vertex.tokens;
+    for (int i = 0; i < tokens.len; ++i) {
+      printf("%s<%s>\n", token_kind_to_str(tokens.arr[i].kind), br_strv_to_c_str(tokens.arr[i].view));
     }
   }
   {
-    shader_t* shader = &programs.arr[0].fragment;
-    get_tokens(shader);
-    for (int i = 0; i < shader->tokens.len; ++i) {
-      printf("%s<%s>\n", token_kind_to_str(shader->tokens.arr[i].kind), br_strv_to_c_str(shader->tokens.arr[i].view));
+    tokens_t tokens = programs.arr[0].fragment.tokens;
+    for (int i = 0; i < tokens.len; ++i) {
+      printf("%s<%s>\n", token_kind_to_str(tokens.arr[i].kind), br_strv_to_c_str(tokens.arr[i].view));
     }
   }
   return 0;
