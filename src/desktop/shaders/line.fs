@@ -1,4 +1,7 @@
 #version 330
+
+precision mediump float;
+
 in vec2 normal;
 in vec3 color;
 

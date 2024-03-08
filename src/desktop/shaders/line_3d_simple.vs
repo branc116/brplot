@@ -1,5 +1,7 @@
 #version 330
 
+precision mediump float;
+
 in vec3 vertexPosition;
 in vec3 vertexColor;
 in vec3 vertexNormal;

@@ -11,7 +11,7 @@
 
 #define br_da_push_t(SIZE_T, ARR, VALUE) do {                          \
   if (ARR.cap == 0) {                                                  \
-    ARR.arr = (DECLTYPE(VALUE)*)BR_MALLOC(sizeof(*ARR.arr));                             \
+    ARR.arr = (DECLTYPE(VALUE)*)BR_MALLOC(sizeof(*ARR.arr));           \
     if (ARR.arr != NULL) {                                             \
       ARR.cap = 1;                                                     \
       ARR.arr[ARR.len++] = (VALUE);                                    \

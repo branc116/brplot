@@ -12,23 +12,7 @@
 #  else
 #    error "Shaders for this platform arn't defined"
 #  endif
-#else
-#  include "src/misc/shaders_dbg.h"
 #endif
-
-static const char* grid_VS = SHADER_GRID_VS;
-static const char* grid_FS = SHADER_GRID_FS;
-static const char* line_FS = SHADER_LINE_FS;
-static const char* line_VS = SHADER_LINE_VS;
-//static const char* quad_FS = SHADER_QUAD_FS;
-//static const char* quad_VS = SHADER_QUAD_VS;
-
-static const char* grid_3d_FS = SHADER_GRID_3D_FS;
-static const char* grid_3d_VS = SHADER_GRID_3D_VS;
-static const char* line_3d_FS = SHADER_LINE_3D_FS;
-static const char* line_3d_VS = SHADER_LINE_3D_VS;
-static const char* line_3d_simple_FS = SHADER_LINE_3D_SIMPLE_FS;
-static const char* line_3d_simple_VS = SHADER_LINE_3D_SIMPLE_VS;
 
 #define X_BUF(NAME, LEN) \
   ret->NAME ## _vbo = BR_MALLOC((size_t)(LEN * cap * 3 * (int)sizeof(float)));
@@ -69,7 +53,6 @@ BR_ALL_SHADERS(X, NOP2, X_BUF)
 #undef X
 #undef X_BUF
 
-
 #define X_BUF(NAME, LEN) \
   rlUnloadVertexBuffer((uint32_t)shader->NAME ## _vbo_id); \
   BR_FREE(shader->NAME ## _vbo);
@@ -99,8 +82,8 @@ BR_ALL_SHADERS(X, X_VEC, X_BUF)
 #define X_VEC(NAME, LEN) shader->NAME ## _u = rlGetLocationUniform(shader->id, #NAME);
 #define X(NAME, CAP, VEC, BUFF) \
   inline static void br_shader_ ## NAME ## _compile(br_shader_ ## NAME ## _t* shader) { \
-    FILE_CONTNET_TYPE vs = READ_FILE(NAME ## _VS); \
-    FILE_CONTNET_TYPE fs = READ_FILE(NAME ## _FS); \
+    FILE_CONTNET_TYPE vs = READ_FILE(NAME ## _vs); \
+    FILE_CONTNET_TYPE fs = READ_FILE(NAME ## _fs); \
     shader->id = rlLoadShaderCode(vs, fs); \
     FREE_FILE_CONTENT(fs); \
     FREE_FILE_CONTENT(vs); \
@@ -172,8 +155,8 @@ void br_shaders_refresh(br_shaders_t shaders) {
 #  define X_VEC(NAME, LEN) shader->NAME ## _u = rlGetLocationUniform(shader->id, #NAME);
 #  define X(NAME, CAP, VEC, BUFF)                             \
      {                                                        \
-       FILE_CONTNET_TYPE vs = READ_FILE(NAME ## _VS);         \
-       FILE_CONTNET_TYPE fs = READ_FILE(NAME ## _FS);         \
+       FILE_CONTNET_TYPE vs = READ_FILE(NAME ## _vs);         \
+       FILE_CONTNET_TYPE fs = READ_FILE(NAME ## _fs);         \
        unsigned int new_shader_id = rlLoadShaderCode(vs, fs); \
        if (new_shader_id > 0) {                               \
          br_shader_ ## NAME ## _t* shader = shaders.NAME;     \

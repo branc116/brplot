@@ -1,5 +1,7 @@
 #version 330
 
+precision mediump float;
+
 in vec3 vertexPosition;
 // This is not normal. This is dx, dy, and length of the line.
 in vec3 vertexColor;

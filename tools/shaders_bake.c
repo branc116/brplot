@@ -6,20 +6,6 @@
 #include "src/br_da.h"
 #include <assert.h>
 
-#define grid_fs "src/desktop/shaders/grid.fs"
-#define grid_vs "src/desktop/shaders/grid.vs"
-#define line_fs "src/desktop/shaders/line.fs"
-#define line_vs "src/desktop/shaders/line.vs"
-#define quad_fs "src/desktop/shaders/quad.fs"
-#define quad_vs "src/desktop/shaders/quad.vs"
-
-#define grid_3d_fs "src/desktop/shaders/grid_3d.fs"
-#define grid_3d_vs "src/desktop/shaders/grid_3d.vs"
-#define line_3d_fs "src/desktop/shaders/line_3d.fs"
-#define line_3d_vs "src/desktop/shaders/line_3d.vs"
-#define line_3d_simple_fs "src/desktop/shaders/line_3d_simple.fs"
-#define line_3d_simple_vs "src/desktop/shaders/line_3d_simple.vs"
-
 #define IS_SPECIAL_TOKEN(c) ((c) == '\n' || (c) == '\r' || (c) == '.' || (c) == ',' || (c) == '{' || (c) == '}' || (c) == ' ')
 #define IS_NUMBER_TOKEN(c) ((c) >= '0' && (c) <= '9')
 #define IS_ALPHA_TOKEN(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
@@ -117,6 +103,11 @@ typedef struct {
   shader_t* arr;
   size_t len, cap;
 } shaders_t;
+
+typedef enum {
+  shader_output_kind_desktop,
+  shader_output_kind_web
+} shader_output_kind_t;
 
 const char* token_kind_to_str(token_kind_t kind) {
   switch (kind) {
@@ -237,15 +228,33 @@ void get_program_variables(programs_t programs) {
   }
 }
 
-void embed(br_str_t name, br_str_t name_postfix, br_str_t content) {
+void embed_tokens(br_str_t name, br_str_t name_postfix, tokens_t tokens, shader_output_kind_t kind) {
   printf("#define %s_%s \"", br_str_to_c_str(name), br_str_to_c_str(name_postfix));
-  size_t l = content.len;
-  for (int j = 0; j < l; ++j) {
-    char cur = content.str[j];
-    if (cur == '\n') printf("\\n\" \\\n\"");
-    else if (cur == '\r') continue;
-    else printf("%c", cur);
+  switch (kind) {
+    case shader_output_kind_desktop: printf("#version 330\\n"); break;
+    case shader_output_kind_web: printf("#version 300 es\\n"); break;
+    default: fprintf(stderr, "ERROR: Bad output kind: %d\n", kind);
   }
+  printf("\" \\\n\"");
+  bool was_last_iden = false;
+  for (size_t i = 3; i < tokens.len; ++i) {
+    token_t t = tokens.arr[i];
+    if (t.kind == token_kind_preprocess) {
+      printf("\\n\"\n\"");
+      for (; i < tokens.len && t.line == tokens.arr[i].line; ++i) {
+        printf("%s ", br_strv_to_c_str(tokens.arr[i].view));
+      }
+      printf("\\n\" \\\n\"\n");
+      was_last_iden = false;
+      --i;
+    } else {
+      bool is_iden = t.kind == token_kind_identifier;
+      if (was_last_iden && is_iden) printf(" ");
+      printf("%s", br_strv_to_c_str(t.view));
+      was_last_iden = is_iden;
+    }
+  }
+  printf("\"\n\n");
 }
 
 token_t init_token(token_kind_t kind, int line, int offset, const char* start) {
@@ -429,7 +438,8 @@ void get_tokens(shader_t* shader) {
 #define ALL_CHECKS(X) \
   X(check_version) \
   X(check_numbers) \
-  X(check_used_variables)
+  X(check_used_variables) \
+  X(check_set_precision)
 
 void check_numbers(shader_t const* shader) {
   for (size_t i = 3; i < shader->tokens.len; ++i) {
@@ -465,9 +475,28 @@ void check_used_variables(shader_t const* shader) {
       if (!br_strv_eq(shader->tokens.arr[j].view, name)) continue;
       if (++n == 2) break;
     }
-    printf("%s %s %d\n", br_str_to_c_str(shader->path), br_strv_to_c_str(name), n);
     if (n < 2) FATAL(shader, 0, 0, "Unused variable `%s`", br_strv_to_c_str(name));
   }
+}
+
+void check_set_precision(shader_t const* shader) {
+  for (size_t i = 0; i < shader->tokens.len; ++i) {
+    //precision mediump float;
+    token_t t = shader->tokens.arr[i];
+    if (strcmp("precision", br_strv_to_c_str(t.view))) continue;
+    t = shader->tokens.arr[i + 1];
+    if (strcmp("mediump", br_strv_to_c_str(t.view))) {
+      FATAL(shader, shader->tokens.arr[i].line, shader->tokens.arr[i].start, "Bad precision `%s`, only supported is mediump",
+          br_strv_to_c_str(t.view));
+    }
+    t = shader->tokens.arr[i + 2];
+    if (strcmp("float", br_strv_to_c_str(t.view))) {
+      FATAL(shader, shader->tokens.arr[i].line, shader->tokens.arr[i].start, "WTF is precision mediump %s ???",
+          br_strv_to_c_str(t.view));
+    }
+    return;
+  }
+  FATAL(shader, 0, 0, "precision mediump float missing!%d", 69);
 }
 
 void check_programs(programs_t programs) {
@@ -541,7 +570,19 @@ void check_programs(programs_t programs) {
   }
 }
 
-int main(void) {
+void exit_usage(const char* name) {
+  fprintf(stderr, "ERROR: Bad input parametes\n"
+          "Usage: %s WEB|LINUX|WINDOWS\n", name);
+  exit(1);
+}
+
+int main(int argc, char const * const* argv) {
+  if (argc != 2) {
+    exit_usage(argv[0]);
+  }
+  shader_output_kind_t output = shader_output_kind_desktop;
+  if (0 == strcmp("WEB", argv[1])) output = shader_output_kind_web;
+
   programs_t programs = get_programs();
   for (size_t i = 0; i < programs.len; ++i) {
     get_tokens(&programs.arr[i].vertex);
@@ -549,25 +590,10 @@ int main(void) {
   }
   get_program_variables(programs);
   check_programs(programs);
-  /*
-  {
-    tokens_t tokens = programs.arr[0].vertex.tokens;
-    for (int i = 0; i < tokens.len; ++i) {
-      printf("%s<%s>\n", token_kind_to_str(tokens.arr[i].kind), br_strv_to_c_str(tokens.arr[i].view));
-    }
-  }
-  {
-    tokens_t tokens = programs.arr[0].fragment.tokens;
-    for (int i = 0; i < tokens.len; ++i) {
-      printf("%s<%s>\n", token_kind_to_str(tokens.arr[i].kind), br_strv_to_c_str(tokens.arr[i].view));
-    }
-  }
-  */
-  return 0;
   
   for (size_t i = 0; i < programs.len; ++i) {
-    embed(programs.arr[i].name, br_str_from_c_str("fs"), programs.arr[i].fragment.content);
-    embed(programs.arr[i].name, br_str_from_c_str("vs"), programs.arr[i].vertex.content);
+    embed_tokens(programs.arr[i].name, br_str_from_c_str("fs"), programs.arr[i].fragment.tokens, output);
+    embed_tokens(programs.arr[i].name, br_str_from_c_str("vs"), programs.arr[i].vertex.tokens, output);
   }
   return 0;
 }
