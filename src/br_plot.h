@@ -233,7 +233,7 @@ typedef struct {
 
 typedef struct {
   struct {
-    int* arr;
+    size_t* arr;
     int len, cap; 
   } groups_to_show;
   // graph_screen_rect is in the screen coordinates.
@@ -368,6 +368,8 @@ BR_API points_groups_t* br_plotter_get_points_groups(br_plotter_t* br);
 BR_API void br_plotter_set_bottom_left(br_plot_instance_t* plot, float left, float bottom);
 BR_API void br_plotter_set_top_right(br_plot_instance_t* plot, float right, float top);
 BR_API void br_plotter_focus_visible(br_plot_instance_t* plot, points_groups_t groups);
+void br_plotter_add_plot_instance_2d(br_plotter_t* br);
+void br_plotter_add_plot_instance_3d(br_plotter_t* br);
 void br_plot_instance_screenshot(br_plot_instance_t* br, points_groups_t groups, char const* path);
 void br_plotter_export(br_plotter_t const* br, char const* path);
 void br_plotter_export_csv(br_plotter_t const* br, char const* path);
@@ -454,8 +456,9 @@ typedef enum {
 } br_file_saver_state_t;
 
 br_file_saver_state_t br_file_explorer(struct br_file_saver_s* fs);
-struct br_file_saver_s* br_file_saver_malloc(const char* title, const char* location);
-void br_file_saver_get_path(struct br_file_saver_s* fs, br_str_t* path);
+struct br_file_saver_s* br_file_saver_malloc(char const* title, char const* location, br_plot_instance_t const* plot);
+void br_file_saver_get_path(struct br_file_saver_s const* fs, br_str_t* path);
+br_plot_instance_t const* br_file_saver_get_plot_instance(struct br_file_saver_s const* fs);
 void br_file_saver_free(struct br_file_saver_s* fs);
 #endif
 

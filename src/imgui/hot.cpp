@@ -7,6 +7,7 @@
 #include "rlgl.h"
 #include "external/glad.h"
 #include "raymath.h"
+#include "src/br_da.h"
 
 void ShowMatrix(const char* name, Matrix m) {
   ImGui::PushID(name);
@@ -141,7 +142,50 @@ void smol_mesh_3d_gen_line_eye(br_shader_line_t* mesh, Vector3 p1, Vector3 p2, V
 bool focused = false;
 float translate_speed = 1.0f;
 
-extern "C" void br_hot_loop(br_plotter_t* gv) {
+extern "C" void br_hot_loop(br_plotter_t* br) {
+  if (ImGui::Begin("Plot instancies")) {
+    ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_AutoSelectNewTabs | ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_FittingPolicyResizeDown;
+    tab_bar_flags &= ~(ImGuiTabBarFlags_FittingPolicyMask_ ^ ImGuiTabBarFlags_FittingPolicyResizeDown);
+    if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags)) {
+      if (ImGui::TabItemButton("+", ImGuiTabItemFlags_Leading | ImGuiTabItemFlags_NoTooltip)) {
+        ImGui::OpenPopup("SelectDimension");
+        printf("HELLO\n");
+      }
+      if (ImGui::BeginPopup("SelectDimension")) {
+          if (ImGui::Selectable("2D")) {
+            br_plotter_add_plot_instance_2d(br);
+          }
+          if (ImGui::Selectable("3D")) {
+            br_plotter_add_plot_instance_3d(br);
+          }
+          ImGui::EndPopup();
+      }
+      for (int i = 0; i < br->plots.len; ++i) {
+        snprintf(context.buff, IM_ARRAYSIZE(context.buff), "Plot #%d", i);
+        bool open = true;
+        if (ImGui::BeginTabItem(context.buff, &open, ImGuiTabItemFlags_None)) {
+          ImGui::PushID(i);
+          for (size_t j = 0; j < br->groups.len; ++j) {
+            bool contains = false;
+            br_da_contains_t(int, br->plots.arr[i].groups_to_show, j, contains);
+            br_str_to_c_str1(br->groups.arr[j].name, context.buff);
+            if (ImGui::Checkbox(context.buff, &contains)) {
+              if (contains) br_da_push_t(int, br->plots.arr[i].groups_to_show, j);
+              else br_da_remove(br->plots.arr[i].groups_to_show, j);
+            }
+          }
+          ImGui::PopID();
+          ImGui::EndTabItem();
+        }
+        if (false == open) {
+          br_da_remove_at_t(int, br->plots, i);
+          --i;
+        }
+      }
+      ImGui::EndTabBar();
+    }
+  }
+  ImGui::End();
 #if 0
   ImGui::Begin("3d");
   br::Input("Eyes", gv->eye);

@@ -36,7 +36,6 @@ namespace br {
     if (str->len >= str->cap) br_str_realloc(str, str->cap * 2);
     str->str[str->len] = 0;
     ImGui::InputText(label, str->str, str->cap, ImGuiInputTextFlags_CallbackResize, [](ImGuiInputTextCallbackData* data) {
-      printf("Handled event: %d\n", data->EventFlag);
       br_str_t* str = (br_str_t*)data->UserData;
       if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
       {

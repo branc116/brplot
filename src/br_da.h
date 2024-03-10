@@ -44,23 +44,35 @@
   ARR.len = ARR.cap = 0;     \
 } while(0)
 
-#define br_da_remove_n_at(ARR, N, I) do {                                             \
-  assert("Index is out of bounds" && (I) > 0 && ((I) + (N) - 1) < (size_t)(ARR).len); \
-  size_t i = (size_t)(I);                                                             \
-  for (; (i + N) < (size_t)((ARR).len); ++i) {                                        \
-    (ARR).arr[i] = (ARR).arr[i + 1];                                                  \
-  }                                                                                   \
-  --(ARR).len;                                                                        \
+#define br_da_remove_n_at_t(T, ARR, N, I) do {                                    \
+  assert("Index is out of bounds" && (I) >= 0 && ((I) + (N) - 1) < (T)(ARR).len); \
+  T _i = (T)(I);                                                                  \
+  for (; (_i + N) < (T)((ARR).len); ++_i) {                                       \
+    (ARR).arr[_i] = (ARR).arr[_i + 1];                                            \
+  }                                                                               \
+  --(ARR).len;                                                                    \
 } while(0)
 
+#define br_da_remove_n_at(ARR, N, I) br_da_remove_n_at_t(size_t ARR, N, I)
 #define br_da_remove_at(ARR, I) br_da_remove_n_at(ARR, 1, I)
+#define br_da_remove_at_t(T, ARR, I) br_da_remove_n_at_t(T, ARR, 1, I)
 
 #define br_da_remove(ARR, V) do {            \
-  size_t i = 0;                              \
-  for (; i < (size_t)(ARR).len; ++i) {       \
-    if ((ARR).arr[i] == (V)) {               \
-      (ARR).arr[i] = (ARR).arr[--(ARR).len]; \
+  size_t _i = 0;                              \
+  for (; _i < (size_t)(ARR).len; ++_i) {       \
+    if ((ARR).arr[_i] == (V)) {               \
+      (ARR).arr[_i] = (ARR).arr[--(ARR).len]; \
     }                                        \
   }                                          \
 } while(0)
 
+#define br_da_contains_t(T, ARR, V, CONTAINS) do { \
+  for (T _i = 0; _i < (ARR).len; ++_i) { \
+    if ((ARR).arr[_i] == V) { \
+      CONTAINS = true; \
+      break; \
+    } \
+  } \
+} while(0)
+
+#define br_da_contains(T, ARR, V, CONTAINS) br_da_contains_t(size_t, ARR, V, CONTAINS)

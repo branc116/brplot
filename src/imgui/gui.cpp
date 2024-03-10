@@ -32,7 +32,7 @@
 "  DockNode  ID=0x00000001 Parent=0x8B93E3BD SizeRef=1005,720\n" \
 "  DockNode  ID=0x00000002 Parent=0x8B93E3BD SizeRef=273,720\n"
 
-static void br_plot_instance_screenshot_imgui(br_plot_instance_t* br, points_groups_t groups, char* path);
+static void br_plot_instance_screenshot_imgui(br_plot_instance_t br, points_groups_t groups, char* path);
 
 static int screenshot_file_save = 0;
 static struct br_file_saver_s* fs = nullptr;
@@ -89,19 +89,19 @@ extern "C" void br_gui_free_specifics(br_plotter_t* br) {
   ImGui::DestroyContext();
 }
 
-void graph_draw_min(br_plotter_t* br, br_plot_instance_t* plot, float posx, float posy, float width, float height, float padding) {
+void graph_draw_min(points_groups_t groups, br_plot_instance_t* plot, float posx, float posy, float width, float height, float padding) {
   plot->resolution.x = (float)GetScreenWidth();
   plot->resolution.y = (float)GetScreenHeight();
   plot->graph_screen_rect.x = 50.f + posx + padding;
   plot->graph_screen_rect.y = posy + padding;
   plot->graph_screen_rect.width = width - 50.f - 2.f * padding;
   plot->graph_screen_rect.height = height - 30.f - 2.f * padding;
+  br_plot_instance_update_shader_values(plot);
 
   //DrawRectangleRec(plot->graph_screen_rect, BLACK);
-  br_plotter_update_variables(br);
   draw_grid_numbers(plot);
   smol_mesh_grid_draw(plot);
-  points_groups_draw(br->groups, plot);
+  points_groups_draw(groups, plot);
 }
 
 extern "C" void br_plotter_draw(br_plotter_t* gv) {
@@ -122,13 +122,19 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui::NewFrame();
   ImGui::DockSpaceOverViewport();
-  br_plot_instance_t* plot = &gv->plots.arr[0];
-  if (ImGui::Begin("Plot") && false == ImGui::IsWindowHidden()) {
-    ImVec2 p = ImGui::GetWindowPos();
-    ImVec2 size = ImGui::GetWindowSize();
-    graph_draw_min(gv, plot, p.x, p.y, size.x, size.y, padding);
+  br_plotter_update_variables(gv);
+  for (int i = 0; i < gv->plots.len; ++i) {
+    ImGui::PushID(i);
+    br_plot_instance_t* plot = &gv->plots.arr[i];
+    snprintf(context.buff, IM_ARRAYSIZE(context.buff), "Plot #%d", i);
+    if (ImGui::Begin(context.buff) && false == ImGui::IsWindowHidden()) {
+      ImVec2 p = ImGui::GetWindowPos();
+      ImVec2 size = ImGui::GetWindowSize();
+      graph_draw_min(gv->groups, plot, p.x, p.y, size.x, size.y, padding);
+    }
+    ImGui::End();
+    ImGui::PopID();
   }
-  ImGui::End();
 #ifndef RELEASE
 #ifdef LINUX
   if (gv->hot_state.func_loop != nullptr) {
@@ -143,22 +149,18 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
   br::ui_settings(gv);
   br::ui_info(gv);
   if (screenshot_file_save == 1) {
-    fs = br_file_saver_malloc("Save screenshot", std::getenv("HOME"));
-    screenshot_file_save = 2;
-  }
-  if (screenshot_file_save == 2) {
     br_file_saver_state_t state = br_file_explorer(fs);
     switch (state) {
       case file_saver_state_exploring: break;
       case file_saver_state_accept: {
-                                      br_str_t s = br_str_malloc(64);
-                                      br_file_saver_get_path(fs, &s);
-                                      br_plot_instance_screenshot_imgui(plot, gv->groups, br_str_move_to_c_str(&s));
-                                    } // FALLTHROUGH
+        br_str_t s = br_str_malloc(64);
+        br_file_saver_get_path(fs, &s);
+        br_plot_instance_screenshot_imgui(*br_file_saver_get_plot_instance(fs), gv->groups, br_str_move_to_c_str(&s));
+      } // FALLTHROUGH
       case file_saver_state_cancle: {
-                                      br_file_saver_free(fs);
-                                      screenshot_file_save = 0;
-                                    } break;
+        br_file_saver_free(fs);
+        screenshot_file_save = 0;
+      } break;
     }
   }
 
@@ -175,24 +177,25 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
 #endif
 }
 
-extern "C" void br_plot_instance_screenshot(br_plot_instance_t*, points_groups_t, char const*) {
+extern "C" void br_plot_instance_screenshot(br_plot_instance_t* plot, points_groups_t, char const*) {
+  fs = br_file_saver_malloc("Save screenshot", std::getenv("HOME"), plot);
   screenshot_file_save = 1;
   return;
 }
 
-static void br_plot_instance_screenshot_imgui(br_plot_instance_t* plot, points_groups_t groups, char* path) {
+static void br_plot_instance_screenshot_imgui(br_plot_instance_t plot, points_groups_t groups, char* path) {
   float left_pad = 80.f;
   float bottom_pad = 80.f;
   Vector2 is = {1280, 720};
   RenderTexture2D target = LoadRenderTexture((int)is.x, (int)is.y); // TODO: make this values user defined.
-  plot->graph_screen_rect = {left_pad, 0.f, is.x - left_pad, is.y - bottom_pad};
-  plot->resolution = {is.x, is.y};
-  br_plot_instance_update_context(plot, GetMousePosition());
-  br_plot_instance_update_shader_values(plot);
+  plot.graph_screen_rect = {left_pad, 0.f, is.x - left_pad, is.y - bottom_pad};
+  plot.resolution = {is.x, is.y};
+  br_plot_instance_update_context(&plot, GetMousePosition());
+  br_plot_instance_update_shader_values(&plot);
   BeginTextureMode(target);
-    smol_mesh_grid_draw(plot);
-    points_groups_draw(groups, plot);
-    draw_grid_numbers(plot);
+    smol_mesh_grid_draw(&plot);
+    points_groups_draw(groups, &plot);
+    draw_grid_numbers(&plot);
   EndTextureMode();
   Image img = LoadImageFromTexture(target.texture);
   ImageFlipVertical(&img);

@@ -161,8 +161,9 @@ void points_groups_draw(points_groups_t pg, br_plot_instance_t* plot) {
 //    Vector2 size = {  uvs.zoom_uv.x * .01f, uvs.zoom_uv.y * .01f };
     rlSetBlendFactors(GL_SRC_ALPHA, GL_DST_ALPHA, GL_MAX);
     rlSetBlendMode(BLEND_CUSTOM);
-    for (size_t j = 0; j < pg.len; ++j) {
-      points_group_t const* g = &pg.arr[j];
+    for (int j = 0; j < plot->groups_to_show.len; ++j) {
+      size_t group = plot->groups_to_show.arr[j];
+      points_group_t const* g = &pg.arr[group];
       if (g->len == 0) continue;
       if (g->is_selected) {
         resampling2_draw(g->resampling, g, plot);
@@ -179,6 +180,7 @@ void points_groups_draw(points_groups_t pg, br_plot_instance_t* plot) {
     }
     if (plot->dd.line_shader->len > 0) {
       br_shader_line_draw(plot->dd.line_shader);
+      plot->dd.line_shader->len = 0;
     }
     rlSetBlendMode(BLEND_ALPHA);
   } else {

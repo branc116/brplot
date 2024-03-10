@@ -1,6 +1,7 @@
 #include "br_plot.h"
 #include "br_gui_internal.h"
 #include "br_help.h"
+#include "br_da.h"
 
 #include <assert.h>
 #include <math.h>
@@ -55,6 +56,51 @@ BR_API void br_plotter_resize(br_plotter_t* br, float width, float height) {
 
 BR_API points_groups_t* br_plotter_get_points_groups(br_plotter_t* br) {
   return &br->groups;
+}
+
+void br_plotter_add_plot_instance_2d(br_plotter_t* br) {
+  br_plot_instance_t plot = {
+    .groups_to_show = { 0 },
+    .graph_screen_rect = { GRAPH_LEFT_PAD, 50, (float)GetScreenWidth() - GRAPH_LEFT_PAD - 60, (float)GetScreenHeight() - 110 },
+    .resolution = { (float)GetScreenWidth(), (float)GetScreenHeight() },
+    .follow = false,
+    .jump_around = false,
+    .mouse_inside_graph = false,
+    .kind = br_plot_instance_kind_2d,
+    .dd =  {
+      .line_shader = br->shaders.line,
+      .grid_shader = br->shaders.grid,
+      .zoom = { 1.f, 1.f },
+      .offset = { 0.f, 0.f },
+      .delta = { 0 },
+    }
+  };
+  br_da_push_t(int, (br->plots), plot);
+}
+
+void br_plotter_add_plot_instance_3d(br_plotter_t* br) {
+  br_plot_instance_t plot = {
+    .groups_to_show = { 0 },
+    .graph_screen_rect = { GRAPH_LEFT_PAD, 50, (float)GetScreenWidth() - GRAPH_LEFT_PAD - 60, (float)GetScreenHeight() - 110 },
+    .resolution = { (float)GetScreenWidth(), (float)GetScreenHeight() },
+    .follow = false,
+    .jump_around = false,
+    .mouse_inside_graph = false,
+    .kind = br_plot_instance_kind_3d,
+    .ddd =  {
+      .grid_shader = br->shaders.grid_3d,
+      .line_shader = br->shaders.line_3d,
+      .line_simple_shader = br->shaders.line_3d_simple,
+      .eye = { 0, 0, 100 },
+      .target = { 0, 0, 0},
+      .up = { 0, 1, 0},
+      .fov_y = 1,
+      .near_plane = 0.001f,
+      .far_plane = 10e7f,
+      .groups_3d_to_show = { 0 }
+    }
+  };
+  br_da_push_t(int, (br->plots), plot);
 }
 
 BR_API void br_plotter_free(br_plotter_t* gv) {
