@@ -160,6 +160,7 @@ typedef struct {
   min_distances_t point_closest_to_mouse;
   bb_t bounding_box;
   bool is_selected;
+  bool is_new;
 } points_group_t;
 
 typedef struct {
@@ -331,7 +332,7 @@ void smol_mesh_gen_line_strip_stride(br_shader_line_t* mesh, Vector2 const * poi
 void smol_mesh_gen_bb(br_shader_line_t* mesh, bb_t bb, Color color);
 void smol_mesh_grid_draw(br_plot_instance_t* plot);
 
-void smol_mesh_3d_gen_line(br_shader_line_3d_t* mesh, Vector3 p1, Vector3 p2, Color color);
+void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, Vector3 p1, Vector3 p2, Color color);
 
 BR_API points_group_t* points_group_get(points_groups_t* pg_array, int group);
 BR_API void points_group_set_name(points_groups_t* pg_array, int group, br_str_t name);

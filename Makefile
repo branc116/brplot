@@ -158,7 +158,7 @@ $(shell test -d bin || mkdir bin)
 
 $(OUTPUT): $(OBJS)
 	$(CXX) $(COMMONFLAGS) $(LD_FLAGS) -o $@ $(LIBS) $(OBJS) $(LIBS)
-	ln -fs $@ bin/brplot
+	ln -fs ../$@ bin/brplot
 
 $(PREFIX_BUILD)/src/%.o:src/%.c
 	$(CC) $(CCFLAGS) $(WARNING_FLAGS) -c -o $@ $<

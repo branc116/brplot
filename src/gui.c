@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "raylib.h"
+#include "raymath.h"
 #include "rlgl.h"
 
 context_t context;
@@ -19,8 +20,9 @@ BR_API br_plotter_t* br_plotter_malloc(void) {
 }
 
 BR_API void br_plotter_init(br_plotter_t* br, float width, float height) {
+  SetConfigFlags(FLAG_MSAA_4X_HINT);
   InitWindow((int)width, (int)height, "brplot");
-  SetWindowState(FLAG_VSYNC_HINT);
+  SetWindowState(FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
   *br = (br_plotter_t){
     .groups = {0},
     .groups_3d = {0},
@@ -186,8 +188,32 @@ bool br_plot_instance_update_variables_2d(br_plot_instance_t* plot, points_group
   return false;
 }
 
+bool br_plot_instance_update_variables_3d(br_plot_instance_t* plot, points_groups_t const groups, Vector2 mouse_pos) {
+  assert(plot->kind == br_plot_instance_kind_3d);
+  if (!plot->mouse_inside_graph) return false;
+  if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+    Vector2 md = Vector2Scale(GetMouseDelta(), -0.003f);
+    Vector3 zeroed = Vector3Subtract(plot->ddd.eye, plot->ddd.target);
+    Vector3 rotated_up = Vector3RotateByAxisAngle(zeroed, plot->ddd.up, md.x);
+    Vector3 right = Vector3CrossProduct(plot->ddd.up, Vector3Normalize(zeroed));
+    Vector3 rotated_right = Vector3RotateByAxisAngle(rotated_up, right, md.y);
+    if (fabsf(Vector3DotProduct(rotated_right, plot->ddd.up)) > 0.94f) plot->ddd.eye = Vector3Add(rotated_up,    plot->ddd.target);
+    else                                                               plot->ddd.eye = Vector3Add(rotated_right, plot->ddd.target);
+    plot->ddd.eye = Vector3Add(rotated_right, plot->ddd.target);
+    return false;
+  }
+  {
+    float mw = GetMouseWheelMove();
+    float mw_scale = (1 + mw/10);
+    Vector3 zeroed = Vector3Subtract(plot->ddd.eye, plot->ddd.target);
+    float len = Vector3Length(zeroed);
+    len *= mw_scale;
+    plot->ddd.eye = Vector3Add(Vector3Scale(Vector3Normalize(zeroed), len), plot->ddd.target);
+  }
+  return true;
+}
+
 void br_plotter_update_variables(br_plotter_t* br) {
-// TODO 2D/3D
 #ifndef RELEASE
   if (br->shaders_dirty) {
     br_shaders_refresh(br->shaders);
@@ -198,10 +224,17 @@ void br_plotter_update_variables(br_plotter_t* br) {
   br_plotter_update_context(br, mouse_pos);
   for (int i = 0; i < br->plots.len; ++i) {
     br_plot_instance_t* plot = &br->plots.arr[i];
-    assert(plot->kind == br_plot_instance_kind_2d);
-    if (br_plot_instance_update_variables_2d(plot, br->groups, mouse_pos))
-      br_keybinding_handle_keys(br, plot);
-    br_plot_instance_update_shader_values(plot);
+    switch (plot->kind) {
+      case br_plot_instance_kind_2d: {
+        if (br_plot_instance_update_variables_2d(plot, br->groups, mouse_pos))
+          br_keybinding_handle_keys(br, plot);
+      } break;
+      case br_plot_instance_kind_3d: {
+        if (br_plot_instance_update_variables_3d(plot, br->groups, mouse_pos))
+          br_keybinding_handle_keys(br, plot);
+      } break;
+      default: assert(0);
+    }
   }
 
   while (1) {
@@ -227,18 +260,46 @@ void br_plotter_update_variables(br_plotter_t* br) {
   end: return;
 }
 void br_plot_instance_update_shader_values(br_plot_instance_t* plot) {
-    plot->dd.grid_shader->uvs.zoom_uv = plot->dd.zoom;
-    plot->dd.grid_shader->uvs.offset_uv = plot->dd.offset;
-    plot->dd.grid_shader->uvs.screen_uv = (Vector2) { .x = plot->graph_screen_rect.width, .y = plot->graph_screen_rect.height };
+  switch (plot->kind) {
+    case br_plot_instance_kind_2d: {
+      Vector2 zoom = plot->dd.zoom;
+      Vector2 zoom_log = { .x = powf(10.f, -floorf(log10f(zoom.x))), .y = powf(10.f, -floorf(log10f(zoom.y))) };
+      Vector2 zoom_final = { .x = zoom.x * zoom_log.x, .y = zoom.y * zoom_log.y };
+      plot->dd.grid_shader->uvs.zoom_uv = zoom_final;
+      Vector2 off_zoom = Vector2Multiply(plot->dd.offset, zoom_log);
+      Vector2 off = Vector2Divide(off_zoom, (Vector2) { 10, 10 });
+      plot->dd.grid_shader->uvs.offset_uv = Vector2Subtract(off_zoom, (Vector2) { floorf(off.x) * 10.f, floorf(off.y) * 10.f });
 
-    plot->dd.line_shader->uvs.zoom_uv = plot->dd.zoom;
-    plot->dd.line_shader->uvs.offset_uv = plot->dd.offset;
-    plot->dd.line_shader->uvs.screen_uv = plot->resolution;
-    plot->dd.line_shader->uvs.resolution_uv = *(Vector4*)&plot->graph_screen_rect;
+      plot->dd.grid_shader->uvs.screen_uv = (Vector2) { .x = plot->graph_screen_rect.width, .y = plot->graph_screen_rect.height };
+
+      plot->dd.line_shader->uvs.zoom_uv = plot->dd.zoom;
+      plot->dd.line_shader->uvs.offset_uv = plot->dd.offset;
+      plot->dd.line_shader->uvs.screen_uv = plot->resolution;
+      plot->dd.line_shader->uvs.resolution_uv = *(Vector4*)&plot->graph_screen_rect;
+    } break;
+    case br_plot_instance_kind_3d: {
+      Vector2 re = plot->ddd.grid_shader->uvs.resolution_uv = (Vector2) { .x = plot->graph_screen_rect.width, .y = plot->graph_screen_rect.height };
+      Matrix per = MatrixPerspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
+      Matrix look = MatrixLookAt(plot->ddd.eye, plot->ddd.target, plot->ddd.up);
+      plot->ddd.grid_shader->uvs.m_mvp_uv = MatrixMultiply(look, per);
+      plot->ddd.grid_shader->uvs.eye_uv = plot->ddd.eye;
+
+      plot->ddd.line_shader->uvs.m_mvp_uv = MatrixMultiply(look, per);
+      plot->ddd.line_shader->uvs.eye_uv = plot->ddd.eye;
+    } break;
+    default: assert(0);
+  }
 }
 
 BR_API void br_plotter_frame_end(br_plotter_t* gv) {
   (void)gv;
+  for (size_t i = 0; i < gv->groups.len; ++i) {
+    if (gv->groups.arr[i].is_new == false) continue;
+    for (int j = 0; j < gv->plots.len; ++j) {
+      br_da_push_t(int, gv->plots.arr[j].groups_to_show, i);
+    }
+    gv->groups.arr[i].is_new = false;
+  }
   //gv->lines_mesh->draw_calls = 0;
   //gv->lines_mesh->points_drawn = 0;
 }
@@ -284,7 +345,7 @@ void br_plot_instance_update_context(br_plot_instance_t* plot, Vector2 mouse_pos
       plot->dd.zoom.y};
   } else {
     // TODO 2D/3D
-    assert(false);
+    //assert(false);
   }
 }
 
@@ -294,7 +355,9 @@ void br_plotter_update_context(br_plotter_t* br, Vector2 mouse_pos) {
 }
 
 void draw_grid_numbers(br_plot_instance_t* plot) {
-  assert(plot->kind == br_plot_instance_kind_2d);
+  // TODO 2D/3D
+  //assert(plot->kind == br_plot_instance_kind_2d);
+  if(plot->kind != br_plot_instance_kind_2d) return;
 
   Rectangle r = plot->dd.graph_rect;
   Rectangle graph_screen_rect = plot->graph_screen_rect;

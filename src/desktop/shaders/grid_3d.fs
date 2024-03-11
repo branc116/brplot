@@ -3,7 +3,7 @@
 precision mediump float;
 
 //x, y, width, height
-uniform vec4 resolution;
+uniform vec2 resolution;
 uniform vec3 eye;
 
 in vec3 fragTexCoord;
@@ -42,9 +42,9 @@ float map_outer(vec2 fragCoord) {
 }
 
 void main(void) {
+  out_color = vec4(1.0);
   if (gl_FragCoord.x < resolution.x || gl_FragCoord.y > resolution.y) {
     out_color = vec4(0.0);
-    return;
   }
   float res = normal.z > normal.y ? map_outer(fragTexCoord.xy) : map_outer(fragTexCoord.xz);
   out_color = (normal.z > normal.y ? vec4(0.2, 0.3, 0.5, 1.0) : vec4(0.5, 0.3, 0.2, 1.0))*res;

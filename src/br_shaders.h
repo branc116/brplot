@@ -39,10 +39,10 @@
       X_BUF(vertexNormal, 3)            \
       X_BUF(vertexColor, 3)             \
     )                                   \
-  X(grid_3d, 1024,                      \
+  X(grid_3d, 2,                         \
       X_VEC(eye, 3)                     \
       X_VEC(m_mvp, 16)                  \
-      X_VEC(resolution, 4),             \
+      X_VEC(resolution, 2),             \
                                         \
       X_BUF(vertexPosition, 3)          \
       X_BUF(vertexColor, 3)             \

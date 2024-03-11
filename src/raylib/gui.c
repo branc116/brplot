@@ -16,19 +16,7 @@ void emscripten_run_script(const char* script);
 static void update_resolution(br_plotter_t* gv);
 static void draw_left_panel(br_plotter_t* gv);
 void br_gui_init_specifics_gui(br_plotter_t* br) {
-  br_plot_instance_t plot = {
-    .kind = br_plot_instance_kind_2d,
-    .graph_screen_rect = { GRAPH_LEFT_PAD, 50, (float)GetScreenWidth() - GRAPH_LEFT_PAD - 60, (float)GetScreenHeight() - 110 },
-    .resolution = { (float)GetScreenWidth(), (float)GetScreenHeight() },
-    .follow = false,
-    .dd = {
-      .line_shader = br->shaders.line,
-      .grid_shader = br->shaders.grid,
-      .zoom = (Vector2) { .x = 1.f, .y = 1.f },
-      .offset = { 0 }
-    }
-  };
-  br_da_push_t(int, br->plots, plot);
+  br_plotter_add_plot_instance_2d(br);
 }
 
 BR_API void br_plotter_draw(br_plotter_t* br) {
@@ -37,9 +25,13 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   update_resolution(br);
   br_plotter_update_variables(br);
   help_draw_fps(0, 0);
-  draw_grid_numbers(&br->plots.arr[0]);
-  smol_mesh_grid_draw(&br->plots.arr[0]);
-  points_groups_draw(br->groups, &br->plots.arr[0]);
+  for (int i = 0; i < br->plots.len; ++i) {
+    br_plot_instance_t* plot = &br->plots.arr[i];
+    br_plot_instance_update_shader_values(plot);
+    draw_grid_numbers(plot);
+    smol_mesh_grid_draw(plot);
+    points_groups_draw(br->groups, plot);
+  }
   draw_left_panel(br);
   EndDrawing();
 }

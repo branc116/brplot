@@ -43,16 +43,7 @@ static float padding = 50.f;
 static GLFWwindow* ctx;
 
 extern "C" void br_gui_init_specifics_gui(br_plotter_t* br) {
-  br_plot_instance_t plot;
-  plot.kind = br_plot_instance_kind_2d;
-  plot.graph_screen_rect = { GRAPH_LEFT_PAD, 50, (float)GetScreenWidth() - GRAPH_LEFT_PAD - 60, (float)GetScreenHeight() - 110 };
-  plot.resolution = { (float)GetScreenWidth(), (float)GetScreenHeight() };
-  plot.follow = false;
-  plot.dd.line_shader = br->shaders.line;
-  plot.dd.grid_shader = br->shaders.grid,
-  plot.dd.zoom = Vector2 { 1.f, 1.f },
-  plot.dd.offset = { 0, 0 };
-  br_da_push_t(int, (br->plots), plot);
+  br_plotter_add_plot_instance_2d(br);
 
   ctx = glfwGetCurrentContext();
   ImGui::SetAllocatorFunctions(BR_IMGUI_MALLOC, BR_IMGUI_FREE, nullptr);

@@ -1,3 +1,5 @@
+#include "imgui.h"
+#include "raylib.h"
 #include "src/br_plot.h"
 #include "src/imgui/imgui_extensions.h"
 
@@ -11,6 +13,7 @@ void br::ui_info(br_plotter_t* br) {
       s = sprintf(context.buff, "Unaccounted Allocations: >%lu", context.free_of_unknown_memory); ImGui::TextUnformatted(context.buff, context.buff + s);
     }
     if (ImGui::CollapsingHeader("Draw Debug")) {
+      ImGui::Text("FPS: %d", GetFPS());
       //int s = sprintf(context.buff, "Draw Calls: %lu (%lu lines)", br->lines_mesh->draw_calls, br->lines_mesh->points_drawn); ImGui::TextUnformatted(context.buff, context.buff + s);
       for (size_t i = 0; i < br->groups.len; ++i) {
         //auto& a = br->groups.arr[i];

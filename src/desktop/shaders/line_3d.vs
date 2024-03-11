@@ -16,7 +16,7 @@ void main(void)
 {
   pos = vertexPosition;
   color = vertexColor;
-  normal = normalize(vertexNormal);
+  normal = vertexNormal;
   gl_Position = m_mvp * vec4(vertexPosition, 1.0);
 }
 

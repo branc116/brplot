@@ -38,7 +38,10 @@ static inline void br_keybinding_gui_reset(br_plotter_t* br, br_plot_instance_t*
     if (!cs.ctrl)  plot->dd.zoom.x = plot->dd.zoom.y = 1;
     if (!cs.shift) plot->dd.offset.x = plot->dd.offset.y = 0;
   } else {
-    assert(false);
+    br_plot_instance_3d_t* pi3 = &plot->ddd;
+    pi3->eye = (Vector3){ 0, 0, 100 };
+    pi3->target = (Vector3){ 0, 0, 0 };
+    pi3->up = (Vector3){ 0, 1, 0 };
   }
 }
 

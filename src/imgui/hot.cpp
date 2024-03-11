@@ -26,10 +26,6 @@ extern "C" void br_hot_init(br_plotter_t* gv) {
 #endif
 }
 
-Vector3 Vector3MultiplyValue(Vector3 v, float s) {
-  return Vector3 { v.x * s, v.y * s, v.z * s };
-}
-
 void smol_mesh_gen_quad_3d_simple(br_shader_grid_3d_t* mesh, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, Color color) {
 #if 0
   size_t c = mesh->cur_len++;
@@ -186,26 +182,25 @@ extern "C" void br_hot_loop(br_plotter_t* br) {
     }
   }
   ImGui::End();
-#if 0
   ImGui::Begin("3d");
-  br::Input("Eyes", gv->eye);
-  br::Input("Target", gv->target);
-  br::Input("Up", gv->up);
-  if (ImGui::Button("Reset") || IsKeyPressed(KEY_R)) {
-    gv->eye = Vector3 { 0, 0, 100 };
-    gv->target = Vector3 { 0, 0, 0 };
-    gv->up = Vector3 { 0, 1, 0 };
+  for (int i = 0; i < br->plots.len; ++i) {
+    ImGui::PushID(i);
+    br_plot_instance_3d_t* pi3 = &br->plots.arr[i].ddd;
+    br::Input("Eyes", pi3->eye);
+    br::Input("Target", pi3->target);
+    br::Input("Up", pi3->up);
+    if (ImGui::Button("Reset") || IsKeyPressed(KEY_R)) {
+      pi3->eye = Vector3 { 0, 0, 100 };
+      pi3->target = Vector3 { 0, 0, 0 };
+      pi3->up = Vector3 { 0, 1, 0 };
+    }
+    ImGui::InputFloat("FovY", &pi3->fov_y);
+    ImGui::InputFloat("Near", &pi3->near_plane);
+    ImGui::InputFloat("Far", &pi3->far_plane);
+    ImGui::PopID();
   }
-  ImGui::InputFloat("FovY", &gv->fov_y);
-  ImGui::InputFloat("Near", &gv->near_plane);
-  ImGui::InputFloat("Far", &gv->far_plane);
-  ShowMatrix("ViewMatrix", gv->uvMatView);
-  ShowMatrix("Projection", gv->uvMatProjection);
-  ShowMatrix("MVP", gv->uvMvp);
-  ShowMatrix("Rl Project", rlGetMatrixProjection());
-  ShowMatrix("Rl ModelView", rlGetMatrixTransform());
   ImGui::End();
-
+#if 0
 
   //rlSetUniformMatrix(gv->grid3dShader.uMatProjection, gv->uvMatProjection);
   if (ImGui::Begin("3d View 2")) {

@@ -16,7 +16,6 @@ static bool points_group_realloc(points_group_t* pg, size_t new_cap);
 static Color color_get(int id);
 static void br_bb_expand_with_point(bb_t* bb, Vector2 v);
 
-
 BR_API void points_group_push_y(points_groups_t* pg_array, float y, int group) {
   points_group_t* pg = points_group_get(pg_array, group);
   if (pg == NULL) return;
@@ -113,9 +112,10 @@ void points_groups_add_test_points(points_groups_t* pg) {
     int group = 0;
     points_group_t* g = points_group_get(pg, group);
     if (NULL == g) return;
-    for (int i = 0; i < 10*1024; ++i)
+    for (int i = 0; i < 1024; ++i)
       points_group_push_point(g, (Vector2){(float)g->len/128.f, sinf((float)g->len/128.f)});
   }
+  return;
   {
     int group = 1;
     points_group_t* g = points_group_get(pg, group);
@@ -157,8 +157,6 @@ void points_groups_add_test_points(points_groups_t* pg) {
 
 void points_groups_draw(points_groups_t pg, br_plot_instance_t* plot) {
   if (plot->kind == br_plot_instance_kind_2d) {
-//    br_shader_line_uvs_t uvs = plot->dd.line_shader->uvs;
-//    Vector2 size = {  uvs.zoom_uv.x * .01f, uvs.zoom_uv.y * .01f };
     rlSetBlendFactors(GL_SRC_ALPHA, GL_DST_ALPHA, GL_MAX);
     rlSetBlendMode(BLEND_CUSTOM);
     for (int j = 0; j < plot->groups_to_show.len; ++j) {
@@ -168,15 +166,6 @@ void points_groups_draw(points_groups_t pg, br_plot_instance_t* plot) {
       if (g->is_selected) {
         resampling2_draw(g->resampling, g, plot);
       }
-//      if (pgdi.show_closest) {
-//        smol_mesh_gen_point1(pgdi.line_mesh, g->point_closest_to_mouse.graph_point, size, WHITE);
-//      }
-//      if (pgdi.show_x_closest) {
-//        smol_mesh_gen_point1(pgdi.line_mesh, g->point_closest_to_mouse.graph_point_x, size, WHITE);
-//      }
-//      if (pgdi.show_y_closest) {
-//        smol_mesh_gen_point1(pgdi.line_mesh, g->point_closest_to_mouse.graph_point_y, size, WHITE);
-//      }
     }
     if (plot->dd.line_shader->len > 0) {
       br_shader_line_draw(plot->dd.line_shader);
@@ -184,8 +173,26 @@ void points_groups_draw(points_groups_t pg, br_plot_instance_t* plot) {
     }
     rlSetBlendMode(BLEND_ALPHA);
   } else {
-    assert(false);
-    // TODO
+    int h = (int)plot->graph_screen_rect.height;
+    rlViewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
+    rlDisableBackfaceCulling();
+    rlEnableDepthTest();
+    for (int j = 0; j < plot->groups_to_show.len; ++j) {
+      size_t group = plot->groups_to_show.arr[j];
+      points_group_t const* g = &pg.arr[group];
+      for (size_t i = 0; i < g->len - 1; ++i) {
+        Vector3 p1 = { g->points[i].x, g->points[i].y, 0 };
+        Vector3 p2 = { g->points[i + 1].x, g->points[i + 1].y, 0 };
+        smol_mesh_3d_gen_line(plot->ddd.line_shader, p1, p2, g->color);
+      }
+    }
+    if (plot->ddd.line_shader->len > 0) {
+      br_shader_line_3d_draw(plot->ddd.line_shader);
+      plot->ddd.line_shader->len = 0;
+    }
+    rlDisableDepthTest();
+    rlEnableBackfaceCulling();
+    rlViewport(0, 0, (int)plot->resolution.x, (int)plot->resolution.y);
   }
 }
 
@@ -195,7 +202,8 @@ static points_group_t* points_group_init(points_group_t* g, int group_id) {
     .points = BR_MALLOC(sizeof(Vector2) * 1024),
     .resampling = resampling2_malloc(),
     .color = color_get(group_id),
-    .name = br_str_malloc(32)
+    .name = br_str_malloc(32),
+    .is_new = true
   };
   if (NULL != g->name.str) {
     sprintf(g->name.str, "Plot #%d", group_id);
