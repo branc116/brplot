@@ -116,6 +116,9 @@ BR_API void br_plotter_free(br_plotter_t* gv) {
     c = q_pop(&gv->commands);
   }
   BR_FREE(gv->commands.commands);
+  for (int i = 0; i < gv->plots.len; ++i) {
+    BR_FREE(gv->plots.arr[i].groups_to_show.arr);
+  }
   BR_FREE(gv->plots.arr);
 }
 
