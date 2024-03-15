@@ -743,10 +743,10 @@ static void lex(br_plotter_t* br) {
     lex_step(br, &s);
   }
   s.c = 0;
-  while (s.tokens_len > 0) {
+  do {
     lex_step(br, &s);
     input_tokens_reduce(br, &s, true);
-  }
+  } while (s.tokens_len > 0);
   lex_state_deinit(&s);
   q_push(&br->commands, (q_command) { .type = q_command_focus });
 }

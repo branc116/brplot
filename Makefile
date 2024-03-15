@@ -22,7 +22,9 @@ FUZZ?= NO
 RL                 = ./external/raylib-5.0/src
 IM                 = ./external/imgui-docking
 RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
-SOURCE             = src/main.c src/help.c src/points_group.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c src/keybindings.c src/str.c src/memory.cpp src/resampling2.c src/graph_utils.c src/br_shaders.c
+SOURCE             = src/main.c src/help.c src/points_group.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c \
+										 src/keybindings.c src/str.c src/memory.cpp src/resampling2.c src/graph_utils.c src/shaders.c \
+										 src/plot_instance.c
 COMMONFLAGS        = -I. -MMD -MP
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra
 LD_FLAGS           =
@@ -190,7 +192,7 @@ clean:
 
 .PHONY: fuzz
 fuzz:
-	make GUI=HEADLESS && \
+	make CONFIG=DEBUG GUI=HEADLESS && \
 	cat /dev/random | ./bin/brplot_headless_linux_debug_gcc > /dev/null && echo "Fuzz test OK"
 
 .PHONY: test

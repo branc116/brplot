@@ -71,8 +71,12 @@ static void draw_left_panel(br_plotter_t* br) {
     }
     if (res > 0) {
       if (IsKeyPressed(KEY_C)) {
-        if (IsKeyDown(KEY_LEFT_SHIFT)) points_group_clear(&br->groups, br->groups.arr[j].group_id);
-        else                           points_group_empty(&br->groups.arr[j]);
+        if (IsKeyDown(KEY_LEFT_SHIFT)) {
+          points_group_clear(&br->groups, br->plots, br->groups.arr[j].group_id);
+        }
+        else {
+          points_group_empty(&br->groups.arr[j]);
+        }
       }
     }
   }

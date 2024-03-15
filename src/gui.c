@@ -122,100 +122,6 @@ BR_API void br_plotter_free(br_plotter_t* gv) {
   BR_FREE(gv->plots.arr);
 }
 
-bool br_plot_instance_update_variables_2d(br_plot_instance_t* plot, points_groups_t const groups, Vector2 mouse_pos) {
-  assert(plot->kind == br_plot_instance_kind_2d);
-  if (plot->follow) {
-    Rectangle sr = plot->dd.graph_rect;
-    Vector2 middle = { sr.x + sr.width/2, sr.y - sr.height/2 };
-    for (size_t i = 0; i < groups.len; ++i) {
-      points_group_t* pg = &groups.arr[i];
-      size_t gl = pg->len;
-      if (!pg->is_selected || gl == 0) continue;
-      plot->dd.delta.x += ((middle.x - pg->points[gl - 1].x))/1000.f;
-      plot->dd.delta.y += ((middle.y - pg->points[gl - 1].y))/1000.f;
-    }
-    plot->dd.offset.x -= plot->dd.delta.x;
-    plot->dd.offset.y -= plot->dd.delta.y;
-    plot->dd.delta.x *= plot->dd.recoil;
-    plot->dd.delta.y *= plot->dd.recoil;
-  } else {
-    plot->dd.delta = (Vector2){ 0.f, 0.f };
-  }
-  if (plot->mouse_inside_graph) {
-    // TODO: Move this to br_keybindings.c
-    // Stuff related to zoom
-    {
-      float mw = -GetMouseWheelMove();
-      Vector2 old = plot->dd.mouse_pos;
-      bool any = false;
-      if (false == help_near_zero(mw)) {
-        float mw_scale = (1 + mw/10);
-        if (IsKeyDown(KEY_X)) {
-          plot->dd.zoom.x *= mw_scale;
-        } else if (IsKeyDown(KEY_Y)) {
-          plot->dd.zoom.y *= mw_scale;
-        } else {
-          plot->dd.zoom.x *= mw_scale;
-          plot->dd.zoom.y *= mw_scale;
-        }
-        any = true;
-      }
-      if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_SHIFT)) any = true,   plot->dd.zoom.x *= 1.1f;
-      if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_SHIFT)) any = true,   plot->dd.zoom.y *= 1.1f;
-      if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_CONTROL)) any = true, plot->dd.zoom.x *= .9f;
-      if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_CONTROL)) any = true, plot->dd.zoom.y *= .9f;
-      if (any) {
-        br_plot_instance_update_context(plot, mouse_pos);
-        Vector2 now = plot->dd.mouse_pos;
-        plot->dd.offset.x -= now.x - old.x;
-        plot->dd.offset.y -= now.y - old.y;
-      }
-    }
-    if (plot->jump_around) {
-      plot->graph_screen_rect.x += 100.f * (float)sin(GetTime());
-      plot->graph_screen_rect.y += 77.f * (float)cos(GetTime());
-      plot->graph_screen_rect.width += 130.f * (float)sin(GetTime());
-      plot->graph_screen_rect.height += 177.f * (float)cos(GetTime());
-    }
-    if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
-      Vector2 delt = GetMouseDelta();
-      //float speed = 1.f;
-      if (IsKeyDown(KEY_W)) {
-        //Vector3 diff = Vector3Subtract(br->eye, br->target);
-      }
-      plot->dd.offset.x -= plot->dd.zoom.x*delt.x/plot->graph_screen_rect.height;
-      plot->dd.offset.y += plot->dd.zoom.y*delt.y/plot->graph_screen_rect.height;
-      return false;
-    } else return true;
-  }
-  return false;
-}
-
-bool br_plot_instance_update_variables_3d(br_plot_instance_t* plot, points_groups_t const groups, Vector2 mouse_pos) {
-  assert(plot->kind == br_plot_instance_kind_3d);
-  if (!plot->mouse_inside_graph) return false;
-  if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-    Vector2 md = Vector2Scale(GetMouseDelta(), -0.003f);
-    Vector3 zeroed = Vector3Subtract(plot->ddd.eye, plot->ddd.target);
-    Vector3 rotated_up = Vector3RotateByAxisAngle(zeroed, plot->ddd.up, md.x);
-    Vector3 right = Vector3CrossProduct(plot->ddd.up, Vector3Normalize(zeroed));
-    Vector3 rotated_right = Vector3RotateByAxisAngle(rotated_up, right, md.y);
-    if (fabsf(Vector3DotProduct(rotated_right, plot->ddd.up)) > 0.94f) plot->ddd.eye = Vector3Add(rotated_up,    plot->ddd.target);
-    else                                                               plot->ddd.eye = Vector3Add(rotated_right, plot->ddd.target);
-    plot->ddd.eye = Vector3Add(rotated_right, plot->ddd.target);
-    return false;
-  }
-  {
-    float mw = GetMouseWheelMove();
-    float mw_scale = (1 + mw/10);
-    Vector3 zeroed = Vector3Subtract(plot->ddd.eye, plot->ddd.target);
-    float len = Vector3Length(zeroed);
-    len *= mw_scale;
-    plot->ddd.eye = Vector3Add(Vector3Scale(Vector3Normalize(zeroed), len), plot->ddd.target);
-  }
-  return true;
-}
-
 void br_plotter_update_variables(br_plotter_t* br) {
 #ifndef RELEASE
   if (br->shaders_dirty) {
@@ -248,7 +154,7 @@ void br_plotter_update_variables(br_plotter_t* br) {
       case q_command_push_point_y:  points_group_push_y(&br->groups, comm.push_point_y.y, comm.push_point_y.group); break;
       case q_command_push_point_xy: points_group_push_xy(&br->groups, comm.push_point_xy.x, comm.push_point_xy.y, comm.push_point_xy.group); break;
       case q_command_pop:           break; //TODO
-      case q_command_clear:         points_group_clear(&br->groups, comm.clear.group); break;
+      case q_command_clear:         points_group_clear(&br->groups, br->plots, comm.clear.group); break;
       case q_command_clear_all:     points_groups_deinit(&br->groups); break;
       case q_command_screenshot:    br_plot_instance_screenshot(&br->plots.arr[0], br->groups, comm.path_arg.path); free(comm.path_arg.path); break;
       case q_command_export:        br_plotter_export(br, comm.path_arg.path);     free(comm.path_arg.path); break;
@@ -262,44 +168,13 @@ void br_plotter_update_variables(br_plotter_t* br) {
   }
   end: return;
 }
-void br_plot_instance_update_shader_values(br_plot_instance_t* plot) {
-  switch (plot->kind) {
-    case br_plot_instance_kind_2d: {
-      Vector2 zoom = plot->dd.zoom;
-      Vector2 zoom_log = { .x = powf(10.f, -floorf(log10f(zoom.x))), .y = powf(10.f, -floorf(log10f(zoom.y))) };
-      Vector2 zoom_final = { .x = zoom.x * zoom_log.x, .y = zoom.y * zoom_log.y };
-      plot->dd.grid_shader->uvs.zoom_uv = zoom_final;
-      Vector2 off_zoom = Vector2Multiply(plot->dd.offset, zoom_log);
-      Vector2 off = Vector2Divide(off_zoom, (Vector2) { 10, 10 });
-      plot->dd.grid_shader->uvs.offset_uv = Vector2Subtract(off_zoom, (Vector2) { floorf(off.x) * 10.f, floorf(off.y) * 10.f });
-
-      plot->dd.grid_shader->uvs.screen_uv = (Vector2) { .x = plot->graph_screen_rect.width, .y = plot->graph_screen_rect.height };
-
-      plot->dd.line_shader->uvs.zoom_uv = plot->dd.zoom;
-      plot->dd.line_shader->uvs.offset_uv = plot->dd.offset;
-      plot->dd.line_shader->uvs.screen_uv = plot->resolution;
-      plot->dd.line_shader->uvs.resolution_uv = *(Vector4*)&plot->graph_screen_rect;
-    } break;
-    case br_plot_instance_kind_3d: {
-      Vector2 re = plot->ddd.grid_shader->uvs.resolution_uv = (Vector2) { .x = plot->graph_screen_rect.width, .y = plot->graph_screen_rect.height };
-      Matrix per = MatrixPerspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
-      Matrix look = MatrixLookAt(plot->ddd.eye, plot->ddd.target, plot->ddd.up);
-      plot->ddd.grid_shader->uvs.m_mvp_uv = MatrixMultiply(look, per);
-      plot->ddd.grid_shader->uvs.eye_uv = plot->ddd.eye;
-
-      plot->ddd.line_shader->uvs.m_mvp_uv = MatrixMultiply(look, per);
-      plot->ddd.line_shader->uvs.eye_uv = plot->ddd.eye;
-    } break;
-    default: assert(0);
-  }
-}
 
 BR_API void br_plotter_frame_end(br_plotter_t* gv) {
   (void)gv;
   for (size_t i = 0; i < gv->groups.len; ++i) {
     if (gv->groups.arr[i].is_new == false) continue;
     for (int j = 0; j < gv->plots.len; ++j) {
-      br_da_push_t(int, gv->plots.arr[j].groups_to_show, i);
+      br_da_push_t(int, gv->plots.arr[j].groups_to_show, gv->groups.arr[i].group_id);
     }
     gv->groups.arr[i].is_new = false;
   }
@@ -335,23 +210,6 @@ void br_plotter_export_csv(br_plotter_t const* br, char const * path) {
   fclose(file);
 }
 
-void br_plot_instance_update_context(br_plot_instance_t* plot, Vector2 mouse_pos) {
-  Vector2 mp_in_graph = { mouse_pos.x - plot->graph_screen_rect.x, mouse_pos.y - plot->graph_screen_rect.y };
-  plot->mouse_inside_graph = CheckCollisionPointRec(mouse_pos, plot->graph_screen_rect);
-  if (plot->kind == br_plot_instance_kind_2d) {
-    plot->dd.mouse_pos = (Vector2) {
-    -(plot->graph_screen_rect.width  - 2.f*mp_in_graph.x)/plot->graph_screen_rect.height*plot->dd.zoom.x/2.f + plot->dd.offset.x,
-     (plot->graph_screen_rect.height - 2.f*mp_in_graph.y)/plot->graph_screen_rect.height*plot->dd.zoom.y/2.f + plot->dd.offset.y};
-    plot->dd.graph_rect = (Rectangle){-plot->graph_screen_rect.width/plot->graph_screen_rect.height*plot->dd.zoom.x/2.f + plot->dd.offset.x,
-      plot->dd.zoom.y/2.f + plot->dd.offset.y,
-      plot->graph_screen_rect.width/plot->graph_screen_rect.height*plot->dd.zoom.x,
-      plot->dd.zoom.y};
-  } else {
-    // TODO 2D/3D
-    //assert(false);
-  }
-}
-
 void br_plotter_update_context(br_plotter_t* br, Vector2 mouse_pos) {
 // TODO 2D/3D
   for (int i = 0; i < br->plots.len; ++i) br_plot_instance_update_context(&br->plots.arr[i], mouse_pos);
@@ -367,46 +225,50 @@ void draw_grid_numbers(br_plot_instance_t* plot) {
   float font_size = 15.f * context.font_scale;
   char fmt[16];
 
-  float exp = floorf(log10f(r.height / 2.f));
-  if (false == isnan(exp)) {
-    float base = powf(10.f, exp);
-    float start = floorf(r.y / base) * base;
-    if (exp >= 0) strcpy(fmt, "%f");
-    else sprintf(fmt, "%%.%df", -(int)exp);
+  if (r.height > 1) {
+    float exp = floorf(log10f(r.height / 2.f));
+    if (false == isnan(exp)) {
+      float base = powf(10.f, exp);
+      float start = floorf(r.y / base) * base;
+      if (exp >= 0) strcpy(fmt, "%f");
+      else sprintf(fmt, "%%.%df", -(int)exp);
 
-    float i = 0.f;
-    while (base * i < r.height) {
-      float cur = start - base * i;
-      i += 1.f;
-      sprintf(context.buff, fmt, cur);
-      help_trim_zeros(context.buff);
-      Vector2 sz = help_measure_text(context.buff, font_size);
-      float y = graph_screen_rect.y + (graph_screen_rect.height / r.height) * (r.y - cur);
-      y -= sz.y / 2.f;
-      help_draw_text(context.buff, (Vector2){ .x = graph_screen_rect.x - sz.x - 2.f, .y = y }, font_size, RAYWHITE);
+      float i = 0.f;
+      while (base * i < r.height) {
+        float cur = start - base * i;
+        i += 1.f;
+        sprintf(context.buff, fmt, cur);
+        help_trim_zeros(context.buff);
+        Vector2 sz = help_measure_text(context.buff, font_size);
+        float y = graph_screen_rect.y + (graph_screen_rect.height / r.height) * (r.y - cur);
+        y -= sz.y / 2.f;
+        help_draw_text(context.buff, (Vector2){ .x = graph_screen_rect.x - sz.x - 2.f, .y = y }, font_size, RAYWHITE);
+      }
     }
   }
 
-  exp =  floorf(log10f(r.width / 2.f));
-  if (false == isnan(exp)) {
-    float base = powf(10.f, exp);
-    if (isnan(base) || isinf(base)) return;
-    float start = ceilf(r.x / base) * base;
-    if (exp >= 0) strcpy(fmt, "%f");
-    else sprintf(fmt, "%%.%df", -(int)exp);
-    float x_last_max = -INFINITY;
-    float i = 0;
-    while (base * i < r.width) {
-      float cur = start + base * i;
-      i += 1.f;
-      sprintf(context.buff, fmt, cur);
-      help_trim_zeros(context.buff);
-      Vector2 sz = help_measure_text(context.buff, font_size);
-      float x = graph_screen_rect.x + (graph_screen_rect.width / r.width) * (cur - r.x);
-      x -= sz.x / 2.f;
-      if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
-      x_last_max = x + sz.x;
-      help_draw_text(context.buff, (Vector2){ .x = x, .y = graph_screen_rect.y + graph_screen_rect.height }, font_size, RAYWHITE);
+  if (r.width > 1.f) {
+    float exp = floorf(log10f(r.width / 2.f));
+    if (false == isnan(exp)) {
+      float base = powf(10.f, exp);
+      if (isnan(base) || isinf(base)) return;
+      float start = ceilf(r.x / base) * base;
+      if (exp >= 0) strcpy(fmt, "%f");
+      else sprintf(fmt, "%%.%df", -(int)exp);
+      float x_last_max = -INFINITY;
+      float i = 0;
+      while (base * i < r.width) {
+        float cur = start + base * i;
+        i += 1.f;
+        sprintf(context.buff, fmt, cur);
+        help_trim_zeros(context.buff);
+        Vector2 sz = help_measure_text(context.buff, font_size);
+        float x = graph_screen_rect.x + (graph_screen_rect.width / r.width) * (cur - r.x);
+        x -= sz.x / 2.f;
+        if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
+        x_last_max = x + sz.x;
+        help_draw_text(context.buff, (Vector2){ .x = x, .y = graph_screen_rect.y + graph_screen_rect.height }, font_size, RAYWHITE);
+      }
     }
   }
 }

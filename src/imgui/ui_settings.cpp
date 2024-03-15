@@ -64,7 +64,7 @@ namespace br {
             ImGui::PopStyleColor(3);
             sprintf(context.buff, "Clear##P%lu", i);
             if (ImGui::Button(context.buff)) {
-              points_group_clear(&br->groups, br->groups.arr[i].group_id);
+              points_group_clear(&br->groups, br->plots, br->groups.arr[i].group_id);
             }
             ImGui::SetNextItemWidth(60.f);
             sprintf(context.buff, "PlotColor_%lu", i);

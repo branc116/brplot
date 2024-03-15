@@ -1,5 +1,6 @@
 #include "br_plot.h"
 #include "rlgl.h"
+#include "src/br_gui_internal.h"
 
 
 #include <stdio.h>
@@ -41,9 +42,10 @@ BR_API void points_group_empty(points_group_t* pg) {
   resampling2_empty(pg->resampling);
 }
 
-BR_API void points_group_clear(points_groups_t* pg, int group_id) {
+BR_API void points_group_clear(points_groups_t* pg, br_plot_instancies_t plots, int group_id) {
   size_t len = pg->len;
   bool found = false;
+  // TODO: This is stupind, can be solved with just 1 swap.
   for (size_t i = 0; i < len; ++i) {
     if (pg->arr[i].group_id == group_id) {
       found = true;
@@ -56,6 +58,7 @@ BR_API void points_group_clear(points_groups_t* pg, int group_id) {
   if (found == true) {
     memset(&pg->arr[len - 1], 0, sizeof(points_group_t));
     --pg->len;
+    br_plot_instancies_remove_group(plots, group_id);
   }
 }
 
@@ -160,8 +163,17 @@ void points_groups_draw(points_groups_t pg, br_plot_instance_t* plot) {
     rlSetBlendFactors(GL_SRC_ALPHA, GL_DST_ALPHA, GL_MAX);
     rlSetBlendMode(BLEND_CUSTOM);
     for (int j = 0; j < plot->groups_to_show.len; ++j) {
-      size_t group = plot->groups_to_show.arr[j];
-      points_group_t const* g = &pg.arr[group];
+      int group = plot->groups_to_show.arr[j];
+      points_group_t const* g = points_group_get1(pg, group);
+      if (g == NULL) {
+        for (size_t k = 0; k < pg.len; ++k) {
+          fprintf(stderr, "k = %lu, group = %d\n", k, pg.arr[k].group_id);
+        }
+        for (int k = 0; k < plot->groups_to_show.len; ++k) {
+          fprintf(stderr, "h = %d, group = %d\n", k, plot->groups_to_show.arr[k]);
+        }
+        fprintf(stderr, "j = %d, group = %d\n", j, group);
+      }
       if (g->len == 0) continue;
       if (g->is_selected) {
         resampling2_draw(g->resampling, g, plot);
@@ -178,8 +190,8 @@ void points_groups_draw(points_groups_t pg, br_plot_instance_t* plot) {
     rlDisableBackfaceCulling();
     rlEnableDepthTest();
     for (int j = 0; j < plot->groups_to_show.len; ++j) {
-      size_t group = plot->groups_to_show.arr[j];
-      points_group_t const* g = &pg.arr[group];
+      int group = plot->groups_to_show.arr[j];
+      points_group_t const* g = points_group_get1(pg, group);
       for (size_t i = 0; i < g->len - 1; ++i) {
         Vector3 p1 = { g->points[i].x, g->points[i].y, 0 };
         Vector3 p2 = { g->points[i + 1].x, g->points[i + 1].y, 0 };
@@ -231,6 +243,12 @@ static Color color_get(int id) {
     count += 1;
   }
   return c;
+}
+
+BR_API points_group_t* points_group_get1(points_groups_t pg, int group) {
+  for (size_t i = 0; i < pg.len; ++i) if (pg.arr[i].group_id == group)
+    return &pg.arr[i];
+  return NULL;
 }
 
 BR_API points_group_t* points_group_get(points_groups_t* pg, int group) {

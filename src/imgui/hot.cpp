@@ -163,11 +163,12 @@ extern "C" void br_hot_loop(br_plotter_t* br) {
           ImGui::PushID(i);
           for (size_t j = 0; j < br->groups.len; ++j) {
             bool contains = false;
-            br_da_contains_t(int, br->plots.arr[i].groups_to_show, j, contains);
+            int group_id = br->groups.arr[j].group_id;
+            br_da_contains_t(int, br->plots.arr[i].groups_to_show, group_id, contains);
             br_str_to_c_str1(br->groups.arr[j].name, context.buff);
             if (ImGui::Checkbox(context.buff, &contains)) {
-              if (contains) br_da_push_t(int, br->plots.arr[i].groups_to_show, j);
-              else br_da_remove(br->plots.arr[i].groups_to_show, j);
+              if (contains) br_da_push_t(int, br->plots.arr[i].groups_to_show, group_id);
+              else br_da_remove(br->plots.arr[i].groups_to_show, group_id);
             }
           }
           ImGui::PopID();

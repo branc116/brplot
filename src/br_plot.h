@@ -234,7 +234,7 @@ typedef struct {
 
 typedef struct {
   struct {
-    size_t* arr;
+    int* arr;
     int len, cap; 
   } groups_to_show;
   // graph_screen_rect is in the screen coordinates.
@@ -335,11 +335,12 @@ void smol_mesh_grid_draw(br_plot_instance_t* plot);
 void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, Vector3 p1, Vector3 p2, Color color);
 
 BR_API points_group_t* points_group_get(points_groups_t* pg_array, int group);
+BR_API points_group_t* points_group_get1(points_groups_t pg, int group);
 BR_API void points_group_set_name(points_groups_t* pg_array, int group, br_str_t name);
 BR_API void points_group_push_y(points_groups_t* pg, float y, int group);
 BR_API void points_group_push_x(points_groups_t* pg, float x, int group);
 BR_API void points_group_push_xy(points_groups_t* pg, float x, float y, int group);
-BR_API void points_group_clear(points_groups_t* pg, int group_id);
+BR_API void points_group_clear(points_groups_t* pg, br_plot_instancies_t plots, int group_id);
 // Only remove all points from a group, don't remove the group itself.
 BR_API void points_group_empty(points_group_t* pg);
 void points_group_export(points_group_t const* pg, FILE* file);
