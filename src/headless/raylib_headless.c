@@ -428,13 +428,11 @@ void rlViewport(int x, int y, int width, int height) {
 }
 
 #include "math.h"
-Vector2 Vector2Normalize(Vector2 v)
-{
+Vector2 Vector2Normalize(Vector2 v) {
     Vector2 result = { 0 };
     float length = sqrtf((v.x*v.x) + (v.y*v.y));
 
-    if (length > 0)
-    {
+    if (length > 0) {
         float ilength = 1.0f/length;
         result.x = v.x*ilength;
         result.y = v.y*ilength;
@@ -442,3 +440,154 @@ Vector2 Vector2Normalize(Vector2 v)
 
     return result;
 }
+
+Vector3 Vector3Scale(Vector3 v, float scalar) {
+    Vector3 result = { v.x*scalar, v.y*scalar, v.z*scalar };
+    return result;
+}
+
+Vector3 Vector3Add(Vector3 v1, Vector3 v2) {
+    Vector3 result = { v1.x + v2.x, v1.y + v2.y, v1.z + v2.z };
+    return result;
+}
+
+Vector3 Vector3Normalize(Vector3 v) {
+    Vector3 result = v;
+
+    float length = sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
+    if (length != 0.0f) {
+        float ilength = 1.0f/length;
+
+        result.x *= ilength;
+        result.y *= ilength;
+        result.z *= ilength;
+    }
+
+    return result;
+}
+
+Vector2 Vector2Divide(Vector2 v1, Vector2 v2) {
+    Vector2 result = { v1.x/v2.x, v1.y/v2.y };
+    return result;
+}
+
+float Vector3Length(const Vector3 v) {
+    float result = sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
+    return result;
+}
+
+Vector3 Vector3Subtract(Vector3 v1, Vector3 v2) {
+    Vector3 result = { v1.x - v2.x, v1.y - v2.y, v1.z - v2.z };
+    return result;
+}
+
+float Vector3DotProduct(Vector3 v1, Vector3 v2) {
+    float result = (v1.x*v2.x + v1.y*v2.y + v1.z*v2.z);
+    return result;
+}
+
+Vector3 Vector3RotateByAxisAngle(Vector3 v, Vector3 axis, float angle) {
+    // Using Euler-Rodrigues Formula
+    // Ref.: https://en.wikipedia.org/w/index.php?title=Euler%E2%80%93Rodrigues_formula
+
+    Vector3 result = v;
+
+    // Vector3Normalize(axis);
+    float length = sqrtf(axis.x*axis.x + axis.y*axis.y + axis.z*axis.z);
+    if (length == 0.0f) length = 1.0f;
+    float ilength = 1.0f / length;
+    axis.x *= ilength;
+    axis.y *= ilength;
+    axis.z *= ilength;
+
+    angle /= 2.0f;
+    float a = sinf(angle);
+    float b = axis.x*a;
+    float c = axis.y*a;
+    float d = axis.z*a;
+    a = cosf(angle);
+    Vector3 w = { b, c, d };
+
+    // Vector3CrossProduct(w, v)
+    Vector3 wv = { w.y*v.z - w.z*v.y, w.z*v.x - w.x*v.z, w.x*v.y - w.y*v.x };
+
+    // Vector3CrossProduct(w, wv)
+    Vector3 wwv = { w.y*wv.z - w.z*wv.y, w.z*wv.x - w.x*wv.z, w.x*wv.y - w.y*wv.x };
+
+    // Vector3Scale(wv, 2*a)
+    a *= 2;
+    wv.x *= a;
+    wv.y *= a;
+    wv.z *= a;
+
+    // Vector3Scale(wwv, 2)
+    wwv.x *= 2;
+    wwv.y *= 2;
+    wwv.z *= 2;
+
+    result.x += wv.x;
+    result.y += wv.y;
+    result.z += wv.z;
+
+    result.x += wwv.x;
+    result.y += wwv.y;
+    result.z += wwv.z;
+
+    return result;
+}
+
+Vector2 Vector2Multiply(Vector2 v1, Vector2 v2) {
+    Vector2 result = { v1.x*v2.x, v1.y*v2.y };
+    return result;
+}
+
+Vector3 Vector3CrossProduct(Vector3 v1, Vector3 v2) {
+    Vector3 result = { v1.y*v2.z - v1.z*v2.y, v1.z*v2.x - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x };
+    return result;
+}
+
+void SetConfigFlags(unsigned int flags) {
+  (void)flags;
+}
+
+void rlDisableBackfaceCulling(void) {}
+
+void rlEnableBackfaceCulling(void) {}
+
+float Vector3Distance(Vector3 v1, Vector3 v2) {
+    float result = 0.0f;
+
+    float dx = v2.x - v1.x;
+    float dy = v2.y - v1.y;
+    float dz = v2.z - v1.z;
+    result = sqrtf(dx*dx + dy*dy + dz*dz);
+
+    return result;
+}
+
+Vector3 Vector3Perpendicular(Vector3 v) {
+    Vector3 result = { 0 };
+
+    float min = (float) fabs(v.x);
+    Vector3 cardinalAxis = {1.0f, 0.0f, 0.0f};
+
+    if (fabsf(v.y) < min) {
+        min = (float) fabs(v.y);
+        Vector3 tmp = {0.0f, 1.0f, 0.0f};
+        cardinalAxis = tmp;
+    }
+
+    if (fabsf(v.z) < min) {
+        Vector3 tmp = {0.0f, 0.0f, 1.0f};
+        cardinalAxis = tmp;
+    }
+
+    // Cross product between vectors
+    result.x = v.y*cardinalAxis.z - v.z*cardinalAxis.y;
+    result.y = v.z*cardinalAxis.x - v.x*cardinalAxis.z;
+    result.z = v.x*cardinalAxis.y - v.y*cardinalAxis.x;
+
+    return result;
+}
+void rlDisableDepthTest(void) {}
+void rlEnableDepthTest(void) {}
