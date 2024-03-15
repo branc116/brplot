@@ -160,7 +160,7 @@ $(shell test -d bin || mkdir bin)
 
 $(OUTPUT): $(OBJS)
 	$(CXX) $(COMMONFLAGS) $(LD_FLAGS) -o $@ $(LIBS) $(OBJS) $(LIBS)
-	ln -fs ../$@ bin/brplot
+	ln -fs $@ brplot
 
 $(PREFIX_BUILD)/src/%.o:src/%.c
 	$(CC) $(CCFLAGS) $(WARNING_FLAGS) -c -o $@ $<
@@ -177,7 +177,7 @@ $(PREFIX_BUILD)/%.o:%.c
 src/help.c: src/misc/default_font.h
 ifeq ($(CONFIG), DEBUG)
 endif
-src/br_shaders.c: $(SHADERS_HEADER)
+src/shaders.c: $(SHADERS_HEADER)
 
 .PHONY: clean
 clean:
