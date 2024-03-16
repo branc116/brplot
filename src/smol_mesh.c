@@ -3,6 +3,7 @@
 #include "raymath.h"
 #include <math.h>
 #include <assert.h>
+#include "Tracy/tracy/TracyC.h"
 
 void smol_mesh_gen_bb(br_shader_line_t* shader, bb_t bb, Color color) {
   float xmi = bb.xmin, ymi = bb.ymin , xma = bb.xmax, yma = bb.ymax;
@@ -183,6 +184,7 @@ void smol_mesh_grid_draw(br_plot_instance_t* plot) {
   rlViewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
   switch (plot->kind) {
     case br_plot_instance_kind_2d: {
+      TracyCFrameMarkStart("grid_draw_2d");
       br_shader_grid_t* grid = plot->dd.grid_shader;
       assert(grid->len == 0);
       Vector2* p = (Vector2*)grid->vertexPosition_vbo;
@@ -195,8 +197,10 @@ void smol_mesh_grid_draw(br_plot_instance_t* plot) {
       grid->len = 2;
       br_shader_grid_draw(grid);
       grid->len = 0;
+      TracyCFrameMarkEnd("grid_draw_2d");
     } break;
     case br_plot_instance_kind_3d: {
+      TracyCFrameMarkStart("grid_draw_3d");
       float sz = 10000.f;
       rlDisableBackfaceCulling();
       //smol_mesh_gen_quad_simple(gv->graph_mesh_3d, r3, Color {0, 0, 1, 0});
@@ -205,6 +209,7 @@ void smol_mesh_grid_draw(br_plot_instance_t* plot) {
       br_shader_grid_3d_draw(plot->ddd.grid_shader);
       plot->ddd.grid_shader->len = 0;
       rlEnableBackfaceCulling();
+      TracyCFrameMarkEnd("grid_draw_3d");
     } break;
     default: assert(0);
   }

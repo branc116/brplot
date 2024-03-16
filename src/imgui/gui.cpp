@@ -7,6 +7,7 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 #include "GLFW/glfw3.h"
+#include "Tracy/tracy/TracyC.h"
 
 #include <cstdlib>
 
@@ -81,6 +82,7 @@ extern "C" void br_gui_free_specifics(br_plotter_t* br) {
 }
 
 void graph_draw_min(points_groups_t groups, br_plot_instance_t* plot, float posx, float posy, float width, float height, float padding) {
+  TracyCFrameMarkStart("graph_draw_min");
   plot->resolution.x = (float)GetScreenWidth();
   plot->resolution.y = (float)GetScreenHeight();
   plot->graph_screen_rect.x = 50.f + posx + padding;
@@ -93,6 +95,7 @@ void graph_draw_min(points_groups_t groups, br_plot_instance_t* plot, float posx
   draw_grid_numbers(plot);
   smol_mesh_grid_draw(plot);
   points_groups_draw(groups, plot);
+  TracyCFrameMarkEnd("graph_draw_min");
 }
 
 extern "C" void br_plotter_draw(br_plotter_t* gv) {
@@ -109,6 +112,7 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
 #endif
 #endif
   BeginDrawing();
+  TracyCFrameMarkStart("BeginDrawing");
   ImGui_ImplGlfw_NewFrame();
   ImGui_ImplOpenGL3_NewFrame();
   ImGui::NewFrame();
@@ -121,6 +125,7 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
     if (ImGui::Begin(context.buff) && false == ImGui::IsWindowHidden()) {
       ImVec2 p = ImGui::GetWindowPos();
       ImVec2 size = ImGui::GetWindowSize();
+
       graph_draw_min(gv->groups, plot, p.x, p.y, size.x, size.y, padding);
     }
     ImGui::End();
@@ -162,6 +167,7 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
   glViewport(0, 0, display_w, display_h);
   glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+  TracyCFrameMarkEnd("BeginDrawing");
   EndDrawing();
 #ifndef PLATFORM_WEB
   ClearBackground(BLACK);

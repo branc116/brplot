@@ -18,6 +18,8 @@ COMPILER?= GCC
 COVERAGE?= NO
 # YES | NO
 FUZZ?= NO
+# YES | NO
+TRACY?= NO
 
 RL                 = ./external/raylib-5.0/src
 IM                 = ./external/imgui-docking
@@ -25,7 +27,7 @@ RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextur
 SOURCE             = src/main.c src/help.c src/points_group.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c \
 										 src/keybindings.c src/str.c src/memory.cpp src/resampling2.c src/graph_utils.c src/shaders.c \
 										 src/plot_instance.c
-COMMONFLAGS        = -I. -MMD -MP
+COMMONFLAGS        = -I. -I./external/Tracy -MMD -MP
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra
 LD_FLAGS           =
 
@@ -142,6 +144,11 @@ else ifeq ($(CONFIG), RELEASE)
 	endif
 else
 	$(error BadCONFIG)
+endif
+
+ifeq ($(TRACY), YES)
+	COMMONFLAGS+= -DTRACY_ENABLE=1
+	LD_FLAGS+= -ltracy
 endif
 
 PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')

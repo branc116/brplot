@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
+#include "Tracy/tracy/TracyC.h"
 
 static points_group_t* points_group_init(points_group_t* g, int group_id);
 points_group_t* points_group_get(points_groups_t* pg_array, int group);
@@ -160,6 +161,7 @@ void points_groups_add_test_points(points_groups_t* pg) {
 
 void points_groups_draw(points_groups_t pg, br_plot_instance_t* plot) {
   if (plot->kind == br_plot_instance_kind_2d) {
+    TracyCFrameMarkStart("points_groups_draw_2d");
     rlSetBlendFactors(GL_SRC_ALPHA, GL_DST_ALPHA, GL_MAX);
     rlSetBlendMode(BLEND_CUSTOM);
     for (int j = 0; j < plot->groups_to_show.len; ++j) {
@@ -184,7 +186,9 @@ void points_groups_draw(points_groups_t pg, br_plot_instance_t* plot) {
       plot->dd.line_shader->len = 0;
     }
     rlSetBlendMode(BLEND_ALPHA);
+    TracyCFrameMarkEnd("points_groups_draw_2d");
   } else {
+    TracyCFrameMarkStart("points_groups_draw_3d");
     int h = (int)plot->graph_screen_rect.height;
     rlViewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
     rlDisableBackfaceCulling();
@@ -205,6 +209,7 @@ void points_groups_draw(points_groups_t pg, br_plot_instance_t* plot) {
     rlDisableDepthTest();
     rlEnableBackfaceCulling();
     rlViewport(0, 0, (int)plot->resolution.x, (int)plot->resolution.y);
+    TracyCFrameMarkEnd("points_groups_draw_3d");
   }
 }
 

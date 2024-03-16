@@ -10,6 +10,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
+#include "Tracy/tracy/TracyC.h"
 
 context_t context;
 
@@ -220,6 +221,7 @@ void draw_grid_numbers(br_plot_instance_t* plot) {
   //assert(plot->kind == br_plot_instance_kind_2d);
   if(plot->kind != br_plot_instance_kind_2d) return;
 
+  TracyCFrameMarkStart("draw_grid_numbers");
   Rectangle r = plot->dd.graph_rect;
   Rectangle graph_screen_rect = plot->graph_screen_rect;
   float font_size = 15.f * context.font_scale;
@@ -251,7 +253,7 @@ void draw_grid_numbers(br_plot_instance_t* plot) {
     float exp = floorf(log10f(r.width / 2.f));
     if (false == isnan(exp)) {
       float base = powf(10.f, exp);
-      if (isnan(base) || isinf(base)) return;
+      if (isnan(base) || isinf(base)) goto end;
       float start = ceilf(r.x / base) * base;
       if (exp >= 0) strcpy(fmt, "%f");
       else sprintf(fmt, "%%.%df", -(int)exp);
@@ -271,5 +273,6 @@ void draw_grid_numbers(br_plot_instance_t* plot) {
       }
     }
   }
+  end: TracyCFrameMarkEnd("draw_grid_numbers");
 }
 

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "Tracy/tracy/TracyC.h"
 
 #include "raylib.h"
 #ifdef LINUX
@@ -29,8 +30,11 @@ const char* __asan_default_options(void) {
 
 int main_gui(br_plotter_t* gv) {
   while(!WindowShouldClose() && !gv->should_close) {
+    TracyCFrameMark;
     br_plotter_draw(gv);
+    TracyCFrameMarkStart("plotter_frame_end");
     br_plotter_frame_end(gv);
+    TracyCFrameMarkEnd("plotter_frame_end");
   }
   return 0;
 }

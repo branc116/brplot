@@ -8,6 +8,7 @@
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #include "raymath.h"
 #pragma GCC diagnostic pop
+#include "Tracy/tracy/Tracy.hpp"
 
 #define RESAMPLING_NODE_MAX_LEN 128
 #define RESAMPLING_RAW_NODE_MAX_LEN (RESAMPLING_NODE_MAX_LEN * 8)
@@ -191,6 +192,7 @@ void resampling2_free(resampling2_t* r) {
 }
 
 extern "C" void resampling2_add_point(resampling2_t* r, const points_group_t *pg, uint32_t index) {
+  ZoneScopedN("resampline2_add_point0");
   bool was_valid_x = r->temp_x_valid, was_valid_y = r->temp_y_valid, was_valid_raw = r->temp_raw_valid;
   if (was_valid_x)   r->temp_x_valid   = resampling2_add_point<resampling2_kind_x>(&r->temp_root_x, pg, index);
   if (was_valid_y)   r->temp_y_valid   = resampling2_add_point<resampling2_kind_y>(&r->temp_root_y, pg, index);
@@ -310,6 +312,7 @@ static bool resampling2_nodes_push_point(resampling2_nodes_t* nodes, uint32_t in
 
 template<resampling2_node_kind_t kind>
 static bool resampling2_add_point(resampling2_nodes_t* nodes, const points_group_t *pg, uint32_t index) {
+  ZoneScopedN("resampling2_add_point1");
   Vector2 p = pg->points[index];
   if (nodes->len == 0) nodes->is_rising = nodes->is_falling = true;
   if (index == 0) {
@@ -344,6 +347,7 @@ static bool resampling2_add_point(resampling2_nodes_t* nodes, const points_group
 
 template<resampling2_node_kind_t kind>
 static ssize_t resampling2_get_first_inside(resampling2_nodes_t const* nodes, Vector2 const * const points, Rectangle rect, uint32_t start_index) {
+  ZoneScopedN("resampling2_get_first_inside");
   while (start_index % powers_base != 0) {
     if (start_index == nodes->len) return -1;
     if (nodes->arr[start_index].is_inside<kind>(points, rect)) return (ssize_t)start_index;
@@ -372,6 +376,7 @@ int not_raw_c = 0;
 template<resampling2_node_kind_t kind>
 static void resampling2_draw(resampling2_nodes_t const* nodes, points_group_t const* pg, br_plot_instance_t* plot) {
   assert(plot->kind == br_plot_instance_kind_2d);
+  ZoneScopedN("resampling2_draw_not_raw");
   ssize_t j = 0;
   Rectangle rect = plot->dd.graph_rect;
   j = resampling2_get_first_inside<kind>(nodes, pg->points, rect, (uint32_t)j);
@@ -438,6 +443,7 @@ static bool resampling2_add_point_raw(resampling2_raw_node_t* node, Vector2 cons
 }
 
 static void resampling2_draw(resampling2_raw_node_t raw, points_group_t const* pg, br_plot_instance_t* plot) {
+  ZoneScopedN("resampling2_draw_raw");
   assert(plot->kind == br_plot_instance_kind_2d);
   Vector2 const* ps = pg->points;
   Rectangle rect = plot->dd.graph_rect;
@@ -449,12 +455,14 @@ static void resampling2_draw(resampling2_raw_node_t raw, points_group_t const* p
 }
 
 static void resampling2_draw(resampling2_all_roots r, points_group_t const* pg, br_plot_instance_t *rdi) {
+  ZoneScopedN("resampline2_draw1");
   if      (r.kind == resampling2_kind_raw) resampling2_draw(r.raw, pg, rdi);
   else if (r.kind == resampling2_kind_x)   resampling2_draw<resampling2_kind_x>(&r.x, pg, rdi);
   else if (r.kind == resampling2_kind_y)   resampling2_draw<resampling2_kind_y>(&r.y, pg, rdi);
 }
 
 void resampling2_draw(resampling2_t const* res, points_group_t const* pg, br_plot_instance_t* plot) {
+  ZoneScopedN("resampline2_draw0");
   assert(plot->kind == br_plot_instance_kind_2d);
   Rectangle rect = plot->dd.graph_rect;
   auto draw_if_inside = [pg, rect, plot](int64_t li, int64_t ci) {

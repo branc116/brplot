@@ -4,6 +4,7 @@
 #include "raymath.h"
 #include "assert.h"
 #include "src/br_da.h"
+#include "Tracy/tracy/TracyC.h"
 
 bool br_plot_instance_update_variables_2d(br_plot_instance_t* plot, points_groups_t const groups, Vector2 mouse_pos) {
   assert(plot->kind == br_plot_instance_kind_2d);
@@ -103,6 +104,7 @@ bool br_plot_instance_update_variables_3d(br_plot_instance_t* plot, points_group
 void br_plot_instance_update_shader_values(br_plot_instance_t* plot) {
   switch (plot->kind) {
     case br_plot_instance_kind_2d: {
+      TracyCFrameMarkStart("update_shader_values_2d");
       Vector2 zoom = plot->dd.zoom;
       Vector2 zoom_log = { .x = powf(10.f, -floorf(log10f(zoom.x))), .y = powf(10.f, -floorf(log10f(zoom.y))) };
       Vector2 zoom_final = { .x = zoom.x * zoom_log.x, .y = zoom.y * zoom_log.y };
@@ -117,8 +119,10 @@ void br_plot_instance_update_shader_values(br_plot_instance_t* plot) {
       plot->dd.line_shader->uvs.offset_uv = plot->dd.offset;
       plot->dd.line_shader->uvs.screen_uv = plot->resolution;
       plot->dd.line_shader->uvs.resolution_uv = *(Vector4*)&plot->graph_screen_rect;
+      TracyCFrameMarkEnd("update_shader_values_2d");
     } break;
     case br_plot_instance_kind_3d: {
+      TracyCFrameMarkStart("update_shader_values_3d");
       Vector2 re = plot->ddd.grid_shader->uvs.resolution_uv = (Vector2) { .x = plot->graph_screen_rect.width, .y = plot->graph_screen_rect.height };
       Matrix per = MatrixPerspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
       Matrix look = MatrixLookAt(plot->ddd.eye, plot->ddd.target, plot->ddd.up);
@@ -127,6 +131,7 @@ void br_plot_instance_update_shader_values(br_plot_instance_t* plot) {
 
       plot->ddd.line_shader->uvs.m_mvp_uv = MatrixMultiply(look, per);
       plot->ddd.line_shader->uvs.eye_uv = plot->ddd.eye;
+      TracyCFrameMarkEnd("update_shader_values_3d");
     } break;
     default: assert(0);
   }
