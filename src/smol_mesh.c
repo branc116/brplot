@@ -3,7 +3,7 @@
 #include "raymath.h"
 #include <math.h>
 #include <assert.h>
-#include "Tracy/tracy/TracyC.h"
+#include "tracy/TracyC.h"
 
 void smol_mesh_gen_bb(br_shader_line_t* shader, bb_t bb, Color color) {
   float xmi = bb.xmin, ymi = bb.ymin , xma = bb.xmax, yma = bb.ymax;
@@ -98,7 +98,10 @@ void smol_mesh_gen_line(br_shader_line_t* shader, Vector2 startPos, Vector2 endP
 }
 
 void smol_mesh_gen_line_strip(br_shader_line_t* shader, Vector2 const * points, size_t len, Color color) {
+  TracyCZoneN(gen_line_strip_ctx, "GenLineStrip", true);
+  TracyCZoneValue(gen_line_strip_ctx, len);
   for (size_t v = 0; v < (len - 1); ++v) smol_mesh_gen_line(shader, points[v], points[v + 1], color);
+  TracyCZoneEnd(gen_line_strip_ctx);
 }
 
 void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, Vector3 p1, Vector3 p2, Color color) {

@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "Tracy/tracy/TracyC.h"
+#include "tracy/TracyC.h"
 
 #include "raylib.h"
 #ifdef LINUX

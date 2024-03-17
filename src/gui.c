@@ -10,7 +10,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
-#include "Tracy/tracy/TracyC.h"
+#include "tracy/TracyC.h"
 
 context_t context;
 

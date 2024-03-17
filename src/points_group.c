@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
-#include "Tracy/tracy/TracyC.h"
+#include "tracy/TracyC.h"
 
 static points_group_t* points_group_init(points_group_t* g, int group_id);
 points_group_t* points_group_get(points_groups_t* pg_array, int group);

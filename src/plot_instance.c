@@ -4,7 +4,7 @@
 #include "raymath.h"
 #include "assert.h"
 #include "src/br_da.h"
-#include "Tracy/tracy/TracyC.h"
+#include "tracy/TracyC.h"
 
 bool br_plot_instance_update_variables_2d(br_plot_instance_t* plot, points_groups_t const groups, Vector2 mouse_pos) {
   assert(plot->kind == br_plot_instance_kind_2d);

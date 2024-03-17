@@ -8,7 +8,7 @@
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #include "raymath.h"
 #pragma GCC diagnostic pop
-#include "Tracy/tracy/Tracy.hpp"
+#include "tracy/Tracy.hpp"
 
 #define RESAMPLING_NODE_MAX_LEN 128
 #define RESAMPLING_RAW_NODE_MAX_LEN (RESAMPLING_NODE_MAX_LEN * 8)
@@ -455,7 +455,6 @@ static void resampling2_draw(resampling2_raw_node_t raw, points_group_t const* p
 }
 
 static void resampling2_draw(resampling2_all_roots r, points_group_t const* pg, br_plot_instance_t *rdi) {
-  ZoneScopedN("resampline2_draw1");
   if      (r.kind == resampling2_kind_raw) resampling2_draw(r.raw, pg, rdi);
   else if (r.kind == resampling2_kind_x)   resampling2_draw<resampling2_kind_x>(&r.x, pg, rdi);
   else if (r.kind == resampling2_kind_y)   resampling2_draw<resampling2_kind_y>(&r.y, pg, rdi);
