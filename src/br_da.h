@@ -1,6 +1,7 @@
 #pragma once
-#include "br_plot.h"
 #include "assert.h"
+#include "stdlib.h"
+#include "br_pp.h"
 
 #ifdef __cplusplus
 #define DECLTYPE(VALUE) decltype(VALUE)
@@ -53,7 +54,7 @@
   --(ARR).len;                                                                    \
 } while(0)
 
-#define br_da_remove_n_at(ARR, N, I) br_da_remove_n_at_t(size_t ARR, N, I)
+#define br_da_remove_n_at(ARR, N, I) br_da_remove_n_at_t(size_t, ARR, N, I)
 #define br_da_remove_at(ARR, I) br_da_remove_n_at(ARR, 1, I)
 #define br_da_remove_at_t(T, ARR, I) br_da_remove_n_at_t(T, ARR, 1, I)
 

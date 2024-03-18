@@ -1,6 +1,8 @@
 #include "br_plot.h"
-#include "rlgl.h"
 #include "src/br_gui_internal.h"
+
+#include "tracy/TracyC.h"
+#include "rlgl.h"
 
 
 #include <stdio.h>
@@ -8,10 +10,8 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
-#include "tracy/TracyC.h"
 
 static br_data_t* br_data_init(br_data_t* g, int group_id);
-br_data_t* br_data_get(br_datas_t* pg_array, int group);
 static void br_data_push_point(br_data_t* g, Vector2 v);
 static void br_data_deinit(br_data_t* g);
 static bool br_data_realloc(br_data_t* pg, size_t new_cap);
