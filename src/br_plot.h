@@ -4,52 +4,12 @@
 #include "stdio.h"
 #include "stdint.h"
 #include "br_shaders.h"
-
-#ifdef PLATFORM_WEB
-#include <emscripten.h>
-#define BR_API EMSCRIPTEN_KEEPALIVE
-#else
-#define BR_API
-#endif
+#include "br_pp.h"
+#include "br_str.h"
+#include "br_data.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef RELEASE
-
-#ifndef LINUX
-#ifdef UNIT_TEST
-#undef UNIT_TEST
-// IT don't work on windows....
-#endif
-#endif
-
-#endif
-
-
-// This is the size of buffer used to transfer points from cpu to gpu.
-#define PTOM_COUNT (1<<10)
-
-//TODO: Do something with this...
-#define GRAPH_LEFT_PAD 500
-
-#ifdef LINUX
-#include "pthread.h"
-#define LOCK_T pthread_mutex_t
-#endif
-
-#ifdef LOCK_T
-#define LOCK(x) LOCK_T x;
-#else
-#define LOCK(x)
-#endif
-
-#define LOG(...)
-#define LOGI(...) fprintf(stderr, __VA_ARGS__)
-
-#ifdef WINDOWS
-typedef int64_t ssize_t;
 #endif
 
 typedef enum {
@@ -74,17 +34,6 @@ typedef enum {
 } q_command_type;
 
 extern char q_command_path[];
-
-typedef struct {
-  char* str;
-  unsigned int len;
-  unsigned int cap;
-} br_str_t;
-
-typedef struct {
-  const char* str;
-  unsigned int len;
-} br_strv_t;
 
 typedef struct {
   q_command_type type;
@@ -130,10 +79,6 @@ typedef struct {
   LOCK(push_mutex)
 } q_commands;
 
-typedef struct bounding_box {
-  float xmin, ymin, xmax, ymax;
-} bb_t;
-
 typedef enum {
   resampling_dir_null = 0ul,
   resampling_dir_left = 1ul,
@@ -142,51 +87,7 @@ typedef enum {
   resampling_dir_down = 8ul
 } resampling_dir;
 
-typedef struct resampling2_s resampling2_t;
-
-typedef struct {
-  Vector2 graph_point;
-  Vector2 graph_point_x;
-  Vector2 graph_point_y;
-} min_distances_t;
-
-typedef struct {
-  int group_id;
-  Color color;
-  size_t cap, len;
-  Vector2* points;
-  resampling2_t* resampling;
-  br_str_t name;
-  min_distances_t point_closest_to_mouse;
-  bb_t bounding_box;
-  bool is_selected;
-  bool is_new;
-} points_group_t;
-
-typedef struct {
-  size_t cap, len;
-  points_group_t* arr;
-} points_groups_t;
-
-typedef struct {
-  float xmin, ymin, zmin, xmax, ymax, zmax;
-} bb_3d_t;
-
-typedef struct {
-  int group_id;
-  Color color;
-  size_t cap, len;
-  Vector3* points;
-  br_str_t name;
-  min_distances_t point_closest_to_mouse;
-  bb_t bounding_box;
-  bool is_selected;
-} points_group_3d_t;
-
-typedef struct {
-  size_t cap, len;
-  points_group_3d_t* arr;
-} points_groups_3d_t;
+typedef struct resampling2_t resampling2_t;
 
 typedef enum {
   br_plot_kind_2d,
@@ -219,7 +120,7 @@ typedef struct {
   } groups_3d_to_show;
 } br_plot_3d_t;
 
-typedef struct {
+typedef struct br_plot_t {
   struct {
     int* arr;
     int len, cap; 
@@ -239,7 +140,7 @@ typedef struct {
   };
 } br_plot_t;
 
-typedef struct {
+typedef struct br_plots_t {
   br_plot_t* arr;
   int len, cap;
 } br_plots_t;
@@ -252,7 +153,7 @@ typedef struct {
   struct {
     float min_dist_sqr;
     float min_dist_loc;
-    points_group_t* closest_to;
+    br_data_t* closest_to;
   } hover;
 } context_t;
 
@@ -299,38 +200,15 @@ void smol_mesh_grid_draw(br_plot_t* plot);
 
 void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, Vector3 p1, Vector3 p2, Color color);
 
-BR_API points_group_t* points_group_get(points_groups_t* pg_array, int group);
-BR_API points_group_t* points_group_get1(points_groups_t pg, int group);
-BR_API void points_group_set_name(points_groups_t* pg_array, int group, br_str_t name);
-BR_API void points_group_push_y(points_groups_t* pg, float y, int group);
-BR_API void points_group_push_x(points_groups_t* pg, float x, int group);
-BR_API void points_group_push_xy(points_groups_t* pg, float x, float y, int group);
-BR_API void points_group_clear(points_groups_t* pg, br_plots_t plots, int group_id);
-// Only remove all points from a group, don't remove the group itself.
-BR_API void points_group_empty(points_group_t* pg);
-void points_group_export(points_group_t const* pg, FILE* file);
-void points_group_export_csv(points_group_t const* pg, FILE* file);
-void points_groups_draw(points_groups_t pg_array, br_plot_t* shader);
-void points_groups_add_test_points(points_groups_t* pg_array);
-void points_groups_deinit(points_groups_t* pg_array);
-// Only remove all points from all groups, don't remove groups themselfs.
-BR_API void points_groups_empty(points_groups_t* pg_array);
-void points_groups_export(points_groups_t const* pg_array, FILE* file);
-void points_groups_export_csv(points_groups_t const* pg_array, FILE* file);
-
-BR_API void points_group_3d_set_name(points_groups_t* pg_array, int group, br_str_t name);
-BR_API void points_group_3d_push(points_groups_t* pg, float x, float y, float z, int group);
-BR_API points_group_t* points_group_3d_get(points_groups_3d_t* pg_array, int group);
-
 resampling2_t* resampling2_malloc(void);
 void resampling2_empty(resampling2_t* res);
 void resampling2_free(resampling2_t* res);
-void resampling2_draw(resampling2_t const* res, points_group_t const* pg, br_plot_t* rdi);
-void resampling2_add_point(resampling2_t* res, points_group_t const* pg, uint32_t index);
+void resampling2_draw(resampling2_t const* res, br_data_t const* pg, br_plot_t* rdi);
+void resampling2_add_point(resampling2_t* res, br_data_t const* pg, uint32_t index);
 
 typedef struct br_plotter_t br_plotter_t;
 
-void br_plot_screenshot(br_plot_t* br, points_groups_t groups, char const* path);
+void br_plot_screenshot(br_plot_t* br, br_datas_t groups, char const* path);
 void br_keybinding_handle_keys(br_plotter_t* br, br_plot_t* plot);
 
 #ifndef RELEASE
@@ -369,30 +247,6 @@ void    help_load_default_font(void);
 void    help_resampling_dir_to_str(char* buff, resampling_dir r);
 min_distances_t min_distances_get(Vector2 const* points, size_t points_len, Vector2 to);
 void min_distances_get1(min_distances_t* m, Vector2 const* points, size_t points_len, Vector2 to);
-
-br_str_t   br_str_malloc(size_t size);
-void       br_str_free(br_str_t str);
-bool       br_str_realloc(br_str_t* s, size_t new_cap);
-bool       br_str_push_char(br_str_t* s, char c);
-bool       br_str_push_int(br_str_t* s, int c);
-bool       br_str_push_float1(br_str_t* s, float c, int decimals);
-bool       br_str_push_float(br_str_t* s, float c);
-bool       br_str_push_br_str(br_str_t* s, br_str_t const c);
-bool       br_str_push_c_str(br_str_t* s, char const* c);
-bool       br_strv_eq(br_strv_t s1, br_strv_t s2);
-char*      br_str_to_c_str(br_str_t s);
-char*      br_str_move_to_c_str(br_str_t* s);
-br_str_t   br_str_copy(br_str_t s);
-br_str_t   br_str_from_c_str(const char* str);
-void       br_str_to_c_str1(br_str_t s, char* out_s);
-#define    br_str_sub(s, start, new_length) ((br_strv_t) { .str = s.str + (start), .len = (new_length) })
-#define    br_str_sub1(s, start) ((br_strv_t) { .str = s.str + (start), .len = s.len - (start) })
-#define    br_str_as_view(s) ((br_strv_t) { .str = s.str, .len = s.len })
-#define    br_strv_sub(s, start, new_length) ((br_strv_t) { .str = s.str + (start), .len = (new_length) })
-#define    br_strv_sub1(s, start) ((br_strv_t) { .str = s.str + (start), .len = s.len - (start) })
-char*      br_strv_to_c_str(br_strv_t s);
-void       br_strv_to_c_str1(br_strv_t s, char* out_s);
-br_strv_t  br_strv_from_c_str(const char* s);
 
 #ifdef IMGUI
 #ifndef RELEASE

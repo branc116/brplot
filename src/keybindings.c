@@ -48,8 +48,8 @@ static inline void br_keybinding_gui_reset(br_plotter_t* br, br_plot_t* plot, br
 
 static inline void br_keybinding_clear(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
   (void)plot;
-  if (cs.shift) points_groups_deinit(&br->groups);
-  else          points_groups_empty(&br->groups);
+  if (cs.shift) br_datas_deinit(&br->groups);
+  else          br_datas_empty(&br->groups);
 }
 
 static inline void br_keybinding_hide(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
@@ -60,7 +60,7 @@ static inline void br_keybinding_hide(br_plotter_t* br, br_plot_t* plot, br_keyb
 
 static inline void br_keybinding_test_points(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
   (void)cs; (void)plot;
-  points_groups_add_test_points(&br->groups);
+  br_datas_add_test_points(&br->groups);
 }
 
 static inline void br_keybinding_follow(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {

@@ -18,9 +18,9 @@ export class Brplot {
   pushPoint(x, y, group) {
     if (group === undefined) group = 0;
     if (y === undefined && x !== undefined && typeof x === "number") {
-      this.module._points_group_push_y(this.pgs, x, group); 
+      this.module._br_data_push_y(this.pgs, x, group); 
     } else if (y !== undefined && x !== undefined && typeof x === "number" && typeof y === "number") {
-      this.module._points_group_push_xy(this.pgs, x, y, group); 
+      this.module._br_data_push_xy(this.pgs, x, y, group); 
     }
   }
 
@@ -64,7 +64,7 @@ export class Brplot {
     this.module._graph_init(graph, this.canvas.width, this.canvas.height);
     this.module._graph_draw(graph);
     this.graph = graph;
-    this.pgs = this.module._graph_get_points_groups(this.graph);
+    this.pgs = this.module._graph_get_br_datas(this.graph);
   }
 
   _loopRedraw = () => {

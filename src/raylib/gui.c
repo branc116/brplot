@@ -31,7 +31,7 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
     br_plot_update_shader_values(plot);
     draw_grid_numbers(plot);
     smol_mesh_grid_draw(plot);
-    points_groups_draw(br->groups, plot);
+    br_datas_draw(br->groups, plot);
   }
   draw_left_panel(br);
   EndDrawing();
@@ -56,7 +56,7 @@ static void draw_left_panel(br_plotter_t* br) {
     //ui_stack_buttons_add(NULL, "Points drawn: %d", gv->lines_mesh->points_drawn);
     ui_stack_buttons_add(NULL, "Recoil: %f", plot->dd.recoil);
     if (2 == ui_stack_buttons_add(NULL, "Add test points")) {
-      points_groups_add_test_points(&br->groups);
+      br_datas_add_test_points(&br->groups);
     }
   }
   Vector2 new_pos = ui_stack_buttons_end();
@@ -73,10 +73,10 @@ static void draw_left_panel(br_plotter_t* br) {
     if (res > 0) {
       if (IsKeyPressed(KEY_C)) {
         if (IsKeyDown(KEY_LEFT_SHIFT)) {
-          points_group_clear(&br->groups, br->plots, br->groups.arr[j].group_id);
+          br_data_clear(&br->groups, &br->plots, br->groups.arr[j].group_id);
         }
         else {
-          points_group_empty(&br->groups.arr[j]);
+          br_data_empty(&br->groups.arr[j]);
         }
       }
     }
@@ -99,7 +99,7 @@ static void update_resolution(br_plotter_t* br) {
   }
 }
 
-void br_plot_screenshot(br_plot_t* plot, points_groups_t groups, char const* path) {
+void br_plot_screenshot(br_plot_t* plot, br_datas_t groups, char const* path) {
   float left_pad = 80.f;
   float bottom_pad = 80.f;
   plot->resolution = (Vector2){1280, 720};
@@ -109,7 +109,7 @@ void br_plot_screenshot(br_plot_t* plot, points_groups_t groups, char const* pat
   br_plot_update_shader_values(plot);
   BeginTextureMode(target);
     smol_mesh_grid_draw(plot);
-    points_groups_draw(groups, plot);
+    br_datas_draw(groups, plot);
     draw_grid_numbers(plot);
   EndTextureMode();
   Image img = LoadImageFromTexture(target.texture);

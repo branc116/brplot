@@ -29,7 +29,7 @@ BR_API void br_plotter_set_top_right(br_plot_t* plot, float right, float top) {
   plot->dd.offset.y += (newHeight - plot->dd.graph_rect.height) / 2.f;
 }
 
-BR_API void br_plotter_focus_visible(br_plot_t* plot, points_groups_t const groups) {
+BR_API void br_plotter_focus_visible(br_plot_t* plot, br_datas_t const groups) {
   // TODO 2D/3D
   assert(plot->kind == br_plot_kind_2d);
   if (groups.len == 0) return;

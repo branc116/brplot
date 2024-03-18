@@ -1,3 +1,4 @@
+#include "br_data.h"
 #include "br_plot.h"
 #ifdef __cplusplus
 extern "C" {
@@ -18,8 +19,8 @@ typedef struct {
 #endif
 
 typedef struct br_plotter_t {
-  points_groups_t groups;
-  points_groups_3d_t groups_3d;
+  br_datas_t groups;
+  br_datas_3d_t groups_3d;
   br_plots_t plots;
   br_shaders_t shaders;
 
@@ -42,10 +43,10 @@ typedef struct br_plotter_t {
 BR_API br_plotter_t* br_plotter_malloc(void);
 BR_API void br_plotter_init(br_plotter_t* br, float width, float height);
 BR_API void br_plotter_resize(br_plotter_t* br, float width, float height);
-BR_API points_groups_t* br_plotter_get_points_groups(br_plotter_t* br);
+BR_API br_datas_t* br_plotter_get_br_datas(br_plotter_t* br);
 BR_API void br_plotter_set_bottom_left(br_plot_t* plot, float left, float bottom);
 BR_API void br_plotter_set_top_right(br_plot_t* plot, float right, float top);
-BR_API void br_plotter_focus_visible(br_plot_t* plot, points_groups_t groups);
+BR_API void br_plotter_focus_visible(br_plot_t* plot, br_datas_t groups);
 void br_plotter_add_plot_2d(br_plotter_t* br);
 void br_plotter_add_plot_3d(br_plotter_t* br);
 void br_plotter_export(br_plotter_t const* br, char const* path);

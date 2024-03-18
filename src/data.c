@@ -10,67 +10,67 @@
 #include <string.h>
 #include "tracy/TracyC.h"
 
-static points_group_t* points_group_init(points_group_t* g, int group_id);
-points_group_t* points_group_get(points_groups_t* pg_array, int group);
-static void points_group_push_point(points_group_t* g, Vector2 v);
-static void points_group_deinit(points_group_t* g);
-static bool points_group_realloc(points_group_t* pg, size_t new_cap);
+static br_data_t* br_data_init(br_data_t* g, int group_id);
+br_data_t* br_data_get(br_datas_t* pg_array, int group);
+static void br_data_push_point(br_data_t* g, Vector2 v);
+static void br_data_deinit(br_data_t* g);
+static bool br_data_realloc(br_data_t* pg, size_t new_cap);
 static Color color_get(int id);
 static void br_bb_expand_with_point(bb_t* bb, Vector2 v);
 
-BR_API void points_group_push_y(points_groups_t* pg_array, float y, int group) {
-  points_group_t* pg = points_group_get(pg_array, group);
+BR_API void br_data_push_y(br_datas_t* pg_array, float y, int group) {
+  br_data_t* pg = br_data_get(pg_array, group);
   if (pg == NULL) return;
   float x = pg->len == 0 ? 0.f : (pg->points[pg->len - 1].x + 1.f);
-  points_group_push_point(pg, (Vector2){ .x = x, .y = y });
+  br_data_push_point(pg, (Vector2){ .x = x, .y = y });
 }
 
-BR_API void points_group_push_x(points_groups_t* pg_array, float x, int group) {
-  points_group_t* pg = points_group_get(pg_array, group);
+BR_API void br_data_push_x(br_datas_t* pg_array, float x, int group) {
+  br_data_t* pg = br_data_get(pg_array, group);
   if (pg == NULL) return;
   float y = pg->len == 0 ? 0.f : (pg->points[pg->len - 1].y + 1.f);
-  points_group_push_point(pg, (Vector2){ .x = x, .y = y });
+  br_data_push_point(pg, (Vector2){ .x = x, .y = y });
 }
 
-BR_API void points_group_push_xy(points_groups_t* pg_array, float x, float y, int group) {
-  points_group_t* pg = points_group_get(pg_array, group);
+BR_API void br_data_push_xy(br_datas_t* pg_array, float x, float y, int group) {
+  br_data_t* pg = br_data_get(pg_array, group);
   if (pg == NULL) return;
-  points_group_push_point(pg, (Vector2){ .x = x, .y = y });
+  br_data_push_point(pg, (Vector2){ .x = x, .y = y });
 }
 
-BR_API void points_group_empty(points_group_t* pg) {
+BR_API void br_data_empty(br_data_t* pg) {
   pg->len = 0;
   resampling2_empty(pg->resampling);
 }
 
-BR_API void points_group_clear(points_groups_t* pg, br_plots_t plots, int group_id) {
+BR_API void br_data_clear(br_datas_t* pg, br_plots_t* plots, int group_id) {
   size_t len = pg->len;
   bool found = false;
   // TODO: This is stupind, can be solved with just 1 swap.
   for (size_t i = 0; i < len; ++i) {
     if (pg->arr[i].group_id == group_id) {
       found = true;
-      points_group_deinit(&pg->arr[i]);
+      br_data_deinit(&pg->arr[i]);
     }
     if (found == true && i + 1 < len) {
-      memcpy(&pg->arr[i], &pg->arr[i + 1], sizeof(points_group_t));
+      memcpy(&pg->arr[i], &pg->arr[i + 1], sizeof(br_data_t));
     }
   }
   if (found == true) {
-    memset(&pg->arr[len - 1], 0, sizeof(points_group_t));
+    memset(&pg->arr[len - 1], 0, sizeof(br_data_t));
     --pg->len;
-    br_plot_remove_group(plots, group_id);
+    br_plot_remove_group(*plots, group_id);
   }
 }
 
-void points_group_export(points_group_t const* pg, FILE* file) {
+void br_data_export(br_data_t const* pg, FILE* file) {
   for (size_t i = 0; i < pg->len; ++i) {
     Vector2 point = pg->points[i];
     fprintf(file, "%f,%f;%d\n", point.x, point.y, pg->group_id);
   }
 }
 
-void points_group_export_csv(points_group_t const* pg, FILE* file) {
+void br_data_export_csv(br_data_t const* pg, FILE* file) {
   fprintf(file, "group,id,x,y\n");
   for (size_t i = 0; i < pg->len; ++i) {
     Vector2 point = pg->points[i];
@@ -78,16 +78,16 @@ void points_group_export_csv(points_group_t const* pg, FILE* file) {
   }
 }
 
-void points_groups_export(points_groups_t const* pg_array, FILE* file) {
+void br_datas_export(br_datas_t const* pg_array, FILE* file) {
   for (size_t i = 0; i < pg_array->len; ++i) {
-    points_group_export(&pg_array->arr[i], file);
+    br_data_export(&pg_array->arr[i], file);
   }
 }
 
-void points_groups_export_csv(points_groups_t const* pg_array, FILE* file) {
+void br_datas_export_csv(br_datas_t const* pg_array, FILE* file) {
   fprintf(file, "group,id,x,y\n");
   for (size_t j = 0; j < pg_array->len; ++j) {
-    points_group_t* pg = &pg_array->arr[j];
+    br_data_t* pg = &pg_array->arr[j];
     for (size_t i = 0; i < pg->len; ++i) {
       Vector2 point = pg->points[i];
       fprintf(file, "%d,%lu,%f,%f\n", pg->group_id, i, point.x, point.y);
@@ -95,52 +95,52 @@ void points_groups_export_csv(points_groups_t const* pg_array, FILE* file) {
   }
 }
 
-void points_groups_deinit(points_groups_t* arr) {
+void br_datas_deinit(br_datas_t* arr) {
   if (arr->arr == NULL) return;
   for (size_t i = 0; i < arr->len; ++i) {
-    points_group_deinit(&arr->arr[i]);
+    br_data_deinit(&arr->arr[i]);
   }
   arr->len = arr->cap = 0;
   BR_FREE(arr->arr);
   arr->arr = NULL;
 }
 
-BR_API void points_groups_empty(points_groups_t* pg) {
+BR_API void br_datas_empty(br_datas_t* pg) {
   for (size_t i = 0; i < pg->len; ++i) {
-    points_group_empty(&pg->arr[i]);
+    br_data_empty(&pg->arr[i]);
   }
 }
 
-void points_groups_add_test_points(points_groups_t* pg) {
+void br_datas_add_test_points(br_datas_t* pg) {
   {
     int group = 0;
-    points_group_t* g = points_group_get(pg, group);
+    br_data_t* g = br_data_get(pg, group);
     if (NULL == g) return;
     for (int i = 0; i < 1024; ++i)
-      points_group_push_point(g, (Vector2){(float)g->len/128.f, sinf((float)g->len/128.f)});
+      br_data_push_point(g, (Vector2){(float)g->len/128.f, sinf((float)g->len/128.f)});
   }
   return;
   {
     int group = 1;
-    points_group_t* g = points_group_get(pg, group);
+    br_data_t* g = br_data_get(pg, group);
     if (NULL == g) return;
     for (int i = 0; i < 10*1024; ++i)
-      points_group_push_point(g, (Vector2){-(float)g->len/128.f, sinf((float)g->len/128.f)});
+      br_data_push_point(g, (Vector2){-(float)g->len/128.f, sinf((float)g->len/128.f)});
   }
   {
     int group = 5;
-    points_group_t* g = points_group_get(pg, group);
+    br_data_t* g = br_data_get(pg, group);
     if (NULL == g) return;
     for(int i = 0; i < 1024*1024; ++i) {
       float t = (float)(1 + g->len)*.1f;
       float x = sqrtf(t)*cosf(log2f(t));
       float y = sqrtf(t)*sinf(log2f(t));
       Vector2 p = {x, y};
-      points_group_push_point(g, p);
+      br_data_push_point(g, p);
     }
   }
   {
-    points_group_t* g = points_group_get(pg, 6);
+    br_data_t* g = br_data_get(pg, 6);
     if (NULL == g) return;
     int l = (int)g->len;
     for(int i = 0; i < 0; ++i) {
@@ -148,7 +148,7 @@ void points_groups_add_test_points(points_groups_t* pg) {
         int x = -50 + j + l;
         int y = (-50 + (i - j) + l) * (i % 2 == 0 ? 1 : -1);
         Vector2 p = {(float)x, (float)y};
-        points_group_push_point(g, p);
+        br_data_push_point(g, p);
       }
     }
   }
@@ -159,14 +159,14 @@ void points_groups_add_test_points(points_groups_t* pg) {
 #define GL_DST_ALPHA 0x0304
 #define GL_MAX 0x8008
 
-void points_groups_draw(points_groups_t pg, br_plot_t* plot) {
+void br_datas_draw(br_datas_t pg, br_plot_t* plot) {
   if (plot->kind == br_plot_kind_2d) {
-    TracyCFrameMarkStart("points_groups_draw_2d");
+    TracyCFrameMarkStart("br_datas_draw_2d");
     rlSetBlendFactors(GL_SRC_ALPHA, GL_DST_ALPHA, GL_MAX);
     rlSetBlendMode(BLEND_CUSTOM);
     for (int j = 0; j < plot->groups_to_show.len; ++j) {
       int group = plot->groups_to_show.arr[j];
-      points_group_t const* g = points_group_get1(pg, group);
+      br_data_t const* g = br_data_get1(pg, group);
       if (g == NULL) {
         for (size_t k = 0; k < pg.len; ++k) {
           fprintf(stderr, "k = %lu, group = %d\n", k, pg.arr[k].group_id);
@@ -186,16 +186,16 @@ void points_groups_draw(points_groups_t pg, br_plot_t* plot) {
       plot->dd.line_shader->len = 0;
     }
     rlSetBlendMode(BLEND_ALPHA);
-    TracyCFrameMarkEnd("points_groups_draw_2d");
+    TracyCFrameMarkEnd("br_datas_draw_2d");
   } else {
-    TracyCFrameMarkStart("points_groups_draw_3d");
+    TracyCFrameMarkStart("br_datas_draw_3d");
     int h = (int)plot->graph_screen_rect.height;
     rlViewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
     rlDisableBackfaceCulling();
     rlEnableDepthTest();
     for (int j = 0; j < plot->groups_to_show.len; ++j) {
       int group = plot->groups_to_show.arr[j];
-      points_group_t const* g = points_group_get1(pg, group);
+      br_data_t const* g = br_data_get1(pg, group);
       for (size_t i = 0; i < g->len - 1; ++i) {
         Vector3 p1 = { g->points[i].x, g->points[i].y, 0 };
         Vector3 p2 = { g->points[i + 1].x, g->points[i + 1].y, 0 };
@@ -209,12 +209,12 @@ void points_groups_draw(points_groups_t pg, br_plot_t* plot) {
     rlDisableDepthTest();
     rlEnableBackfaceCulling();
     rlViewport(0, 0, (int)plot->resolution.x, (int)plot->resolution.y);
-    TracyCFrameMarkEnd("points_groups_draw_3d");
+    TracyCFrameMarkEnd("br_datas_draw_3d");
   }
 }
 
-static points_group_t* points_group_init(points_group_t* g, int group_id) {
-  *g = (points_group_t) { .cap = 1024, .len = 0, .group_id = group_id,
+static br_data_t* br_data_init(br_data_t* g, int group_id) {
+  *g = (br_data_t) { .cap = 1024, .len = 0, .group_id = group_id,
     .is_selected = true,
     .points = BR_MALLOC(sizeof(Vector2) * 1024),
     .resampling = resampling2_malloc(),
@@ -250,20 +250,20 @@ static Color color_get(int id) {
   return c;
 }
 
-BR_API points_group_t* points_group_get1(points_groups_t pg, int group) {
+BR_API br_data_t* br_data_get1(br_datas_t pg, int group) {
   for (size_t i = 0; i < pg.len; ++i) if (pg.arr[i].group_id == group)
     return &pg.arr[i];
   return NULL;
 }
 
-BR_API points_group_t* points_group_get(points_groups_t* pg, int group) {
+BR_API br_data_t* br_data_get(br_datas_t* pg, int group) {
   assert(pg);
 
   // TODO: da
   if (pg->len == 0) {
-    pg->arr = BR_MALLOC(sizeof(points_group_t));
+    pg->arr = BR_MALLOC(sizeof(br_data_t));
     if (NULL == pg->arr) return NULL;
-    points_group_t* ret = points_group_init(&pg->arr[0], group);
+    br_data_t* ret = br_data_init(&pg->arr[0], group);
     if (ret->points == NULL) return NULL;
     pg->cap = pg->len = 1;
     return ret;
@@ -277,12 +277,12 @@ BR_API points_group_t* points_group_get(points_groups_t* pg, int group) {
 
   if (pg->len >= pg->cap) {
     size_t new_cap = pg->cap * 2;
-    points_group_t* new_arr = BR_REALLOC(pg->arr, sizeof(points_group_t)*new_cap);
+    br_data_t* new_arr = BR_REALLOC(pg->arr, sizeof(br_data_t)*new_cap);
     if (NULL == new_arr) return NULL;
     pg->arr = new_arr;
     pg->cap = new_cap;
   }
-  points_group_t* ret = points_group_init(&pg->arr[pg->len++], group);
+  br_data_t* ret = br_data_init(&pg->arr[pg->len++], group);
   if (ret->points == NULL) {
     --pg->len;
     return NULL;
@@ -290,15 +290,15 @@ BR_API points_group_t* points_group_get(points_groups_t* pg, int group) {
   return ret;
 }
 
-BR_API void points_group_set_name(points_groups_t* pg, int group, br_str_t name) {
-  points_group_t* g = points_group_get(pg, group);
+BR_API void br_data_set_name(br_datas_t* pg, int group, br_str_t name) {
+  br_data_t* g = br_data_get(pg, group);
   if (pg == NULL) return;
   br_str_free(g->name);
   g->name = name;
 }
 
-static void points_group_push_point(points_group_t* g, Vector2 v) {
-  if (g->len >= g->cap && false == points_group_realloc(g, g->cap * 2)) return;
+static void br_data_push_point(br_data_t* g, Vector2 v) {
+  if (g->len >= g->cap && false == br_data_realloc(g, g->cap * 2)) return;
   if (g->len == 0) g->bounding_box = (bb_t) { v.x, v.y, v.x, v.y };
   else             br_bb_expand_with_point(&g->bounding_box, v);
   g->points[g->len] = v;
@@ -306,7 +306,7 @@ static void points_group_push_point(points_group_t* g, Vector2 v) {
   ++g->len;
 }
 
-static void points_group_deinit(points_group_t* g) {
+static void br_data_deinit(br_data_t* g) {
   // Free points
   BR_FREE(g->points);
   resampling2_free(g->resampling);
@@ -315,7 +315,7 @@ static void points_group_deinit(points_group_t* g) {
   g->len = g->cap = 0;
 }
 
-static bool points_group_realloc(points_group_t* pg, size_t new_cap) {
+static bool br_data_realloc(br_data_t* pg, size_t new_cap) {
   Vector2* new_arr = BR_REALLOC(pg->points, new_cap * sizeof(Vector2));
   if (new_arr == NULL) {
     LOG("Out of memory. Can't add any more lines. Buy more RAM, or close Chrome\n");

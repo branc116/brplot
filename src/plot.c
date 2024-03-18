@@ -6,13 +6,13 @@
 #include "src/br_da.h"
 #include "tracy/TracyC.h"
 
-bool br_plot_update_variables_2d(br_plot_t* plot, points_groups_t const groups, Vector2 mouse_pos) {
+bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, Vector2 mouse_pos) {
   assert(plot->kind == br_plot_kind_2d);
   if (plot->follow) {
     Rectangle sr = plot->dd.graph_rect;
     Vector2 middle = { sr.x + sr.width/2, sr.y - sr.height/2 };
     for (size_t i = 0; i < groups.len; ++i) {
-      points_group_t* pg = &groups.arr[i];
+      br_data_t* pg = &groups.arr[i];
       size_t gl = pg->len;
       if (!pg->is_selected || gl == 0) continue;
       plot->dd.delta.x += ((middle.x - pg->points[gl - 1].x))/1000.f;
@@ -75,7 +75,7 @@ bool br_plot_update_variables_2d(br_plot_t* plot, points_groups_t const groups, 
   return false;
 }
 
-bool br_plot_update_variables_3d(br_plot_t* plot, points_groups_t const groups, Vector2 mouse_pos) {
+bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, Vector2 mouse_pos) {
   assert(plot->kind == br_plot_kind_3d);
   if (!plot->mouse_inside_graph) return false;
   if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {

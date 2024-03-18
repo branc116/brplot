@@ -24,11 +24,11 @@ namespace br {
       raw_c = 0;
       not_raw_c = 0;
       if (ImGui::Button("Clear all")) {
-        points_groups_deinit(&br->groups);
+        br_datas_deinit(&br->groups);
       }
       ImGui::SameLine();
       if (ImGui::Button("Empty all")) {
-        points_groups_empty(&br->groups);
+        br_datas_empty(&br->groups);
       }
       if (ImGui::Button("Toggle Hide all")) {
         for (size_t i = 0; i < br->groups.len; ++i) {
@@ -65,7 +65,7 @@ namespace br {
             ImGui::PopStyleColor(3);
             sprintf(context.buff, "Clear##P%lu", i);
             if (ImGui::Button(context.buff)) {
-              points_group_clear(&br->groups, br->plots, br->groups.arr[i].group_id);
+              br_data_clear(&br->groups, &br->plots, br->groups.arr[i].group_id);
             }
             ImGui::SetNextItemWidth(60.f);
             sprintf(context.buff, "PlotColor_%lu", i);

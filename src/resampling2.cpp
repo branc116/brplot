@@ -121,7 +121,7 @@ struct resampling2_all_roots{
   }
 };
 
-typedef struct resampling2_s {
+typedef struct resampling2_t {
   resampling2_all_roots* roots = nullptr;
   uint32_t roots_len = 0;
   uint32_t roots_cap = 0;
@@ -148,14 +148,14 @@ static resampling2_node_t* resampling2_get_last_node(resampling2_nodes_t* nodes)
 template<resampling2_node_kind_t kind>
 static bool resampling2_nodes_push_point(resampling2_nodes_t* nodes, uint32_t index, Vector2 const* points, uint8_t depth);
 template<resampling2_node_kind_t kind>
-static bool resampling2_add_point(resampling2_nodes_t* nodes, points_group_t const* pg, uint32_t index);
+static bool resampling2_add_point(resampling2_nodes_t* nodes, br_data_t const* pg, uint32_t index);
 template<resampling2_node_kind_t kind>
 static ssize_t resampling2_get_first_inside(resampling2_nodes_t const* nodes, Vector2 const* points, Rectangle rect, uint32_t start_index);
 template<resampling2_node_kind_t kind>
-static void resampling2_draw(resampling2_nodes_t const* nodes, points_group_t const* pg, br_plot_t* rdi);
+static void resampling2_draw(resampling2_nodes_t const* nodes, br_data_t const* pg, br_plot_t* rdi);
 static bool resampling2_add_point_raw(resampling2_raw_node_t* node, Vector2 const* points, uint32_t index);
-static void resampling2_draw(resampling2_raw_node_t raw, points_group_t const* pg, br_plot_t* rdi);
-static void resampling2_draw(resampling2_all_roots r, points_group_t const* pg, br_plot_t* rdi);
+static void resampling2_draw(resampling2_raw_node_t raw, br_data_t const* pg, br_plot_t* rdi);
+static void resampling2_draw(resampling2_all_roots r, br_data_t const* pg, br_plot_t* rdi);
 
 resampling2_t* resampling2_malloc(void) {
    resampling2_t* r = (resampling2_t*)BR_CALLOC(1, sizeof(resampling2_t));
@@ -191,7 +191,7 @@ void resampling2_free(resampling2_t* r) {
   BR_FREE(r);
 }
 
-extern "C" void resampling2_add_point(resampling2_t* r, const points_group_t *pg, uint32_t index) {
+extern "C" void resampling2_add_point(resampling2_t* r, const br_data_t *pg, uint32_t index) {
   ZoneScopedN("resampline2_add_point0");
   bool was_valid_x = r->temp_x_valid, was_valid_y = r->temp_y_valid, was_valid_raw = r->temp_raw_valid;
   if (was_valid_x)   r->temp_x_valid   = resampling2_add_point<resampling2_kind_x>(&r->temp_root_x, pg, index);
@@ -311,7 +311,7 @@ static bool resampling2_nodes_push_point(resampling2_nodes_t* nodes, uint32_t in
 }
 
 template<resampling2_node_kind_t kind>
-static bool resampling2_add_point(resampling2_nodes_t* nodes, const points_group_t *pg, uint32_t index) {
+static bool resampling2_add_point(resampling2_nodes_t* nodes, const br_data_t *pg, uint32_t index) {
   ZoneScopedN("resampling2_add_point1");
   Vector2 p = pg->points[index];
   if (nodes->len == 0) nodes->is_rising = nodes->is_falling = true;
@@ -374,7 +374,7 @@ int raw_c = 0;
 int not_raw_c = 0;
 
 template<resampling2_node_kind_t kind>
-static void resampling2_draw(resampling2_nodes_t const* nodes, points_group_t const* pg, br_plot_t* plot) {
+static void resampling2_draw(resampling2_nodes_t const* nodes, br_data_t const* pg, br_plot_t* plot) {
   assert(plot->kind == br_plot_kind_2d);
   ZoneScopedN("resampling2_draw_not_raw");
   ssize_t j = 0;
@@ -442,7 +442,7 @@ static bool resampling2_add_point_raw(resampling2_raw_node_t* node, Vector2 cons
   return true;
 }
 
-static void resampling2_draw(resampling2_raw_node_t raw, points_group_t const* pg, br_plot_t* plot) {
+static void resampling2_draw(resampling2_raw_node_t raw, br_data_t const* pg, br_plot_t* plot) {
   ZoneScopedN("resampling2_draw_raw");
   assert(plot->kind == br_plot_kind_2d);
   Vector2 const* ps = pg->points;
@@ -454,13 +454,13 @@ static void resampling2_draw(resampling2_raw_node_t raw, points_group_t const* p
   smol_mesh_gen_line_strip(plot->dd.line_shader, &pg->points[raw.index_start], raw.len, pg->color);
 }
 
-static void resampling2_draw(resampling2_all_roots r, points_group_t const* pg, br_plot_t *rdi) {
+static void resampling2_draw(resampling2_all_roots r, br_data_t const* pg, br_plot_t *rdi) {
   if      (r.kind == resampling2_kind_raw) resampling2_draw(r.raw, pg, rdi);
   else if (r.kind == resampling2_kind_x)   resampling2_draw<resampling2_kind_x>(&r.x, pg, rdi);
   else if (r.kind == resampling2_kind_y)   resampling2_draw<resampling2_kind_y>(&r.y, pg, rdi);
 }
 
-void resampling2_draw(resampling2_t const* res, points_group_t const* pg, br_plot_t* plot) {
+void resampling2_draw(resampling2_t const* res, br_data_t const* pg, br_plot_t* plot) {
   ZoneScopedN("resampline2_draw0");
   assert(plot->kind == br_plot_kind_2d);
   Rectangle rect = plot->dd.graph_rect;
@@ -554,7 +554,7 @@ extern "C" {
 #include "src/misc/tests.h"
 TEST_CASE(resampling) {
   Vector2 points[] = { {0, 1}, {1, 2}, {2, 4}, {3, 2} };
-  points_group_t pg;
+  br_data_t pg;
   memset(&pg, 0, sizeof(pg));
   pg.cap = 4;
   pg.len = 4;
@@ -578,7 +578,7 @@ TEST_CASE(resampling2) {
     points[i].x = sinf(3.14f / 4.f * (float)i);
     points[i].y = cosf(3.14f / 4.f * (float)i);
   }
-  points_group_t pg;
+  br_data_t pg;
   memset(&pg, 0, sizeof(pg));
   pg.cap = N;
   pg.len = N;

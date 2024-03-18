@@ -34,7 +34,7 @@
 "  DockNode  ID=0x00000001 Parent=0x8B93E3BD SizeRef=1005,720\n" \
 "  DockNode  ID=0x00000002 Parent=0x8B93E3BD SizeRef=273,720\n"
 
-static void br_plot_screenshot_imgui(br_plot_t br, points_groups_t groups, char* path);
+static void br_plot_screenshot_imgui(br_plot_t br, br_datas_t groups, char* path);
 
 static int screenshot_file_save = 0;
 static struct br_file_saver_s* fs = nullptr;
@@ -82,7 +82,7 @@ extern "C" void br_gui_free_specifics(br_plotter_t* br) {
   ImGui::DestroyContext();
 }
 
-void graph_draw_min(points_groups_t groups, br_plot_t* plot, float posx, float posy, float width, float height, float padding) {
+void graph_draw_min(br_datas_t groups, br_plot_t* plot, float posx, float posy, float width, float height, float padding) {
   TracyCFrameMarkStart("graph_draw_min");
   plot->resolution.x = (float)GetScreenWidth();
   plot->resolution.y = (float)GetScreenHeight();
@@ -95,7 +95,7 @@ void graph_draw_min(points_groups_t groups, br_plot_t* plot, float posx, float p
   //DrawRectangleRec(plot->graph_screen_rect, BLACK);
   draw_grid_numbers(plot);
   smol_mesh_grid_draw(plot);
-  points_groups_draw(groups, plot);
+  br_datas_draw(groups, plot);
   TracyCFrameMarkEnd("graph_draw_min");
 }
 
@@ -175,13 +175,13 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
 #endif
 }
 
-extern "C" void br_plot_screenshot(br_plot_t* plot, points_groups_t, char const*) {
+extern "C" void br_plot_screenshot(br_plot_t* plot, br_datas_t, char const*) {
   fs = br_file_saver_malloc("Save screenshot", std::getenv("HOME"), plot);
   screenshot_file_save = 1;
   return;
 }
 
-static void br_plot_screenshot_imgui(br_plot_t plot, points_groups_t groups, char* path) {
+static void br_plot_screenshot_imgui(br_plot_t plot, br_datas_t groups, char* path) {
   float left_pad = 80.f;
   float bottom_pad = 80.f;
   Vector2 is = {1280, 720};
@@ -192,7 +192,7 @@ static void br_plot_screenshot_imgui(br_plot_t plot, points_groups_t groups, cha
   br_plot_update_shader_values(&plot);
   BeginTextureMode(target);
     smol_mesh_grid_draw(&plot);
-    points_groups_draw(groups, &plot);
+    br_datas_draw(groups, &plot);
     draw_grid_numbers(&plot);
   EndTextureMode();
   Image img = LoadImageFromTexture(target.texture);

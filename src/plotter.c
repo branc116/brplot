@@ -58,7 +58,7 @@ BR_API void br_plotter_resize(br_plotter_t* br, float width, float height) {
   SetWindowSize((int)width, (int)height);
 }
 
-BR_API points_groups_t* br_plotter_get_points_groups(br_plotter_t* br) {
+BR_API br_datas_t* br_plotter_get_br_datas(br_plotter_t* br) {
   return &br->groups;
 }
 
@@ -110,7 +110,7 @@ void br_plotter_add_plot_3d(br_plotter_t* br) {
 BR_API void br_plotter_free(br_plotter_t* gv) {
   br_shaders_free(gv->shaders);
   for (size_t i = 0; i < gv->groups.len; ++i) {
-    points_groups_deinit(&gv->groups);
+    br_datas_deinit(&gv->groups);
   }
   q_command c = q_pop(&gv->commands);
   while(c.type != q_command_none) {
@@ -152,18 +152,18 @@ void br_plotter_update_variables(br_plotter_t* br) {
     q_command comm = q_pop(&br->commands);
     switch (comm.type) {
       case q_command_none:          goto end;
-      case q_command_push_point_x:  points_group_push_x(&br->groups, comm.push_point_x.x, comm.push_point_y.group); break;
-      case q_command_push_point_y:  points_group_push_y(&br->groups, comm.push_point_y.y, comm.push_point_y.group); break;
-      case q_command_push_point_xy: points_group_push_xy(&br->groups, comm.push_point_xy.x, comm.push_point_xy.y, comm.push_point_xy.group); break;
+      case q_command_push_point_x:  br_data_push_x(&br->groups, comm.push_point_x.x, comm.push_point_y.group); break;
+      case q_command_push_point_y:  br_data_push_y(&br->groups, comm.push_point_y.y, comm.push_point_y.group); break;
+      case q_command_push_point_xy: br_data_push_xy(&br->groups, comm.push_point_xy.x, comm.push_point_xy.y, comm.push_point_xy.group); break;
       case q_command_pop:           break; //TODO
-      case q_command_clear:         points_group_clear(&br->groups, br->plots, comm.clear.group); break;
-      case q_command_clear_all:     points_groups_deinit(&br->groups); break;
+      case q_command_clear:         br_data_clear(&br->groups, &br->plots, comm.clear.group); break;
+      case q_command_clear_all:     br_datas_deinit(&br->groups); break;
       case q_command_screenshot:    br_plot_screenshot(&br->plots.arr[0], br->groups, comm.path_arg.path); free(comm.path_arg.path); break;
       case q_command_export:        br_plotter_export(br, comm.path_arg.path);     free(comm.path_arg.path); break;
       case q_command_exportcsv:     br_plotter_export_csv(br, comm.path_arg.path); free(comm.path_arg.path); break;
-      case q_command_hide:          points_group_get(&br->groups, comm.hide_show.group)->is_selected = false; break;
-      case q_command_show:          points_group_get(&br->groups, comm.hide_show.group)->is_selected = true;  break;
-      case q_command_set_name:      points_group_set_name(&br->groups, comm.set_quoted_str.group, comm.set_quoted_str.str);  break;
+      case q_command_hide:          br_data_get(&br->groups, comm.hide_show.group)->is_selected = false; break;
+      case q_command_show:          br_data_get(&br->groups, comm.hide_show.group)->is_selected = true;  break;
+      case q_command_set_name:      br_data_set_name(&br->groups, comm.set_quoted_str.group, comm.set_quoted_str.str);  break;
       case q_command_focus:         br_plotter_focus_visible(&br->plots.arr[0], br->groups); break;
       default:                      BR_ASSERT(false);
     }
@@ -200,7 +200,7 @@ void br_plotter_export(br_plotter_t const* gv, char const * path) {
   for (size_t i = 0; i < gv->groups.len; ++i) {
     fprintf(file, gv->groups.arr[i].is_selected ? "--show %d\n" : "--hide %d\n", gv->groups.arr[i].group_id);
   }
-  points_groups_export(&gv->groups, file);
+  br_datas_export(&gv->groups, file);
   fclose(file);
 }
 
@@ -208,7 +208,7 @@ void br_plotter_export_csv(br_plotter_t const* br, char const * path) {
   FILE* file = fopen(path, "w");
   // TODO: Show user an error message
   if (file == NULL) return;
-  points_groups_export_csv(&br->groups, file);
+  br_datas_export_csv(&br->groups, file);
   fclose(file);
 }
 
