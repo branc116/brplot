@@ -22,12 +22,12 @@ typedef struct br_file_saver_s {
   Rectangle file_list_rect;
   ImVec2 cur_button_sz = {100, 40};
   ImVec2 default_button_sz = {100, 40};
-  br_plot_instance_t const* plot;
+  br_plot_t const* plot;
 } br_file_saver_t;
 
 static void file_saver_change_cwd_to(br_file_saver_t& fs, std::filesystem::path&& p);
 
-extern "C" br_file_saver_t* br_file_saver_malloc(char const* title, char const * location, br_plot_instance_t const* plot) {
+extern "C" br_file_saver_t* br_file_saver_malloc(char const* title, char const * location, br_plot_t const* plot) {
   br_file_saver_t* br = new br_file_saver_t();
   br->title = br_strv_from_c_str(title);
   br->plot = plot;
@@ -42,7 +42,7 @@ extern "C" void br_file_saver_get_path(br_file_saver_t const* fs, br_str_t *path
   br_str_push_c_str(path, ".png");
 }
 
-extern "C" br_plot_instance_t const* br_file_saver_get_plot_instance(br_file_saver_s const* fs) {
+extern "C" br_plot_t const* br_file_saver_get_plot_instance(br_file_saver_s const* fs) {
   return fs->plot;
 }
 

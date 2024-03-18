@@ -1,6 +1,7 @@
 #include "imgui.h"
 #include "raylib.h"
 #include "src/br_plot.h"
+#include "src/br_plotter.h"
 #include "src/imgui/imgui_extensions.h"
 
 void br::ui_info(br_plotter_t* br) {

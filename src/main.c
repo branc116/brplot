@@ -1,5 +1,6 @@
 #ifndef LIB
 #include "br_plot.h"
+#include "br_plotter.h"
 
 #include <stddef.h>
 #include <assert.h>

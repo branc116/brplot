@@ -24,9 +24,9 @@ TRACY?= NO
 RL                 = ./external/raylib-5.0/src
 IM                 = ./external/imgui-docking
 RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
-SOURCE             = src/main.c src/help.c src/points_group.c src/smol_mesh.c src/q.c src/read_input.c src/gui.c \
+SOURCE             = src/main.c src/help.c src/points_group.c src/smol_mesh.c src/q.c src/read_input.c src/plotter.c \
 										 src/keybindings.c src/str.c src/memory.cpp src/resampling2.c src/graph_utils.c src/shaders.c \
-										 src/plot_instance.c
+										 src/plot.c
 COMMONFLAGS        = -I. -I./external/Tracy -MMD -MP
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra
 LD_FLAGS           =

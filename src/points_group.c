@@ -43,7 +43,7 @@ BR_API void points_group_empty(points_group_t* pg) {
   resampling2_empty(pg->resampling);
 }
 
-BR_API void points_group_clear(points_groups_t* pg, br_plot_instancies_t plots, int group_id) {
+BR_API void points_group_clear(points_groups_t* pg, br_plots_t plots, int group_id) {
   size_t len = pg->len;
   bool found = false;
   // TODO: This is stupind, can be solved with just 1 swap.
@@ -59,7 +59,7 @@ BR_API void points_group_clear(points_groups_t* pg, br_plot_instancies_t plots, 
   if (found == true) {
     memset(&pg->arr[len - 1], 0, sizeof(points_group_t));
     --pg->len;
-    br_plot_instancies_remove_group(plots, group_id);
+    br_plot_remove_group(plots, group_id);
   }
 }
 
@@ -159,8 +159,8 @@ void points_groups_add_test_points(points_groups_t* pg) {
 #define GL_DST_ALPHA 0x0304
 #define GL_MAX 0x8008
 
-void points_groups_draw(points_groups_t pg, br_plot_instance_t* plot) {
-  if (plot->kind == br_plot_instance_kind_2d) {
+void points_groups_draw(points_groups_t pg, br_plot_t* plot) {
+  if (plot->kind == br_plot_kind_2d) {
     TracyCFrameMarkStart("points_groups_draw_2d");
     rlSetBlendFactors(GL_SRC_ALPHA, GL_DST_ALPHA, GL_MAX);
     rlSetBlendMode(BLEND_CUSTOM);

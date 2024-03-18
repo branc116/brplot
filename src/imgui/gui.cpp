@@ -1,4 +1,5 @@
 #include "src/br_plot.h"
+#include "src/br_plotter.h"
 #include "src/br_gui_internal.h"
 #include "src/br_da.h"
 #include "imgui_extensions.h"
@@ -33,7 +34,7 @@
 "  DockNode  ID=0x00000001 Parent=0x8B93E3BD SizeRef=1005,720\n" \
 "  DockNode  ID=0x00000002 Parent=0x8B93E3BD SizeRef=273,720\n"
 
-static void br_plot_instance_screenshot_imgui(br_plot_instance_t br, points_groups_t groups, char* path);
+static void br_plot_screenshot_imgui(br_plot_t br, points_groups_t groups, char* path);
 
 static int screenshot_file_save = 0;
 static struct br_file_saver_s* fs = nullptr;
@@ -44,7 +45,7 @@ static float padding = 50.f;
 static GLFWwindow* ctx;
 
 extern "C" void br_gui_init_specifics_gui(br_plotter_t* br) {
-  br_plotter_add_plot_instance_2d(br);
+  br_plotter_add_plot_2d(br);
 
   ctx = glfwGetCurrentContext();
   ImGui::SetAllocatorFunctions(BR_IMGUI_MALLOC, BR_IMGUI_FREE, nullptr);
@@ -81,7 +82,7 @@ extern "C" void br_gui_free_specifics(br_plotter_t* br) {
   ImGui::DestroyContext();
 }
 
-void graph_draw_min(points_groups_t groups, br_plot_instance_t* plot, float posx, float posy, float width, float height, float padding) {
+void graph_draw_min(points_groups_t groups, br_plot_t* plot, float posx, float posy, float width, float height, float padding) {
   TracyCFrameMarkStart("graph_draw_min");
   plot->resolution.x = (float)GetScreenWidth();
   plot->resolution.y = (float)GetScreenHeight();
@@ -89,7 +90,7 @@ void graph_draw_min(points_groups_t groups, br_plot_instance_t* plot, float posx
   plot->graph_screen_rect.y = posy + padding;
   plot->graph_screen_rect.width = width - 50.f - 2.f * padding;
   plot->graph_screen_rect.height = height - 30.f - 2.f * padding;
-  br_plot_instance_update_shader_values(plot);
+  br_plot_update_shader_values(plot);
 
   //DrawRectangleRec(plot->graph_screen_rect, BLACK);
   draw_grid_numbers(plot);
@@ -120,7 +121,7 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
   br_plotter_update_variables(gv);
   for (int i = 0; i < gv->plots.len; ++i) {
     ImGui::PushID(i);
-    br_plot_instance_t* plot = &gv->plots.arr[i];
+    br_plot_t* plot = &gv->plots.arr[i];
     snprintf(context.buff, IM_ARRAYSIZE(context.buff), "Plot #%d", i);
     if (ImGui::Begin(context.buff) && false == ImGui::IsWindowHidden()) {
       ImVec2 p = ImGui::GetWindowPos();
@@ -151,7 +152,7 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
       case file_saver_state_accept: {
         br_str_t s = br_str_malloc(64);
         br_file_saver_get_path(fs, &s);
-        br_plot_instance_screenshot_imgui(*br_file_saver_get_plot_instance(fs), gv->groups, br_str_move_to_c_str(&s));
+        br_plot_screenshot_imgui(*br_file_saver_get_plot_instance(fs), gv->groups, br_str_move_to_c_str(&s));
       } // FALLTHROUGH
       case file_saver_state_cancle: {
         br_file_saver_free(fs);
@@ -174,21 +175,21 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
 #endif
 }
 
-extern "C" void br_plot_instance_screenshot(br_plot_instance_t* plot, points_groups_t, char const*) {
+extern "C" void br_plot_screenshot(br_plot_t* plot, points_groups_t, char const*) {
   fs = br_file_saver_malloc("Save screenshot", std::getenv("HOME"), plot);
   screenshot_file_save = 1;
   return;
 }
 
-static void br_plot_instance_screenshot_imgui(br_plot_instance_t plot, points_groups_t groups, char* path) {
+static void br_plot_screenshot_imgui(br_plot_t plot, points_groups_t groups, char* path) {
   float left_pad = 80.f;
   float bottom_pad = 80.f;
   Vector2 is = {1280, 720};
   RenderTexture2D target = LoadRenderTexture((int)is.x, (int)is.y); // TODO: make this values user defined.
   plot.graph_screen_rect = {left_pad, 0.f, is.x - left_pad, is.y - bottom_pad};
   plot.resolution = {is.x, is.y};
-  br_plot_instance_update_context(&plot, GetMousePosition());
-  br_plot_instance_update_shader_values(&plot);
+  br_plot_update_context(&plot, GetMousePosition());
+  br_plot_update_shader_values(&plot);
   BeginTextureMode(target);
     smol_mesh_grid_draw(&plot);
     points_groups_draw(groups, &plot);

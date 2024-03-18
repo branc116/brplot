@@ -1,4 +1,5 @@
 #include "src/br_plot.h"
+#include "src/br_plotter.h"
 #include "src/br_gui_internal.h"
 
 #include <raymath.h>
@@ -16,7 +17,7 @@ void emscripten_run_script(const char* script);
 static void update_resolution(br_plotter_t* gv);
 static void draw_left_panel(br_plotter_t* gv);
 void br_gui_init_specifics_gui(br_plotter_t* br) {
-  br_plotter_add_plot_instance_2d(br);
+  br_plotter_add_plot_2d(br);
 }
 
 BR_API void br_plotter_draw(br_plotter_t* br) {
@@ -26,8 +27,8 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   br_plotter_update_variables(br);
   help_draw_fps(0, 0);
   for (int i = 0; i < br->plots.len; ++i) {
-    br_plot_instance_t* plot = &br->plots.arr[i];
-    br_plot_instance_update_shader_values(plot);
+    br_plot_t* plot = &br->plots.arr[i];
+    br_plot_update_shader_values(plot);
     draw_grid_numbers(plot);
     smol_mesh_grid_draw(plot);
     points_groups_draw(br->groups, plot);
@@ -39,7 +40,7 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
 static float sp = 0.f;
 static void draw_left_panel(br_plotter_t* br) {
 #if 1
-  br_plot_instance_t* plot = &br->plots.arr[0];
+  br_plot_t* plot = &br->plots.arr[0];
   ui_stack_buttons_init((Vector2){.x = 30.f, .y = 25.f}, NULL, context.font_scale * 15);
   ui_stack_buttons_add(&plot->follow, "Follow");
   if (ui_stack_buttons_add(NULL, "Export") == 2) {
@@ -87,8 +88,8 @@ static void draw_left_panel(br_plotter_t* br) {
 // TODO 2D/3D
 static void update_resolution(br_plotter_t* br) {
   for (int i = 0; i < br->plots.len; ++i) {
-    br_plot_instance_t* plot = &br->plots.arr[i];
-    assert(plot->kind == br_plot_instance_kind_2d);
+    br_plot_t* plot = &br->plots.arr[i];
+    assert(plot->kind == br_plot_kind_2d);
     plot->resolution = (Vector2) { (float)GetScreenWidth(), (float)GetScreenHeight() };
     float w = (float)plot->resolution.x - GRAPH_LEFT_PAD - 25.f, h = (float)plot->resolution.y - 50.f;
     plot->graph_screen_rect.x = GRAPH_LEFT_PAD;
@@ -98,14 +99,14 @@ static void update_resolution(br_plotter_t* br) {
   }
 }
 
-void br_plot_instance_screenshot(br_plot_instance_t* plot, points_groups_t groups, char const* path) {
+void br_plot_screenshot(br_plot_t* plot, points_groups_t groups, char const* path) {
   float left_pad = 80.f;
   float bottom_pad = 80.f;
   plot->resolution = (Vector2){1280, 720};
   RenderTexture2D target = LoadRenderTexture((int)plot->resolution.x, (int)plot->resolution.y); // TODO: make this values user defined.
   plot->graph_screen_rect = (Rectangle){left_pad, 0.f, plot->resolution.x - left_pad, plot->resolution.y - bottom_pad};
-  br_plot_instance_update_context(plot, GetMousePosition());
-  br_plot_instance_update_shader_values(plot);
+  br_plot_update_context(plot, GetMousePosition());
+  br_plot_update_shader_values(plot);
   BeginTextureMode(target);
     smol_mesh_grid_draw(plot);
     points_groups_draw(groups, plot);

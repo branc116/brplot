@@ -2,10 +2,10 @@
 #include "math.h"
 #include "assert.h"
 
-// TODO: rename to br_plot_instance_
-BR_API void br_plotter_set_bottom_left(br_plot_instance_t* plot, float left, float bottom) {
+// TODO: rename to br_plot_
+BR_API void br_plotter_set_bottom_left(br_plot_t* plot, float left, float bottom) {
   // TODO 2D/3D
-  assert(plot->kind == br_plot_instance_kind_2d);
+  assert(plot->kind == br_plot_kind_2d);
   Vector2 bl = {left, bottom};
   Vector2 tr = {plot->dd.graph_rect.x + plot->dd.graph_rect.width, plot->dd.graph_rect.y};
   float newWidth = (tr.x - bl.x);
@@ -16,9 +16,9 @@ BR_API void br_plotter_set_bottom_left(br_plot_instance_t* plot, float left, flo
   plot->dd.offset.y -= (newHeight - plot->dd.graph_rect.height) / 2.f;
 }
 
-BR_API void br_plotter_set_top_right(br_plot_instance_t* plot, float right, float top) {
+BR_API void br_plotter_set_top_right(br_plot_t* plot, float right, float top) {
   // TODO 2D/3D
-  assert(plot->kind == br_plot_instance_kind_2d);
+  assert(plot->kind == br_plot_kind_2d);
   Vector2 tr = {right, top};
   Vector2 bl = {plot->dd.graph_rect.x, plot->dd.graph_rect.y - plot->dd.graph_rect.height};
   float newWidth = (tr.x - bl.x);
@@ -29,9 +29,9 @@ BR_API void br_plotter_set_top_right(br_plot_instance_t* plot, float right, floa
   plot->dd.offset.y += (newHeight - plot->dd.graph_rect.height) / 2.f;
 }
 
-BR_API void br_plotter_focus_visible(br_plot_instance_t* plot, points_groups_t const groups) {
+BR_API void br_plotter_focus_visible(br_plot_t* plot, points_groups_t const groups) {
   // TODO 2D/3D
-  assert(plot->kind == br_plot_instance_kind_2d);
+  assert(plot->kind == br_plot_kind_2d);
   if (groups.len == 0) return;
   size_t i = 0;
   while (i < groups.len && (groups.arr[i].len == 0 || false == groups.arr[i].is_selected)) ++i;

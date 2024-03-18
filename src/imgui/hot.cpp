@@ -149,10 +149,10 @@ extern "C" void br_hot_loop(br_plotter_t* br) {
       }
       if (ImGui::BeginPopup("SelectDimension")) {
           if (ImGui::Selectable("2D")) {
-            br_plotter_add_plot_instance_2d(br);
+            br_plotter_add_plot_2d(br);
           }
           if (ImGui::Selectable("3D")) {
-            br_plotter_add_plot_instance_3d(br);
+            br_plotter_add_plot_3d(br);
           }
           ImGui::EndPopup();
       }
@@ -186,7 +186,7 @@ extern "C" void br_hot_loop(br_plotter_t* br) {
   ImGui::Begin("3d");
   for (int i = 0; i < br->plots.len; ++i) {
     ImGui::PushID(i);
-    br_plot_instance_3d_t* pi3 = &br->plots.arr[i].ddd;
+    br_plot_3d_t* pi3 = &br->plots.arr[i].ddd;
     br::Input("Eyes", pi3->eye);
     br::Input("Target", pi3->target);
     br::Input("Up", pi3->up);

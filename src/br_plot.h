@@ -188,23 +188,10 @@ typedef struct {
   points_group_3d_t* arr;
 } points_groups_3d_t;
 
-struct br_plotter_t;
-#ifdef IMGUI
-#ifndef RELEASE
-typedef struct {
-  LOCK(lock)
-  void (*func_loop)(struct br_plotter_t* gv);
-  void (*func_init)(struct br_plotter_t* gv);
-  bool is_init_called;
-  void* handl;
-} br_hotreload_state_t;
-#endif
-#endif
-
 typedef enum {
-  br_plot_instance_kind_2d,
-  br_plot_instance_kind_3d
-} br_plot_instance_kind_t;
+  br_plot_kind_2d,
+  br_plot_kind_3d
+} br_plot_kind_t;
 
 typedef struct {
   br_shader_line_t* line_shader;
@@ -218,7 +205,7 @@ typedef struct {
   Vector2 offset;
   Vector2 delta;
   bool show_closest, show_x_closest, show_y_closest;
-} br_plot_instance_2d_t;
+} br_plot_2d_t;
 
 typedef struct {
   br_shader_grid_3d_t* grid_shader;
@@ -230,7 +217,7 @@ typedef struct {
     int* arr;
     int len, cap; 
   } groups_3d_to_show;
-} br_plot_instance_3d_t;
+} br_plot_3d_t;
 
 typedef struct {
   struct {
@@ -245,39 +232,17 @@ typedef struct {
   bool jump_around;
   bool mouse_inside_graph;
 
-  br_plot_instance_kind_t kind;
+  br_plot_kind_t kind;
   union {
-    br_plot_instance_2d_t dd;
-    br_plot_instance_3d_t ddd;
+    br_plot_2d_t dd;
+    br_plot_3d_t ddd;
   };
-} br_plot_instance_t;
+} br_plot_t;
 
 typedef struct {
-  br_plot_instance_t* arr;
+  br_plot_t* arr;
   int len, cap;
-} br_plot_instancies_t;
-
-typedef struct br_plotter_t {
-  points_groups_t groups;
-  points_groups_3d_t groups_3d;
-  br_plot_instancies_t plots;
-  br_shaders_t shaders;
-
-  // Any thread can write to this q, only render thread can pop
-  q_commands commands;
-#ifndef RELEASE
-#ifdef IMGUI
-#ifdef LINUX
-  br_hotreload_state_t hot_state;
-#endif
-#endif
-#endif
-  Vector2 mouse_graph_pos;
-
-  bool shaders_dirty;
-  bool file_saver_inited;
-  bool should_close;
-} br_plotter_t;
+} br_plots_t;
 
 typedef struct {
   float font_scale;
@@ -330,7 +295,7 @@ void smol_mesh_gen_line(br_shader_line_t* mesh, Vector2 p1, Vector2 p2, Color co
 void smol_mesh_gen_line_strip(br_shader_line_t* mesh, Vector2 const * points, size_t len, Color color);
 void smol_mesh_gen_line_strip_stride(br_shader_line_t* mesh, Vector2 const * points, ssize_t len, Color color, int stride);
 void smol_mesh_gen_bb(br_shader_line_t* mesh, bb_t bb, Color color);
-void smol_mesh_grid_draw(br_plot_instance_t* plot);
+void smol_mesh_grid_draw(br_plot_t* plot);
 
 void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, Vector3 p1, Vector3 p2, Color color);
 
@@ -340,12 +305,12 @@ BR_API void points_group_set_name(points_groups_t* pg_array, int group, br_str_t
 BR_API void points_group_push_y(points_groups_t* pg, float y, int group);
 BR_API void points_group_push_x(points_groups_t* pg, float x, int group);
 BR_API void points_group_push_xy(points_groups_t* pg, float x, float y, int group);
-BR_API void points_group_clear(points_groups_t* pg, br_plot_instancies_t plots, int group_id);
+BR_API void points_group_clear(points_groups_t* pg, br_plots_t plots, int group_id);
 // Only remove all points from a group, don't remove the group itself.
 BR_API void points_group_empty(points_group_t* pg);
 void points_group_export(points_group_t const* pg, FILE* file);
 void points_group_export_csv(points_group_t const* pg, FILE* file);
-void points_groups_draw(points_groups_t pg_array, br_plot_instance_t* shader);
+void points_groups_draw(points_groups_t pg_array, br_plot_t* shader);
 void points_groups_add_test_points(points_groups_t* pg_array);
 void points_groups_deinit(points_groups_t* pg_array);
 // Only remove all points from all groups, don't remove groups themselfs.
@@ -360,27 +325,13 @@ BR_API points_group_t* points_group_3d_get(points_groups_3d_t* pg_array, int gro
 resampling2_t* resampling2_malloc(void);
 void resampling2_empty(resampling2_t* res);
 void resampling2_free(resampling2_t* res);
-void resampling2_draw(resampling2_t const* res, points_group_t const* pg, br_plot_instance_t* rdi);
+void resampling2_draw(resampling2_t const* res, points_group_t const* pg, br_plot_t* rdi);
 void resampling2_add_point(resampling2_t* res, points_group_t const* pg, uint32_t index);
 
-BR_API br_plotter_t* br_plotter_malloc(void);
-BR_API void br_plotter_init(br_plotter_t* br, float width, float height);
-BR_API void br_plotter_resize(br_plotter_t* br, float width, float height);
-BR_API points_groups_t* br_plotter_get_points_groups(br_plotter_t* br);
-BR_API void br_plotter_set_bottom_left(br_plot_instance_t* plot, float left, float bottom);
-BR_API void br_plotter_set_top_right(br_plot_instance_t* plot, float right, float top);
-BR_API void br_plotter_focus_visible(br_plot_instance_t* plot, points_groups_t groups);
-void br_plotter_add_plot_instance_2d(br_plotter_t* br);
-void br_plotter_add_plot_instance_3d(br_plotter_t* br);
-void br_plot_instance_screenshot(br_plot_instance_t* br, points_groups_t groups, char const* path);
-void br_plotter_export(br_plotter_t const* br, char const* path);
-void br_plotter_export_csv(br_plotter_t const* br, char const* path);
-BR_API void br_plotter_free(br_plotter_t* br);
-BR_API void br_plotter_draw(br_plotter_t* br);
-BR_API void br_plotter_minimal(br_plotter_t* br);
-BR_API void br_plotter_frame_end(br_plotter_t* br);
+typedef struct br_plotter_t br_plotter_t;
 
-void br_keybinding_handle_keys(br_plotter_t* br, br_plot_instance_t* plot);
+void br_plot_screenshot(br_plot_t* br, points_groups_t groups, char const* path);
+void br_keybinding_handle_keys(br_plotter_t* br, br_plot_t* plot);
 
 #ifndef RELEASE
 // Start watching shaders folder for changes and
@@ -458,9 +409,9 @@ typedef enum {
 } br_file_saver_state_t;
 
 br_file_saver_state_t br_file_explorer(struct br_file_saver_s* fs);
-struct br_file_saver_s* br_file_saver_malloc(char const* title, char const* location, br_plot_instance_t const* plot);
+struct br_file_saver_s* br_file_saver_malloc(char const* title, char const* location, br_plot_t const* plot);
 void br_file_saver_get_path(struct br_file_saver_s const* fs, br_str_t* path);
-br_plot_instance_t const* br_file_saver_get_plot_instance(struct br_file_saver_s const* fs);
+br_plot_t const* br_file_saver_get_plot_instance(struct br_file_saver_s const* fs);
 void br_file_saver_free(struct br_file_saver_s* fs);
 #endif
 

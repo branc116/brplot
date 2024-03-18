@@ -1,4 +1,5 @@
 #include "br_plot.h"
+#include "br_plotter.h"
 #include "br_gui_internal.h"
 #include "br_help.h"
 #include "br_da.h"
@@ -61,15 +62,15 @@ BR_API points_groups_t* br_plotter_get_points_groups(br_plotter_t* br) {
   return &br->groups;
 }
 
-void br_plotter_add_plot_instance_2d(br_plotter_t* br) {
-  br_plot_instance_t plot = {
+void br_plotter_add_plot_2d(br_plotter_t* br) {
+  br_plot_t plot = {
     .groups_to_show = { 0 },
     .graph_screen_rect = { GRAPH_LEFT_PAD, 50, (float)GetScreenWidth() - GRAPH_LEFT_PAD - 60, (float)GetScreenHeight() - 110 },
     .resolution = { (float)GetScreenWidth(), (float)GetScreenHeight() },
     .follow = false,
     .jump_around = false,
     .mouse_inside_graph = false,
-    .kind = br_plot_instance_kind_2d,
+    .kind = br_plot_kind_2d,
     .dd =  {
       .line_shader = br->shaders.line,
       .grid_shader = br->shaders.grid,
@@ -81,15 +82,15 @@ void br_plotter_add_plot_instance_2d(br_plotter_t* br) {
   br_da_push_t(int, (br->plots), plot);
 }
 
-void br_plotter_add_plot_instance_3d(br_plotter_t* br) {
-  br_plot_instance_t plot = {
+void br_plotter_add_plot_3d(br_plotter_t* br) {
+  br_plot_t plot = {
     .groups_to_show = { 0 },
     .graph_screen_rect = { GRAPH_LEFT_PAD, 50, (float)GetScreenWidth() - GRAPH_LEFT_PAD - 60, (float)GetScreenHeight() - 110 },
     .resolution = { (float)GetScreenWidth(), (float)GetScreenHeight() },
     .follow = false,
     .jump_around = false,
     .mouse_inside_graph = false,
-    .kind = br_plot_instance_kind_3d,
+    .kind = br_plot_kind_3d,
     .ddd =  {
       .grid_shader = br->shaders.grid_3d,
       .line_shader = br->shaders.line_3d,
@@ -133,14 +134,14 @@ void br_plotter_update_variables(br_plotter_t* br) {
   Vector2 mouse_pos = GetMousePosition();
   br_plotter_update_context(br, mouse_pos);
   for (int i = 0; i < br->plots.len; ++i) {
-    br_plot_instance_t* plot = &br->plots.arr[i];
+    br_plot_t* plot = &br->plots.arr[i];
     switch (plot->kind) {
-      case br_plot_instance_kind_2d: {
-        if (br_plot_instance_update_variables_2d(plot, br->groups, mouse_pos))
+      case br_plot_kind_2d: {
+        if (br_plot_update_variables_2d(plot, br->groups, mouse_pos))
           br_keybinding_handle_keys(br, plot);
       } break;
-      case br_plot_instance_kind_3d: {
-        if (br_plot_instance_update_variables_3d(plot, br->groups, mouse_pos))
+      case br_plot_kind_3d: {
+        if (br_plot_update_variables_3d(plot, br->groups, mouse_pos))
           br_keybinding_handle_keys(br, plot);
       } break;
       default: assert(0);
@@ -157,7 +158,7 @@ void br_plotter_update_variables(br_plotter_t* br) {
       case q_command_pop:           break; //TODO
       case q_command_clear:         points_group_clear(&br->groups, br->plots, comm.clear.group); break;
       case q_command_clear_all:     points_groups_deinit(&br->groups); break;
-      case q_command_screenshot:    br_plot_instance_screenshot(&br->plots.arr[0], br->groups, comm.path_arg.path); free(comm.path_arg.path); break;
+      case q_command_screenshot:    br_plot_screenshot(&br->plots.arr[0], br->groups, comm.path_arg.path); free(comm.path_arg.path); break;
       case q_command_export:        br_plotter_export(br, comm.path_arg.path);     free(comm.path_arg.path); break;
       case q_command_exportcsv:     br_plotter_export_csv(br, comm.path_arg.path); free(comm.path_arg.path); break;
       case q_command_hide:          points_group_get(&br->groups, comm.hide_show.group)->is_selected = false; break;
@@ -213,13 +214,13 @@ void br_plotter_export_csv(br_plotter_t const* br, char const * path) {
 
 void br_plotter_update_context(br_plotter_t* br, Vector2 mouse_pos) {
 // TODO 2D/3D
-  for (int i = 0; i < br->plots.len; ++i) br_plot_instance_update_context(&br->plots.arr[i], mouse_pos);
+  for (int i = 0; i < br->plots.len; ++i) br_plot_update_context(&br->plots.arr[i], mouse_pos);
 }
 
-void draw_grid_numbers(br_plot_instance_t* plot) {
+void draw_grid_numbers(br_plot_t* plot) {
   // TODO 2D/3D
-  //assert(plot->kind == br_plot_instance_kind_2d);
-  if(plot->kind != br_plot_instance_kind_2d) return;
+  //assert(plot->kind == br_plot_kind_2d);
+  if(plot->kind != br_plot_kind_2d) return;
 
   TracyCFrameMarkStart("draw_grid_numbers");
   Rectangle r = plot->dd.graph_rect;

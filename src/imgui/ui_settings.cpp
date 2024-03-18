@@ -1,5 +1,6 @@
 #include "imgui.h"
 #include "src/br_plot.h"
+#include "src/br_plotter.h"
 #include "src/imgui/imgui_extensions.h"
 
 ImVec4 operator-(float f, ImVec4 v) {
@@ -79,8 +80,8 @@ namespace br {
         }
       }
       if (ImGui::CollapsingHeader("Scene")) {
-        br_plot_instance_t* plot = &br->plots.arr[0];
-        assert(plot->kind == br_plot_instance_kind_2d);
+        br_plot_t* plot = &br->plots.arr[0];
+        assert(plot->kind == br_plot_kind_2d);
         br::Input("Size", plot->dd.zoom);
         br::Input("Scene Center", plot->dd.offset);
         Vector2 tr{plot->dd.graph_rect.x + plot->dd.graph_rect.width, plot->dd.graph_rect.y};
@@ -106,8 +107,8 @@ namespace br {
         ImGui::LabelText("Not Raw", "Not raw: %d", not_raw_c);
       }
       if (ImGui::CollapsingHeader("Debug")) {
-        br_plot_instance_t* plot = &br->plots.arr[0];
-        assert(plot->kind == br_plot_instance_kind_2d);
+        br_plot_t* plot = &br->plots.arr[0];
+        assert(plot->kind == br_plot_kind_2d);
         ImGui::SliderFloat("Recoil", &plot->dd.recoil, 0.f, 1.1f);
         ImGui::SliderFloat("Font scale", &context.font_scale, 0.5f, 2.5f);
         ImGui::SliderFloat("Font scale", &context.font_scale, 0.5f, 2.5f);

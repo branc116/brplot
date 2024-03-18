@@ -6,8 +6,8 @@
 #include "src/br_da.h"
 #include "tracy/TracyC.h"
 
-bool br_plot_instance_update_variables_2d(br_plot_instance_t* plot, points_groups_t const groups, Vector2 mouse_pos) {
-  assert(plot->kind == br_plot_instance_kind_2d);
+bool br_plot_update_variables_2d(br_plot_t* plot, points_groups_t const groups, Vector2 mouse_pos) {
+  assert(plot->kind == br_plot_kind_2d);
   if (plot->follow) {
     Rectangle sr = plot->dd.graph_rect;
     Vector2 middle = { sr.x + sr.width/2, sr.y - sr.height/2 };
@@ -49,7 +49,7 @@ bool br_plot_instance_update_variables_2d(br_plot_instance_t* plot, points_group
       if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_CONTROL)) any = true, plot->dd.zoom.x *= .9f;
       if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_CONTROL)) any = true, plot->dd.zoom.y *= .9f;
       if (any) {
-        br_plot_instance_update_context(plot, mouse_pos);
+        br_plot_update_context(plot, mouse_pos);
         Vector2 now = plot->dd.mouse_pos;
         plot->dd.offset.x -= now.x - old.x;
         plot->dd.offset.y -= now.y - old.y;
@@ -75,8 +75,8 @@ bool br_plot_instance_update_variables_2d(br_plot_instance_t* plot, points_group
   return false;
 }
 
-bool br_plot_instance_update_variables_3d(br_plot_instance_t* plot, points_groups_t const groups, Vector2 mouse_pos) {
-  assert(plot->kind == br_plot_instance_kind_3d);
+bool br_plot_update_variables_3d(br_plot_t* plot, points_groups_t const groups, Vector2 mouse_pos) {
+  assert(plot->kind == br_plot_kind_3d);
   if (!plot->mouse_inside_graph) return false;
   if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
     Vector2 md = Vector2Scale(GetMouseDelta(), -0.003f);
@@ -101,9 +101,9 @@ bool br_plot_instance_update_variables_3d(br_plot_instance_t* plot, points_group
 }
 
 
-void br_plot_instance_update_shader_values(br_plot_instance_t* plot) {
+void br_plot_update_shader_values(br_plot_t* plot) {
   switch (plot->kind) {
-    case br_plot_instance_kind_2d: {
+    case br_plot_kind_2d: {
       TracyCFrameMarkStart("update_shader_values_2d");
       Vector2 zoom = plot->dd.zoom;
       Vector2 zoom_log = { .x = powf(10.f, -floorf(log10f(zoom.x))), .y = powf(10.f, -floorf(log10f(zoom.y))) };
@@ -121,7 +121,7 @@ void br_plot_instance_update_shader_values(br_plot_instance_t* plot) {
       plot->dd.line_shader->uvs.resolution_uv = *(Vector4*)&plot->graph_screen_rect;
       TracyCFrameMarkEnd("update_shader_values_2d");
     } break;
-    case br_plot_instance_kind_3d: {
+    case br_plot_kind_3d: {
       TracyCFrameMarkStart("update_shader_values_3d");
       Vector2 re = plot->ddd.grid_shader->uvs.resolution_uv = (Vector2) { .x = plot->graph_screen_rect.width, .y = plot->graph_screen_rect.height };
       Matrix per = MatrixPerspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
@@ -137,10 +137,10 @@ void br_plot_instance_update_shader_values(br_plot_instance_t* plot) {
   }
 }
 
-void br_plot_instance_update_context(br_plot_instance_t* plot, Vector2 mouse_pos) {
+void br_plot_update_context(br_plot_t* plot, Vector2 mouse_pos) {
   Vector2 mp_in_graph = { mouse_pos.x - plot->graph_screen_rect.x, mouse_pos.y - plot->graph_screen_rect.y };
   plot->mouse_inside_graph = CheckCollisionPointRec(mouse_pos, plot->graph_screen_rect);
-  if (plot->kind == br_plot_instance_kind_2d) {
+  if (plot->kind == br_plot_kind_2d) {
     plot->dd.mouse_pos = (Vector2) {
     -(plot->graph_screen_rect.width  - 2.f*mp_in_graph.x)/plot->graph_screen_rect.height*plot->dd.zoom.x/2.f + plot->dd.offset.x,
      (plot->graph_screen_rect.height - 2.f*mp_in_graph.y)/plot->graph_screen_rect.height*plot->dd.zoom.y/2.f + plot->dd.offset.y};
@@ -154,9 +154,9 @@ void br_plot_instance_update_context(br_plot_instance_t* plot, Vector2 mouse_pos
   }
 }
 
-void br_plot_instancies_remove_group(br_plot_instancies_t plots, int group) {
+void br_plot_remove_group(br_plots_t plots, int group) {
   for (int i = 0; i < plots.len; ++i) {
-    br_plot_instance_t plot = plots.arr[i];
+    br_plot_t plot = plots.arr[i];
     br_da_remove(plot.groups_to_show, group);
   }
 }

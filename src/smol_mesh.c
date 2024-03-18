@@ -181,12 +181,12 @@ void smol_mesh_gen_quad_3d_simple(br_shader_grid_3d_t* shader, Vector3 p1, Vecto
 }
 
 // TODO: This should be split to _gen and _draw
-void smol_mesh_grid_draw(br_plot_instance_t* plot) {
+void smol_mesh_grid_draw(br_plot_t* plot) {
   // TODO 2D/3D
   int h = (int)plot->graph_screen_rect.height;
   rlViewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
   switch (plot->kind) {
-    case br_plot_instance_kind_2d: {
+    case br_plot_kind_2d: {
       TracyCFrameMarkStart("grid_draw_2d");
       br_shader_grid_t* grid = plot->dd.grid_shader;
       assert(grid->len == 0);
@@ -202,7 +202,7 @@ void smol_mesh_grid_draw(br_plot_instance_t* plot) {
       grid->len = 0;
       TracyCFrameMarkEnd("grid_draw_2d");
     } break;
-    case br_plot_instance_kind_3d: {
+    case br_plot_kind_3d: {
       TracyCFrameMarkStart("grid_draw_3d");
       float sz = 10000.f;
       rlDisableBackfaceCulling();
