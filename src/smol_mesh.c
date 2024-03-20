@@ -1,9 +1,10 @@
+#include "br_smol_mesh.h"
 #include "br_plot.h"
-#include "src/br_shaders.h"
+
 #include "raymath.h"
-#include <math.h>
-#include <assert.h>
 #include "tracy/TracyC.h"
+
+#include <assert.h>
 
 void smol_mesh_gen_bb(br_shader_line_t* shader, bb_t bb, Color color) {
   float xmi = bb.xmin, ymi = bb.ymin , xma = bb.xmax, yma = bb.ymax;

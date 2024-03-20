@@ -105,7 +105,7 @@ BR_ALL_SHADERS(X, X_U, X_B)
 #undef X_B
 #undef X_U
 
-typedef struct {
+typedef struct br_shaders_t {
 #define X(NAME, CAP, UNIF, BUFF) br_shader_ ## NAME ## _t* NAME;
 BR_ALL_SHADERS(X, NOP2, NOP2)
 #undef X

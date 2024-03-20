@@ -1,17 +1,11 @@
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
 #include "src/br_gui_internal.h"
-
-#include <raymath.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <math.h>
-#include <stdarg.h>
-#include <string.h>
-#include <pthread.h>
-#include "raylib.h"
+#include "src/br_smol_mesh.h"
 #include "src/br_da.h"
+
+#include "raylib.h"
+#include "raymath.h"
 
 void emscripten_run_script(const char* script);
 static void update_resolution(br_plotter_t* gv);

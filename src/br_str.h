@@ -7,13 +7,13 @@
 extern "C" {
 #endif
 
-typedef struct {
+typedef struct br_str_t {
   char* str;
   unsigned int len;
   unsigned int cap;
 } br_str_t;
 
-typedef struct {
+typedef struct br_strv_t {
   const char* str;
   unsigned int len;
 } br_strv_t;

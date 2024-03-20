@@ -29,7 +29,7 @@ typedef enum {
   q_command_focus
 } q_command_type;
 
-typedef struct {
+typedef struct q_command {
   q_command_type type;
   union {
     float value;

@@ -12,21 +12,21 @@ typedef struct resampling2_t resampling2_t;
 typedef struct br_plot_t br_plot_t;
 typedef struct br_plots_t br_plots_t;
 
-typedef struct {
+typedef struct min_distances_t {
   Vector2 graph_point;
   Vector2 graph_point_x;
   Vector2 graph_point_y;
 } min_distances_t;
 
-typedef struct {
+typedef struct bb_3d_t {
   float xmin, ymin, zmin, xmax, ymax, zmax;
 } bb_3d_t;
 
-typedef struct bounding_box {
+typedef struct bb_t {
   float xmin, ymin, xmax, ymax;
 } bb_t;
 
-typedef struct {
+typedef struct br_data_t {
   int group_id;
   Color color;
   size_t cap, len;
@@ -39,7 +39,7 @@ typedef struct {
   bool is_new;
 } br_data_t;
 
-typedef struct {
+typedef struct br_data_3d_t {
   int group_id;
   Color color;
   size_t cap, len;
@@ -50,12 +50,12 @@ typedef struct {
   bool is_selected;
 } br_data_3d_t;
 
-typedef struct {
+typedef struct br_datas_t {
   size_t cap, len;
   br_data_t* arr;
 } br_datas_t;
 
-typedef struct {
+typedef struct br_datas_3d_t {
   size_t cap, len;
   br_data_3d_t* arr;
 } br_datas_3d_t;

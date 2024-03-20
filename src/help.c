@@ -1,10 +1,13 @@
+#include "br_resampling2.h"
 #include "br_plot.h"
-#include "src/br_help.h"
-#include "src/misc/default_font.h"
-#include "string.h"
-#include "math.h"
-#include <raylib.h>
-#include <raymath.h>
+#include "br_help.h"
+#include "misc/default_font.h"
+
+#include "raylib.h"
+#include "raymath.h"
+
+#include <string.h>
+#include <math.h>
 #include <stdio.h>
 
 void help_trim_zeros(char * buff) {

@@ -1,14 +1,21 @@
-#include <algorithm>
+#include "br_resampling2.h"
+#include "br_pp.h"
+#include "br_data.h"
 #include "br_plot.h"
-#include "stdint.h"
-#include "math.h"
-#include "string.h"
-#include "assert.h"
+#include "br_smol_mesh.h"
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#include "raylib.h"
 #include "raymath.h"
 #pragma GCC diagnostic pop
 #include "tracy/Tracy.hpp"
+
+#include <algorithm>
+#include <stdint.h>
+#include <math.h>
+#include <string.h>
+#include <assert.h>
 
 #define RESAMPLING_NODE_MAX_LEN 128
 #define RESAMPLING_RAW_NODE_MAX_LEN (RESAMPLING_NODE_MAX_LEN * 8)

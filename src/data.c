@@ -1,5 +1,7 @@
 #include "br_plot.h"
-#include "src/br_gui_internal.h"
+#include "br_resampling2.h"
+#include "br_smol_mesh.h"
+#include "br_gui_internal.h"
 
 #include "tracy/TracyC.h"
 #include "rlgl.h"

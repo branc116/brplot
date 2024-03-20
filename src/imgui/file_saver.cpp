@@ -27,7 +27,7 @@ typedef struct br_file_saver_s {
 
 static void file_saver_change_cwd_to(br_file_saver_t& fs, std::filesystem::path&& p);
 
-extern "C" br_file_saver_t* br_file_saver_malloc(char const* title, char const * location, br_plot_t const* plot) {
+br_file_saver_t* br_file_saver_malloc(char const* title, char const * location, br_plot_t const* plot) {
   br_file_saver_t* br = new br_file_saver_t();
   br->title = br_strv_from_c_str(title);
   br->plot = plot;
@@ -35,18 +35,18 @@ extern "C" br_file_saver_t* br_file_saver_malloc(char const* title, char const *
   return br;
 }
 
-extern "C" void br_file_saver_get_path(br_file_saver_t const* fs, br_str_t *path) {
+void br_file_saver_get_path(br_file_saver_t const* fs, br_str_t *path) {
   br_str_push_c_str(path, fs->cwd.string().c_str());
   if (path->str[path->len - 1] != '\\' || path->str[path->len - 1] != '/') br_str_push_char(path, '/');
   br_str_push_br_str(path, fs->name);
   br_str_push_c_str(path, ".png");
 }
 
-extern "C" br_plot_t const* br_file_saver_get_plot_instance(br_file_saver_s const* fs) {
+br_plot_t const* br_file_saver_get_plot_instance(br_file_saver_s const* fs) {
   return fs->plot;
 }
 
-extern "C" void br_file_saver_free(br_file_saver_t* f) {
+void br_file_saver_free(br_file_saver_t* f) {
   br_str_free(f->name);
   br_str_free(f->filter_string);
   delete f;

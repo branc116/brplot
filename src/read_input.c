@@ -43,7 +43,7 @@ typedef enum {
   input_lex_state_quoted
 } input_lex_state_t;
 
-typedef struct {
+typedef struct input_token_t {
   union {
     struct {
       float value_f;

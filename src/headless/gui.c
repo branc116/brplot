@@ -1,7 +1,9 @@
-#include "raylib.h"
 #include "src/br_da.h"
 #include "src/br_plotter.h"
 #include "src/br_gui_internal.h"
+#include "src/br_smol_mesh.h"
+
+#include "raylib.h"
 
 void br_gui_init_specifics_gui(br_plotter_t* br) {
   br_plot_t plot = { 

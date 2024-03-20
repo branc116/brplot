@@ -76,6 +76,7 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, Vecto
 }
 
 bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, Vector2 mouse_pos) {
+  (void)groups; (void)mouse_pos;
   assert(plot->kind == br_plot_kind_3d);
   if (!plot->mouse_inside_graph) return false;
   if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
@@ -118,7 +119,7 @@ void br_plot_update_shader_values(br_plot_t* plot) {
       plot->dd.line_shader->uvs.zoom_uv = plot->dd.zoom;
       plot->dd.line_shader->uvs.offset_uv = plot->dd.offset;
       plot->dd.line_shader->uvs.screen_uv = plot->resolution;
-      plot->dd.line_shader->uvs.resolution_uv = *(Vector4*)&plot->graph_screen_rect;
+      plot->dd.line_shader->uvs.resolution_uv = *(Vector4*)&plot->graph_screen_rect.x;
       TracyCFrameMarkEnd("update_shader_values_2d");
     } break;
     case br_plot_kind_3d: {
