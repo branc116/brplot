@@ -22,6 +22,7 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   help_draw_fps(0, 0);
   for (int i = 0; i < br->plots.len; ++i) {
     br_plot_t* plot = &br->plots.arr[i];
+    br_plot_update_variables(br, plot, br->groups, GetMousePosition());
     br_plot_update_shader_values(plot);
     draw_grid_numbers(plot);
     smol_mesh_grid_draw(plot);

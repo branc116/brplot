@@ -129,20 +129,6 @@ void br_plotter_update_variables(br_plotter_t* br) {
 #endif
   Vector2 mouse_pos = GetMousePosition();
   br_plotter_update_context(br, mouse_pos);
-  for (int i = 0; i < br->plots.len; ++i) {
-    br_plot_t* plot = &br->plots.arr[i];
-    switch (plot->kind) {
-      case br_plot_kind_2d: {
-        if (br_plot_update_variables_2d(plot, br->groups, mouse_pos))
-          br_keybinding_handle_keys(br, plot);
-      } break;
-      case br_plot_kind_3d: {
-        if (br_plot_update_variables_3d(plot, br->groups, mouse_pos))
-          br_keybinding_handle_keys(br, plot);
-      } break;
-      default: assert(0);
-    }
-  }
   handle_all_commands(br, br->commands);
 }
 
@@ -203,7 +189,7 @@ void draw_grid_numbers(br_plot_t* plot) {
   float font_size = 15.f * context.font_scale;
   char fmt[16];
 
-  if (r.height > 1) {
+  if (r.height > 0.f) {
     float exp = floorf(log10f(r.height / 2.f));
     if (false == isnan(exp)) {
       float base = powf(10.f, exp);
@@ -225,7 +211,7 @@ void draw_grid_numbers(br_plot_t* plot) {
     }
   }
 
-  if (r.width > 1.f) {
+  if (r.width > 0.f) {
     float exp = floorf(log10f(r.width / 2.f));
     if (false == isnan(exp)) {
       float base = powf(10.f, exp);

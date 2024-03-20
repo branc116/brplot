@@ -121,16 +121,20 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
   ImGui::NewFrame();
   ImGui::DockSpaceOverViewport();
   br_plotter_update_variables(gv);
+  Vector2 mouse_pos = GetMousePosition();
+  ImGuiID prev = 0;
   for (int i = 0; i < gv->plots.len; ++i) {
     ImGui::PushID(i);
     br_plot_t* plot = &gv->plots.arr[i];
     snprintf(context.buff, IM_ARRAYSIZE(context.buff), "Plot #%d", i);
+    ImGui::SetNextWindowDockID(prev, ImGuiCond_FirstUseEver);
     if (ImGui::Begin(context.buff) && false == ImGui::IsWindowHidden()) {
+      br_plot_update_variables(gv, plot, gv->groups, mouse_pos);
       ImVec2 p = ImGui::GetWindowPos();
       ImVec2 size = ImGui::GetWindowSize();
-
       graph_draw_min(gv->groups, plot, p.x, p.y, size.x, size.y, padding);
     }
+    prev = ImGui::GetWindowDockID();
     ImGui::End();
     ImGui::PopID();
   }

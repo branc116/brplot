@@ -6,6 +6,20 @@
 #include "src/br_da.h"
 #include "tracy/TracyC.h"
 
+void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t groups, Vector2 mouse_pos) {
+    switch (plot->kind) {
+      case br_plot_kind_2d: {
+        if (br_plot_update_variables_2d(plot, groups, mouse_pos))
+          br_keybinding_handle_keys(br, plot);
+      } break;
+      case br_plot_kind_3d: {
+        if (br_plot_update_variables_3d(plot, groups, mouse_pos))
+          br_keybinding_handle_keys(br, plot);
+      } break;
+      default: assert(0);
+    }
+}
+
 bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, Vector2 mouse_pos) {
   assert(plot->kind == br_plot_kind_2d);
   if (plot->follow) {
