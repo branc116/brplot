@@ -1,8 +1,8 @@
 #pragma once
 #include "raylib.h"
 #include <stddef.h>
-#include "stdio.h"
-#include "stdint.h"
+#include <stdio.h>
+#include <stdint.h>
 #include "br_shaders.h"
 #include "br_pp.h"
 #include "br_str.h"
@@ -13,73 +13,6 @@ extern "C" {
 #endif
 
 typedef enum {
-  q_command_none,
-  q_command_set_zoom_x,
-  q_command_set_zoom_y,
-  q_command_set_offset_x,
-  q_command_set_offset_y,
-  q_command_push_point_x,
-  q_command_push_point_y,
-  q_command_push_point_xy,
-  q_command_pop,
-  q_command_clear,
-  q_command_clear_all,
-  q_command_screenshot,
-  q_command_export,
-  q_command_exportcsv,
-  q_command_hide,
-  q_command_show,
-  q_command_set_name,
-  q_command_focus
-} q_command_type;
-
-extern char q_command_path[];
-
-typedef struct {
-  q_command_type type;
-  union {
-    float value;
-    struct {
-      float x;
-      int group;
-    } push_point_x;
-    struct {
-      float y;
-      int group;
-    } push_point_y;
-    struct {
-      int group;
-      float x, y;
-    } push_point_xy;
-    struct {
-      int group;
-    } pop;
-    struct {
-      int group;
-    } clear;
-    struct {
-      // Should be freed by UI thread
-      char* path;
-    } path_arg;
-    struct {
-      int group;
-    } hide_show;
-    struct {
-      int group;
-      // Should be freed by UI thread
-      br_str_t str;
-    } set_quoted_str;
-  };
-} q_command;
-
-typedef struct {
-  size_t read_index, write_index;
-  size_t capacity;
-  q_command* commands;
-  LOCK(push_mutex)
-} q_commands;
-
-typedef enum {
   resampling_dir_null = 0ul,
   resampling_dir_left = 1ul,
   resampling_dir_right = 2ul,
@@ -88,6 +21,7 @@ typedef enum {
 } resampling_dir;
 
 typedef struct resampling2_t resampling2_t;
+typedef struct br_hotreload_state_t br_hotreload_state_t;
 
 typedef enum {
   br_plot_kind_2d,
@@ -159,33 +93,6 @@ typedef struct {
 
 extern context_t context;
 
-void* br_malloc(size_t size);
-void* br_calloc(size_t n, size_t size);
-void* br_realloc(void *old, size_t newS);
-void  br_free(void* p);
-void* br_imgui_malloc(size_t size, void* user_data);
-void  br_imgui_free(void* p, void* user_data);
-
-#if !defined(RELEASE) && defined(LINUX)
-#define BR_MALLOC(size) malloc(size)
-#define BR_CALLOC calloc
-#define BR_REALLOC realloc
-#define BR_FREE free
-#define BR_IMGUI_MALLOC br_imgui_malloc
-#define BR_IMGUI_FREE br_imgui_free
-#include "signal.h"
-#define BR_ASSERT(x) if (!x) raise(SIGABRT)
-#else
-#include <stdlib.h>
-#define BR_ASSERT(x) assert(x)
-#define BR_MALLOC malloc
-#define BR_CALLOC calloc
-#define BR_REALLOC realloc
-#define BR_FREE free
-#define BR_IMGUI_MALLOC br_imgui_malloc
-#define BR_IMGUI_FREE br_imgui_free
-#endif
-
 Vector2 br_graph_to_screen(Rectangle graph_rect, Rectangle screen_rect, Vector2 point);
 
 //void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 mid_point, Vector2 tangent, Color color);
@@ -221,15 +128,6 @@ void read_input_start(br_plotter_t* br);
 void read_input_main_worker(br_plotter_t* br);
 int  read_input_read_next(void);
 void read_input_stop(void);
-
-void q_init(q_commands* q);
-#ifdef LOCK_T
-// If you know that only one thread writes to q use q_push, else use this.
-bool q_push_safe(q_commands* q, q_command command);
-#endif
-// If you know that only one thread writes to q us this, else use q_push_safe.
-bool q_push(q_commands* q, q_command command);
-q_command q_pop(q_commands* q);
 
 #ifndef IMGUI
 int     ui_draw_button(bool* is_pressed, float x, float y, float font_size, const char* str, ...);

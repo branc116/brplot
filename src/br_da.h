@@ -5,10 +5,11 @@
 
 #ifdef __cplusplus
 #define DECLTYPE(VALUE) decltype(VALUE)
+extern "C" {
 #else
 #define DECLTYPE(VALUE) void
 #endif
-  
+
 
 #define br_da_push_t(SIZE_T, ARR, VALUE) do {                          \
   if (ARR.cap == 0) {                                                  \
@@ -77,3 +78,8 @@
 } while(0)
 
 #define br_da_contains(T, ARR, V, CONTAINS) br_da_contains_t(size_t, ARR, V, CONTAINS)
+
+#ifdef __cplusplus
+}
+#endif
+  

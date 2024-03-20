@@ -1,8 +1,10 @@
-#include "imgui.h"
-#include "raylib.h"
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
+#include "src/br_q.h"
 #include "src/imgui/imgui_extensions.h"
+
+#include "imgui.h"
+#include "raylib.h"
 
 void br::ui_info(br_plotter_t* br) {
   ImGui::SetNextWindowBgAlpha(0.7f);
@@ -29,10 +31,10 @@ void br::ui_info(br_plotter_t* br) {
       }
     }
     if (ImGui::CollapsingHeader("Queue")) {
-      auto const& qc = br->commands;
-      int s = sprintf(context.buff, "Read  index: %lu", qc.read_index); ImGui::TextUnformatted(context.buff, context.buff + s);
-      s = sprintf(context.buff, "Write index: %lu", qc.write_index); ImGui::TextUnformatted(context.buff, context.buff + s);
-      s = sprintf(context.buff, "Length:      %lu", (qc.write_index - qc.read_index + qc.capacity) % qc.capacity); ImGui::TextUnformatted(context.buff, context.buff + s);
+      q_commands* qc = br->commands;
+      int s = sprintf(context.buff, "Read  index: %lu", qc->read_index); ImGui::TextUnformatted(context.buff, context.buff + s);
+      s = sprintf(context.buff, "Write index: %lu", qc->write_index); ImGui::TextUnformatted(context.buff, context.buff + s);
+      s = sprintf(context.buff, "Length:      %lu", (qc->write_index - qc->read_index + qc->capacity) % qc->capacity); ImGui::TextUnformatted(context.buff, context.buff + s);
     }
   }
   ImGui::End();

@@ -1,5 +1,6 @@
 #include "br_plot.h"
 #include "br_plotter.h"
+#include "br_q.h"
 #include "src/misc/tests.h"
 
 #include <stdlib.h>
@@ -93,19 +94,19 @@ typedef struct lex_state_s {
 } lex_state_t;
 
 static void input_reduce_y(br_plotter_t* gv, lex_state_t* s) {
-  if (s->should_push_eagre) q_push(&gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = 0, .y = s->tokens[0].value_f} });
+  if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = 0, .y = s->tokens[0].value_f} });
 }
 
 static void input_reduce_xy(br_plotter_t* gv, lex_state_t* s) {
-  if (s->should_push_eagre) q_push(&gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = 0, .x = s->tokens[0].value_f, .y = s->tokens[2].value_f} });
+  if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = 0, .x = s->tokens[0].value_f, .y = s->tokens[2].value_f} });
 }
 
 static void input_reduce_xygroup(br_plotter_t* gv, lex_state_t* s) {
-  if (s->should_push_eagre) q_push(&gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = s->tokens[4].value_i, .x = s->tokens[0].value_f, .y = s->tokens[2].value_f } });
+  if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = s->tokens[4].value_i, .x = s->tokens[0].value_f, .y = s->tokens[2].value_f } });
 }
 
 static void input_reduce_ygroup(br_plotter_t* gv, lex_state_t* s) {
-  if (s->should_push_eagre) q_push(&gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = s->tokens[2].value_i, .y = s->tokens[0].value_f } });
+  if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = s->tokens[2].value_i, .y = s->tokens[0].value_f } });
 }
 
 static void input_push_command_with_path(q_commands* commands, const char* path, q_command_type command) {
@@ -403,28 +404,28 @@ static extractor_res_state_t extractor_extract(br_strv_t ex, br_strv_t view, flo
 static void input_reduce_command(br_plotter_t* gv, lex_state_t* s) {
   (void)gv;
   if (0 == strcmp("zoomx", s->tokens[1].name)) {
-    q_push(&gv->commands, (q_command) { .type = q_command_set_zoom_x, .value = s->tokens[2].value_f});
+    q_push(gv->commands, (q_command) { .type = q_command_set_zoom_x, .value = s->tokens[2].value_f});
   } else if (0 == strcmp("focus", s->tokens[1].name)) {
-    q_push(&gv->commands, (q_command) { .type = q_command_focus });
+    q_push(gv->commands, (q_command) { .type = q_command_focus });
   } else if (0 == strcmp("zoomy", s->tokens[1].name)) {
-    q_push(&gv->commands, (q_command) { .type = q_command_set_zoom_y, .value = s->tokens[2].value_f});
+    q_push(gv->commands, (q_command) { .type = q_command_set_zoom_y, .value = s->tokens[2].value_f});
   } else if (0 == strcmp("zoom", s->tokens[1].name)) {
-    q_push(&gv->commands, (q_command) { .type = q_command_set_zoom_x, .value = s->tokens[2].value_f});
-    q_push(&gv->commands, (q_command) { .type = q_command_set_zoom_y, .value = s->tokens[2].value_f});
+    q_push(gv->commands, (q_command) { .type = q_command_set_zoom_x, .value = s->tokens[2].value_f});
+    q_push(gv->commands, (q_command) { .type = q_command_set_zoom_y, .value = s->tokens[2].value_f});
   } else if (0 == strcmp("offsetx", s->tokens[1].name)) {
-    q_push(&gv->commands, (q_command) { .type = q_command_set_offset_x, .value = s->tokens[2].value_f});
+    q_push(gv->commands, (q_command) { .type = q_command_set_offset_x, .value = s->tokens[2].value_f});
   } else if (0 == strcmp("offsety", s->tokens[1].name)) {
-    q_push(&gv->commands, (q_command) { .type = q_command_set_offset_y, .value = s->tokens[2].value_f});
+    q_push(gv->commands, (q_command) { .type = q_command_set_offset_y, .value = s->tokens[2].value_f});
   } else if (0 == strcmp("hide", s->tokens[1].name)) {
-    q_push(&gv->commands, (q_command) { .type = q_command_hide, .hide_show = { .group = s->tokens[2].value_i } });
+    q_push(gv->commands, (q_command) { .type = q_command_hide, .hide_show = { .group = s->tokens[2].value_i } });
   } else if (0 == strcmp("show", s->tokens[1].name)) {
-    q_push(&gv->commands, (q_command) { .type = q_command_show, .hide_show = { .group = s->tokens[2].value_i } });
+    q_push(gv->commands, (q_command) { .type = q_command_show, .hide_show = { .group = s->tokens[2].value_i } });
   } else if (0 == strcmp("exportcsv", s->tokens[1].name)) {
-    input_push_command_with_path(&gv->commands, s->tokens[2].name, q_command_exportcsv);
+    input_push_command_with_path(gv->commands, s->tokens[2].name, q_command_exportcsv);
   } else if (0 == strcmp("export", s->tokens[1].name)) {
-    input_push_command_with_path(&gv->commands, s->tokens[2].name, q_command_export);
+    input_push_command_with_path(gv->commands, s->tokens[2].name, q_command_export);
   } else if (0 == strcmp("screenshot", s->tokens[1].name)) {
-    input_push_command_with_path(&gv->commands, s->tokens[2].name, q_command_screenshot);
+    input_push_command_with_path(gv->commands, s->tokens[2].name, q_command_screenshot);
   } else if (0 == strcmp("exit", s->tokens[1].name)) {
     gv->should_close = true;
     exit(0);
@@ -443,7 +444,7 @@ static void input_reduce_command(br_plotter_t* gv, lex_state_t* s) {
         .str = s->tokens[3].br_str
       }
     };
-    q_push(&gv->commands, cmd);
+    q_push(gv->commands, cmd);
     s->tokens[3].kind = input_token_any;
   } else
     printf("Execute %c%c%c...\n", s->tokens[1].name[0], s->tokens[1].name[1], s->tokens[1].name[2]);
@@ -714,11 +715,11 @@ static void lex_step_extractor(br_plotter_t* br, lex_state_t* s) {
         int group = s->extractors.arr[i].group;
         extractor_res_state_t r = extractor_extract(br_str_as_view(s->extractors.arr[i].ex), br_str_as_view(s->cur_line), &x, &y);
         if (r == extractor_res_state_x) {
-          q_push(&br->commands, (q_command) { .type = q_command_push_point_x, .push_point_x = { .x = x, .group = group }});
+          q_push(br->commands, (q_command) { .type = q_command_push_point_x, .push_point_x = { .x = x, .group = group }});
         } else if (r == extractor_res_state_y) {
-          q_push(&br->commands, (q_command) { .type = q_command_push_point_y, .push_point_y = { .y = y, .group = group }});
+          q_push(br->commands, (q_command) { .type = q_command_push_point_y, .push_point_y = { .y = y, .group = group }});
         } else if (r == extractor_res_state_xy) {
-          q_push(&br->commands, (q_command) { .type = q_command_push_point_xy, .push_point_xy = { .x = x, .y = y, .group = group }});
+          q_push(br->commands, (q_command) { .type = q_command_push_point_xy, .push_point_xy = { .x = x, .y = y, .group = group }});
         }
       }
       s->cur_line.len = 0;
@@ -749,7 +750,7 @@ static void lex(br_plotter_t* br) {
     input_tokens_reduce(br, &s, true);
   } while (s.tokens_len > 0);
   lex_state_deinit(&s);
-  q_push(&br->commands, (q_command) { .type = q_command_focus });
+  q_push(br->commands, (q_command) { .type = q_command_focus });
 }
 
 void read_input_main_worker(br_plotter_t* gv) {
@@ -761,7 +762,7 @@ void read_input_main_worker(br_plotter_t* gv) {
 int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
   lex_state_t s;
   br_plotter_t br = {0};
-  q_init(&br.commands);
+  br.commands = q_malloc();
   for (size_t i = 0; i < str_len;) {
     if (s.read_next) {
       s.c = str[i++];
@@ -774,25 +775,25 @@ int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
     lex_step(&br, &s);
     input_tokens_reduce(&br, &s, true);
   }
-  free(br.commands.commands);
+  q_free(br.commands);
   return 0;  // Values other than 0 and -1 are reserved for future use.
 }
 
 #define TEST_COMMAND_SET_ZOOM(q, AXIS, VALUE) do { \
-  q_command c = q_pop(&q); \
+  q_command c = q_pop(q); \
   TEST_EQUAL(c.type, q_command_set_zoom_ ## AXIS); \
   TEST_EQUAL(c.value, VALUE); \
 } while(false)
 
 #define TEST_COMMAND_PUSH_POINT_Y(q, Y, GROUP) do { \
-  q_command c = q_pop(&q); \
+  q_command c = q_pop(q); \
   TEST_EQUAL(c.type, q_command_push_point_y); \
   TEST_EQUAL(c.push_point_y.y, Y); \
   TEST_EQUAL(c.push_point_y.group, GROUP); \
 } while(false)
 
 #define TEST_COMMAND_PUSH_POINT_XY(q, X, Y, GROUP) do { \
-  q_command c = q_pop(&q); \
+  q_command c = q_pop(q); \
   TEST_EQUAL(c.type, q_command_push_point_xy); \
   TEST_EQUAL(c.push_point_xy.x, X); \
   TEST_EQUAL(c.push_point_xy.y, Y); \
@@ -800,13 +801,13 @@ int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
 } while(false)
 
 #define TEST_COMMAND_END(q) do { \
-  q_command c = q_pop(&q); \
+  q_command c = q_pop(q); \
   TEST_EQUAL(c.type, q_command_none); \
-  BR_FREE(q.commands); \
+  q_free(q); \
 } while(false)
 
 #define TEST_COMMAND_SET_NAME(q, GROUP, NAME) do { \
-  q_command c = q_pop(&q); \
+  q_command c = q_pop(q); \
   TEST_EQUAL(c.type, q_command_set_name); \
   TEST_EQUAL(c.set_quoted_str.group, GROUP); \
   char* cstr = br_str_to_c_str(c.set_quoted_str.str); \
@@ -818,7 +819,7 @@ int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
 void test_input(br_plotter_t* br, const char* str) {
   lex_state_t s;
   lex_state_init(&s);
-  q_init(&br->commands);
+  br->commands = q_malloc();
   size_t str_len = strlen(str);
   for (size_t i = 0; i <= str_len;) {
     if (s.read_next) {

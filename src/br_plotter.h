@@ -1,14 +1,17 @@
+#pragma once
 #include "br_data.h"
 #include "br_plot.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
 struct br_plotter_t;
+typedef struct q_commands q_commands;
+
 #ifdef IMGUI
 #ifndef RELEASE
-typedef struct {
+typedef struct br_hotreload_state_t {
   LOCK(lock)
   void (*func_loop)(struct br_plotter_t* gv);
   void (*func_init)(struct br_plotter_t* gv);
@@ -25,7 +28,7 @@ typedef struct br_plotter_t {
   br_shaders_t shaders;
 
   // Any thread can write to this q, only render thread can pop
-  q_commands commands;
+  q_commands* commands;
 #ifndef RELEASE
 #ifdef IMGUI
 #ifdef LINUX

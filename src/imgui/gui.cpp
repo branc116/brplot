@@ -2,6 +2,7 @@
 #include "src/br_plotter.h"
 #include "src/br_gui_internal.h"
 #include "src/br_da.h"
+#include "src/br_pp.h"
 #include "imgui_extensions.h"
 
 #include "imgui.h"

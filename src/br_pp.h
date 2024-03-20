@@ -1,4 +1,5 @@
 #pragma once
+#include <stddef.h>
 
 #ifdef PLATFORM_WEB
 #include <emscripten.h>
@@ -39,8 +40,8 @@
 #define LOG(...)
 #define LOGI(...) fprintf(stderr, __VA_ARGS__)
 
-#ifdef WINDOWS
-typedef int64_t ssize_t;
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 // TODO: Move malloc stuff to it's own header file, maybe...
@@ -50,6 +51,10 @@ void* br_realloc(void *old, size_t newS);
 void  br_free(void* p);
 void* br_imgui_malloc(size_t size, void* user_data);
 void  br_imgui_free(void* p, void* user_data);
+
+#ifdef __cplusplus
+}
+#endif
 
 #if !defined(RELEASE) && defined(LINUX)
 #define BR_MALLOC(size) malloc(size)
@@ -70,4 +75,3 @@ void  br_imgui_free(void* p, void* user_data);
 #define BR_IMGUI_MALLOC br_imgui_malloc
 #define BR_IMGUI_FREE br_imgui_free
 #endif
-

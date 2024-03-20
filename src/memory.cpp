@@ -1,4 +1,5 @@
 #include "cstdlib"
+#include "br_pp.h"
 
 #if defined(LINUX) && !defined(RELEASE)
 #include "br_plot.h"

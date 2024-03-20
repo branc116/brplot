@@ -4,7 +4,6 @@
 #include "tracy/TracyC.h"
 #include "rlgl.h"
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

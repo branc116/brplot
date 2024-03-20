@@ -11,6 +11,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
+#include "src/br_q.h"
 #include "tracy/TracyC.h"
 
 context_t context;
@@ -30,7 +31,7 @@ BR_API void br_plotter_init(br_plotter_t* br, float width, float height) {
     .groups_3d = {0},
     .plots = {0},
     .shaders = {0},
-    .commands = {0},
+    .commands = NULL,
     .shaders_dirty = false,
   };
 #ifdef IMGUI
@@ -44,7 +45,7 @@ BR_API void br_plotter_init(br_plotter_t* br, float width, float height) {
 #endif
 #endif
   br->shaders = br_shaders_malloc();
-  q_init(&br->commands);
+  br->commands = q_malloc();
   help_load_default_font();
 
   context.font_scale = 1.8f;
@@ -112,12 +113,7 @@ BR_API void br_plotter_free(br_plotter_t* gv) {
   for (size_t i = 0; i < gv->groups.len; ++i) {
     br_datas_deinit(&gv->groups);
   }
-  q_command c = q_pop(&gv->commands);
-  while(c.type != q_command_none) {
-    if (c.type == q_command_set_name) br_str_free(c.set_quoted_str.str);
-    c = q_pop(&gv->commands);
-  }
-  BR_FREE(gv->commands.commands);
+  q_free(gv->commands);
   for (int i = 0; i < gv->plots.len; ++i) {
     BR_FREE(gv->plots.arr[i].groups_to_show.arr);
   }
@@ -147,28 +143,7 @@ void br_plotter_update_variables(br_plotter_t* br) {
       default: assert(0);
     }
   }
-
-  while (1) {
-    q_command comm = q_pop(&br->commands);
-    switch (comm.type) {
-      case q_command_none:          goto end;
-      case q_command_push_point_x:  br_data_push_x(&br->groups, comm.push_point_x.x, comm.push_point_y.group); break;
-      case q_command_push_point_y:  br_data_push_y(&br->groups, comm.push_point_y.y, comm.push_point_y.group); break;
-      case q_command_push_point_xy: br_data_push_xy(&br->groups, comm.push_point_xy.x, comm.push_point_xy.y, comm.push_point_xy.group); break;
-      case q_command_pop:           break; //TODO
-      case q_command_clear:         br_data_clear(&br->groups, &br->plots, comm.clear.group); break;
-      case q_command_clear_all:     br_datas_deinit(&br->groups); break;
-      case q_command_screenshot:    br_plot_screenshot(&br->plots.arr[0], br->groups, comm.path_arg.path); free(comm.path_arg.path); break;
-      case q_command_export:        br_plotter_export(br, comm.path_arg.path);     free(comm.path_arg.path); break;
-      case q_command_exportcsv:     br_plotter_export_csv(br, comm.path_arg.path); free(comm.path_arg.path); break;
-      case q_command_hide:          br_data_get(&br->groups, comm.hide_show.group)->is_selected = false; break;
-      case q_command_show:          br_data_get(&br->groups, comm.hide_show.group)->is_selected = true;  break;
-      case q_command_set_name:      br_data_set_name(&br->groups, comm.set_quoted_str.group, comm.set_quoted_str.str);  break;
-      case q_command_focus:         br_plotter_focus_visible(&br->plots.arr[0], br->groups); break;
-      default:                      BR_ASSERT(false);
-    }
-  }
-  end: return;
+  handle_all_commands(br, br->commands);
 }
 
 BR_API void br_plotter_frame_end(br_plotter_t* gv) {

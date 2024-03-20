@@ -5,6 +5,10 @@
 #include "stdlib.h"
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef RELEASE
 #define grid_fs "src/desktop/shaders/grid.fs"
 #define grid_vs "src/desktop/shaders/grid.vs"
@@ -115,3 +119,6 @@ br_shaders_t br_shaders_malloc(void);
 void br_shaders_free(br_shaders_t shaders);
 void br_shaders_refresh(br_shaders_t shaders);
 
+#ifdef __cplusplus
+}
+#endif

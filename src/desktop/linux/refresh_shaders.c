@@ -1,4 +1,5 @@
 #include "src/br_plot.h"
+#include "src/br_plotter.h"
 
 #include <pthread.h>
 #include <stdio.h>
