@@ -105,6 +105,45 @@ void smol_mesh_gen_line_strip(br_shader_line_t* shader, Vector2 const * points, 
   TracyCZoneEnd(gen_line_strip_ctx);
 }
 
+void smol_mesh_3d_gen_line_simple(br_shader_line_3d_simple_t* shader, Vector3 p1, Vector3 p2, Color color, Vector3 eye) {
+  int i = shader->len;
+  shader->len += 2;
+  if (shader->len > shader->cap) {
+    shader->len -= 2;
+    br_shader_line_3d_simple_draw(shader);
+    shader->len = 2;
+    i = 0;
+  }
+  Vector3* vecs = (Vector3*) &shader->vertexPosition_vbo[i*18];
+  Vector3* colors = (Vector3*) &shader->vertexColor_vbo[i*18];
+  Vector3* normals = (Vector3*) &shader->vertexNormal_vbo[i*18];
+  Vector3 const cv = {color.r/255.f, color.g/255.f, color.b/255.f};
+  //Vector3 mid = Vector3Scale(Vector3Add(p1, p2), 0.5f);
+  Vector3 diff = Vector3Normalize(Vector3Subtract(p2, p1));
+  float dist1 = 0.01f * Vector3Distance(eye, p1);
+  float dist2 = 0.01f * Vector3Distance(eye, p2);
+  dist1 = dist2 = (dist1 + dist2) * .5f;
+  Vector3 right1 = Vector3CrossProduct(Vector3Normalize(Vector3Subtract(eye, p1)), diff);
+  Vector3 right2 = Vector3CrossProduct(Vector3Normalize(Vector3Subtract(eye, p2)), diff);
+  normals[0] = Vector3Scale(right1, -dist1);
+  normals[1] = Vector3Scale(right1, dist1);
+  normals[2] = Vector3Scale(right2, dist2);
+
+  normals[3] = Vector3Scale(right2, dist2);
+  normals[4] = Vector3Scale(right2, -dist2);
+  normals[5] = Vector3Scale(right1, -dist1);
+
+  vecs[0] = Vector3Add(p1, normals[0]);
+  vecs[1] = Vector3Add(p1, normals[1]);
+  vecs[2] = Vector3Add(p2, normals[2]);
+
+  vecs[3] = Vector3Add(p2, normals[3]);
+  vecs[4] = Vector3Add(p2, normals[4]);
+  vecs[5] = Vector3Add(p1, normals[5]);
+
+  for (int j = 0; j < 6; ++j) colors[j] = cv;
+}
+
 void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, Vector3 p1, Vector3 p2, Color color) {
   Vector3 const cv = {color.r/255.f, color.g/255.f, color.b/255.f};
   //Vector3 mid   = Vector3Scale(Vector3Add(p1, p2), 0.5f);

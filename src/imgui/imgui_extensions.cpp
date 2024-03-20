@@ -58,4 +58,14 @@ namespace br {
       return 0;
     }, str);
   }
+
+  void ShowMatrix(const char* name, Matrix m) {
+    ImGui::PushID(name);
+    ImGui::LabelText("##name", "%s", name);
+    ImGui::LabelText("##0", "%5.4f %5.4f %.4f %.4f", m.m0, m.m1, m.m2, m.m3); 
+    ImGui::LabelText("##1", "%.4f %.4f %.4f %.4f", m.m4, m.m5, m.m6, m.m7); 
+    ImGui::LabelText("##2", "%.4f %.4f %.4f %.4f", m.m8, m.m9, m.m10, m.m11); 
+    ImGui::LabelText("##3", "%.4f %.4f %.4f %.4f", m.m12, m.m13, m.m14, m.m15); 
+    ImGui::PopID();
+  }
 }

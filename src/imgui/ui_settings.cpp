@@ -1,6 +1,7 @@
 #include "imgui.h"
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
+#include "src/br_da.h"
 #include "src/imgui/imgui_extensions.h"
 
 ImVec4 operator-(float f, ImVec4 v) {
@@ -9,7 +10,6 @@ ImVec4 operator-(float f, ImVec4 v) {
 
 extern float something;
 extern float something2;
-
 
 extern float stride_after;
 extern int max_stride;
@@ -47,14 +47,50 @@ namespace br {
           br->groups.arr[i].is_selected = true;
         }
       }
-      if (ImGui::CollapsingHeader("Plots", ImGuiTreeNodeFlags_DefaultOpen)) {
+      if (ImGui::CollapsingHeader("Plots")) {
+        ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_AutoSelectNewTabs | ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_FittingPolicyResizeDown;
+        tab_bar_flags &= ~(ImGuiTabBarFlags_FittingPolicyMask_ ^ ImGuiTabBarFlags_FittingPolicyResizeDown);
+        if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags)) {
+          if (ImGui::TabItemButton("+2D", ImGuiTabItemFlags_Leading | ImGuiTabItemFlags_NoTooltip)) {
+            br_plotter_add_plot_2d(br);
+          }
+          if (ImGui::TabItemButton("+3D", ImGuiTabItemFlags_Leading | ImGuiTabItemFlags_NoTooltip)) {
+            br_plotter_add_plot_3d(br);
+          }
+          for (int i = 0; i < br->plots.len; ++i) {
+            snprintf(context.buff, IM_ARRAYSIZE(context.buff), "Plot #%d", i);
+            bool open = true;
+            if (ImGui::BeginTabItem(context.buff, &open, ImGuiTabItemFlags_None)) {
+              ImGui::PushID(i);
+              for (size_t j = 0; j < br->groups.len; ++j) {
+                bool contains = false;
+                int group_id = br->groups.arr[j].group_id;
+                br_da_contains_t(int, br->plots.arr[i].groups_to_show, group_id, contains);
+                br_str_to_c_str1(br->groups.arr[j].name, context.buff);
+                if (ImGui::Checkbox(context.buff, &contains)) {
+                  if (contains) br_da_push_t(int, br->plots.arr[i].groups_to_show, group_id);
+                  else br_da_remove(br->plots.arr[i].groups_to_show, group_id);
+                }
+              }
+              ImGui::PopID();
+              ImGui::EndTabItem();
+            }
+            if (false == open) {
+              br_da_remove_at_t(int, br->plots, i);
+              --i;
+            }
+          }
+          ImGui::EndTabBar();
+        }
+      }
+      if (ImGui::CollapsingHeader("Data Groups", ImGuiTreeNodeFlags_DefaultOpen)) {
         for (size_t i = 0; i < br->groups.len; ++i) {
           auto& c = br->groups.arr[i].color;
           float colors[4] = { ((float)c.r)/255.f, ((float)c.g)/255.f, ((float)c.b)/255.f, ((float)c.a)/255.f};
           ImVec4 imcol = {colors[0], colors[1], colors[2], 1.f};
           ImVec4 imcol_inv = 1.f - imcol;
           imcol_inv.w = 1.f;
-          sprintf(&context.buff[2], "Plot %d", br->groups.arr[i].group_id);
+          sprintf(&context.buff[2], "Data Group %d", br->groups.arr[i].group_id);
           context.buff[0] = context.buff[1] = '#';
           ImGui::Checkbox(context.buff, &br->groups.arr[i].is_selected);
           ImGui::PushStyleColor(ImGuiCol_Text, imcol);

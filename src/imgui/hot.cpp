@@ -1,6 +1,7 @@
 #include "src/br_plot.h"
 #include "src/br_gui_internal.h"
 #include "src/imgui/imgui_extensions.h"
+#include "src/br_plotter.h"
 #include "raylib.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -9,198 +10,14 @@
 #include "raymath.h"
 #include "src/br_da.h"
 
-void ShowMatrix(const char* name, Matrix m) {
-  ImGui::PushID(name);
-  ImGui::LabelText("##name", "%s", name);
-  ImGui::LabelText("##0", "%5.4f %5.4f %.4f %.4f", m.m0, m.m1, m.m2, m.m3); 
-  ImGui::LabelText("##1", "%.4f %.4f %.4f %.4f", m.m4, m.m5, m.m6, m.m7); 
-  ImGui::LabelText("##2", "%.4f %.4f %.4f %.4f", m.m8, m.m9, m.m10, m.m11); 
-  ImGui::LabelText("##3", "%.4f %.4f %.4f %.4f", m.m12, m.m13, m.m14, m.m15); 
-  ImGui::PopID();
-}
-
 extern "C" void br_hot_init(br_plotter_t* gv) {
   fprintf(stderr, "First call\n");
-#if 0
-  rlDisableBackfaceCulling();
-#endif
-}
-
-void smol_mesh_gen_quad_3d_simple(br_shader_grid_3d_t* mesh, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, Color color) {
-#if 0
-  size_t c = mesh->cur_len++;
-  if (c >= mesh->capacity) {
-    smol_mesh_update(mesh);
-    smol_mesh_draw(mesh);
-    c = mesh->cur_len++;
-  }
-  c*=18;
-  Vector3 vc = {color.r/255.f, color.g/255.f, color.b/255.f};
-  for (size_t i = 0; i < 18; i += 3) {
-    mesh->colors[c+i+0] = vc.x;
-    mesh->colors[c+i+1] = vc.y;
-    mesh->colors[c+i+2] = vc.z;
-  }
-  Vector3* points = (Vector3*)&mesh->verticies[c];
-  points[0] = p1;
-  points[1] = p2;
-  points[2] = p3;
-
-  points[3] = p3;
-  points[4] = p4;
-  points[5] = p1;
-#endif
-}
-
-void smol_mesh_3d_gen_line_eye2(br_shader_line_t* mesh, Vector3 p1, Vector3 p2, Vector3 eye, Color color) {
-#if 0
-  Vector3 const cv = {color.r/255.f, color.g/255.f, color.b/255.f};
-  Vector3 mid   = Vector3MultiplyValue(Vector3Add(p1, p2), 0.5f);
-  Vector3 diff  = Vector3Normalize(Vector3Subtract(p2, p1));
-  Vector3 norm = { diff.z, -diff.x, diff.y }; 
-  norm = Vector3Perpendicular(diff);
-  Vector3Angle(p1, p2);
-  int n = 12;
-  float dist1 = 0.01f * Vector3Distance(eye, p1);
-  float dist2 = 0.01f * Vector3Distance(eye, p2);
-  for (int k = 0; k <= n; ++k) {
-    Vector3 next = Vector3Normalize(Vector3RotateByAxisAngle(norm, diff, (float)PI * 2 / (float)n));
-    size_t i = mesh->cur_len++;
-    if (i >= mesh->capacity) {
-      smol_mesh_3d_update(mesh);
-      smol_mesh_3d_draw(mesh);
-      i = mesh->cur_len++;
-    }
-    Vector3* vecs = (Vector3*) &mesh->verticies[i*18];
-    Vector3* colors = (Vector3*) &mesh->colors[i*18];
-    Vector3* normals = (Vector3*) &mesh->normals[i*18];
-    normals[0] = norm;
-    normals[1] = next;
-    normals[2] = norm;
-
-    normals[3] = norm;
-    normals[4] = next;
-    normals[5] = next;
-
-    vecs[0] = Vector3Add(p1, normals[0]);
-    vecs[1] = Vector3Add(p1, normals[1]);
-    vecs[2] = Vector3Add(p2, normals[2]);
-
-    vecs[3] = Vector3Add(p2, normals[3]);
-    vecs[4] = Vector3Add(p2, normals[4]);
-    vecs[5] = Vector3Add(p1, normals[5]);
-
-    for (int j = 0; j < 6; ++j) colors[j] = cv;
-    norm = next;
-  }
-#endif
-}
-
-void smol_mesh_3d_gen_line_eye(br_shader_line_t* mesh, Vector3 p1, Vector3 p2, Vector3 eye, Color color) {
-#if 0
-  size_t i = mesh->cur_len++;
-  if (i >= mesh->capacity) {
-    smol_mesh_3d_update(mesh);
-    smol_mesh_3d_draw(mesh);
-    i = mesh->cur_len++;
-  }
-  Vector3* vecs = (Vector3*) &mesh->verticies[i*18];
-  Vector3* colors = (Vector3*) &mesh->colors[i*18];
-  Vector3* normals = (Vector3*) &mesh->normals[i*18];
-  Vector3 const cv = {color.r/255.f, color.g/255.f, color.b/255.f};
-  Vector3 mid = Vector3MultiplyValue(Vector3Add(p1, p2), 0.5f);
-  Vector3 diff = Vector3Normalize(Vector3Subtract(p2, p1));
-  float dist1 = 0.01f * Vector3Distance(eye, p1);
-  float dist2 = 0.01f * Vector3Distance(eye, p2);
-  dist1 = dist2 = (dist1 + dist2) * .5f;
-  Vector3 right1 = Vector3CrossProduct(Vector3Normalize(Vector3Subtract(eye, p1)), diff);
-  Vector3 right2 = Vector3CrossProduct(Vector3Normalize(Vector3Subtract(eye, p2)), diff);
-  normals[0] = Vector3MultiplyValue(right1, -dist1);
-  normals[1] = Vector3MultiplyValue(right1, dist1);
-  normals[2] = Vector3MultiplyValue(right2, dist2);
-
-  normals[3] = Vector3MultiplyValue(right2, dist2);
-  normals[4] = Vector3MultiplyValue(right2, -dist2);
-  normals[5] = Vector3MultiplyValue(right1, -dist1);
-
-  vecs[0] = Vector3Add(p1, normals[0]);
-  vecs[1] = Vector3Add(p1, normals[1]);
-  vecs[2] = Vector3Add(p2, normals[2]);
-
-  vecs[3] = Vector3Add(p2, normals[3]);
-  vecs[4] = Vector3Add(p2, normals[4]);
-  vecs[5] = Vector3Add(p1, normals[5]);
-
-  for (int j = 0; j < 6; ++j) colors[j] = cv;
-#endif
 }
 
 bool focused = false;
 float translate_speed = 1.0f;
 
 extern "C" void br_hot_loop(br_plotter_t* br) {
-  if (ImGui::Begin("Plot instancies")) {
-    ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_AutoSelectNewTabs | ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_FittingPolicyResizeDown;
-    tab_bar_flags &= ~(ImGuiTabBarFlags_FittingPolicyMask_ ^ ImGuiTabBarFlags_FittingPolicyResizeDown);
-    if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags)) {
-      if (ImGui::TabItemButton("+", ImGuiTabItemFlags_Leading | ImGuiTabItemFlags_NoTooltip)) {
-        ImGui::OpenPopup("SelectDimension");
-        printf("HELLO\n");
-      }
-      if (ImGui::BeginPopup("SelectDimension")) {
-          if (ImGui::Selectable("2D")) {
-            br_plotter_add_plot_2d(br);
-          }
-          if (ImGui::Selectable("3D")) {
-            br_plotter_add_plot_3d(br);
-          }
-          ImGui::EndPopup();
-      }
-      for (int i = 0; i < br->plots.len; ++i) {
-        snprintf(context.buff, IM_ARRAYSIZE(context.buff), "Plot #%d", i);
-        bool open = true;
-        if (ImGui::BeginTabItem(context.buff, &open, ImGuiTabItemFlags_None)) {
-          ImGui::PushID(i);
-          for (size_t j = 0; j < br->groups.len; ++j) {
-            bool contains = false;
-            int group_id = br->groups.arr[j].group_id;
-            br_da_contains_t(int, br->plots.arr[i].groups_to_show, group_id, contains);
-            br_str_to_c_str1(br->groups.arr[j].name, context.buff);
-            if (ImGui::Checkbox(context.buff, &contains)) {
-              if (contains) br_da_push_t(int, br->plots.arr[i].groups_to_show, group_id);
-              else br_da_remove(br->plots.arr[i].groups_to_show, group_id);
-            }
-          }
-          ImGui::PopID();
-          ImGui::EndTabItem();
-        }
-        if (false == open) {
-          br_da_remove_at_t(int, br->plots, i);
-          --i;
-        }
-      }
-      ImGui::EndTabBar();
-    }
-  }
-  ImGui::End();
-  ImGui::Begin("3d");
-  for (int i = 0; i < br->plots.len; ++i) {
-    ImGui::PushID(i);
-    br_plot_3d_t* pi3 = &br->plots.arr[i].ddd;
-    br::Input("Eyes", pi3->eye);
-    br::Input("Target", pi3->target);
-    br::Input("Up", pi3->up);
-    if (ImGui::Button("Reset") || IsKeyPressed(KEY_R)) {
-      pi3->eye = Vector3 { 0, 0, 100 };
-      pi3->target = Vector3 { 0, 0, 0 };
-      pi3->up = Vector3 { 0, 1, 0 };
-    }
-    ImGui::InputFloat("FovY", &pi3->fov_y);
-    ImGui::InputFloat("Near", &pi3->near_plane);
-    ImGui::InputFloat("Far", &pi3->far_plane);
-    ImGui::PopID();
-  }
-  ImGui::End();
 #if 0
 
   //rlSetUniformMatrix(gv->grid3dShader.uMatProjection, gv->uvMatProjection);
@@ -290,46 +107,6 @@ extern "C" void br_hot_loop(br_plotter_t* br) {
         gv->target = Vector3Add(Vector3RotateByAxisAngle(diff, Vector3 { 0.f, 1.f, 0.f }, -0.01f), gv->eye);
       }
     }
-    glUseProgram(gv->grid3dShader.shader.id);
-    Vector2 screen = { (float)GetRenderWidth(), (float)GetRenderHeight() };
-    float sz = 10000.f;
-    Rectangle r = { .x = v.x / screen.x * 2, .y = 2.f -2.f*(v.y + size.y) / screen.y, .width = 2 * size.x / screen.x, .height = 2 * size.y / screen.y };
-    Rectangle r1 = { .x = v.x, .y = GetScreenHeight() - v.y , .width = size.x, .height = -size.y };
-    Rectangle r3 = { .x = -sz, .y = -sz, .width = sz * 2.f, .height = sz * 2.f };
-
-    int loc = GetShaderLocation(gv->grid3dShader.shader, "eye");
-    rlSetUniform(gv->grid3dShader.uResolution, &r1, RL_SHADER_UNIFORM_VEC4, 1);
-    rlSetUniform(gv->grid3dShader.uScreen, &screen, RL_SHADER_UNIFORM_VEC2, 1);
-    rlSetUniform(gv->grid3dShader.uOffset, &gv->eye, RL_SHADER_UNIFORM_VEC3, 1);
-    rlSetUniform(loc, &gv->eye, RL_SHADER_UNIFORM_VEC3, 1);
-
-    Matrix trans = MatrixTranslate(r.x, r.y, 0.f);
-    gv->uvMatProjection = MatrixPerspective(gv->fov_y, screen.x / screen.y, gv->near_plane, gv->far_plane);
-    gv->uvMatView = MatrixLookAt(gv->eye, gv->target, gv->up);
-    Matrix end = MatrixIdentity();
-    end = MatrixMultiply(end, gv->uvMatView);
-    end = MatrixMultiply(end, gv->uvMatProjection);
-    end = MatrixMultiply(end, trans);
-    gv->uvMvp = end;
-    rlSetUniformMatrix(gv->grid3dShader.uMvp, gv->uvMvp);
-    
-    smol_mesh_gen_quad_simple(gv->graph_mesh_3d, r3, Color {0, 0, 1, 0});
-    smol_mesh_gen_quad_3d_simple(gv->graph_mesh_3d, Vector3 { -sz, 0, -sz }, Vector3 { sz, 0, -sz }, Vector3 { sz, 0, sz }, Vector3 { -sz, 0, sz }, Color {0, 1, 0, 0});
-    smol_mesh_update(gv->graph_mesh_3d);
-    smol_mesh_draw(gv->graph_mesh_3d);
-
-    glUseProgram(gv->lines3dShader.shader.id);
-    loc = GetShaderLocation(gv->lines3dShader.shader, "eye");
-    rlSetUniformMatrix(gv->lines3dShader.uMvp, gv->uvMvp);
-    rlSetUniform(loc, &gv->eye, RL_SHADER_UNIFORM_VEC3, 1);
-
-    rlEnableDepthTest();
-    smol_mesh_3d_gen_line_eye(gv->lines_mesh_3d, Vector3 { 0, 0, 0 }, Vector3 { 10, 10, 0 }, gv->eye, GREEN);
-    smol_mesh_3d_gen_line_eye(gv->lines_mesh_3d, Vector3 { 0, 0, 0 }, Vector3 { 10, 10, 10 }, gv->eye, GREEN);
-    smol_mesh_3d_gen_line_eye(gv->lines_mesh_3d, Vector3 { 0, 0, 0 }, Vector3 { 10, 0, 0 }, gv->eye, BLUE);
-    smol_mesh_3d_update(gv->lines_mesh_3d);
-    smol_mesh_3d_draw(gv->lines_mesh_3d);
-    rlDisableDepthTest();
   }
   ImGui::End();
 #endif
