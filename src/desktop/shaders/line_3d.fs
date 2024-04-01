@@ -2,7 +2,6 @@
 
 precision mediump float;
 
-in vec3 pos;
 in vec3 color;
 in vec3 normal;
 
