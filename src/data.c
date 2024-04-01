@@ -120,7 +120,6 @@ void br_datas_add_test_points(br_datas_t* pg) {
     for (int i = 0; i < 1024; ++i)
       br_data_push_point(g, (Vector2){(float)g->len/128.f, sinf((float)g->len/128.f)});
   }
-  return;
   {
     int group = 1;
     br_data_t* g = br_data_get(pg, group);
@@ -168,19 +167,8 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot) {
     for (int j = 0; j < plot->groups_to_show.len; ++j) {
       int group = plot->groups_to_show.arr[j];
       br_data_t const* g = br_data_get1(pg, group);
-      if (g == NULL) {
-        for (size_t k = 0; k < pg.len; ++k) {
-          fprintf(stderr, "k = %lu, group = %d\n", k, pg.arr[k].group_id);
-        }
-        for (int k = 0; k < plot->groups_to_show.len; ++k) {
-          fprintf(stderr, "h = %d, group = %d\n", k, plot->groups_to_show.arr[k]);
-        }
-        fprintf(stderr, "j = %d, group = %d\n", j, group);
-      }
       if (g->len == 0) continue;
-      if (g->is_selected) {
-        resampling2_draw(g->resampling, g, plot);
-      }
+      resampling2_draw(g->resampling, g, plot);
     }
     if (plot->dd.line_shader->len > 0) {
       br_shader_line_draw(plot->dd.line_shader);
