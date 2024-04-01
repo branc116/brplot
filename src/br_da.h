@@ -4,7 +4,8 @@
 #include "br_pp.h"
 
 #ifdef __cplusplus
-#define DECLTYPE(VALUE) decltype(VALUE)
+#include <type_traits>
+#define DECLTYPE(VALUE) std::remove_reference<decltype((VALUE))>::type
 extern "C" {
 #else
 #define DECLTYPE(VALUE) void
@@ -12,24 +13,24 @@ extern "C" {
 
 
 #define br_da_push_t(SIZE_T, ARR, VALUE) do {                          \
-  if (ARR.cap == 0) {                                                  \
-    ARR.arr = (DECLTYPE(VALUE)*)BR_MALLOC(sizeof(*ARR.arr));           \
-    if (ARR.arr != NULL) {                                             \
-      ARR.cap = 1;                                                     \
-      ARR.arr[ARR.len++] = (VALUE);                                    \
+  if ((ARR).cap == 0) {                                                  \
+    (ARR).arr = (DECLTYPE((VALUE))*)BR_MALLOC(sizeof(*(ARR).arr));           \
+    if ((ARR).arr != NULL) {                                             \
+      (ARR).cap = 1;                                                     \
+      (ARR).arr[(ARR).len++] = (VALUE);                                    \
     }                                                                  \
   }                                                                    \
-  else if (ARR.len < ARR.cap) ARR.arr[ARR.len++] = (VALUE);            \
+  else if ((ARR).len < (ARR).cap) (ARR).arr[(ARR).len++] = (VALUE);            \
   else {                                                               \
-    SIZE_T cap_diff = ARR.cap;                                         \
+    SIZE_T cap_diff = (ARR).cap;                                         \
     bool is_ok = false;                                                \
     while (!is_ok && cap_diff > 0) {                                   \
-      SIZE_T new_cap =  ARR.cap + cap_diff;                            \
-      DECLTYPE(VALUE)* new_arr = (DECLTYPE(VALUE)*)BR_REALLOC(ARR.arr, (size_t)new_cap * sizeof(*ARR.arr)); \
+      SIZE_T new_cap =  (ARR).cap + cap_diff;                            \
+      DECLTYPE((VALUE))* new_arr = (DECLTYPE((VALUE))*)BR_REALLOC((ARR).arr, (size_t)new_cap * sizeof(*(ARR).arr)); \
       if (new_arr) {                                                   \
-        ARR.arr = new_arr;                                             \
-        ARR.cap = new_cap;                                             \
-        ARR.arr[ARR.len++] = (VALUE);                                  \
+        (ARR).arr = new_arr;                                             \
+        (ARR).cap = new_cap;                                             \
+        (ARR).arr[(ARR).len++] = ((VALUE));                                  \
         is_ok = true; \
       } else {                                                         \
         cap_diff >>= 1;                                                \
