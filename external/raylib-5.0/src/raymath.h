@@ -398,8 +398,13 @@ RMAPI Vector2 Vector2TransformScale(Vector2 v, Matrix mat)
     float y = v.y;
 
     float w = mat.m3*x + mat.m7*y + mat.m15;
-    result.x = (mat.m0*x + mat.m4*y + mat.m12)/w;
-    result.y = (mat.m1*x + mat.m5*y + mat.m13)/w;
+    if (fabsf(w) > 1e-5) {
+      result.x = (mat.m0*x + mat.m4*y + mat.m12)/w;
+      result.y = (mat.m1*x + mat.m5*y + mat.m13)/w;
+    } else {
+      result.x = (mat.m0*x + mat.m4*y + mat.m12);
+      result.y = (mat.m1*x + mat.m5*y + mat.m13);
+    }
 
     return result;
 }

@@ -35,6 +35,7 @@ struct resampling2_nodes_t {
   }
 
   constexpr bool is_inside_3d(Vector2 const* points, Matrix mat) {
+    if (len == 0) return false;
     Vector2 minx = Vector2TransformScale(points[min_index_x], mat),
             miny = Vector2TransformScale(points[min_index_y], mat),
             maxx = Vector2TransformScale(points[max_index_x], mat),
@@ -44,7 +45,7 @@ struct resampling2_nodes_t {
     float My = fmaxf(fmaxf(minx.y, miny.y), fmaxf(maxy.y, maxx.y));
     float Mx = fmaxf(fmaxf(minx.x, miny.x), fmaxf(maxy.x, maxx.x));
     Rectangle rect = { -1, 1, 2, 2 };
-    return !((my > rect.y) || (My < rect.y - rect.height) || (mx > rect.x + rect.width) || (Mx < rect.x));
+    return CheckCollisionRecs(rect, Rectangle { mx, My, Mx - mx, My - my });
   }
   constexpr Vector2 get_ratios(Vector2 const* points, float screen_width, float screen_height) const {
     float xr = points[max_index_x].x - points[min_index_x].x, yr = points[max_index_y].y - points[min_index_y].y;

@@ -18,14 +18,14 @@ bool focused = false;
 float translate_speed = 1.0f;
 
 extern "C" void br_hot_loop(br_plotter_t* br) {
-  return;
+  if (br->plots.len < 2) return;
   if (ImGui::Begin("TestMath")) {
     Matrix mvp = br->plots.arr[1].ddd.grid_shader->uvs.m_mvp_uv;
-    Vector2 v = { 3, 0 };
-    Vector2 vt1 = Vector2Transform(v, MatrixTranspose(mvp));
-    Vector2 vt2 = Vector2Transform(v, mvp);
-    ImGui::Text("(%f, %f) -> (%f, %f)", v.x, v.y, vt1.x, vt1.y);
+    Vector3 eye = br->plots.arr[1].ddd.eye;
+    Vector2 v = { 3, 3 };
+    Vector2 vt2 = Vector2TransformScale(v, mvp);
     ImGui::Text("(%f, %f) -> (%f, %f)", v.x, v.y, vt2.x, vt2.y);
+    ImGui::Text("(%f, %f, %f)", eye.x, eye.y, eye.z);
   }
   ImGui::End();
 
