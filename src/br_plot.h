@@ -2,9 +2,7 @@
 #include "raylib.h"
 #include <stddef.h>
 #include <stdio.h>
-#include <stdint.h>
 #include "br_shaders.h"
-#include "br_pp.h"
 #include "br_data.h"
 
 #ifdef __cplusplus

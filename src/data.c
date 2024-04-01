@@ -185,11 +185,7 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot) {
     for (int j = 0; j < plot->groups_to_show.len; ++j) {
       int group = plot->groups_to_show.arr[j];
       br_data_t const* g = br_data_get1(pg, group);
-      for (size_t i = 0; i < g->len - 1; ++i) {
-        Vector3 p1 = { g->points[i].x, g->points[i].y, 0 };
-        Vector3 p2 = { g->points[i + 1].x, g->points[i + 1].y, 0 };
-        smol_mesh_3d_gen_line(plot->ddd.line_shader, p1, p2, g->color);
-      }
+      resampling2_draw(g->resampling, g, plot);
     }
     if (plot->ddd.line_shader->len > 0) {
       br_shader_line_3d_draw(plot->ddd.line_shader);

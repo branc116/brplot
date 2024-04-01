@@ -8,6 +8,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #include "raylib.h"
+#include "raymath.h"
 #pragma GCC diagnostic pop
 #include "tracy/Tracy.hpp"
 
@@ -33,9 +34,32 @@ struct resampling2_nodes_t {
     return !((miny > rect.y) || (maxy < rect.y - rect.height) || (minx > rect.x + rect.width) || (maxx < rect.x));
   }
 
+  constexpr bool is_inside_3d(Vector2 const* points, Matrix mat) {
+    Vector2 minx = Vector2TransformScale(points[min_index_x], mat),
+            miny = Vector2TransformScale(points[min_index_y], mat),
+            maxx = Vector2TransformScale(points[max_index_x], mat),
+            maxy = Vector2TransformScale(points[max_index_y], mat);
+    float my = fminf(fminf(minx.y, miny.y), fminf(maxy.y, maxx.y));
+    float mx = fminf(fminf(minx.x, miny.x), fminf(maxy.x, maxx.x));
+    float My = fmaxf(fmaxf(minx.y, miny.y), fmaxf(maxy.y, maxx.y));
+    float Mx = fmaxf(fmaxf(minx.x, miny.x), fmaxf(maxy.x, maxx.x));
+    Rectangle rect = { -1, 1, 2, 2 };
+    return !((my > rect.y) || (My < rect.y - rect.height) || (mx > rect.x + rect.width) || (Mx < rect.x));
+  }
   constexpr Vector2 get_ratios(Vector2 const* points, float screen_width, float screen_height) const {
     float xr = points[max_index_x].x - points[min_index_x].x, yr = points[max_index_y].y - points[min_index_y].y;
     return {xr / screen_width, yr / screen_height};
+  }
+  constexpr Vector2 get_ratios_3d(Vector2 const* points, Matrix mvp) const {
+    Vector2 minx = Vector2TransformScale(points[min_index_x], mvp),
+            miny = Vector2TransformScale(points[min_index_y], mvp),
+            maxx = Vector2TransformScale(points[max_index_x], mvp),
+            maxy = Vector2TransformScale(points[max_index_y], mvp);
+    float my = fminf(fminf(minx.y, miny.y), fminf(maxy.y, maxx.y));
+    float mx = fminf(fminf(minx.x, miny.x), fminf(maxy.x, maxx.x));
+    float My = fmaxf(fmaxf(minx.y, miny.y), fmaxf(maxy.y, maxx.y));
+    float Mx = fmaxf(fmaxf(minx.x, miny.x), fmaxf(maxy.x, maxx.x));
+    return {(Mx - mx) / 2.f, (My - my) / 2.f};
   }
   int64_t get_last_point() const {
     if (len == 0) return -1;
@@ -151,7 +175,7 @@ int not_raw_c = 0;
 
 static void resampling2_draw(resampling2_nodes_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot) {
   assert(plot->kind == br_plot_kind_2d);
-  ZoneScopedN("resampling2_draw_not_raw");
+  ZoneScopedN("resampling2_2d");
   Vector2 const* ps = pg->points;
   Rectangle rect = plot->dd.graph_rect;
   resampling2_nodes_t node = nodes->arr[index];
@@ -185,11 +209,49 @@ static void resampling2_draw(resampling2_nodes_allocator_t const* const nodes, s
   }
 }
 
+static void resampling2_draw_3d(resampling2_nodes_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot) {
+  assert(plot->kind == br_plot_kind_3d);
+  ZoneScopedN("resampling2_3d");
+  Vector2 const* ps = pg->points;
+  resampling2_nodes_t node = nodes->arr[index];
+  Matrix mvp = plot->ddd.line_shader->uvs.m_mvp_uv;
+  if (false == node.is_inside_3d(ps, mvp)) return;
+  bool is_end = pg->len == node.index_start + node.len;
+  if (node.depth == 0) { // This is the leaf node
+    smol_mesh_3d_gen_line_strip2(plot->ddd.line_shader, &ps[node.index_start], node.len + (is_end ? 0 : 1), pg->color);
+    return;
+  }
+  Vector2 ratios = node.get_ratios_3d(ps, mvp);
+  float rmin = fminf(ratios.x, ratios.y);
+  if (rmin < (node.depth == 1 ? something : something2)) {
+    size_t indexies[] = {
+      node.index_start,
+      node.min_index_x,
+      node.min_index_y,
+      node.max_index_x,
+      node.max_index_y,
+      node.index_start + node.len - (is_end ? 1 : 0)
+    };
+    std::sort(indexies, &indexies[5]);
+    Vector2 pss[] = {
+      ps[indexies[0]], ps[indexies[1]],
+      ps[indexies[2]], ps[indexies[3]],
+      ps[indexies[4]], ps[indexies[5]],
+    };
+    smol_mesh_3d_gen_line_strip2(plot->ddd.line_shader, pss, 6, pg->color);
+  } else {
+    resampling2_draw_3d(nodes, node.child1, pg, plot);
+    resampling2_draw_3d(nodes, node.child2, pg, plot);
+  }
+}
+
 void resampling2_draw(resampling2_t const* res, br_data_t const* pg, br_plot_t* plot) {
   ZoneScopedN("resampline2_draw0");
-  assert(plot->kind == br_plot_kind_2d);
 
-  resampling2_draw(&res->resamp, 0, pg, plot);
+  switch (plot->kind) {
+    case br_plot_kind_2d: resampling2_draw(&res->resamp, 0, pg, plot); break;
+    case br_plot_kind_3d: resampling2_draw_3d(&res->resamp, 0, pg, plot); break;
+  }
 }
 
 static void resampling2_nodes_debug_print(FILE* file, resampling2_nodes_allocator_t const* r, size_t index) {

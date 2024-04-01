@@ -144,6 +144,15 @@ void smol_mesh_3d_gen_line_simple(br_shader_line_3d_simple_t* shader, Vector3 p1
   for (int j = 0; j < 6; ++j) colors[j] = cv;
 }
 
+void smol_mesh_3d_gen_line_strip(br_shader_line_3d_t* shader, Vector3 const* ps, size_t len, Color color) {
+  for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(shader, ps[i], ps[i + 1], color);
+}
+void smol_mesh_3d_gen_line_strip2(br_shader_line_3d_t* shader, Vector2 const* ps, size_t len, Color color) {
+  for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(shader,
+      (Vector3){ps[i].x, ps[i].y, 0},
+      (Vector3) {ps[i + 1].x, ps[i + 1].y, 0}, color);
+}
+
 void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, Vector3 p1, Vector3 p2, Color color) {
   Vector3 const cv = {color.r/255.f, color.g/255.f, color.b/255.f};
   //Vector3 mid   = Vector3Scale(Vector3Add(p1, p2), 0.5f);

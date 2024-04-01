@@ -8,6 +8,8 @@ extern "C" {
 
 //void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, Vector2 mid_point, Vector2 tangent, Color color);
 //void smol_mesh_gen_quad_simple(smol_mesh_t* mesh, Rectangle rect, Color color);
+void smol_mesh_3d_gen_line_strip(br_shader_line_3d_t* shader, Vector3 const* ps, size_t len, Color color);
+void smol_mesh_3d_gen_line_strip2(br_shader_line_3d_t* shader, Vector2 const* ps, size_t len, Color color);
 void smol_mesh_gen_point(br_shader_line_t* mesh, Vector2 point, Color color);
 void smol_mesh_gen_point1(br_shader_line_t* mesh, Vector2 point, Vector2 size, Color color);
 void smol_mesh_gen_line(br_shader_line_t* mesh, Vector2 p1, Vector2 p2, Color color);

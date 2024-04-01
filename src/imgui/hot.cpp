@@ -18,8 +18,18 @@ bool focused = false;
 float translate_speed = 1.0f;
 
 extern "C" void br_hot_loop(br_plotter_t* br) {
-#if 0
+  return;
+  if (ImGui::Begin("TestMath")) {
+    Matrix mvp = br->plots.arr[1].ddd.grid_shader->uvs.m_mvp_uv;
+    Vector2 v = { 3, 0 };
+    Vector2 vt1 = Vector2Transform(v, MatrixTranspose(mvp));
+    Vector2 vt2 = Vector2Transform(v, mvp);
+    ImGui::Text("(%f, %f) -> (%f, %f)", v.x, v.y, vt1.x, vt1.y);
+    ImGui::Text("(%f, %f) -> (%f, %f)", v.x, v.y, vt2.x, vt2.y);
+  }
+  ImGui::End();
 
+#if 0
   //rlSetUniformMatrix(gv->grid3dShader.uMatProjection, gv->uvMatProjection);
   if (ImGui::Begin("3d View 2")) {
     ImVec2 v = ImGui::GetWindowPos();
