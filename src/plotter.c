@@ -1,15 +1,12 @@
 #include "br_plot.h"
 #include "br_plotter.h"
 #include "br_gui_internal.h"
-#include "br_help.h"
 #include "br_da.h"
 
-#include <assert.h>
 #include <math.h>
 #include <string.h>
 
 #include "raylib.h"
-#include "raymath.h"
 #include "rlgl.h"
 #include "src/br_q.h"
 #include "tracy/TracyC.h"
