@@ -220,12 +220,6 @@ npm-imgui:
 	  ((cd packages/npm && \
 	   npm publish || cd ../..) && cd ../..)
 
-bin/upper: tools/upper.cpp
-	g++ -O3 -o bin/upper tools/upper.cpp
-
-bin/lower: tools/lower.cpp
-	g++ -O3 -o bin/lower tools/lower.cpp
-
 src/misc/default_font.h: bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf
 	bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf > src/misc/default_font.h
 
