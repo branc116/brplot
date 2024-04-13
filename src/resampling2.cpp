@@ -34,7 +34,7 @@ struct resampling2_nodes_t {
     return !((miny > rect.y) || (maxy < rect.y - rect.height) || (minx > rect.x + rect.width) || (maxx < rect.x));
   }
 
-  constexpr bool is_inside_3d(Vector2 const* points, Matrix mat) {
+  bool is_inside_3d(Vector2 const* points, Matrix mat) {
     if (len == 0) return false;
     Vector2 minx = Vector2TransformScale(points[min_index_x], mat),
             miny = Vector2TransformScale(points[min_index_y], mat),
@@ -51,7 +51,7 @@ struct resampling2_nodes_t {
     float xr = points[max_index_x].x - points[min_index_x].x, yr = points[max_index_y].y - points[min_index_y].y;
     return {xr / screen_width, yr / screen_height};
   }
-  constexpr Vector2 get_ratios_3d(Vector2 const* points, Matrix mvp) const {
+  Vector2 get_ratios_3d(Vector2 const* points, Matrix mvp) const {
     Vector2 minx = Vector2TransformScale(points[min_index_x], mvp),
             miny = Vector2TransformScale(points[min_index_y], mvp),
             maxx = Vector2TransformScale(points[max_index_x], mvp),
