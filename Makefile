@@ -5,21 +5,22 @@
 # $ make COMPILER=CLANG
 
 # DEBUG | RELEASE
-CONFIG?= RELEASE
+CONFIG    ?= RELEASE
 # LINUX | WEB | WINDOWS
-PLATFORM?= LINUX
+PLATFORM  ?= LINUX
 # IMGUI | RAYLIB | HEADLESS
-GUI?= IMGUI
+GUI       ?= IMGUI
 # EXE | LIB
-TYPE?= EXE
+TYPE      ?= EXE
 # GCC | CLANG ( Only for linux build )
-COMPILER?= GCC
+COMPILER  ?= GCC
+NATIVE_CC ?= gcc
 # YES | NO
-COVERAGE?= NO
+COVERAGE  ?= NO
 # YES | NO
-FUZZ?= NO
+FUZZ      ?= NO
 # YES | NO
-TRACY?= NO
+TRACY     ?= NO
 
 RL                 = ./external/raylib-5.0/src
 IM                 = ./external/imgui-docking
@@ -224,10 +225,10 @@ src/misc/default_font.h: bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf
 	bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf > src/misc/default_font.h
 
 bin/font_export: tools/font_export.c
-	gcc -o bin/font_export tools/font_export.c -lm
+	$(NATIVE_CC) -o bin/font_export tools/font_export.c -lm
 
 bin/shaders_bake: ./tools/shaders_bake.c ./src/br_shaders.h ./src/str.c
-	gcc -I. -I./external/raylib-5.0/src -O3 -o bin/shaders_bake src/str.c tools/shaders_bake.c
+	$(NATIVE_CC) -I. -I./external/raylib-5.0/src -O3 -o bin/shaders_bake src/str.c tools/shaders_bake.c
 
 $(SHADERS_HEADER): ./src/desktop/shaders/* bin/shaders_bake
 	bin/shaders_bake $(PLATFORM) > $(SHADERS_HEADER)
