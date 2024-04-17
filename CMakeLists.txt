@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 3.23.0)
+# I don't know what I'm doing with cmake. This is all vodoo...
+
+cmake_minimum_required(VERSION 3.22.1)
 include(CMakeDependentOption)
 project(Brplot)
 
