@@ -8,10 +8,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "")
 endif ()
 message("Config=${CMAKE_BUILD_TYPE}")
 
+set(GUI imgui CACHE STRING "What gui to use")
 set_property(CACHE GUI PROPERTY STRINGS raylib imgui headless)
-if (GUI STREQUAL "")
-  set(GUI imgui)
-endif ()
 message("GUI=${GUI}")
 
 cmake_dependent_option(USE_LTO "Enable LTO" ON "CMAKE_BUILD_TYPE STREQUAL Release" OFF)
