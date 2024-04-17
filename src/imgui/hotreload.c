@@ -1,6 +1,8 @@
+#include "src/br_plotter.h"
+
 #include "dlfcn.h"
 #include "errno.h"
-#include "src/br_plotter.h"
+#include "poll.h"
 #include "pthread.h"
 #include "signal.h"
 #include "stdbool.h"
@@ -12,7 +14,6 @@
 #include "sys/syscall.h"
 #include "unistd.h"
 #include <bits/types/siginfo_t.h>
-#include "poll.h"
 #include <errno.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -21,6 +22,13 @@
 
 #define GCC "/bin/g++"
 
+#ifndef IMGUI
+#error "IMGUI must be defined"
+#endif
+#ifdef RELEASE
+#error "RELEASE must not be defined"
+#endif
+
 static bool br_hotreload_compile(void) {
   pid_t a = fork();
   if (a == -1) {
@@ -28,7 +36,7 @@ static bool br_hotreload_compile(void) {
     return false;
   }
   if (a == 0) {
-    static char* newargv[] = { GCC, "-Iexternal/raylib-5.0/src", "-Iexternal/imgui-docking", "-I.", "-DLINUX", "-DPLATFORM_DESKTOP", "-fpic", "--shared", "-g", "-o", "build/linux/debug/imgui/hot.o", "src/imgui/hot.cpp", NULL };
+    static char* newargv[] = { GCC, "-Iexternal/raylib-5.0/src", "-Iexternal/imgui-docking", "-I.", "-DLINUX", "-DPLATFORM_DESKTOP", "-fpic", "--shared", "-g", "-o", "build/hot.o", "src/imgui/hot.cpp", NULL };
     execvp(GCC, newargv);
   } else {
     int wstat;
@@ -45,7 +53,7 @@ static bool br_hotreload_compile(void) {
 //#define RTLD_GLOBAL	0x00100
 
 void br_hotreload_link(br_hotreload_state_t* s) {
-  s->handl = dlopen("build/linux/debug/imgui/hot.o", RTLD_GLOBAL |	RTLD_LAZY);
+  s->handl = dlopen("build/hot.o", RTLD_GLOBAL |	RTLD_LAZY);
   if (s->handl == NULL) {
     const char* err = dlerror();
     fprintf(stderr, "dlopen failed: `%s`\n", err ? err : "NULL");
@@ -55,6 +63,7 @@ void br_hotreload_link(br_hotreload_state_t* s) {
 #pragma GCC diagnostic ignored "-Wpedantic"
   s->func_loop = (void (*)(br_plotter_t*))dlsym(s->handl, "br_hot_loop");
   s->func_init = (void (*)(br_plotter_t*))dlsym(s->handl, "br_hot_init");
+  printf("hot opened init: %p, loop: %p\n", s->func_loop, s->func_init);
 #pragma GCC diagnostic pop
   char* error = dlerror();
   if (error != NULL) {
@@ -72,6 +81,7 @@ static void hot_reload_all(br_hotreload_state_t* state) {
     if (state->func_loop != NULL) {
       pthread_mutex_lock(&state->lock);
       dlclose(state->handl);
+      printf("dlclosed\n");
       state->handl = NULL;
       state->func_loop = NULL;
       state->func_init = NULL;

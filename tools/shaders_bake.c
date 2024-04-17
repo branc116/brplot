@@ -11,7 +11,7 @@
 #define IS_ALPHA_TOKEN(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
 #define FATAL(shader, line, offset, msg, ...) do { \
   fprintf(stderr, "|%s:%d:%d|ERROR: "msg"\n", br_str_to_c_str(shader->path), line, offset, __VA_ARGS__); \
-  assert(0); \
+  exit(1); \
 } while(0)
 
 #define TOKENS(X) \
@@ -228,33 +228,33 @@ void get_program_variables(programs_t programs) {
   }
 }
 
-void embed_tokens(br_str_t name, br_str_t name_postfix, tokens_t tokens, shader_output_kind_t kind) {
-  printf("#define %s_%s \"", br_str_to_c_str(name), br_str_to_c_str(name_postfix));
+void embed_tokens(FILE* out, br_str_t name, br_str_t name_postfix, tokens_t tokens, shader_output_kind_t kind) {
+  fprintf(out, "#define %s_%s \"", br_str_to_c_str(name), br_str_to_c_str(name_postfix));
   switch (kind) {
-    case shader_output_kind_desktop: printf("#version 330\\n"); break;
-    case shader_output_kind_web: printf("#version 300 es\\n"); break;
+    case shader_output_kind_desktop: fprintf(out, "#version 330\\n"); break;
+    case shader_output_kind_web: fprintf(out, "#version 300 es\\n"); break;
     default: fprintf(stderr, "ERROR: Bad output kind: %d\n", kind);
   }
-  printf("\" \\\n\"");
+  fprintf(out, "\" \\\n\"");
   bool was_last_iden = false;
   for (size_t i = 3; i < tokens.len; ++i) {
     token_t t = tokens.arr[i];
     if (t.kind == token_kind_preprocess) {
-      printf("\\n\"\n\"");
+      fprintf(out, "\\n\"\n\"");
       for (; i < tokens.len && t.line == tokens.arr[i].line; ++i) {
-        printf("%s ", br_strv_to_c_str(tokens.arr[i].view));
+        fprintf(out, "%s ", br_strv_to_c_str(tokens.arr[i].view));
       }
-      printf("\\n\" \\\n\"\n");
+      fprintf(out, "\\n\" \\\n\"\n");
       was_last_iden = false;
       --i;
     } else {
       bool is_iden = t.kind == token_kind_identifier;
-      if (was_last_iden && is_iden) printf(" ");
-      printf("%s", br_strv_to_c_str(t.view));
+      if (was_last_iden && is_iden) fprintf(out, " ");
+      fprintf(out, "%s", br_strv_to_c_str(t.view));
       was_last_iden = is_iden;
     }
   }
-  printf("\"\n\n");
+  fprintf(out, "\"\n\n");
 }
 
 token_t init_token(token_kind_t kind, int line, int offset, const char* start) {
@@ -577,11 +577,19 @@ void exit_usage(const char* name) {
 }
 
 int main(int argc, char const * const* argv) {
-  if (argc != 2) {
+  if (argc < 2 || argc > 3) {
     exit_usage(argv[0]);
   }
   shader_output_kind_t output = shader_output_kind_desktop;
   if (0 == strcmp("WEB", argv[1])) output = shader_output_kind_web;
+  FILE* f = stdout;
+  if (argc == 3) {
+    f = fopen(argv[2], "w");
+    if (f == NULL) {
+      fprintf(stderr, "Error opening a file %s: %d:%s\n", argv[2], errno, strerror(errno));
+      exit(1);
+    }
+  }
 
   programs_t programs = get_programs();
   for (size_t i = 0; i < programs.len; ++i) {
@@ -592,8 +600,8 @@ int main(int argc, char const * const* argv) {
   check_programs(programs);
   
   for (size_t i = 0; i < programs.len; ++i) {
-    embed_tokens(programs.arr[i].name, br_str_from_c_str("fs"), programs.arr[i].fragment.tokens, output);
-    embed_tokens(programs.arr[i].name, br_str_from_c_str("vs"), programs.arr[i].vertex.tokens, output);
+    embed_tokens(f, programs.arr[i].name, br_str_from_c_str("fs"), programs.arr[i].fragment.tokens, output);
+    embed_tokens(f, programs.arr[i].name, br_str_from_c_str("vs"), programs.arr[i].vertex.tokens, output);
   }
   return 0;
 }

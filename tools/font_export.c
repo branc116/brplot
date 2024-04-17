@@ -99,26 +99,26 @@ void trim_zeros(void * data, int* data_size) {
   }
 }
 
-void export_image_as_code(Image image)
+void export_image_as_code(FILE* out, Image image)
 {
     int dataSize = GetPixelDataSize(image.width, image.height, image.format);
 
     // Add image information
-    printf("// Image data information\n");
-    printf("#define FONT_IMAGE_WIDTH    %i\n", image.width);
-    printf("#define FONT_IMAGE_HEIGHT   %i\n", image.height);
-    printf("#define FONT_IMAGE_FORMAT   %i\n\n", image.format);
+    fprintf(out, "// Image data information\n");
+    fprintf(out, "#define FONT_IMAGE_WIDTH    %i\n", image.width);
+    fprintf(out, "#define FONT_IMAGE_HEIGHT   %i\n", image.height);
+    fprintf(out, "#define FONT_IMAGE_FORMAT   %i\n\n", image.format);
 
-    printf("static unsigned char FONT_IMAGE_DATA[%i] = { ", dataSize);
-    for (int i = 0; i < dataSize - 1; ++i) printf(((i%20 == 0) ? "0x%x,\n" : "0x%x, "), ((unsigned char *)image.data)[i]);
-    printf("0x%x };\n", ((unsigned char *)image.data)[dataSize - 1]);
+    fprintf(out, "static unsigned char FONT_IMAGE_DATA[%i] = { ", dataSize);
+    for (int i = 0; i < dataSize - 1; ++i) fprintf(out, ((i%20 == 0) ? "0x%x,\n" : "0x%x, "), ((unsigned char *)image.data)[i]);
+    fprintf(out, "0x%x };\n", ((unsigned char *)image.data)[dataSize - 1]);
 }
 
-void export_font_data_as_code(unsigned char* data, unsigned int len) {
-  printf("//Exported font data\n");
-  printf("static unsigned char const default_font_data[%u] = {\n", len);
-  for (unsigned int i = 0; i < len - 1; ++i) printf(((i%20 == 0) ? "0x%x,\n" : "0x%x, "), data[i]);
-  printf("0x%x };\n", data[len - 1]);
+void export_font_data_as_code(FILE* out, unsigned char* data, unsigned int len) {
+  fprintf(out, "//Exported font data\n");
+  fprintf(out, "static unsigned char const default_font_data[%u] = {\n", len);
+  for (unsigned int i = 0; i < len - 1; ++i) fprintf(out, ((i%20 == 0) ? "0x%x,\n" : "0x%x, "), data[i]);
+  fprintf(out, "0x%x };\n", data[len - 1]);
 }
 
 // GlyphInfo, font characters glyphs info
@@ -286,7 +286,7 @@ GlyphInfo *LoadFontData(const unsigned char *fileData, int fontSize, int *codepo
     return chars;
 }
 
-void export_font_as_code(unsigned char* data) {
+void export_font_as_code(FILE* out, unsigned char* data) {
   int chars[] =  {
         (int)'#', (int)'.', (int)',', (int)'(', (int)')', (int)'1', (int)'2', (int)'3', (int)'4', (int)'5',
         (int)'6', (int)'7', (int)'8', (int)'9', (int)'0', (int)'A', (int)'B', (int)'C', (int)'D', (int)'E',
@@ -301,26 +301,26 @@ void export_font_as_code(unsigned char* data) {
   font.glyphCount = sizeof(chars)/sizeof(int);
   font.glyphPadding = 4;
   GlyphInfo* glyphs = font.glyphs = LoadFontData(data, font.baseSize, chars, sizeof(chars)/sizeof(int));
-  printf("#include \"raylib.h\"\n");
-  printf("#include \"stdlib.h\"\n");
+  fprintf(out, "#include \"raylib.h\"\n");
+  fprintf(out, "#include \"stdlib.h\"\n");
   unsigned int count = sizeof(chars)/sizeof(int);
   for (unsigned i = 0; i < count; ++i) {
     int dataSize = glyphs[i].image.width * glyphs[i].image.height;
-    printf("static unsigned char data_%d[] = {", glyphs[i].value);
-    for (int j = 0; j < dataSize - 1; ++j) printf(((j%20 == 0) ? "0x%x,\n" : "0x%x, "), ((unsigned char *)glyphs[i].image.data)[j]);
-    printf("0x%x };\n", ((unsigned char *)glyphs[i].image.data)[dataSize - 1]);
+    fprintf(out, "static unsigned char data_%d[] = {", glyphs[i].value);
+    for (int j = 0; j < dataSize - 1; ++j) fprintf(out, ((j%20 == 0) ? "0x%x,\n" : "0x%x, "), ((unsigned char *)glyphs[i].image.data)[j]);
+    fprintf(out, "0x%x };\n", ((unsigned char *)glyphs[i].image.data)[dataSize - 1]);
   }
-  printf("static GlyphInfo glyphs[] = {\n");
+  fprintf(out, "static GlyphInfo glyphs[] = {\n");
   for (unsigned int i = 0; i < count; ++i) {
     if (glyphs[i].image.format != RL_PIXELFORMAT_UNCOMPRESSED_GRAYSCALE) {
       fprintf(stderr, "Format of a font must be PIXELFORMAT_UNCOMPRESSED_GRAYSCALE\n");
       assert(false);
     }
-    printf("{ .value = %d, .offsetX = %d, .offsetY = %d, .advanceX = %d, .image = {\n", glyphs[i].value, glyphs[i].offsetX, glyphs[i].offsetY, glyphs[i].advanceX);
-    printf("  .data = (void *)data_%d, .width = %d, .height = %d, .mipmaps = %d, .format = %d }\n}", glyphs[i].value, glyphs[i].image.width, glyphs[i].image.height, glyphs[i].image.mipmaps, glyphs[i].image.format);
-    printf((int)i < (int)count - 1 ? ",\n" : "\n};\n");
+    fprintf(out, "{ .value = %d, .offsetX = %d, .offsetY = %d, .advanceX = %d, .image = {\n", glyphs[i].value, glyphs[i].offsetX, glyphs[i].offsetY, glyphs[i].advanceX);
+    fprintf(out, "  .data = (void *)data_%d, .width = %d, .height = %d, .mipmaps = %d, .format = %d }\n}", glyphs[i].value, glyphs[i].image.width, glyphs[i].image.height, glyphs[i].image.mipmaps, glyphs[i].image.format);
+    fprintf(out, (int)i < (int)count - 1 ? ",\n" : "\n};\n");
   }
-  printf("static Font default_font = { .baseSize = %d, .glyphCount = %d, .glyphPadding = %d, .recs = NULL, .glyphs = glyphs };",
+  fprintf(out, "static Font default_font = { .baseSize = %d, .glyphCount = %d, .glyphPadding = %d, .recs = NULL, .glyphs = glyphs };",
       font.baseSize, font.glyphCount, font.glyphPadding);
 }
 
@@ -377,7 +377,11 @@ int main(int argc, char** argv) {
     fprintf(stderr, "ERROR: bad number of arguments.\nUSAGE: %s <name of font you want to export>\n", argv[0]); 
     exit(-1);
   }
+  FILE* out = stdout;
+  if (argc == 3) {
+    out = fopen(argv[2], "w");
+  }
   unsigned int bytesRead = 0;
   unsigned char* data = LoadFileData(argv[1], &bytesRead);
-  export_font_as_code(data);
+  export_font_as_code(out, data);
 }
