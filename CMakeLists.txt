@@ -133,10 +133,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL Linux)
     ./src/desktop/platform.c
     ./src/desktop/linux/read_input.c
   )
-else if(CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
+elseif (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
   target_compile_definitions(brplot PUBLIC LINUX)
   target_compile_definitions(raylib PUBLIC PLATFORM_DESKTOP=1)
-  target_link_libraries(raylib glfw)
+  target_link_libraries(raylib glfw pthread)
   target_sources(brplot PUBLIC 
     ./src/desktop/platform.c
     ./src/desktop/linux/read_input.c
