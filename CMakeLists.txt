@@ -6,7 +6,7 @@ set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Release Debug)
 if (CMAKE_BUILD_TYPE STREQUAL "")
   set(CMAKE_BUILD_TYPE Release)
 endif ()
-message("Config=${CMAKE_BUILD_TYPE}")
+message("CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
 set(GUI imgui CACHE STRING "What gui to use")
 set_property(CACHE GUI PROPERTY STRINGS raylib imgui headless)
@@ -27,7 +27,7 @@ add_library(raylib STATIC
   ./external/raylib-5.0/src/utils.c
   ./external/raylib-5.0/src/rcore.c
 )
-target_include_directories(raylib PUBLIC .)
+target_include_directories(raylib PUBLIC . ./external/glfw/include)
 
 add_library(imgui STATIC
   ./external/imgui-docking/imgui.cpp
@@ -37,7 +37,7 @@ add_library(imgui STATIC
   ./external/imgui-docking/backends/imgui_impl_glfw.cpp
   ./external/imgui-docking/backends/imgui_impl_opengl3.cpp
 )
-target_include_directories(imgui PUBLIC ./external/imgui-docking/)
+target_include_directories(imgui PUBLIC ./external/imgui-docking/ ./external/glfw/include)
 
 add_executable(brplot
   src/main.c          src/help.c        src/data.c        src/smol_mesh.c src/q.c
@@ -133,6 +133,17 @@ if (CMAKE_SYSTEM_NAME STREQUAL Linux)
     ./src/desktop/platform.c
     ./src/desktop/linux/read_input.c
   )
+else if(CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
+  target_compile_definitions(brplot PUBLIC LINUX)
+  target_compile_definitions(raylib PUBLIC PLATFORM_DESKTOP=1)
+  target_link_libraries(raylib glfw)
+  target_sources(brplot PUBLIC 
+    ./src/desktop/platform.c
+    ./src/desktop/linux/read_input.c
+  )
+  target_include_directories(imgui PUBLIC /usr/local/include)
+  target_link_directories(brplot PUBLIC /usr/local/lib
+    /usr/lib)
 else ()
   message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} not supported")
 endif ()
@@ -143,6 +154,7 @@ if (PLAT_CONF STREQUAL Linux_Debug)
   target_sources(brplot PUBLIC
     ./src/desktop/linux/refresh_shaders.c)
 elseif (PLAT_CONF STREQUAL Linux_Release)
+elseif (PLAT_CONF STREQUAL FreeBSD_Release)
 else ()
   message(FATAL_ERROR "${PLAT_CONF} not supported")
 endif ()
