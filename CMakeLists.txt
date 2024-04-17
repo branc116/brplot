@@ -2,14 +2,24 @@ cmake_minimum_required(VERSION 3.23.0)
 include(CMakeDependentOption)
 project(Brplot)
 
-set(CMAKE_BUILD_TYPE Release CACHE STRING "Release or Debug")
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Release Debug)
-set(GUI imgui CACHE STRING "One of (raylib|imgui|headless)")
+if (CMAKE_BUILD_TYPE STREQUAL "")
+  set(CMAKE_BUILD_TYPE Release)
+endif ()
+message("Config=${CMAKE_BUILD_TYPE}")
+
 set_property(CACHE GUI PROPERTY STRINGS raylib imgui headless)
+if (GUI STREQUAL "")
+  set(GUI imgui)
+endif ()
+message("GUI=${GUI}")
+
 cmake_dependent_option(USE_LTO "Enable LTO" ON "CMAKE_BUILD_TYPE STREQUAL Release" OFF)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${USE_LTO})
+message("USE_LTO=${USE_LTO}")
+
 option(USE_TRACY OFF "Use tracy for profiling")
 cmake_dependent_option(USE_HOTRELOAD "Enable Hot reload" ON "CMAKE_BUILD_TYPE STREQUAL Debug; GUI STREQUAL imgui" OFF)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${USE_LTO})
 
 add_library(raylib STATIC
   ./external/raylib-5.0/src/rmodels.c
@@ -88,7 +98,7 @@ elseif (CMAKE_BUILD_TYPE STREQUAL Release)
   )
   target_sources(brplot PUBLIC ./src/misc/shaders.h)
 else ()
-  message(FATAL_ERROR "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} not supported. (Debug|Release)")
+  message(FATAL_ERROR "CMAKE_BUILD_TYPE=`${CMAKE_BUILD_TYPE}` not supported. (Debug|Release)")
 endif()
 
 if (GUI STREQUAL raylib)
