@@ -5,7 +5,57 @@ Small application that plots lines that are sent to the application's stdin.
 ## Running brplot
 brplot is designed in such a way that it plays nicely with other unix tools. You can just pipe the output of your program to brplot and brplot will do it's best to plot your data.
 
-### Examples
+## Compile
+Brplot can be built using GNU make or cmake or use whatever you like.
+Only tested on linux. Maybe will work on other OSes.
+But it can cross compile for windows and for webassm.
+
+### Ubuntu
+Tested on 22.04
+```sh
+sudo apt install git make gcc g++ libglfw3-dev pkg-config
+git clone https://github.com/branc116/brplot
+cd brplot
+make
+```
+
+### Debian
+Tested on Debian-12
+```sh
+sudo apt install git make gcc g++ libglfw3-dev pkg-config
+git clone https://github.com/branc116/brplot
+cd brplot
+make
+```
+
+### Arch
+```sh
+sudo pacman -Sy base-devel glfw3
+git clone https://github.com/branc116/brplot
+cd brplot
+make
+```
+
+### FreeBSD
+Tested on FreeBSD 14.0
+```sh
+pkg install glfw cmake
+git clone https://github.com/branc116/brplot
+cd brplot
+mkdir build
+cd build
+cmake ..
+make
+```
+
+Here are the parameters you can change ( for make, but some are also in cmake ):
+* EMSCRIPTEN - only useful if you are building for webassm ( path to emscripten )
+* PLATFORM   - LINUX | WINDOWS | WEB ( Default LINUX )
+* CONFIG     - RELEASE | DEBUG (Default RELEASE )
+* GUI        - IMGUI | RAYLIB | HEADLESS ( Default IMGUI )
+* TYPE       - EXE | LIB  - ( To create executable or library. Currently only web version can be a library. ) ( Default EXE )
+
+## Examples
 I think that more or less all the examples listed on [ttyplot examples](https://github.com/tenox7/ttyplot#examples) should work with brplot ( just replace ttyplot with brplot. )
 But here are some more examples:
 
@@ -188,24 +238,6 @@ In the future they migh chage/be deleted.
 * **C** + **LSHIFT** - Clear all points in line which the mouse is over.
 * **C**              - Empty all points over which the mouse is over.
 * Left mouse button  - Toggle visiblity of the line over which the mouse is over
-
-## Compile
-
-Brplot can be built using GNU make or Use whatever you like.
-Only tested on linux. Maybe will work on other OSes.
-But it can cross compile for windows and for webassm.
-
-```sh 
-make EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI
-```
-
-Here are the parameters you can change:
-
-* EMSCRIPTEN - only useful if you are building for webassm ( path to emscripten )
-* PLATFORM   - LINUX | WINDOWS | WEB
-* CONFIG     - RELEASE | DEBUG
-* GUI        - IMGUI | RAYLIB | HEADLESS
-* TYPE       - EXE | LIB  - ( To create executable or library. Currently only web version can be a library. )
 
 ## Install
 When built, brplot is only one file and you can install it using ```install``` command.
