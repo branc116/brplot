@@ -229,8 +229,8 @@ static void resampling2_draw_3d(resampling2_nodes_allocator_t const* const nodes
     return;
   }
   Vector2 ratios = node.get_ratios_3d(ps, mvp);
-  float rmin = ratios.x * ratios.y;
-  if (rmin < (node.depth == 1 ? 0.0001f : 0.0002f)) {
+  float rmin = fminf(ratios.x, ratios.y);
+  if (rmin < (node.depth == 1 ? 0.01f : 0.02f)) {
     size_t indexies[] = {
       node.index_start,
       node.min_index_x,
