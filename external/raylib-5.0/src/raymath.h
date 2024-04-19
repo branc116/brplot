@@ -390,20 +390,19 @@ RMAPI Vector2 Vector2Normalize(Vector2 v)
     return result;
 }
 
-RMAPI Vector2 Vector2TransformScale(Vector2 v, Matrix mat)
+RMAPI Vector3 Vector2TransformScale(Vector2 v, Matrix mat)
 {
-    Vector2 result = { 0 };
+    Vector3 result = { 0 };
 
     float x = v.x;
     float y = v.y;
 
-    float w = mat.m3*x + mat.m7*y + mat.m15;
-    if (fabsf(w) > 1e-5) {
-      result.x = (mat.m0*x + mat.m4*y + mat.m12)/w;
-      result.y = (mat.m1*x + mat.m5*y + mat.m13)/w;
-    } else {
-      result.x = (mat.m0*x + mat.m4*y + mat.m12);
-      result.y = (mat.m1*x + mat.m5*y + mat.m13);
+    result.x = (mat.m0*x + mat.m4*y + mat.m12);
+    result.y = (mat.m1*x + mat.m5*y + mat.m13);
+    result.z = (mat.m2*x + mat.m6*y + mat.m14);
+    if (fabsf(result.z) > 0.00001f) {
+      result.x /= fabsf(result.z);
+      result.y /= fabsf(result.z);
     }
 
     return result;

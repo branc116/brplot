@@ -77,6 +77,7 @@ typedef struct context_t {
     float min_dist_loc;
     br_data_t* closest_to;
   } hover;
+  br_datas_t* datas;
 } context_t;
 
 extern context_t context;

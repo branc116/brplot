@@ -36,23 +36,26 @@ struct resampling2_nodes_t {
 
   bool is_inside_3d(Vector2 const* points, Matrix mat) {
     if (len == 0) return false;
-    Vector2 minx = Vector2TransformScale(points[min_index_x], mat),
+    Vector3 minx = Vector2TransformScale(points[min_index_x], mat),
             miny = Vector2TransformScale(points[min_index_y], mat),
             maxx = Vector2TransformScale(points[max_index_x], mat),
             maxy = Vector2TransformScale(points[max_index_y], mat);
-    float my = fminf(fminf(minx.y, miny.y), fminf(maxy.y, maxx.y));
     float mx = fminf(fminf(minx.x, miny.x), fminf(maxy.x, maxx.x));
-    float My = fmaxf(fmaxf(minx.y, miny.y), fmaxf(maxy.y, maxx.y));
     float Mx = fmaxf(fmaxf(minx.x, miny.x), fmaxf(maxy.x, maxx.x));
-    Rectangle rect = { -1, 1, 2, 2 };
-    return CheckCollisionRecs(rect, Rectangle { mx, My, Mx - mx, My - my });
+    float my = fminf(fminf(minx.y, miny.y), fminf(maxy.y, maxx.y));
+    float My = fmaxf(fmaxf(minx.y, miny.y), fmaxf(maxy.y, maxx.y));
+    float Mz = fmaxf(fmaxf(minx.z, miny.z), fmaxf(maxy.z, maxx.z));
+    float quad_size = 2.1f;
+    
+    Rectangle rect = { quad_size / -2, quad_size / -2, quad_size, quad_size };
+    return Mz > 0.f && CheckCollisionRecs(rect, Rectangle { mx, my, Mx - mx, My - my });
   }
   constexpr Vector2 get_ratios(Vector2 const* points, float screen_width, float screen_height) const {
     float xr = points[max_index_x].x - points[min_index_x].x, yr = points[max_index_y].y - points[min_index_y].y;
     return {xr / screen_width, yr / screen_height};
   }
-  Vector2 get_ratios_3d(Vector2 const* points, Matrix mvp) const {
-    Vector2 minx = Vector2TransformScale(points[min_index_x], mvp),
+  constexpr Vector2 get_ratios_3d(Vector2 const* points, Matrix mvp) const {
+    Vector3 minx = Vector2TransformScale(points[min_index_x], mvp),
             miny = Vector2TransformScale(points[min_index_y], mvp),
             maxx = Vector2TransformScale(points[max_index_x], mvp),
             maxy = Vector2TransformScale(points[max_index_y], mvp);
@@ -197,14 +200,17 @@ static void resampling2_draw(resampling2_nodes_allocator_t const* const nodes, s
       node.max_index_y,
       node.index_start + node.len - (is_end ? 1 : 0)
     };
-    std::sort(indexies, &indexies[5]);
+    std::sort(indexies, &indexies[6]);
     Vector2 pss[] = {
       ps[indexies[0]], ps[indexies[1]],
       ps[indexies[2]], ps[indexies[3]],
       ps[indexies[4]], ps[indexies[5]],
     };
+    smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.min_index_x].x, ps[node.min_index_y].y, ps[node.max_index_x].x, ps[node.max_index_y].y }, RAYWHITE);
     smol_mesh_gen_line_strip(plot->dd.line_shader, pss, 6, pg->color);
   } else {
+
+    smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.min_index_x].x, ps[node.min_index_y].y, ps[node.max_index_x].x, ps[node.max_index_y].y }, RAYWHITE);
     resampling2_draw(nodes, node.child1, pg, plot);
     resampling2_draw(nodes, node.child2, pg, plot);
   }
@@ -223,8 +229,8 @@ static void resampling2_draw_3d(resampling2_nodes_allocator_t const* const nodes
     return;
   }
   Vector2 ratios = node.get_ratios_3d(ps, mvp);
-  float rmin = fminf(ratios.x, ratios.y);
-  if (rmin < (node.depth == 1 ? something : something2)) {
+  float rmin = ratios.x * ratios.y;
+  if (rmin < (node.depth == 1 ? 0.0001f : 0.0002f)) {
     size_t indexies[] = {
       node.index_start,
       node.min_index_x,
@@ -233,7 +239,7 @@ static void resampling2_draw_3d(resampling2_nodes_allocator_t const* const nodes
       node.max_index_y,
       node.index_start + node.len - (is_end ? 1 : 0)
     };
-    std::sort(indexies, &indexies[5]);
+    std::sort(indexies, &indexies[6]);
     Vector2 pss[] = {
       ps[indexies[0]], ps[indexies[1]],
       ps[indexies[2]], ps[indexies[3]],
@@ -249,10 +255,16 @@ static void resampling2_draw_3d(resampling2_nodes_allocator_t const* const nodes
 void resampling2_draw(resampling2_t const* res, br_data_t const* pg, br_plot_t* plot) {
   ZoneScopedN("resampline2_draw0");
 
+  if (res->resamp.len == 0) return;
   switch (plot->kind) {
     case br_plot_kind_2d: resampling2_draw(&res->resamp, 0, pg, plot); break;
-    case br_plot_kind_3d: resampling2_draw_3d(&res->resamp, 0, pg, plot); break;
+    case br_plot_kind_3d: {
+                            resampling2_draw_3d(&res->resamp, 0, pg, plot);
+
+                            break;
+                          }
   }
+
 }
 
 static void resampling2_nodes_debug_print(FILE* file, resampling2_nodes_allocator_t const* r, size_t index) {

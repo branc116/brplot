@@ -5,6 +5,9 @@
 #include "src/br_plot.h"
 #include "src/br_da.h"
 #include <assert.h>
+#ifdef RELEASE
+#include "misc/shaders.h"
+#endif
 
 #define IS_SPECIAL_TOKEN(c) ((c) == '\n' || (c) == '\r' || (c) == '.' || (c) == ',' || (c) == '{' || (c) == '}' || (c) == ' ')
 #define IS_NUMBER_TOKEN(c) ((c) >= '0' && (c) <= '9')
