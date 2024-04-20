@@ -27,7 +27,7 @@
 "Pos=1007,0\n" \
 "DockId=0x00000002,0\n" \
 "\n" \
-"[Window][Plot]\n" \
+"[Window][Plot #0]\n" \
 "Pos=0,0\n" \
 "Size=1005,720\n" \
 "DockId=0x00000001,0\n" \
