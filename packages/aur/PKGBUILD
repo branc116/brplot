@@ -1,0 +1,29 @@
+# Maintainer: Branimir Ricko <rickobranimir at gmail dot com>
+
+pkgname=brplot
+pkgver=0.1
+pkgrel=1
+pkgdesc="A tool for plotting data"
+arch=('any')
+url="https://github.com/branc116/brplot"
+license=('MIT')
+provides=("brplot=$pkgver")
+depends=('glfw')
+makedepends=('base-devel' 'git')
+#source=("git+https://github.com/branc116/brplot.git#tag=v$pkgver")
+source=("git+https://github.com/branc116/brplot.git")
+sha256sums=('SKIP')
+ 
+build() {
+  cd "${srcdir}/brplot"
+  make
+  make GUI=RAYLIB
+}
+ 
+package() {
+  cd "${srcdir}/brplot"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm755 ./bin/brplot_imgui_linux_release_gcc "$pkgdir/usr/bin/brplot_imgui"
+  install -Dm755 ./bin/brplot_raylib_linux_release_gcc "$pkgdir/usr/bin/brplot_raylib"
+  ln -s /usr/bin/brplot_imgui "$pkgdir/usr/bin/brplot"
+} 
