@@ -36,7 +36,7 @@ float map_outer(vec2 fragCoord) {
 }
 
 void main(void) {
-  int aa = 1.;
+  float aa = 1.;
   vec2 d = vec2(dFdx(fragTexCoord.x), dFdy(fragTexCoord.y)) * 1.;
   float c = aa*2.+1.;
   float res = 0.;
