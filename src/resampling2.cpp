@@ -206,11 +206,11 @@ static void resampling2_draw(resampling2_nodes_allocator_t const* const nodes, s
       ps[indexies[2]], ps[indexies[3]],
       ps[indexies[4]], ps[indexies[5]],
     };
-    smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.min_index_x].x, ps[node.min_index_y].y, ps[node.max_index_x].x, ps[node.max_index_y].y }, RAYWHITE);
+    if (context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.min_index_x].x, ps[node.min_index_y].y, ps[node.max_index_x].x, ps[node.max_index_y].y }, RAYWHITE);
     smol_mesh_gen_line_strip(plot->dd.line_shader, pss, 6, pg->color);
   } else {
 
-    smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.min_index_x].x, ps[node.min_index_y].y, ps[node.max_index_x].x, ps[node.max_index_y].y }, RAYWHITE);
+    if (context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.min_index_x].x, ps[node.min_index_y].y, ps[node.max_index_x].x, ps[node.max_index_y].y }, RAYWHITE);
     resampling2_draw(nodes, node.child1, pg, plot);
     resampling2_draw(nodes, node.child2, pg, plot);
   }
