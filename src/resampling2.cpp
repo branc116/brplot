@@ -28,7 +28,7 @@ struct resampling2_nodes_t {
   size_t child2 = 0;
   uint32_t depth = 0;
 
-  constexpr bool is_inside(Vector2 const* points, Rectangle rect) const {
+  bool is_inside(Vector2 const* points, Rectangle rect) const {
     if (len == 0) return false;
     float minx = points[min_index_x].x, miny = points[min_index_y].y, maxx = points[max_index_x].x, maxy = points[max_index_y].y;
     return !((miny > rect.y) || (maxy < rect.y - rect.height) || (minx > rect.x + rect.width) || (maxx < rect.x));
@@ -50,11 +50,11 @@ struct resampling2_nodes_t {
     Rectangle rect = { quad_size / -2, quad_size / -2, quad_size, quad_size };
     return Mz > 0.f && CheckCollisionRecs(rect, Rectangle { mx, my, Mx - mx, My - my });
   }
-  constexpr Vector2 get_ratios(Vector2 const* points, float screen_width, float screen_height) const {
+  Vector2 get_ratios(Vector2 const* points, float screen_width, float screen_height) const {
     float xr = points[max_index_x].x - points[min_index_x].x, yr = points[max_index_y].y - points[min_index_y].y;
     return {xr / screen_width, yr / screen_height};
   }
-  constexpr Vector2 get_ratios_3d(Vector2 const* points, Matrix mvp) const {
+  Vector2 get_ratios_3d(Vector2 const* points, Matrix mvp) const {
     Vector3 minx = Vector2TransformScale(points[min_index_x], mvp),
             miny = Vector2TransformScale(points[min_index_y], mvp),
             maxx = Vector2TransformScale(points[max_index_x], mvp),
@@ -65,23 +65,11 @@ struct resampling2_nodes_t {
     float Mx = fmaxf(fmaxf(minx.x, miny.x), fmaxf(maxy.x, maxx.x));
     return {(Mx - mx) / 2.f, (My - my) / 2.f};
   }
-  int64_t get_last_point() const {
-    if (len == 0) return -1;
-    return index_start + len - 1;
-  }
-  int64_t get_first_point() const {
-    if (len == 0) return -1;
-    return index_start;
-  }
 };
 
 struct resampling2_nodes_allocator_t {
   resampling2_nodes_t * arr = NULL;
   size_t len = 0, cap = 0;
-  constexpr int64_t get_first_point() const {
-    if (len == 0) return -1;
-    return arr[0].get_first_point();
-  }
 };
 
 typedef struct resampling2_t {
