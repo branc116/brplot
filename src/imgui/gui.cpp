@@ -1,7 +1,6 @@
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
 #include "src/br_gui_internal.h"
-#include "src/br_da.h"
 #include "src/br_pp.h"
 #include "src/br_smol_mesh.h"
 #include "imgui_extensions.h"
@@ -9,7 +8,9 @@
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
+#if !PLATFORM_WEB
 #include "backends/imgui_impl_opengl3_loader.h"
+#endif
 #include "external/glfw/include/GLFW/glfw3.h"
 #include "tracy/TracyC.h"
 
