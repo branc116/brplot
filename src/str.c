@@ -1,6 +1,5 @@
 #include "src/br_plot.h"
 #include "string.h"
-#include "src/misc/tests.h"
 
 br_str_t br_str_malloc(size_t size) {
   br_str_t br = {
@@ -186,6 +185,8 @@ br_strv_t br_strv_from_c_str(const char* s) {
   return (br_strv_t) { .str = s, .len = (unsigned int)strlen((s)) };
 }
 
+#ifndef _MSC_VER
+#include "misc/tests.h"
 TEST_CASE(str_tests) {
   char c[128];
   br_str_t br = br_str_malloc(2);
@@ -209,4 +210,4 @@ TEST_CASE(str_tests) {
   TEST_STREQUAL("a69-690nice12345678", c);
   br_str_free(br);
 }
-
+#endif

@@ -1,7 +1,6 @@
 #include "br_plot.h"
 #include "br_plotter.h"
 #include "br_q.h"
-#include "src/misc/tests.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -768,7 +767,9 @@ void read_input_main_worker(br_plotter_t* gv) {
   lex(gv);
 }
 
+#ifndef _MSC_VER
 #ifndef RELEASE
+#include "misc/tests.h"
 
 int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
   lex_state_t s;
@@ -928,4 +929,5 @@ TEST_CASE(Extractors) {
   VALXY("%y.%x", "12.13.14.15", 14.15f, 12.13f);
 }
 
+#endif
 #endif

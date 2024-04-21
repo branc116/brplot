@@ -156,7 +156,7 @@ typedef struct resampling2_t {
 
 static uint32_t powers[32] = {0};
 static uint32_t powers_base = 2;
-static void __attribute__((constructor(101))) construct_powers(void) {
+void br_resampling2_construct(void) {
   powers[0] = 1;
   powers[1] = powers_base;
   for (int i = 2; i < 32; ++i) {
@@ -430,14 +430,14 @@ void resampling2_draw(resampling2_t const* res, br_data_t const* pg, br_plot_t* 
   }
 }
 
+#ifndef _MSC_VER
 #define PRINT_ALLOCS(prefix) \
   printf("\n%s ALLOCATIONS: %zu ( %zuKB ) | %lu (%zuKB)\n", prefix, \
       context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
-
 extern "C" {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-#include "src/misc/tests.h"
+#include "misc/tests.h"
 TEST_CASE(resampling) {
   Vector2 points[] = { {0, 1}, {1, 2}, {2, 4}, {3, 2} };
   br_data_t pg;
@@ -478,3 +478,4 @@ TEST_CASE(resampling2) {
 }
 #pragma GCC diagnostic pop
 } // extern "C"
+#endif

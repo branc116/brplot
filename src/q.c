@@ -1,10 +1,10 @@
 #include "br_q.h"
 #include "br_data.h"
 #include "br_plotter.h"
+#include "br_pp.h"
 
-#include "stdbool.h"
+#include <stdbool.h>
 #include <stdlib.h>
-#include <assert.h>
 
 q_commands* q_malloc(void) {
   q_commands* q = BR_MALLOC(sizeof(*q));

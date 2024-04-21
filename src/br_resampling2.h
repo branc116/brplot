@@ -10,6 +10,7 @@ extern "C" {
 typedef struct resampling2_t resampling2_t;
 typedef struct br_plot_t br_plot_t;
 
+void br_resampling2_construct(void);
 resampling2_t* resampling2_malloc(br_data_kind_t kind);
 void resampling2_empty(resampling2_t* res);
 void resampling2_free(resampling2_t* res);

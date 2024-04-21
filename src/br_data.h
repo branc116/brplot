@@ -61,6 +61,7 @@ typedef struct br_datas_t {
   br_data_t* arr;
 } br_datas_t;
 
+void br_data_construct(void);
 BR_API br_data_t* br_data_get(br_datas_t* pg_array, int group);
 BR_API br_data_t* br_data_get1(br_datas_t pg, int group);
 BR_API br_data_t* br_data_get2(br_datas_t* pg_array, int group, br_data_kind_t kind);

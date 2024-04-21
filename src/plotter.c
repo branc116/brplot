@@ -2,13 +2,14 @@
 #include "br_plotter.h"
 #include "br_gui_internal.h"
 #include "br_da.h"
+#include "br_resampling2.h"
+#include "br_q.h"
 
 #include <math.h>
 #include <string.h>
 
 #include "raylib.h"
 #include "rlgl.h"
-#include "src/br_q.h"
 #include "tracy/TracyC.h"
 
 context_t context;
@@ -16,6 +17,8 @@ context_t context;
 void emscripten_run_script(const char* script);
 
 BR_API br_plotter_t* br_plotter_malloc(void) {
+  br_resampling2_construct();
+  br_data_construct();
   return BR_MALLOC(sizeof(br_plotter_t));
 }
 

@@ -1,10 +1,12 @@
 #include "br_plot.h"
 #include "br_help.h"
 #include "br_gui_internal.h"
-#include "raymath.h"
-#include "assert.h"
 #include "src/br_da.h"
+
+#include "raymath.h"
 #include "tracy/TracyC.h"
+
+#include "assert.h"
 
 void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t groups, Vector2 mouse_pos) {
     switch (plot->kind) {

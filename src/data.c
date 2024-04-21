@@ -20,6 +20,19 @@ static Color color_get(int id);
 static void br_bb_expand_with_point(bb_t* bb, Vector2 v);
 static void br_bb_3d_expand_with_point(bb_3d_t* bb, Vector3 v);
 
+static Color base_colors[8];
+
+void br_data_construct(void) {
+  base_colors[0] = RED;
+  base_colors[1] = GREEN;
+  base_colors[2] = BLUE;
+  base_colors[3] = LIGHTGRAY;
+  base_colors[4] = PINK;
+  base_colors[5] = GOLD;
+  base_colors[6] = VIOLET;
+  base_colors[7] = DARKPURPLE;
+}
+
 BR_API void br_data_push_y(br_datas_t* pg_array, float y, int group) {
   br_data_t* pg = br_data_get(pg_array, group);
   if (pg == NULL) return;
@@ -277,11 +290,6 @@ static br_data_t* br_data_init(br_data_t* g, int group_id, br_data_kind_t kind) 
   }
   return g;
 }
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-static Color base_colors[8] = { RED, GREEN, BLUE, LIGHTGRAY, PINK, GOLD, VIOLET, DARKPURPLE };
-#pragma GCC diagnostic pop
 
 static Color color_get(int id) {
   id = abs(id);
