@@ -2,12 +2,7 @@
 #include "br_plot.h"
 #include "br_plotter.h"
 
-#include <stddef.h>
-#include <assert.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "tracy/TracyC.h"
 
 #include "raylib.h"
@@ -42,12 +37,6 @@ int main_gui(br_plotter_t* gv) {
 
 int main(void) {
 #ifdef RELEASE
-#ifdef LINUX
-  const unsigned long mem_size = 1L << 31L;
-  struct rlimit rl = {mem_size, mem_size};
-  int r = setrlimit(RLIMIT_AS, &rl);
-  if (r != 0) fprintf(stderr, "setrlimit failed: %d:%s", errno, strerror(errno));
-#endif
   SetTraceLogLevel(LOG_ERROR);
 #endif
   br_plotter_t* gv = br_plotter_malloc();
