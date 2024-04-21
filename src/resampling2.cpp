@@ -67,14 +67,79 @@ struct resampling2_nodes_t {
   }
 };
 
+struct resampling2_nodes_3d_t {
+  uint32_t min_index_x = 0, max_index_x = 0;
+  uint32_t min_index_y = 0, max_index_y = 0;
+  uint32_t min_index_z = 0, max_index_z = 0;
+  uint32_t index_start = 0, len = 0;
+  size_t child1 = 0;
+  size_t child2 = 0;
+  uint32_t depth = 0;
+
+  constexpr bool is_inside(Vector2 const* points, Rectangle rect) const {
+    if (len == 0) return false;
+    float minx = points[min_index_x].x, miny = points[min_index_y].y, maxx = points[max_index_x].x, maxy = points[max_index_y].y;
+    return !((miny > rect.y) || (maxy < rect.y - rect.height) || (minx > rect.x + rect.width) || (maxx < rect.x));
+  }
+
+  bool is_inside_3d(Vector2 const* points, Matrix mat) {
+    if (len == 0) return false;
+    Vector3 minx = Vector2TransformScale(points[min_index_x], mat),
+            miny = Vector2TransformScale(points[min_index_y], mat),
+            maxx = Vector2TransformScale(points[max_index_x], mat),
+            maxy = Vector2TransformScale(points[max_index_y], mat);
+    float mx = fminf(fminf(minx.x, miny.x), fminf(maxy.x, maxx.x));
+    float Mx = fmaxf(fmaxf(minx.x, miny.x), fmaxf(maxy.x, maxx.x));
+    float my = fminf(fminf(minx.y, miny.y), fminf(maxy.y, maxx.y));
+    float My = fmaxf(fmaxf(minx.y, miny.y), fmaxf(maxy.y, maxx.y));
+    float Mz = fmaxf(fmaxf(minx.z, miny.z), fmaxf(maxy.z, maxx.z));
+    float quad_size = 2.1f;
+    
+    Rectangle rect = { quad_size / -2, quad_size / -2, quad_size, quad_size };
+    return Mz > 0.f && CheckCollisionRecs(rect, Rectangle { mx, my, Mx - mx, My - my });
+  }
+  constexpr Vector2 get_ratios(Vector2 const* points, float screen_width, float screen_height) const {
+    float xr = points[max_index_x].x - points[min_index_x].x, yr = points[max_index_y].y - points[min_index_y].y;
+    return {xr / screen_width, yr / screen_height};
+  }
+  constexpr Vector2 get_ratios_3d(Vector2 const* points, Matrix mvp) const {
+    Vector3 minx = Vector2TransformScale(points[min_index_x], mvp),
+            miny = Vector2TransformScale(points[min_index_y], mvp),
+            maxx = Vector2TransformScale(points[max_index_x], mvp),
+            maxy = Vector2TransformScale(points[max_index_y], mvp);
+    float my = fminf(fminf(minx.y, miny.y), fminf(maxy.y, maxx.y));
+    float mx = fminf(fminf(minx.x, miny.x), fminf(maxy.x, maxx.x));
+    float My = fmaxf(fmaxf(minx.y, miny.y), fmaxf(maxy.y, maxx.y));
+    float Mx = fmaxf(fmaxf(minx.x, miny.x), fmaxf(maxy.x, maxx.x));
+    return {(Mx - mx) / 2.f, (My - my) / 2.f};
+  }
+  int64_t get_last_point() const {
+    if (len == 0) return -1;
+    return index_start + len - 1;
+  }
+  int64_t get_first_point() const {
+    if (len == 0) return -1;
+    return index_start;
+  }
+};
+
 struct resampling2_nodes_allocator_t {
   resampling2_nodes_t * arr = NULL;
+  size_t len = 0, cap = 0;
+};
+
+struct resampling2_nodes_3d_allocator_t {
+  resampling2_nodes_3d_t * arr = NULL;
   size_t len = 0, cap = 0;
 };
 
 typedef struct resampling2_t {
   resampling2_nodes_allocator_t resamp;
 } resampling2_t;
+
+typedef struct resampling2_3d_t {
+  resampling2_nodes_3d_allocator_t resamp;
+} resampling2_3d_t;
 
 static uint32_t powers[32] = {0};
 static uint32_t powers_base = 2;
@@ -88,6 +153,7 @@ static void __attribute__((constructor(101))) construct_powers(void) {
 
 static void resampling2_nodes_deinit(resampling2_nodes_allocator_t* nodes);
 static bool resampling2_nodes_push_point(resampling2_nodes_allocator_t* nodes, size_t node_index, uint32_t index, Vector2 const* points);
+static bool resampling2_nodes_3d_push_point(resampling2_nodes_3d_allocator_t* nodes, size_t node_index, uint32_t index, Vector3 const* points);
 static void resampling2_nodes_debug_print(FILE* file, resampling2_nodes_allocator_t const* r, size_t index);
 
 resampling2_t* resampling2_malloc(void) {
@@ -113,6 +179,14 @@ extern "C" void resampling2_add_point(resampling2_t* r, const br_data_t *pg, uin
     br_da_push((r->resamp), root);
   }
   resampling2_nodes_push_point(&r->resamp, 0, index, pg->points);
+}
+
+extern "C" void resampling2_add_point_3d(resampling2_3d_t* r, const br_data_3d_t *pg, uint32_t index) {
+  if (r->resamp.len == 0) {
+    resampling2_nodes_3d_t root = {};
+    br_da_push((r->resamp), root);
+  }
+  resampling2_nodes_3d_push_point(&r->resamp, 0, index, pg->points);
 }
 
 static void resampling2_nodes_deinit(resampling2_nodes_allocator_t* nodes) {
@@ -147,6 +221,41 @@ static bool resampling2_nodes_push_point(resampling2_nodes_allocator_t* nodes, s
     if (split) {
       resampling2_nodes_t left = node;
       resampling2_nodes_t right = {};
+      br_da_push(*nodes, left);
+      node.child1 = nodes->len - 1;
+      br_da_push(*nodes, right);
+      node.child2 = nodes->len - 1;
+      ++node.depth;
+    }
+  }
+  nodes->arr[node_index] = node;
+  return true;
+}
+
+static bool resampling2_nodes_3d_push_point(resampling2_nodes_3d_allocator_t* nodes, size_t node_index, uint32_t index, Vector3 const* points) {
+  resampling2_nodes_3d_t node = nodes->arr[node_index];
+  ++node.len;
+  if (node.len == 1) {
+    node.index_start = 
+    node.max_index_y = 
+    node.min_index_y =
+    node.max_index_x = 
+    node.min_index_x = index;
+  } else {
+    if (points[index].y < points[node.min_index_y].y) node.min_index_y = index;
+    if (points[index].y > points[node.max_index_y].y) node.max_index_y = index;
+    if (points[index].x < points[node.min_index_x].x) node.min_index_x = index;
+    if (points[index].x > points[node.max_index_x].x) node.max_index_x = index;
+    if (node.depth > 0) {
+      if (false == resampling2_nodes_3d_push_point(nodes, node.child2, index, points)) {
+        return false;
+      }
+    }
+    bool split = (node_index == 0 && node.len == RESAMPLING_NODE_MAX_LEN * powers[node.depth]) ||
+      (node_index != 0 && node.len > RESAMPLING_NODE_MAX_LEN * powers[node.depth]);
+    if (split) {
+      resampling2_nodes_3d_t left = node;
+      resampling2_nodes_3d_t right = {};
       br_da_push(*nodes, left);
       node.child1 = nodes->len - 1;
       br_da_push(*nodes, right);

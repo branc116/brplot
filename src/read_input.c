@@ -10,7 +10,7 @@
 
 #define MAX_REDUCE 6
 #define MAX_NAME 64
-#define REDUCTORS 9
+#define REDUCTORS 10
 #define INPUT_TOKENS_COUNT MAX_REDUCE
 #define IS_VALID_NAME(c) ((c) >= 'a' && (c) <= 'z')
 #define IS_VALID_PATH(c) (((c) >= '0' && (c) <= '1') || \
@@ -99,6 +99,16 @@ static void input_reduce_y(br_plotter_t* gv, lex_state_t* s) {
 
 static void input_reduce_xy(br_plotter_t* gv, lex_state_t* s) {
   if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = 0, .x = s->tokens[0].value_f, .y = s->tokens[2].value_f} });
+}
+
+static void input_reduce_xyz(br_plotter_t* gv, lex_state_t* s) {
+  if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_xyz, 
+      .push_point_xyz = { 
+        .group = 0,
+        .x = s->tokens[0].value_f,
+        .y = s->tokens[2].value_f,
+        .z = s->tokens[4].value_f
+  }});
 }
 
 static void input_reduce_xygroup(br_plotter_t* gv, lex_state_t* s) {
@@ -544,6 +554,7 @@ static void lex_state_init(lex_state_t* lex_state) {
    .reductors = {
     {{input_token_number}, input_reduce_y},
     {{input_token_number, input_token_comma, input_token_number}, input_reduce_xy},
+    {{input_token_number, input_token_comma, input_token_number, input_token_comma, input_token_number}, input_reduce_xyz},
     {{input_token_number, input_token_comma, input_token_number, input_token_semicollon, input_token_number}, input_reduce_xygroup},
     {{input_token_number, input_token_semicollon, input_token_number}, input_reduce_ygroup},
     {{input_token_dashdash, input_token_name, input_token_number}, input_reduce_command},

@@ -17,6 +17,7 @@ typedef enum {
   q_command_push_point_x,
   q_command_push_point_y,
   q_command_push_point_xy,
+  q_command_push_point_xyz,
   q_command_pop,
   q_command_clear,
   q_command_clear_all,
@@ -45,6 +46,10 @@ typedef struct q_command {
       int group;
       float x, y;
     } push_point_xy;
+    struct {
+      int group;
+      float x, y, z;
+    } push_point_xyz;
     struct {
       int group;
     } pop;

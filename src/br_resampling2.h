@@ -6,7 +6,9 @@ extern "C" {
 #endif
 
 typedef struct resampling2_t resampling2_t;
+typedef struct resampling2_3d_t resampling2_3d_t;
 typedef struct br_data_t br_data_t;
+typedef struct br_data_3d_t br_data_3d_t;
 typedef struct br_plot_t br_plot_t;
 
 
@@ -23,6 +25,7 @@ void resampling2_empty(resampling2_t* res);
 void resampling2_free(resampling2_t* res);
 void resampling2_draw(resampling2_t const* res, br_data_t const* pg, br_plot_t* rdi);
 void resampling2_add_point(resampling2_t* res, br_data_t const* pg, uint32_t index);
+void resampling2_add_point_3d(resampling2_3d_t* res, br_data_3d_t const* pg, uint32_t index);
 //void    help_resampling_dir_to_str(char* buff, resampling_dir r);
 
 #ifdef __cplusplus

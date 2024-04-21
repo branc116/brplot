@@ -39,6 +39,7 @@ void handle_all_commands(br_plotter_t* br, q_commands* commands) {
       case q_command_push_point_x:  br_data_push_x(&br->groups, comm.push_point_x.x, comm.push_point_y.group); break;
       case q_command_push_point_y:  br_data_push_y(&br->groups, comm.push_point_y.y, comm.push_point_y.group); break;
       case q_command_push_point_xy: br_data_push_xy(&br->groups, comm.push_point_xy.x, comm.push_point_xy.y, comm.push_point_xy.group); break;
+      case q_command_push_point_xyz:br_data_push_xyz(&br->groups_3d, comm.push_point_xyz.x, comm.push_point_xyz.y, comm.push_point_xyz.z, comm.push_point_xy.group); break;
       case q_command_pop:           break; //TODO
       case q_command_clear:         br_data_clear(&br->groups, &br->plots, comm.clear.group); break;
       case q_command_clear_all:     br_datas_deinit(&br->groups); break;

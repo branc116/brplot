@@ -44,10 +44,12 @@ typedef struct br_data_3d_t {
   Color color;
   size_t cap, len;
   Vector3* points;
+  resampling2_t* resampling;
   br_str_t name;
   min_distances_t point_closest_to_mouse;
-  bb_t bounding_box;
+  bb_3d_t bounding_box;
   bool is_selected;
+  bool is_new;
 } br_data_3d_t;
 
 typedef struct br_datas_t {
@@ -66,6 +68,7 @@ BR_API void br_data_set_name(br_datas_t* pg_array, int group, br_str_t name);
 BR_API void br_data_push_y(br_datas_t* pg, float y, int group);
 BR_API void br_data_push_x(br_datas_t* pg, float x, int group);
 BR_API void br_data_push_xy(br_datas_t* pg, float x, float y, int group);
+BR_API void br_data_push_xyz(br_datas_3d_t* pg, float x, float y, float z, int group);
 // TODO: this should be br_plotter_clear_data()
 BR_API void br_data_clear(br_datas_t* pg, br_plots_t* plots, int group_id);
 // Only remove all points from a group, don't remove the group itself.
@@ -82,7 +85,7 @@ void br_datas_export_csv(br_datas_t const* pg_array, FILE* file);
 
 BR_API void br_data_3d_set_name(br_datas_t* pg_array, int group, br_str_t name);
 BR_API void br_data_3d_push(br_datas_t* pg, float x, float y, float z, int group);
-BR_API br_data_t* br_data_3d_get(br_datas_3d_t* pg_array, int group);
+BR_API br_data_3d_t* br_data_3d_get(br_datas_3d_t* pg_array, int group);
 
 #ifdef __cplusplus
 }
