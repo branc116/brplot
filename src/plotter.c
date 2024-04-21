@@ -25,7 +25,6 @@ BR_API void br_plotter_init(br_plotter_t* br, float width, float height) {
   SetWindowState(FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
   *br = (br_plotter_t){
     .groups = {0},
-    .groups_3d = {0},
     .plots = {0},
     .shaders = {0},
     .commands = NULL,
@@ -134,6 +133,7 @@ BR_API void br_plotter_frame_end(br_plotter_t* gv) {
   for (size_t i = 0; i < gv->groups.len; ++i) {
     if (gv->groups.arr[i].is_new == false) continue;
     for (int j = 0; j < gv->plots.len; ++j) {
+      if (gv->plots.arr[j].kind == br_plot_kind_2d && gv->groups.arr[i].kind == br_data_kind_3d) continue;
       br_da_push_t(int, gv->plots.arr[j].groups_to_show, gv->groups.arr[i].group_id);
     }
     gv->groups.arr[i].is_new = false;

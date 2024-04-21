@@ -1,4 +1,6 @@
 #include "br_plot.h"
+#include "br_plotter.h"
+
 #include "math.h"
 #include "assert.h"
 
@@ -29,18 +31,26 @@ BR_API void br_plotter_set_top_right(br_plot_t* plot, float right, float top) {
   plot->dd.offset.y += (newHeight - plot->dd.graph_rect.height) / 2.f;
 }
 
-BR_API void br_plotter_focus_visible(br_plot_t* plot, br_datas_t const groups) {
+BR_API void br_plots_focus_visible(br_plots_t plots, br_datas_t const groups) {
+  for (int i = 0; i < plots.len; ++i) {
+    if (plots.arr[i].kind != br_plot_kind_2d) continue;
+    br_plot_focus_visible(&plots.arr[i], groups);
+    br_plot_focus_visible(&plots.arr[i], groups);
+  }
+}
+
+BR_API void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups) {
   // TODO 2D/3D
   assert(plot->kind == br_plot_kind_2d);
   if (groups.len == 0) return;
   size_t i = 0;
-  while (i < groups.len && (groups.arr[i].len == 0 || false == groups.arr[i].is_selected)) ++i;
+  while (i < groups.len && (groups.arr[i].kind != br_data_kind_2d || groups.arr[i].len == 0 || false == groups.arr[i].is_selected)) ++i;
   if (i >= groups.len) return;
 
-  bb_t bb = groups.arr[i++].bounding_box;
+  bb_t bb = groups.arr[i++].dd.bounding_box;
   for (; i < groups.len; ++i) {
-    if (groups.arr[i].len == 0 || false == groups.arr[i].is_selected) continue;
-    bb_t cur_bb = groups.arr[i].bounding_box;
+    if (groups.arr[i].kind != br_data_kind_2d || groups.arr[i].len == 0 || false == groups.arr[i].is_selected) continue;
+    bb_t cur_bb = groups.arr[i].dd.bounding_box;
     bb = (bb_t) {
       .xmin = fminf(bb.xmin, cur_bb.xmin),
       .ymin = fminf(bb.ymin, cur_bb.ymin),

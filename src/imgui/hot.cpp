@@ -23,8 +23,8 @@ extern "C" void br_hot_loop(br_plotter_t* br) {
     Matrix mvp = br->plots.arr[1].ddd.grid_shader->uvs.m_mvp_uv;
     Vector3 eye = br->plots.arr[1].ddd.eye;
     Vector2 v = { 3, 3 };
-    Vector2 vt2 = Vector2TransformScale(v, mvp);
-    ImGui::Text("(%f, %f) -> (%f, %f)", v.x, v.y, vt2.x, vt2.y);
+    Vector3 vt2 = Vector2TransformScale(v, mvp);
+    ImGui::Text("(%f, %f) -> (%f, %f, %f)", v.x, v.y, vt2.x, vt2.y, vt2.z);
     ImGui::Text("(%f, %f, %f)", eye.x, eye.y, eye.z);
   }
   ImGui::End();

@@ -7,8 +7,6 @@
 
 #include "raylib.h"
 #ifdef LINUX
-#include "sys/resource.h"
-#include "errno.h"
 #ifndef RELEASE
 const char* __asan_default_options(void) {
   return "verbosity=0:"

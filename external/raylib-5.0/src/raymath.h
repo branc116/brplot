@@ -828,6 +828,27 @@ RMAPI Vector3 Vector3Transform(Vector3 v, Matrix mat)
     return result;
 }
 
+RMAPI Vector3 Vector3TransformScale(Vector3 v, Matrix mat)
+{
+    Vector3 result = { 0 };
+
+    float x = v.x;
+    float y = v.y;
+    float z = v.z;
+
+    result.x = mat.m0*x + mat.m4*y + mat.m8*z + mat.m12;
+    result.y = mat.m1*x + mat.m5*y + mat.m9*z + mat.m13;
+    result.z = mat.m2*x + mat.m6*y + mat.m10*z + mat.m14;
+    //float w =  mat.m3*x + mat.m7*y + mat.m11*z + mat.m15;
+
+    if (fabsf(result.z) > 0.00001f) {
+      result.x /= fabsf(result.z);
+      result.y /= fabsf(result.z);
+    }
+
+    return result;
+}
+
 // Transform a vector by quaternion rotation
 RMAPI Vector3 Vector3RotateByQuaternion(Vector3 v, Quaternion q)
 {

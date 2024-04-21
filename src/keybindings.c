@@ -66,7 +66,7 @@ static inline void br_keybinding_test_points(br_plotter_t* br, br_plot_t* plot, 
 static inline void br_keybinding_follow(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
   (void)br; (void)cs;
   plot->follow = !plot->follow;
-  if (plot->follow) br_plotter_focus_visible(plot, br->groups);
+  if (plot->follow) br_plot_focus_visible(plot, br->groups);
 }
 
 static inline void br_keybinding_debug(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
