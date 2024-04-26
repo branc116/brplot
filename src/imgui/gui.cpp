@@ -90,10 +90,21 @@ void graph_draw_min(br_datas_t groups, br_plot_t* plot, float posx, float posy, 
   TracyCFrameMarkStart("graph_draw_min");
   plot->resolution.x = (float)GetScreenWidth();
   plot->resolution.y = (float)GetScreenHeight();
-  plot->graph_screen_rect.x = 50.f + posx + padding;
-  plot->graph_screen_rect.y = posy + padding;
-  plot->graph_screen_rect.width = width - 50.f - 2.f * padding;
-  plot->graph_screen_rect.height = height - 30.f - 2.f * padding;
+  switch (plot->kind) {
+    case br_plot_kind_2d: {
+      plot->graph_screen_rect.x = 50.f + posx + padding;
+      plot->graph_screen_rect.y = posy + padding;
+      plot->graph_screen_rect.width = width - 50.f - 2.f * padding;
+      plot->graph_screen_rect.height = height - 30.f - 2.f * padding;
+    } break;
+    case br_plot_kind_3d: {
+      plot->graph_screen_rect.x = posx;
+      plot->graph_screen_rect.y = posy;
+      plot->graph_screen_rect.width = width;
+      plot->graph_screen_rect.height = height;
+    } break;
+    default: assert(0);
+  }
   br_plot_update_shader_values(plot);
 
   //DrawRectangleRec(plot->graph_screen_rect, BLACK);
