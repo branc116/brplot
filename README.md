@@ -233,6 +233,8 @@ In the future they migh chage/be deleted.
 * **S**                                  - Grab a screenshot.
 * **H**                                  - Hide all lines.
 * **H** + **LSHIFT**                     - Toggle visiblity of all lines.
+* **3**                                  - Switch to 3D plot.
+* **2**                                  - Switch to 2D plot.
 
 #### Controls are only active if mouse is over element in list of graphs
 * **C** + **LSHIFT** - Clear all points in line which the mouse is over.
