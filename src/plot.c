@@ -141,10 +141,14 @@ void br_plot_update_shader_values(br_plot_t* plot) {
     case br_plot_kind_3d: {
       TracyCFrameMarkStart("update_shader_values_3d");
       Vector2 re = plot->ddd.grid_shader->uvs.resolution_uv = (Vector2) { .x = plot->graph_screen_rect.width, .y = plot->graph_screen_rect.height };
+      Vector3 eye_zero = Vector3Subtract(plot->ddd.eye, plot->ddd.target);
+      float eye_scale = 10.f * powf(10.f, -floorf(log10f(fmaxf(fmaxf(fabsf(eye_zero.x), fabsf(eye_zero.y)), fabsf(eye_zero.z)))));
+      Vector3 eye_final = Vector3Add(Vector3Scale(eye_zero, eye_scale), plot->ddd.target);
       Matrix per = MatrixPerspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
+      Matrix look_grid = MatrixLookAt(eye_final, plot->ddd.target, plot->ddd.up);
       Matrix look = MatrixLookAt(plot->ddd.eye, plot->ddd.target, plot->ddd.up);
-      plot->ddd.grid_shader->uvs.m_mvp_uv = MatrixMultiply(look, per);
-      plot->ddd.grid_shader->uvs.eye_uv = plot->ddd.eye;
+      plot->ddd.grid_shader->uvs.m_mvp_uv = MatrixMultiply(look_grid, per);
+      plot->ddd.grid_shader->uvs.eye_uv = eye_final;
 
       plot->ddd.line_shader->uvs.m_mvp_uv = MatrixMultiply(look, per);
       plot->ddd.line_shader->uvs.eye_uv = plot->ddd.eye;
