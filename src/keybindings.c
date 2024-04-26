@@ -20,7 +20,9 @@ typedef struct {
   x(KEY_D, KEY_PRESS, br_keybinding_debug) \
   x(KEY_J, KEY_DOWN,  br_keybinding_recoil_smol) \
   x(KEY_K, KEY_DOWN,  br_keybinding_recoil_big) \
-  x(KEY_S, KEY_PRESS, br_keybinding_screenshot)
+  x(KEY_S, KEY_PRESS, br_keybinding_screenshot) \
+  x(KEY_THREE, KEY_PRESS, br_keybinding_switch_3d) \
+  x(KEY_TWO, KEY_PRESS, br_keybinding_switch_2d)
 
 #define X(key, kind, name) static inline void name(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t meta);
 KEY_BINDINGS(X)
@@ -54,8 +56,7 @@ static inline void br_keybinding_clear(br_plotter_t* br, br_plot_t* plot, br_key
 
 static inline void br_keybinding_hide(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
   (void)plot;
-  if (cs.shift) for (size_t i = 0; i < br->groups.len; ++i) br->groups.arr[i].is_selected = !br->groups.arr[i].is_selected;
-  else          for (size_t i = 0; i < br->groups.len; ++i) br->groups.arr[i].is_selected = false;
+  assert(0);
 }
 
 static inline void br_keybinding_test_points(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
@@ -86,5 +87,13 @@ static inline void br_keybinding_recoil_big(br_plotter_t* br, br_plot_t* plot, b
 static inline void br_keybinding_screenshot(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
   (void)cs; (void)br;
   br_plot_screenshot(plot, br->groups, "test.png"); // TODO set a sensible name
+}
+
+static inline void br_keybinding_switch_2d(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
+  br->switch_to_2d = true;
+}
+
+static inline void br_keybinding_switch_3d(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
+  br->switch_to_3d = true;
 }
 

@@ -141,6 +141,14 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
     br_plot_t* plot = &gv->plots.arr[i];
     snprintf(context.buff, IM_ARRAYSIZE(context.buff), "Plot #%d", i);
     ImGui::SetNextWindowDockID(prev, ImGuiCond_FirstUseEver);
+    if (gv->switch_to_3d && (plot->kind == br_plot_kind_3d)) {
+      ImGui::SetNextWindowFocus();
+      gv->switch_to_3d = false;
+    }
+    if (gv->switch_to_2d && (plot->kind == br_plot_kind_2d)) {
+      ImGui::SetNextWindowFocus();
+      gv->switch_to_2d = false;
+    }
     if (ImGui::Begin(context.buff) && false == ImGui::IsWindowHidden()) {
       br_plot_update_variables(gv, plot, gv->groups, mouse_pos);
       ImVec2 p = ImGui::GetWindowPos();
@@ -151,6 +159,10 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
     ImGui::End();
     ImGui::PopID();
   }
+  if (gv->switch_to_3d && !gv->any_3d)
+    br_plotter_add_plot_3d(gv);
+  if (gv->switch_to_2d && !gv->any_2d)
+    br_plotter_add_plot_2d(gv);
 #ifndef RELEASE
 #ifdef LINUX
   if (gv->hot_state.func_loop != nullptr) {

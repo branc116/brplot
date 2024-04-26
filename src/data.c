@@ -278,7 +278,6 @@ static br_data_t* br_data_init(br_data_t* g, int group_id, br_data_kind_t kind) 
     .group_id = group_id,
     .color = color_get(group_id),
     .name = br_str_malloc(32),
-    .is_selected = true,
     .is_new = true,
     .dd = {
       .points = BR_MALLOC(br_data_element_size(kind) * 1024),

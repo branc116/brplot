@@ -32,6 +32,10 @@ BR_API void br_plotter_init(br_plotter_t* br, float width, float height) {
     .shaders = {0},
     .commands = NULL,
     .shaders_dirty = false,
+    .file_saver_inited = false,
+    .should_close = false,
+    .switch_to_2d = false,
+    .switch_to_3d = false
   };
 #ifdef IMGUI
 #ifndef RELEASE
@@ -62,6 +66,14 @@ BR_API br_datas_t* br_plotter_get_br_datas(br_plotter_t* br) {
   return &br->groups;
 }
 
+BR_API void br_plotter_switch_2d(br_plotter_t* br) {
+  br->switch_to_2d = true;
+}
+
+BR_API void br_plotter_switch_3d(br_plotter_t* br) {
+  br->switch_to_3d = true;
+}
+
 void br_plotter_add_plot_2d(br_plotter_t* br) {
   br_plot_t plot = {
     .groups_to_show = { 0 },
@@ -80,6 +92,7 @@ void br_plotter_add_plot_2d(br_plotter_t* br) {
     }
   };
   br_da_push_t(int, (br->plots), plot);
+  br->any_2d = true;
 }
 
 void br_plotter_add_plot_3d(br_plotter_t* br) {
@@ -105,6 +118,7 @@ void br_plotter_add_plot_3d(br_plotter_t* br) {
     }
   };
   br_da_push_t(int, (br->plots), plot);
+  br->any_3d = true;
 }
 
 BR_API void br_plotter_free(br_plotter_t* gv) {
@@ -159,7 +173,7 @@ void br_plotter_export(br_plotter_t const* gv, char const * path) {
   fprintf(file, "--offsety %f\n", gv->uvOffset.y);
 #endif
   for (size_t i = 0; i < gv->groups.len; ++i) {
-    fprintf(file, gv->groups.arr[i].is_selected ? "--show %d\n" : "--hide %d\n", gv->groups.arr[i].group_id);
+    assert(0);
   }
   br_datas_export(&gv->groups, file);
   fclose(file);

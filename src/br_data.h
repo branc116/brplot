@@ -48,7 +48,6 @@ typedef struct br_data_t {
   int group_id;
   Color color;
   br_str_t name;
-  bool is_selected;
   bool is_new;
   union {
     br_data_2d_t dd;

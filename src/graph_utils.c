@@ -44,12 +44,12 @@ BR_API void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups) {
   assert(plot->kind == br_plot_kind_2d);
   if (groups.len == 0) return;
   size_t i = 0;
-  while (i < groups.len && (groups.arr[i].kind != br_data_kind_2d || groups.arr[i].len == 0 || false == groups.arr[i].is_selected)) ++i;
+  while (i < groups.len && (groups.arr[i].kind != br_data_kind_2d || groups.arr[i].len == 0)) ++i;
   if (i >= groups.len) return;
 
   bb_t bb = groups.arr[i++].dd.bounding_box;
   for (; i < groups.len; ++i) {
-    if (groups.arr[i].kind != br_data_kind_2d || groups.arr[i].len == 0 || false == groups.arr[i].is_selected) continue;
+    if (groups.arr[i].kind != br_data_kind_2d || groups.arr[i].len == 0) continue;
     bb_t cur_bb = groups.arr[i].dd.bounding_box;
     bb = (bb_t) {
       .xmin = fminf(bb.xmin, cur_bb.xmin),

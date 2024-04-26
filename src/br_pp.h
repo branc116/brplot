@@ -64,7 +64,8 @@ void  br_imgui_free(void* p, void* user_data);
 #define BR_IMGUI_MALLOC br_imgui_malloc
 #define BR_IMGUI_FREE br_imgui_free
 #include "signal.h"
-#define BR_ASSERT(x) if (!x) raise(SIGABRT)
+#include <assert.h>
+#define BR_ASSERT(x) do { if (!x) { raise(SIGABRT); } assert(x); } while (false)
 #else
 #include <assert.h>
 #define BR_ASSERT(x) assert(x)

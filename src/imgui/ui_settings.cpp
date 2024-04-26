@@ -30,23 +30,6 @@ namespace br {
       if (ImGui::Button("Empty all")) {
         br_datas_empty(&br->groups);
       }
-      if (ImGui::Button("Toggle Hide all")) {
-        for (size_t i = 0; i < br->groups.len; ++i) {
-          br->groups.arr[i].is_selected = !br->groups.arr[i].is_selected;
-        }
-      }
-      ImGui::SameLine();
-      if (ImGui::Button("Hide all")) {
-        for (size_t i = 0; i < br->groups.len; ++i) {
-          br->groups.arr[i].is_selected = false;
-        }
-      }
-      ImGui::SameLine();
-      if (ImGui::Button("Show all")) {
-        for (size_t i = 0; i < br->groups.len; ++i) {
-          br->groups.arr[i].is_selected = true;
-        }
-      }
       if (ImGui::CollapsingHeader("Plots")) {
         ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_AutoSelectNewTabs | ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_FittingPolicyResizeDown;
         tab_bar_flags &= ~(ImGuiTabBarFlags_FittingPolicyMask_ ^ ImGuiTabBarFlags_FittingPolicyResizeDown);
@@ -91,12 +74,9 @@ namespace br {
           ImVec4 imcol_inv = 1.f - imcol;
           imcol_inv.w = 1.f;
           sprintf(&context.buff[2], "Data Group %d", br->groups.arr[i].group_id);
-          context.buff[0] = context.buff[1] = '#';
-          ImGui::Checkbox(context.buff, &br->groups.arr[i].is_selected);
           ImGui::PushStyleColor(ImGuiCol_Text, imcol);
           ImGui::PushStyleColor(ImGuiCol_HeaderActive, imcol_inv);
           ImGui::PushStyleColor(ImGuiCol_HeaderHovered, imcol_inv);
-          ImGui::SameLine();
           if (ImGui::TreeNodeEx(&context.buff[2], ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::PopStyleColor(3);
             sprintf(context.buff, "Clear##P%lu", i);

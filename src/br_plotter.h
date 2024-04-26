@@ -35,17 +35,20 @@ typedef struct br_plotter_t {
 #endif
 #endif
 #endif
-  Vector2 mouse_graph_pos;
 
   bool shaders_dirty;
   bool file_saver_inited;
   bool should_close;
+  bool switch_to_2d, switch_to_3d;
+  bool any_2d, any_3d;
 } br_plotter_t;
 
 BR_API br_plotter_t* br_plotter_malloc(void);
 BR_API void br_plotter_init(br_plotter_t* br, float width, float height);
 BR_API void br_plotter_resize(br_plotter_t* br, float width, float height);
 BR_API br_datas_t* br_plotter_get_br_datas(br_plotter_t* br);
+BR_API void br_plotter_switch_2d(br_plotter_t* br);
+BR_API void br_plotter_switch_3d(br_plotter_t* br);
 BR_API void br_plotter_set_bottom_left(br_plot_t* plot, float left, float bottom);
 BR_API void br_plotter_set_top_right(br_plot_t* plot, float right, float top);
 BR_API void br_plots_focus_visible(br_plots_t plot, br_datas_t groups);

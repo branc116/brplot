@@ -59,11 +59,12 @@ static void draw_left_panel(br_plotter_t* br) {
   ui_stack_buttons_init(new_pos, &sp, context.font_scale * 15);
   for(size_t j = 0; j < br->groups.len; ++j) {
     int res = 0;
+    bool yes = true;
     if (context.debug_bounds) {
-      res = ui_stack_buttons_add(&br->groups.arr[j].is_selected, "Line #%d: %d;",
+      res = ui_stack_buttons_add(&yes, "Line #%d: %d;",
         br->groups.arr[j].group_id, br->groups.arr[j].len);
     } else {
-      res = ui_stack_buttons_add(&br->groups.arr[j].is_selected, "Line #%d: %d", br->groups.arr[j].group_id, br->groups.arr[j].len);
+      res = ui_stack_buttons_add(&yes, "Line #%d: %d", br->groups.arr[j].group_id, br->groups.arr[j].len);
     }
     if (res > 0) {
       if (IsKeyPressed(KEY_C)) {

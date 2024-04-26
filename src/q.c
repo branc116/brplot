@@ -46,8 +46,8 @@ void handle_all_commands(br_plotter_t* br, q_commands* commands) {
       case q_command_screenshot:    br_plot_screenshot(&br->plots.arr[0], br->groups, comm.path_arg.path); free(comm.path_arg.path); break;
       case q_command_export:        br_plotter_export(br, comm.path_arg.path);     free(comm.path_arg.path); break;
       case q_command_exportcsv:     br_plotter_export_csv(br, comm.path_arg.path); free(comm.path_arg.path); break;
-      case q_command_hide:          br_data_get(&br->groups, comm.hide_show.group)->is_selected = false; break;
-      case q_command_show:          br_data_get(&br->groups, comm.hide_show.group)->is_selected = true;  break;
+      case q_command_hide:          BR_ASSERT(0);
+      case q_command_show:          BR_ASSERT(0);
       case q_command_set_name:      br_data_set_name(&br->groups, comm.set_quoted_str.group, comm.set_quoted_str.str);  break;
       case q_command_focus:         br_plots_focus_visible(br->plots, br->groups); break;
       default:                      BR_ASSERT(false);
