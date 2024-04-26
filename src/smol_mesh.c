@@ -162,7 +162,7 @@ void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, Vector3 p1, Vector3 p2, 
   norm = Vector3Perpendicular(diff);
   float dist1 = 0.1f * Vector3Distance(shader->uvs.eye_uv, p1);
   float dist2 = 0.1f * Vector3Distance(shader->uvs.eye_uv, p2);
-  int n = (int)(12.f/dist1) + 4;
+  int n = (int)(6.f/fminf(dist1, dist2)) + 6;
   for (int k = 0; k <= n; ++k) {
     Vector3 next = Vector3Normalize(Vector3RotateByAxisAngle(norm, diff, (float)PI * 2 / (float)n));
     int i = shader->len;
