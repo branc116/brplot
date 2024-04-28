@@ -44,7 +44,8 @@ target_include_directories(imgui PUBLIC ./external/imgui-docking/ ./external/glf
 add_executable(brplot
   src/main.c          src/help.c        src/data.c        src/smol_mesh.c src/q.c
   src/read_input.c    src/plotter.c     src/keybindings.c src/str.c       src/memory.cpp 
-  src/resampling2.cpp src/graph_utils.c src/shaders.c     src/plot.c
+  src/resampling2.cpp src/graph_utils.c src/shaders.c     src/plot.c      src/filesystem.cpp
+  src/permastate.c
 )
 
 if (MSVC)
@@ -133,6 +134,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Linux)
   target_sources(brplot PUBLIC 
     ./src/desktop/platform.c
     ./src/desktop/linux/read_input.c
+    ./src/desktop/linux/filesystem.c
   )
 elseif (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
   target_compile_definitions(brplot PUBLIC LINUX=1)
@@ -141,6 +143,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
   target_sources(brplot PUBLIC 
     ./src/desktop/platform.c
     ./src/desktop/linux/read_input.c
+    ./src/desktop/linux/filesystem.c
   )
   target_include_directories(imgui PUBLIC /usr/local/include)
   target_link_directories(brplot PUBLIC /usr/local/lib /usr/lib)
@@ -150,7 +153,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL Windows)
   target_compile_definitions(imgui PUBLIC PLATFORM_DESKTOP=1 _WIN32=1 WIN32_LEAN_AND_MEAN=1)
   target_link_libraries(brplot opengl32 gdi32 winmm)
   target_sources(raylib PUBLIC ./external/raylib-5.0/src/rglfw.c)
-  target_sources(brplot PUBLIC src/desktop/win/read_input.c src/desktop/platform.c)
+  target_sources(brplot PUBLIC src/desktop/win/read_input.c src/desktop/platform.c ./src/desktop/win/filesystem.cpp)
 else ()
   message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} not supported")
 endif ()

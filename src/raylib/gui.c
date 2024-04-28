@@ -3,18 +3,20 @@
 #include "src/br_gui_internal.h"
 #include "src/br_smol_mesh.h"
 #include "src/br_da.h"
+#include "src/br_permastate.h"
 
 #include "raylib.h"
 #include "raymath.h"
 
 static bool show_2d = true;
 static bool show_3d = false;
-void emscripten_run_script(const char* script);
 static void update_resolution(br_plotter_t* gv);
 static void draw_left_panel(br_plotter_t* gv);
 void br_gui_init_specifics_gui(br_plotter_t* br) {
-  br_plotter_add_plot_2d(br);
-  br_plotter_add_plot_3d(br);
+  if (false == br_permastate_load(br)) {
+    br_plotter_add_plot_2d(br);
+    br_plotter_add_plot_3d(br);
+  }
 }
 
 BR_API void br_plotter_draw(br_plotter_t* br) {

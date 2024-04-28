@@ -27,7 +27,7 @@ IM                 = ./external/imgui-docking
 RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
 SOURCE             = src/main.c src/help.c src/data.c src/smol_mesh.c src/q.c src/read_input.c src/plotter.c \
 										 src/keybindings.c src/str.c src/memory.cpp src/resampling2.c src/graph_utils.c src/shaders.c \
-										 src/plot.c
+										 src/plot.c src/permastate.c src/filesystem.cpp
 COMMONFLAGS        = -I. -I./external/glfw/include/ -I./external/Tracy -MMD -MP
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra
 LD_FLAGS           =
@@ -71,7 +71,7 @@ endif
 ifeq ($(PLATFORM), LINUX)
 	LIBS= `pkg-config --static --libs glfw3` -lGL
 	COMMONFLAGS+= -DLINUX=1 -DPLATFORM_DESKTOP=1
-	SOURCE+= src/desktop/linux/read_input.c src/desktop/platform.c
+	SOURCE+= src/desktop/linux/read_input.c src/desktop/platform.c src/desktop/linux/filesystem.c
 	SHADERS_HEADER= src/misc/shaders.h
 
 else ifeq ($(PLATFORM), WINDOWS)
@@ -79,7 +79,7 @@ else ifeq ($(PLATFORM), WINDOWS)
 	CXX= x86_64-w64-mingw32-g++
 	CC= x86_64-w64-mingw32-gcc
 	COMMONFLAGS+= -Iexternal/glfw/include -DWINDOWS=1 -DPLATFORM_DESKTOP=1 -D_WIN32=1 -DWIN32_LEAN_AND_MEAN
-	SOURCE+= $(RL)/rglfw.c src/desktop/win/read_input.c src/desktop/platform.c
+	SOURCE+= $(RL)/rglfw.c src/desktop/win/read_input.c src/desktop/platform.c src/desktop/win/filesystem.cpp
 	SHADERS_HEADER= src/misc/shaders.h
 	COMPILER= MINGW
 
@@ -89,7 +89,7 @@ else ifeq ($(PLATFORM), WEB)
 	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES3=1 -DPLATFORM_WEB=1
 	LD_FLAGS= -sWASM_BIGINT -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH -sUSE_GLFW=3 -sUSE_WEBGL2=1 -sGL_ENABLE_GET_PROC_ADDRESS --shell-file=src/web/minshell.html
 	LD_FLAGS+= -sCHECK_NULL_WRITES=0 -sDISABLE_EXCEPTION_THROWING=1 -sFILESYSTEM=0 -sDYNAMIC_EXECUTION=0
-	SOURCE+= src/web/read_input.c src/web/platform.c
+	SOURCE+= src/web/read_input.c src/web/platform.c src/web/filesystem.c
 	SHADERS_HEADER= src/misc/shaders_web.h
 	COMPILER= EMCC
 	ifeq ($(TYPE), LIB)

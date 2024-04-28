@@ -1,4 +1,5 @@
 #include "src/br_plot.h"
+#include "src/br_str.h"
 #include "string.h"
 
 br_str_t br_str_malloc(size_t size) {
@@ -92,6 +93,20 @@ bool br_str_push_float(br_str_t* s, float c) {
 }
 
 bool br_str_push_br_str(br_str_t* s, br_str_t const c) {
+  size_t size = c.len;
+  if (size == 0) return true;
+  if (s->len + size > s->cap) {
+    size_t pot_size_1 = s->cap * 2, pot_size_2 = s->len + size;
+    size_t new_size =  pot_size_2 > pot_size_1 ? pot_size_2 : pot_size_1;
+    if (false == br_str_realloc(s, new_size)) return false;
+  }
+  for (size_t i = 0; i < size; ++i) {
+    br_str_push_char_unsafe(s, c.str[i]);
+  }
+  return true;
+}
+
+bool br_str_push_br_strv(br_str_t* s, br_strv_t const c) {
   size_t size = c.len;
   if (size == 0) return true;
   if (s->len + size > s->cap) {

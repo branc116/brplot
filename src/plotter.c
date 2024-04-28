@@ -14,8 +14,6 @@
 
 context_t context;
 
-void emscripten_run_script(const char* script);
-
 BR_API br_plotter_t* br_plotter_malloc(void) {
   br_resampling2_construct();
   br_data_construct();
@@ -114,7 +112,6 @@ void br_plotter_add_plot_3d(br_plotter_t* br) {
       .fov_y = 1,
       .near_plane = 0.001f,
       .far_plane = 10e7f,
-      .groups_3d_to_show = { 0 }
     }
   };
   br_da_push_t(int, (br->plots), plot);

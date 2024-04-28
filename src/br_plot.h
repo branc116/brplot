@@ -36,10 +36,6 @@ typedef struct br_plot_3d_t {
   br_shader_line_3d_simple_t* line_simple_shader;
   Vector3 eye, target, up;
   float fov_y, near_plane, far_plane;
-  struct {
-    int* arr;
-    int len, cap; 
-  } groups_3d_to_show;
 } br_plot_3d_t;
 
 typedef struct br_plot_t {

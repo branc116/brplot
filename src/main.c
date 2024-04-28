@@ -1,6 +1,7 @@
 #ifndef LIB
 #include "br_plot.h"
 #include "br_plotter.h"
+#include "br_permastate.h"
 
 #include <stdio.h>
 #include "tracy/TracyC.h"
@@ -48,7 +49,7 @@ int main(void) {
 
   // Clean up
   read_input_stop();
-  fprintf(stdin, "\1\n");
+  br_permastate_save(gv);
   br_plotter_free(gv);
   BR_FREE(gv);
   CloseWindow();

@@ -9,7 +9,7 @@
 
 static int br_pipes[2];
 static pthread_t thread;
-
+// TODO: fprintf -> LOG
 static void* indirection_function(void* gv);
 
 void read_input_start(br_plotter_t* gv) {
@@ -40,7 +40,7 @@ int read_input_read_next(void) {
       read(STDIN_FILENO, &c, 1);
       return (int)c;
     } else if (POLLHUP & fds[0].revents) {
-      fprintf(stderr, "God POOLHUP(%d) on stdin, Stopping read_input\n", fds[0].revents);
+      fprintf(stderr, "Got POOLHUP(%d) on stdin, Stopping read_input\n", fds[0].revents);
       close(br_pipes[0]);
       return -1;
     }
@@ -52,7 +52,7 @@ int read_input_read_next(void) {
         return -1;
       }
     } else if ((32 | POLLHUP) & fds[1].revents) {
-      fprintf(stderr, "God POOLHUP(%d) on br_pipe, Stopping read_input\n", fds[1].revents);
+      fprintf(stderr, "Got POOLHUP(%d) on br_pipe, Stopping read_input\n", fds[1].revents);
       close(br_pipes[0]);
       return -1;
     }
