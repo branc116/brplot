@@ -21,8 +21,8 @@ bool br_fs_exists(br_strv_t path) {
 
 #ifdef IMGUI
 #include "imgui_internal.h"
-uint32_t br_fs_crc(const void* data, size_t len) {
-  return ImHashData(data, len, 0);
+uint32_t br_fs_crc(const void* data, size_t len, uint32_t seed) {
+  return ImHashData(data, len, seed);
 }
 #else
 // CRC32 needs a 1KB lookup table (not cache friendly)
@@ -48,9 +48,9 @@ static const uint32_t GCrc32LookupTable[256] =
     0xBDBDF21C,0xCABAC28A,0x53B39330,0x24B4A3A6,0xBAD03605,0xCDD70693,0x54DE5729,0x23D967BF,0xB3667A2E,0xC4614AB8,0x5D681B02,0x2A6F2B94,0xB40BBE37,0xC30C8EA1,0x5A05DF1B,0x2D02EF8D,
 };
 
-uint32_t br_fs_crc(const void* data_p, size_t data_size) // Stolen from ImGui
+uint32_t br_fs_crc(const void* data_p, size_t data_size, uint32_t seed) // Stolen from ImGui
 {
-    uint32_t crc = ~0;
+    uint32_t crc = ~seed;
     const unsigned char* data = (const unsigned char*)data_p;
     while (data_size-- != 0)
         crc = (crc >> 8) ^ GCrc32LookupTable[(crc & 0xFF) ^ *data++];

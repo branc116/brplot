@@ -35,7 +35,9 @@ typedef struct br_plotter_t {
 #endif
 #endif
 #endif
+  int active_plot_index;
 
+  bool loaded;
   bool shaders_dirty;
   bool file_saver_inited;
   bool should_close;

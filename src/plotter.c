@@ -4,6 +4,7 @@
 #include "br_da.h"
 #include "br_resampling2.h"
 #include "br_q.h"
+#include "br_permastate.h"
 
 #include <math.h>
 #include <string.h>
@@ -51,6 +52,11 @@ BR_API void br_plotter_init(br_plotter_t* br, float width, float height) {
 
   context.font_scale = 1.8f;
   memset(context.buff, 0, sizeof(context.buff));
+  br->loaded = br_permastate_load(br);
+  if (false == br->loaded) {
+    br_datas_deinit(&br->groups);
+    br->plots.len = 0;
+  }
   br_gui_init_specifics_gui(br);
   br_gui_init_specifics_platform(br);
 }

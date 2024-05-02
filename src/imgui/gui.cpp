@@ -50,7 +50,7 @@ static float padding = 50.f;
 static GLFWwindow* ctx;
 
 extern "C" void br_gui_init_specifics_gui(br_plotter_t* br) {
-  if (false == br_permastate_load(br)) br_plotter_add_plot_2d(br);
+  if (false == br->loaded) br_plotter_add_plot_2d(br);
 
   ctx = glfwGetCurrentContext();
   ImGui::SetAllocatorFunctions(BR_IMGUI_MALLOC, BR_IMGUI_FREE, nullptr);

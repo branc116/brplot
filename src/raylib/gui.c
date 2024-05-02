@@ -13,7 +13,7 @@ static bool show_3d = false;
 static void update_resolution(br_plotter_t* gv);
 static void draw_left_panel(br_plotter_t* gv);
 void br_gui_init_specifics_gui(br_plotter_t* br) {
-  if (false == br_permastate_load(br)) {
+  if (false == br->loaded) {
     br_plotter_add_plot_2d(br);
     br_plotter_add_plot_3d(br);
   }
