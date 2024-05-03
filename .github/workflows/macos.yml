@@ -1,0 +1,31 @@
+name: Macos
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'src/**'
+      - 'tools/**'
+      - '.github/workflows/linux.yml'
+      - 'external/**'
+      - 'Makefile'
+
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-13
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3.6.0
+      with:
+        submodules: true
+
+    - name: Setup Environment
+      run: | 
+        brew install zig
+
+    - name: Build
+      run: |
+        zig build
+
