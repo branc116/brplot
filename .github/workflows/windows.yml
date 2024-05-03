@@ -1,4 +1,4 @@
-name: Macos
+name: Windows
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
     paths:
       - 'src/**'
       - 'tools/**'
-      - '.github/workflows/macos.yml'
+      - '.github/workflows/linux.yml'
       - 'external/**'
       - 'Makefile'
 
@@ -14,12 +14,12 @@ permissions:
   contents: read
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: windows-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v3.6.0
       with:
-        submodules: true
+        submodules: true 
 
     - name: Setup Zig
       uses: goto-bus-stop/setup-zig@v2.2.0
@@ -29,7 +29,6 @@ jobs:
 
     - name: Build
       run: |
-        ls
-        zig build -Doptimize=ReleaseSafe
-        ls zig-out/bin
+        dir
+        zig build
 

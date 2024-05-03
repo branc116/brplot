@@ -178,7 +178,7 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
             exe.addCSourceFile(.{ .file = b.path("./src/desktop/win/filesystem.cpp") });
             exe.addCSourceFile(.{ .file = b.path("./src/desktop/platform.c") });
             if (false == is_release) {
-                exe.addCSourceFile(.{ .file = b.path("./src/desktop/win/refresh_shaders.c") });
+                exe.addCSourceFile(.{ .file = b.path("./src/desktop/nob/refresh_shaders.c") });
             }
         },
         .freebsd, .linux, .macos => {
@@ -186,7 +186,11 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
             exe.addCSourceFile(.{ .file = b.path("./src/desktop/linux/filesystem.c") });
             exe.addCSourceFile(.{ .file = b.path("./src/desktop/platform.c") });
             if (false == is_release) {
-                exe.addCSourceFile(.{ .file = b.path("./src/desktop/linux/refresh_shaders.c") });
+                if (target.result.os.tag == .linux) {
+                    exe.addCSourceFile(.{ .file = b.path("./src/desktop/linux/refresh_shaders.c") });
+                } else {
+                    exe.addCSourceFile(.{ .file = b.path("./src/desktop/nob/refresh_shaders.c") });
+                }
             }
         },
         else => {
