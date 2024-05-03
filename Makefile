@@ -124,7 +124,7 @@ ifeq ($(CONFIG), DEBUG)
 		endif
 	endif
 	ifeq ($(PLATFORM), WINDOWS)
-		SOURCE+= src/desktop/win/refresh_shaders.c
+		SOURCE+= src/desktop/nob/refresh_shaders.c
 	endif
 	ifeq ($(PLATFORM), WEB)
 		SOURCE+= src/web/refresh_shaders.c

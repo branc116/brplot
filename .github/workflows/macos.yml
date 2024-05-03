@@ -30,6 +30,6 @@ jobs:
     - name: Build
       run: |
         ls
-        zig build -Doptimize=ReleaseSafe
+        zig build -Doptimize=ReleaseSafe --summary all
         ls zig-out/bin
 

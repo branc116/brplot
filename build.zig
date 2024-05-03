@@ -91,6 +91,7 @@ pub fn build_raylib(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
             raylib.linkFramework("CoreGraphics");
             raylib.linkFramework("AppKit");
             raylib.linkFramework("IOKit");
+            raylib.defineCMacro("PLATFORM_DESKTOP", null);
         },
         else => {
             unreachable();
