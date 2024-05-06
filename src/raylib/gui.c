@@ -5,6 +5,8 @@
 #include "src/br_da.h"
 #include "src/br_permastate.h"
 
+#include "ui.c"
+
 #include "raylib.h"
 #include "raymath.h"
 

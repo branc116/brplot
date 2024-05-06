@@ -150,6 +150,15 @@ void br_shaders_free(br_shaders_t shaders) {
 }
 
 #ifndef RELEASE
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
+#  include "desktop/linux/refresh_shaders.c"
+#elif defined(_WIN32) || defined(__CYGWIN__)
+#  include "desktop/nob/refresh_shaders.c"
+#elif defined(__EMSCRIPTEN__)
+#  include "web/refresh_shaders.c"
+#else
+#  error "Unsupported Platform"
+#endif
 void br_shaders_refresh(br_shaders_t shaders) {
 #  define X_BUF(NAME, LEN) shader->NAME ## _loc = rlGetLocationAttrib(shader->id, #NAME);
 #  define X_VEC(NAME, LEN) shader->NAME ## _u = rlGetLocationUniform(shader->id, #NAME);

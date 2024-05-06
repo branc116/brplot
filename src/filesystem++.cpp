@@ -2,6 +2,14 @@
 #include "br_str.h"
 #include "br_pp.h"
 
+#if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
+#elif defined(_WIN32) || defined(__CYGWIN__)
+#  include "desktop/win/filesystem.cpp"
+#elif defined(__EMSCRIPTEN__)
+#else
+#  error "Unsupported Platform"
+#endif
+
 #include <filesystem>
 
 bool br_fs_mkdir(br_strv_t path) {

@@ -6,6 +6,14 @@
 #include "src/br_permastate.h"
 #include "imgui_extensions.h"
 
+#include "file_saver.cpp"
+#ifndef RELEASE
+#  include "external/imgui-docking/imgui_demo.cpp"
+#endif
+#include "imgui_extensions.cpp"
+#include "ui_info.cpp"
+#include "ui_settings.cpp"
+
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"

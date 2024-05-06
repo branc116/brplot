@@ -145,8 +145,11 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
 
     exe.addCSourceFiles(.{ .files = &.{
         "./src/data.c",
-        "./src/filesystem.cpp",
+        "./src/filesystem.c",
+        "./src/filesystem++.cpp",
         "./src/graph_utils.c",
+        "./src/gui.c",
+        "./src/gui++.cpp",
         "./src/help.c",
         "./src/keybindings.c",
         "./src/main.c",
@@ -173,53 +176,21 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
         exe.step.dependOn(&(try generate_shaders(b)).step);
     }
 
-    switch (target.result.os.tag) {
-        .windows => {
-            exe.addCSourceFile(.{ .file = b.path("./src/desktop/win/read_input.c") });
-            exe.addCSourceFile(.{ .file = b.path("./src/desktop/win/filesystem.cpp") });
-            exe.addCSourceFile(.{ .file = b.path("./src/desktop/platform.c") });
-            if (false == is_release) {
-                exe.addCSourceFile(.{ .file = b.path("./src/desktop/nob/refresh_shaders.c") });
-            }
-        },
-        .freebsd, .linux, .macos => {
-            exe.addCSourceFile(.{ .file = b.path("./src/desktop/linux/read_input.c") });
-            exe.addCSourceFile(.{ .file = b.path("./src/desktop/linux/filesystem.c") });
-            exe.addCSourceFile(.{ .file = b.path("./src/desktop/platform.c") });
-            if (false == is_release) {
-                if (target.result.os.tag == .linux) {
-                    exe.addCSourceFile(.{ .file = b.path("./src/desktop/linux/refresh_shaders.c") });
-                } else {
-                    exe.addCSourceFile(.{ .file = b.path("./src/desktop/nob/refresh_shaders.c") });
-                }
-            }
-        },
-        else => {
-            unreachable();
-        },
-    }
     switch (kind) {
         .raylib => {
             exe.linkLibrary(raylib);
-            exe.addCSourceFile(.{ .file = b.path("./src/raylib/gui.c") });
-            exe.addCSourceFile(.{ .file = b.path("./src/raylib/ui.c") });
+            exe.defineCMacro("RAYLIB", null);
         },
         .imgui => {
             exe.linkLibrary(raylib);
             exe.linkLibrary(imgui);
-            exe.addCSourceFile(.{ .file = b.path("./src/imgui/gui.cpp") });
-            exe.addCSourceFile(.{ .file = b.path("./src/imgui/imgui_extensions.cpp") });
-            exe.addCSourceFile(.{ .file = b.path("./src/imgui/ui_settings.cpp") });
-            exe.addCSourceFile(.{ .file = b.path("./src/imgui/ui_info.cpp") });
-            exe.addCSourceFile(.{ .file = b.path("./src/imgui/file_saver.cpp") });
             exe.addIncludePath(b.path("./external/imgui-docking"));
             exe.addIncludePath(b.path("./src/imgui"));
+            exe.defineCMacro("IMGUI", null);
         },
         .headless => {
             exe.defineCMacro("NUMBER_OF_STEPS", "100");
-            exe.addCSourceFile(.{ .file = b.path("./src/headless/gui.c") });
-            exe.addCSourceFile(.{ .file = b.path("./src/headless/gui.c") });
-            exe.addCSourceFile(.{ .file = b.path("./src/headless/raylib_headless.c") });
+            exe.defineCMacro("HEADLESS", null);
         },
     }
     exe.linkLibCpp();

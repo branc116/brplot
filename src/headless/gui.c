@@ -3,6 +3,11 @@
 #include "src/br_gui_internal.h"
 #include "src/br_smol_mesh.h"
 
+#ifndef NUMBER_OF_STEPS
+#define NUMBER_OF_STEPS 100
+#endif
+#include "raylib_headless.c"
+
 #include "raylib.h"
 
 void br_gui_init_specifics_gui(br_plotter_t* br) {

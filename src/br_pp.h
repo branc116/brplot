@@ -26,7 +26,7 @@
 //TODO: Do something with this...
 #define GRAPH_LEFT_PAD 500
 
-#ifdef LINUX
+#ifdef __linux__
 #include "pthread.h"
 #define LOCK_T pthread_mutex_t
 #endif

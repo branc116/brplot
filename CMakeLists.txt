@@ -5,7 +5,8 @@ include(CMakeDependentOption)
 project(Brplot)
 
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Release Debug)
-if ((NOT DEFINED CMAKE_BUILD_TYPE) OR (NOT DEFINED ${CMAKE_BUILD_TYPE}) OR (CMAKE_BUILD_TYPE STREQUAL ""))
+message("CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+if ((NOT DEFINED CMAKE_BUILD_TYPE) OR (CMAKE_BUILD_TYPE STREQUAL ""))
   set(CMAKE_BUILD_TYPE Release)
 endif ()
 message("CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
@@ -44,8 +45,8 @@ target_include_directories(imgui PUBLIC ./external/imgui-docking/ ./external/glf
 add_executable(brplot
   src/main.c          src/help.c        src/data.c        src/smol_mesh.c src/q.c
   src/read_input.c    src/plotter.c     src/keybindings.c src/str.c       src/memory.cpp 
-  src/resampling2.cpp src/graph_utils.c src/shaders.c     src/plot.c      src/filesystem.cpp
-  src/permastate.c
+  src/resampling2.cpp src/graph_utils.c src/shaders.c     src/plot.c      src/filesystem++.cpp
+  src/permastate.c    src/gui++.cpp     src/gui.c         src/filesystem.c
 )
 
 if (MSVC)
@@ -61,7 +62,6 @@ endif ()
 
 if (USE_HOTRELOAD)
   message("Using hot reload")
-  target_sources(brplot PUBLIC ./src/imgui/hotreload.c)
   target_link_options(brplot PUBLIC -fpie -rdynamic)
   target_compile_options(brplot PUBLIC -fpie)
 endif ()
@@ -76,7 +76,6 @@ target_sources(brplot PRIVATE src/misc/default_font.h)
 
 if (CMAKE_BUILD_TYPE STREQUAL Debug)
   target_compile_definitions(brplot PUBLIC DEBUG)
-  target_sources(imgui PUBLIC ./external/imgui-docking/imgui_demo.cpp)
 elseif (CMAKE_BUILD_TYPE STREQUAL Release)
   target_compile_definitions(brplot PUBLIC RELEASE IMGUI_DISABLE_DEMO_WINDOWS IMGUI_DISABLE_DEBUG_TOOLS)
   if (MSVC)
@@ -104,25 +103,13 @@ endif()
 
 if (GUI STREQUAL raylib)
   target_compile_definitions(brplot PUBLIC RAYLIB)
-  target_sources(brplot PUBLIC ./src/raylib/gui.c ./src/raylib/ui.c)
   target_link_libraries(brplot raylib)
 elseif (GUI STREQUAL imgui)
   target_compile_definitions(brplot PUBLIC IMGUI)
-  target_sources(brplot PUBLIC
-    ./src/imgui/file_saver.cpp
-    ./src/imgui/gui.cpp
-    ./src/imgui/imgui_extensions.cpp
-    ./src/imgui/ui_info.cpp
-    ./src/imgui/ui_settings.cpp
-  )
   target_link_libraries(brplot imgui raylib)
   target_include_directories(brplot PUBLIC external/imgui-docking)
 elseif (GUI STREQUAL headless)
   target_compile_definitions(brplot PUBLIC HEADLESS)
-  target_sources(brplot 
-    ./src/headless/gui.c
-    ./src/headless/raylib_headless.c
-  )
 else ()
   message(FATAL_ERROR "GUI=${GUI} not supported. (raylib|imgui|headless)")
 endif ()
@@ -131,20 +118,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL Linux)
   target_compile_definitions(brplot PUBLIC LINUX=1)
   target_compile_definitions(raylib PUBLIC PLATFORM_DESKTOP=1)
   target_link_libraries(raylib glfw)
-  target_sources(brplot PUBLIC 
-    ./src/desktop/platform.c
-    ./src/desktop/linux/read_input.c
-    ./src/desktop/linux/filesystem.c
-  )
 elseif (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
   target_compile_definitions(brplot PUBLIC LINUX=1)
   target_compile_definitions(raylib PUBLIC PLATFORM_DESKTOP=1)
   target_link_libraries(raylib glfw pthread)
-  target_sources(brplot PUBLIC 
-    ./src/desktop/platform.c
-    ./src/desktop/linux/read_input.c
-    ./src/desktop/linux/filesystem.c
-  )
   target_include_directories(imgui PUBLIC /usr/local/include)
   target_link_directories(brplot PUBLIC /usr/local/lib /usr/lib)
 elseif (CMAKE_SYSTEM_NAME STREQUAL Windows)
@@ -153,7 +130,6 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL Windows)
   target_compile_definitions(imgui PUBLIC PLATFORM_DESKTOP=1 _WIN32=1 WIN32_LEAN_AND_MEAN=1)
   target_link_libraries(brplot opengl32 gdi32 winmm)
   target_sources(raylib PUBLIC ./external/raylib-5.0/src/rglfw.c)
-  target_sources(brplot PUBLIC src/desktop/win/read_input.c src/desktop/platform.c ./src/desktop/win/filesystem.cpp)
 else ()
   message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} not supported")
 endif ()
@@ -161,8 +137,6 @@ endif ()
 set(PLAT_CONF ${CMAKE_SYSTEM_NAME}_${CMAKE_BUILD_TYPE})
 
 if (PLAT_CONF STREQUAL Linux_Debug)
-  target_sources(brplot PUBLIC
-    ./src/desktop/linux/refresh_shaders.c)
 elseif (PLAT_CONF STREQUAL Linux_Release)
 elseif (PLAT_CONF STREQUAL FreeBSD_Release)
 elseif (PLAT_CONF STREQUAL Windows_Release)

@@ -2,6 +2,16 @@
 #include "br_plotter.h"
 #include "br_q.h"
 
+#if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
+#  include "desktop/linux/read_input.c"
+#elif defined(_WIN32) || defined(__CYGWIN__)
+#  include "desktop/win/read_input.c"
+#elif defined(__EMSCRIPTEN__)
+#  include "web/read_input.c"
+#else
+#  error "Unsupported platform"
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
