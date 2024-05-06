@@ -1,7 +1,7 @@
 #if defined(IMGUI)
 #  ifndef RELEASE
 #    if defined(__linux__)
-#      include "hotreload.c"
+#      include "imgui/hotreload.c"
 #    endif
 #  endif
 #elif defined(RAYLIB)
