@@ -12,6 +12,7 @@
 #include <string.h>
 
 typedef enum {
+  br_save_state_command_none = 0,
   // command       - br_save_state_command_t
   // N             - int
   // |for i in 0:N 
@@ -39,36 +40,53 @@ typedef enum {
   
 } br_save_state_command_t;
 
-static bool br_permastate_get_home_dir(br_str_t* home) {
-#if defined(LINUX)
-  return br_str_push_c_str(home, getenv("HOME"));
-#elif defined(WINDOWS)
-  return br_str_push_c_str(home, getenv("LOCALAPPDATA"));
-#else
-  return false;
-#endif
+bool br_permastate_save_plots(br_str_t path_folder, br_plots_t plots) {
+  char buff[512]; buff[0]         = '\0';
+  FILE* f                         = NULL;
+  size_t plots_len                = (size_t)plots.len;
+  br_save_state_command_t command = br_save_state_command_save_plots;
+  uint32_t crc                    = 0;
+  bool success                    = true;
+
+  if (false == br_fs_cd(&path_folder, br_strv_from_literal("plots.br"))) goto error;
+  br_str_to_c_str1(path_folder, buff);
+  f = fopen(buff, "wb");
+  if (NULL == f)                                                         goto error;
+  if (1 != fwrite(&command, sizeof(command), 1, f))                      goto error;
+  if (1 != fwrite(&plots_len, sizeof(plots_len), 1, f))                  goto error;
+  if (plots_len != fwrite(plots.arr, sizeof(*plots.arr), plots_len, f))  goto error;
+  crc = br_fs_crc(plots.arr, sizeof(*plots.arr) * plots_len, 0);
+
+  for (int i = 0; i < plots.len; ++i) {
+    br_plot_t* plot = &plots.arr[i];
+    int* arr = plot->groups_to_show.arr;
+    int len = plot->groups_to_show.len;
+    if (1 != fwrite(&len, sizeof(len), 1, f))                            goto error;
+    if (len == 0) continue;
+    if (len != (int32_t)fwrite(arr, sizeof(*arr), (uint32_t)len, f))    goto error;
+    crc = br_fs_crc(arr, sizeof(*arr) * (size_t)len, crc);
+  }
+  if (1 != fwrite(&crc, sizeof(crc), 1, f))                              goto error;
+  goto end;
+
+error:
+  if ('\0' == buff[0]) LOGI("Failed to allocate memory for plots path\n");
+  else if (NULL == f) LOGI("Failed to open a file %s: %d(%s)", buff, errno, strerror(errno));
+  else LOGI("Failed to write to file %s: %d(%s)", buff, errno, strerror(errno));
+  success = false;
+
+end:
+  if (NULL != f) fclose(f);
+  br_str_free(path_folder);
+  return success;
 }
 
-static bool br_permastate_get_config_dir(br_str_t* config) {
-  if (false == br_permastate_get_home_dir(config)) return false;;
-#if defined(LINUX)
-  return br_fs_cd(config, br_strv_from_literal(".config/brplot"));
-#elif defined(WINDOWS)
-  return br_fs_cd(config, br_strv_from_literal("brplot"));
-#else
-  return false;
-#endif
-}
-
-static bool br_permastate_get_plots_state_file(br_str_t* plots_state) {
-  if (false == br_permastate_get_config_dir(plots_state)) return false;
-  return br_fs_cd(plots_state, br_strv_from_literal("plots.br"));
-}
-
-void br_permastate_save_datas(br_str_t path_folder, br_datas_t datas) {
+bool br_permastate_save_datas(br_str_t path_folder, br_datas_t datas) {
   char buff[512]; buff[0] = '\0';
   FILE* file = NULL;
   br_save_state_command_t command;
+  bool success = true;
+  uint32_t crc = 0;
 
   for (size_t i = 0; i < datas.len; ++i) {
     br_data_t* data = &datas.arr[i];
@@ -88,14 +106,18 @@ void br_permastate_save_datas(br_str_t path_folder, br_datas_t datas) {
     switch (data->kind) {
       case br_plot_kind_2d: {
         if (1 != fwrite(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file)) goto error;
-        if (data->len != fwrite(data->dd.points, sizeof(*data->dd.points), data->len, file)) goto error;
-        uint32_t crc = br_fs_crc(data->dd.points, sizeof(*data->dd.points) * data->len, 0);
+        if (0 != data->len) {
+          if (data->len != fwrite(data->dd.points, sizeof(*data->dd.points), data->len, file)) goto error;
+          crc = br_fs_crc(data->dd.points, sizeof(*data->dd.points) * data->len, 0);
+        }
         if (1 != fwrite(&crc, sizeof(crc), 1, file)) goto error;
       } break;
       case br_plot_kind_3d: {
         if (1 != fwrite(&data->ddd.bounding_box, sizeof(data->ddd.bounding_box), 1, file)) goto error;
-        if (data->len != fwrite(data->ddd.points, sizeof(*data->ddd.points), data->len, file)) goto error;
-        uint32_t crc = br_fs_crc(data->ddd.points, sizeof(*data->ddd.points) * data->len, 0);
+        if (0 != data->len) {
+          if (data->len != fwrite(data->ddd.points, sizeof(*data->ddd.points), data->len, file)) goto error;
+          crc = br_fs_crc(data->ddd.points, sizeof(*data->ddd.points) * data->len, 0);
+        }
         if (1 != fwrite(&crc, sizeof(crc), 1, file)) goto error;
       } break;
       default: BR_ASSERT(0);
@@ -111,16 +133,19 @@ error:
   if (buff[0] == '\0')  LOGI("Failed to allocatate memory from the plots permastate path\n");
   else if (file == NULL)LOGI("Failed to open a file %s: %d(%s)\n", buff, errno, strerror(errno));
   else                  LOGI("Failed to write to a file %s: %d(%s)\n", buff, errno, strerror(errno));
+  success = false;
 
 end:
   if (NULL != file) fclose(file);
   br_str_free(path_folder);
+  return success;
 }
 
-void br_permastate_save_plotter(br_str_t path_folder, br_plotter_t* br) {
+bool br_permastate_save_plotter(br_str_t path_folder, br_plotter_t* br) {
   char buff[512]; buff[0] = '\0';
   FILE* file = NULL;
   br_save_state_command_t command = br_save_state_command_plotter;
+  bool success = true;
 
   if (false == br_fs_cd(&path_folder, br_strv_from_literal("plotter.br"))) goto error;
   br_str_to_c_str1(path_folder, buff);
@@ -140,44 +165,32 @@ error:
   if (buff[0] == '\0')  LOGI("Failed to allocatate memory from the plots permastate path\n");
   else if (file == NULL)LOGI("Failed to open a file %s: %d(%s)\n", buff, errno, strerror(errno));
   else                  LOGI("Failed to write to a file %s: %d(%s)\n", buff, errno, strerror(errno));
+  success = false;
 
 end:
   if (NULL != file) fclose(file);
   br_str_free(path_folder);
+  return success;
 }
 
 void br_permastate_save(br_plotter_t* br) {
   char buff[512]               /* = uninitialized */;
   br_str_t path                   = {0};
-  FILE* f                         = NULL;
-  size_t plots_len                = (size_t)br->plots.len;
-  br_save_state_command_t command = br_save_state_command_save_plots;
-  uint32_t crc                    = 0;
 
-  if (false == br_permastate_get_plots_state_file(&path))                       goto error;
+  if (false == br_fs_get_config_dir(&path))                             goto error;
   br_str_to_c_str1(path, buff);
-  if (false == br_fs_up_dir(&path))                                             goto error;
-  if (false == br_fs_mkdir(br_str_sub1(path, 0)))                               goto error;
-  f = fopen(buff, "wb");
-  if (NULL == f)                                                                goto error;
-  if (1 != fwrite(&command, sizeof(command), 1, f))                             goto error;
-  if (1 != fwrite(&plots_len, sizeof(plots_len), 1, f))                         goto error;
-  if (plots_len != fwrite(br->plots.arr, sizeof(*br->plots.arr), plots_len, f)) goto error;
-  crc = br_fs_crc(br->plots.arr, sizeof(*br->plots.arr) * plots_len, 0);
-  if (1 != fwrite(&crc, sizeof(crc), 1, f))                                     goto error;
-
-  br_permastate_save_datas(br_str_copy(path), br->groups);
-  br_permastate_save_plotter(br_str_copy(path), br);
+  if (false == br_fs_mkdir(br_str_sub1(path, 0)))                       goto error;
+  if (false == br_permastate_save_plots(br_str_copy(path), br->plots))  goto error;
+  if (false == br_permastate_save_datas(br_str_copy(path), br->groups)) goto error;
+  if (false == br_permastate_save_plotter(br_str_copy(path), br))       goto error;
   goto end;
 
 error:
   if (path.str == NULL) LOGI("Failed to allocatate memory from the plots permastate path\n");
-  else if (f == NULL)   LOGI("Failed to open a file %s: %d(%s)\n", buff, errno, strerror(errno));
-  else                  LOGI("Failed to write to a file %s: %d(%s)\n", buff, errno, strerror(errno));
+  LOGI("Failed to save state to permastate: %d(%s)\n", errno, strerror(errno));
 
 end:
-  if (NULL != path.str) br_str_free(path);
-  if (NULL != f) fclose(f);
+  br_str_free(path);
   return;
 }
 
@@ -232,26 +245,38 @@ bool br_permastate_load_plots(FILE* file, br_plotter_t* br) {
   size_t read_plots               = 0;
 
   if (1 != fread(&plots_len, sizeof(plots_len), 1, file))                        goto error;
-  plots = BR_MALLOC(sizeof(*plots) * plots_len);
-  if (NULL == plots)                                                             goto error;
+  if (NULL == (plots = BR_MALLOC(sizeof(*plots) * plots_len)))                   goto error;
   if (plots_len != (read_plots = fread(plots, sizeof(*plots), plots_len, file))) goto error;
-  if (1 != fread(&read_crc, sizeof(read_crc), 1, file))                          goto error;
-  calculated_crc = br_fs_crc(plots, sizeof(*plots) * plots_len, 0);
-  if (calculated_crc != read_crc)                                                goto error;
   BR_FREE(br->plots.arr);
   br->plots.arr = plots;
-  br->plots.len = (int)plots_len;
-  br->plots.cap = (int)plots_len;
+  br->plots.len = br->plots.cap = (int)plots_len;
+  calculated_crc = br_fs_crc(plots, sizeof(*plots) * (size_t)plots_len, 0);
   for (size_t i = 0; i < plots_len; ++i) {
     br_permastate_remove_pointers(br, &plots[i]);
   }
+  for (size_t i = 0; i < plots_len; ++i) {
+    br_plot_t* p = &plots[i];
+    int len = 0;
+    int* arr = NULL;
+    if (1 != fread(&len, sizeof(len), 1, file))                                  goto error;
+    if (len == 0) continue;
+    p->groups_to_show.len = len;
+    p->groups_to_show.cap = len;
+    arr = BR_MALLOC(sizeof(*arr) * (size_t)len);
+    p->groups_to_show.arr = arr;
+    if ((uint32_t)len != fread(arr, sizeof(*arr), (size_t)len, file))            goto error;
+    calculated_crc = br_fs_crc(arr, sizeof(*arr) * (size_t)len, calculated_crc);
+  }
+  if (1 != fread(&read_crc, sizeof(read_crc), 1, file))                          goto error;
+  if (calculated_crc != read_crc)                                                goto error;
+
   return true;
 
 error:
   if (0 == plots_len)                  LOGI("Failed to read a file: %d(%s)\n", errno, strerror(errno));
   else if (NULL == plots)              LOGI("Failed to allocated memory for array of %lu plots\n", plots_len);
   else if (read_plots != plots_len)    LOGI("Failed to read right amount of plots, wanted %lu, but got %lu\n", plots_len, read_plots);
-  else if (calculated_crc != read_crc) LOGI("Crc check failed expected %u, but got %u\n", calculated_crc, read_crc);
+  else if (calculated_crc != read_crc) LOGE("Crc check failed expected %u, but got %u\n", calculated_crc, read_crc);
   return false;
 }
 
@@ -298,7 +323,7 @@ error:
   if (0 == memcmp(&data->color, &(Color){0}, sizeof(data->color))) LOGI("Failed to read color\n");
   else if (0 == data->len)                                         LOGI("Failed to read data len\n");
   else if (NULL == data->dd.points)                                LOGI("Failed to allocate memeory for data\n");
-  else if (crc_read != crc_calculated)                             LOGI("Crc failed for a data\n");
+  else if (crc_read != crc_calculated)                             LOGE("Crc failed for a data\n");
   return false;
 }
 
@@ -310,7 +335,7 @@ bool br_permastate_load(br_plotter_t* br) {
   bool file_exists                = false;
   bool success                    = true;
 
-  if (false == br_permastate_get_config_dir(&path))                   goto error;
+  if (false == br_fs_get_config_dir(&path))                           goto error;
   if (false == br_fs_cd(&path, br_strv_from_literal("plotter.br")))   goto error;
   {
     br_str_to_c_str1(path, buff);

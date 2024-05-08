@@ -145,33 +145,28 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
   br_plotter_update_variables(gv);
   Vector2 mouse_pos = GetMousePosition();
   ImGuiID prev = 0;
+  bool switching = false;
+
   for (int i = 0; i < gv->plots.len; ++i) {
     ImGui::PushID(i);
-    br_plot_t* plot = &gv->plots.arr[i];
     snprintf(context.buff, IM_ARRAYSIZE(context.buff), "Plot #%d", i);
     ImGui::SetNextWindowDockID(prev, ImGuiCond_FirstUseEver);
-    if (gv->switch_to_3d && (plot->kind == br_plot_kind_3d)) {
+    if (switching && gv->active_plot_index == i) {
       ImGui::SetNextWindowFocus();
-      gv->switch_to_3d = false;
+      gv->switch_to_active = false;
     }
-    if (gv->switch_to_2d && (plot->kind == br_plot_kind_2d)) {
-      ImGui::SetNextWindowFocus();
-      gv->switch_to_2d = false;
-    }
-    if (ImGui::Begin(context.buff) && false == ImGui::IsWindowHidden()) {
-      br_plot_update_variables(gv, plot, gv->groups, mouse_pos);
+    if ( ImGui::Begin(context.buff) && false == ImGui::IsWindowHidden() && ((false == switching) || (switching && gv->active_plot_index == i))){
+      br_plot_update_variables(gv, &gv->plots.arr[i], gv->groups, mouse_pos); // Invalidates plots
       ImVec2 p = ImGui::GetWindowPos();
       ImVec2 size = ImGui::GetWindowSize();
-      graph_draw_min(gv->groups, plot, p.x, p.y, size.x, size.y, padding);
+      graph_draw_min(gv->groups,  &gv->plots.arr[i], p.x, p.y, size.x, size.y, padding);
+      gv->active_plot_index = switching ? gv->active_plot_index : i;
     }
+    switching = false;
     prev = ImGui::GetWindowDockID();
     ImGui::End();
     ImGui::PopID();
   }
-  if (gv->switch_to_3d && !gv->any_3d)
-    br_plotter_add_plot_3d(gv);
-  if (gv->switch_to_2d && !gv->any_2d)
-    br_plotter_add_plot_2d(gv);
 #ifndef RELEASE
 #ifdef LINUX
   if (gv->hot_state.func_loop != nullptr) {

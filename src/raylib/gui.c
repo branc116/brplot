@@ -2,16 +2,12 @@
 #include "src/br_plotter.h"
 #include "src/br_gui_internal.h"
 #include "src/br_smol_mesh.h"
-#include "src/br_da.h"
 #include "src/br_permastate.h"
 
 #include "ui.c"
 
 #include "raylib.h"
-#include "raymath.h"
 
-static bool show_2d = true;
-static bool show_3d = false;
 static void update_resolution(br_plotter_t* gv);
 static void draw_left_panel(br_plotter_t* gv);
 void br_gui_init_specifics_gui(br_plotter_t* br) {
@@ -27,22 +23,12 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   update_resolution(br);
   br_plotter_update_variables(br);
   help_draw_fps(0, 0);
-  if (show_2d) {
-    br_plot_t* plot = &br->plots.arr[0];
-    br_plot_update_variables(br, plot, br->groups, GetMousePosition());
-    br_plot_update_shader_values(plot);
-    draw_grid_numbers(plot);
-    smol_mesh_grid_draw(plot);
-    br_datas_draw(br->groups, plot);
-  }
-  if (show_3d) {
-    br_plot_t* plot = &br->plots.arr[1];
-    br_plot_update_variables(br, plot, br->groups, GetMousePosition());
-    br_plot_update_shader_values(plot);
-    draw_grid_numbers(plot);
-    smol_mesh_grid_draw(plot);
-    br_datas_draw(br->groups, plot);
-  }
+  br_plot_t* plot = &br->plots.arr[br->active_plot_index];
+  br_plot_update_variables(br, plot, br->groups, GetMousePosition());
+  br_plot_update_shader_values(plot);
+  draw_grid_numbers(plot);
+  smol_mesh_grid_draw(plot);
+  br_datas_draw(br->groups, plot);
   draw_left_panel(br);
   EndDrawing();
 }
@@ -98,38 +84,13 @@ static void draw_left_panel(br_plotter_t* br) {
 
 // TODO 2D/3D
 static void update_resolution(br_plotter_t* br) {
-  if (show_2d) {
-    br_plot_t* plot = &br->plots.arr[0];
-    assert(plot->kind == br_plot_kind_2d);
-    plot->resolution = (Vector2) { (float)GetScreenWidth(), (float)GetScreenHeight() };
-    float w = (float)plot->resolution.x - GRAPH_LEFT_PAD - 25.f, h = (float)plot->resolution.y - 50.f;
-    plot->graph_screen_rect.x = GRAPH_LEFT_PAD;
-    plot->graph_screen_rect.y = 25.f;
-    plot->graph_screen_rect.width = w;
-    plot->graph_screen_rect.height = h;
-    if (br->switch_to_2d) br->switch_to_2d = false;
-    if (br->switch_to_3d) {
-      br->switch_to_2d = false;
-      show_2d = false;
-      show_3d = true;
-    }
-  }
-  else if (show_3d) {
-    br_plot_t* plot = &br->plots.arr[1];
-    assert(plot->kind == br_plot_kind_3d);
-    plot->resolution = (Vector2) { (float)GetScreenWidth(), (float)GetScreenHeight() };
-    float w = (float)plot->resolution.x - GRAPH_LEFT_PAD - 25.f, h = (float)plot->resolution.y - 50.f;
-    plot->graph_screen_rect.x = GRAPH_LEFT_PAD;
-    plot->graph_screen_rect.y = 25.f;
-    plot->graph_screen_rect.width = w;
-    plot->graph_screen_rect.height = h;
-    if (br->switch_to_3d) br->switch_to_3d = false;
-    if (br->switch_to_2d) {
-      br->switch_to_3d = false;
-      show_2d = true;
-      show_3d = false;
-    }
-  }
+  br_plot_t* plot = &br->plots.arr[br->active_plot_index];
+  plot->resolution = (Vector2) { (float)GetScreenWidth(), (float)GetScreenHeight() };
+  float w = (float)plot->resolution.x - GRAPH_LEFT_PAD - 25.f, h = (float)plot->resolution.y - 50.f;
+  plot->graph_screen_rect.x = GRAPH_LEFT_PAD;
+  plot->graph_screen_rect.y = 25.f;
+  plot->graph_screen_rect.width = w;
+  plot->graph_screen_rect.height = h;
 }
 
 void br_plot_screenshot(br_plot_t* plot, br_datas_t groups, char const* path) {

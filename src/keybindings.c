@@ -90,10 +90,12 @@ static inline void br_keybinding_screenshot(br_plotter_t* br, br_plot_t* plot, b
 }
 
 static inline void br_keybinding_switch_2d(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
-  br->switch_to_2d = true;
+  (void)plot, (void)cs;
+  br_plotter_switch_2d(br);
 }
 
 static inline void br_keybinding_switch_3d(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
-  br->switch_to_3d = true;
+  (void)plot, (void)cs;
+  br_plotter_switch_3d(br);
 }
 

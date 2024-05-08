@@ -41,7 +41,7 @@ typedef struct br_plotter_t {
   bool shaders_dirty;
   bool file_saver_inited;
   bool should_close;
-  bool switch_to_2d, switch_to_3d;
+  bool switch_to_active;
   bool any_2d, any_3d;
 } br_plotter_t;
 
@@ -55,8 +55,8 @@ BR_API void br_plotter_set_bottom_left(br_plot_t* plot, float left, float bottom
 BR_API void br_plotter_set_top_right(br_plot_t* plot, float right, float top);
 BR_API void br_plots_focus_visible(br_plots_t plot, br_datas_t groups);
 BR_API void br_plot_focus_visible(br_plot_t* plot, br_datas_t groups);
-void br_plotter_add_plot_2d(br_plotter_t* br);
-void br_plotter_add_plot_3d(br_plotter_t* br);
+int br_plotter_add_plot_2d(br_plotter_t* br);
+int br_plotter_add_plot_3d(br_plotter_t* br);
 void br_plotter_export(br_plotter_t const* br, char const* path);
 void br_plotter_export_csv(br_plotter_t const* br, char const* path);
 BR_API void br_plotter_free(br_plotter_t* br);

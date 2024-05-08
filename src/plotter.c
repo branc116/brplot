@@ -11,6 +11,7 @@
 
 #include "raylib.h"
 #include "rlgl.h"
+#include "src/br_pp.h"
 #include "tracy/TracyC.h"
 
 context_t context;
@@ -33,8 +34,8 @@ BR_API void br_plotter_init(br_plotter_t* br, float width, float height) {
     .shaders_dirty = false,
     .file_saver_inited = false,
     .should_close = false,
-    .switch_to_2d = false,
-    .switch_to_3d = false
+    .switch_to_active = false,
+    .active_plot_index = 0
   };
 #ifdef IMGUI
 #ifndef RELEASE
@@ -71,14 +72,36 @@ BR_API br_datas_t* br_plotter_get_br_datas(br_plotter_t* br) {
 }
 
 BR_API void br_plotter_switch_2d(br_plotter_t* br) {
-  br->switch_to_2d = true;
+  if (false == br->any_2d) {
+    br->active_plot_index = br_plotter_add_plot_2d(br);
+    br->switch_to_active = true;
+    return;
+  }
+  for (int i = 0; i < br->plots.len; ++i) {
+    if (br->plots.arr[i].kind != br_plot_kind_2d) continue;
+    br->active_plot_index = i;
+    br->switch_to_active = true;
+    return;
+  }
+  BR_ASSERT(0);
 }
 
 BR_API void br_plotter_switch_3d(br_plotter_t* br) {
-  br->switch_to_3d = true;
+  if (false == br->any_3d) {
+    br->active_plot_index = br_plotter_add_plot_3d(br);
+    br->switch_to_active = true;
+    return;
+  }
+  for (int i = 0; i < br->plots.len; ++i) {
+    if (br->plots.arr[i].kind != br_plot_kind_3d) continue;
+    br->active_plot_index = i;
+    br->switch_to_active = true;
+    return;
+  }
+  BR_ASSERT(0);
 }
 
-void br_plotter_add_plot_2d(br_plotter_t* br) {
+int br_plotter_add_plot_2d(br_plotter_t* br) {
   br_plot_t plot = {
     .groups_to_show = { 0 },
     .graph_screen_rect = { GRAPH_LEFT_PAD, 50, (float)GetScreenWidth() - GRAPH_LEFT_PAD - 60, (float)GetScreenHeight() - 110 },
@@ -97,9 +120,10 @@ void br_plotter_add_plot_2d(br_plotter_t* br) {
   };
   br_da_push_t(int, (br->plots), plot);
   br->any_2d = true;
+  return br->plots.len - 1;
 }
 
-void br_plotter_add_plot_3d(br_plotter_t* br) {
+int br_plotter_add_plot_3d(br_plotter_t* br) {
   br_plot_t plot = {
     .groups_to_show = { 0 },
     .graph_screen_rect = { GRAPH_LEFT_PAD, 50, (float)GetScreenWidth() - GRAPH_LEFT_PAD - 60, (float)GetScreenHeight() - 110 },
@@ -122,6 +146,7 @@ void br_plotter_add_plot_3d(br_plotter_t* br) {
   };
   br_da_push_t(int, (br->plots), plot);
   br->any_3d = true;
+  return br->plots.len - 1;
 }
 
 BR_API void br_plotter_free(br_plotter_t* gv) {
