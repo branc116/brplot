@@ -79,15 +79,15 @@ namespace br {
           ImGui::PushStyleColor(ImGuiCol_HeaderHovered, imcol_inv);
           if (ImGui::TreeNodeEx(&context.buff[2], ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::PopStyleColor(3);
-            sprintf(context.buff, "Clear##P%lu", i);
+            sprintf(context.buff, "Clear##P%zu", i);
             if (ImGui::Button(context.buff)) {
               br_data_clear(&br->groups, &br->plots, br->groups.arr[i].group_id);
             }
             ImGui::SetNextItemWidth(60.f);
-            sprintf(context.buff, "PlotColor_%lu", i);
+            sprintf(context.buff, "PlotColor_%zu", i);
             ImGui::ColorPicker3(context.buff, colors, ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoSidePreview);
             br->groups.arr[i].color = { (unsigned char)(colors[0] * 255.f), (unsigned char)(colors[1] * 255.f), (unsigned char)(colors[2] * 255.f), (unsigned char)(colors[3] * 255.f) };
-            sprintf(context.buff, "%lu##%lu", br->groups.arr[i].len, i);
+            sprintf(context.buff, "%zu##%zu", br->groups.arr[i].len, i);
             ImGui::LabelText(context.buff, "Number of points");
             br::ui_textbox("Name", &br->groups.arr[i].name);
             ImGui::TreePop();

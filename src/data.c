@@ -109,12 +109,12 @@ void br_data_export_csv(br_data_t const* pg, FILE* file) {
     switch(pg->kind) {
       case br_data_kind_2d: {
         Vector2 point = pg->dd.points[i];
-        fprintf(file, "%d,%lu,%f,%f,\n", pg->group_id, i, point.x, point.y);
+        fprintf(file, "%d,%zu,%f,%f,\n", pg->group_id, i, point.x, point.y);
         break;
       }
       case br_data_kind_3d: {
         Vector3 point = pg->ddd.points[i];
-        fprintf(file, "%d,%lu,%f,%f,%f\n", pg->group_id, i, point.x, point.y, point.z);
+        fprintf(file, "%d,%zu,%f,%f,%f\n", pg->group_id, i, point.x, point.y, point.z);
         break;
       }
       default: assert(0);
@@ -136,12 +136,12 @@ void br_datas_export_csv(br_datas_t const* pg_array, FILE* file) {
       switch(pg->kind) {
         case br_data_kind_2d: {
           Vector2 point = pg->dd.points[i];
-          fprintf(file, "%d,%lu,%f,%f,\n", pg->group_id, i, point.x, point.y);
+          fprintf(file, "%d,%zu,%f,%f,\n", pg->group_id, i, point.x, point.y);
           break;
         }
         case br_data_kind_3d: {
           Vector3 point = pg->ddd.points[i];
-          fprintf(file, "%d,%lu,%f,%f,%f\n", pg->group_id, i, point.x, point.y, point.z);
+          fprintf(file, "%d,%zu,%f,%f,%f\n", pg->group_id, i, point.x, point.y, point.z);
           break;
         }
         default: assert(0);
@@ -258,7 +258,7 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot) {
         LOGE("Trying to get a group with id = group, but that groups don't exist..\n"
              "NOTE: Groups that exist are:\n");
         for (int i = 0; pg.len; ++i) {
-        LOGI("      *%d (len = %lu)\n", pg.arr[i].group_id, pg.arr[i].len);
+        LOGI("      *%d (len = %zu)\n", pg.arr[i].group_id, pg.arr[i].len);
         }
       }
 #endif
@@ -272,14 +272,6 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot) {
     rlEnableBackfaceCulling();
     rlViewport(0, 0, (int)plot->resolution.x, (int)plot->resolution.y);
     TracyCFrameMarkEnd("br_datas_draw_3d");
-  }
-}
-
-static size_t br_data_element_size(br_data_kind_t kind) {
-  switch (kind) {
-    case br_data_kind_2d: return sizeof(Vector2);
-    case br_data_kind_3d: return sizeof(Vector3);
-    default: assert(0);
   }
 }
 
@@ -342,10 +334,8 @@ BR_API br_data_t* br_data_get2(br_datas_t* pg, int group, br_data_kind_t kind) {
   }
 
   for (size_t i = 0; i < pg->len; ++i) {
-    if (pg->arr[i].group_id == group) {
-      assert("Kinds must match when getting a plot..." && pg->arr[i].kind == kind);
-      return &pg->arr[i];
-    }
+    if (pg->arr[i].group_id != group) continue;
+    return pg->arr[i].kind == kind ? &pg->arr[i] : NULL;
   }
 
   if (pg->len >= pg->cap) {
@@ -369,6 +359,15 @@ BR_API void br_data_set_name(br_datas_t* pg, int group, br_str_t name) {
   br_str_free(g->name);
   g->name = name;
 }
+
+size_t br_data_element_size(br_data_kind_t kind) {
+  switch (kind) {
+    case br_data_kind_2d: return sizeof(Vector2);
+    case br_data_kind_3d: return sizeof(Vector3);
+    default: assert(0);
+  }
+}
+
 
 static void br_data_push_point2(br_data_t* g, Vector2 v) {
   if (g->len >= g->cap && false == br_data_realloc(g, g->cap * 2)) return;
@@ -398,6 +397,8 @@ static void br_data_deinit(br_data_t* g) {
 }
 
 static bool br_data_realloc(br_data_t* pg, size_t new_cap) {
+  assert(pg->cap > 0 && new_cap > 0);
+
   Vector2* new_arr = BR_REALLOC(pg->dd.points, new_cap * br_data_element_size(pg->kind));
   if (new_arr == NULL) {
     LOG("Out of memory. Can't add any more lines. Buy more RAM, or close Chrome\n");

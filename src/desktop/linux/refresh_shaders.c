@@ -9,7 +9,6 @@
 #include "unistd.h"
 #include "pthread.h"
 #include "sys/inotify.h"
-#include "sys/select.h"
 
 static void* watch_shader_change(void* gv) {
   int fd = inotify_init();

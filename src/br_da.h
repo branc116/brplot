@@ -4,7 +4,6 @@
 #include "br_pp.h"
 
 #ifdef __cplusplus
-#include <type_traits>
 #define DECLTYPE(VALUE) std::remove_reference<decltype((VALUE))>::type
 extern "C" {
 #else

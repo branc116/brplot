@@ -274,9 +274,9 @@ bool br_permastate_load_plots(FILE* file, br_plotter_t* br) {
 
 error:
   if (0 == plots_len)                  LOGI("Failed to read a file: %d(%s)\n", errno, strerror(errno));
-  else if (NULL == plots)              LOGI("Failed to allocated memory for array of %lu plots\n", plots_len);
-  else if (read_plots != plots_len)    LOGI("Failed to read right amount of plots, wanted %lu, but got %lu\n", plots_len, read_plots);
-  else if (calculated_crc != read_crc) LOGE("Crc check failed expected %u, but got %u\n", calculated_crc, read_crc);
+  else if (NULL == plots)              LOGI("Failed to allocated memory for array of %zu plots\n", plots_len);
+  else if (read_plots != plots_len)    LOGI("Failed to read right amount of plots, wanted %zu, but got %zu\n", plots_len, read_plots);
+  else if (calculated_crc != read_crc) LOGEF("Crc check failed expected %u, but got %u\n", calculated_crc, read_crc);
   return false;
 }
 
@@ -293,7 +293,13 @@ bool br_permastate_load_data(FILE* file, br_data_t* data, br_data_kind_t kind) {
   if (1 != fread(&data->color, sizeof(data->color), 1, file)) goto error;
   if (1 != fread(&data->len, sizeof(data->len), 1, file)) goto error;
   data->cap = data->len;
-  if (0 == data->len) return true;
+  if (0 == data->len) {
+    data->resampling = resampling2_malloc(kind);
+    data->kind = kind;
+    data->cap = 8;
+    data->dd.points = BR_MALLOC(br_data_element_size(kind) * 8);
+    return true;
+  }
   switch (data->kind) {
     case br_plot_kind_2d: {
       if (1 != fread(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file)) goto error;

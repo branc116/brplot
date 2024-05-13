@@ -452,7 +452,7 @@ TEST_CASE(resampling) {
   resampling2_add_point(r, &pg, 3);
   printf("\nALLOCATIONS: %zu ( %zuKB ) | %zu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   for (int i = 0; i < 64*1024; ++i) resampling2_add_point(r, &pg, 3);
-  printf("\nALLOCATIONS: %zu ( %zuKB ) | %lu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
+  printf("\nALLOCATIONS: %zu ( %zuKB ) | %zu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   resampling2_free(r);
 }
 
@@ -471,9 +471,9 @@ TEST_CASE(resampling2) {
   pg.resampling = NULL;
   resampling2_t* r = resampling2_malloc(br_data_kind_2d);
   for (int i = 0; i < N; ++i) resampling2_add_point(r, &pg, (uint32_t)i);
-  printf("\nALLOCATIONS: %lu ( %zuKB ) | %zu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
+  printf("\nALLOCATIONS: %zu ( %zuKB ) | %zu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   resampling2_add_point(r, &pg, 3);
-  printf("\nALLOCATIONS: %zu ( %zuKB ) | %lu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
+  printf("\nALLOCATIONS: %zu ( %zuKB ) | %zu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   resampling2_free(r);
 }
 #pragma GCC diagnostic pop

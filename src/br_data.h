@@ -83,6 +83,8 @@ BR_API void br_datas_empty(br_datas_t* pg_array);
 void br_datas_export(br_datas_t const* pg_array, FILE* file);
 void br_datas_export_csv(br_datas_t const* pg_array, FILE* file);
 
+size_t br_data_element_size(br_data_kind_t kind);
+
 #ifdef __cplusplus
 }
 #endif

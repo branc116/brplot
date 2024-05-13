@@ -6,6 +6,10 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#if defined(__linux__)
+#  include <pthread.h>
+#endif
+
 q_commands* q_malloc(void) {
   q_commands* q = BR_MALLOC(sizeof(*q));
   size_t cap = 1024 * 1024;

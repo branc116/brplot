@@ -1,6 +1,7 @@
 #pragma once
 #include "br_data.h"
 #include "br_plot.h"
+#include "br_pp.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -9,8 +10,7 @@ extern "C" {
 struct br_plotter_t;
 typedef struct q_commands q_commands;
 
-#ifdef IMGUI
-#ifndef RELEASE
+#if BR_HAS_HOTRELOAD
 typedef struct br_hotreload_state_t {
   LOCK(lock)
   void (*func_loop)(struct br_plotter_t* gv);
@@ -18,7 +18,6 @@ typedef struct br_hotreload_state_t {
   bool is_init_called;
   void* handl;
 } br_hotreload_state_t;
-#endif
 #endif
 
 typedef struct br_plotter_t {
@@ -28,17 +27,15 @@ typedef struct br_plotter_t {
 
   // Any thread can write to this q, only render thread can pop
   q_commands* commands;
-#ifndef RELEASE
-#ifdef IMGUI
-#ifdef LINUX
+#if BR_HAS_HOTRELOAD
   br_hotreload_state_t hot_state;
-#endif
-#endif
 #endif
   int active_plot_index;
 
   bool loaded;
+#if BR_HAS_SHADER_RELOAD
   bool shaders_dirty;
+#endif
   bool file_saver_inited;
   bool should_close;
   bool switch_to_active;

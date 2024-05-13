@@ -55,7 +55,7 @@ static inline void br_keybinding_clear(br_plotter_t* br, br_plot_t* plot, br_key
 }
 
 static inline void br_keybinding_hide(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
-  (void)plot;
+  (void)br, (void)plot, (void)cs;
   assert(0);
 }
 

@@ -85,7 +85,7 @@ typedef struct br_plotter_t br_plotter_t;
 void br_plot_screenshot(br_plot_t* br, br_datas_t groups, char const* path);
 void br_keybinding_handle_keys(br_plotter_t* br, br_plot_t* plot);
 
-#ifndef RELEASE
+#if BR_HAS_SHADER_RELOAD
 // Start watching shaders folder for changes and
 // mark gv->shader_dirty flag to true if there were any change to shaders.
 void start_refreshing_shaders(br_plotter_t* br);

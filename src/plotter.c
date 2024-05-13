@@ -9,6 +9,10 @@
 #include <math.h>
 #include <string.h>
 
+#if BR_HAS_HOTRELOAD
+#  include <pthread.h>
+#endif
+
 #include "raylib.h"
 #include "rlgl.h"
 #include "src/br_pp.h"
@@ -31,21 +35,19 @@ BR_API void br_plotter_init(br_plotter_t* br, float width, float height) {
     .plots = {0},
     .shaders = {0},
     .commands = NULL,
+#if BR_HAS_SHADER_RELOAD
     .shaders_dirty = false,
+#endif
     .file_saver_inited = false,
     .should_close = false,
     .switch_to_active = false,
     .active_plot_index = 0
   };
-#ifdef IMGUI
-#ifndef RELEASE
-#ifdef LINUX
-  br->hot_state = (br_hotreload_state_t) { .handl = NULL, .func_loop = NULL, .func_init = NULL, .is_init_called = false, .lock = { 0 } };
+#if BR_HAS_HOTRELOAD
+  br->hot_state = (br_hotreload_state_t) { .handl = NULL, .func_loop = NULL, .func_init = NULL, .is_init_called = false };
   pthread_mutexattr_t attrs;
   pthread_mutexattr_init(&attrs);
   pthread_mutex_init(&br->hot_state.lock, &attrs);
-#endif
-#endif
 #endif
   br->shaders = br_shaders_malloc();
   br->commands = q_malloc();
@@ -162,7 +164,7 @@ BR_API void br_plotter_free(br_plotter_t* gv) {
 }
 
 void br_plotter_update_variables(br_plotter_t* br) {
-#ifndef RELEASE
+#if BR_HAS_SHADER_RELOAD
   if (br->shaders_dirty) {
     br_shaders_refresh(br->shaders);
     br->shaders_dirty = false;

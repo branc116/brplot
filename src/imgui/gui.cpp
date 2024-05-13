@@ -17,8 +17,8 @@
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
-#if !PLATFORM_WEB
-#include "backends/imgui_impl_opengl3_loader.h"
+#if !defined(PLATFORM_WEB)
+#  include "backends/imgui_impl_opengl3_loader.h"
 #endif
 #include "external/glfw/include/GLFW/glfw3.h"
 #include "tracy/TracyC.h"
@@ -66,10 +66,10 @@ extern "C" void br_gui_init_specifics_gui(br_plotter_t* br) {
   ImGuiIO& io = ImGui::GetIO();
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable;
   ImGui::StyleColorsDark();
-#ifdef PLATFORM_WEB
+#if defined(PLATFORM_WEB)
   const char* glsl_version = "#version 100";
   io.IniFilename = nullptr;
-#elif PLATFORM_DESKTOP
+#elif defined(PLATFORM_DESKTOP)
   const char* glsl_version = "#version 330";
 #endif
   ImGui_ImplGlfw_InitForOpenGL(ctx, true);
@@ -77,13 +77,11 @@ extern "C" void br_gui_init_specifics_gui(br_plotter_t* br) {
 
   ImGuiStyle& s = ImGui::GetStyle();
   s.Colors[ImGuiCol_WindowBg].w = 0.f;
-#ifndef RELEASE
-#ifdef LINUX
+#if !defined(RELEASE) && defined(__linux__)
   br_hotreload_start(&br->hot_state);
 #endif
-#endif
     ImGui::LoadIniSettingsFromMemory(DEFAULT_INI);
-#ifndef PLATFORM_WEB
+#if !defined(PLATFORM_WEB)
     ImGui::LoadIniSettingsFromDisk("imgui.ini");
 #endif
 }
@@ -124,8 +122,7 @@ void graph_draw_min(br_datas_t groups, br_plot_t* plot, float posx, float posy, 
 }
 
 extern "C" void br_plotter_draw(br_plotter_t* gv) {
-#ifndef RELEASE
-#ifdef LINUX
+#if !defined(RELEASE) && defined(__linux__)
   if (gv->hot_state.is_init_called == false && gv->hot_state.func_init != nullptr) {
     pthread_mutex_lock(&gv->hot_state.lock);
       if (gv->hot_state.func_init != nullptr) {
@@ -134,7 +131,6 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
       }
     pthread_mutex_unlock(&gv->hot_state.lock);
   }
-#endif
 #endif
   BeginDrawing();
   TracyCFrameMarkStart("BeginDrawing");
@@ -167,8 +163,7 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
     ImGui::End();
     ImGui::PopID();
   }
-#ifndef RELEASE
-#ifdef LINUX
+#if !defined(RELEASE) && defined(__linux__)
   if (gv->hot_state.func_loop != nullptr) {
     pthread_mutex_lock(&gv->hot_state.lock);
       if (gv->hot_state.func_loop != nullptr) gv->hot_state.func_loop(gv);
@@ -176,7 +171,6 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
   }
   ImGui::SetNextWindowBgAlpha(0.7f);
   ImGui::ShowDemoWindow();
-#endif
 #endif
   br::ui_settings(gv);
   br::ui_info(gv);
@@ -205,7 +199,7 @@ extern "C" void br_plotter_draw(br_plotter_t* gv) {
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   TracyCFrameMarkEnd("BeginDrawing");
   EndDrawing();
-#ifndef PLATFORM_WEB
+#if !defined(PLATFORM_WEB)
   ClearBackground(BLACK);
 #endif
 }

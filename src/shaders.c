@@ -1,8 +1,12 @@
 #include "br_shaders.h"
 // cpp -I. -DDEBUG_MACROS -E ./src/br_shaders.c | sed 's/^#/\/\//' | clang-format
-#ifndef DEBUG_MACROS
-#include "br_plot.h"
+#if !defined(DEBUG_MACROS)
+#  include "br_pp.h"
+
+#  include <stdint.h>
+#  include <stdlib.h>
 #endif
+
 
 #ifdef RELEASE
 #  ifdef PLATFORM_DESKTOP
@@ -149,7 +153,7 @@ void br_shaders_free(br_shaders_t shaders) {
 #undef X
 }
 
-#ifndef RELEASE
+#if BR_HAS_SHADER_RELOAD
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
 #  include "desktop/linux/refresh_shaders.c"
 #elif defined(_WIN32) || defined(__CYGWIN__)
@@ -181,5 +185,5 @@ void br_shaders_refresh(br_shaders_t shaders) {
 #  undef X_VEC
 #  undef X_BUF
 }
-#endif // RELEASE
+#endif // HAS_SHADER_RELOAD
 

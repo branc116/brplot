@@ -2,21 +2,15 @@
 #include <stddef.h>
 
 #ifdef PLATFORM_WEB
-#include <emscripten.h>
-#define BR_API EMSCRIPTEN_KEEPALIVE
+#  include <emscripten.h>
+#  define BR_API EMSCRIPTEN_KEEPALIVE
 #else
-#define BR_API
+#  define BR_API
 #endif
 
-#ifndef RELEASE
-
-#ifndef LINUX
-#ifdef UNIT_TEST
-#undef UNIT_TEST
-// IT don't work on windows....
-#endif
-#endif
-
+#if !defined(RELEASE) && !defined(__linux__) && defined(UNIT_TEST)
+   // IT don't work on windows....
+#  undef UNIT_TEST
 #endif
 
 
@@ -27,19 +21,19 @@
 #define GRAPH_LEFT_PAD 500
 
 #ifdef __linux__
-#include "pthread.h"
-#define LOCK_T pthread_mutex_t
+#  define LOCK_T pthread_mutex_t
 #endif
 
-#ifdef LOCK_T
-#define LOCK(x) LOCK_T x;
+#if defined(LOCK_T)
+#  define LOCK(x) LOCK_T x;
 #else
-#define LOCK(x)
+#  define LOCK(x)
 #endif
 
 #define LOG(...)
 #define LOGI(...) fprintf(stderr, __VA_ARGS__)
-#define LOGE(format, ...) fprintf(stderr, "ERROR: [%s:%d]" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define LOGE(text) fprintf(stderr, "ERROR: [%s:%d]" text, __FILE__, __LINE__)
+#define LOGEF(format, ...) fprintf(stderr, "ERROR: [%s:%d]" format, __FILE__, __LINE__,  __VA_ARGS__)
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,23 +51,35 @@ void  br_imgui_free(void* p, void* user_data);
 }
 #endif
 
-#if !defined(RELEASE) && defined(LINUX)
-#define BR_MALLOC(size) malloc(size)
-#define BR_CALLOC calloc
-#define BR_REALLOC realloc
-#define BR_FREE free
-#define BR_IMGUI_MALLOC br_imgui_malloc
-#define BR_IMGUI_FREE br_imgui_free
-#include "signal.h"
-#include <assert.h>
-#define BR_ASSERT(x) do { if (!(x)) { raise(SIGABRT); } assert((x)); } while (false)
+#if !defined(RELEASE) && defined(__linux__)
+#  define BR_MALLOC(size) malloc(size)
+#  define BR_CALLOC calloc
+#  define BR_REALLOC realloc
+#  define BR_FREE free
+#  define BR_IMGUI_MALLOC br_imgui_malloc
+#  define BR_IMGUI_FREE br_imgui_free
+#  include "signal.h"
+#  include <assert.h>
+#  define BR_ASSERT(x) do { if (!(x)) { raise(SIGABRT); } assert((x)); } while (false)
 #else
-#include <assert.h>
-#define BR_ASSERT(x) assert(x)
-#define BR_MALLOC malloc
-#define BR_CALLOC calloc
-#define BR_REALLOC realloc
-#define BR_FREE free
-#define BR_IMGUI_MALLOC br_imgui_malloc
-#define BR_IMGUI_FREE br_imgui_free
+#  include <assert.h>
+#  define BR_ASSERT(x) assert(x)
+#  define BR_MALLOC malloc
+#  define BR_CALLOC calloc
+#  define BR_REALLOC realloc
+#  define BR_FREE free
+#  define BR_IMGUI_MALLOC br_imgui_malloc
+#  define BR_IMGUI_FREE br_imgui_free
+#endif
+
+#if !defined(RELEASE) && defined(IMGUI) && defined(__linux__)
+#  define BR_HAS_HOTRELOAD 1
+#else
+#  define BR_HAS_HOTRELOAD 0
+#endif
+
+#if !defined(RELEASE) && defined(__linux__)
+#  define BR_HAS_SHADER_RELOAD 1
+#else
+#  define BR_HAS_SHADER_RELOAD 0
 #endif

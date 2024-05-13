@@ -1,6 +1,7 @@
 #include "src/br_plot.h"
 #include "src/br_str.h"
-#include "string.h"
+
+#include <string.h>
 
 br_str_t br_str_malloc(size_t size) {
   br_str_t br = {

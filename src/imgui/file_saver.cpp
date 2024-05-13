@@ -92,7 +92,7 @@ void br_file_explorer_filter(br_file_saver_t* fs) {
 
 br_file_saver_state_t br_file_explorer(br_file_saver_t* fs) {
   ImGui::Begin("File Saver");
-  ImGui::LabelText("##CurName", "%s/%.*s.png", fs->cwd.c_str(), fs->name.len, fs->name.str);
+  ImGui::LabelText("##CurName", "%s/%.*s.png", fs->cwd.string().c_str(), fs->name.len, fs->name.str);
   br_file_explorer_filter(fs);
   if (fs->last_read != fs->cwd) {
     file_saver_change_cwd_to(*fs, std::move(fs->cwd));

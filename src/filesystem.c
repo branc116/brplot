@@ -15,6 +15,7 @@ static bool br_permastate_get_home_dir(br_str_t* home) {
 #elif defined(_WIN32) || defined(__CYGWIN__)
   return br_str_push_c_str(home, getenv("LOCALAPPDATA"));
 #else
+  (void)home;
   return false;
 #endif
 }
@@ -24,8 +25,9 @@ bool br_fs_get_config_dir(br_str_t* path) {
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
   return br_fs_cd(path, br_strv_from_literal(".config/brplot"));
 #elif defined(_WIN32) || defined(__CYGWIN__)
-  return br_fs_cd(config, br_strv_from_literal("brplot"));
+  return br_fs_cd(path, br_strv_from_literal("brplot"));
 #else
+  (void)path;
   return false;
 #endif
 }
