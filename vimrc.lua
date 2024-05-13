@@ -7,7 +7,11 @@ vim.keymap.set("n", "<F6>", function()
 end)
 
 vim.keymap.set("n", "<F7>", function()
-  vim.cmd(":term sudo ./gdb_attach.sh");
+  vim.cmd(":term sudo ./tools/gdb_attach.sh");
+end)
+
+vim.keymap.set("n", "<F5>", function()
+  vim.cmd(":term ./tools/gdb_start.sh");
 end)
 
 vim.opt.smartindent = true

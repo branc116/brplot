@@ -65,24 +65,19 @@ BR_API void br_data_empty(br_data_t* pg) {
   resampling2_empty(pg->resampling);
 }
 
+static int br_data_compare(const void* data1, const void* data2) {
+  return ((br_data_t*)data1)->group_id - ((br_data_t*)data2)->group_id;
+}
+
 BR_API void br_data_clear(br_datas_t* pg, br_plots_t* plots, int group_id) {
-  size_t len = pg->len;
-  bool found = false;
-  // TODO: This is stupind, can be solved with just 1 swap.
-  for (size_t i = 0; i < len; ++i) {
-    if (pg->arr[i].group_id == group_id) {
-      found = true;
-      br_data_deinit(&pg->arr[i]);
-    }
-    if (found == true && i + 1 < len) {
-      memcpy(&pg->arr[i], &pg->arr[i + 1], sizeof(br_data_t));
-    }
-  }
-  if (found == true) {
-    memset(&pg->arr[len - 1], 0, sizeof(br_data_t));
-    --pg->len;
+  for (size_t i = 0; i < pg->len; ++i) {
+    if (pg->arr[i].group_id != group_id) continue;
+    br_data_deinit(&pg->arr[i]);
+    if (i != pg->len - 1) memcpy(&pg->arr[i], &pg->arr[pg->len - 1], sizeof(br_data_t));
+    memset(&pg->arr[--pg->len], 0, sizeof(br_data_t));
     br_plot_remove_group(*plots, group_id);
   }
+  if (pg->len > 1) qsort(pg->arr, pg->len, sizeof(pg->arr[0]), br_data_compare);
 }
 
 void br_data_export(br_data_t const* pg, FILE* file) {
@@ -350,7 +345,8 @@ BR_API br_data_t* br_data_get2(br_datas_t* pg, int group, br_data_kind_t kind) {
     --pg->len;
     return NULL;
   }
-  return ret;
+  qsort(pg->arr, pg->len, sizeof(pg->arr[0]), br_data_compare);
+  return br_data_get2(pg, group, kind);
 }
 
 BR_API void br_data_set_name(br_datas_t* pg, int group, br_str_t name) {

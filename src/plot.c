@@ -177,7 +177,6 @@ void br_plot_update_context(br_plot_t* plot, Vector2 mouse_pos) {
 
 void br_plot_remove_group(br_plots_t plots, int group) {
   for (int i = 0; i < plots.len; ++i) {
-    br_plot_t plot = plots.arr[i];
-    br_da_remove(plot.groups_to_show, group);
+    br_da_remove(plots.arr[i].groups_to_show, group);
   }
 }

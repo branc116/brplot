@@ -59,13 +59,12 @@ extern "C" {
 #define br_da_remove_at(ARR, I) br_da_remove_n_at(ARR, 1, I)
 #define br_da_remove_at_t(T, ARR, I) br_da_remove_n_at_t(T, ARR, 1, I)
 
-#define br_da_remove(ARR, V) do {            \
-  size_t _i = 0;                              \
-  for (; _i < (size_t)(ARR).len; ++_i) {       \
-    if ((ARR).arr[_i] == (V)) {               \
-      (ARR).arr[_i] = (ARR).arr[--(ARR).len]; \
-    }                                        \
-  }                                          \
+#define br_da_remove(ARR, V) do {                                     \
+  size_t _i = 0;                                                      \
+  for (; _i < (size_t)(ARR).len; ) {                                  \
+    if ((ARR).arr[_i] == (V)) (ARR).arr[_i] = (ARR).arr[--(ARR).len]; \
+    else ++_i;                                                        \
+  }                                                                   \
 } while(0)
 
 #define br_da_contains_t(T, ARR, V, CONTAINS) do { \

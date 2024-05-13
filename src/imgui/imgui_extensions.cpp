@@ -1,8 +1,6 @@
 #include "imgui_extensions.h"
 #include "imgui_internal.h"
 #include "src/br_help.h"
-#include "src/br_plot.h"
-#include <algorithm>
 
 namespace ImGui {
   bool IsWindowHidden() {
