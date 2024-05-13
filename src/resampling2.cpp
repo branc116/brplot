@@ -191,12 +191,14 @@ extern "C" void resampling2_add_point(resampling2_t* r, const br_data_t *pg, uin
     switch (r->kind) {
       case br_data_kind_2d: { br_da_push((r->dd), resampling2_nodes_2d_t()); break; }
       case br_data_kind_3d: { br_da_push((r->ddd), resampling2_nodes_3d_t()); break; }
+      case br_data_kind_expr_2d: { br_da_push((r->dd), resampling2_nodes_2d_t()); break; }
       default: assert(false);
     }
   }
   switch (r->kind) {
     case br_data_kind_2d: { resampling2_nodes_2d_push_point(&r->dd, 0, index, pg->dd.points); break; }
     case br_data_kind_3d: { resampling2_nodes_3d_push_point(&r->ddd, 0, index, pg->ddd.points); break; }
+    case br_data_kind_expr_2d: { resampling2_nodes_2d_push_point(&r->dd, 0, index, pg->expr_2d.dd.points); break; }
     default: assert(false);
   }
 }
@@ -292,7 +294,7 @@ int not_raw_c = 0;
 
 static void resampling2_draw(resampling2_nodes_2d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot) {
   assert(plot->kind == br_plot_kind_2d);
-  assert(pg->kind == br_data_kind_2d);
+  assert(pg->kind == br_data_kind_2d || pg->kind == br_data_kind_expr_2d);
   ZoneScopedN("resampling2_2d");
   Vector2 const* ps = pg->dd.points;
   Rectangle rect = plot->dd.graph_rect;
@@ -332,7 +334,7 @@ static void resampling2_draw(resampling2_nodes_2d_allocator_t const* const nodes
 
 static void resampling2_draw_3d(resampling2_nodes_2d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot) {
   assert(plot->kind == br_plot_kind_3d);
-  assert(pg->kind == br_data_kind_2d);
+  assert(pg->kind == br_data_kind_2d || pg->kind == br_data_kind_expr_2d);
   ZoneScopedN("resampling2_3d");
   Vector2 const* ps = pg->dd.points;
   resampling2_nodes_2d_t node = nodes->arr[index];
@@ -412,6 +414,7 @@ void resampling2_draw(resampling2_t const* res, br_data_t const* pg, br_plot_t* 
 
   if (res->common.len == 0) return;
   switch (pg->kind) {
+    case br_data_kind_expr_2d:
     case br_data_kind_2d: {
       switch (plot->kind) {
         case br_plot_kind_2d: resampling2_draw(&res->dd, 0, pg, plot); break;

@@ -1,14 +1,11 @@
 #include "src/br_plot.h"
 #include "src/br_gui_internal.h"
-#include "src/imgui/imgui_extensions.h"
 #include "src/br_plotter.h"
 #include "raylib.h"
 #include "imgui.h"
-#include "imgui_internal.h"
 #include "rlgl.h"
 #include "external/glad.h"
 #include "raymath.h"
-#include "src/br_da.h"
 
 extern "C" void br_hot_init(br_plotter_t* gv) {
   fprintf(stderr, "First call\n");
@@ -18,6 +15,7 @@ bool focused = false;
 float translate_speed = 1.0f;
 
 extern "C" void br_hot_loop(br_plotter_t* br) {
+  return;
   if (br->plots.len < 2) return;
   if (ImGui::Begin("TestMath")) {
     Matrix mvp = br->plots.arr[1].ddd.grid_shader->uvs.m_mvp_uv;

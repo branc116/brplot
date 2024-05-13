@@ -29,6 +29,7 @@ typedef enum {
   //|points                    - Vector2[len2]
   //|_CRC                      - uint32_t
   br_save_state_command_save_data_3d,
+  br_save_state_command_save_data_expr_2d,
   // command                   - br_save_state_command_t
   // number of datasets        - size_t
   // for dataset in datasets:
@@ -91,8 +92,9 @@ bool br_permastate_save_datas(br_str_t path_folder, br_datas_t datas) {
   for (size_t i = 0; i < datas.len; ++i) {
     br_data_t* data = &datas.arr[i];
     switch (data->kind) {
-      case br_plot_kind_2d: command = br_save_state_command_save_data_2d; break;
-      case br_plot_kind_3d: command = br_save_state_command_save_data_3d; break;
+      case br_data_kind_2d: command = br_save_state_command_save_data_2d; break;
+      case br_data_kind_3d: command = br_save_state_command_save_data_3d; break;
+      case br_data_kind_expr_2d: continue; // TODO
       default: BR_ASSERT(0);
     }
     if (false == br_fs_cd(&path_folder, br_strv_from_literal("data"))) goto error;
@@ -375,7 +377,10 @@ bool br_permastate_load(br_plotter_t* br) {
     if (false == br_str_push_int(&path, br->groups.arr[i].group_id))  goto error;
     if (false == br_str_push_c_str(&path, ".br"))                     goto error;
     br_str_to_c_str1(path, buff);
-    if (false == (file_exists = br_fs_exists(br_str_sub1(path, 0))))  goto error;
+    if (false == (file_exists = br_fs_exists(br_str_sub1(path, 0)))) {
+      br_data_clear(&br->groups, &br->plots, br->groups.arr[i].group_id);
+      continue;
+    }
     f = fopen(buff, "rb");
     if (NULL == f)                                                    goto error;
     if (1 != fread(&command, sizeof(command), 1, f))                  goto error;

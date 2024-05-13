@@ -2,6 +2,7 @@
 #include "br_pp.h"
 #include "br_str.h"
 #include "raylib.h"
+
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -29,6 +30,7 @@ typedef struct bb_t {
 typedef enum {
   br_data_kind_2d,
   br_data_kind_3d,
+  br_data_kind_expr_2d,
 } br_data_kind_t;
 
 typedef struct br_data_2d_t {
@@ -41,6 +43,25 @@ typedef struct br_data_3d_t {
   bb_3d_t bounding_box;
 } br_data_3d_t;
 
+typedef enum {
+  br_data_expr_kind_reference_x,
+  br_data_expr_kind_reference_y,
+  br_data_expr_kind_reference_z,
+} br_data_expr_kind_t;
+
+typedef struct br_data_expr_t {
+  br_data_expr_kind_t kind;
+  union {
+    int group_id;
+  };
+} br_data_expr_t;
+
+typedef struct br_data_2d_expr_t {
+  br_data_2d_t dd;
+  br_data_expr_t x_expr;
+  br_data_expr_t y_expr;
+} br_data_2d_expr_t;
+
 typedef struct br_data_t {
   resampling2_t* resampling;
   size_t cap, len;
@@ -52,6 +73,7 @@ typedef struct br_data_t {
   union {
     br_data_2d_t dd;
     br_data_3d_t ddd;
+    br_data_2d_expr_t expr_2d;
   };
 } br_data_t;
 
@@ -69,6 +91,7 @@ BR_API void br_data_push_y(br_datas_t* pg, float y, int group);
 BR_API void br_data_push_x(br_datas_t* pg, float x, int group);
 BR_API void br_data_push_xy(br_datas_t* pg, float x, float y, int group);
 BR_API void br_data_push_xyz(br_datas_t* pg, float x, float y, float z, int group);
+void br_data_push_expr_xy(br_datas_t* pg, br_data_expr_t x, br_data_expr_t y, int group);
 // TODO: this should be br_plotter_clear_data()
 BR_API void br_data_clear(br_datas_t* pg, br_plots_t* plots, int group_id);
 // Only remove all points from a group, don't remove the group itself.
@@ -84,6 +107,8 @@ void br_datas_export(br_datas_t const* pg_array, FILE* file);
 void br_datas_export_csv(br_datas_t const* pg_array, FILE* file);
 
 size_t br_data_element_size(br_data_kind_t kind);
+
+void br_data_calcuate_expressions(br_datas_t datas, double until);
 
 #ifdef __cplusplus
 }

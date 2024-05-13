@@ -60,7 +60,7 @@ void  br_imgui_free(void* p, void* user_data);
 #  define BR_IMGUI_FREE br_imgui_free
 #  include "signal.h"
 #  include <assert.h>
-#  define BR_ASSERT(x) do { if (!(x)) { raise(SIGABRT); } assert((x)); } while (false)
+#  define BR_ASSERT(x) assert(x)
 #else
 #  include <assert.h>
 #  define BR_ASSERT(x) assert(x)
