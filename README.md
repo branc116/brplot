@@ -48,6 +48,26 @@ cmake ..
 make
 ```
 
+### Windows
+Tested on Windows 11
+* Download [zig](https://ziglang.org/download/) - Tested with zig 0.12
+* Download [git](https://git-scm.com/downloads)
+* Open cmd/powershell
+```cmd
+git clone https://github.com/branc116/brplot
+cd brplot
+zig build
+./zig-out/brplot_imgui_windows_ReleaseSafe.exe
+```
+
+### Mac
+```cmd
+brew install git zig
+git clone https://github.com/branc116/brplot
+cd brplot
+zig build
+```
+
 Here are the parameters you can change ( for make, but some are also in cmake ):
 * EMSCRIPTEN - only useful if you are building for webassm ( path to emscripten )
 * PLATFORM   - LINUX | WINDOWS | WEB ( Default LINUX )
