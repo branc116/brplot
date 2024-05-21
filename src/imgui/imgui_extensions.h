@@ -1,8 +1,17 @@
 #pragma once
+#include "src/br_plot.h"
+
 #include "raylib.h"
 #include "imgui.h"
-#include "src/br_plot.h"
+
 #include <algorithm>
+
+#if defined(__GNUC__)
+#  define BR_UNUSED_FN __attribute__ ((__unused__))
+#elif defined(_MSC_VER)
+#  define BR_UNUSED_FN
+#endif
+
 
 namespace ImGui {
   bool IsWindowHidden();
@@ -17,9 +26,10 @@ namespace br {
   void ui_info(br_plotter_t* br);
   void ui_textbox(const char* label, br_str_t* str);
   void ShowMatrix(const char* name, Matrix m);
-   __attribute__ ((__unused__)) static inline ImVec2 max(ImVec2 a, ImVec2 b) { return ImVec2 { std::max(a.x, b.x), std::max(a.y, b.y) }; }
+  BR_UNUSED_FN inline ImVec2 max(ImVec2 a, ImVec2 b) { return ImVec2 { std::max(a.x, b.x), std::max(a.y, b.y) }; }
 }
-__attribute__ ((__unused__)) static inline ImVec2 operator+(ImVec2 a, ImVec2 b) { return ImVec2 { a.x + b.x, a.y + b.y }; }
+
+BR_UNUSED_FN static inline ImVec2 operator+(ImVec2 a, ImVec2 b) { return ImVec2 { a.x + b.x, a.y + b.y }; }
 
 struct br_file_saver_s;
 

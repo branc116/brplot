@@ -462,7 +462,7 @@ void check_numbers(shader_t const* shader) {
 
 void check_version(shader_t const* shader) {
   if (shader->tokens.len <= 3) {
-    FATAL(shader, 0, 0, "Expected shader to have more than 2 tokens, found only %lu.\n", shader->tokens.len);
+    FATAL(shader, 0, 0, "Expected shader to have more than 2 tokens, found only %zu.\n", shader->tokens.len);
   }
   EXPECT_TOKEN_K(shader, 0, token_kind_preprocess);
   EXPECT_TOKEN_KS(shader, 1, token_kind_identifier, "version");

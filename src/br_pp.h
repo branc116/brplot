@@ -83,3 +83,7 @@ void  br_imgui_free(void* p, void* user_data);
 #else
 #  define BR_HAS_SHADER_RELOAD 0
 #endif
+
+#if defined(_MSC_VER)
+#  define ssize_t long long int
+#endif

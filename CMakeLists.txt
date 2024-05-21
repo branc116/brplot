@@ -48,6 +48,7 @@ add_executable(brplot
   src/resampling2.cpp src/graph_utils.c src/shaders.c     src/plot.c       src/filesystem++.cpp
   src/permastate.c    src/gui++.cpp     src/gui.c         src/filesystem.c src/data_generator.c
 )
+target_compile_features(brplot PUBLIC cxx_std_17)
 
 if (MSVC)
 else ()
@@ -71,7 +72,11 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/misc/default_font.h
   COMMAND font_export fonts/PlayfairDisplayRegular-ywLOY.ttf src/misc/default_font.h
   DEPENDS font_export fonts/PlayfairDisplayRegular-ywLOY.ttf
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(font_export PUBLIC m)
+
+if (MSVC)
+else ()
+  target_link_libraries(font_export PUBLIC m)
+endif ()
 target_sources(brplot PRIVATE src/misc/default_font.h)
 
 if (CMAKE_BUILD_TYPE STREQUAL Debug)

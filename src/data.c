@@ -370,7 +370,7 @@ size_t br_data_element_size(br_data_kind_t kind) {
   switch (kind) {
     case br_data_kind_2d:      return sizeof(Vector2);
     case br_data_kind_3d:      return sizeof(Vector3);
-    default: assert(0);
+    default: assert(0); return 0;
   }
 }
 

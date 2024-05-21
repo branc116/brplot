@@ -5,11 +5,15 @@
 #include "br_smol_mesh.h"
 #include "br_da.h"
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#endif
 #include "raylib.h"
 #include "raymath.h"
-#pragma GCC diagnostic pop
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
 #include "tracy/Tracy.hpp"
 
 #include <algorithm>
