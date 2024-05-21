@@ -27,7 +27,8 @@ IM                 = ./external/imgui-docking
 RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
 SOURCE             = src/main.c src/help.c src/data.c src/smol_mesh.c src/q.c src/read_input.c src/plotter.c \
 										 src/keybindings.c src/str.c src/memory.cpp src/resampling2.c src/graph_utils.c src/shaders.c \
-										 src/plot.c src/permastate.c src/filesystem.c src/filesystem++.cpp src/gui.c src/gui++.cpp
+										 src/plot.c src/permastate.c src/filesystem.c src/filesystem++.cpp src/gui.c src/gui++.cpp \
+										 src/data_generator.c
 COMMONFLAGS        = -I. -I./external/glfw/include/ -I./external/Tracy -I$(RL) -MMD -MP 
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra
 LD_FLAGS           =

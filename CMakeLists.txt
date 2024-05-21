@@ -43,10 +43,10 @@ add_library(imgui STATIC
 target_include_directories(imgui PUBLIC ./external/imgui-docking/ ./external/glfw/include)
 
 add_executable(brplot
-  src/main.c          src/help.c        src/data.c        src/smol_mesh.c src/q.c
-  src/read_input.c    src/plotter.c     src/keybindings.c src/str.c       src/memory.cpp 
-  src/resampling2.cpp src/graph_utils.c src/shaders.c     src/plot.c      src/filesystem++.cpp
-  src/permastate.c    src/gui++.cpp     src/gui.c         src/filesystem.c
+  src/main.c          src/help.c        src/data.c        src/smol_mesh.c  src/q.c
+  src/read_input.c    src/plotter.c     src/keybindings.c src/str.c        src/memory.cpp 
+  src/resampling2.cpp src/graph_utils.c src/shaders.c     src/plot.c       src/filesystem++.cpp
+  src/permastate.c    src/gui++.cpp     src/gui.c         src/filesystem.c src/data_generator.c
 )
 
 if (MSVC)

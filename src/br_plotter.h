@@ -2,6 +2,7 @@
 #include "br_data.h"
 #include "br_plot.h"
 #include "br_pp.h"
+#include "br_data_generator.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,6 +25,7 @@ typedef struct br_plotter_t {
   br_datas_t groups;
   br_plots_t plots;
   br_shaders_t shaders;
+  br_dagens_t dagens;
 
   // Any thread can write to this q, only render thread can pop
   q_commands* commands;

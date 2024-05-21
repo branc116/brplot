@@ -145,11 +145,12 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
 
     exe.addCSourceFiles(.{ .files = &.{
         "./src/data.c",
-        "./src/filesystem.c",
+        "./src/data_generator.c",
         "./src/filesystem++.cpp",
+        "./src/filesystem.c",
         "./src/graph_utils.c",
-        "./src/gui.c",
         "./src/gui++.cpp",
+        "./src/gui.c",
         "./src/help.c",
         "./src/keybindings.c",
         "./src/main.c",

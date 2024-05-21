@@ -47,7 +47,7 @@ extern "C" {
 } while(0)
 
 #define br_da_remove_n_at_t(T, ARR, N, I) do {                                    \
-  assert("Index is out of bounds" && (I) >= 0 && ((I) + (N) - 1) < (T)(ARR).len); \
+  assert("Index is out of bounds" && ((I) + (N) - 1) < (T)(ARR).len); \
   T _i = (T)(I);                                                                  \
   for (; (_i + N) < (T)((ARR).len); ++_i) {                                       \
     (ARR).arr[_i] = (ARR).arr[_i + 1];                                            \

@@ -33,10 +33,7 @@ int main_gui(br_plotter_t* gv) {
   while(!WindowShouldClose() && !gv->should_close) {
     TracyCFrameMark;
     br_plotter_draw(gv);
-    double cur_time = GetTime();
-    TracyCFrameMarkStart("CalcuateExpressions");
-    br_data_calcuate_expressions(gv->groups, cur_time + 0.016);
-    TracyCFrameMarkStart("CalcuateExpressions");
+    br_dagens_handle(gv, GetTime() + 0.010);
     TracyCFrameMarkStart("plotter_frame_end");
     br_plotter_frame_end(gv);
     TracyCFrameMarkEnd("plotter_frame_end");

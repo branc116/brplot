@@ -34,6 +34,7 @@ BR_API void br_plotter_init(br_plotter_t* br, float width, float height) {
     .groups = {0},
     .plots = {0},
     .shaders = {0},
+    .dagens = {0},
     .commands = NULL,
 #if BR_HAS_SHADER_RELOAD
     .shaders_dirty = false,

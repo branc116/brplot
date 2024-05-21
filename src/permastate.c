@@ -4,42 +4,14 @@
 #include "br_pp.h"
 #include "br_filesystem.h"
 #include "br_resampling2.h"
-#include "src/br_data.h"
+#include "br_permastate.h"
+#include "br_data.h"
+#include "br_data_generator.h"
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-
-typedef enum {
-  br_save_state_command_none = 0,
-  // command       - br_save_state_command_t
-  // N             - int
-  // |for i in 0:N 
-  // |   plot data - br_plot_t[N]
-  // |_ CRC        - uint32_t
-  br_save_state_command_save_plots,
-  // command                   - br_save_state_command_t
-  // number of points (len2)   - size_t
-  //|points                    - Vector2[len2]
-  //|_CRC                      - uint32_t
-  br_save_state_command_save_data_2d,
-  // command                   - br_save_state_command_t
-  // number of points (len2)   - size_t
-  //|points                    - Vector2[len2]
-  //|_CRC                      - uint32_t
-  br_save_state_command_save_data_3d,
-  br_save_state_command_save_data_expr_2d,
-  // command                   - br_save_state_command_t
-  // number of datasets        - size_t
-  // for dataset in datasets:
-  //   dataset id              - size_t
-  //   length of dataset name  - size_t
-  //   dataset name            - char[len]
-  // active plot index         - int
-  br_save_state_command_plotter
-  
-} br_save_state_command_t;
 
 bool br_permastate_save_plots(br_str_t path_folder, br_plots_t plots) {
   char buff[512]; buff[0]         = '\0';
@@ -94,7 +66,6 @@ bool br_permastate_save_datas(br_str_t path_folder, br_datas_t datas) {
     switch (data->kind) {
       case br_data_kind_2d: command = br_save_state_command_save_data_2d; break;
       case br_data_kind_3d: command = br_save_state_command_save_data_3d; break;
-      case br_data_kind_expr_2d: continue; // TODO
       default: BR_ASSERT(0);
     }
     if (false == br_fs_cd(&path_folder, br_strv_from_literal("data"))) goto error;
@@ -282,59 +253,6 @@ error:
   return false;
 }
 
-bool br_permastate_load_data(FILE* file, br_data_t* data, br_data_kind_t kind) {
-  uint32_t crc_calculated = 0;
-  uint32_t crc_read = 0;
-
-  data->color = (Color){0};
-  data->ddd = (br_data_3d_t){0};
-  data->kind = kind;
-  data->len = 0;
-  data->is_new = false;
-
-  if (1 != fread(&data->color, sizeof(data->color), 1, file)) goto error;
-  if (1 != fread(&data->len, sizeof(data->len), 1, file)) goto error;
-  data->cap = data->len;
-  if (0 == data->len) {
-    data->resampling = resampling2_malloc(kind);
-    data->kind = kind;
-    data->cap = 8;
-    data->dd.points = BR_MALLOC(br_data_element_size(kind) * 8);
-    return true;
-  }
-  switch (data->kind) {
-    case br_plot_kind_2d: {
-      if (1 != fread(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file)) goto error;
-      if (NULL == (data->dd.points = BR_MALLOC(sizeof(*data->dd.points) * data->len))) goto error;
-      if (data->len != fread(data->dd.points, sizeof(*data->dd.points), data->len, file)) goto error;
-      crc_calculated = br_fs_crc(data->dd.points, sizeof(*data->dd.points) * data->len, 0);
-      if (1 != fread(&crc_read, sizeof(crc_read), 1, file)) goto error;
-    } break;
-    case br_plot_kind_3d: {
-      if (1 != fread(&data->ddd.bounding_box, sizeof(data->ddd.bounding_box), 1, file)) goto error;
-      if (NULL == (data->ddd.points = BR_MALLOC(sizeof(*data->ddd.points) * data->len))) goto error;
-      if (data->len != fread(data->ddd.points, sizeof(*data->ddd.points), data->len, file)) goto error;
-      crc_calculated = br_fs_crc(data->ddd.points, sizeof(*data->ddd.points) * data->len, 0);
-      if (1 != fread(&crc_read, sizeof(crc_read), 1, file)) goto error;
-    } break;
-    default: BR_ASSERT(0);
-  }
-  if (crc_calculated != crc_read) goto error;
-  data->resampling = resampling2_malloc(kind);
-  for (size_t i = 0; i < data->len; ++i) {
-    resampling2_add_point(data->resampling, data, (uint32_t)i);
-  }
-  return true;
-
-error:
-  LOGI("Failed to read a file: %d(%s) data_id=%d\n", errno, strerror(errno), data->group_id);
-  if (0 == memcmp(&data->color, &(Color){0}, sizeof(data->color))) LOGI("Failed to read color\n");
-  else if (0 == data->len)                                         LOGI("Failed to read data len\n");
-  else if (NULL == data->dd.points)                                LOGI("Failed to allocate memeory for data\n");
-  else if (crc_read != crc_calculated)                             LOGE("Crc failed for a data\n");
-  return false;
-}
-
 bool br_permastate_load(br_plotter_t* br) {
   char buff[512]               /* = uninitialized */;
   br_str_t path                   = {0};
@@ -381,19 +299,9 @@ bool br_permastate_load(br_plotter_t* br) {
       br_data_clear(&br->groups, &br->plots, br->groups.arr[i].group_id);
       continue;
     }
-    f = fopen(buff, "rb");
-    if (NULL == f)                                                    goto error;
-    if (1 != fread(&command, sizeof(command), 1, f))                  goto error;
-    br_data_kind_t kind;
-    switch (command) {
-      case br_save_state_command_save_data_2d: kind = br_data_kind_2d; break;
-      case br_save_state_command_save_data_3d: kind = br_data_kind_3d; break;
-      default:                                                        goto error;
-    }
-    if (false == br_permastate_load_data(f, &br->groups.arr[i], kind))goto error;
+    if (false == br_dagen_push_file(&br->dagens, &br->groups.arr[i], fopen(buff, "rb"))) goto error;
     if (false == br_fs_up_dir(&path))                                 goto error;
   }
-
   goto end;
 
 error:

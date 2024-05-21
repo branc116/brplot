@@ -60,12 +60,12 @@ BR_API void br_data_push_xyz(br_datas_t* pg_array, float x, float y, float z, in
   br_data_push_point3(pg, (Vector3){ .x = x, .y = y, .z = z });
 }
 
-void br_data_push_expr_xy(br_datas_t* datas, br_data_expr_t x, br_data_expr_t y, int group) {
-  br_data_t* data = br_data_get2(datas, group, br_data_kind_expr_2d);
-  data->expr_2d.x_expr = x;
-  data->expr_2d.y_expr = y;
-  br_data_empty(data);
-}
+//void br_data_push_expr_xy(br_datas_t* datas, br_data_expr_t x, br_data_expr_t y, int group) {
+//  br_data_t* data = br_data_get2(datas, group, br_data_kind_expr_2d);
+//  data->expr_2d.x_expr = x;
+//  data->expr_2d.y_expr = y;
+//  br_data_empty(data);
+//}
 
 BR_API void br_data_empty(br_data_t* pg) {
   pg->len = 0;
@@ -221,7 +221,7 @@ void br_datas_add_test_points(br_datas_t* pg) {
     }
   }
   {
-    br_data_push_expr_xy(pg, (br_data_expr_t){ .kind = br_data_expr_kind_reference_y, .group_id = 5 }, (br_data_expr_t){ .kind = br_data_expr_kind_reference_x, .group_id = 5 }, 12);
+//    br_data_push_expr_xy(pg, (br_data_expr_t){ .kind = br_data_expr_kind_reference_y, .group_id = 5 }, (br_data_expr_t){ .kind = br_data_expr_kind_reference_x, .group_id = 5 }, 12);
   }
 }
 
@@ -369,76 +369,8 @@ BR_API void br_data_set_name(br_datas_t* pg, int group, br_str_t name) {
 size_t br_data_element_size(br_data_kind_t kind) {
   switch (kind) {
     case br_data_kind_2d:      return sizeof(Vector2);
-    case br_data_kind_expr_2d: return sizeof(Vector2);
     case br_data_kind_3d:      return sizeof(Vector3);
     default: assert(0);
-  }
-}
-
-static size_t br_data_expr_get_len(br_datas_t datas, br_data_expr_t expr) {
-  switch (expr.kind) {
-    case br_data_expr_kind_reference_x:
-    case br_data_expr_kind_reference_y:
-    case br_data_expr_kind_reference_z:
-      return br_data_get1(datas, expr.group_id)->len;
-    default:
-      assert(0);
-  }
-}
-
-static float br_data_get_x_at(br_data_t const* data, size_t i) {
-  switch(data->kind) {
-    case br_data_kind_2d: return data->dd.points[i].x;
-    case br_data_kind_3d: return data->ddd.points[i].x;
-    case br_data_kind_expr_2d: return data->expr_2d.dd.points[i].x;
-    default: assert(0);
-  }
-}
-
-static float br_data_get_y_at(br_data_t const* data, size_t i) {
-  switch(data->kind) {
-    case br_data_kind_2d: return data->dd.points[i].y;
-    case br_data_kind_3d: return data->ddd.points[i].y;
-    case br_data_kind_expr_2d: return data->expr_2d.dd.points[i].y;
-    default: assert(0);
-  }
-}
-
-static float br_data_get_z_at(br_data_t const* data, size_t i) {
-  switch(data->kind) {
-    case br_data_kind_3d: return data->ddd.points[i].x;
-    default: assert(0);
-  }
-}
-
-static float br_data_expr_get_at(br_datas_t datas, br_data_expr_t expr, size_t i) {
-  switch (expr.kind) {
-    case br_data_expr_kind_reference_x: return br_data_get_x_at(br_data_get1(datas, expr.group_id), i);
-    case br_data_expr_kind_reference_y: return br_data_get_y_at(br_data_get1(datas, expr.group_id), i);
-    case br_data_expr_kind_reference_z: return br_data_get_z_at(br_data_get1(datas, expr.group_id), i);
-    default: assert(0);
-  }
-}
-
-void br_data_calcuate_expressions(br_datas_t datas, double until) {
-  for (size_t i = 0; i < datas.len; ++i) {
-    br_data_t* data = &datas.arr[i];
-    switch (datas.arr[i].kind) {
-      case br_data_kind_2d:
-      case br_data_kind_3d:
-        continue;
-      case br_data_kind_expr_2d: {
-        size_t x_len = br_data_expr_get_len(datas, data->expr_2d.x_expr);
-        size_t y_len = br_data_expr_get_len(datas, data->expr_2d.y_expr);
-        size_t len = x_len < y_len ? x_len : y_len;
-        for (size_t i = data->len; i < len; ++i) {
-          if (i % 1024 && GetTime() > until) return;
-          Vector2 point = { br_data_expr_get_at(datas, data->expr_2d.x_expr, i), br_data_expr_get_at(datas, data->expr_2d.y_expr, i) };
-          br_data_push_point2(data, point);
-        }
-      } break;
-      default: assert(0);
-    }
   }
 }
 
@@ -470,7 +402,8 @@ static void br_data_deinit(br_data_t* g) {
 }
 
 static bool br_data_realloc(br_data_t* pg, size_t new_cap) {
-  assert(pg->cap > 0 && new_cap > 0);
+  BR_ASSERT(pg->cap > 0);
+  BR_ASSERT(new_cap > 0);
 
   Vector2* new_arr = BR_REALLOC(pg->dd.points, new_cap * br_data_element_size(pg->kind));
   if (new_arr == NULL) {
