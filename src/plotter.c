@@ -52,6 +52,10 @@ BR_API void br_plotter_init(br_plotter_t* br, float width, float height) {
 #endif
   br->shaders = br_shaders_malloc();
   br->commands = q_malloc();
+  if (NULL == br->commands) {
+    LOGE("Failed to malloc command queue. Exiting...\n");
+    exit(1);
+  }
   help_load_default_font();
 
   context.font_scale = 1.8f;

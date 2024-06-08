@@ -46,6 +46,10 @@ int main(void) {
   SetTraceLogLevel(LOG_ERROR);
 #endif
   br_plotter_t* gv = br_plotter_malloc();
+  if (NULL == gv) {
+    LOGE("Failed to malloc br plotter, exiting...\n");
+    exit(1);
+  }
   br_plotter_init(gv, WIDTH, HEIGHT);
 #if BR_HAS_SHADER_RELOAD
   start_refreshing_shaders(gv);

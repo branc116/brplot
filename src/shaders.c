@@ -3,6 +3,7 @@
 #if !defined(DEBUG_MACROS)
 #  include "br_pp.h"
 
+#  include <stdio.h>
 #  include <stdint.h>
 #  include <stdlib.h>
 #endif
@@ -19,14 +20,24 @@
 #endif
 
 #define X_BUF(NAME, LEN) \
-  ret->NAME ## _vbo = BR_MALLOC((size_t)(LEN * cap * 3 * (int)sizeof(float)));
-#define X(NAME, CAP, U_VEC, BUFF) \
-  inline static br_shader_ ## NAME ## _t* br_shader_ ## NAME ## _malloc(void) { \
-    const int cap = CAP; \
+  do {                                                                           \
+    ret->NAME ## _vbo = BR_MALLOC((size_t)(LEN * cap * 3 * (int)sizeof(float))); \
+    if (NULL == ret->NAME ## _vbo) {                                             \
+      LOGE("Failed to allocate shader " #NAME " buffer, exitting...\n");         \
+      exit(1);                                                                   \
+    }                                                                            \
+  } while (0);
+#define X(NAME, CAP, U_VEC, BUFF)                                                   \
+  inline static br_shader_ ## NAME ## _t* br_shader_ ## NAME ## _malloc(void) {     \
+    const int cap = CAP;                                                            \
     br_shader_ ## NAME ## _t* ret = BR_CALLOC(1, sizeof(br_shader_ ## NAME ## _t)); \
-    BUFF \
-    ret->cap = cap; \
-    return ret; \
+    if (NULL == ret) {                                                              \
+      LOGE("Failed to allocate shader " #NAME ", exitting...\n");                   \
+      exit(1);                                                                      \
+    }                                                                               \
+    BUFF                                                                            \
+    ret->cap = cap;                                                                 \
+    return ret;                                                                     \
   }
 BR_ALL_SHADERS(X, NOP2, X_BUF)
 #undef X

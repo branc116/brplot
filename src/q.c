@@ -13,7 +13,15 @@
 q_commands* q_malloc(void) {
   q_commands* q = BR_MALLOC(sizeof(*q));
   size_t cap = 1024 * 1024;
+  if (NULL == q) {
+    LOGE("Failed to malloc q, exitting...\n");
+    exit(1);
+  }
   q->commands = BR_MALLOC(cap * sizeof(q->commands[0]));
+  if (NULL == q->commands) {
+    LOGE("Failed to malloc q commands, exitting...\n");
+    exit(1);
+  }
   q->capacity = cap;
   q->read_index = 0;
   q->write_index = 0;
