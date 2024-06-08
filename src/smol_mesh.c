@@ -39,7 +39,6 @@ void smol_mesh_gen_point1(br_shader_line_t* shader, Vector2 point, Vector2 size,
 }
 
 void smol_mesh_gen_line(br_shader_line_t* shader, Vector2 startPos, Vector2 endPos, Color const color) {
-  int const vn = 3*3;
   Vector3 const cv = {color.r/255.f, color.g/255.f, color.b/255.f};
   int c = shader->len;
   if (c + 1 >= shader->cap) {
@@ -49,47 +48,37 @@ void smol_mesh_gen_line(br_shader_line_t* shader, Vector2 startPos, Vector2 endP
   } else {
     shader->len += 2;
   }
-  c *= vn;
+  c *= 3;
   Vector2 delta = { endPos.x - startPos.x, endPos.y - startPos.y };
-  float length = sqrtf(delta.x*delta.x + delta.y*delta.y);
 
   Vector2 strip[2] = {
     { startPos.x, startPos.y},
     { endPos.x, endPos.y},
   };
   //First triangle
-  shader->vertexPosition_vbo[c+0] = strip[0].x;
-  shader->vertexPosition_vbo[c+1] = strip[0].y;
-  shader->vertexPosition_vbo[c+2] = -1;
-  shader->vertexPosition_vbo[c+3] = strip[1].x;
-  shader->vertexPosition_vbo[c+4] = strip[1].y;
-  shader->vertexPosition_vbo[c+5] = -1;
-  shader->vertexPosition_vbo[c+6] = strip[0].x;
-  shader->vertexPosition_vbo[c+7] = strip[0].y;
-  shader->vertexPosition_vbo[c+8] = 1;
-  //Second triangle
-  shader->vertexPosition_vbo[c+9]  = strip[0].x;
-  shader->vertexPosition_vbo[c+10] = strip[0].y;
-  shader->vertexPosition_vbo[c+11] = 1;
-  shader->vertexPosition_vbo[c+12] = strip[1].x;
-  shader->vertexPosition_vbo[c+13] = strip[1].y;
-  shader->vertexPosition_vbo[c+14] = -1;
-  shader->vertexPosition_vbo[c+15] = strip[1].x;
-  shader->vertexPosition_vbo[c+16] = strip[1].y;
-  shader->vertexPosition_vbo[c+17] = 1;
+  shader->vertexX_vbo[c+0] = strip[0].x; shader->vertexY_vbo[c+0] = strip[0].y;
+  shader->vertexX_vbo[c+1] = strip[1].x; shader->vertexY_vbo[c+1] = strip[1].y;
+  shader->vertexX_vbo[c+2] = strip[0].x; shader->vertexY_vbo[c+2] = strip[0].y;
+  shader->vertexX_vbo[c+3] = strip[0].x; shader->vertexY_vbo[c+3] = strip[0].y;
+  shader->vertexX_vbo[c+4] = strip[1].x; shader->vertexY_vbo[c+4] = strip[1].y;
+  shader->vertexX_vbo[c+5] = strip[1].x; shader->vertexY_vbo[c+5] = strip[1].y;
 
-  for (ssize_t i = 0; i < vn*2; i += 3) {
-    //Not a normal, this is dx, dy, length for first triangle
-    shader->vertexNormal_vbo[c+i+0] = delta.x;
-    shader->vertexNormal_vbo[c+i+1] = delta.y;
-    shader->vertexNormal_vbo[c+i+2] = length;
-  }
+  Vector2* normals = (Vector2*)&shader->delta_vbo[2*c];
+  normals[0] = (Vector2){ delta.x, delta.y };
+  normals[1] = (Vector2){ delta.x, delta.y };
+  normals[2] = (Vector2){ delta.x, delta.y };
+  normals[3] = (Vector2){ delta.x, delta.y };
+  normals[4] = (Vector2){ delta.x, delta.y };
+  normals[5] = (Vector2){ delta.x, delta.y };
 
-  for (ssize_t i = 0; i < vn*2; i += 3) {
-    shader->vertexColor_vbo[c+i+0] = cv.x;
-    shader->vertexColor_vbo[c+i+1] = cv.y;
-    shader->vertexColor_vbo[c+i+2] = cv.z;
-  }
+  Vector3* colors = (Vector3*)&shader->vertexColor_vbo[3*c];
+  colors[0] = (Vector3){ cv.x, cv.y, 2.f+cv.z };
+  colors[1] = (Vector3){ cv.x, cv.y, 2.f+cv.z };
+  colors[2] = (Vector3){ cv.x, cv.y, cv.z };
+  colors[3] = (Vector3){ cv.x, cv.y, cv.z };
+  colors[4] = (Vector3){ cv.x, cv.y, 2.f+cv.z };
+  colors[5] = (Vector3){ cv.x, cv.y, cv.z };
+
   if (context.debug_bounds) {
     context.debug_bounds = false;
     smol_mesh_gen_point(shader, startPos, WHITE);
@@ -102,6 +91,14 @@ void smol_mesh_gen_line_strip(br_shader_line_t* shader, Vector2 const * points, 
   TracyCZoneN(gen_line_strip_ctx, "GenLineStrip", true);
   TracyCZoneValue(gen_line_strip_ctx, len);
   for (size_t v = 0; v < (len - 1); ++v) smol_mesh_gen_line(shader, points[v], points[v + 1], color);
+  TracyCZoneEnd(gen_line_strip_ctx);
+}
+
+void smol_mesh_gen_line_strip2(br_shader_line_t* shader, float const* xs, float const* ys, size_t len, Color color) {
+  TracyCZoneN(gen_line_strip_ctx, "GenLineStrip2", true);
+  TracyCZoneValue(gen_line_strip_ctx, len);
+  for (size_t v = 0; v < (len - 1); ++v)
+    smol_mesh_gen_line(shader, (Vector2){ xs[v], ys[v] }, (Vector2){ xs[v+1], ys[v+1] }, color);
   TracyCZoneEnd(gen_line_strip_ctx);
 }
 
@@ -147,11 +144,21 @@ void smol_mesh_3d_gen_line_simple(br_shader_line_3d_simple_t* shader, Vector3 p1
 void smol_mesh_3d_gen_line_strip(br_shader_line_3d_t* shader, Vector3 const* ps, size_t len, Color color) {
   for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(shader, ps[i], ps[i + 1], color);
 }
+void smol_mesh_3d_gen_line_strip1(br_shader_line_3d_t* shader, float const* xs, float const* ys, float const* zs, size_t len, Color color) {
+  for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(shader, (Vector3){ xs[i], ys[i], zs[i] }, (Vector3){ xs[i + 1], ys[i + 1], zs[i + 1] }, color);
+
+}
 
 void smol_mesh_3d_gen_line_strip2(br_shader_line_3d_t* shader, Vector2 const* ps, size_t len, Color color) {
   for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(shader,
-      (Vector3){ps[i].x, ps[i].y, 0},
-      (Vector3) {ps[i + 1].x, ps[i + 1].y, 0}, color);
+      (Vector3){ ps[i].x, ps[i].y, 0 },
+      (Vector3){ ps[i+1].x, ps[i+1].y, 0 }, color);
+}
+
+void smol_mesh_3d_gen_line_strip3(br_shader_line_3d_t* shader, float const* xs, float const* ys, size_t len, Color color) {
+  for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(shader,
+      (Vector3){ xs[i], ys[i], 0 },
+      (Vector3){ xs[i+1], ys[i+1], 0 }, color);
 }
 
 void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, Vector3 p1, Vector3 p2, Color color) {

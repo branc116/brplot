@@ -10,7 +10,33 @@
 #include <errno.h>
 #include <string.h>
 
-void br_dagen_push_expr_xy(br_dagens_t* pg, br_data_expr_t x, br_data_expr_t y, int group);
+void br_dagen_push_expr_xy(br_dagens_t* pg, br_datas_t* datas, br_dagen_expr_t x, br_dagen_expr_t y, int group) {
+  br_dagen_t dagen = {
+    .kind = br_dagen_kind_expr,
+    .data_kind = br_data_kind_2d,
+    .state = br_dagen_state_inprogress,
+    .group_id = group,
+    .expr_2d = {
+      .x_expr = x,
+      .y_expr = y
+    }
+  };
+  br_data_t data = {
+    .resampling = resampling2_malloc(1024),
+    .cap = 0, .len = 0,
+    .kind = br_data_kind_2d,
+    .group_id = group,
+    .color = br_data_get_default_color(group),
+    .name = br_str_malloc(32),
+    .is_new = true,
+    .dd = {
+      .xs = BR_MALLOC(sizeof(float) * 1024),
+      .ys = BR_MALLOC(sizeof(float) * 1024),
+    }
+  };
+  br_da_push(*datas, data);
+  br_da_push(*pg, dagen);
+}
 
 bool br_dagen_push_file(br_dagens_t* dagens, br_data_t* temp_data, FILE* file) {
   if (file == NULL) goto error;
@@ -27,20 +53,35 @@ bool br_dagen_push_file(br_dagens_t* dagens, br_data_t* temp_data, FILE* file) {
   if (1 != fread(&temp_data->cap, sizeof(temp_data->cap), 1, file)) goto error;
   if (0 == temp_data->cap) {
     temp_data->cap = 8;
-    temp_data->dd.points = BR_MALLOC(br_data_element_size(temp_data->kind) * 8);
+    switch (temp_data->kind) {
+      case br_data_kind_2d: {
+        temp_data->dd.xs = BR_MALLOC(sizeof(float) * 8);
+        temp_data->dd.ys = BR_MALLOC(sizeof(float) * 8);
+      } break;
+      case br_data_kind_3d: {
+        temp_data->ddd.xs = BR_MALLOC(sizeof(float) * 8);
+        temp_data->ddd.ys = BR_MALLOC(sizeof(float) * 8);
+        temp_data->ddd.zs = BR_MALLOC(sizeof(float) * 8);
+      } break;
+      default: BR_ASSERT(0);
+    }
   } else {
     data_left = temp_data->cap;
     switch (temp_data->kind) {
       case br_data_kind_2d: {
         if (1 != fread(&temp_data->dd.bounding_box, sizeof(temp_data->dd.bounding_box), 1, file)) goto error;
+        if (NULL == (temp_data->dd.xs = BR_MALLOC(sizeof(float) * temp_data->cap))) goto error;
+        if (NULL == (temp_data->dd.ys = BR_MALLOC(sizeof(float) * temp_data->cap))) goto error;
       } break;
       case br_data_kind_3d: {
         if (1 != fread(&temp_data->ddd.bounding_box, sizeof(temp_data->ddd.bounding_box), 1, file)) goto error;
+        if (NULL == (temp_data->ddd.xs = BR_MALLOC(sizeof(float) * temp_data->cap))) goto error;
+        if (NULL == (temp_data->ddd.ys = BR_MALLOC(sizeof(float) * temp_data->cap))) goto error;
+        if (NULL == (temp_data->ddd.zs = BR_MALLOC(sizeof(float) * temp_data->cap))) goto error;
       } break;
       default: BR_ASSERT(0);
     }
   }
-  if (NULL == (temp_data->dd.points = BR_MALLOC(br_data_element_size(temp_data->kind) * temp_data->cap))) goto error;
   temp_data->resampling = resampling2_malloc(temp_data->kind);
   br_dagen_t new = {
     .data_kind = temp_data->kind,
@@ -67,10 +108,13 @@ void br_dagen_handle(br_dagen_t* dagen, br_data_t* data) {
       size_t read_n = 1024 < dagen->file.data_left ? 1024 : dagen->file.data_left;
       switch (data->kind) {
         case br_data_kind_2d: {
-          if (read_n != fread(&data->dd.points[data->len], sizeof(data->dd.points[0]), read_n, dagen->file.file)) goto error;
+          if (read_n != fread(&data->dd.xs[data->len], sizeof(data->dd.xs[0]), read_n, dagen->file.file)) goto error;
+          if (read_n != fread(&data->dd.ys[data->len], sizeof(data->dd.ys[0]), read_n, dagen->file.file)) goto error;
         } break;
         case br_data_kind_3d: {
-          if (read_n != fread(&data->ddd.points[data->len], sizeof(data->ddd.points[0]), read_n, dagen->file.file)) goto error;
+          if (read_n != fread(&data->ddd.xs[data->len], sizeof(data->ddd.xs[0]), read_n, dagen->file.file)) goto error;
+          if (read_n != fread(&data->ddd.ys[data->len], sizeof(data->ddd.ys[0]), read_n, dagen->file.file)) goto error;
+          if (read_n != fread(&data->ddd.zs[data->len], sizeof(data->ddd.zs[0]), read_n, dagen->file.file)) goto error;
         } break;
         default: BR_ASSERT(0);
       }
@@ -88,6 +132,15 @@ error:
       LOGEF("Failed to read data for a plot %s: %d(%s)\n", br_str_to_c_str(data->name), errno, strerror(errno));
       fclose(dagen->file.file);
       dagen->state = br_dagen_state_failed;
+    } break;
+    case br_dagen_kind_expr:
+    {
+      switch(data->kind) {
+        case br_data_kind_2d:
+        {
+        }
+        default: BR_ASSERT(0);
+      }
     } break;
     default: BR_ASSERT(0);
   }

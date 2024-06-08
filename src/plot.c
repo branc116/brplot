@@ -31,8 +31,8 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, Vecto
       br_data_t* pg = &groups.arr[i];
       size_t gl = pg->len;
       if (pg->kind != br_data_kind_2d || gl == 0) continue;
-      plot->dd.delta.x += ((middle.x - pg->dd.points[gl - 1].x))/1000.f;
-      plot->dd.delta.y += ((middle.y - pg->dd.points[gl - 1].y))/1000.f;
+      plot->dd.delta.x += ((middle.x - pg->dd.xs[gl - 1]))/1000.f;
+      plot->dd.delta.y += ((middle.y - pg->dd.ys[gl - 1]))/1000.f;
     }
     plot->dd.offset.x -= plot->dd.delta.x;
     plot->dd.offset.y -= plot->dd.delta.y;

@@ -17,7 +17,6 @@ static void br_data_push_point2(br_data_t* g, Vector2 v);
 static void br_data_push_point3(br_data_t* g, Vector3 v);
 static void br_data_deinit(br_data_t* g);
 static bool br_data_realloc(br_data_t* pg, size_t new_cap);
-static Color color_get(int id);
 static void br_bb_expand_with_point(bb_t* bb, Vector2 v);
 static void br_bb_3d_expand_with_point(bb_3d_t* bb, Vector3 v);
 
@@ -37,14 +36,14 @@ void br_data_construct(void) {
 BR_API void br_data_push_y(br_datas_t* pg_array, float y, int group) {
   br_data_t* pg = br_data_get(pg_array, group);
   if (pg == NULL) return;
-  float x = pg->len == 0 ? 0.f : (pg->dd.points[pg->len - 1].x + 1.f);
+  float x = pg->len == 0 ? 0.f : (pg->dd.xs[pg->len - 1] + 1.f);
   br_data_push_point2(pg, (Vector2){ .x = x, .y = y });
 }
 
 BR_API void br_data_push_x(br_datas_t* pg_array, float x, int group) {
   br_data_t* pg = br_data_get(pg_array, group);
   if (pg == NULL) return;
-  float y = pg->len == 0 ? 0.f : (pg->dd.points[pg->len - 1].y + 1.f);
+  float y = pg->len == 0 ? 0.f : (pg->dd.ys[pg->len - 1] + 1.f);
   br_data_push_point2(pg, (Vector2){ .x = x, .y = y });
 }
 
@@ -91,12 +90,12 @@ void br_data_export(br_data_t const* pg, FILE* file) {
   for (size_t i = 0; i < pg->len; ++i) {
     switch(pg->kind) {
       case br_data_kind_2d: {
-        Vector2 point = pg->dd.points[i];
+        Vector2 point = { pg->dd.xs[i], pg->dd.ys[i] };
         fprintf(file, "%f,%f;%d\n", point.x, point.y, pg->group_id);
         break;
       }
       case br_data_kind_3d: {
-        Vector3 point = pg->ddd.points[i];
+        Vector3 point = { pg->ddd.xs[i], pg->ddd.ys[i], pg->ddd.zs[i] };
         fprintf(file, "%f,%f,%f;%d\n", point.x, point.y, point.z, pg->group_id);
         break;
       }
@@ -110,12 +109,12 @@ void br_data_export_csv(br_data_t const* pg, FILE* file) {
   for (size_t i = 0; i < pg->len; ++i) {
     switch(pg->kind) {
       case br_data_kind_2d: {
-        Vector2 point = pg->dd.points[i];
+        Vector2 point = { pg->dd.xs[i], pg->dd.ys[i] };
         fprintf(file, "%d,%zu,%f,%f,\n", pg->group_id, i, point.x, point.y);
         break;
       }
       case br_data_kind_3d: {
-        Vector3 point = pg->ddd.points[i];
+        Vector3 point = { pg->ddd.xs[i], pg->ddd.ys[i], pg->ddd.zs[i] };
         fprintf(file, "%d,%zu,%f,%f,%f\n", pg->group_id, i, point.x, point.y, point.z);
         break;
       }
@@ -137,12 +136,12 @@ void br_datas_export_csv(br_datas_t const* pg_array, FILE* file) {
     for (size_t i = 0; i < pg->len; ++i) {
       switch(pg->kind) {
         case br_data_kind_2d: {
-          Vector2 point = pg->dd.points[i];
+          Vector2 point = { pg->dd.xs[i], pg->dd.ys[i] };
           fprintf(file, "%d,%zu,%f,%f,\n", pg->group_id, i, point.x, point.y);
           break;
         }
         case br_data_kind_3d: {
-          Vector3 point = pg->ddd.points[i];
+          Vector3 point = { pg->ddd.xs[i], pg->ddd.ys[i], pg->ddd.zs[i] };
           fprintf(file, "%d,%zu,%f,%f,%f\n", pg->group_id, i, point.x, point.y, point.z);
           break;
         }
@@ -280,18 +279,28 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot) {
   }
 }
 
+#define DEF_CAP 1024
 static br_data_t* br_data_init(br_data_t* g, int group_id, br_data_kind_t kind) {
   *g = (br_data_t) {
     .resampling = resampling2_malloc(kind),
-    .cap = 1024, .len = 0, .kind = kind,
+    .cap = DEF_CAP, .len = 0, .kind = kind,
     .group_id = group_id,
-    .color = color_get(group_id),
+    .color = br_data_get_default_color(group_id),
     .name = br_str_malloc(32),
     .is_new = true,
-    .dd = {
-      .points = BR_MALLOC(br_data_element_size(kind) * 1024),
-    }
   };
+  switch (kind) {
+    case br_data_kind_3d:
+    {
+      g->ddd.zs = BR_MALLOC(sizeof(Vector3) * DEF_CAP);
+    } // PASSTROUGH
+    case br_data_kind_2d:
+    {
+      g->dd.xs = BR_MALLOC(sizeof(float) * DEF_CAP);
+      g->dd.ys = BR_MALLOC(sizeof(float) * DEF_CAP);
+    } break;
+    default: BR_ASSERT(0);
+  }
   if (NULL != g->name.str) {
     sprintf(g->name.str, "Data #%d", group_id);
     g->name.len = (unsigned int)strlen(g->name.str);
@@ -299,17 +308,17 @@ static br_data_t* br_data_init(br_data_t* g, int group_id, br_data_kind_t kind) 
   return g;
 }
 
-static Color color_get(int id) {
-  id = abs(id);
+Color br_data_get_default_color(int group_id) {
+  group_id = abs(group_id);
   static int base_colors_count = sizeof(base_colors)/sizeof(Color);
   float count = 2.f;
-  Color c = base_colors[id%base_colors_count];
-  id /= base_colors_count;
-  while (id > 0) {
-    c.r = (unsigned char)(((float)c.r + (float)base_colors[id%base_colors_count].r) / count);
-    c.g = (unsigned char)(((float)c.g + (float)base_colors[id%base_colors_count].g) / count);
-    c.b = (unsigned char)(((float)c.b + (float)base_colors[id%base_colors_count].b) / count);
-    id /= base_colors_count;
+  Color c = base_colors[group_id%base_colors_count];
+  group_id /= base_colors_count;
+  while (group_id > 0) {
+    c.r = (unsigned char)(((float)c.r + (float)base_colors[group_id%base_colors_count].r) / count);
+    c.g = (unsigned char)(((float)c.g + (float)base_colors[group_id%base_colors_count].g) / count);
+    c.b = (unsigned char)(((float)c.b + (float)base_colors[group_id%base_colors_count].b) / count);
+    group_id /= base_colors_count;
     count += 1;
   }
   return c;
@@ -333,7 +342,7 @@ BR_API br_data_t* br_data_get2(br_datas_t* pg, int group, br_data_kind_t kind) {
     pg->arr = BR_MALLOC(sizeof(br_data_t));
     if (NULL == pg->arr) return NULL;
     br_data_t* ret = br_data_init(&pg->arr[0], group, kind);
-    if (ret->dd.points == NULL) return NULL;
+    if (ret->dd.xs == NULL) return NULL;
     pg->cap = pg->len = 1;
     return ret;
   }
@@ -351,7 +360,7 @@ BR_API br_data_t* br_data_get2(br_datas_t* pg, int group, br_data_kind_t kind) {
     pg->cap = new_cap;
   }
   br_data_t* ret = br_data_init(&pg->arr[pg->len++], group, kind);
-  if (ret->dd.points == NULL) {
+  if (ret->dd.xs == NULL) {
     --pg->len;
     return NULL;
   }
@@ -378,7 +387,8 @@ static void br_data_push_point2(br_data_t* g, Vector2 v) {
   if (g->len >= g->cap && false == br_data_realloc(g, g->cap * 2)) return;
   if (g->len == 0) g->dd.bounding_box = (bb_t) { v.x, v.y, v.x, v.y };
   else             br_bb_expand_with_point(&g->dd.bounding_box, v);
-  g->dd.points[g->len] = v;
+  g->dd.xs[g->len] = v.x;
+  g->dd.ys[g->len] = v.y;
   resampling2_add_point(g->resampling, g, (uint32_t)g->len);
   ++g->len;
 }
@@ -387,17 +397,32 @@ static void br_data_push_point3(br_data_t* g, Vector3 v) {
   if (g->len >= g->cap && false == br_data_realloc(g, g->cap * 2)) return;
   if (g->len == 0) g->ddd.bounding_box = (bb_3d_t) { v.x, v.y, v.z, v.x, v.y, v.z };
   else             br_bb_3d_expand_with_point(&g->ddd.bounding_box, v);
-  g->ddd.points[g->len] = v;
+  g->ddd.xs[g->len] = v.x;
+  g->ddd.ys[g->len] = v.y;
+  g->ddd.zs[g->len] = v.z;
   resampling2_add_point(g->resampling, g, (uint32_t)g->len);
   ++g->len;
 }
 
 static void br_data_deinit(br_data_t* g) {
   // Free points
-  BR_FREE(g->dd.points);
+  switch (g->kind) {
+    case br_data_kind_3d:
+    {
+      BR_FREE(g->ddd.zs);
+      g->ddd.zs = NULL;
+    } // PASSTROUGH
+    case br_data_kind_2d:
+    {
+      BR_FREE(g->dd.xs);
+      BR_FREE(g->dd.ys);
+      g->dd.xs = NULL;
+      g->dd.ys = NULL;
+    } break;
+    default: BR_ASSERT(0);
+  }
   resampling2_free(g->resampling);
   br_str_free(g->name);
-  g->dd.points = NULL;
   g->len = g->cap = 0;
 }
 
@@ -405,13 +430,47 @@ static bool br_data_realloc(br_data_t* pg, size_t new_cap) {
   BR_ASSERT(pg->cap > 0);
   BR_ASSERT(new_cap > 0);
 
-  Vector2* new_arr = BR_REALLOC(pg->dd.points, new_cap * br_data_element_size(pg->kind));
-  if (new_arr == NULL) {
-    LOG("Out of memory. Can't add any more lines. Buy more RAM, or close Chrome\n");
-    return false;
+  switch (pg->kind) {
+    case br_data_kind_2d:
+    {
+      float* xs = BR_REALLOC(pg->dd.xs, new_cap * sizeof(float));
+      if (xs == NULL) {
+        LOG("Out of memory. Can't add any more lines. Buy more RAM, or close Chrome\n");
+        return false;
+      }
+      pg->dd.xs = xs;
+      float* ys = BR_REALLOC(pg->dd.ys, new_cap * sizeof(float));
+      if (xs == NULL) {
+        LOG("Out of memory. Can't add any more lines. Buy more RAM, or close Chrome\n");
+        return false;
+      }
+      pg->dd.ys = ys;
+      pg->cap = new_cap;
+    } break;
+    case br_data_kind_3d:
+    {
+      float* xs = BR_REALLOC(pg->dd.xs, new_cap * sizeof(float));
+      if (xs == NULL) {
+        LOG("Out of memory. Can't add any more lines. Buy more RAM, or close Chrome\n");
+        return false;
+      }
+      pg->dd.xs = xs;
+      float* ys = BR_REALLOC(pg->dd.ys, new_cap * sizeof(float));
+      if (xs == NULL) {
+        LOG("Out of memory. Can't add any more lines. Buy more RAM, or close Chrome\n");
+        return false;
+      }
+      pg->dd.ys = ys;
+      float* zs = BR_REALLOC(pg->ddd.zs, new_cap * sizeof(float));
+      if (xs == NULL) {
+        LOG("Out of memory. Can't add any more lines. Buy more RAM, or close Chrome\n");
+        return false;
+      }
+      pg->ddd.zs = zs;
+      pg->cap = new_cap;
+    } break;
+    default: BR_ASSERT(0);
   }
-  pg->dd.points = new_arr;
-  pg->cap = new_cap;
   return true;
 }
 

@@ -1,5 +1,5 @@
 #include "br_shaders.h"
-// cpp -I. -DDEBUG_MACROS -E ./src/br_shaders.c | sed 's/^#/\/\//' | clang-format
+// cpp -I. -DDEBUG_MACROS -E ./src/shaders.c | sed 's/^#/\/\//' | clang-format > tmp.c
 #if !defined(DEBUG_MACROS)
 #  include "br_pp.h"
 
@@ -34,7 +34,7 @@ BR_ALL_SHADERS(X, NOP2, X_BUF)
 
 #define X_BUF(NAME, LEN) \
   shader->NAME ## _vbo_id = rlLoadVertexBuffer(shader->NAME ## _vbo, LEN * shader->cap * 3 * (int)sizeof(float), true); \
-  rlSetVertexAttribute((uint32_t)shader->NAME ## _loc, 3, RL_FLOAT, 0, 0, 0);
+  rlSetVertexAttribute((uint32_t)shader->NAME ## _loc, LEN, RL_FLOAT, 0, 0, 0);
 #define X(NAME, CAP, U_VEC, BUFF) \
   inline static void br_shader_ ## NAME ## _upload(br_shader_ ## NAME ## _t* shader) { \
     shader->vao_id = rlLoadVertexArray(); \

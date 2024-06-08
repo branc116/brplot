@@ -62,18 +62,18 @@ T my_min(T a, Ts... bs) {
 struct resampling2_nodes_2d_t {
   resampling2_nodes_t base;
 
-  bool is_inside(Vector2 const* points, Rectangle rect) const {
+  bool is_inside(float const* xs, float const* ys, Rectangle rect) const {
     if (base.len == 0) return false;
-    float minx = points[base.min_index_x].x, miny = points[base.min_index_y].y, maxx = points[base.max_index_x].x, maxy = points[base.max_index_y].y;
+    float minx = xs[base.min_index_x], miny = ys[base.min_index_y], maxx = xs[base.max_index_x], maxy = ys[base.max_index_y];
     return !((miny > rect.y) || (maxy < rect.y - rect.height) || (minx > rect.x + rect.width) || (maxx < rect.x));
   }
 
-  bool is_inside_3d(Vector2 const* points, Matrix mat) {
+  bool is_inside_3d(float const* xs, float const* ys, Matrix mat) {
     if (base.len == 0) return false;
-    Vector3 minx = Vector2TransformScale(points[base.min_index_x], mat),
-            miny = Vector2TransformScale(points[base.min_index_y], mat),
-            maxx = Vector2TransformScale(points[base.max_index_x], mat),
-            maxy = Vector2TransformScale(points[base.max_index_y], mat);
+    Vector3 minx = Vector2TransformScale(CLITERAL(Vector2) { xs[base.min_index_x], ys[base.min_index_x] }, mat),
+            miny = Vector2TransformScale(CLITERAL(Vector2) { xs[base.min_index_y], ys[base.min_index_y] }, mat),
+            maxx = Vector2TransformScale(CLITERAL(Vector2) { xs[base.max_index_x], ys[base.max_index_x] }, mat),
+            maxy = Vector2TransformScale(CLITERAL(Vector2) { xs[base.max_index_y], ys[base.max_index_y] }, mat);
     float mx = my_min(minx.x, miny.x, maxy.x, maxx.x);
     float Mx = my_max(minx.x, miny.x, maxy.x, maxx.x);
     float my = my_min(minx.y, miny.y, maxy.y, maxx.y);
@@ -85,16 +85,16 @@ struct resampling2_nodes_2d_t {
     return Mz > 0.f && CheckCollisionRecs(rect, Rectangle { mx, my, Mx - mx, My - my });
   }
 
-  Vector2 get_ratios(Vector2 const* points, float screen_width, float screen_height) const {
-    float xr = points[base.max_index_x].x - points[base.min_index_x].x, yr = points[base.max_index_y].y - points[base.min_index_y].y;
+  Vector2 get_ratios(float const* xs, float const* ys, float screen_width, float screen_height) const {
+    float xr = xs[base.max_index_x] - xs[base.min_index_x], yr = ys[base.max_index_y] - ys[base.min_index_y];
     return {xr / screen_width, yr / screen_height};
   }
 
-  Vector2 get_ratios_3d(Vector2 const* points, Matrix mvp) const {
-    Vector3 minx = Vector2TransformScale(points[base.min_index_x], mvp),
-            miny = Vector2TransformScale(points[base.min_index_y], mvp),
-            maxx = Vector2TransformScale(points[base.max_index_x], mvp),
-            maxy = Vector2TransformScale(points[base.max_index_y], mvp);
+  Vector2 get_ratios_3d(float const* xs, float const* ys, Matrix mvp) const {
+    Vector3 minx = Vector2TransformScale(CLITERAL(Vector2) { xs[base.min_index_x], ys[base.min_index_x] }, mvp),
+            miny = Vector2TransformScale(CLITERAL(Vector2) { xs[base.min_index_y], ys[base.min_index_y] }, mvp),
+            maxx = Vector2TransformScale(CLITERAL(Vector2) { xs[base.max_index_x], ys[base.max_index_x] }, mvp),
+            maxy = Vector2TransformScale(CLITERAL(Vector2) { xs[base.max_index_y], ys[base.max_index_y] }, mvp);
     float mx = my_min(minx.x, miny.x, maxy.x, maxx.x);
     float my = my_min(minx.y, miny.y, maxy.y, maxx.y);
     float Mx = my_max(minx.x, miny.x, maxy.x, maxx.x);
@@ -104,17 +104,21 @@ struct resampling2_nodes_2d_t {
 };
 
 
+Vector3 br_data_3d_get_v3(br_data_3d_t const* data, uint32_t index) {
+  return CLITERAL(Vector3) { data->xs[index], data->ys[index], data->zs[index] };
+}
+
 struct resampling2_nodes_3d_t {
   resampling2_nodes_t base;
   uint32_t min_index_z = 0, max_index_z = 0;
 
-  bool is_inside(Vector3 const* points, Matrix mvp) {
-    Vector3 minx = Vector3TransformScale(points[base.min_index_x], mvp),
-            miny = Vector3TransformScale(points[base.min_index_y], mvp),
-            minz = Vector3TransformScale(points[min_index_z], mvp),
-            maxx = Vector3TransformScale(points[base.max_index_x], mvp),
-            maxy = Vector3TransformScale(points[base.max_index_y], mvp),
-            maxz = Vector3TransformScale(points[max_index_z], mvp);
+  bool is_inside(br_data_3d_t const* data, Matrix mvp) {
+    Vector3 minx = Vector3TransformScale(br_data_3d_get_v3(data, base.min_index_x), mvp),
+            miny = Vector3TransformScale(br_data_3d_get_v3(data, base.min_index_y), mvp),
+            minz = Vector3TransformScale(br_data_3d_get_v3(data, min_index_z), mvp),
+            maxx = Vector3TransformScale(br_data_3d_get_v3(data, base.max_index_x), mvp),
+            maxy = Vector3TransformScale(br_data_3d_get_v3(data, base.max_index_y), mvp),
+            maxz = Vector3TransformScale(br_data_3d_get_v3(data, max_index_z), mvp);
     float my = my_min(minx.y, miny.y, maxy.y, maxx.y, minz.y, maxz.y);
     float mx = my_min(minx.x, miny.x, maxy.x, maxx.x, minz.x, maxz.x);
     float My = my_max(minx.y, miny.y, maxy.y, maxx.y, minz.y, maxz.y);
@@ -126,13 +130,13 @@ struct resampling2_nodes_3d_t {
     return Mz > 0.f && CheckCollisionRecs(rect, Rectangle { mx, my, Mx - mx, My - my });
   }
 
-  Vector2 get_ratios(Vector3 const* points, Matrix mvp) const {
-    Vector3 minx = Vector3TransformScale(points[base.min_index_x], mvp),
-            miny = Vector3TransformScale(points[base.min_index_y], mvp),
-            minz = Vector3TransformScale(points[min_index_z], mvp),
-            maxx = Vector3TransformScale(points[base.max_index_x], mvp),
-            maxy = Vector3TransformScale(points[base.max_index_y], mvp),
-            maxz = Vector3TransformScale(points[max_index_z], mvp);
+  Vector2 get_ratios(br_data_3d_t const* data, Matrix mvp) const {
+    Vector3 minx = Vector3TransformScale(br_data_3d_get_v3(data, base.min_index_x), mvp),
+            miny = Vector3TransformScale(br_data_3d_get_v3(data, base.min_index_y), mvp),
+            minz = Vector3TransformScale(br_data_3d_get_v3(data, min_index_z), mvp),
+            maxx = Vector3TransformScale(br_data_3d_get_v3(data, base.max_index_x), mvp),
+            maxy = Vector3TransformScale(br_data_3d_get_v3(data, base.max_index_y), mvp),
+            maxz = Vector3TransformScale(br_data_3d_get_v3(data, max_index_z), mvp);
     float my = my_min(minx.y, miny.y, maxy.y, maxx.y, minz.y, maxz.y);
     float mx = my_min(minx.x, miny.x, maxy.x, maxx.x, minz.x, maxz.x);
     float My = my_max(minx.y, miny.y, maxy.y, maxx.y, minz.y, maxz.y);
@@ -169,8 +173,8 @@ void br_resampling2_construct(void) {
 }
 
 static void resampling2_nodes_deinit(resampling2_t* nodes);
-static bool resampling2_nodes_2d_push_point(resampling2_nodes_2d_allocator_t* nodes, size_t node_index, uint32_t index, Vector2 const* points);
-static bool resampling2_nodes_3d_push_point(resampling2_nodes_3d_allocator_t* nodes, size_t node_index, uint32_t index, Vector3 const* points);
+static bool resampling2_nodes_2d_push_point(resampling2_nodes_2d_allocator_t* nodes, size_t node_index, uint32_t index, float const* xs, float const* ys);
+static bool resampling2_nodes_3d_push_point(resampling2_nodes_3d_allocator_t* nodes, size_t node_index, uint32_t index, float const* xs, float const* ys, float const* zs);
 
 resampling2_t* resampling2_malloc(br_data_kind_t kind) {
    resampling2_t* r = (resampling2_t*)BR_CALLOC(1, sizeof(*r));
@@ -199,8 +203,8 @@ extern "C" void resampling2_add_point(resampling2_t* r, const br_data_t *pg, uin
     }
   }
   switch (r->kind) {
-    case br_data_kind_2d: { resampling2_nodes_2d_push_point(&r->dd, 0, index, pg->dd.points); break; }
-    case br_data_kind_3d: { resampling2_nodes_3d_push_point(&r->ddd, 0, index, pg->ddd.points); break; }
+    case br_data_kind_2d: { resampling2_nodes_2d_push_point(&r->dd, 0, index, pg->dd.xs, pg->dd.ys); break; }
+    case br_data_kind_3d: { resampling2_nodes_3d_push_point(&r->ddd, 0, index, pg->ddd.xs, pg->ddd.ys, pg->ddd.zs); break; }
     default: assert(false);
   }
 }
@@ -213,7 +217,7 @@ static void resampling2_nodes_deinit(resampling2_t* nodes) {
   nodes->common.arr = NULL;
 }
 
-static bool resampling2_nodes_2d_push_point(resampling2_nodes_2d_allocator_t* nodes, size_t node_index, uint32_t index, Vector2 const* points) {
+static bool resampling2_nodes_2d_push_point(resampling2_nodes_2d_allocator_t* nodes, size_t node_index, uint32_t index, float const* xs, float const* ys) {
   resampling2_nodes_2d_t node = nodes->arr[node_index];
   ++node.base.len;
   if (node.base.len == 1) {
@@ -223,12 +227,12 @@ static bool resampling2_nodes_2d_push_point(resampling2_nodes_2d_allocator_t* no
     node.base.max_index_x = 
     node.base.min_index_x = index;
   } else {
-    if (points[index].y < points[node.base.min_index_y].y) node.base.min_index_y = index;
-    if (points[index].y > points[node.base.max_index_y].y) node.base.max_index_y = index;
-    if (points[index].x < points[node.base.min_index_x].x) node.base.min_index_x = index;
-    if (points[index].x > points[node.base.max_index_x].x) node.base.max_index_x = index;
+    if (ys[index] < ys[node.base.min_index_y]) node.base.min_index_y = index;
+    if (ys[index] > ys[node.base.max_index_y]) node.base.max_index_y = index;
+    if (xs[index] < xs[node.base.min_index_x]) node.base.min_index_x = index;
+    if (xs[index] > xs[node.base.max_index_x]) node.base.max_index_x = index;
     if (node.base.depth > 0) {
-      if (false == resampling2_nodes_2d_push_point(nodes, node.base.child2, index, points)) {
+      if (false == resampling2_nodes_2d_push_point(nodes, node.base.child2, index, xs, ys)) {
         return false;
       }
     }
@@ -248,7 +252,8 @@ static bool resampling2_nodes_2d_push_point(resampling2_nodes_2d_allocator_t* no
   return true;
 }
 
-static bool resampling2_nodes_3d_push_point(resampling2_nodes_3d_allocator_t* nodes, size_t node_index, uint32_t index, Vector3 const* points) {
+static bool resampling2_nodes_3d_push_point(resampling2_nodes_3d_allocator_t* nodes, size_t node_index, uint32_t index,
+    float const* xs, float const* ys, float const* zs) {
   resampling2_nodes_3d_t node = nodes->arr[node_index];
   ++node.base.len;
   if (node.base.len == 1) {
@@ -260,14 +265,14 @@ static bool resampling2_nodes_3d_push_point(resampling2_nodes_3d_allocator_t* no
     node.base.max_index_x = 
     node.base.min_index_x = index;
   } else {
-    if (points[index].z < points[node.min_index_z].z) node.min_index_z = index;
-    if (points[index].z > points[node.max_index_z].z) node.max_index_z = index;
-    if (points[index].y < points[node.base.min_index_y].y) node.base.min_index_y = index;
-    if (points[index].y > points[node.base.max_index_y].y) node.base.max_index_y = index;
-    if (points[index].x < points[node.base.min_index_x].x) node.base.min_index_x = index;
-    if (points[index].x > points[node.base.max_index_x].x) node.base.max_index_x = index;
+    if (zs[index] < zs[node.min_index_z]) node.min_index_z = index;
+    if (zs[index] > zs[node.max_index_z]) node.max_index_z = index;
+    if (ys[index] < ys[node.base.min_index_y]) node.base.min_index_y = index;
+    if (ys[index] > ys[node.base.max_index_y]) node.base.max_index_y = index;
+    if (xs[index] < xs[node.base.min_index_x]) node.base.min_index_x = index;
+    if (xs[index] > xs[node.base.max_index_x]) node.base.max_index_x = index;
     if (node.base.depth > 0) {
-      if (false == resampling2_nodes_3d_push_point(nodes, node.base.child2, index, points)) {
+      if (false == resampling2_nodes_3d_push_point(nodes, node.base.child2, index, xs, ys, zs)) {
         return false;
       }
     }
@@ -298,16 +303,17 @@ static void resampling2_draw(resampling2_nodes_2d_allocator_t const* const nodes
   assert(plot->kind == br_plot_kind_2d);
   assert(pg->kind == br_data_kind_2d);
   ZoneScopedN("resampling2_2d");
-  Vector2 const* ps = pg->dd.points;
+  float const* xs = pg->dd.xs;
+  float const* ys = pg->dd.ys;
   Rectangle rect = plot->dd.graph_rect;
   resampling2_nodes_2d_t node = nodes->arr[index];
-  if (false == node.is_inside(ps, rect)) return;
+  if (false == node.is_inside(xs, ys, rect)) return;
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
-    smol_mesh_gen_line_strip(plot->dd.line_shader, &ps[node.base.index_start], node.base.len + (is_end ? 0 : 1), pg->color);
+    smol_mesh_gen_line_strip2(plot->dd.line_shader, &xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1), pg->color);
     return;
   }
-  Vector2 ratios = node.get_ratios(ps, rect.width, rect.height);
+  Vector2 ratios = node.get_ratios(xs, ys, rect.width, rect.height);
   float rmin = fminf(ratios.x, ratios.y);
   if (rmin < (node.base.depth == 1 ? something : something2)) {
     size_t indexies[] = {
@@ -320,15 +326,15 @@ static void resampling2_draw(resampling2_nodes_2d_allocator_t const* const nodes
     };
     std::sort(indexies, &indexies[6]);
     Vector2 pss[] = {
-      ps[indexies[0]], ps[indexies[1]],
-      ps[indexies[2]], ps[indexies[3]],
-      ps[indexies[4]], ps[indexies[5]],
+      {xs[indexies[0]], ys[indexies[0]]}, {xs[indexies[1]], ys[indexies[0]]},
+      {xs[indexies[2]], ys[indexies[2]]}, {xs[indexies[3]], ys[indexies[3]]},
+      {xs[indexies[4]], ys[indexies[4]]}, {xs[indexies[5]], ys[indexies[5]]},
     };
-    if (context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.base.min_index_x].x, ps[node.base.min_index_y].y, ps[node.base.max_index_x].x, ps[node.base.max_index_y].y }, RAYWHITE);
+    //if (context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.base.min_index_x].x, ps[node.base.min_index_y].y, ps[node.base.max_index_x].x, ps[node.base.max_index_y].y }, RAYWHITE);
     smol_mesh_gen_line_strip(plot->dd.line_shader, pss, 6, pg->color);
   } else {
 
-    if (context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.base.min_index_x].x, ps[node.base.min_index_y].y, ps[node.base.max_index_x].x, ps[node.base.max_index_y].y }, RAYWHITE);
+    //if (context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.base.min_index_x].x, ps[node.base.min_index_y].y, ps[node.base.max_index_x].x, ps[node.base.max_index_y].y }, RAYWHITE);
     resampling2_draw(nodes, node.base.child1, pg, plot);
     resampling2_draw(nodes, node.base.child2, pg, plot);
   }
@@ -336,18 +342,19 @@ static void resampling2_draw(resampling2_nodes_2d_allocator_t const* const nodes
 
 static void resampling2_draw_3d(resampling2_nodes_2d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot) {
   assert(plot->kind == br_plot_kind_3d);
-  assert(pg->kind == br_data_kind_2d)
+  assert(pg->kind == br_data_kind_2d);
   ZoneScopedN("resampling2_3d");
-  Vector2 const* ps = pg->dd.points;
+  float const* xs = pg->dd.xs;
+  float const* ys = pg->dd.ys;
   resampling2_nodes_2d_t node = nodes->arr[index];
   Matrix mvp = plot->ddd.line_shader->uvs.m_mvp_uv;
-  if (false == node.is_inside_3d(ps, mvp)) return;
+  if (false == node.is_inside_3d(xs, ys, mvp)) return;
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
-    smol_mesh_3d_gen_line_strip2(plot->ddd.line_shader, &ps[node.base.index_start], node.base.len + (is_end ? 0 : 1), pg->color);
+    smol_mesh_3d_gen_line_strip3(plot->ddd.line_shader, &xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1), pg->color);
     return;
   }
-  Vector2 ratios = node.get_ratios_3d(ps, mvp);
+  Vector2 ratios = node.get_ratios_3d(xs, ys, mvp);
   float rmin = fminf(ratios.x, ratios.y);
   if (rmin < (node.base.depth == 1 ? 0.01f : 0.02f)) {
     size_t indexies[] = {
@@ -360,9 +367,9 @@ static void resampling2_draw_3d(resampling2_nodes_2d_allocator_t const* const no
     };
     std::sort(indexies, &indexies[6]);
     Vector2 pss[] = {
-      ps[indexies[0]], ps[indexies[1]],
-      ps[indexies[2]], ps[indexies[3]],
-      ps[indexies[4]], ps[indexies[5]],
+      { xs[indexies[0]], ys[indexies[0]] }, { xs[indexies[1]], ys[indexies[1]] },
+      { xs[indexies[2]], ys[indexies[2]] }, { xs[indexies[3]], ys[indexies[3]] },
+      { xs[indexies[4]], ys[indexies[4]] }, { xs[indexies[5]], ys[indexies[5]] },
     };
     smol_mesh_3d_gen_line_strip2(plot->ddd.line_shader, pss, 6, pg->color);
   } else {
@@ -375,16 +382,19 @@ static void resampling2_3d_draw_3d(resampling2_nodes_3d_allocator_t const* const
   assert(plot->kind == br_plot_kind_3d);
   assert(pg->kind == br_data_kind_3d);
   ZoneScopedN("resampling2_3d");
-  Vector3 const* ps = pg->ddd.points;
+  float const* xs = pg->ddd.xs;
+  float const* ys = pg->ddd.ys;
+  float const* zs = pg->ddd.zs;
   resampling2_nodes_3d_t node = nodes->arr[index];
   Matrix mvp = plot->ddd.line_shader->uvs.m_mvp_uv;
-  if (false == node.is_inside(ps, mvp)) return;
+  if (false == node.is_inside(&pg->ddd, mvp)) return;
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
-    smol_mesh_3d_gen_line_strip(plot->ddd.line_shader, &ps[node.base.index_start], node.base.len + (is_end ? 0 : 1), pg->color);
+    size_t st = node.base.index_start;
+    smol_mesh_3d_gen_line_strip1(plot->ddd.line_shader, &xs[st], &ys[st], &zs[st], node.base.len + (is_end ? 0 : 1), pg->color);
     return;
   }
-  Vector2 ratios = node.get_ratios(ps, mvp);
+  Vector2 ratios = node.get_ratios(&pg->ddd, mvp);
   float rmin = fmaxf(ratios.x, ratios.y);
   if (rmin < (node.base.depth == 1 ? something2 : something)) {
     size_t indexies[] = {
@@ -402,7 +412,7 @@ static void resampling2_3d_draw_3d(resampling2_nodes_3d_allocator_t const* const
     size_t cur = indexies[0];
     for (size_t i = 1; i < 8; ++i) {
       if (cur == indexies[i]) continue;
-      smol_mesh_3d_gen_line(plot->ddd.line_shader, ps[cur], ps[indexies[i]], pg->color);
+      smol_mesh_3d_gen_line(plot->ddd.line_shader, CLITERAL(Vector3) { xs[cur], ys[cur], zs[cur] }, CLITERAL(Vector3) { xs[indexies[i]], ys[indexies[i]], zs[indexies[i]] }, pg->color);
       cur = indexies[i];
     }
   } else {
@@ -443,12 +453,14 @@ extern "C" {
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #include "misc/tests.h"
 TEST_CASE(resampling) {
-  Vector2 points[] = { {0, 1}, {1, 2}, {2, 4}, {3, 2} };
+  float xs[] = { 0, 1, 2, 3};
+  float ys[] = {  1, 2,  4, 2 };
   br_data_t pg;
   memset(&pg, 0, sizeof(pg));
   pg.cap = 4;
   pg.len = 4;
-  pg.dd.points = points;
+  pg.dd.xs = xs;
+  pg.dd.ys = ys;
   pg.resampling = NULL;
   resampling2_t* r = resampling2_malloc(br_data_kind_2d);
   for (int i = 0; i < 2*1024; ++i) resampling2_add_point(r, &pg, 3);
@@ -462,16 +474,18 @@ TEST_CASE(resampling) {
 
 #define N 2048
 TEST_CASE(resampling2) {
-  Vector2 points[N];
+  float xs[N];
+  float ys[N];
   for (int i = 0; i < N; ++i) {
-    points[i].x = sinf(3.14f / 4.f * (float)i);
-    points[i].y = cosf(3.14f / 4.f * (float)i);
+    xs[i] = sinf(3.14f / 4.f * (float)i);
+    ys[i] = cosf(3.14f / 4.f * (float)i);
   }
   br_data_t pg;
   memset(&pg, 0, sizeof(pg));
   pg.cap = N;
   pg.len = N;
-  pg.dd.points = points;
+  pg.dd.xs = xs;
+  pg.dd.ys = ys;
   pg.resampling = NULL;
   resampling2_t* r = resampling2_malloc(br_data_kind_2d);
   for (int i = 0; i < N; ++i) resampling2_add_point(r, &pg, (uint32_t)i);

@@ -57,8 +57,9 @@ extern "C" {
       X_VEC(zoom, 2)                    \
       X_VEC(screen, 2),                 \
                                         \
-      X_BUF(vertexPosition, 3)          \
-      X_BUF(vertexNormal, 3)            \
+      X_BUF(vertexX, 1)                 \
+      X_BUF(vertexY, 1)                 \
+      X_BUF(delta, 2)                   \
       X_BUF(vertexColor, 3)             \
     )                                   \
   X(grid, 2,                            \

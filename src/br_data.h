@@ -33,12 +33,15 @@ typedef enum {
 } br_data_kind_t;
 
 typedef struct br_data_2d_t {
-  Vector2* points;
+  float* xs;
+  float* ys;
   bb_t bounding_box;
 } br_data_2d_t;
 
 typedef struct br_data_3d_t {
-  Vector3* points;
+  float* xs;
+  float* ys;
+  float* zs;
   bb_3d_t bounding_box;
 } br_data_3d_t;
 
@@ -83,6 +86,7 @@ void br_datas_deinit(br_datas_t* pg_array);
 BR_API void br_datas_empty(br_datas_t* pg_array);
 void br_datas_export(br_datas_t const* pg_array, FILE* file);
 void br_datas_export_csv(br_datas_t const* pg_array, FILE* file);
+Color br_data_get_default_color(int group_id);
 
 size_t br_data_element_size(br_data_kind_t kind);
 

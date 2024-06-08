@@ -80,18 +80,18 @@ bool br_permastate_save_datas(br_str_t path_folder, br_datas_t datas) {
       case br_plot_kind_2d: {
         if (1 != fwrite(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file)) goto error;
         if (0 != data->len) {
-          if (data->len != fwrite(data->dd.points, sizeof(*data->dd.points), data->len, file)) goto error;
-          crc = br_fs_crc(data->dd.points, sizeof(*data->dd.points) * data->len, 0);
+          if (data->len != fwrite(data->dd.xs, sizeof(*data->dd.xs), data->len, file)) goto error;
+          if (data->len != fwrite(data->dd.ys, sizeof(*data->dd.ys), data->len, file)) goto error;
         }
         if (1 != fwrite(&crc, sizeof(crc), 1, file)) goto error;
       } break;
       case br_plot_kind_3d: {
         if (1 != fwrite(&data->ddd.bounding_box, sizeof(data->ddd.bounding_box), 1, file)) goto error;
         if (0 != data->len) {
-          if (data->len != fwrite(data->ddd.points, sizeof(*data->ddd.points), data->len, file)) goto error;
-          crc = br_fs_crc(data->ddd.points, sizeof(*data->ddd.points) * data->len, 0);
+          if (data->len != fwrite(data->ddd.xs, sizeof(*data->ddd.xs), data->len, file)) goto error;
+          if (data->len != fwrite(data->ddd.ys, sizeof(*data->ddd.ys), data->len, file)) goto error;
+          if (data->len != fwrite(data->ddd.zs, sizeof(*data->ddd.zs), data->len, file)) goto error;
         }
-        if (1 != fwrite(&crc, sizeof(crc), 1, file)) goto error;
       } break;
       default: BR_ASSERT(0);
     }

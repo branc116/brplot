@@ -2,10 +2,11 @@
 
 precision mediump float;
 
-in vec3 vertexPosition;
-// This is not normal. This is dx, dy, and length of the line.
+in float vertexX;
+in float vertexY;
 in vec3 vertexColor;
-in vec3 vertexNormal;
+// This is not normal. This is dx, dy, and length of the line.
+in vec2 delta;
 
 out vec2 normal;
 out vec3 color;
@@ -20,10 +21,16 @@ void main(void)
     color = vertexColor;
     // TODO: make this uniform.
     float thick = 0.05;
-    vec2 tg = vertexNormal.xy;
-    vec2 position = vertexPosition.xy;
+    vec2 tg = delta;
+    vec2 position = vec2(vertexX, vertexY);
+    float dir = 1.0; color.b >= 0.0 ? 1.0 : -1.0; 
+    if (color.b > 1.5) {
+      dir = -1.0;
+      color.b -= 2.0;
+    }
+    color = abs(color);
 
-    normal = -vertexPosition.z * normalize(tg.yx * zoom * vec2(-1.0, 1.0));
+    normal = -dir * normalize(tg.yx * zoom * vec2(-1.0, 1.0));
     vec2 dif = normal * thick;
     position -= dif * max(zoom * 0.1, position / 7e5);
 

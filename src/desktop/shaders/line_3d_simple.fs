@@ -12,7 +12,6 @@ vec4 simple() {
   return vec4(color, 1.0) * fact;
 }
 
-void main()
-{
+void main() {
   finalColor = simple();
 }

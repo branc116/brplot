@@ -19,23 +19,21 @@ typedef struct {
 } br_dagen_file_t;
 
 typedef enum {
-  br_data_expr_kind_reference_x,
-  br_data_expr_kind_reference_y,
-  br_data_expr_kind_reference_z,
-} br_data_expr_kind_t;
+  br_dagen_expr_kind_reference_x,
+  br_dagen_expr_kind_reference_y,
+  br_dagen_expr_kind_reference_z,
+} br_dagen_expr_kind_t;
 
-typedef struct br_data_expr_t {
-  br_data_expr_kind_t kind;
+typedef struct br_dagen_expr_t {
+  br_dagen_expr_kind_t kind;
   union {
     int group_id;
   };
-} br_data_expr_t;
+} br_dagen_expr_t;
 
-typedef struct br_data_2d_expr_t {
-  br_data_2d_t dd;
-  br_data_expr_t x_expr;
-  br_data_expr_t y_expr;
-} br_data_2d_expr_t;
+typedef struct br_dagen_2d_expr_t {
+  br_dagen_expr_t x_expr, y_expr;
+} br_dagen_expr_2d_t;
 
 typedef struct {
   br_dagen_kind_t kind;
@@ -44,6 +42,7 @@ typedef struct {
   int group_id;
   union {
     br_dagen_file_t file;
+    br_dagen_expr_2d_t expr_2d;
   };
 } br_dagen_t;
 
@@ -57,6 +56,7 @@ typedef struct br_plotter_t br_plotter_t;
 #if defined(__cplusplus)
 extern "C" {
 #endif
+void br_dagen_push_expr_xy(br_dagens_t* dagens, br_datas_t* datas, br_dagen_expr_t y, br_dagen_expr_t x, int group_id);
 bool br_dagen_push_file(br_dagens_t* dagens, br_data_t* temp_data, FILE* file);
 void br_dagens_handle(br_plotter_t* br, double until);
 #if defined(__cplusplus)
