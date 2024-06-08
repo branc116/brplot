@@ -53,7 +53,7 @@ bool br_fs_cd(br_str_t* cwd, br_strv_t path) {
     else if (br_strv_eq(next_name, br_strv_from_c_str("."))) /* DO NOTHING */;
     else if (cwd->len == 0) br_str_push_br_strv(cwd, next_name);
     else if (cwd->str[cwd->len - 1] == '/') br_str_push_br_strv(cwd, next_name);
-    else if (cwd->str[cwd->len - 1] != '/') {
+    else {
       br_str_push_char(cwd, '/');
       br_str_push_br_strv(cwd, next_name);
     }
