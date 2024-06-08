@@ -1,0 +1,27 @@
+#define RAYMATH_STATIC_INLINE
+#include "../da.c"
+#include "../data.c"
+#include "../data_generator.c"
+#include "../filesystem.c"
+#include "../graph_utils.c"
+#include "../gui.c"
+#include "../help.c"
+#include "../keybindings.c"
+#include "../permastate.c"
+#include "../plot.c"
+#include "../plotter.c"
+#include "../q.c"
+#include "../read_input.c"
+#include "../shaders.c"
+#include "../smol_mesh.c"
+#include "../str.c"
+#include "../main.c"
+#include "../../external/raylib-5.0/src/rmodels.c"
+#include "../../external/raylib-5.0/src/rshapes.c"
+#include "../../external/raylib-5.0/src/rtext.c"
+#include "../../external/raylib-5.0/src/rtextures.c"
+#include "../../external/raylib-5.0/src/utils.c"
+#include "../../external/raylib-5.0/src/rcore.c"
+
+// cc -DLINUX=1 -DPLATFORM_DESKTOP=1 -DIMGUI -I. -Isrc -I ./external/raylib-5.0/src/ -I ./external/Tracy src/unity/brplot.c -lglfw -lm brplot++.o
+

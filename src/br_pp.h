@@ -30,10 +30,18 @@
 #  define LOCK(x)
 #endif
 
-#define LOG(...)
-#define LOGI(...) fprintf(stderr, __VA_ARGS__)
-#define LOGE(text) fprintf(stderr, "ERROR: [%s:%d]" text, __FILE__, __LINE__)
-#define LOGEF(format, ...) fprintf(stderr, "ERROR: [%s:%d]" format, __FILE__, __LINE__,  __VA_ARGS__)
+#if !defined(BR_DISABLE_LOG)
+#  define LOG(...)
+#  define LOGI(...) fprintf(stderr, __VA_ARGS__)
+#  define LOGE(text) fprintf(stderr, "ERROR: [%s:%d]" text, __FILE__, __LINE__)
+#  define LOGEF(format, ...) fprintf(stderr, "ERROR: [%s:%d]" format, __FILE__, __LINE__,  __VA_ARGS__)
+#else
+#  define LOG(...)
+#  define LOGI(...)
+#  define LOGE(text)
+#  define LOGEF(format, ...)
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {

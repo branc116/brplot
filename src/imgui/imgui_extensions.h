@@ -29,8 +29,6 @@ namespace br {
   BR_UNUSED_FN inline ImVec2 max(ImVec2 a, ImVec2 b) { return ImVec2 { std::max(a.x, b.x), std::max(a.y, b.y) }; }
 }
 
-BR_UNUSED_FN static inline ImVec2 operator+(ImVec2 a, ImVec2 b) { return ImVec2 { a.x + b.x, a.y + b.y }; }
-
 struct br_file_saver_s;
 
 typedef enum {

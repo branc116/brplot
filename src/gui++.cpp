@@ -1,4 +1,5 @@
 #if defined(IMGUI)
+#  define IMGUI_DEFINE_MATH_OPERATORS
 #  include "imgui/gui.cpp"
 #elif defined(RAYLIB)
 #elif defined(HEADLESS)
