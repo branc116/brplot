@@ -15,7 +15,7 @@ typedef enum {
 
 typedef struct {
   FILE* file;
-  size_t data_left;
+  size_t x_left, y_left, z_left;
 } br_dagen_file_t;
 
 typedef enum {

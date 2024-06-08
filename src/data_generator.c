@@ -89,7 +89,9 @@ bool br_dagen_push_file(br_dagens_t* dagens, br_data_t* temp_data, FILE* file) {
     .group_id = temp_data->group_id,
     .file = {
       .file = file,
-      .data_left = data_left,
+      .x_left = data_left,
+      .y_left = data_left,
+      .z_left = temp_data->kind == br_data_kind_2d ? 0 : data_left,
     }
   };
   br_da_push(*dagens, new);
@@ -105,27 +107,30 @@ void br_dagen_handle(br_dagen_t* dagen, br_data_t* data) {
   switch (dagen->kind) {
     case br_dagen_kind_file:
     {
-      size_t read_n = 1024 < dagen->file.data_left ? 1024 : dagen->file.data_left;
-      switch (data->kind) {
-        case br_data_kind_2d: {
-          if (read_n != fread(&data->dd.xs[data->len], sizeof(data->dd.xs[0]), read_n, dagen->file.file)) goto error;
-          if (read_n != fread(&data->dd.ys[data->len], sizeof(data->dd.ys[0]), read_n, dagen->file.file)) goto error;
-        } break;
-        case br_data_kind_3d: {
-          if (read_n != fread(&data->ddd.xs[data->len], sizeof(data->ddd.xs[0]), read_n, dagen->file.file)) goto error;
-          if (read_n != fread(&data->ddd.ys[data->len], sizeof(data->ddd.ys[0]), read_n, dagen->file.file)) goto error;
-          if (read_n != fread(&data->ddd.zs[data->len], sizeof(data->ddd.zs[0]), read_n, dagen->file.file)) goto error;
-        } break;
-        default: BR_ASSERT(0);
+      BR_ASSERT((data->kind == br_data_kind_2d) || (data->kind == br_data_kind_3d));
+      size_t* left = &dagen->file.x_left;
+      float* d = data->dd.xs;
+      if (*left == 0) {
+        left = &dagen->file.y_left;
+        d = data->dd.ys;
       }
-      data->len += read_n;
-      dagen->file.data_left -= read_n;
-      for (size_t i = data->len - read_n; i < data->len; ++i) {
-        resampling2_add_point(data->resampling, data, (uint32_t)i);
+      if (*left == 0) {
+        left = &dagen->file.z_left;
+        d = data->ddd.zs;
       }
-      if (dagen->file.data_left == 0) {
-        dagen->state = br_dagen_state_finished;
-        fclose(dagen->file.file);
+      size_t index = data->cap - *left;
+      size_t read_n = 1024 < *left ? 1024 : *left;
+      if (read_n != fread(&d[index], sizeof(d[index]), read_n, dagen->file.file)) goto error;
+      *left -= read_n;
+      if ((data->kind == br_data_kind_2d && d == data->dd.ys) || (data->kind == br_data_kind_3d && d == data->ddd.zs)) {
+        data->len += read_n;
+        for (size_t i = data->len - read_n; i < data->len; ++i) {
+          resampling2_add_point(data->resampling, data, (uint32_t)i);
+        }
+        if (*left == 0) {
+          dagen->state = br_dagen_state_finished;
+          fclose(dagen->file.file);
+        }
       }
       return;
 error:
