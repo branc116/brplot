@@ -20,9 +20,12 @@ void br_str_free(br_str_t str) {
 
 bool br_str_realloc(br_str_t* s, size_t new_cap) {
   if (s->cap == 0) {
+    BR_ASSERT(NULL == s->str);
+    BR_ASSERT(0 == s->len);
+    BR_ASSERT(0 == s->cap);
     s->str = BR_MALLOC(new_cap > 8 ? new_cap : 8);
     if (s->str == NULL) return false;
-    s->cap = 8;
+    s->cap = new_cap > 8 ? (unsigned int)new_cap : 8;
     return true;
   }
   if (s->cap < new_cap) {
@@ -37,6 +40,7 @@ bool br_str_realloc(br_str_t* s, size_t new_cap) {
 }
 
 static inline void br_str_push_char_unsafe(br_str_t* s, char c) {
+  BR_ASSERT(NULL != s->str);
   s->str[s->len++] = c;
 }
 

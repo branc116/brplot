@@ -149,6 +149,9 @@ end:
 void br_permastate_save(br_plotter_t* br) {
   char buff[512]               /* = uninitialized */;
   br_str_t path                   = {0};
+  for (size_t i = 0; i < br->dagens.len; ++i) {
+    if (br->dagens.arr[i].kind == br_dagen_kind_file) return;
+  }
 
   if (false == br_fs_get_config_dir(&path))                             goto error;
   br_str_to_c_str1(path, buff);

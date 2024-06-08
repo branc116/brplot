@@ -166,6 +166,12 @@ BR_API void br_plotter_free(br_plotter_t* gv) {
     BR_FREE(gv->plots.arr[i].groups_to_show.arr);
   }
   BR_FREE(gv->plots.arr);
+  for (size_t i = 0; i < gv->dagens.len; ++i) {
+    if (gv->dagens.arr[i].kind == br_dagen_kind_file) {
+      fclose(gv->dagens.arr[i].file.file);
+    }
+  }
+  BR_FREE(gv->dagens.arr);
 }
 
 void br_plotter_update_variables(br_plotter_t* br) {

@@ -13,6 +13,7 @@ extern "C" {
 
 #define br_da_push_t(SIZE_T, ARR, VALUE) do {                          \
   if ((ARR).cap == 0) {                                                  \
+    BR_ASSERT((ARR).arr == NULL); \
     (ARR).arr = (DECLTYPE((VALUE))*)BR_MALLOC(sizeof(*(ARR).arr));           \
     if ((ARR).arr != NULL) {                                             \
       (ARR).cap = 1;                                                     \
@@ -21,6 +22,7 @@ extern "C" {
   }                                                                    \
   else if ((ARR).len < (ARR).cap) (ARR).arr[(ARR).len++] = (VALUE);            \
   else {                                                               \
+    BR_ASSERT((ARR).arr != NULL); \
     SIZE_T cap_diff = (ARR).cap;                                         \
     bool is_ok = false;                                                \
     while (!is_ok && cap_diff > 0) {                                   \

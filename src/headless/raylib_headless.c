@@ -272,8 +272,9 @@ RLAPI Shader LoadShaderFromMemory(const char *vsCode, const char *fsCode) {
   return ret;
 }
 
+static double cur = 0.0;
 RLAPI double GetTime(void) {
-  return 69.0;
+  return cur += .001;
 }
 
 void BeginScissorMode(int x, int y, int width, int height) {
