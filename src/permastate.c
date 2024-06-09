@@ -54,7 +54,7 @@ end:
   return success;
 }
 
-bool br_permastate_save_datas(br_str_t path_folder, br_datas_t datas) {
+bool br_permastate_save_datas(br_str_t path_folder, br_dagens_t const* dagens, br_datas_t datas) {
   char buff[512]; buff[0] = '\0';
   FILE* file = NULL;
   br_save_state_command_t command;
@@ -63,34 +63,35 @@ bool br_permastate_save_datas(br_str_t path_folder, br_datas_t datas) {
 
   for (size_t i = 0; i < datas.len; ++i) {
     br_data_t* data = &datas.arr[i];
+    if (br_data_is_generated(dagens, data->group_id)) continue;
     switch (data->kind) {
       case br_data_kind_2d: command = br_save_state_command_save_data_2d; break;
       case br_data_kind_3d: command = br_save_state_command_save_data_3d; break;
       default: BR_ASSERT(0);
     }
-    if (false == br_fs_cd(&path_folder, br_strv_from_literal("data"))) goto error;
-    if (false == br_str_push_int(&path_folder, data->group_id)) goto error;
-    if (false == br_str_push_br_strv(&path_folder, br_strv_from_literal(".br"))) goto error;
+    if (false == br_fs_cd(&path_folder, br_strv_from_literal("data")))                     goto error;
+    if (false == br_str_push_int(&path_folder, data->group_id))                            goto error;
+    if (false == br_str_push_br_strv(&path_folder, br_strv_from_literal(".br")))           goto error;
     br_str_to_c_str1(path_folder, buff);
-    if (NULL == (file = fopen(buff, "wb"))) goto error;
-    if (1 != fwrite(&command, sizeof(command), 1, file)) goto error;
-    if (1 != fwrite(&data->color, sizeof(data->color), 1, file)) goto error;
-    if (1 != fwrite(&data->len, sizeof(data->len), 1, file)) goto error;
+    if (NULL == (file = fopen(buff, "wb")))                                                goto error;
+    if (1 != fwrite(&command, sizeof(command), 1, file))                                   goto error;
+    if (1 != fwrite(&data->color, sizeof(data->color), 1, file))                           goto error;
+    if (1 != fwrite(&data->len, sizeof(data->len), 1, file))                               goto error;
     switch (data->kind) {
       case br_plot_kind_2d: {
-        if (1 != fwrite(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file)) goto error;
+        if (1 != fwrite(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file))   goto error;
         if (0 != data->len) {
-          if (data->len != fwrite(data->dd.xs, sizeof(*data->dd.xs), data->len, file)) goto error;
-          if (data->len != fwrite(data->dd.ys, sizeof(*data->dd.ys), data->len, file)) goto error;
+          if (data->len != fwrite(data->dd.xs, sizeof(*data->dd.xs), data->len, file))     goto error;
+          if (data->len != fwrite(data->dd.ys, sizeof(*data->dd.ys), data->len, file))     goto error;
         }
-        if (1 != fwrite(&crc, sizeof(crc), 1, file)) goto error;
+        if (1 != fwrite(&crc, sizeof(crc), 1, file))                                       goto error;
       } break;
       case br_plot_kind_3d: {
         if (1 != fwrite(&data->ddd.bounding_box, sizeof(data->ddd.bounding_box), 1, file)) goto error;
         if (0 != data->len) {
-          if (data->len != fwrite(data->ddd.xs, sizeof(*data->ddd.xs), data->len, file)) goto error;
-          if (data->len != fwrite(data->ddd.ys, sizeof(*data->ddd.ys), data->len, file)) goto error;
-          if (data->len != fwrite(data->ddd.zs, sizeof(*data->ddd.zs), data->len, file)) goto error;
+          if (data->len != fwrite(data->ddd.xs, sizeof(*data->ddd.xs), data->len, file))   goto error;
+          if (data->len != fwrite(data->ddd.ys, sizeof(*data->ddd.ys), data->len, file))   goto error;
+          if (data->len != fwrite(data->ddd.zs, sizeof(*data->ddd.zs), data->len, file))   goto error;
         }
       } break;
       default: BR_ASSERT(0);
@@ -120,18 +121,18 @@ bool br_permastate_save_plotter(br_str_t path_folder, br_plotter_t* br) {
   br_save_state_command_t command = br_save_state_command_plotter;
   bool success = true;
 
-  if (false == br_fs_cd(&path_folder, br_strv_from_literal("plotter.br"))) goto error;
+  if (false == br_fs_cd(&path_folder, br_strv_from_literal("plotter.br")))                       goto error;
   br_str_to_c_str1(path_folder, buff);
-  if (NULL == (file = fopen(buff, "wb"))) goto error;
-  if (1 != fwrite(&command, sizeof(command), 1, file)) goto error;
-  if (1 != fwrite(&br->groups.len, sizeof(br->groups.len), 1, file)) goto error;
+  if (NULL == (file = fopen(buff, "wb")))                                                        goto error;
+  if (1 != fwrite(&command, sizeof(command), 1, file))                                           goto error;
+  if (1 != fwrite(&br->groups.len, sizeof(br->groups.len), 1, file))                             goto error;
   for (size_t i = 0; i < br->groups.len; ++i) {
     br_data_t* data = &br->groups.arr[i];
-    if (1 != fwrite(&data->group_id, sizeof(data->group_id), 1, file)) goto error;
-    if (1 != fwrite(&data->name.len, sizeof(data->name.len), 1, file)) goto error;
+    if (1 != fwrite(&data->group_id, sizeof(data->group_id), 1, file))                           goto error;
+    if (1 != fwrite(&data->name.len, sizeof(data->name.len), 1, file))                           goto error;
     if (data->name.len != fwrite(data->name.str, sizeof(*data->name.str), data->name.len, file)) goto error;
   }
-  if (1 != fwrite(&br->active_plot_index, sizeof(br->active_plot_index), 1, file)) goto error;
+  if (1 != fwrite(&br->active_plot_index, sizeof(br->active_plot_index), 1, file))               goto error;
   goto end;
 
 error:
@@ -153,12 +154,12 @@ void br_permastate_save(br_plotter_t* br) {
     if (br->dagens.arr[i].kind == br_dagen_kind_file) return;
   }
 
-  if (false == br_fs_get_config_dir(&path))                             goto error;
+  if (false == br_fs_get_config_dir(&path))                                          goto error;
   br_str_to_c_str1(path, buff);
-  if (false == br_fs_mkdir(br_str_sub1(path, 0)))                       goto error;
-  if (false == br_permastate_save_plots(br_str_copy(path), br->plots))  goto error;
-  if (false == br_permastate_save_datas(br_str_copy(path), br->groups)) goto error;
-  if (false == br_permastate_save_plotter(br_str_copy(path), br))       goto error;
+  if (false == br_fs_mkdir(br_str_sub1(path, 0)))                                    goto error;
+  if (false == br_permastate_save_plots(br_str_copy(path), br->plots))               goto error;
+  if (false == br_permastate_save_datas(br_str_copy(path), &br->dagens, br->groups)) goto error;
+  if (false == br_permastate_save_plotter(br_str_copy(path), br))                    goto error;
   goto end;
 
 error:

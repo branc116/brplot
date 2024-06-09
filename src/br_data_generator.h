@@ -46,7 +46,7 @@ typedef struct {
   };
 } br_dagen_t;
 
-typedef struct {
+typedef struct br_dagens_t {
   br_dagen_t* arr;
   size_t len, cap;
 } br_dagens_t;

@@ -2,6 +2,7 @@
 #include "br_resampling2.h"
 #include "br_gui_internal.h"
 #include "br_pp.h"
+#include "br_data_generator.h"
 
 #include "tracy/TracyC.h"
 #include "rlgl.h"
@@ -16,7 +17,6 @@ static br_data_t* br_data_init(br_data_t* g, int group_id, br_data_kind_t kind);
 static void br_data_push_point2(br_data_t* g, Vector2 v);
 static void br_data_push_point3(br_data_t* g, Vector3 v);
 static void br_data_deinit(br_data_t* g);
-static bool br_data_realloc(br_data_t* pg, size_t new_cap);
 static void br_bb_expand_with_point(bb_t* bb, Vector2 v);
 static void br_bb_3d_expand_with_point(bb_3d_t* bb, Vector3 v);
 
@@ -324,6 +324,33 @@ Color br_data_get_default_color(int group_id) {
   return c;
 }
 
+bool br_data_is_generated(br_dagens_t const* dagens, int group_id) {
+  for (size_t i = 0; i < dagens->len; ++i)
+    if (dagens->arr[i].kind == br_dagen_kind_expr && dagens->arr[i].group_id == group_id)
+      return true;
+  return false;
+}
+
+bool br_data_realloc(br_data_t* data, size_t new_cap) {
+  BR_ASSERT((data->kind == br_data_kind_2d) || (data->kind == br_data_kind_3d));
+  if (data->cap >= new_cap) return true;
+  float* xs = BR_REALLOC(data->dd.xs, sizeof(data->dd.xs[0]) * new_cap);
+  if (NULL == xs) return false;
+  data->dd.xs = xs;
+  float* ys = BR_REALLOC(data->dd.ys, sizeof(data->dd.ys[0]) * new_cap);
+  if (NULL == ys) return false;
+  data->dd.ys = ys;
+  if (data->kind == br_data_kind_2d) {
+    data->cap = new_cap;
+    return true;
+  }
+  float* zs = BR_REALLOC(data->ddd.zs, sizeof(data->ddd.zs[0]) * new_cap);
+  if (NULL == zs) return false;
+  data->ddd.zs = zs;
+  data->cap = new_cap;
+  return true;
+}
+
 BR_API br_data_t* br_data_get1(br_datas_t pg, int group) {
   for (size_t i = 0; i < pg.len; ++i) if (pg.arr[i].group_id == group)
     return &pg.arr[i];
@@ -424,54 +451,6 @@ static void br_data_deinit(br_data_t* g) {
   resampling2_free(g->resampling);
   br_str_free(g->name);
   g->len = g->cap = 0;
-}
-
-static bool br_data_realloc(br_data_t* pg, size_t new_cap) {
-  BR_ASSERT(pg->cap > 0);
-  BR_ASSERT(new_cap > 0);
-
-  switch (pg->kind) {
-    case br_data_kind_2d:
-    {
-      float* xs = BR_REALLOC(pg->dd.xs, new_cap * sizeof(float));
-      if (xs == NULL) {
-        LOG("Out of memory. Can't add any more lines. Buy more RAM, or close Chrome\n");
-        return false;
-      }
-      pg->dd.xs = xs;
-      float* ys = BR_REALLOC(pg->dd.ys, new_cap * sizeof(float));
-      if (xs == NULL) {
-        LOG("Out of memory. Can't add any more lines. Buy more RAM, or close Chrome\n");
-        return false;
-      }
-      pg->dd.ys = ys;
-      pg->cap = new_cap;
-    } break;
-    case br_data_kind_3d:
-    {
-      float* xs = BR_REALLOC(pg->dd.xs, new_cap * sizeof(float));
-      if (xs == NULL) {
-        LOG("Out of memory. Can't add any more lines. Buy more RAM, or close Chrome\n");
-        return false;
-      }
-      pg->dd.xs = xs;
-      float* ys = BR_REALLOC(pg->dd.ys, new_cap * sizeof(float));
-      if (xs == NULL) {
-        LOG("Out of memory. Can't add any more lines. Buy more RAM, or close Chrome\n");
-        return false;
-      }
-      pg->dd.ys = ys;
-      float* zs = BR_REALLOC(pg->ddd.zs, new_cap * sizeof(float));
-      if (xs == NULL) {
-        LOG("Out of memory. Can't add any more lines. Buy more RAM, or close Chrome\n");
-        return false;
-      }
-      pg->ddd.zs = zs;
-      pg->cap = new_cap;
-    } break;
-    default: BR_ASSERT(0);
-  }
-  return true;
 }
 
 static void br_bb_expand_with_point(bb_t* bb, Vector2 v) {

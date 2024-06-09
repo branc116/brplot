@@ -12,6 +12,7 @@ extern "C" {
 typedef struct resampling2_t resampling2_t;
 typedef struct br_plot_t br_plot_t;
 typedef struct br_plots_t br_plots_t;
+typedef struct br_dagens_t br_dagens_t;
 
 typedef struct min_distances_t {
   Vector2 graph_point;
@@ -87,6 +88,8 @@ BR_API void br_datas_empty(br_datas_t* pg_array);
 void br_datas_export(br_datas_t const* pg_array, FILE* file);
 void br_datas_export_csv(br_datas_t const* pg_array, FILE* file);
 Color br_data_get_default_color(int group_id);
+bool br_data_is_generated(br_dagens_t const* dagens, int groups_id);
+bool br_data_realloc(br_data_t* data, size_t new_cap);
 
 size_t br_data_element_size(br_data_kind_t kind);
 

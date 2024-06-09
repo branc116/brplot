@@ -10,7 +10,29 @@
 #include <errno.h>
 #include <string.h>
 
+static size_t br_dagen_expr_read_n(br_datas_t datas, br_dagen_expr_t* expr, size_t offset, size_t n, float data[n]) {
+  br_data_t* data_in = br_data_get1(datas, expr->group_id);
+  if (NULL == data_in) return 0;
+  size_t real_n = (offset + n > data_in->len) ? data_in->len - offset : n;
+  switch (expr->kind) {
+    case br_dagen_expr_kind_reference_x: memcpy(data, &data_in->dd.xs[offset], real_n * sizeof(data[0])); break;
+    case br_dagen_expr_kind_reference_y: memcpy(data, &data_in->dd.ys[offset], real_n * sizeof(data[0])); break;
+    case br_dagen_expr_kind_reference_z: memcpy(data, &data_in->ddd.zs[offset], real_n * sizeof(data[0])); break;
+  }
+  return real_n;
+}
+
+static size_t br_dagen_expr_len(br_datas_t datas, br_dagen_expr_t* expr) {
+  br_data_t* data_in = br_data_get1(datas, expr->group_id);
+  if (NULL == data_in) return 0;
+  return data_in->len;
+}
+
 void br_dagen_push_expr_xy(br_dagens_t* pg, br_datas_t* datas, br_dagen_expr_t x, br_dagen_expr_t y, int group) {
+  if (NULL != br_data_get1(*datas, group)) {
+    LOGI("Data with id %d already exists, will not create expr with the same id\n", group);
+    return;
+  }
   br_dagen_t dagen = {
     .kind = br_dagen_kind_expr,
     .data_kind = br_data_kind_2d,
@@ -22,7 +44,7 @@ void br_dagen_push_expr_xy(br_dagens_t* pg, br_datas_t* datas, br_dagen_expr_t x
     }
   };
   br_data_t data = {
-    .resampling = resampling2_malloc(1024),
+    .resampling = resampling2_malloc(br_data_kind_2d),
     .cap = 0, .len = 0,
     .kind = br_data_kind_2d,
     .group_id = group,
@@ -103,7 +125,7 @@ error:
   return false;
 }
 
-void br_dagen_handle(br_dagen_t* dagen, br_data_t* data) {
+void br_dagen_handle(br_dagen_t* dagen, br_data_t* data, br_datas_t datas) {
   switch (dagen->kind) {
     case br_dagen_kind_file:
     {
@@ -115,6 +137,11 @@ void br_dagen_handle(br_dagen_t* dagen, br_data_t* data) {
         d = data->dd.ys;
       }
       if (*left == 0) {
+        if (data->kind == br_data_kind_2d) {
+          dagen->state = br_dagen_state_finished;
+          fclose(dagen->file.file);
+          return;
+        }
         left = &dagen->file.z_left;
         d = data->ddd.zs;
       }
@@ -143,8 +170,27 @@ error:
       switch(data->kind) {
         case br_data_kind_2d:
         {
-        }
-        default: BR_ASSERT(0);
+          size_t read_index = data->len;
+          size_t read_per_batch = 16*1024;
+          size_t x_len = br_dagen_expr_len(datas, &dagen->expr_2d.x_expr);
+          size_t y_len = br_dagen_expr_len(datas, &dagen->expr_2d.y_expr);
+          size_t min_len = x_len < y_len ? x_len : y_len;
+          if (data->cap < min_len) if (false == br_data_realloc(data, min_len)) {
+            LOGE("Failed to alloc memory for generated plot\n");
+            dagen->state = br_dagen_state_failed;
+          }
+          float* out_xs = &data->dd.xs[read_index];
+          float* out_ys = &data->dd.ys[read_index];
+          size_t read = br_dagen_expr_read_n(datas, &dagen->expr_2d.x_expr, read_index, read_per_batch, out_xs);
+          read_per_batch = read_per_batch > read ? read : read_per_batch;
+          read = br_dagen_expr_read_n(datas, &dagen->expr_2d.y_expr, read_index, read_per_batch, out_ys);
+          read_per_batch = read_per_batch > read ? read : read_per_batch;
+          for (size_t i = 0; i < read_per_batch; ++i) {
+            ++data->len;
+            resampling2_add_point(data->resampling, data, (uint32_t)(read_index + i));
+          }
+        } break;
+        default: LOGEF("Unsupported data kind: %d\n", data->kind); BR_ASSERT(0);
       }
     } break;
     default: BR_ASSERT(0);
@@ -156,7 +202,8 @@ void br_dagens_handle(br_plotter_t* br, double until) {
     for (size_t i = 0; i < br->dagens.len;) {
       br_dagen_t* cur = &br->dagens.arr[i]; 
       br_data_t* d = br_data_get1(br->groups, cur->group_id);
-      br_dagen_handle(cur, d);
+      if (NULL == cur) cur->state = br_dagen_state_failed;
+      else br_dagen_handle(cur, d, br->groups);
       switch (cur->state) {
         case br_dagen_state_failed: {
           br_data_clear(&br->groups, &br->plots, d->group_id); 

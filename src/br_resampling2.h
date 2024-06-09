@@ -15,6 +15,7 @@ resampling2_t* resampling2_malloc(br_data_kind_t kind);
 void resampling2_empty(resampling2_t* res);
 void resampling2_free(resampling2_t* res);
 void resampling2_draw(resampling2_t const* res, br_data_t const* pg, br_plot_t* rdi);
+// TODO: index should be size_t...
 void resampling2_add_point(resampling2_t* res, br_data_t const* pg, uint32_t index);
 
 #ifdef __cplusplus

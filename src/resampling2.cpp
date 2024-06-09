@@ -199,13 +199,13 @@ extern "C" void resampling2_add_point(resampling2_t* r, const br_data_t *pg, uin
     switch (r->kind) {
       case br_data_kind_2d: { br_da_push((r->dd), resampling2_nodes_2d_t()); break; }
       case br_data_kind_3d: { br_da_push((r->ddd), resampling2_nodes_3d_t()); break; }
-      default: assert(false);
+      default: BR_ASSERT(false);
     }
   }
   switch (r->kind) {
     case br_data_kind_2d: { resampling2_nodes_2d_push_point(&r->dd, 0, index, pg->dd.xs, pg->dd.ys); break; }
     case br_data_kind_3d: { resampling2_nodes_3d_push_point(&r->ddd, 0, index, pg->ddd.xs, pg->ddd.ys, pg->ddd.zs); break; }
-    default: assert(false);
+    default: BR_ASSERT(false);
   }
 }
 
