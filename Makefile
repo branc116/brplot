@@ -21,6 +21,8 @@ COVERAGE  ?= NO
 FUZZ      ?= NO
 # YES | NO
 TRACY     ?= NO
+# GLFW | X11 | WAYLAND
+BACKEND   ?= GLFW
 
 RL                 = ./external/raylib-5.0/src
 IM                 = ./external/imgui-docking
@@ -66,11 +68,20 @@ else
 endif
 
 ifeq ($(PLATFORM), LINUX)
-	LIBS= `pkg-config --static --libs glfw3` -lGL
+	ifeq ($(BACKEND), X11)
+	  SOURCE+= $(RL)/rglfw.c
+		COMMONFLAGS+= -Iexternal/glfw/include
+	else ifeq ($(BACKEND), WAYLAND)
+	  SOURCE+= $(RL)/rglfw.c
+		COMMONFLAGS+= -Iexternal/glfw/include -D_GLFW_WAYLAND  -I/home/branimir/Documents/github.com/glfw/glfw/build/src
+	else ifeq ($(BACKEND), GLFW)
+		LIBS= `pkg-config --static --libs glfw3` -lGL
+	endif
 	COMMONFLAGS+= -DLINUX=1 -DPLATFORM_DESKTOP=1
 	SHADERS_HEADER= src/misc/shaders.h
 
 else ifeq ($(PLATFORM), WINDOWS)
+	BACKEND= GLFW
 	LIBS= -lopengl32 -lgdi32 -lwinmm
 	CXX= x86_64-w64-mingw32-g++
 	CC= x86_64-w64-mingw32-gcc
@@ -80,6 +91,7 @@ else ifeq ($(PLATFORM), WINDOWS)
 	COMPILER= MINGW
 
 else ifeq ($(PLATFORM), WEB)
+	BACKEND= GLFW
 	CXX= $(EMSCRIPTEN)em++
 	CC= $(EMSCRIPTEN)emcc
 	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES3=1 -DPLATFORM_WEB=1
@@ -134,14 +146,22 @@ ifeq ($(TRACY), YES)
 	COMMONFLAGS+= -DTRACY_ENABLE=1
 	LD_FLAGS+= -ltracy
 endif
-
-PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
+ifeq ($(BACKEND), GLFW)
+	PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
+else
+	PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)/$(BACKEND)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
+endif
 OBJSA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE))
 OBJS+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
 MAKE_INCLUDES= $(patsubst %.o, %.d, $(OBJS))
 CXXFLAGS= $(COMMONFLAGS) -fno-exceptions -std=gnu++17
-CCFLAGS= $(COMMONFLAGS)
-OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
+CCFLAGS= $(COMMONFLAGS) -std=gnu11
+ifeq ($(BACKEND), GLFW)
+	PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
+	OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
+else
+	OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(BACKEND)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
+endif
 
 OBJSDIR= $(sort $(dir $(OBJS)))
 $(shell $(foreach var,$(OBJSDIR), test -d $(var) || mkdir -p $(var);))
