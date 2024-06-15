@@ -13,13 +13,30 @@ on:
 permissions:
   contents: read
 jobs:
+
+  windows_vs:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [ Win32, x64 ]
+        config: [ Debug, Release ]
+        gui: [ raylib, imgui, headless ]
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+        cmake -S. -B build `
+        -D CMAKE_BUILD_TYPE=${{matrix.config}} `
+        -D GUI=${{matrix.gui}} `
+        -A ${{ matrix.arch }} `
+        -D BUILD_WERROR=ON
+      - run: cmake --build build/ --config ${{matrix.config}}
+      - run: cmake --install build --prefix build/install --config ${{matrix.config}}
+
   build:
     runs-on: windows-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v3.6.0
-      with:
-        submodules: true 
 
     - name: Setup Zig
       uses: goto-bus-stop/setup-zig@v2.2.0
