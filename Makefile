@@ -21,6 +21,8 @@ COVERAGE  ?= NO
 FUZZ      ?= NO
 # YES | NO
 TRACY     ?= NO
+# YES | NO
+LTO       ?= YES
 # GLFW | X11 | WAYLAND
 BACKEND   ?= GLFW
 
@@ -135,7 +137,7 @@ else ifeq ($(CONFIG), RELEASE)
 		-DIMGUI_DISABLE_DEMO_WINDOWS \
 		-DIMGUI_DISABLE_DEBUG_TOOLS
 	LD_FLAGS+= -fdata-sections -ffunction-sections -Wl,--gc-sections 
-	ifeq ($(PLATFORM), LINUX)
+	ifeq ($(PATFORM)_$(LTO), LINUX_YES)
 		LD_FLAGS+= -flto=auto
 	endif
 else
@@ -146,6 +148,7 @@ ifeq ($(TRACY), YES)
 	COMMONFLAGS+= -DTRACY_ENABLE=1
 	LD_FLAGS+= -ltracy
 endif
+
 ifeq ($(BACKEND), GLFW)
 	PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
 else

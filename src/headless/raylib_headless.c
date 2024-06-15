@@ -6,8 +6,12 @@
 #include "src/br_plot.h"
 
 #define RLAPI
+
+#if !defined(_MSC_VER)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+
 RLAPI void rlUnloadVertexBuffer(unsigned int vboId) {
   LOG("rlUnloadVertexBuffer vboId=%u\n", vboId);
 }

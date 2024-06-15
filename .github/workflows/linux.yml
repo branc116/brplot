@@ -17,24 +17,24 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ ubuntu-20.04, ubuntu-22.04, ubuntu-24.04 ]
+        os: [ {name: ubuntu-20.04, lto: NO}, {name: ubuntu-22.04, lto: YES}, {name: ubuntu-24.04, lto: YES} ]
     steps:
     - uses: actions/checkout@v4.1.7
-    - run: | 
+    - run: |
         sudo apt-get update -qq
         sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev gcc mingw-w64 clang
     - run: make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI COMPILER=GCC -B
     - run: make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB COMPILER=GCC -B
     - run: make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS COMPILER=GCC -B
-    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI COMPILER=GCC -B
-    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB COMPILER=GCC -B
-    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS COMPILER=GCC -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI COMPILER=GCC LTO=${{matrix.os.lto}} -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB COMPILER=GCC LTO=${{matrix.os.lto}} -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS COMPILER=GCC LTO=${{matrix.os.lto}} -B
     - run: make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI COMPILER=CLANG -B
     - run: make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB COMPILER=CLANG -B
     - run: make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS COMPILER=CLANG -B
-    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI COMPILER=CLANG -B
-    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB COMPILER=CLANG -B
-    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS COMPILER=CLANG -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI COMPILER=CLANG LTO=${{matrix.os.lto}} -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB COMPILER=CLANG LTO=${{matrix.os.lto}} -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS COMPILER=CLANG LTO=${{matrix.os.lto}} -B
     - run: make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=IMGUI -B
     - run: make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=RAYLIB -B
     - run: make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=HEADLESS -B
@@ -68,15 +68,15 @@ jobs:
         make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=HEADLESS
         make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=RAYLIB
         make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=IMGUI
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS COMPILER=GCC
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB COMPILER=GCC
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI COMPILER=GCC
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS COMPILER=GCC LTO=${{matrix.os.lto}}
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB COMPILER=GCC LTO=${{matrix.os.lto}}
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI COMPILER=GCC LTO=${{matrix.os.lto}}
         make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS COMPILER=GCC
         make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB COMPILER=GCC
         make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI COMPILER=GCC
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS COMPILER=CLANG
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB COMPILER=CLANG
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI COMPILER=CLANG
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS COMPILER=CLANG LTO=${{matrix.os.lto}}
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB COMPILER=CLANG LTO=${{matrix.os.lto}}
+        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI COMPILER=CLANG LTO=${{matrix.os.lto}}
         make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS COMPILER=CLANG
         make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB COMPILER=CLANG
         make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI COMPILER=CLANG
@@ -86,7 +86,7 @@ jobs:
         cat /dev/random | time bin/brplot_headless_linux_debug_clang
 
     - run: |
-        EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ ./tools/local_ci.sh
+        EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ ./tools/local_ci.sh LTO=${{matrix.os.lto}}
 
     - run: |
         test -f www/index.wasm && ls -alFh www

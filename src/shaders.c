@@ -10,9 +10,9 @@
 
 
 #ifdef RELEASE
-#  ifdef PLATFORM_DESKTOP
+#  if defined(PLATFORM_DESKTOP)
 #    include "src/misc/shaders.h"
-#  elif PLATFORM_WEB
+#  elif defined(PLATFORM_WEB)
 #    include "src/misc/shaders_web.h"
 #  else
 #    error "Shaders for this platform arn't defined"
