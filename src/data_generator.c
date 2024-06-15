@@ -10,7 +10,37 @@
 #include <errno.h>
 #include <string.h>
 
+inline static size_t min_s(size_t a, size_t b) { return a < b ? a : b; }
+static size_t br_dagen_expr_add_to(br_datas_t datas, br_dagen_expr_t* expr, size_t offset, size_t n, float data[n]) {
+  if (expr->kind == br_dagen_expr_kind_add) {
+    size_t read = br_dagen_expr_add_to(datas, expr->operands.op1, offset, n, data);
+    read = br_dagen_expr_add_to(datas, expr->operands.op1, offset, read, data);
+    return read;
+  }
+
+  br_data_t* data_in = br_data_get1(datas, expr->group_id);
+  if (data_in == NULL) return 0;
+  float* fs = NULL;
+  size_t real_n = (offset + n > data_in->len) ? data_in->len - offset : n;
+  switch (expr->kind) {
+    case br_dagen_expr_kind_reference_x: fs = &data_in->dd.xs[offset]; break;
+    case br_dagen_expr_kind_reference_y: fs = &data_in->dd.ys[offset]; break;
+    case br_dagen_expr_kind_reference_z: fs = &data_in->ddd.zs[offset]; break;
+    default: BR_ASSERT(0);
+  }
+  for (size_t i = 0; i < real_n; ++i) {
+    data[i] += fs[i];
+  }
+  return real_n;
+}
+
 static size_t br_dagen_expr_read_n(br_datas_t datas, br_dagen_expr_t* expr, size_t offset, size_t n, float data[n]) {
+  if (expr->kind == br_dagen_expr_kind_add) {
+    size_t read = br_dagen_expr_read_n(datas, expr->operands.op1, offset, n, data); 
+    size_t added = br_dagen_expr_add_to(datas, expr, offset, read, data);
+    return added;
+  }
+
   br_data_t* data_in = br_data_get1(datas, expr->group_id);
   if (NULL == data_in) return 0;
   size_t real_n = (offset + n > data_in->len) ? data_in->len - offset : n;
@@ -18,14 +48,27 @@ static size_t br_dagen_expr_read_n(br_datas_t datas, br_dagen_expr_t* expr, size
     case br_dagen_expr_kind_reference_x: memcpy(data, &data_in->dd.xs[offset], real_n * sizeof(data[0])); break;
     case br_dagen_expr_kind_reference_y: memcpy(data, &data_in->dd.ys[offset], real_n * sizeof(data[0])); break;
     case br_dagen_expr_kind_reference_z: memcpy(data, &data_in->ddd.zs[offset], real_n * sizeof(data[0])); break;
+    default: BR_ASSERT(0);
   }
   return real_n;
 }
 
 static size_t br_dagen_expr_len(br_datas_t datas, br_dagen_expr_t* expr) {
-  br_data_t* data_in = br_data_get1(datas, expr->group_id);
-  if (NULL == data_in) return 0;
-  return data_in->len;
+  switch (expr->kind) {
+    case br_dagen_expr_kind_reference_x: 
+    case br_dagen_expr_kind_reference_y: 
+    case br_dagen_expr_kind_reference_z: 
+    {
+      br_data_t* data_in = br_data_get1(datas, expr->group_id);
+      if (NULL == data_in) return 0;
+      return data_in->len;
+    }
+    case br_dagen_expr_kind_add:
+    {
+      return min_s(br_dagen_expr_len(datas, expr->operands.op1), br_dagen_expr_len(datas, expr->operands.op2));
+    }
+    default: BR_ASSERT(0);
+  }
 }
 
 void br_dagen_push_expr_xy(br_dagens_t* pg, br_datas_t* datas, br_dagen_expr_t x, br_dagen_expr_t y, int group) {
@@ -179,12 +222,13 @@ error:
             LOGE("Failed to alloc memory for generated plot\n");
             dagen->state = br_dagen_state_failed;
           }
+          min_len -= read_index;
+          if (min_len == 0) return;
+          read_per_batch = min_s(read_per_batch, min_len);
           float* out_xs = &data->dd.xs[read_index];
           float* out_ys = &data->dd.ys[read_index];
-          size_t read = br_dagen_expr_read_n(datas, &dagen->expr_2d.x_expr, read_index, read_per_batch, out_xs);
-          read_per_batch = read_per_batch > read ? read : read_per_batch;
-          read = br_dagen_expr_read_n(datas, &dagen->expr_2d.y_expr, read_index, read_per_batch, out_ys);
-          read_per_batch = read_per_batch > read ? read : read_per_batch;
+          br_dagen_expr_read_n(datas, &dagen->expr_2d.x_expr, read_index, read_per_batch, out_xs);
+          br_dagen_expr_read_n(datas, &dagen->expr_2d.y_expr, read_index, read_per_batch, out_ys);
           for (size_t i = 0; i < read_per_batch; ++i) {
             ++data->len;
             resampling2_add_point(data->resampling, data, (uint32_t)(read_index + i));
@@ -202,7 +246,7 @@ void br_dagens_handle(br_plotter_t* br, double until) {
     for (size_t i = 0; i < br->dagens.len;) {
       br_dagen_t* cur = &br->dagens.arr[i]; 
       br_data_t* d = br_data_get1(br->groups, cur->group_id);
-      if (NULL == cur) cur->state = br_dagen_state_failed;
+      if (NULL == cur || NULL == d) cur->state = br_dagen_state_failed;
       else br_dagen_handle(cur, d, br->groups);
       switch (cur->state) {
         case br_dagen_state_failed: {

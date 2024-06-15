@@ -22,12 +22,17 @@ typedef enum {
   br_dagen_expr_kind_reference_x,
   br_dagen_expr_kind_reference_y,
   br_dagen_expr_kind_reference_z,
+  br_dagen_expr_kind_add
 } br_dagen_expr_kind_t;
 
 typedef struct br_dagen_expr_t {
   br_dagen_expr_kind_t kind;
   union {
     int group_id;
+    struct {
+      struct br_dagen_expr_t* op1;
+      struct br_dagen_expr_t* op2;
+    } operands;
   };
 } br_dagen_expr_t;
 
