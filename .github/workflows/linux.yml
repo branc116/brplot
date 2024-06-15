@@ -14,80 +14,31 @@ permissions:
   contents: read
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ ubuntu-20.04, ubuntu-22.04, ubuntu-24.04 ]
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3.6.0
-      with:
-        submodules: true
-
-    - name: Setup Environment
-      run: | 
+    - uses: actions/checkout@v3.6.0
+    - run: | 
         sudo apt-get update -qq
         sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev gcc mingw-w64 clang
-
-    - name: Build brplot linux debug imgui gcc
-      run: |
-        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI COMPILER=GCC -B
-
-    - name: Build brplot linux debug raylib gcc
-      run: |
-        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB COMPILER=GCC -B
-
-    - name: Build brplot linux debug headless gcc
-      run: |
-        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS COMPILER=GCC -B
-        
-    - name: Build brplot linux release imgui gcc
-      run: |
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI COMPILER=GCC -B
-
-    - name: Build brplot linux release raylib gcc
-      run: |
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB COMPILER=GCC -B
-
-    - name: Build brplot linux release headless gcc
-      run: |
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS COMPILER=GCC -B
-
-    - name: Build brplot linux debug imgui clang
-      run: |
-        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI COMPILER=CLANG -B
-
-    - name: Build brplot linux debug raylib clang
-      run: |
-        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB COMPILER=CLANG -B
-
-    - name: Build brplot linux debug headless clang
-      run: |
-        make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS COMPILER=CLANG -B
-
-    - name: Build brplot linux release imgui clang
-      run: |
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI COMPILER=CLANG -B
-
-    - name: Build brplot linux release raylib clang
-      run: |
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB COMPILER=CLANG -B
-
-    - name: Build brplot linux release headless clang
-      run: |
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS COMPILER=CLANG -B
-
-    - name: Build brplot windows release imgui
-      run: |
-        make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=IMGUI -B
-
-    - name: Build brplot windows release raylib
-      run: |
-        make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=RAYLIB -B
-
-    - name: Build brplot windows release headless
-      run: |
-        make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=HEADLESS -B
-
-    - name: Run unit tests
-      run: |
+    - run: make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI COMPILER=GCC -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB COMPILER=GCC -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS COMPILER=GCC -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI COMPILER=GCC -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB COMPILER=GCC -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS COMPILER=GCC -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI COMPILER=CLANG -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB COMPILER=CLANG -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=HEADLESS COMPILER=CLANG -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=IMGUI COMPILER=CLANG -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=RAYLIB COMPILER=CLANG -B
+    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE GUI=HEADLESS COMPILER=CLANG -B
+    - run: make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=IMGUI -B
+    - run: make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=RAYLIB -B
+    - run: make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=HEADLESS -B
+    - run: |
         ./bin/brplot_imgui_linux_debug_gcc --unittest
         ./bin/brplot_raylib_linux_debug_gcc --unittest
         ./bin/brplot_headless_linux_debug_gcc --unittest
@@ -95,8 +46,7 @@ jobs:
         ./bin/brplot_raylib_linux_debug_clang --unittest
         ./bin/brplot_headless_linux_debug_clang --unittest
 
-    - name: Setup Emscripten
-      run: |
+    - run: |
         git clone https://github.com/emscripten-core/emsdk.git
         cd emsdk
         ./emsdk install latest
@@ -104,20 +54,14 @@ jobs:
         source ./emsdk_env.sh
         cd ..
 
-    - name: Build brplot web release imgui
-      run: |
-        make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=IMGUI -B
+    - run: make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=IMGUI -B
 
-    - name: Build brplot webrelease raylib
-      run: |
-        make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=RAYLIB -B
+    - run: make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=RAYLIB -B
 
-    - name: Build brplot web release headless
-      run: |
+    - run: |
         make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE GUI=HEADLESS -B
 
-    - name: Build Cache
-      run: |
+    - run: |
         make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=HEADLESS
         make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=RAYLIB
         make -j8 PLATFORM=WINDOWS CONFIG=RELEASE GUI=IMGUI
@@ -137,17 +81,14 @@ jobs:
         make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=RAYLIB COMPILER=CLANG
         make -j8 PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI COMPILER=CLANG
 
-    - name: Fuzz test
-      run: |
+    - run: |
         cat /dev/random | time bin/brplot_headless_linux_debug_gcc
         cat /dev/random | time bin/brplot_headless_linux_debug_clang
 
-    - name: Local CI
-      run: |
+    - run: |
         EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ ./tools/local_ci.sh
 
-    - name: Test artefacts
-      run: |
+    - run: |
         test -f www/index.wasm && ls -alFh www
         ls -alFh bin && strip bin/* && ls -alFh bin
         file bin/*

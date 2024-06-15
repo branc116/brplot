@@ -13,14 +13,14 @@ on:
 permissions:
   contents: read
 jobs:
-
   windows_vs:
-    runs-on: windows-latest
+    runs-on: ${{matrix.os}}
     strategy:
       matrix:
         arch: [ Win32, x64 ]
         config: [ Debug, Release ]
         gui: [ raylib, imgui, headless ]
+        os: [ windows-2019, windows-2022 ]
     steps:
       - uses: actions/checkout@v4
       - run: |

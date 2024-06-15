@@ -14,22 +14,19 @@ permissions:
   contents: read
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ macos-11, macos-12, macos-13, macos-14 ]
+        gui: [ raylib, imgui, headless ]
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3.6.0
-      with:
-        submodules: true
-
-    - name: Setup Zig
-      uses: goto-bus-stop/setup-zig@v2.2.0
+    - uses: actions/checkout@v3.6.0
+    - uses: goto-bus-stop/setup-zig@v2.2.0
       with:
         version: 0.12.0
         cache: true
-
-    - name: Build
-      run: |
+    - run: |
         ls
-        zig build -Doptimize=ReleaseSafe --summary all
+        zig build -Doptimize=ReleaseSafe -DGui=${{matrix.gui}} --summary all
         ls zig-out/bin
 
