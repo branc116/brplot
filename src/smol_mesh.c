@@ -1,6 +1,7 @@
 #include "br_smol_mesh.h"
 #include "br_plot.h"
 
+#define RAYMATH_STATIC_INLINE
 #include "raymath.h"
 #include "tracy/TracyC.h"
 

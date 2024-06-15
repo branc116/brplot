@@ -10,6 +10,7 @@
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
 #include "raylib.h"
+#define RAYMATH_STATIC_INLINE
 #include "raymath.h"
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop

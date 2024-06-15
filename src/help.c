@@ -2,6 +2,7 @@
 #include "br_help.h"
 #include "misc/default_font.h"
 
+#define RAYMATH_STATIC_INLINE
 #include "raylib.h"
 #include "raymath.h"
 

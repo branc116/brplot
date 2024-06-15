@@ -1,11 +1,14 @@
 #include "src/br_plot.h"
 #include "src/br_help.h"
-#include "stdbool.h"
-#include "stdio.h"
-#include "assert.h"
-#include <raylib.h>
-#include <raymath.h>
+
+#define RAYMATH_STATIC_INLINE
+#include "raylib.h"
+#include "raymath.h"
+
 #include <stdarg.h>
+#include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
 
 //int ui_draw_text_box(bool focused, float x, float y, float font_size, Vector2* size_out, char* str) {
 //  return 0;

@@ -1,11 +1,13 @@
 #include "src/br_plot.h"
 #include "src/br_gui_internal.h"
 #include "src/br_plotter.h"
-#include "raylib.h"
-#include "imgui.h"
-#include "rlgl.h"
+
+#define RAYMATH_STATIC_INLINE
 #include "external/glad.h"
+#include "imgui.h"
+#include "raylib.h"
 #include "raymath.h"
+#include "rlgl.h"
 
 extern "C" void br_hot_init(br_plotter_t* gv) {
   fprintf(stderr, "First call\n");

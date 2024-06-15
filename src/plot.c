@@ -3,6 +3,7 @@
 #include "br_gui_internal.h"
 #include "src/br_da.h"
 
+#define RAYMATH_STATIC_INLINE
 #include "raymath.h"
 #include "tracy/TracyC.h"
 
