@@ -5,6 +5,7 @@
 #include "br_plot.h"
 #include "br_pp.h"
 #include "br_resampling2.h"
+#include "br_str.h"
 
 #include "tracy/TracyC.h"
 #include "rlgl.h"
@@ -14,6 +15,8 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
+
+#define DEF_CAP 1024
 
 static br_data_t* br_data_init(br_data_t* g, int group_id, br_data_kind_t kind);
 static void br_data_push_point2(br_data_t* g, Vector2 v);
@@ -35,10 +38,37 @@ void br_data_construct(void) {
   base_colors[7] = DARKPURPLE;
 }
 
-BR_API void br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind) {
+BR_API br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind) {
   br_data_t data;
   br_data_init(&data, group_id, kind);
   br_da_push(*datas, data);
+  return &datas->arr[datas->len - 1];
+}
+
+BR_API br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, Color color, size_t cap, br_str_t name) {
+  BR_ASSERT(kind == br_data_kind_2d || kind == br_data_kind_3d);
+  br_data_t* ret = NULL;
+
+  cap = cap < DEF_CAP ? DEF_CAP : cap;
+  br_data_t d = {
+    .resampling = resampling2_malloc(kind),
+    .cap = cap, .len = 0, .kind = kind,
+    .group_id = group_id,
+    .color = color,
+    .name = name
+  };
+  if (NULL == d.resampling)                                                               goto error;
+  if (NULL == (d.dd.xs = BR_MALLOC(sizeof(float) * cap)))                                 goto error;
+  if (NULL == (d.dd.ys = BR_MALLOC(sizeof(float) * cap)))                                 goto error;
+  if (kind == br_data_kind_3d) if (NULL == (d.ddd.zs = BR_MALLOC(sizeof(Vector3) * cap))) goto error;
+  br_da_push(*datas, d);
+  ret = &datas->arr[datas->len - 1];
+  if (ret->group_id != group_id)                                                          goto error;
+  return ret;
+
+error:
+  br_data_deinit(&d);
+  return NULL;
 }
 
 BR_API void br_data_push_y(br_datas_t* pg_array, float y, int group) {
@@ -126,7 +156,7 @@ void br_data_export_csv(br_data_t const* pg, FILE* file) {
         fprintf(file, "%d,%zu,%f,%f,%f\n", pg->group_id, i, point.x, point.y, point.z);
         break;
       }
-      default: assert(0);
+      default: BR_ASSERT(0);
     }
   }
 }
@@ -161,18 +191,14 @@ void br_datas_export_csv(br_datas_t const* pg_array, FILE* file) {
 
 void br_datas_deinit(br_datas_t* arr) {
   if (arr->arr == NULL) return;
-  for (size_t i = 0; i < arr->len; ++i) {
-    br_data_deinit(&arr->arr[i]);
-  }
+  for (size_t i = 0; i < arr->len; ++i) br_data_deinit(&arr->arr[i]);
   arr->len = arr->cap = 0;
   BR_FREE(arr->arr);
   arr->arr = NULL;
 }
 
 BR_API void br_datas_empty(br_datas_t* pg) {
-  for (size_t i = 0; i < pg->len; ++i) {
-    br_data_empty(&pg->arr[i]);
-  }
+  for (size_t i = 0; i < pg->len; ++i) br_data_empty(&pg->arr[i]);
 }
 
 void br_datas_add_test_points(br_datas_t* pg) {
@@ -287,8 +313,9 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot) {
   }
 }
 
-#define DEF_CAP 1024
 static br_data_t* br_data_init(br_data_t* g, int group_id, br_data_kind_t kind) {
+  BR_ASSERT(kind == br_data_kind_2d || kind == br_data_kind_3d);
+
   *g = (br_data_t) {
     .resampling = resampling2_malloc(kind),
     .cap = DEF_CAP, .len = 0, .kind = kind,
@@ -297,23 +324,18 @@ static br_data_t* br_data_init(br_data_t* g, int group_id, br_data_kind_t kind) 
     .name = br_str_malloc(32),
     .is_new = true,
   };
-  switch (kind) {
-    case br_data_kind_3d:
-    {
-      g->ddd.zs = BR_MALLOC(sizeof(Vector3) * DEF_CAP);
-    } // PASSTROUGH
-    case br_data_kind_2d:
-    {
-      g->dd.xs = BR_MALLOC(sizeof(float) * DEF_CAP);
-      g->dd.ys = BR_MALLOC(sizeof(float) * DEF_CAP);
-    } break;
-    default: BR_ASSERT(0);
-  }
-  if (NULL != g->name.str) {
-    sprintf(g->name.str, "Data #%d", group_id);
-    g->name.len = (unsigned int)strlen(g->name.str);
-  }
+  if (NULL == g->name.str)                                                                     goto error;
+  if (NULL == g->resampling)                                                                   goto error;
+  if (NULL == (g->dd.xs = BR_MALLOC(sizeof(float) * DEF_CAP)))                                 goto error;
+  if (NULL == (g->dd.ys = BR_MALLOC(sizeof(float) * DEF_CAP)))                                 goto error;
+  if (kind == br_data_kind_3d) if (NULL == (g->ddd.zs = BR_MALLOC(sizeof(Vector3) * DEF_CAP))) goto error;
+  if (false == br_str_push_literal(&g->name, "Data #"))                                        goto error;
+  if (false == br_str_push_int(&g->name, group_id))                                            goto error;
   return g;
+
+error:
+  br_data_deinit(g);
+  return NULL;
 }
 
 Color br_data_get_default_color(int group_id) {
@@ -370,14 +392,14 @@ BR_API br_data_t* br_data_get(br_datas_t* pg, int group) {
 }
 
 BR_API br_data_t* br_data_get2(br_datas_t* pg, int group, br_data_kind_t kind) {
-  assert(pg);
+  BR_ASSERT(pg);
 
   // TODO: da
   if (pg->len == 0) {
     pg->arr = BR_MALLOC(sizeof(br_data_t));
     if (NULL == pg->arr) return NULL;
     br_data_t* ret = br_data_init(&pg->arr[0], group, kind);
-    if (ret->dd.xs == NULL) return NULL;
+    if (ret == NULL) return NULL;
     pg->cap = pg->len = 1;
     return ret;
   }
@@ -395,7 +417,7 @@ BR_API br_data_t* br_data_get2(br_datas_t* pg, int group, br_data_kind_t kind) {
     pg->cap = new_cap;
   }
   br_data_t* ret = br_data_init(&pg->arr[pg->len++], group, kind);
-  if (ret->dd.xs == NULL) {
+  if (NULL == ret) {
     --pg->len;
     return NULL;
   }
@@ -414,7 +436,7 @@ size_t br_data_element_size(br_data_kind_t kind) {
   switch (kind) {
     case br_data_kind_2d:      return sizeof(Vector2);
     case br_data_kind_3d:      return sizeof(Vector3);
-    default: assert(0); return 0;
+    default: BR_ASSERT(0); return 0;
   }
 }
 
@@ -440,22 +462,11 @@ static void br_data_push_point3(br_data_t* g, Vector3 v) {
 }
 
 static void br_data_deinit(br_data_t* g) {
-  // Free points
-  switch (g->kind) {
-    case br_data_kind_3d:
-    {
-      BR_FREE(g->ddd.zs);
-      g->ddd.zs = NULL;
-    } // PASSTROUGH
-    case br_data_kind_2d:
-    {
-      BR_FREE(g->dd.xs);
-      BR_FREE(g->dd.ys);
-      g->dd.xs = NULL;
-      g->dd.ys = NULL;
-    } break;
-    default: BR_ASSERT(0);
-  }
+  BR_ASSERT(g->kind == br_data_kind_2d || g->kind == br_data_kind_3d);
+
+  BR_FREE(g->dd.xs); g->dd.xs = NULL;
+  BR_FREE(g->dd.ys); g->dd.ys = NULL;
+  if (br_data_kind_3d == g->kind) BR_FREE(g->ddd.zs), g->ddd.zs = NULL;
   resampling2_free(g->resampling);
   br_str_free(g->name);
   g->len = g->cap = 0;

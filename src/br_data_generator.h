@@ -62,7 +62,7 @@ typedef struct br_plotter_t br_plotter_t;
 extern "C" {
 #endif
 void br_dagen_push_expr_xy(br_dagens_t* dagens, br_datas_t* datas, br_dagen_expr_t y, br_dagen_expr_t x, int group_id);
-bool br_dagen_push_file(br_dagens_t* dagens, br_data_t* temp_data, FILE* file);
+bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* temp_data, FILE* file);
 void br_dagens_handle(br_plotter_t* br, double until);
 #if defined(__cplusplus)
 }

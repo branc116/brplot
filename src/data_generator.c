@@ -91,60 +91,48 @@ void br_dagen_push_expr_xy(br_dagens_t* pg, br_datas_t* datas, br_dagen_expr_t x
   br_da_push(*pg, dagen);
 }
 
-bool br_dagen_push_file(br_dagens_t* dagens, br_data_t* temp_data, FILE* file) {
+bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* desc, FILE* file) {
   if (file == NULL) goto error;
   br_save_state_command_t command = br_save_state_command_save_plots;
   size_t data_left = 0;
+  br_data_kind_t kind;
+  Color color;
+  size_t cap;
 
   if (1 != fread(&command, sizeof(command), 1, file)) goto error;
   switch (command) {
-    case br_save_state_command_save_data_2d: temp_data->kind = br_data_kind_2d; break;
-    case br_save_state_command_save_data_3d: temp_data->kind = br_data_kind_3d; break;
+    case br_save_state_command_save_data_2d: kind = br_data_kind_2d; break;
+    case br_save_state_command_save_data_3d: kind = br_data_kind_3d; break;
     default: goto error;
   }
-  if (1 != fread(&temp_data->color, sizeof(temp_data->color), 1, file)) goto error;
-  if (1 != fread(&temp_data->cap, sizeof(temp_data->cap), 1, file)) goto error;
-  if (0 == temp_data->cap) {
-    temp_data->cap = 8;
-    switch (temp_data->kind) {
+  if (1 != fread(&color, sizeof(color), 1, file)) goto error;
+  if (1 != fread(&cap, sizeof(cap), 1, file)) goto error;
+
+  br_data_t* data = br_datas_create2(datas, desc->group_id, kind, color, cap, desc->name);
+  br_str_invalidata(desc->name);
+  if (NULL == data) goto error;
+
+  if (0 != cap) {
+    data_left = cap;
+    switch (kind) {
       case br_data_kind_2d: {
-        temp_data->dd.xs = BR_MALLOC(sizeof(float) * 8);
-        temp_data->dd.ys = BR_MALLOC(sizeof(float) * 8);
+        if (1 != fread(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file)) goto error;
       } break;
       case br_data_kind_3d: {
-        temp_data->ddd.xs = BR_MALLOC(sizeof(float) * 8);
-        temp_data->ddd.ys = BR_MALLOC(sizeof(float) * 8);
-        temp_data->ddd.zs = BR_MALLOC(sizeof(float) * 8);
-      } break;
-      default: BR_ASSERT(0);
-    }
-  } else {
-    data_left = temp_data->cap;
-    switch (temp_data->kind) {
-      case br_data_kind_2d: {
-        if (1 != fread(&temp_data->dd.bounding_box, sizeof(temp_data->dd.bounding_box), 1, file)) goto error;
-        if (NULL == (temp_data->dd.xs = BR_MALLOC(sizeof(float) * temp_data->cap))) goto error;
-        if (NULL == (temp_data->dd.ys = BR_MALLOC(sizeof(float) * temp_data->cap))) goto error;
-      } break;
-      case br_data_kind_3d: {
-        if (1 != fread(&temp_data->ddd.bounding_box, sizeof(temp_data->ddd.bounding_box), 1, file)) goto error;
-        if (NULL == (temp_data->ddd.xs = BR_MALLOC(sizeof(float) * temp_data->cap))) goto error;
-        if (NULL == (temp_data->ddd.ys = BR_MALLOC(sizeof(float) * temp_data->cap))) goto error;
-        if (NULL == (temp_data->ddd.zs = BR_MALLOC(sizeof(float) * temp_data->cap))) goto error;
+        if (1 != fread(&data->ddd.bounding_box, sizeof(data->ddd.bounding_box), 1, file)) goto error;
       } break;
       default: BR_ASSERT(0);
     }
   }
-  temp_data->resampling = resampling2_malloc(temp_data->kind);
   br_dagen_t new = {
-    .data_kind = temp_data->kind,
+    .data_kind = kind,
     .state = br_dagen_state_inprogress,
-    .group_id = temp_data->group_id,
+    .group_id = desc->group_id,
     .file = {
       .file = file,
       .x_left = data_left,
       .y_left = data_left,
-      .z_left = temp_data->kind == br_data_kind_2d ? 0 : data_left,
+      .z_left = kind == br_data_kind_2d ? 0 : data_left,
     }
   };
   br_da_push(*dagens, new);
