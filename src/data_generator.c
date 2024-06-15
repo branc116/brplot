@@ -86,20 +86,8 @@ void br_dagen_push_expr_xy(br_dagens_t* pg, br_datas_t* datas, br_dagen_expr_t x
       .y_expr = y
     }
   };
-  br_data_t data = {
-    .resampling = resampling2_malloc(br_data_kind_2d),
-    .cap = 0, .len = 0,
-    .kind = br_data_kind_2d,
-    .group_id = group,
-    .color = br_data_get_default_color(group),
-    .name = br_str_malloc(32),
-    .is_new = true,
-    .dd = {
-      .xs = BR_MALLOC(sizeof(float) * 1024),
-      .ys = BR_MALLOC(sizeof(float) * 1024),
-    }
-  };
-  br_da_push(*datas, data);
+
+  br_datas_create(datas, group, br_data_kind_2d);
   br_da_push(*pg, dagen);
 }
 
@@ -261,70 +249,3 @@ void br_dagens_handle(br_plotter_t* br, double until) {
     }
   }
 }
-
-#if 0
-static size_t br_data_expr_get_len(br_datas_t datas, br_data_expr_t expr) {
-  switch (expr.kind) {
-    case br_data_expr_kind_reference_x:
-    case br_data_expr_kind_reference_y:
-    case br_data_expr_kind_reference_z:
-      return br_data_get1(datas, expr.group_id)->len;
-    default:
-      assert(0);
-  }
-}
-
-static float br_data_get_x_at(br_data_t const* data, size_t i) {
-  switch(data->kind) {
-    case br_data_kind_2d: return data->dd.points[i].x;
-    case br_data_kind_3d: return data->ddd.points[i].x;
-    default: assert(0);
-  }
-}
-
-static float br_data_get_y_at(br_data_t const* data, size_t i) {
-  switch(data->kind) {
-    case br_data_kind_2d: return data->dd.points[i].y;
-    case br_data_kind_3d: return data->ddd.points[i].y;
-    default: assert(0);
-  }
-}
-
-static float br_data_get_z_at(br_data_t const* data, size_t i) {
-  switch(data->kind) {
-    case br_data_kind_3d: return data->ddd.points[i].x;
-    default: assert(0);
-  }
-}
-
-static float br_data_expr_get_at(br_datas_t datas, br_data_expr_t expr, size_t i) {
-  switch (expr.kind) {
-    case br_data_expr_kind_reference_x: return br_data_get_x_at(br_data_get1(datas, expr.group_id), i);
-    case br_data_expr_kind_reference_y: return br_data_get_y_at(br_data_get1(datas, expr.group_id), i);
-    case br_data_expr_kind_reference_z: return br_data_get_z_at(br_data_get1(datas, expr.group_id), i);
-    default: assert(0);
-  }
-}
-
-//void br_data_calcuate_expressions(br_datas_t datas, double until) {
-//  for (size_t i = 0; i < datas.len; ++i) {
-//    br_data_t* data = &datas.arr[i];
-//    switch (datas.arr[i].kind) {
-//      case br_data_kind_2d:
-//      case br_data_kind_3d:
-//        continue;
-//      case br_data_kind_expr_2d: {
-//        size_t x_len = br_data_expr_get_len(datas, data->expr_2d.x_expr);
-//        size_t y_len = br_data_expr_get_len(datas, data->expr_2d.y_expr);
-//        size_t len = x_len < y_len ? x_len : y_len;
-//        for (size_t i = data->len; i < len; ++i) {
-//          if (i % 1024 && GetTime() > until) return;
-//          Vector2 point = { br_data_expr_get_at(datas, data->expr_2d.x_expr, i), br_data_expr_get_at(datas, data->expr_2d.y_expr, i) };
-//          br_data_push_point2(data, point);
-//        }
-//      } break;
-//      default: assert(0);
-//    }
-//  }
-//}
-#endif

@@ -1,8 +1,10 @@
 #include "br_plot.h"
 #include "br_plotter.h"
-#include "stdbool.h"
+
 #include "raylib.h"
-#include "assert.h"
+
+#include <assert.h>
+#include <stdbool.h>
 
 typedef struct {
   bool ctrl, shift;

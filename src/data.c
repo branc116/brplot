@@ -1,8 +1,10 @@
-#include "br_plot.h"
-#include "br_resampling2.h"
-#include "br_gui_internal.h"
-#include "br_pp.h"
+#include "br_data.h"
+#include "br_da.h"
 #include "br_data_generator.h"
+#include "br_gui_internal.h"
+#include "br_plot.h"
+#include "br_pp.h"
+#include "br_resampling2.h"
 
 #include "tracy/TracyC.h"
 #include "rlgl.h"
@@ -31,6 +33,12 @@ void br_data_construct(void) {
   base_colors[5] = GOLD;
   base_colors[6] = VIOLET;
   base_colors[7] = DARKPURPLE;
+}
+
+BR_API void br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind) {
+  br_data_t data;
+  br_data_init(&data, group_id, kind);
+  br_da_push(*datas, data);
 }
 
 BR_API void br_data_push_y(br_datas_t* pg_array, float y, int group) {

@@ -13,3 +13,4 @@
 #endif
 
 void ISO_C_requires_a_translation_unit_to_contain_at_least_one_declaration_Wempty_translation_unit(void) {}
+
