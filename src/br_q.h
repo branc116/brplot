@@ -35,12 +35,12 @@ typedef struct q_command {
   union {
     float value;
     struct {
-      float x;
       int group;
+      float x;
     } push_point_x;
     struct {
-      float y;
       int group;
+      float y;
     } push_point_y;
     struct {
       int group;
@@ -88,6 +88,7 @@ bool q_push_safe(q_commands* q, q_command command);
 // If you know that only one thread writes to q us this, else use q_push_safe.
 bool q_push(q_commands* q, q_command command);
 q_command q_pop(q_commands* q);
+q_command q_peek(q_commands* q);
 
 void handle_all_commands(br_plotter_t* br, q_commands* commands);
 

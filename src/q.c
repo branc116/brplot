@@ -45,9 +45,27 @@ void q_free(q_commands* q) {
 
 void handle_all_commands(br_plotter_t* br, q_commands* commands) {
   while (1) {
-    q_command comm = q_pop(commands);
+    q_command comm = q_peek(commands);
     switch (comm.type) {
-      case q_command_none:          goto end;
+      case q_command_push_point_x:  
+      case q_command_push_point_y:  
+      case q_command_push_point_xy: 
+      case q_command_push_point_xyz: {
+        for (size_t i = 0; i < br->dagens.len; ++i) {
+          int group = comm.push_point_x.group;
+          if (br->dagens.arr[i].group_id == group) {
+            if (br->dagens.arr[i].kind == br_dagen_kind_file) return;
+            else if (br->dagens.arr[i].kind == br_dagen_kind_expr) {
+              LOGEF("Trying to push points to data grenerated by experession id: %d\n", group);
+            }
+          }
+        }
+      }
+      default: break;
+    }
+    comm = q_pop(commands);
+    switch (comm.type) {
+      case q_command_none:          return;
       case q_command_push_point_x:  br_data_push_x(&br->groups, comm.push_point_x.x, comm.push_point_y.group); break;
       case q_command_push_point_y:  br_data_push_y(&br->groups, comm.push_point_y.y, comm.push_point_y.group); break;
       case q_command_push_point_xy: br_data_push_xy(&br->groups, comm.push_point_xy.x, comm.push_point_xy.y, comm.push_point_xy.group); break;
@@ -62,10 +80,9 @@ void handle_all_commands(br_plotter_t* br, q_commands* commands) {
       case q_command_show:          BR_ASSERT(0);
       case q_command_set_name:      br_data_set_name(&br->groups, comm.set_quoted_str.group, comm.set_quoted_str.str);  break;
       case q_command_focus:         br_plots_focus_visible(br->plots, br->groups); break;
-      default:                      BR_ASSERT(false);
+      default:                      LOGEF("Unknown command(%zu,%zu): %d\n", commands->read_index, commands->write_index, comm.type); BR_ASSERT(false);
     }
   }
-  end: return;
 }
 
 #ifdef LOCK_T
@@ -92,3 +109,7 @@ q_command q_pop(q_commands* q) {
   return ret;
 }
 
+q_command q_peek(q_commands* q) {
+  if (q->write_index == q->read_index) return (q_command) { .type = q_command_none };
+  return q->commands[q->read_index];
+}

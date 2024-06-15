@@ -57,13 +57,13 @@ BR_API br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind
     .color = color,
     .name = name
   };
-  if (NULL == d.resampling)                                                               goto error;
-  if (NULL == (d.dd.xs = BR_MALLOC(sizeof(float) * cap)))                                 goto error;
-  if (NULL == (d.dd.ys = BR_MALLOC(sizeof(float) * cap)))                                 goto error;
-  if (kind == br_data_kind_3d) if (NULL == (d.ddd.zs = BR_MALLOC(sizeof(Vector3) * cap))) goto error;
+  if (NULL == d.resampling)                                                             goto error;
+  if (NULL == (d.dd.xs = BR_MALLOC(sizeof(float) * cap)))                               goto error;
+  if (NULL == (d.dd.ys = BR_MALLOC(sizeof(float) * cap)))                               goto error;
+  if (kind == br_data_kind_3d) if (NULL == (d.ddd.zs = BR_MALLOC(sizeof(float) * cap))) goto error;
   br_da_push(*datas, d);
   ret = &datas->arr[datas->len - 1];
-  if (ret->group_id != group_id)                                                          goto error;
+  if (ret->group_id != group_id)                                                        goto error;
   return ret;
 
 error:
