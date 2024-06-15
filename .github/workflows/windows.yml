@@ -6,7 +6,7 @@ on:
     paths:
       - 'src/**'
       - 'tools/**'
-      - '.github/workflows/linux.yml'
+      - '.github/workflows/windows.yml'
       - 'external/**'
       - 'Makefile'
 
@@ -24,11 +24,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-        cmake -S. -B build `
-        -D CMAKE_BUILD_TYPE=${{matrix.config}} `
-        -D GUI=${{matrix.gui}} `
-        -A ${{ matrix.arch }} `
-        -D BUILD_WERROR=ON
+          cmake -S. -B build `
+          -D CMAKE_BUILD_TYPE=${{matrix.config}} `
+          -D GUI=${{matrix.gui}} `
+          -A ${{ matrix.arch }} `
+          -D BUILD_WERROR=ON
       - run: cmake --build build/ --config ${{matrix.config}}
       - run: cmake --install build --prefix build/install --config ${{matrix.config}}
 
