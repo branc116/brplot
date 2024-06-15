@@ -8,7 +8,8 @@ on:
       - 'tools/**'
       - '.github/workflows/windows.yml'
       - 'external/**'
-      - 'Makefile'
+      - 'CMakeLists.txt'
+      - 'build.zig'
 
 permissions:
   contents: read
@@ -22,7 +23,7 @@ jobs:
         gui: [ raylib, imgui, headless ]
         os: [ windows-2019, windows-2022 ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - run: |
           cmake -S. -B build `
           -D CMAKE_BUILD_TYPE=${{matrix.config}} `
@@ -36,7 +37,7 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v3.6.0
+      uses: actions/checkout@v4.1.7
 
     - name: Setup Zig
       uses: goto-bus-stop/setup-zig@v2.2.0

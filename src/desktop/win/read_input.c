@@ -8,8 +8,8 @@ typedef struct br_plotter_t br_plotter_t;
 static void* thandle;
 
 void read_input_main_worker(br_plotter_t* br);
-unsigned long read_input_indirect(void* gv) {
-  read_input_main_worker((br_plotter_t*)gv);
+DWORD read_input_indirect(LPVOID lpThreadParameter) {
+  read_input_main_worker((br_plotter_t*)lpThreadParameter);
   return 0;
 }
 

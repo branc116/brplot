@@ -75,7 +75,7 @@ ifeq ($(PLATFORM), LINUX)
 	  SOURCE+= $(RL)/rglfw.c
 		COMMONFLAGS+= -Iexternal/glfw/include -D_GLFW_WAYLAND  -I/home/branimir/Documents/github.com/glfw/glfw/build/src
 	else ifeq ($(BACKEND), GLFW)
-		LIBS= `pkg-config --static --libs glfw3` -lGL
+		LIBS= `pkg-config --static --libs glfw3` -lGL -pthread
 	endif
 	COMMONFLAGS+= -DLINUX=1 -DPLATFORM_DESKTOP=1
 	SHADERS_HEADER= src/misc/shaders.h
@@ -169,7 +169,7 @@ $(shell test -d $(dir $(OUTPUT)) || mkdir $(dir $(OUTPUT)))
 $(shell test -d bin || mkdir bin)
 
 $(OUTPUT): $(OBJS)
-	$(CXX) $(COMMONFLAGS) $(LD_FLAGS) -o $@ $(LIBS) $(OBJS) $(LIBS)
+	$(CXX) $(COMMONFLAGS) $(LD_FLAGS) -o $@ $(OBJS) $(LIBS)
 	ln -fs $@ brplot
 
 $(PREFIX_BUILD)/src/%.o:src/%.c

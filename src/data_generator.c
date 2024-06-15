@@ -11,7 +11,7 @@
 #include <string.h>
 
 inline static size_t min_s(size_t a, size_t b) { return a < b ? a : b; }
-static size_t br_dagen_expr_add_to(br_datas_t datas, br_dagen_expr_t* expr, size_t offset, size_t n, float data[n]) {
+static size_t br_dagen_expr_add_to(br_datas_t datas, br_dagen_expr_t* expr, size_t offset, size_t n, float* data) {
   if (expr->kind == br_dagen_expr_kind_add) {
     size_t read = br_dagen_expr_add_to(datas, expr->operands.op1, offset, n, data);
     read = br_dagen_expr_add_to(datas, expr->operands.op1, offset, read, data);
@@ -34,7 +34,7 @@ static size_t br_dagen_expr_add_to(br_datas_t datas, br_dagen_expr_t* expr, size
   return real_n;
 }
 
-static size_t br_dagen_expr_read_n(br_datas_t datas, br_dagen_expr_t* expr, size_t offset, size_t n, float data[n]) {
+static size_t br_dagen_expr_read_n(br_datas_t datas, br_dagen_expr_t* expr, size_t offset, size_t n, float* data) {
   if (expr->kind == br_dagen_expr_kind_add) {
     size_t read = br_dagen_expr_read_n(datas, expr->operands.op1, offset, n, data); 
     size_t added = br_dagen_expr_add_to(datas, expr, offset, read, data);
