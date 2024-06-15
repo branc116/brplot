@@ -14,7 +14,7 @@ permissions:
   contents: read
 jobs:
   build:
-    runs-on: ${{matrix.os}}
+    runs-on: ${{matrix.os.name}}
     strategy:
       matrix:
         os: [ {name: ubuntu-20.04, lto: NO}, {name: ubuntu-22.04, lto: YES}, {name: ubuntu-24.04, lto: YES} ]
