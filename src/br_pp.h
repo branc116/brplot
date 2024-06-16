@@ -94,4 +94,8 @@ void  br_imgui_free(void* p, void* user_data);
 
 #if defined(_MSC_VER)
 #  define ssize_t long long int
+#  define TEST_ONLY
+#else
+#  define TEST_ONLY __attribute_maybe_unused__
 #endif
+

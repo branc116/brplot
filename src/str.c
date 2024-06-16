@@ -205,6 +205,13 @@ br_strv_t br_strv_from_c_str(const char* s) {
   return (br_strv_t) { .str = s, .len = (unsigned int)strlen((s)) };
 }
 
+int br_strv_to_int(br_strv_t str) {
+  static char buff[32];
+  int len = sprintf(buff, "%.*s", str.len, str.str);
+  buff[len] = '\0';
+  return atoi(buff);
+}
+
 #ifndef _MSC_VER
 #include "misc/tests.h"
 TEST_CASE(str_tests) {

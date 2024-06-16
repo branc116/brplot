@@ -45,6 +45,7 @@ bool       br_strv_eq(br_strv_t s1, br_strv_t s2);
 char*      br_strv_to_c_str(br_strv_t s);
 void       br_strv_to_c_str1(br_strv_t s, char* out_s);
 br_strv_t  br_strv_from_c_str(const char* s);
+int        br_strv_to_int(br_strv_t str);
 
 #ifdef __cplusplus
 }

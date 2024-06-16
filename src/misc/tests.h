@@ -228,5 +228,6 @@ static inline void __attribute__((constructor(1002))) run_tests(void) {
   (void)(a);                      \
   (void)(b);                      \
   (void)(len)
+#define TEST_TRUE(a) (void)a      \
 
 #endif

@@ -40,9 +40,14 @@ void br_data_construct(void) {
 
 BR_API br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind) {
   br_data_t data;
-  br_data_init(&data, group_id, kind);
+  if (NULL == br_data_init(&data, group_id, kind)) return NULL;
+  size_t index = datas->len;
   br_da_push(*datas, data);
-  return &datas->arr[datas->len - 1];
+  if (index == datas->len) {
+    br_data_deinit(&data);
+    return NULL;
+  }
+  return &datas->arr[index];
 }
 
 BR_API br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, Color color, size_t cap, br_str_t name) {
