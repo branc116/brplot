@@ -34,7 +34,7 @@ SOURCE             = src/main.c src/help.c src/data.c src/smol_mesh.c src/q.c sr
 										 src/plot.c src/permastate.c src/filesystem.c src/filesystem++.cpp src/gui.c src/gui++.cpp \
 										 src/data_generator.c
 COMMONFLAGS        = -I. -I./external/glfw/include/ -I./external/Tracy -I$(RL) -MMD -MP 
-WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra
+WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra -Wshadow
 LD_FLAGS           =
 
 ifeq ($(PLATFORM)_$(COMPILER), LINUX_CLANG)
