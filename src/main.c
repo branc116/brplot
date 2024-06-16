@@ -33,7 +33,7 @@ int main_gui(br_plotter_t* gv) {
   while(!WindowShouldClose() && !gv->should_close) {
     TracyCFrameMark;
     br_plotter_draw(gv);
-    br_dagens_handle(gv, GetTime() + 0.010);
+    br_dagens_handle(&gv->groups, &gv->dagens, &gv->plots, GetTime() + 0.010);
     TracyCFrameMarkStart("plotter_frame_end");
     br_plotter_frame_end(gv);
     TracyCFrameMarkEnd("plotter_frame_end");

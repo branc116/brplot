@@ -192,9 +192,7 @@ void br_datas_export_csv(br_datas_t const* pg_array, FILE* file) {
 void br_datas_deinit(br_datas_t* arr) {
   if (arr->arr == NULL) return;
   for (size_t i = 0; i < arr->len; ++i) br_data_deinit(&arr->arr[i]);
-  arr->len = arr->cap = 0;
-  BR_FREE(arr->arr);
-  arr->arr = NULL;
+  br_da_free(*arr);
 }
 
 BR_API void br_datas_empty(br_datas_t* pg) {

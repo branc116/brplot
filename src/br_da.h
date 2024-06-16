@@ -43,9 +43,9 @@ extern "C" {
 #define br_da_push(ARR, VALUE) br_da_push_t(size_t, ARR, VALUE)
 
 #define br_da_free(ARR) do { \
-  BR_FREE(ARR.arr);          \
-  ARR.arr = NULL;            \
-  ARR.len = ARR.cap = 0;     \
+  BR_FREE((ARR).arr);        \
+  (ARR).arr = NULL;          \
+  (ARR).len = (ARR).cap = 0; \
 } while(0)
 
 #define br_da_remove_n_at_t(T, ARR, N, I) do {                                    \

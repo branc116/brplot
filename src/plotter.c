@@ -158,20 +158,13 @@ int br_plotter_add_plot_3d(br_plotter_t* br) {
 
 BR_API void br_plotter_free(br_plotter_t* gv) {
   br_shaders_free(gv->shaders);
-  for (size_t i = 0; i < gv->groups.len; ++i) {
-    br_datas_deinit(&gv->groups);
-  }
+  br_datas_deinit(&gv->groups);
   q_free(gv->commands);
   for (int i = 0; i < gv->plots.len; ++i) {
     BR_FREE(gv->plots.arr[i].groups_to_show.arr);
   }
   BR_FREE(gv->plots.arr);
-  for (size_t i = 0; i < gv->dagens.len; ++i) {
-    if (gv->dagens.arr[i].kind == br_dagen_kind_file) {
-      fclose(gv->dagens.arr[i].file.file);
-    }
-  }
-  BR_FREE(gv->dagens.arr);
+  br_dagens_free(&gv->dagens);
 }
 
 void br_plotter_update_variables(br_plotter_t* br) {

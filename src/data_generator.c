@@ -1,20 +1,86 @@
 #include "br_data_generator.h"
+#include "br_da.h"
 #include "br_data.h"
 #include "br_permastate.h"
-#include "br_da.h"
+#include "br_plot.h"
 #include "br_pp.h"
-#include "br_plotter.h"
 #include "br_resampling2.h"
 
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
 
+#define MAX_BATCH_LEN (16*1024)
+
+typedef struct {
+  float** arr;
+  size_t len, cap;
+  size_t max_len;
+} batches_t;
+static batches_t batches;
+
+static float* push_batch(void) {
+  if (batches.len < batches.max_len) return batches.arr[batches.len++];
+  float* batch = BR_MALLOC(sizeof(float) * MAX_BATCH_LEN);
+  br_da_push(batches, batch);
+  batches.max_len = batches.len;
+  return batch;
+}
+
+static void pop_batch(void) {
+  --batches.len;
+}
+
+
+static size_t br_dagen_expr_add_to(br_datas_t datas, br_dagen_expr_t* expr, size_t offset, size_t n, float* data);
+static size_t br_dagen_expr_mul_to(br_datas_t datas, br_dagen_expr_t* expr, size_t offset, size_t n, float* data);
+static size_t br_dagen_expr_read_n(br_datas_t datas, br_dagen_expr_t* expr, size_t offset, size_t n, float* data);
 inline static size_t min_s(size_t a, size_t b) { return a < b ? a : b; }
+
+static size_t br_dagen_expr_mul_to(br_datas_t datas, br_dagen_expr_t* expr, size_t offset, size_t n, float* data) {
+  if (expr->kind == br_dagen_expr_kind_add) {
+    float* new_batch = push_batch();
+    size_t read = br_dagen_expr_read_n(datas, expr->operands.op1, offset, n, new_batch);
+    read = br_dagen_expr_add_to(datas, expr->operands.op2, offset, read, new_batch);
+    for (size_t i = 0; i < read; ++i) data[i] *= new_batch[i];
+    pop_batch();
+    return read;
+  }
+
+  if (expr->kind == br_dagen_expr_kind_mul) {
+    size_t read = br_dagen_expr_mul_to(datas, expr->operands.op1, offset, n, data);
+    read = br_dagen_expr_mul_to(datas, expr->operands.op2, offset, read, data);
+    return read;
+  }
+
+  br_data_t* data_in = br_data_get1(datas, expr->group_id);
+  if (data_in == NULL) return 0;
+  float* fs = NULL;
+  size_t real_n = (offset + n > data_in->len) ? data_in->len - offset : n;
+  switch (expr->kind) {
+    case br_dagen_expr_kind_reference_x: fs = &data_in->dd.xs[offset]; break;
+    case br_dagen_expr_kind_reference_y: fs = &data_in->dd.ys[offset]; break;
+    case br_dagen_expr_kind_reference_z: fs = &data_in->ddd.zs[offset]; break;
+    default: BR_ASSERT(0);
+  }
+  for (size_t i = 0; i < real_n; ++i) {
+    data[i] *= fs[i];
+  }
+  return real_n;
+}
+
 static size_t br_dagen_expr_add_to(br_datas_t datas, br_dagen_expr_t* expr, size_t offset, size_t n, float* data) {
   if (expr->kind == br_dagen_expr_kind_add) {
     size_t read = br_dagen_expr_add_to(datas, expr->operands.op1, offset, n, data);
-    read = br_dagen_expr_add_to(datas, expr->operands.op1, offset, read, data);
+    read = br_dagen_expr_add_to(datas, expr->operands.op2, offset, read, data);
+    return read;
+  }
+
+  if (expr->kind == br_dagen_expr_kind_mul) {
+    float* batch = push_batch();
+    size_t read = br_dagen_expr_read_n(datas, expr->operands.op1, offset, n, batch);
+    read = br_dagen_expr_mul_to(datas, expr->operands.op2, offset, read, batch);
+    for (size_t i = 0; i < read; ++i) data[i] += batch[i];
     return read;
   }
 
@@ -36,8 +102,14 @@ static size_t br_dagen_expr_add_to(br_datas_t datas, br_dagen_expr_t* expr, size
 
 static size_t br_dagen_expr_read_n(br_datas_t datas, br_dagen_expr_t* expr, size_t offset, size_t n, float* data) {
   if (expr->kind == br_dagen_expr_kind_add) {
-    size_t read = br_dagen_expr_read_n(datas, expr->operands.op1, offset, n, data); 
-    size_t added = br_dagen_expr_add_to(datas, expr, offset, read, data);
+    size_t read = br_dagen_expr_read_n(datas, expr->operands.op1, offset, n, data);
+    size_t added = br_dagen_expr_add_to(datas, expr->operands.op2, offset, read, data);
+    return added;
+  }
+
+  if (expr->kind == br_dagen_expr_kind_mul) {
+    size_t read = br_dagen_expr_read_n(datas, expr->operands.op1, offset, n, data);
+    size_t added = br_dagen_expr_mul_to(datas, expr->operands.op2, offset, read, data);
     return added;
   }
 
@@ -55,15 +127,16 @@ static size_t br_dagen_expr_read_n(br_datas_t datas, br_dagen_expr_t* expr, size
 
 static size_t br_dagen_expr_len(br_datas_t datas, br_dagen_expr_t* expr) {
   switch (expr->kind) {
-    case br_dagen_expr_kind_reference_x: 
-    case br_dagen_expr_kind_reference_y: 
-    case br_dagen_expr_kind_reference_z: 
+    case br_dagen_expr_kind_reference_x:
+    case br_dagen_expr_kind_reference_y:
+    case br_dagen_expr_kind_reference_z:
     {
       br_data_t* data_in = br_data_get1(datas, expr->group_id);
       if (NULL == data_in) return 0;
       return data_in->len;
     }
     case br_dagen_expr_kind_add:
+    case br_dagen_expr_kind_mul:
     {
       return min_s(br_dagen_expr_len(datas, expr->operands.op1), br_dagen_expr_len(datas, expr->operands.op2));
     }
@@ -190,7 +263,7 @@ error:
         case br_data_kind_2d:
         {
           size_t read_index = data->len;
-          size_t read_per_batch = 16*1024;
+          size_t read_per_batch = MAX_BATCH_LEN;
           size_t x_len = br_dagen_expr_len(datas, &dagen->expr_2d.x_expr);
           size_t y_len = br_dagen_expr_len(datas, &dagen->expr_2d.y_expr);
           size_t min_len = x_len < y_len ? x_len : y_len;
@@ -217,23 +290,186 @@ error:
   }
 }
 
-void br_dagens_handle(br_plotter_t* br, double until) {
-  while (GetTime() < until) {
-    for (size_t i = 0; i < br->dagens.len;) {
-      br_dagen_t* cur = &br->dagens.arr[i]; 
-      br_data_t* d = br_data_get1(br->groups, cur->group_id);
-      if (NULL == cur || NULL == d) cur->state = br_dagen_state_failed;
-      else br_dagen_handle(cur, d, br->groups);
-      switch (cur->state) {
-        case br_dagen_state_failed: {
-          br_data_clear(&br->groups, &br->plots, d->group_id); 
-          br_da_remove_at(br->dagens, i);
-        } break;
-        case br_dagen_state_finished: br_da_remove_at(br->dagens, i); break;
-        case br_dagen_state_inprogress: ++i; break;
-        default: BR_ASSERT(0);
-      }
-      if (GetTime() > until) return;
+static void br_dagens_handle_once(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots) {
+  for (size_t i = 0; i < dagens->len;) {
+    br_dagen_t* cur = &dagens->arr[i];
+    br_data_t* d = br_data_get1(*datas, cur->group_id);
+    if (NULL == cur || NULL == d) cur->state = br_dagen_state_failed;
+    else br_dagen_handle(cur, d, *datas);
+    switch (cur->state) {
+      case br_dagen_state_failed: {
+        br_data_clear(datas, plots, d->group_id);
+        br_da_remove_at(*dagens, i);
+      } break;
+      case br_dagen_state_finished: br_da_remove_at(*dagens, i); break;
+      case br_dagen_state_inprogress: ++i; break;
+      default: BR_ASSERT(0);
     }
   }
 }
+
+void br_dagens_handle(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots, double until) {
+  while (GetTime() < until) br_dagens_handle_once(datas, dagens, plots);
+}
+
+void br_dagens_free(br_dagens_t* dagens) {
+  for (size_t i = 0; i < dagens->len; ++i) if (dagens->arr[i].kind == br_dagen_kind_file)
+    fclose(dagens->arr[i].file.file);
+  br_da_free(*dagens);
+  for (size_t i = 0; i < batches.max_len; ++i) {
+    BR_FREE(batches.arr[i]);
+  }
+  br_da_free(batches);
+  batches.max_len = 0;
+}
+
+#ifndef _MSC_VER
+#include "misc/tests.h"
+
+#define INIT \
+  br_datas_t datas = {0}; \
+  br_dagens_t dagens = {0}; \
+  br_plots_t plots = {0};
+
+#define FREE \
+  br_datas_deinit(&datas); \
+  br_dagens_free(&dagens);
+
+TEST_CASE(dagen_simple_reference_x) {
+  INIT
+  br_data_push_xy(&datas, 10.f, 20.f, 0);
+  br_dagen_expr_t expr = { .kind = br_dagen_expr_kind_reference_x, .group_id = 0 };
+  br_dagen_push_expr_xy(&dagens, &datas, expr, expr, 1);
+  br_dagens_handle_once(&datas, &dagens, &plots);
+
+  br_data_t* res = br_data_get1(datas, 1);
+  TEST_EQUAL(res->len, 1);
+  TEST_EQUAL(res->kind, br_data_kind_2d);
+  TEST_EQUAL(res->dd.xs[0], 10.f);
+  TEST_EQUAL(res->dd.ys[0], 10.f);
+
+  FREE
+}
+
+TEST_CASE(dagen_simple_reference_y) {
+  INIT
+  br_data_push_xy(&datas, 10.f, 20.f, 0);
+  br_dagen_expr_t expr = { .kind = br_dagen_expr_kind_reference_y, .group_id = 0 };
+  br_dagen_push_expr_xy(&dagens, &datas, expr, expr, 1);
+  br_dagens_handle_once(&datas, &dagens, &plots);
+
+  br_data_t* res = br_data_get1(datas, 1);
+  TEST_EQUAL(res->len, 1);
+  TEST_EQUAL(res->kind, br_data_kind_2d);
+  TEST_EQUAL(res->dd.xs[0], 20.f);
+  TEST_EQUAL(res->dd.ys[0], 20.f);
+
+  FREE
+}
+
+TEST_CASE(dagen_simple_reference_z) {
+  INIT
+  br_data_push_xyz(&datas, 10.f, 20.f, 30.f, 0);
+  br_dagen_expr_t expr = { .kind = br_dagen_expr_kind_reference_z, .group_id = 0 };
+  br_dagen_push_expr_xy(&dagens, &datas, expr, expr, 1);
+  br_dagens_handle_once(&datas, &dagens, &plots);
+
+  br_data_t* res = br_data_get1(datas, 1);
+  TEST_EQUAL(res->len, 1);
+  TEST_EQUAL(res->kind, br_data_kind_2d);
+  TEST_EQUAL(res->dd.xs[0], 30.f);
+  TEST_EQUAL(res->dd.ys[0], 30.f);
+
+  FREE
+}
+
+TEST_CASE(dagen_buffer_overflow) {
+  INIT
+  for (int i = 0; i < MAX_BATCH_LEN + 1; ++i) br_data_push_xyz(&datas, 10.f, 20.f, 30.f, 0);
+  br_dagen_expr_t exprx = { .kind = br_dagen_expr_kind_reference_x, .group_id = 0 };
+  br_dagen_expr_t expry = { .kind = br_dagen_expr_kind_reference_z, .group_id = 0 };
+  br_dagen_push_expr_xy(&dagens, &datas, exprx, expry, 1);
+  br_dagens_handle_once(&datas, &dagens, &plots);
+
+  br_data_t* res = br_data_get1(datas, 1);
+  TEST_EQUAL(res->len, MAX_BATCH_LEN);
+  TEST_EQUAL(res->kind, br_data_kind_2d);
+  for (size_t i = 0; i < res->len; ++i) TEST_EQUAL(res->dd.xs[0], 10.f);
+  for (size_t i = 0; i < res->len; ++i) TEST_EQUAL(res->dd.ys[0], 30.f);
+
+  br_dagens_handle_once(&datas, &dagens, &plots);
+  TEST_EQUAL(res->len, MAX_BATCH_LEN + 1);
+  FREE
+}
+
+TEST_CASE(dagen_add) {
+  INIT
+  br_data_push_xyz(&datas, 10.f, 20.f, 30.f, 0);
+  br_dagen_expr_t expr_rx = { .kind = br_dagen_expr_kind_reference_x, .group_id = 0 };
+  br_dagen_expr_t expr_rz = { .kind = br_dagen_expr_kind_reference_z, .group_id = 0 };
+  br_dagen_expr_t expr_add = { .kind = br_dagen_expr_kind_add, .operands = { .op1 = &expr_rx, .op2 = &expr_rz } };
+  br_dagen_push_expr_xy(&dagens, &datas, expr_rx, expr_add, 1);
+  br_dagens_handle_once(&datas, &dagens, &plots);
+
+  br_data_t* res = br_data_get1(datas, 1);
+  TEST_EQUAL(res->len, 1);
+  TEST_EQUAL(res->kind, br_data_kind_2d);
+  TEST_EQUAL(res->dd.xs[0], 10.f);
+  TEST_EQUAL(res->dd.ys[0], 10.f + 30.f);
+  FREE
+}
+
+TEST_CASE(dagen_mul) {
+  INIT
+  br_data_push_xyz(&datas, 10.f, 20.f, 30.f, 0);
+  br_dagen_expr_t expr_rx = { .kind = br_dagen_expr_kind_reference_x, .group_id = 0 };
+  br_dagen_expr_t expr_rz = { .kind = br_dagen_expr_kind_reference_z, .group_id = 0 };
+  br_dagen_expr_t expr_mul = { .kind = br_dagen_expr_kind_mul, .operands = { .op1 = &expr_rx, .op2 = &expr_rz } };
+  br_dagen_push_expr_xy(&dagens, &datas, expr_rx, expr_mul, 1);
+  br_dagens_handle_once(&datas, &dagens, &plots);
+
+  br_data_t* res = br_data_get1(datas, 1);
+  TEST_EQUAL(res->len, 1);
+  TEST_EQUAL(res->kind, br_data_kind_2d);
+  TEST_EQUAL(res->dd.xs[0], 10.f);
+  TEST_EQUAL(res->dd.ys[0], 10.f * 30.f);
+  FREE
+}
+
+TEST_CASE(dagen_mul_add) {
+  INIT
+  br_data_push_xyz(&datas, 10.f, 20.f, 30.f, 0);
+  br_dagen_expr_t expr_rx = { .kind = br_dagen_expr_kind_reference_x, .group_id = 0 };
+  br_dagen_expr_t expr_rz = { .kind = br_dagen_expr_kind_reference_z, .group_id = 0 };
+  br_dagen_expr_t expr_add = { .kind = br_dagen_expr_kind_add, .operands = { .op1 = &expr_rx, .op2 = &expr_rz } };
+  br_dagen_expr_t expr_mul = { .kind = br_dagen_expr_kind_mul, .operands = { .op1 = &expr_add, .op2 = &expr_add } };
+  br_dagen_push_expr_xy(&dagens, &datas, expr_rx, expr_mul, 1);
+  br_dagens_handle_once(&datas, &dagens, &plots);
+
+  br_data_t* res = br_data_get1(datas, 1);
+  TEST_EQUAL(res->len, 1);
+  TEST_EQUAL(res->kind, br_data_kind_2d);
+  TEST_EQUAL(res->dd.xs[0], 10.f);
+  TEST_EQUAL(res->dd.ys[0], (10.f + 30.f) * (10.f + 30.f));
+  FREE
+}
+
+TEST_CASE(dagen_add_mul) {
+  INIT
+  br_data_push_xyz(&datas, 10.f, 20.f, 30.f, 0);
+  br_dagen_expr_t expr_rx = { .kind = br_dagen_expr_kind_reference_x, .group_id = 0 };
+  br_dagen_expr_t expr_rz = { .kind = br_dagen_expr_kind_reference_z, .group_id = 0 };
+  br_dagen_expr_t expr_mul = { .kind = br_dagen_expr_kind_mul, .operands = { .op1 = &expr_rx, .op2 = &expr_rz } };
+  br_dagen_expr_t expr_add = { .kind = br_dagen_expr_kind_add, .operands = { .op1 = &expr_mul, .op2 = &expr_mul } };
+  br_dagen_push_expr_xy(&dagens, &datas, expr_mul, expr_add, 1);
+  br_dagens_handle_once(&datas, &dagens, &plots);
+
+  br_data_t* res = br_data_get1(datas, 1);
+  TEST_EQUAL(res->len, 1);
+  TEST_EQUAL(res->kind, br_data_kind_2d);
+  TEST_EQUAL(res->dd.xs[0], 10.f * 30.f);
+  TEST_EQUAL(res->dd.ys[0], (10.f * 30.f) + (10.f * 30.f));
+  FREE
+}
+
+#endif

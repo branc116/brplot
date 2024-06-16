@@ -22,7 +22,8 @@ typedef enum {
   br_dagen_expr_kind_reference_x,
   br_dagen_expr_kind_reference_y,
   br_dagen_expr_kind_reference_z,
-  br_dagen_expr_kind_add
+  br_dagen_expr_kind_add,
+  br_dagen_expr_kind_mul,
 } br_dagen_expr_kind_t;
 
 typedef struct br_dagen_expr_t {
@@ -63,7 +64,8 @@ extern "C" {
 #endif
 void br_dagen_push_expr_xy(br_dagens_t* dagens, br_datas_t* datas, br_dagen_expr_t y, br_dagen_expr_t x, int group_id);
 bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* temp_data, FILE* file);
-void br_dagens_handle(br_plotter_t* br, double until);
+void br_dagens_handle(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots, double until);
+void br_dagens_free(br_dagens_t* dagens);
 #if defined(__cplusplus)
 }
 #endif
