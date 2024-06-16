@@ -396,7 +396,7 @@ push_token:
 
 void br_dagens_add_expr_str(br_dagens_t* dagens, br_strv_t str) {
   tokens_t tokens = {0};
-  br_dagen_exprs_t exprs;
+  br_dagen_exprs_t arena;
   expr_get_tokens(&tokens, str);
 }
 
