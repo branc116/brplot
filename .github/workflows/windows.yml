@@ -18,7 +18,6 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        arch: [ Win32, x64 ]
         config: [ Debug, Release ]
         gui: [ raylib, imgui, headless ]
         os: [ windows-2019, windows-2022 ]
@@ -28,7 +27,6 @@ jobs:
           cmake -S. -B build `
           -D CMAKE_BUILD_TYPE=${{matrix.config}} `
           -D GUI=${{matrix.gui}} `
-          -A ${{ matrix.arch }} `
       - run: cmake --build build/
 
   build:
