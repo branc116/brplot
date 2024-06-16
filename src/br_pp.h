@@ -96,6 +96,6 @@ void  br_imgui_free(void* p, void* user_data);
 #  define ssize_t long long int
 #  define TEST_ONLY
 #else
-#  define TEST_ONLY __attribute_maybe_unused__
+#  define TEST_ONLY __attribute__((__unused__))
 #endif
 

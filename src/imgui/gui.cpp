@@ -53,7 +53,6 @@ static int screenshot_file_save = 0;
 static struct br_file_saver_s* fs = nullptr;
 
 static ImVec4 clear_color = ImVec4(.0f, .0f, .0f, 1.00f);
-static float padding = 50.f;
 
 static GLFWwindow* ctx;
 
@@ -122,6 +121,7 @@ void graph_draw_min(br_datas_t groups, br_plot_t* plot, float posx, float posy, 
 }
 
 extern "C" void br_plotter_draw(br_plotter_t* gv) {
+  static float padding = 50.f;
 #if !defined(RELEASE) && defined(__linux__)
   if (gv->hot_state.is_init_called == false && gv->hot_state.func_init != nullptr) {
     pthread_mutex_lock(&gv->hot_state.lock);

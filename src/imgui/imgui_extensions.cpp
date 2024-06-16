@@ -34,19 +34,18 @@ namespace br {
     if (str->len >= str->cap) br_str_realloc(str, str->cap * 2);
     str->str[str->len] = 0;
     ImGui::InputText(label, str->str, str->cap, ImGuiInputTextFlags_CallbackResize, [](ImGuiInputTextCallbackData* data) {
-      br_str_t* str = (br_str_t*)data->UserData;
+      br_str_t* str1 = (br_str_t*)data->UserData;
       if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
       {
         // Resize string callback
         // If for some reason we refuse the new length (BufTextLen) and/or capacity (BufSize) we need to set them back to what we want.
-        IM_ASSERT(data->Buf == str->str);
-        if (data->BufTextLen + 1 >= (int)str->cap) br_str_realloc(str, (1 + maxui64(str->cap * 2, (size_t)data->BufTextLen)));
-        str->len = (unsigned int)data->BufTextLen;
-        data->Buf = str->str;
+        IM_ASSERT(data->Buf == str1->str);
+        if (data->BufTextLen + 1 >= (int)str1->cap) br_str_realloc(str1, (1 + maxui64(str1->cap * 2, (size_t)data->BufTextLen)));
+        str1->len = (unsigned int)data->BufTextLen;
+        data->Buf = str1->str;
       } else if (data->EventFlag == ImGuiInputTextFlags_CallbackEdit) {
         //str->len = data->BufTextLen;
-      }
-      else {
+      } else {
         fprintf(stderr, "Unhandled event: %d\n", data->EventFlag);
       }
       //    ImGuiInputTextFlags_CallbackCompletion  = 1 << 6,   // Callback on pressing TAB (for completion handling)
