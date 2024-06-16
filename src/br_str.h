@@ -15,7 +15,7 @@ typedef struct br_str_t {
 
 typedef struct br_strv_t {
   const char* str;
-  unsigned int len;
+  uint32_t len;
 } br_strv_t;
 
 br_str_t   br_str_malloc(size_t size);

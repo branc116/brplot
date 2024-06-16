@@ -64,19 +64,19 @@ static inline void br_keybinding_hide(br_plotter_t* br, br_plot_t* plot, br_keyb
 static inline void br_keybinding_test_points(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
   (void)plot;
   br_datas_add_test_points(&br->groups);
-  br_dagen_push_expr_xy(&br->dagens, &br->groups, (br_dagen_expr_t) { .kind = br_dagen_expr_kind_reference_y, .group_id = 5 } , (br_dagen_expr_t) { .kind = br_dagen_expr_kind_reference_x, .group_id = 5 }, 12);
+  //br_dagen_push_expr_xy(&br->dagens, &br->groups, (br_dagen_expr_t) { .kind = br_dagen_expr_kind_reference_y, .group_id = 5 } , (br_dagen_expr_t) { .kind = br_dagen_expr_kind_reference_x, .group_id = 5 }, 12);
 
   if (cs.ctrl) {
     // TODO: This is bad and this will leak...
-    br_dagen_expr_t* ops = malloc(4 * sizeof(*ops));
-    ops[0] = (br_dagen_expr_t) { .kind = br_dagen_expr_kind_reference_x, .group_id = 5 };
-    ops[1] = (br_dagen_expr_t) { .kind = br_dagen_expr_kind_reference_y, .group_id = 0 };
-    ops[2] = (br_dagen_expr_t) { .kind = br_dagen_expr_kind_reference_y, .group_id = 5 };
-    ops[3] = (br_dagen_expr_t) { .kind = br_dagen_expr_kind_reference_y, .group_id = 0 };
-
-    br_dagen_push_expr_xy(&br->dagens, &br->groups,
-        (br_dagen_expr_t) { .kind = br_dagen_expr_kind_add, .operands = { .op1 = &ops[0], .op2 = &ops[1] } },
-        ops[2], 14);
+//    br_dagen_expr_t* ops = malloc(4 * sizeof(*ops));
+//    ops[0] = (br_dagen_expr_t) { .kind = br_dagen_expr_kind_reference_x, .group_id = 5 };
+//    ops[1] = (br_dagen_expr_t) { .kind = br_dagen_expr_kind_reference_y, .group_id = 0 };
+//    ops[2] = (br_dagen_expr_t) { .kind = br_dagen_expr_kind_reference_y, .group_id = 5 };
+//    ops[3] = (br_dagen_expr_t) { .kind = br_dagen_expr_kind_reference_y, .group_id = 0 };
+//
+//    br_dagen_push_expr_xy(&br->dagens, &br->groups,
+//        (br_dagen_expr_t) { .kind = br_dagen_expr_kind_add, .operands = { .op1 = &ops[0], .op2 = &ops[1] } },
+//        ops[2], 14);
   }
 }
 

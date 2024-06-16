@@ -31,14 +31,20 @@ typedef struct br_dagen_expr_t {
   union {
     int group_id;
     struct {
-      struct br_dagen_expr_t* op1;
-      struct br_dagen_expr_t* op2;
+      uint32_t op1;
+      uint32_t op2;
     } operands;
   };
 } br_dagen_expr_t;
 
+typedef struct {
+  br_dagen_expr_t* arr;
+  size_t len, cap;
+} br_dagen_exprs_t;
+
 typedef struct br_dagen_2d_expr_t {
-  br_dagen_expr_t x_expr, y_expr;
+  uint32_t x_expr_index, y_expr_index;
+  br_dagen_exprs_t arena;
 } br_dagen_expr_2d_t;
 
 typedef struct {
@@ -62,7 +68,7 @@ typedef struct br_plotter_t br_plotter_t;
 #if defined(__cplusplus)
 extern "C" {
 #endif
-void br_dagen_push_expr_xy(br_dagens_t* dagens, br_datas_t* datas, br_dagen_expr_t y, br_dagen_expr_t x, int group_id);
+void br_dagen_push_expr_xy(br_dagens_t* dagens, br_datas_t* datas, br_dagen_exprs_t arena, uint32_t x, uint32_t y, int group_id);
 bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* temp_data, FILE* file);
 void br_dagens_handle(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots, double until);
 void br_dagens_free(br_dagens_t* dagens);
