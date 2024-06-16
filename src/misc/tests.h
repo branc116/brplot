@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Stolen from: https://github.com/yshui/test.h
+// BR: Stolen from: https://github.com/yshui/test.h
 #pragma once
 
 #ifdef UNIT_TEST
@@ -59,6 +59,16 @@ static struct test_file_metadata __test_h_file;
       SET_FAILURE(#a " != " #b, false);                      \
       int aa = (int)a, bb = (int)b;                          \
       fprintf(stderr, "%d != %d\n", aa, bb);                   \
+      return;                                                \
+    }                                                        \
+  } while (0)
+
+#define TEST_EQUALF(a, b)                                    \
+  do {                                                       \
+    if ((a) != (b)) {                                        \
+      SET_FAILURE(#a " != " #b, false);                      \
+      float aa = (a), bb = (b);                              \
+      fprintf(stderr, "%f != %f\n", aa, bb);                 \
       return;                                                \
     }                                                        \
   } while (0)
@@ -206,9 +216,11 @@ static inline void __attribute__((constructor(1002))) run_tests(void) {
 #define TEST_CASE(name) static void __attribute__((unused)) __test_h_##name(void)
 
 #define TEST_EQUAL(a, b)          \
-  (void)(a);                      \
+  (void)(a),                      \
   (void)(b)
-#define TEST_TRUE(a) (void)(a)
+#define TEST_EQUALF(a, b)         \
+  (void)(a),                      \
+  (void)(b)
 #define TEST_STREQUAL(a, b)       \
   (void)(a);                      \
   (void)(b)

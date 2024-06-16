@@ -345,8 +345,8 @@ TEST_CASE(dagen_simple_reference_x) {
   br_data_t* res = br_data_get1(datas, 1);
   TEST_EQUAL(res->len, 1);
   TEST_EQUAL(res->kind, br_data_kind_2d);
-  TEST_EQUAL(res->dd.xs[0], 10.f);
-  TEST_EQUAL(res->dd.ys[0], 10.f);
+  TEST_EQUALF(res->dd.xs[0], 10.f);
+  TEST_EQUALF(res->dd.ys[0], 10.f);
 
   FREE
 }
@@ -361,8 +361,8 @@ TEST_CASE(dagen_simple_reference_y) {
   br_data_t* res = br_data_get1(datas, 1);
   TEST_EQUAL(res->len, 1);
   TEST_EQUAL(res->kind, br_data_kind_2d);
-  TEST_EQUAL(res->dd.xs[0], 20.f);
-  TEST_EQUAL(res->dd.ys[0], 20.f);
+  TEST_EQUALF(res->dd.xs[0], 20.f);
+  TEST_EQUALF(res->dd.ys[0], 20.f);
 
   FREE
 }
@@ -377,8 +377,8 @@ TEST_CASE(dagen_simple_reference_z) {
   br_data_t* res = br_data_get1(datas, 1);
   TEST_EQUAL(res->len, 1);
   TEST_EQUAL(res->kind, br_data_kind_2d);
-  TEST_EQUAL(res->dd.xs[0], 30.f);
-  TEST_EQUAL(res->dd.ys[0], 30.f);
+  TEST_EQUALF(res->dd.xs[0], 30.f);
+  TEST_EQUALF(res->dd.ys[0], 30.f);
 
   FREE
 }
@@ -394,8 +394,8 @@ TEST_CASE(dagen_buffer_overflow) {
   br_data_t* res = br_data_get1(datas, 1);
   TEST_EQUAL(res->len, MAX_BATCH_LEN);
   TEST_EQUAL(res->kind, br_data_kind_2d);
-  for (size_t i = 0; i < res->len; ++i) TEST_EQUAL(res->dd.xs[0], 10.f);
-  for (size_t i = 0; i < res->len; ++i) TEST_EQUAL(res->dd.ys[0], 30.f);
+  for (size_t i = 0; i < res->len; ++i) TEST_EQUALF(res->dd.xs[i], 10.f);
+  for (size_t i = 0; i < res->len; ++i) TEST_EQUALF(res->dd.ys[i], 30.f);
 
   br_dagens_handle_once(&datas, &dagens, &plots);
   TEST_EQUAL(res->len, MAX_BATCH_LEN + 1);
@@ -414,8 +414,8 @@ TEST_CASE(dagen_add) {
   br_data_t* res = br_data_get1(datas, 1);
   TEST_EQUAL(res->len, 1);
   TEST_EQUAL(res->kind, br_data_kind_2d);
-  TEST_EQUAL(res->dd.xs[0], 10.f);
-  TEST_EQUAL(res->dd.ys[0], 10.f + 30.f);
+  TEST_EQUALF(res->dd.xs[0], 10.f);
+  TEST_EQUALF(res->dd.ys[0], 10.f + 30.f);
   FREE
 }
 
@@ -431,8 +431,8 @@ TEST_CASE(dagen_mul) {
   br_data_t* res = br_data_get1(datas, 1);
   TEST_EQUAL(res->len, 1);
   TEST_EQUAL(res->kind, br_data_kind_2d);
-  TEST_EQUAL(res->dd.xs[0], 10.f);
-  TEST_EQUAL(res->dd.ys[0], 10.f * 30.f);
+  TEST_EQUALF(res->dd.xs[0], 10.f);
+  TEST_EQUALF(res->dd.ys[0], 10.f * 30.f);
   FREE
 }
 
@@ -449,8 +449,8 @@ TEST_CASE(dagen_mul_add) {
   br_data_t* res = br_data_get1(datas, 1);
   TEST_EQUAL(res->len, 1);
   TEST_EQUAL(res->kind, br_data_kind_2d);
-  TEST_EQUAL(res->dd.xs[0], 10.f);
-  TEST_EQUAL(res->dd.ys[0], (10.f + 30.f) * (10.f + 30.f));
+  TEST_EQUALF(res->dd.xs[0], 10.f);
+  TEST_EQUALF(res->dd.ys[0], (10.f + 30.f) * (10.f + 30.f));
   FREE
 }
 
@@ -467,8 +467,8 @@ TEST_CASE(dagen_add_mul) {
   br_data_t* res = br_data_get1(datas, 1);
   TEST_EQUAL(res->len, 1);
   TEST_EQUAL(res->kind, br_data_kind_2d);
-  TEST_EQUAL(res->dd.xs[0], 10.f * 30.f);
-  TEST_EQUAL(res->dd.ys[0], (10.f * 30.f) + (10.f * 30.f));
+  TEST_EQUALF(res->dd.xs[0], 10.f * 30.f);
+  TEST_EQUALF(res->dd.ys[0], (10.f * 30.f) + (10.f * 30.f));
   FREE
 }
 
