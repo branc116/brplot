@@ -314,6 +314,7 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot) {
     rlViewport(0, 0, (int)plot->resolution.x, (int)plot->resolution.y);
     TracyCFrameMarkEnd("br_datas_draw_3d");
   }
+  resampling2_change_something(pg);
 }
 
 static br_data_t* br_data_init(br_data_t* g, int group_id, br_data_kind_t kind) {

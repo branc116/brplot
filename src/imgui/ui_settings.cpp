@@ -8,21 +8,22 @@ ImVec4 operator-(float f, ImVec4 v) {
   return ImVec4{f - v.x , f - v.y, f - v.z, f - v.w};
 }
 
-extern float something;
-extern float something2;
-
-extern float stride_after;
-extern int max_stride;
-
-extern int raw_c;
-extern int not_raw_c;
+//extern float something;
+//extern float something2;
+//
+//extern float stride_after;
+//extern int max_stride;
+//
+//extern int raw_c;
+//extern int not_raw_c;
+extern float line_3d_size;
 
 namespace br {
   void ui_settings(br_plotter_t* br) {
     ImGui::SetNextWindowBgAlpha(0.7f);
     if (ImGui::Begin("Settings")) {
-      raw_c = 0;
-      not_raw_c = 0;
+//      raw_c = 0;
+//      not_raw_c = 0;
       if (ImGui::Button("Clear all")) {
         br_datas_deinit(&br->groups);
       }
@@ -104,23 +105,24 @@ namespace br {
         Vector2 bl{plot->dd.graph_rect.x, plot->dd.graph_rect.y - plot->dd.graph_rect.height};
         if (br::Input("Bottom Left", bl)) br_plotter_set_bottom_left(plot, bl.x, bl.y);
         if (br::Input("Top Right", tr)) br_plotter_set_top_right(plot, tr.x, tr.y);
+        ImGui::InputFloat("3D line size", &line_3d_size);
         ImGui::Checkbox("Show Closest", &plot->dd.show_closest);
         ImGui::Checkbox("Show Closest X", &plot->dd.show_x_closest);
         ImGui::Checkbox("Show Closest Y", &plot->dd.show_y_closest);
       }
       if (ImGui::CollapsingHeader("Resampling")) {
-        ImGui::InputFloat("Max ratio bounding box/screen size", &something, 0.0f, 0.0f, "%f");
-        ImGui::SetItemTooltip("If you make this value larger, performace will improve, but visual quality will suffer.");
-        ImGui::InputFloat("Max ratio bounding box/screen size2", &something2, 0.0f, 0.0f, "%f");
-        ImGui::SetItemTooltip("If you make this value larger, performace will improve, but visual quality will suffer.");
-        ImGui::InputFloat("Stride After", &stride_after, 0.f, 0.f, "%f");
-        ImGui::SetItemTooltip("If you make this value larger, performace will improve, but visual quality will suffer."
-                          "Skip some points if the line is far away.");
-        ImGui::InputInt("Max Stride", &max_stride);
-        ImGui::SetItemTooltip("If you make this value larger, performace will improve, but visual quality will suffer."
-                          "Max points that can be skipped when line is far away.");
-        ImGui::LabelText("Raw", "raw: %d", raw_c);
-        ImGui::LabelText("Not Raw", "Not raw: %d", not_raw_c);
+//        ImGui::InputFloat("Max ratio bounding box/screen size", &something, 0.0f, 0.0f, "%f");
+//        ImGui::SetItemTooltip("If you make this value larger, performace will improve, but visual quality will suffer.");
+//        ImGui::InputFloat("Max ratio bounding box/screen size2", &something2, 0.0f, 0.0f, "%f");
+//        ImGui::SetItemTooltip("If you make this value larger, performace will improve, but visual quality will suffer.");
+//        ImGui::InputFloat("Stride After", &stride_after, 0.f, 0.f, "%f");
+//        ImGui::SetItemTooltip("If you make this value larger, performace will improve, but visual quality will suffer."
+//                          "Skip some points if the line is far away.");
+//        ImGui::InputInt("Max Stride", &max_stride);
+//        ImGui::SetItemTooltip("If you make this value larger, performace will improve, but visual quality will suffer."
+//                          "Max points that can be skipped when line is far away.");
+//        ImGui::LabelText("Raw", "raw: %d", raw_c);
+//        ImGui::LabelText("Not Raw", "Not raw: %d", not_raw_c);
       }
       if (ImGui::CollapsingHeader("Debug")) {
         br_plot_t* plot = &br->plots.arr[0];

@@ -161,6 +161,10 @@ typedef struct resampling2_t {
     resampling2_nodes_3d_allocator_t ddd;
     resampling2_nodes_allocator_t<void> common;
   };
+  double render_time = 0.0;
+  float something = 0.02f;
+  float something2 = 0.001f;
+  uint32_t draw_count = 0;
 } resampling2_t;
 
 static uint32_t powers[32] = {0};
@@ -178,10 +182,12 @@ static bool resampling2_nodes_2d_push_point(resampling2_nodes_2d_allocator_t* no
 static bool resampling2_nodes_3d_push_point(resampling2_nodes_3d_allocator_t* nodes, size_t node_index, uint32_t index, float const* xs, float const* ys, float const* zs);
 
 resampling2_t* resampling2_malloc(br_data_kind_t kind) {
-   resampling2_t* r = (resampling2_t*)BR_CALLOC(1, sizeof(*r));
-   if (r == NULL) return NULL;
-   r->kind = kind;
-   return r;
+  resampling2_t* r = (resampling2_t*)BR_CALLOC(1, sizeof(*r));
+  if (r == NULL) return NULL;
+  r->kind = kind;
+  r->something = 0.02f;
+  r->something2 = 0.001f;
+  return r;
 }
 
 void resampling2_empty(resampling2_t* res) {
@@ -293,12 +299,6 @@ static bool resampling2_nodes_3d_push_point(resampling2_nodes_3d_allocator_t* no
   return true;
 }
 
-float something = 0.02f;
-float something2 = 0.001f;
-float stride_after = 0.06f;
-int max_stride = 0;
-int raw_c = 0;
-int not_raw_c = 0;
 
 static void resampling2_draw(resampling2_nodes_2d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot) {
   assert(plot->kind == br_plot_kind_2d);
@@ -316,7 +316,7 @@ static void resampling2_draw(resampling2_nodes_2d_allocator_t const* const nodes
   }
   Vector2 ratios = node.get_ratios(xs, ys, rect.width, rect.height);
   float rmin = fminf(ratios.x, ratios.y);
-  if (rmin < (node.base.depth == 1 ? something : something2)) {
+  if (rmin < (node.base.depth == 1 ? pg->resampling->something : pg->resampling->something2)) {
     size_t indexies[] = {
       node.base.index_start,
       node.base.min_index_x,
@@ -397,7 +397,7 @@ static void resampling2_3d_draw_3d(resampling2_nodes_3d_allocator_t const* const
   }
   Vector2 ratios = node.get_ratios(&pg->ddd, mvp);
   float rmin = fmaxf(ratios.x, ratios.y);
-  if (rmin < (node.base.depth == 1 ? something2 : something)) {
+  if (rmin < (node.base.depth == 1 ? pg->resampling->something2 : pg->resampling->something)) {
     size_t indexies[] = {
       node.base.index_start,
       node.base.min_index_x,
@@ -422,9 +422,10 @@ static void resampling2_3d_draw_3d(resampling2_nodes_3d_allocator_t const* const
   }
 }
 
-void resampling2_draw(resampling2_t const* res, br_data_t const* pg, br_plot_t* plot) {
+void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot) {
   ZoneScopedN("resampline2_draw0");
 
+  double start = GetTime();
   if (res->common.len == 0) return;
   switch (pg->kind) {
     case br_data_kind_2d: {
@@ -443,6 +444,38 @@ void resampling2_draw(resampling2_t const* res, br_data_t const* pg, br_plot_t* 
     }
     default: assert(0);
   }
+  res->render_time = GetTime() - start;
+  ++res->draw_count;
+}
+
+void resampling2_change_something(br_datas_t pg) {
+  uint32_t draw_count = 0;
+  for (size_t i = 0; i < pg.len; ++i) draw_count += pg.arr[i].resampling->draw_count;
+  if (draw_count == 0) return;
+  double target = 0.016 / (double)draw_count;
+  for (size_t i = 0; i < pg.len; ++i) {
+    if (pg.arr[i].resampling->draw_count == 0) continue;
+    double delta = (pg.arr[i].resampling->render_time - target);
+    double mul = 1.0 + 10.0f* (delta);
+
+    pg.arr[i].resampling->something *= (float)mul;
+    pg.arr[i].resampling->something2 *= (float)mul;
+    if (pg.arr[i].resampling->something < 0.00001f) pg.arr[i].resampling->something = 0.0001f;
+    if (pg.arr[i].resampling->something2 < 0.00001f) pg.arr[i].resampling->something2 = 0.0001f;
+    pg.arr[i].resampling->draw_count = 0;
+  }
+}
+
+double br_resampling2_get_draw_time(resampling2_t* res) {
+  return res->render_time;
+}
+
+float br_resampling2_get_something(resampling2_t* res) {
+  return res->something;
+}
+
+float br_resampling2_get_something2(resampling2_t* res) {
+  return res->something2;
 }
 
 #ifndef _MSC_VER

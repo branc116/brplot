@@ -1,10 +1,14 @@
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
 #include "src/br_q.h"
+#include "src/br_str.h"
+#include "src/br_resampling2.h"
 #include "src/imgui/imgui_extensions.h"
 
 #include "imgui.h"
 #include "raylib.h"
+
+static br_str_t tmp;
 
 void br::ui_info(br_plotter_t* br) {
   ImGui::SetNextWindowBgAlpha(0.7f);
@@ -19,6 +23,27 @@ void br::ui_info(br_plotter_t* br) {
       ImGui::Text("FPS: %d", GetFPS());
       //int s = sprintf(context.buff, "Draw Calls: %lu (%lu lines)", br->lines_mesh->draw_calls, br->lines_mesh->points_drawn); ImGui::TextUnformatted(context.buff, context.buff + s);
       for (size_t i = 0; i < br->groups.len; ++i) {
+        br_data_t data = br->groups.arr[i];
+        tmp.len = 0;
+        br_str_push_literal(&tmp, "Line #");
+        br_str_push_int(&tmp, data.group_id);
+        br_str_push_literal(&tmp, "Draw time:");
+        double time = br_resampling2_get_draw_time(data.resampling) * 1000;
+        br_str_push_float(&tmp, (float)time);
+        ImGui::TextUnformatted(tmp.str, tmp.str + tmp.len);
+        tmp.len = 0;
+        br_str_push_literal(&tmp, "Line #");
+        br_str_push_int(&tmp, data.group_id);
+        br_str_push_literal(&tmp, "S:");
+        br_str_push_float(&tmp, br_resampling2_get_something(data.resampling));
+        ImGui::TextUnformatted(tmp.str, tmp.str + tmp.len);
+        tmp.len = 0;
+        br_str_push_literal(&tmp, "Line #");
+        br_str_push_int(&tmp, data.group_id);
+        br_str_push_literal(&tmp, "S2:");
+        br_str_push_float(&tmp, br_resampling2_get_something2(data.resampling));
+        ImGui::TextUnformatted(tmp.str, tmp.str + tmp.len);
+
         //auto& a = br->groups.arr[i];
 //        s = sprintf(context.buff, "Line #%d intervals(%lu):", a.group_id, a.resampling->intervals_count); ImGui::TextUnformatted(context.buff, context.buff + s);
 //        for (size_t j = 0; j < a.resampling->intervals_count; ++j) {

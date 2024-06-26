@@ -162,6 +162,8 @@ void smol_mesh_3d_gen_line_strip3(br_shader_line_3d_t* shader, float const* xs, 
       (Vector3){ xs[i+1], ys[i+1], 0 }, color);
 }
 
+float line_3d_size = 0.02f;
+
 void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, Vector3 p1, Vector3 p2, Color color) {
   Vector3 const cv = {color.r/255.f, color.g/255.f, color.b/255.f};
   //Vector3 mid   = Vector3Scale(Vector3Add(p1, p2), 0.5f);
@@ -192,13 +194,13 @@ void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, Vector3 p1, Vector3 p2, 
     normals[4] = norm;
     normals[5] = next;
 
-    vecs[0] = Vector3Add(p1, Vector3Scale(normals[0], 0.1f*dist1));
-    vecs[1] = Vector3Add(p1, Vector3Scale(normals[1], 0.1f*dist1));
-    vecs[2] = Vector3Add(p2, Vector3Scale(normals[2], 0.1f*dist2));
+    vecs[0] = Vector3Add(p1, Vector3Scale(normals[0], line_3d_size*dist1));
+    vecs[1] = Vector3Add(p1, Vector3Scale(normals[1], line_3d_size*dist1));
+    vecs[2] = Vector3Add(p2, Vector3Scale(normals[2], line_3d_size*dist2));
 
-    vecs[3] = Vector3Add(p2, Vector3Scale(normals[3], 0.1f*dist2));
-    vecs[4] = Vector3Add(p2, Vector3Scale(normals[4], 0.1f*dist2));
-    vecs[5] = Vector3Add(p1, Vector3Scale(normals[5], 0.1f*dist1));
+    vecs[3] = Vector3Add(p2, Vector3Scale(normals[3], line_3d_size*dist2));
+    vecs[4] = Vector3Add(p2, Vector3Scale(normals[4], line_3d_size*dist2));
+    vecs[5] = Vector3Add(p1, Vector3Scale(normals[5], line_3d_size*dist1));
 
     for (int j = 0; j < 6; ++j) colors[j] = cv;
     norm = next;

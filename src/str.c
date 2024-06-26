@@ -81,13 +81,13 @@ bool br_str_push_float1(br_str_t* s, float c, int decimals) {
   if (c > 0.f) {
     if (false == br_str_push_char(s, '.')) return false;
   }
-  while (c > 0.f && decimals--) {
+  while (c > 0.f && decimals-- >= 0) {
     c *= 10.f;
     a = (int)c;
     if (false == br_str_push_char(s, '0' + (char)a)) return false;
     c -= (float)a;
   }
-  while (decimals--) {
+  while (decimals-- >= 0) {
     if (false == br_str_push_char(s, '0')) return false;
   }
   return true;
