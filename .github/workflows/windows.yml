@@ -29,20 +29,13 @@ jobs:
           -D GUI=${{matrix.gui}} `
       - run: cmake --build build/
 
-  build:
+  windows_zig:
     runs-on: windows-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4.1.7
-
-    - name: Setup Zig
-      uses: goto-bus-stop/setup-zig@v2.2.0
+    - uses: actions/checkout@v4.1.7
+    - uses: goto-bus-stop/setup-zig@v2.2.0
       with:
         version: 0.12.0
         cache: false
-
-    - name: Build
-      run: |
-        dir
-        zig build -Doptimize=ReleaseSafe --summary all
+    - run: zig build -Doptimize=ReleaseSafe --summary all
 
