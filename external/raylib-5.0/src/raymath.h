@@ -609,6 +609,14 @@ RMAPI Vector3 Vector3Multiply(Vector3 v1, Vector3 v2)
     return result;
 }
 
+// BRPLOT: Pow each element of the vector
+RMAPI Vector3 Vector3Pow(Vector3 v1, float p)
+{
+    Vector3 result = { powf(v1.x, p), powf(v1.y, p), powf(v1.z, p) };
+
+    return result;
+}
+
 // Calculate two vectors cross product
 RMAPI Vector3 Vector3CrossProduct(Vector3 v1, Vector3 v2)
 {

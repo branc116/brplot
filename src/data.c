@@ -247,7 +247,7 @@ void br_datas_add_test_points(br_datas_t* pg) {
   {
     br_data_t* g = br_data_get2(pg, 11, br_data_kind_3d);
     if (NULL == g) return;
-    for(int i = 0; i < 1024; ++i) {
+    for(int i = 0; i < 1024*50; ++i) {
       float t = (float)(1 + g->len)*.1f;
       float x = sqrtf(t)*cosf(log2f(t));
       float y = sqrtf(t)*sinf(log2f(t));

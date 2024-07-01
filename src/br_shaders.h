@@ -45,6 +45,7 @@ extern "C" {
     )                                   \
   X(grid_3d, 2,                         \
       X_VEC(eye, 3)                     \
+      X_VEC(look_dir, 3)                \
       X_VEC(m_mvp, 16)                  \
       X_VEC(resolution, 2),             \
                                         \

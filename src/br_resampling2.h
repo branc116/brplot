@@ -17,6 +17,7 @@ void resampling2_free(resampling2_t* res);
 void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* rdi);
 // TODO: index should be size_t...
 void resampling2_add_point(resampling2_t* res, br_data_t const* pg, uint32_t index);
+void resampling2_reset(resampling2_t* res);
 void resampling2_change_something(br_datas_t pg);
 // In seconds
 double br_resampling2_get_draw_time(resampling2_t* res);

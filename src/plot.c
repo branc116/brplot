@@ -150,6 +150,7 @@ void br_plot_update_shader_values(br_plot_t* plot) {
       Matrix look = MatrixLookAt(plot->ddd.eye, plot->ddd.target, plot->ddd.up);
       plot->ddd.grid_shader->uvs.m_mvp_uv = MatrixMultiply(look_grid, per);
       plot->ddd.grid_shader->uvs.eye_uv = eye_final;
+      plot->ddd.grid_shader->uvs.look_dir_uv = Vector3Subtract(plot->ddd.target, plot->ddd.eye);
 
       plot->ddd.line_shader->uvs.m_mvp_uv = MatrixMultiply(look, per);
       plot->ddd.line_shader->uvs.eye_uv = plot->ddd.eye;

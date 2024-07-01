@@ -32,7 +32,7 @@ RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextur
 SOURCE             = src/main.c src/help.c src/data.c src/smol_mesh.c src/q.c src/read_input.c src/plotter.c \
 										 src/keybindings.c src/str.c src/memory.cpp src/resampling2.c src/graph_utils.c src/shaders.c \
 										 src/plot.c src/permastate.c src/filesystem.c src/filesystem++.cpp src/gui.c src/gui++.cpp \
-										 src/data_generator.c
+										 src/data_generator.c src/platform.c
 COMMONFLAGS        = -I. -I./external/glfw/include/ -I./external/Tracy -I$(RL) -MMD -MP 
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra -Wshadow
 LD_FLAGS           =
@@ -50,6 +50,9 @@ ifeq ($(PLATFORM)_$(COMPILER), LINUX_CLANG)
 else ifeq ($(PLATFORM)_$(COMPILER), LINUX_GCC)
 	CXX= g++
 	CC= gcc
+else ifeq ($(PLATFORM)_$(COMPILER), LINUX_COSMO)
+	CXX= cosmoc++
+	CC= cosmocc
 endif
 
 ifeq ($(GUI), IMGUI)
@@ -226,6 +229,12 @@ npm-imgui:
 	  ((cd packages/npm && \
 	   npm publish || cd ../..) && cd ../..)
 
+.PHONY: bench
+bench: bin/bench
+	date >> bench.txt
+	./bin/bench >> bench.txt
+	cat bench.txt
+
 src/misc/default_font.h: bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf
 	bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf > src/misc/default_font.h
 
@@ -237,6 +246,16 @@ bin/shaders_bake: ./tools/shaders_bake.c ./src/br_shaders.h ./src/str.c
 
 $(SHADERS_HEADER): ./src/desktop/shaders/* bin/shaders_bake
 	bin/shaders_bake $(PLATFORM) > $(SHADERS_HEADER)
+
+
+SOURCE_BENCH= ./src/misc/benchmark.c ./src/resampling2.cpp ./src/smol_mesh.c ./src/shaders.c ./src/plotter.c ./src/help.c ./src/gui.c ./src/data.c ./src/str.c ./src/plot.c ./src/q.c ./src/keybindings.c ./src/memory.cpp ./src/graph_utils.c ./src/data_generator.c ./src/platform.c  ./src/permastate.c ./src/filesystem.c ./src/filesystem++.cpp
+OBJSA_BENCH= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE_BENCH))
+OBJS_BENCH+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA_BENCH))
+OBJSDIR_BENCH= $(sort $(dir $(OBJS_BENCH)))
+$(shell $(foreach var,$(OBJSDIR_BENCH), test -d $(var) || mkdir -p $(var);))
+bin/bench: $(OBJS_BENCH)
+	$(CXX) $(LD_FLAGS) -o bin/bench $(COMMONFLAGS) $(LIBS) $(OBJS_BENCH)
+
 
 COMPILE_FLAGS_JSONA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.json, $(SOURCE))
 COMPILE_FLAGS_JSON= $(patsubst %.c, $(PREFIX_BUILD)/%.json, $(COMPILE_FLAGS_JSONA))

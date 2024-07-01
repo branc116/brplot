@@ -19,7 +19,7 @@
 #  endif
 #endif
 
-#define X_BUF(NAME, LEN) \
+#define X_BUF(NAME, LEN)                                                         \
   do {                                                                           \
     ret->NAME ## _vbo = BR_MALLOC((size_t)(LEN * cap * 3 * (int)sizeof(float))); \
     if (NULL == ret->NAME ## _vbo) {                                             \
