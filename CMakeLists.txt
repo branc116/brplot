@@ -47,6 +47,7 @@ add_executable(brplot
   src/read_input.c    src/plotter.c     src/keybindings.c src/str.c        src/memory.cpp 
   src/resampling2.cpp src/graph_utils.c src/shaders.c     src/plot.c       src/filesystem++.cpp
   src/permastate.c    src/gui++.cpp     src/gui.c         src/filesystem.c src/data_generator.c
+  src/platform.c
 )
 target_compile_features(brplot PUBLIC cxx_std_17)
 

@@ -1,6 +1,7 @@
 #define _WIN32_LEAN_AND_MEAN 1
 #define NOGDI 1
 #define NOUSER 1
+#define LPMSG void*
 #include <windows.h>
 #include <processthreadsapi.h>
 

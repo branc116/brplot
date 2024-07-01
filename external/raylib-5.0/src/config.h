@@ -247,7 +247,7 @@
 #if 1 || !defined(RELEASE)
 #  define SUPPORT_TRACELOG                1
 #endif
-//#define SUPPORT_TRACELOG_DEBUG          1
+#define SUPPORT_TRACELOG_DEBUG          1
 
 // utils: Configuration values
 //------------------------------------------------------------------------------------

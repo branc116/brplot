@@ -29,4 +29,19 @@ jobs:
         ls
         zig build -Doptimize=ReleaseSafe -DGui=${{matrix.gui}} --summary all
         ls zig-out/bin
+  build-all:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ macos-12, macos-13, macos-14 ]
+    steps:
+    - uses: actions/checkout@v4.1.7
+    - uses: goto-bus-stop/setup-zig@v2.2.0
+      with:
+        version: 0.12.1
+        cache: true
+    - run: |
+        ls
+        zig build -DAll --summary all
+        ls zig-out/bin
 

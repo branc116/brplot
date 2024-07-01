@@ -164,6 +164,7 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
         "./src/shaders.c",
         "./src/smol_mesh.c",
         "./src/str.c",
+        "./src/platform.c",
     } });
     exe.addIncludePath(b.path("."));
     exe.addIncludePath(b.path("./src"));
