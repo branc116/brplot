@@ -22,6 +22,11 @@ message("USE_LTO=${USE_LTO}")
 option(USE_TRACY OFF "Use tracy for profiling")
 cmake_dependent_option(USE_HOTRELOAD "Enable Hot reload" ON "CMAKE_BUILD_TYPE STREQUAL Debug; GUI STREQUAL imgui" OFF)
 
+# I don't how msvc can hot reload...
+if (MSVC)
+  set(USE_HOTRELOAD OFF)
+endif ()
+
 add_library(raylib STATIC
   ./external/raylib-5.0/src/rmodels.c
   ./external/raylib-5.0/src/rshapes.c

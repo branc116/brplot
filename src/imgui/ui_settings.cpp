@@ -16,7 +16,7 @@ ImVec4 operator-(float f, ImVec4 v) {
 //
 //extern int raw_c;
 //extern int not_raw_c;
-extern float line_3d_size;
+extern "C" float line_3d_size;
 
 namespace br {
   void ui_settings(br_plotter_t* br) {
