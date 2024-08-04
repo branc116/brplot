@@ -177,19 +177,9 @@ void br_permastate_remove_pointers(br_plotter_t* br, br_plot_t* plot) {
   plot->groups_to_show.len = 0;
   plot->groups_to_show.arr = NULL;
   switch (plot->kind) {
-    case br_plot_kind_2d:
-      plot->dd.grid_shader = br->shaders.grid;
-      plot->dd.line_shader = br->shaders.line;
-      br->any_2d = true;
-      break;
-    case br_plot_kind_3d:
-      plot->ddd.grid_shader = br->shaders.grid_3d;
-      plot->ddd.line_shader = br->shaders.line_3d;
-      plot->ddd.line_simple_shader = br->shaders.line_3d_simple;
-      br->any_3d = true;
-      break;
-    default:
-      assert(0);
+    case br_plot_kind_2d: br->any_2d = true; break;
+    case br_plot_kind_3d: br->any_3d = true; break;
+    default: assert(0);
   }
 }
 

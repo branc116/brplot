@@ -26,10 +26,7 @@ BR_API br_plotter_t* br_plotter_malloc(void) {
   return BR_MALLOC(sizeof(br_plotter_t));
 }
 
-BR_API void br_plotter_init(br_plotter_t* br, float width, float height) {
-  SetConfigFlags(FLAG_MSAA_4X_HINT);
-  InitWindow((int)width, (int)height, "brplot");
-  SetWindowState(FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
+BR_API void br_plotter_init(br_plotter_t* br, bool use_permaste) {
   *br = (br_plotter_t){
     .groups = {0},
     .plots = {0},
@@ -50,22 +47,18 @@ BR_API void br_plotter_init(br_plotter_t* br, float width, float height) {
   pthread_mutexattr_init(&attrs);
   pthread_mutex_init(&br->hot_state.lock, &attrs);
 #endif
-  br->shaders = br_shaders_malloc();
   br->commands = q_malloc();
   if (NULL == br->commands) {
     LOGE("Failed to malloc command queue. Exiting...\n");
     exit(1);
   }
-  help_load_default_font();
-
   context.font_scale = 1.8f;
   memset(context.buff, 0, sizeof(context.buff));
-  br->loaded = br_permastate_load(br);
+  if (use_permaste) br->loaded = br_permastate_load(br);
   if (false == br->loaded) {
     br_datas_deinit(&br->groups);
     br->plots.len = 0;
   }
-  br_gui_init_specifics_gui(br);
   br_gui_init_specifics_platform(br);
 }
 
@@ -118,8 +111,6 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
     .mouse_inside_graph = false,
     .kind = br_plot_kind_2d,
     .dd =  {
-      .line_shader = br->shaders.line,
-      .grid_shader = br->shaders.grid,
       .zoom = { 1.f, 1.f },
       .offset = { 0.f, 0.f },
       .delta = { 0 },
@@ -140,9 +131,6 @@ int br_plotter_add_plot_3d(br_plotter_t* br) {
     .mouse_inside_graph = false,
     .kind = br_plot_kind_3d,
     .ddd =  {
-      .grid_shader = br->shaders.grid_3d,
-      .line_shader = br->shaders.line_3d,
-      .line_simple_shader = br->shaders.line_3d_simple,
       .eye = { 0, 0, 100 },
       .target = { 0, 0, 0},
       .up = { 0, 1, 0},

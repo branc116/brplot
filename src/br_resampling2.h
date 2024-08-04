@@ -14,7 +14,7 @@ void br_resampling2_construct(void);
 resampling2_t* resampling2_malloc(br_data_kind_t kind);
 void resampling2_empty(resampling2_t* res);
 void resampling2_free(resampling2_t* res);
-void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* rdi);
+void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* rdi, br_shaders_t* shaders);
 // TODO: index should be size_t...
 void resampling2_add_point(resampling2_t* res, br_data_t const* pg, uint32_t index);
 void resampling2_reset(resampling2_t* res);

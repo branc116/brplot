@@ -11,14 +11,15 @@ extern "C" {
 
 typedef struct br_hotreload_state_t br_hotreload_state_t;
 
+#if !defined(BR_PLOT_KIND_T)
 typedef enum {
   br_plot_kind_2d,
   br_plot_kind_3d
 } br_plot_kind_t;
+#define BR_PLOT_KIND_T
+#endif
 
 typedef struct br_plot_2d_t {
-  br_shader_line_t* line_shader;
-  br_shader_grid_t* grid_shader;
   // graph_rect is in the graph coordinates.
   //            That is if you zoom in and out, graph_rect will change.
   Rectangle graph_rect;
@@ -31,9 +32,6 @@ typedef struct br_plot_2d_t {
 } br_plot_2d_t;
 
 typedef struct br_plot_3d_t {
-  br_shader_grid_3d_t* grid_shader;
-  br_shader_line_3d_t* line_shader;
-  br_shader_line_3d_simple_t* line_simple_shader;
   Vector3 eye, target, up;
   float fov_y, near_plane, far_plane;
 } br_plot_3d_t;
@@ -50,6 +48,7 @@ typedef struct br_plot_t {
   bool follow;
   bool jump_around;
   bool mouse_inside_graph;
+  bool is_deleted;
 
   br_plot_kind_t kind;
   union {
@@ -82,7 +81,7 @@ Vector2 br_graph_to_screen(Rectangle graph_rect, Rectangle screen_rect, Vector2 
 
 typedef struct br_plotter_t br_plotter_t;
 
-void br_plot_screenshot(br_plot_t* br, br_datas_t groups, char const* path);
+void br_plot_screenshot(br_plot_t* br, br_shaders_t* shaders, br_datas_t groups, char const* path);
 void br_keybinding_handle_keys(br_plotter_t* br, br_plot_t* plot);
 
 #if BR_HAS_SHADER_RELOAD

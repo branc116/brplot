@@ -2,6 +2,7 @@
 #include "br_pp.h"
 #include "br_str.h"
 #include "raylib.h"
+#include "br_shaders.h"
 
 #include <stdio.h>
 
@@ -28,10 +29,13 @@ typedef struct bb_t {
   float xmin, ymin, xmax, ymax;
 } bb_t;
 
+#if !defined(BR_DATA_KIND_T)
 typedef enum {
   br_data_kind_2d,
   br_data_kind_3d
 } br_data_kind_t;
+#define BR_DATA_KIND_T
+#endif
 
 typedef struct br_data_2d_t {
   float* xs;
@@ -76,6 +80,8 @@ typedef struct {
 } br_data_descs_t;
 
 void br_data_construct(void);
+int br_datas_get_new_id(br_datas_t* datas);
+BR_API br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind);
 BR_API br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind);
 BR_API br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, Color color, size_t cap, br_str_t name);
 BR_API br_data_t* br_data_get(br_datas_t* pg_array, int group);
@@ -92,7 +98,7 @@ BR_API void br_data_clear(br_datas_t* pg, br_plots_t* plots, int group_id);
 BR_API void br_data_empty(br_data_t* pg);
 void br_data_export(br_data_t const* pg, FILE* file);
 void br_data_export_csv(br_data_t const* pg, FILE* file);
-void br_datas_draw(br_datas_t pg_array, br_plot_t* shader);
+void br_datas_draw(br_datas_t pg_array, br_plot_t* shader, br_shaders_t* shaders);
 void br_datas_add_test_points(br_datas_t* pg_array);
 void br_datas_deinit(br_datas_t* pg_array);
 // Only remove all points from all groups, don't remove groups themselfs.

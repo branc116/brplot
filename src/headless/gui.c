@@ -1,6 +1,7 @@
 #include "src/br_da.h"
 #include "src/br_plotter.h"
 #include "src/br_gui_internal.h"
+#include "src/br_shaders.h"
 #include "src/br_smol_mesh.h"
 
 #ifndef NUMBER_OF_STEPS
@@ -18,8 +19,6 @@ void br_gui_init_specifics_gui(br_plotter_t* br) {
     .dd = (br_plot_2d_t) {
       .zoom = { 1, 1},
       .offset = { 0 },
-      .line_shader = br->shaders.line,
-      .grid_shader = br->shaders.grid
     }
   };
   br_da_push_t(int, br->plots, plot);
@@ -31,14 +30,14 @@ void br_plotter_draw(br_plotter_t* br) {
   br_plotter_update_variables(br);
   help_draw_fps(0, 0);
   draw_grid_numbers(plot);
-  smol_mesh_grid_draw(plot);
-  br_datas_draw(br->groups, plot);
+  smol_mesh_grid_draw(plot, &br->shaders);
+  br_datas_draw(br->groups, plot, &br->shaders);
   ClearBackground(BLACK);
   EndDrawing();
 }
 
-void br_plot_screenshot(br_plot_t* br, br_datas_t groups, const char* path) {
-  (void)br; (void)path; (void)groups;
+void br_plot_screenshot(br_plot_t* br, br_shaders_t* shaders, br_datas_t groups, const char* path) {
+  (void)br; (void)path; (void)groups; (void)shaders;
   LOGI("Grabbing screenshot in headless, NOP\n");
   return;
 }

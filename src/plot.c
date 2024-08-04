@@ -119,41 +119,41 @@ bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, Vecto
 }
 
 
-void br_plot_update_shader_values(br_plot_t* plot) {
+void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
   switch (plot->kind) {
     case br_plot_kind_2d: {
       TracyCFrameMarkStart("update_shader_values_2d");
       Vector2 zoom = plot->dd.zoom;
       Vector2 zoom_log = { .x = powf(10.f, -floorf(log10f(zoom.x))), .y = powf(10.f, -floorf(log10f(zoom.y))) };
       Vector2 zoom_final = { .x = zoom.x * zoom_log.x, .y = zoom.y * zoom_log.y };
-      plot->dd.grid_shader->uvs.zoom_uv = zoom_final;
+      shaders->grid->uvs.zoom_uv = zoom_final;
       Vector2 off_zoom = Vector2Multiply(plot->dd.offset, zoom_log);
       Vector2 off = Vector2Divide(off_zoom, (Vector2) { 10, 10 });
-      plot->dd.grid_shader->uvs.offset_uv = Vector2Subtract(off_zoom, (Vector2) { floorf(off.x) * 10.f, floorf(off.y) * 10.f });
+      shaders->grid->uvs.offset_uv = Vector2Subtract(off_zoom, (Vector2) { floorf(off.x) * 10.f, floorf(off.y) * 10.f });
 
-      plot->dd.grid_shader->uvs.screen_uv = (Vector2) { .x = plot->graph_screen_rect.width, .y = plot->graph_screen_rect.height };
+      shaders->grid->uvs.screen_uv = (Vector2) { .x = plot->graph_screen_rect.width, .y = plot->graph_screen_rect.height };
 
-      plot->dd.line_shader->uvs.zoom_uv = plot->dd.zoom;
-      plot->dd.line_shader->uvs.offset_uv = plot->dd.offset;
-      plot->dd.line_shader->uvs.screen_uv = plot->resolution;
-      plot->dd.line_shader->uvs.resolution_uv = *(Vector4*)&plot->graph_screen_rect.x;
+      shaders->line->uvs.zoom_uv = plot->dd.zoom;
+      shaders->line->uvs.offset_uv = plot->dd.offset;
+      shaders->line->uvs.screen_uv = plot->resolution;
+      shaders->line->uvs.resolution_uv = *(Vector4*)&plot->graph_screen_rect.x;
       TracyCFrameMarkEnd("update_shader_values_2d");
     } break;
     case br_plot_kind_3d: {
       TracyCFrameMarkStart("update_shader_values_3d");
-      Vector2 re = plot->ddd.grid_shader->uvs.resolution_uv = (Vector2) { .x = plot->graph_screen_rect.width, .y = plot->graph_screen_rect.height };
+      Vector2 re = shaders->grid_3d->uvs.resolution_uv = (Vector2) { .x = plot->graph_screen_rect.width, .y = plot->graph_screen_rect.height };
       Vector3 eye_zero = Vector3Subtract(plot->ddd.eye, plot->ddd.target);
       float eye_scale = 10.f * powf(10.f, -floorf(log10f(fmaxf(fmaxf(fabsf(eye_zero.x), fabsf(eye_zero.y)), fabsf(eye_zero.z)))));
       Vector3 eye_final = Vector3Add(Vector3Scale(eye_zero, eye_scale), plot->ddd.target);
       Matrix per = MatrixPerspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
       Matrix look_grid = MatrixLookAt(eye_final, plot->ddd.target, plot->ddd.up);
       Matrix look = MatrixLookAt(plot->ddd.eye, plot->ddd.target, plot->ddd.up);
-      plot->ddd.grid_shader->uvs.m_mvp_uv = MatrixMultiply(look_grid, per);
-      plot->ddd.grid_shader->uvs.eye_uv = eye_final;
-      plot->ddd.grid_shader->uvs.look_dir_uv = Vector3Subtract(plot->ddd.target, plot->ddd.eye);
+      shaders->grid_3d->uvs.m_mvp_uv = MatrixMultiply(look_grid, per);
+      shaders->grid_3d->uvs.eye_uv = eye_final;
+      shaders->grid_3d->uvs.look_dir_uv = Vector3Subtract(plot->ddd.target, plot->ddd.eye);
 
-      plot->ddd.line_shader->uvs.m_mvp_uv = MatrixMultiply(look, per);
-      plot->ddd.line_shader->uvs.eye_uv = plot->ddd.eye;
+      shaders->line_3d->uvs.m_mvp_uv = MatrixMultiply(look, per);
+      shaders->line_3d->uvs.eye_uv = plot->ddd.eye;
       TracyCFrameMarkEnd("update_shader_values_3d");
     } break;
     default: assert(0);

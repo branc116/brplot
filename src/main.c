@@ -1,10 +1,35 @@
-#ifndef LIB
-#include "br_plot.h"
 #include "br_plotter.h"
+#include "src/br_data.h"
+#include "src/br_pp.h"
+#include "src/br_q.h"
+#include "src/br_resampling2.h"
+#include "tracy/TracyC.h"
+#include <unistd.h>
+
+void br_gui_init_specifics_gui(br_plotter_t* plotter);
+static void* main_gui(void* plotter) {
+  br_plotter_t* br = (br_plotter_t*)plotter;
+  SetConfigFlags(FLAG_MSAA_4X_HINT);
+  InitWindow((int)br->width, (int)br->height, "brplot");
+  SetWindowState(FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
+  br->shaders = br_shaders_malloc();
+  help_load_default_font();
+  br_gui_init_specifics_gui(br);
+  while(!WindowShouldClose() && !br->should_close) {
+    TracyCFrameMark;
+    br_plotter_draw(br);
+    br_dagens_handle(&br->groups, &br->dagens, &br->plots, GetTime() + 0.010);
+    TracyCFrameMarkStart("plotter_frame_end");
+    br_plotter_frame_end(br);
+    TracyCFrameMarkEnd("plotter_frame_end");
+  }
+  return 0;
+}
+
+#if !defined(LIB)
+#include "br_plot.h"
 #include "br_permastate.h"
 #include "br_pp.h"
-
-#include "tracy/TracyC.h"
 
 #include "raylib.h"
 #if defined(__linux__) && !defined(RELEASE)
@@ -21,18 +46,6 @@ const char* __asan_default_options(void) {
 #define WIDTH 1280
 #define HEIGHT 720
 
-int main_gui(br_plotter_t* gv) {
-  while(!WindowShouldClose() && !gv->should_close) {
-    TracyCFrameMark;
-    br_plotter_draw(gv);
-    br_dagens_handle(&gv->groups, &gv->dagens, &gv->plots, GetTime() + 0.010);
-    TracyCFrameMarkStart("plotter_frame_end");
-    br_plotter_frame_end(gv);
-    TracyCFrameMarkEnd("plotter_frame_end");
-  }
-  return 0;
-}
-
 int main(void) {
 #if !defined(RELEASE)
   SetTraceLogLevel(LOG_ALL);
@@ -44,7 +57,9 @@ int main(void) {
     LOGE("Failed to malloc br plotter, exiting...\n");
     exit(1);
   }
-  br_plotter_init(gv, WIDTH, HEIGHT);
+  gv->height = HEIGHT;
+  gv->width = WIDTH;
+  br_plotter_init(gv, true);
 #if BR_HAS_SHADER_RELOAD
   start_refreshing_shaders(gv);
 #endif
@@ -61,3 +76,98 @@ int main(void) {
   return 0;
 }
 #endif
+
+#if defined(LIB)
+#include "include/brplot.h"
+#include "br_plotter.h"
+#include "br_threads.h"
+#include "br_da.h"
+
+#define VERSION 1
+
+typedef union {
+  br_plotter_ctor_t plotter;
+  br_plot_ctor_t plot;
+  br_data_ctor_t data;
+} br_common_ctor;
+
+br_common_ctor ctors[128/8];
+int ctors_len = 0;
+
+br_plotter_ctor_t* br_plotter_default_ctor(void) {
+  // TODO: Only run this once...
+  br_data_construct();
+  br_resampling2_construct();
+  ctors[ctors_len].plotter = (br_plotter_ctor_t) {
+    .version = VERSION,
+    .ctor = {
+      .width = 800, .height = 600,
+      .kind = br_plotter_ui_kind_minimal,
+      .use_permastate = false
+    }
+  };
+  return &ctors[ctors_len++].plotter;
+}
+
+br_plotter_t* br_plotter_new(br_plotter_ctor_t const* ctor) {
+  br_plotter_t* plotter = br_plotter_malloc();
+  br_plotter_init(plotter, ctor->ctor.use_permastate);
+  br_thread_start(&main_gui, plotter);
+  return plotter;
+}
+// Platform specific
+void br_plotter_wait(br_plotter_t const* plotter) {
+  while(false == plotter->should_close) sleep(1);
+}
+
+br_plot_ctor_t* br_plot_default_ctor(void) {
+  ctors[ctors_len].plot = (br_plot_ctor_t) {
+    .version = VERSION,
+    .ctor.kind = br_plot_kind_2d
+  };
+  return &ctors[ctors_len++].plot;
+}
+
+br_plot_id br_plot_new(br_plotter_t* plotter, br_plot_ctor_t const* ctor) {
+  switch (ctor->ctor.kind) {
+    case br_plot_kind_2d: return br_plotter_add_plot_2d(plotter); break;
+    case br_plot_kind_3d: return br_plotter_add_plot_3d(plotter); break;
+  }
+  BR_ASSERT(0);
+}
+
+void br_plot_free(br_plotter_t* plotter, br_plot_id plot) {
+  // TODO: This will invalidate all other inexies so, better dont remote if from the list
+  plotter->plots.arr[plot].is_deleted = true;
+}
+
+void br_plot_show_data(br_plotter_t* plotter, br_plot_id plot, br_data_id data) {
+  br_plot_t* p = &plotter->plots.arr[plot];
+  bool contains = false;
+  br_da_contains_t(int, p->groups_to_show, data, contains);
+  if (contains) return;
+  else br_da_push_t(int, p->groups_to_show, data);
+}
+
+br_data_ctor_t* br_data_default_ctor(void) {
+  ctors[ctors_len].data = (br_data_ctor_t) {
+    .version = VERSION,
+    .ctor.kind = br_data_kind_2d
+  };
+  return &ctors[ctors_len++].data;
+}
+
+br_data_id br_data_new(br_plotter_t* plotter, br_data_ctor_t const* ctor) {
+  br_data_id id = br_datas_get_new_id(&plotter->groups);
+  br_datas_create(&plotter->groups, id, ctor->ctor.kind);
+  return id;
+}
+
+int br_data_add_v1n(br_plotter_t* plotter, br_data_id data, float const* x, int n) {
+  int i = 0;
+  for (i = 0; i < n; ++i) q_push(plotter->commands, (q_command){ .type = q_command_push_point_x, .push_point_x = { .x = x[i], .group = data } } );
+  return i;
+}
+
+#endif
+

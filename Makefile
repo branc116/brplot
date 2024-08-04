@@ -32,8 +32,8 @@ RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextur
 SOURCE             = src/main.c src/help.c src/data.c src/smol_mesh.c src/q.c src/read_input.c src/plotter.c \
 										 src/keybindings.c src/str.c src/memory.cpp src/resampling2.c src/graph_utils.c src/shaders.c \
 										 src/plot.c src/permastate.c src/filesystem.c src/filesystem++.cpp src/gui.c src/gui++.cpp \
-										 src/data_generator.c src/platform.c
-COMMONFLAGS        = -I. -I./external/glfw/include/ -I./external/Tracy -I$(RL) -MMD -MP 
+										 src/data_generator.c src/platform.c src/threads.c
+COMMONFLAGS        = -I. -I./external/glfw/include/ -I./external/Tracy -I$(RL) -MMD -MP
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra -Wshadow
 LD_FLAGS           =
 
@@ -84,6 +84,10 @@ ifeq ($(PLATFORM), LINUX)
 	endif
 	COMMONFLAGS+= -DLINUX=1 -DPLATFORM_DESKTOP=1
 	SHADERS_HEADER= src/misc/shaders.h
+	ifeq ($(TYPE), LIB)
+		COMMONFLAGS+= -DLIB -fPIC
+		LD_FLAGS+= -fPIC -shared
+	endif
 
 else ifeq ($(PLATFORM), WINDOWS)
 	BACKEND= GLFW
@@ -129,17 +133,22 @@ ifeq ($(CONFIG), DEBUG)
 		endif
 		ifeq ($(COVERAGE), NO)
 			LD_FLAGS+= -rdynamic
-			COMMONFLAGS+= -fpie -pg \
-			 -fsanitize=address -fsanitize=leak \
-			 -fsanitize=undefined -fsanitize=signed-integer-overflow \
-			 -fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
+			ifeq ($(TYPE), EXE)
+				COMMONFLAGS+= -fpie \
+				 -fsanitize=address -fsanitize=leak \
+				 -fsanitize=undefined -fsanitize=signed-integer-overflow \
+				 -fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
+			else ifeq ($(TYPE), LIB)
+				COMMONFLAGS+= -DBR_HAS_HOTRELOAD=0
+			endif
+			COMMONFLAGS+= -pg
 		endif
 	endif
 else ifeq ($(CONFIG), RELEASE)
 	COMMONFLAGS+= -fdata-sections -ffunction-sections -Os -DRELEASE=1 \
 		-DIMGUI_DISABLE_DEMO_WINDOWS \
 		-DIMGUI_DISABLE_DEBUG_TOOLS
-	LD_FLAGS+= -fdata-sections -ffunction-sections -Wl,--gc-sections 
+	LD_FLAGS+= -fdata-sections -ffunction-sections -Wl,--gc-sections
 	ifeq ($(PATFORM)_$(LTO), LINUX_YES)
 		LD_FLAGS+= -flto=auto
 	endif
@@ -162,11 +171,16 @@ OBJS+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
 MAKE_INCLUDES= $(patsubst %.o, %.d, $(OBJS))
 CXXFLAGS= $(COMMONFLAGS) -fno-exceptions -std=gnu++17
 CCFLAGS= $(COMMONFLAGS) -std=gnu11
-ifeq ($(BACKEND), GLFW)
-	PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
-	OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
+ifeq ($(TYPE), EXE)
+	ifeq ($(BACKEND), GLFW)
+		PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
+		OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
+	else
+		OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(BACKEND)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
+	endif
 else
-	OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(BACKEND)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
+	PREFIX_BUILD= $(shell echo 'build/lib/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
+	OUTPUT= bin/libbrplot.so
 endif
 
 OBJSDIR= $(sort $(dir $(OBJS)))

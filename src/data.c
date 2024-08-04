@@ -38,6 +38,14 @@ void br_data_construct(void) {
   base_colors[7] = DARKPURPLE;
 }
 
+int br_datas_get_new_id(br_datas_t *datas) {
+  int max = 1;
+  for (size_t i = 0; i < datas->len; ++i) {
+    if (datas->arr[i].group_id > max) max = datas->arr[i].group_id;
+  }
+  return max;
+}
+
 BR_API br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind) {
   br_data_t data;
   if (NULL == br_data_init(&data, group_id, kind)) return NULL;
@@ -266,7 +274,7 @@ void br_datas_add_test_points(br_datas_t* pg) {
 #define GL_DST_ALPHA 0x0304
 #define GL_MAX 0x8008
 
-void br_datas_draw(br_datas_t pg, br_plot_t* plot) {
+void br_datas_draw(br_datas_t pg, br_plot_t* plot, br_shaders_t* shaders) {
   if (plot->kind == br_plot_kind_2d) {
     TracyCFrameMarkStart("br_datas_draw_2d");
     rlSetBlendFactors(GL_SRC_ALPHA, GL_DST_ALPHA, GL_MAX);
@@ -275,11 +283,11 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot) {
       int group = plot->groups_to_show.arr[j];
       br_data_t const* g = br_data_get1(pg, group);
       if (g->len == 0) continue;
-      resampling2_draw(g->resampling, g, plot);
+      resampling2_draw(g->resampling, g, plot, shaders);
     }
-    if (plot->dd.line_shader->len > 0) {
-      br_shader_line_draw(plot->dd.line_shader);
-      plot->dd.line_shader->len = 0;
+    if (shaders->line->len > 0) {
+      br_shader_line_draw(shaders->line);
+      shaders->line->len = 0;
     }
     rlSetBlendMode(BLEND_ALPHA);
     TracyCFrameMarkEnd("br_datas_draw_2d");
@@ -303,11 +311,11 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot) {
         }
       }
 #endif
-      resampling2_draw(g->resampling, g, plot);
+      resampling2_draw(g->resampling, g, plot, shaders);
     }
-    if (plot->ddd.line_shader->len > 0) {
-      br_shader_line_3d_draw(plot->ddd.line_shader);
-      plot->ddd.line_shader->len = 0;
+    if (shaders->line_3d->len > 0) {
+      br_shader_line_3d_draw(shaders->line_3d);
+      shaders->line_3d->len = 0;
     }
     rlDisableDepthTest();
     rlEnableBackfaceCulling();

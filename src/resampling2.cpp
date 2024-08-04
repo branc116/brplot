@@ -5,6 +5,7 @@
 #include "br_plot.h"
 #include "br_smol_mesh.h"
 #include "br_da.h"
+#include "src/br_shaders.h"
 
 #ifdef __GNUC__
 #  pragma GCC diagnostic push
@@ -290,7 +291,7 @@ static bool resampling2_nodes_3d_push_point(resampling2_nodes_3d_allocator_t* no
 }
 
 
-static void resampling2_draw(resampling2_nodes_2d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot) {
+static void resampling2_draw(resampling2_nodes_2d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot, br_shaders_t* const shaders) {
   assert(plot->kind == br_plot_kind_2d);
   assert(pg->kind == br_data_kind_2d);
   ZoneScopedN("resampling2_2d");
@@ -301,7 +302,7 @@ static void resampling2_draw(resampling2_nodes_2d_allocator_t const* const nodes
   if (false == node.is_inside(xs, ys, rect)) return;
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
-    smol_mesh_gen_line_strip2(plot->dd.line_shader, &xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1), pg->color);
+    smol_mesh_gen_line_strip2(shaders->line, &xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1), pg->color);
     return;
   }
   Vector2 ratios = node.get_ratios(xs, ys, rect.width, rect.height);
@@ -322,27 +323,27 @@ static void resampling2_draw(resampling2_nodes_2d_allocator_t const* const nodes
       {xs[indexies[4]], ys[indexies[4]]}, {xs[indexies[5]], ys[indexies[5]]},
     };
     //if (context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.base.min_index_x].x, ps[node.base.min_index_y].y, ps[node.base.max_index_x].x, ps[node.base.max_index_y].y }, RAYWHITE);
-    smol_mesh_gen_line_strip(plot->dd.line_shader, pss, 6, pg->color);
+    smol_mesh_gen_line_strip(shaders->line, pss, 6, pg->color);
   } else {
 
     //if (context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.base.min_index_x].x, ps[node.base.min_index_y].y, ps[node.base.max_index_x].x, ps[node.base.max_index_y].y }, RAYWHITE);
-    resampling2_draw(nodes, node.base.child1, pg, plot);
-    resampling2_draw(nodes, node.base.child2, pg, plot);
+    resampling2_draw(nodes, node.base.child1, pg, plot, shaders);
+    resampling2_draw(nodes, node.base.child2, pg, plot, shaders);
   }
 }
 
-static void resampling2_draw_3d(resampling2_nodes_2d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot) {
+static void resampling2_draw_3d(resampling2_nodes_2d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot, br_shaders_t const* shaders) {
   assert(plot->kind == br_plot_kind_3d);
   assert(pg->kind == br_data_kind_2d);
   ZoneScopedN("resampling2_3d");
   float const* xs = pg->dd.xs;
   float const* ys = pg->dd.ys;
   resampling2_nodes_2d_t node = nodes->arr[index];
-  Matrix mvp = plot->ddd.line_shader->uvs.m_mvp_uv;
+  Matrix mvp = shaders->line_3d->uvs.m_mvp_uv;
   if (false == node.is_inside_3d(xs, ys, mvp)) return;
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
-    smol_mesh_3d_gen_line_strip3(plot->ddd.line_shader, &xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1), pg->color);
+    smol_mesh_3d_gen_line_strip3(shaders->line_3d, &xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1), pg->color);
     return;
   }
   Vector2 ratios = node.get_ratios_3d(xs, ys, mvp);
@@ -362,14 +363,14 @@ static void resampling2_draw_3d(resampling2_nodes_2d_allocator_t const* const no
       { xs[indexies[2]], ys[indexies[2]] }, { xs[indexies[3]], ys[indexies[3]] },
       { xs[indexies[4]], ys[indexies[4]] }, { xs[indexies[5]], ys[indexies[5]] },
     };
-    smol_mesh_3d_gen_line_strip2(plot->ddd.line_shader, pss, 6, pg->color);
+    smol_mesh_3d_gen_line_strip2(shaders->line_3d, pss, 6, pg->color);
   } else {
-    resampling2_draw_3d(nodes, node.base.child1, pg, plot);
-    resampling2_draw_3d(nodes, node.base.child2, pg, plot);
+    resampling2_draw_3d(nodes, node.base.child1, pg, plot, shaders);
+    resampling2_draw_3d(nodes, node.base.child2, pg, plot, shaders);
   }
 }
 
-static void resampling2_3d_draw_3d(resampling2_nodes_3d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot) {
+static void resampling2_3d_draw_3d(resampling2_nodes_3d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot, br_shaders_t* shaders) {
   assert(plot->kind == br_plot_kind_3d);
   assert(pg->kind == br_data_kind_3d);
   ZoneScopedN("resampling2_3d");
@@ -377,14 +378,14 @@ static void resampling2_3d_draw_3d(resampling2_nodes_3d_allocator_t const* const
   float const* ys = pg->ddd.ys;
   float const* zs = pg->ddd.zs;
   resampling2_nodes_3d_t node = nodes->arr[index];
-  Matrix mvp = plot->ddd.line_shader->uvs.m_mvp_uv;
+  Matrix mvp = shaders->line_3d->uvs.m_mvp_uv;
   Vector3 eye = plot->ddd.eye;
   Vector3 target = plot->ddd.target;
   if (false == node.is_inside(&pg->ddd, mvp)) return;
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
     size_t st = node.base.index_start;
-    smol_mesh_3d_gen_line_strip1(plot->ddd.line_shader, &xs[st], &ys[st], &zs[st], node.base.len + (is_end ? 0 : 1), pg->color);
+    smol_mesh_3d_gen_line_strip1(shaders->line_3d, &xs[st], &ys[st], &zs[st], node.base.len + (is_end ? 0 : 1), pg->color);
     return;
   }
   Vector2 ratios = node.get_ratios(&pg->ddd, eye, Vector3Subtract(target, eye));
@@ -407,16 +408,16 @@ static void resampling2_3d_draw_3d(resampling2_nodes_3d_allocator_t const* const
     size_t cur = indexies[0];
     for (size_t i = 1; i < 8; ++i) {
       if (cur == indexies[i]) continue;
-      smol_mesh_3d_gen_line(plot->ddd.line_shader, CLITERAL(Vector3) { xs[cur], ys[cur], zs[cur] }, CLITERAL(Vector3) { xs[indexies[i]], ys[indexies[i]], zs[indexies[i]] }, pg->color);
+      smol_mesh_3d_gen_line(shaders->line_3d, CLITERAL(Vector3) { xs[cur], ys[cur], zs[cur] }, CLITERAL(Vector3) { xs[indexies[i]], ys[indexies[i]], zs[indexies[i]] }, pg->color);
       cur = indexies[i];
     }
   } else {
-    resampling2_3d_draw_3d(nodes, node.base.child1, pg, plot);
-    resampling2_3d_draw_3d(nodes, node.base.child2, pg, plot);
+    resampling2_3d_draw_3d(nodes, node.base.child1, pg, plot, shaders);
+    resampling2_3d_draw_3d(nodes, node.base.child2, pg, plot, shaders);
   }
 }
 
-void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot) {
+void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, br_shaders_t* shaders) {
   ZoneScopedN("resampline2_draw0");
 
   double start = GetTime();
@@ -424,15 +425,15 @@ void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot) 
   switch (pg->kind) {
     case br_data_kind_2d: {
       switch (plot->kind) {
-        case br_plot_kind_2d: resampling2_draw(&res->dd, 0, pg, plot); break;
-        case br_plot_kind_3d: resampling2_draw_3d(&res->dd, 0, pg, plot); break;
+        case br_plot_kind_2d: resampling2_draw(&res->dd, 0, pg, plot, shaders); break;
+        case br_plot_kind_3d: resampling2_draw_3d(&res->dd, 0, pg, plot, shaders); break;
       }
       break;
     }
     case br_data_kind_3d: {
       switch (plot->kind) {
         case br_plot_kind_2d: assert("Can't draw 3d data on 2d plot.." && 0);
-        case br_plot_kind_3d: resampling2_3d_draw_3d(&res->ddd, 0, pg, plot); break;
+        case br_plot_kind_3d: resampling2_3d_draw_3d(&res->ddd, 0, pg, plot, shaders); break;
       }
       break;
     }

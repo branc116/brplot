@@ -1,6 +1,7 @@
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
 #include "src/br_gui_internal.h"
+#include "src/br_shaders.h"
 #include "src/br_smol_mesh.h"
 #include "src/br_permastate.h"
 
@@ -25,10 +26,10 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   help_draw_fps(0, 0);
   br_plot_t* plot = &br->plots.arr[br->active_plot_index];
   br_plot_update_variables(br, plot, br->groups, GetMousePosition());
-  br_plot_update_shader_values(plot);
+  br_plot_update_shader_values(plot, &br->shaders);
   draw_grid_numbers(plot);
-  smol_mesh_grid_draw(plot);
-  br_datas_draw(br->groups, plot);
+  smol_mesh_grid_draw(plot, &br->shaders);
+  br_datas_draw(br->groups, plot, &br->shaders);
   draw_left_panel(br);
   EndDrawing();
 }
@@ -93,17 +94,17 @@ static void update_resolution(br_plotter_t* br) {
   plot->graph_screen_rect.height = h;
 }
 
-void br_plot_screenshot(br_plot_t* plot, br_datas_t groups, char const* path) {
+void br_plot_screenshot(br_plot_t* plot, br_shaders_t* shaders, br_datas_t groups, char const* path) {
   float left_pad = 80.f;
   float bottom_pad = 80.f;
   plot->resolution = (Vector2){1280, 720};
   RenderTexture2D target = LoadRenderTexture((int)plot->resolution.x, (int)plot->resolution.y); // TODO: make this values user defined.
   plot->graph_screen_rect = (Rectangle){left_pad, 0.f, plot->resolution.x - left_pad, plot->resolution.y - bottom_pad};
   br_plot_update_context(plot, GetMousePosition());
-  br_plot_update_shader_values(plot);
+  br_plot_update_shader_values(plot, shaders);
   BeginTextureMode(target);
-    smol_mesh_grid_draw(plot);
-    br_datas_draw(groups, plot);
+    smol_mesh_grid_draw(plot, shaders);
+    br_datas_draw(groups, plot, shaders);
     draw_grid_numbers(plot);
   EndTextureMode();
   Image img = LoadImageFromTexture(target.texture);

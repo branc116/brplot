@@ -73,7 +73,7 @@ void handle_all_commands(br_plotter_t* br, q_commands* commands) {
       case q_command_pop:           break; //TODO
       case q_command_clear:         br_data_clear(&br->groups, &br->plots, comm.clear.group); break;
       case q_command_clear_all:     br_datas_deinit(&br->groups); break;
-      case q_command_screenshot:    br_plot_screenshot(&br->plots.arr[0], br->groups, comm.path_arg.path); free(comm.path_arg.path); break;
+      case q_command_screenshot:    br_plot_screenshot(&br->plots.arr[0], &br->shaders, br->groups, comm.path_arg.path); free(comm.path_arg.path); break;
       case q_command_export:        br_plotter_export(br, comm.path_arg.path);     free(comm.path_arg.path); break;
       case q_command_exportcsv:     br_plotter_export_csv(br, comm.path_arg.path); free(comm.path_arg.path); break;
       case q_command_hide:          BR_ASSERT(0);

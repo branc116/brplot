@@ -241,25 +241,24 @@ void smol_mesh_gen_quad_3d_simple(br_shader_grid_3d_t* shader, Vector3 p1, Vecto
 }
 
 // TODO: This should be split to _gen and _draw
-void smol_mesh_grid_draw(br_plot_t* plot) {
+void smol_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
   // TODO 2D/3D
   int h = (int)plot->graph_screen_rect.height;
   rlViewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
   switch (plot->kind) {
     case br_plot_kind_2d: {
       TracyCFrameMarkStart("grid_draw_2d");
-      br_shader_grid_t* grid = plot->dd.grid_shader;
-      assert(grid->len == 0);
-      Vector2* p = (Vector2*)grid->vertexPosition_vbo;
+      assert(shaders->grid->len == 0);
+      Vector2* p = (Vector2*)shaders->grid->vertexPosition_vbo;
       p[0] = (Vector2) { .x = -1, .y = -1 };
       p[1] = (Vector2) { .x = 1,  .y = -1 };
       p[2] = (Vector2) { .x = 1,  .y = 1 };
       p[3] = (Vector2) { .x = -1, .y = -1 };
       p[4] = (Vector2) { .x = 1,  .y = 1 };
       p[5] = (Vector2) { .x = -1, .y = 1 };
-      grid->len = 2;
-      br_shader_grid_draw(grid);
-      grid->len = 0;
+      shaders->grid->len = 2;
+      br_shader_grid_draw(shaders->grid);
+      shaders->grid->len = 0;
       TracyCFrameMarkEnd("grid_draw_2d");
     } break;
     case br_plot_kind_3d: {
@@ -267,10 +266,10 @@ void smol_mesh_grid_draw(br_plot_t* plot) {
       float sz = 10000.f;
       rlDisableBackfaceCulling();
       //smol_mesh_gen_quad_simple(gv->graph_mesh_3d, r3, Color {0, 0, 1, 0});
-      smol_mesh_gen_quad_3d_simple(plot->ddd.grid_shader, (Vector3){ -sz, 0, -sz }, (Vector3){ sz, 0, -sz }, (Vector3){ sz, 0, sz }, (Vector3){ -sz, 0, sz }, (Color){0, 1, 0, 0});
-      smol_mesh_gen_quad_3d_simple(plot->ddd.grid_shader, (Vector3){ -sz, -sz, 0 }, (Vector3){ sz, -sz, 0 }, (Vector3){ sz, sz, 0 }, (Vector3){ -sz, sz, 0 }, (Color){0, 0, 1, 0});
-      br_shader_grid_3d_draw(plot->ddd.grid_shader);
-      plot->ddd.grid_shader->len = 0;
+      smol_mesh_gen_quad_3d_simple(shaders->grid_3d, (Vector3){ -sz, 0, -sz }, (Vector3){ sz, 0, -sz }, (Vector3){ sz, 0, sz }, (Vector3){ -sz, 0, sz }, (Color){0, 1, 0, 0});
+      smol_mesh_gen_quad_3d_simple(shaders->grid_3d, (Vector3){ -sz, -sz, 0 }, (Vector3){ sz, -sz, 0 }, (Vector3){ sz, sz, 0 }, (Vector3){ -sz, sz, 0 }, (Color){0, 0, 1, 0});
+      br_shader_grid_3d_draw(shaders->grid_3d);
+      shaders->grid_3d->len = 0;
       rlEnableBackfaceCulling();
       TracyCFrameMarkEnd("grid_draw_3d");
     } break;

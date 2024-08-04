@@ -80,10 +80,12 @@ void  br_imgui_free(void* p, void* user_data);
 #  define BR_IMGUI_FREE br_imgui_free
 #endif
 
-#if !defined(RELEASE) && defined(IMGUI) && defined(__linux__)
-#  define BR_HAS_HOTRELOAD 1
-#else
-#  define BR_HAS_HOTRELOAD 0
+#if !defined(BR_HAS_HOTRELOAD)
+#  if !defined(RELEASE) && defined(IMGUI) && defined(__linux__)
+#    define BR_HAS_HOTRELOAD 1
+#  else
+#    define BR_HAS_HOTRELOAD 0
+#  endif
 #endif
 
 #if !defined(RELEASE) && defined(__linux__)

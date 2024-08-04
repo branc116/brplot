@@ -1,5 +1,6 @@
 #pragma once
 #include "br_plot.h"
+#include "src/br_shaders.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,7 +16,7 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, Vecto
 bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, Vector2 mouse_pos);
 void br_plot_remove_group(br_plots_t plots, int group);
 void br_plot_update_context(br_plot_t* plot, Vector2 mouse_pos);
-void br_plot_update_shader_values(br_plot_t* plot);
+void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders);
 
 void br_gui_init_specifics_gui(br_plotter_t* br);
 void br_gui_init_specifics_platform(br_plotter_t* br);
