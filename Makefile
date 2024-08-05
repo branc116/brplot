@@ -97,6 +97,7 @@ ifeq ($(PLATFORM), LINUX)
 		COMMONFLAGS+= -DLIB -fPIC
 		LD_FLAGS+= -fPIC -shared
 	endif
+	LIBS+= -lm
 
 else ifeq ($(PLATFORM), WINDOWS)
 	BACKEND= GLFW
@@ -277,7 +278,7 @@ $(SHADERS_HEADER): ./src/desktop/shaders/* bin/shaders_bake
 	bin/shaders_bake $(PLATFORM) > $(SHADERS_HEADER)
 
 
-SOURCE_BENCH= ./src/misc/benchmark.c ./src/resampling2.cpp ./src/smol_mesh.c ./src/shaders.c ./src/plotter.c ./src/help.c ./src/gui.c ./src/data.c ./src/str.c ./src/plot.c ./src/q.c ./src/keybindings.c ./src/memory.cpp ./src/graph_utils.c ./src/data_generator.c ./src/platform.c  ./src/permastate.c ./src/filesystem.c ./src/filesystem++.cpp
+SOURCE_BENCH= ./src/misc/benchmark.c ./src/resampling2.c ./src/smol_mesh.c ./src/shaders.c ./src/plotter.c ./src/help.c ./src/gui.c ./src/data.c ./src/str.c ./src/plot.c ./src/q.c ./src/keybindings.c ./src/memory.cpp ./src/graph_utils.c ./src/data_generator.c ./src/platform.c  ./src/permastate.c ./src/filesystem.c ./src/filesystem++.cpp
 OBJSA_BENCH= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE_BENCH))
 OBJS_BENCH+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA_BENCH))
 OBJSDIR_BENCH= $(sort $(dir $(OBJS_BENCH)))
