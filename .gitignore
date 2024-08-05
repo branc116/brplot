@@ -5,6 +5,7 @@ src/misc/shaders.h
 src/misc/shaders_web.h
 zig-out
 zig-cache
+.zig-cache
 bench
 default_font.h
 .cache

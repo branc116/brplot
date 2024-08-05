@@ -25,14 +25,23 @@ TRACY     ?= NO
 LTO       ?= YES
 # GLFW | X11 | WAYLAND
 BACKEND   ?= GLFW
+# YES | NO
+ifeq ($(GUI)_$(PLATFORM), RAYLIB_LINUX)
+USE_CXX   ?= NO
+else
+USE_CXX   ?= YES
+endif
 
 RL                 = ./external/raylib-5.0/src
 IM                 = ./external/imgui-docking
 RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
-SOURCE             = src/main.c src/help.c src/data.c src/smol_mesh.c src/q.c src/read_input.c src/plotter.c \
-										 src/keybindings.c src/str.c src/memory.cpp src/resampling2.c src/graph_utils.c src/shaders.c \
-										 src/plot.c src/permastate.c src/filesystem.c src/filesystem++.cpp src/gui.c src/gui++.cpp \
-										 src/data_generator.c src/platform.c src/threads.c
+SOURCE             = src/main.c           src/help.c       src/data.c        src/smol_mesh.c   src/q.c       src/read_input.c \
+										 src/keybindings.c    src/str.c        src/resampling2.c src/graph_utils.c src/shaders.c src/plotter.c    \
+										 src/plot.c           src/permastate.c src/filesystem.c  src/gui.c \
+										 src/data_generator.c src/platform.c   src/threads.c
+ifeq ($(USE_CXX), YES)
+	SOURCE+= src/filesystem++.cpp src/gui++.cpp src/memory.cpp
+endif
 COMMONFLAGS        = -I. -I./external/glfw/include/ -I./external/Tracy -I$(RL) -MMD -MP
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra -Wshadow
 LD_FLAGS           =
@@ -80,7 +89,7 @@ ifeq ($(PLATFORM), LINUX)
 	  SOURCE+= $(RL)/rglfw.c
 		COMMONFLAGS+= -Iexternal/glfw/include -D_GLFW_WAYLAND  -I/home/branimir/Documents/github.com/glfw/glfw/build/src
 	else ifeq ($(BACKEND), GLFW)
-		LIBS= `pkg-config --static --libs glfw3` -lGL -pthread
+		LIBS= `pkg-config --static --libs glfw3` -pthread
 	endif
 	COMMONFLAGS+= -DLINUX=1 -DPLATFORM_DESKTOP=1
 	SHADERS_HEADER= src/misc/shaders.h
@@ -188,8 +197,14 @@ $(shell $(foreach var,$(OBJSDIR), test -d $(var) || mkdir -p $(var);))
 $(shell test -d $(dir $(OUTPUT)) || mkdir $(dir $(OUTPUT)))
 $(shell test -d bin || mkdir bin)
 
+ifeq ($(USE_CXX), YES)
+	LD= $(CXX)
+else
+	LD= $(CC)
+endif
+
 $(OUTPUT): $(OBJS)
-	$(CXX) $(COMMONFLAGS) $(LD_FLAGS) -o $@ $(OBJS) $(LIBS)
+	$(LD) $(COMMONFLAGS) $(LD_FLAGS) -o $@ $(OBJS) $(LIBS)
 	ln -fs $@ brplot
 
 $(PREFIX_BUILD)/src/%.o:src/%.c

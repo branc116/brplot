@@ -16,6 +16,11 @@ void br_thread_start(void *(*function)(void *), void* args) {
 void br_thread_start(void *(*function)(void *), void* args) {
   CreateThread(NULL, 0, function, args, 0, NULL);
 }
+#elif defined(__EMSCRIPTEN__)
+#include <stdio.h>
+void br_thread_start(void *(*function)(void *), void* args) {
+  printf("Can't create thread on the web...\n");
+}
 #else
 #  error "Unsupported Platform"
 #endif

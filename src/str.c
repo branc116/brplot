@@ -1,4 +1,5 @@
 #include "src/br_plot.h"
+#include "src/br_pp.h"
 #include "src/br_str.h"
 
 #include <string.h>
@@ -188,6 +189,12 @@ void br_str_to_c_str1(br_str_t s, char* out_s) {
   out_s[s.len] = 0;
 }
 
+char* br_strv_to_scrach(br_strv_t s) {
+  char* scrach = br_scrach_get(s.len + 1);
+  br_strv_to_c_str1(s, scrach);
+  return scrach;
+}
+
 char* br_strv_to_c_str(br_strv_t s) {
   char* out_s = BR_MALLOC(s.len + 1);
   if (out_s == NULL) return NULL;
@@ -210,6 +217,32 @@ int br_strv_to_int(br_strv_t str) {
   int len = sprintf(buff, "%.*s", str.len, str.str);
   buff[len] = '\0';
   return atoi(buff);
+}
+
+static _Thread_local char*  scrach = NULL;
+static _Thread_local size_t scrach_cur_cap = 0;
+static _Thread_local bool   scrach_is_taken = false;
+
+char* br_scrach_get(size_t size) {
+  BR_ASSERT(false == scrach_is_taken);
+  scrach_is_taken = true;
+  if (NULL == scrach) {
+    size_t new_size = 1024 > size ? 1024 : size;
+    scrach = BR_MALLOC(new_size);
+    scrach_cur_cap = new_size;
+    return scrach;
+  }
+  if (size > scrach_cur_cap) {
+    size_t new_size = scrach_cur_cap * 2 > size ? scrach_cur_cap * 2: size;
+    scrach = BR_REALLOC(scrach, new_size);
+    scrach_cur_cap = new_size;
+  }
+  return scrach;
+}
+
+void br_scrach_free(void) {
+  BR_ASSERT(scrach_is_taken == true);
+  scrach_is_taken = false;
 }
 
 #ifndef _MSC_VER

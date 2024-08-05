@@ -22,3 +22,4 @@ int main(void) {
 
 // gcc -I . -L bin -o example ./tests/example_use_brplot_as_lib.c -lbrplot
 // gcc -I . -L bin -o example.o -c ./tests/example_use_brplot_as_lib.c && g++ -L bin example.o -lbrplot
+// make USE_CXX=NO TYPE=LIB GUI=RAYLIB CONFIG=DEBUG && gcc -ggdb -I . -L bin ./tests/example_use_brplot_as_lib.c -lbrplot && LD_LIBRARY_PATH="$PWD/bin" ./a.out

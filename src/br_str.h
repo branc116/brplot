@@ -53,11 +53,16 @@ char*      br_str_move_to_c_str(br_str_t* s);
 br_str_t   br_str_copy(br_str_t s);
 br_str_t   br_str_from_c_str(const char* str);
 void       br_str_to_c_str1(br_str_t s, char* out_s);
+
 bool       br_strv_eq(br_strv_t s1, br_strv_t s2);
+char*      br_strv_to_scrach(br_strv_t s);
 char*      br_strv_to_c_str(br_strv_t s);
 void       br_strv_to_c_str1(br_strv_t s, char* out_s);
 br_strv_t  br_strv_from_c_str(const char* s);
 int        br_strv_to_int(br_strv_t str);
+
+char*      br_scrach_get(size_t len);
+void       br_scrach_free(void);
 
 #ifdef __cplusplus
 }
