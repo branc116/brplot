@@ -22,7 +22,6 @@
 #include <algorithm>
 #include <stdint.h>
 #include <math.h>
-#include <float.h>
 #include <string.h>
 #include <assert.h>
 
@@ -124,13 +123,14 @@ Vector2 resampling2_nodes_3d_t::get_ratios(br_data_3d_t const* data, Vector3 eye
           maxz = br_data_3d_get_v3(data, max_index_z);
   Vector3 M = { maxx.x, maxy.y, maxz.z };
   Vector3 m = { minx.x, miny.y, minz.z };
-  float dist = Vector3Distance(minx, eye);
-  float pot_dist = Vector3Distance(miny, eye);
+  float dist = Vector3DistanceSqr(minx, eye);
+  float pot_dist = Vector3DistanceSqr(miny, eye);
   if (pot_dist < dist) dist = pot_dist;
-  pot_dist = Vector3Distance(minz, eye); if (pot_dist < dist) dist = pot_dist;
-  pot_dist = Vector3Distance(maxx, eye); if (pot_dist < dist) dist = pot_dist;
-  pot_dist = Vector3Distance(maxy, eye); if (pot_dist < dist) dist = pot_dist;
-  pot_dist = Vector3Distance(maxz, eye); if (pot_dist < dist) dist = pot_dist;
+  pot_dist = Vector3DistanceSqr(minz, eye); if (pot_dist < dist) dist = pot_dist;
+  pot_dist = Vector3DistanceSqr(maxx, eye); if (pot_dist < dist) dist = pot_dist;
+  pot_dist = Vector3DistanceSqr(maxy, eye); if (pot_dist < dist) dist = pot_dist;
+  pot_dist = Vector3DistanceSqr(maxz, eye); if (pot_dist < dist) dist = pot_dist;
+  dist = sqrtf(dist);
 
   Vector3 rot_axis = Vector3CrossProduct({0, 0, 1.f}, look_dir);
   float angle = Vector3Angle({0, 0, 1.f}, look_dir);
