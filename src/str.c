@@ -1,6 +1,7 @@
 #include "src/br_plot.h"
 #include "src/br_pp.h"
 #include "src/br_str.h"
+#include "raylib.h"
 
 #include <string.h>
 
@@ -219,9 +220,9 @@ int br_strv_to_int(br_strv_t str) {
   return atoi(buff);
 }
 
-static _Thread_local char*  scrach = NULL;
-static _Thread_local size_t scrach_cur_cap = 0;
-static _Thread_local bool   scrach_is_taken = false;
+static RL_THREAD_LOCAL char*  scrach = NULL;
+static RL_THREAD_LOCAL size_t scrach_cur_cap = 0;
+static RL_THREAD_LOCAL bool   scrach_is_taken = false;
 
 char* br_scrach_get(size_t size) {
   BR_ASSERT(false == scrach_is_taken);

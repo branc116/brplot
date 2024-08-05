@@ -41,7 +41,7 @@
 
 // This contains all mutable state shared between compilation units of GLFW
 //
-_Thread_local _GLFWlibrary _glfw = { GLFW_FALSE };
+_GLFWlibrary RL_THREAD_LOCAL _glfw = { GLFW_FALSE };
 
 // These are outside of _glfw so they can be used before initialization and
 // after termination without special handling when _glfw is cleared to zero

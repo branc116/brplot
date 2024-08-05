@@ -79,6 +79,18 @@
 #ifndef RAYLIB_H
 #define RAYLIB_H
 
+#if defined(__cplusplus) &&  __cplusplus >= 201103L
+#  define RL_THREAD_LOCAL       thread_local
+#elif defined(__GNUC__) && __GNUC__ < 5
+#  define RL_THREAD_LOCAL       __thread
+#elif defined(_MSC_VER)
+#  define RL_THREAD_LOCAL       __declspec(thread)
+#elif defined (__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
+#  define RL_THREAD_LOCAL       _Thread_local
+#elif defined(__GNUC__)
+#  define RL_THREAD_LOCAL       __thread
+#endif
+
 #include <stdarg.h>     // Required for: va_list - Only used by TraceLogCallback
 
 #define RAYLIB_VERSION_MAJOR 5
