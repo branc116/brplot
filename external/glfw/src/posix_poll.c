@@ -28,6 +28,11 @@
 
 #define _GNU_SOURCE
 
+#include <poll.h>
+#include <signal.h>
+int ppoll(struct pollfd *fds, nfds_t nfds,
+         const struct timespec * tmo_p,
+         const sigset_t * sigmask);
 #include "internal.h"
 
 #include <signal.h>

@@ -42,9 +42,10 @@ bool br_fs_get_config_dir(br_str_t* path) {
 
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
 bool br_fs_mkdir(br_strv_t path) {
+  if (br_fs_exists(path)) return true;
   char* scrach = br_strv_to_scrach(path);
   int ret = mkdir(scrach, ACCESSPERMS);
-  if (ret == -1) LOGEF("Failed to create file `%s`: %s", scrach, strerror(errno));
+  if (ret == -1) LOGEF("Failed to create directory `%s`: %s", scrach, strerror(errno));
   br_scrach_free();
   return ret == 0;
 }
@@ -54,7 +55,7 @@ bool br_fs_exists(br_strv_t path) {
   char* scrach = br_strv_to_scrach(path);
   stat(scrach, &s);
   br_scrach_free();
-  return (s.st_mode & S_IFMT) == S_IFDIR;
+  return 0 != ((s.st_mode & S_IFMT) & (S_IFDIR | S_IFCHR | S_IFBLK | S_IFREG));
 }
 #elif defined(__EMSCRIPTEN__)
 bool br_fs_mkdir(br_strv_t path) { return false; }

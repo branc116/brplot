@@ -104,9 +104,9 @@ typedef struct {
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-extern CoreData CORE;                   // Global CORE state context
+extern _Thread_local CoreData CORE;                   // Global CORE state context
 
-static PlatformData platform = { 0 };   // Platform specific data
+static _Thread_local PlatformData platform = { 0 };   // Platform specific data
 
 //----------------------------------------------------------------------------------
 // Module Internal Functions Declaration

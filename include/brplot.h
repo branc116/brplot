@@ -151,7 +151,7 @@ void br_plot_show_data(br_plotter_t* plotter, br_plot_id plot, br_data_id data);
 void br_plot_hide_data(br_plotter_t* plotter, br_plot_id plot, br_data_id data);
 
 br_data_id br_simp_plot_v1n(br_data_id data_id, float const* points, int n);
-br_data_id br_simp_wait(void);
+void br_simp_wait(void);
 
 #if defined(__cplusplus)
 }

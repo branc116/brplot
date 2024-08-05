@@ -880,7 +880,7 @@ struct _GLFWlibrary
 
 // Global state shared between compilation units of GLFW
 //
-extern _GLFWlibrary _glfw;
+extern _Thread_local _GLFWlibrary _glfw;
 
 
 //////////////////////////////////////////////////////////////////////////

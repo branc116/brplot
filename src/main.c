@@ -1,8 +1,11 @@
 #include "br_plotter.h"
+#include "include/brplot.h"
 #include "src/br_data.h"
 #include "src/br_pp.h"
 #include "src/br_q.h"
 #include "src/br_resampling2.h"
+#include "br_permastate.h"
+#include "br_da.h"
 #include "tracy/TracyC.h"
 #include <unistd.h>
 
@@ -23,12 +26,14 @@ static void* main_gui(void* plotter) {
     br_plotter_frame_end(br);
     TracyCFrameMarkEnd("plotter_frame_end");
   }
+  CloseWindow();
+  br->should_close = true;
+
   return 0;
 }
 
 #if !defined(LIB)
 #include "br_plot.h"
-#include "br_permastate.h"
 #include "br_pp.h"
 
 #include "raylib.h"
@@ -52,36 +57,33 @@ int main(void) {
 #else
   SetTraceLogLevel(LOG_ERROR);
 #endif
-  br_plotter_t* gv = br_plotter_malloc();
-  if (NULL == gv) {
+  br_plotter_t* br = br_plotter_malloc();
+  if (NULL == br) {
     LOGE("Failed to malloc br plotter, exiting...\n");
     exit(1);
   }
-  gv->height = HEIGHT;
-  gv->width = WIDTH;
-  br_plotter_init(gv, true);
+  br->height = HEIGHT;
+  br->width = WIDTH;
+  br_plotter_init(br, true);
 #if BR_HAS_SHADER_RELOAD
   start_refreshing_shaders(gv);
 #endif
-  read_input_start(gv);
+  read_input_start(br);
   SetExitKey(KEY_NULL);
-  main_gui(gv);
+  main_gui(br);
 
-  // Clean up
+  // CLEAN UP
   read_input_stop();
-  br_permastate_save(gv);
-  br_plotter_free(gv);
-  BR_FREE(gv);
-  CloseWindow();
+  br_permastate_save(br);
+  br_plotter_free(br);
+  BR_FREE(br);
   return 0;
 }
 #endif
 
 #if defined(LIB)
-#include "include/brplot.h"
 #include "br_plotter.h"
 #include "br_threads.h"
-#include "br_da.h"
 
 #define VERSION 1
 
@@ -165,9 +167,30 @@ br_data_id br_data_new(br_plotter_t* plotter, br_data_ctor_t const* ctor) {
 
 int br_data_add_v1n(br_plotter_t* plotter, br_data_id data, float const* x, int n) {
   int i = 0;
-  for (i = 0; i < n; ++i) q_push(plotter->commands, (q_command){ .type = q_command_push_point_x, .push_point_x = { .x = x[i], .group = data } } );
+  for (i = 0; i < n; ++i) q_push(plotter->commands, (q_command){ .type = q_command_push_point_y, .push_point_y = { .y = x[i], .group = data } } );
   return i;
 }
 
 #endif
+
+static br_plotter_t* g_brplot_br_plotter = NULL;
+
+br_data_id br_simp_plot_v1n(br_data_id data_id, const float *points, int n) {
+  if (NULL == g_brplot_br_plotter) {
+    g_brplot_br_plotter = br_plotter_new(br_plotter_default_ctor());
+    br_plot_new(g_brplot_br_plotter, br_plot_default_ctor());
+  }
+  if (data_id <= 0) {
+    data_id = br_data_new(g_brplot_br_plotter, br_data_default_ctor());
+    for (int i = 0; i < g_brplot_br_plotter->plots.len; ++i) {
+      br_da_push_t(int, g_brplot_br_plotter->plots.arr->groups_to_show, data_id);
+    }
+  }
+  br_data_add_v1n(g_brplot_br_plotter, data_id, points, n);
+  return data_id;
+}
+
+void br_simp_wait(void) {
+  br_plotter_wait(g_brplot_br_plotter);
+}
 
