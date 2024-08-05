@@ -66,7 +66,7 @@ int main(void) {
   br->width = WIDTH;
   br_plotter_init(br, true);
 #if BR_HAS_SHADER_RELOAD
-  start_refreshing_shaders(gv);
+  start_refreshing_shaders(br);
 #endif
   read_input_start(br);
   SetExitKey(KEY_NULL);
@@ -171,8 +171,6 @@ int br_data_add_v1n(br_plotter_t* plotter, br_data_id data, float const* x, int 
   return i;
 }
 
-#endif
-
 static br_plotter_t* g_brplot_br_plotter = NULL;
 
 br_data_id br_simp_plot_v1n(br_data_id data_id, const float *points, int n) {
@@ -193,4 +191,6 @@ br_data_id br_simp_plot_v1n(br_data_id data_id, const float *points, int n) {
 void br_simp_wait(void) {
   br_plotter_wait(g_brplot_br_plotter);
 }
+
+#endif
 

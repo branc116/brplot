@@ -41,6 +41,4 @@ time ./bin/brplot_imgui_linux_debug_clang --unittest && echo "UNIT TESTS for img
 time ./bin/brplot_raylib_linux_debug_clang --unittest && echo "UNIT TESTS for raylib OK" && \
 time ./bin/brplot_headless_linux_debug_clang --unittest && echo "UNIT TESTS for headless OK" && \
 ls -alFh bin && \
-strip bin/* && \
-ls -alFh bin && \
 echo "OK"
