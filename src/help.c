@@ -1,6 +1,6 @@
 #include "br_plot.h"
 #include "br_help.h"
-#include "misc/default_font.h"
+#include ".generated/default_font.h"
 
 #define RAYMATH_STATIC_INLINE
 #include "raylib.h"

@@ -77,7 +77,7 @@ extern "C" void br_gui_init_specifics_gui(br_plotter_t* br) {
 
   ImGuiStyle& s = ImGui::GetStyle();
   s.Colors[ImGuiCol_WindowBg].w = 0.f;
-#if !defined(RELEASE) && defined(__linux__)
+#if BR_HAS_HOTRELOAD
   br_hotreload_start(&br->hot_state);
 #endif
     ImGui::LoadIniSettingsFromMemory(DEFAULT_INI);
@@ -123,7 +123,7 @@ void graph_draw_min(br_datas_t groups, br_plot_t* plot, br_shaders_t* shaders, f
 
 extern "C" void br_plotter_draw(br_plotter_t* br) {
   static float padding = 50.f;
-#if !defined(RELEASE) && defined(__linux__)
+#if BR_HAS_HOTRELOAD
   if (br->hot_state.is_init_called == false && br->hot_state.func_init != nullptr) {
     pthread_mutex_lock(&br->hot_state.lock);
       if (br->hot_state.func_init != nullptr) {
@@ -164,7 +164,7 @@ extern "C" void br_plotter_draw(br_plotter_t* br) {
     ImGui::End();
     ImGui::PopID();
   }
-#if !defined(RELEASE) && defined(__linux__)
+#if BR_HAS_HOTRELOAD
   if (br->hot_state.func_loop != nullptr) {
     pthread_mutex_lock(&br->hot_state.lock);
       if (br->hot_state.func_loop != nullptr) br->hot_state.func_loop(br);

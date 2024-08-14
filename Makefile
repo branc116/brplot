@@ -44,7 +44,7 @@ SOURCE             = src/main.c           src/help.c       src/data.c        src
 ifeq ($(USE_CXX), YES)
 	SOURCE+= src/filesystem++.cpp src/gui++.cpp src/memory.cpp
 endif
-COMMONFLAGS        = -I. -Iexternal/glfw/include/ -Iexternal/Tracy -I$(RL) -MMD -MP
+COMMONFLAGS        = -I. -Iexternal/glfw/include/ -Iexternal/Tracy -I$(RL) -MMD -MP -fvisibility=hidden
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra -Wshadow
 LD_FLAGS           =
 
@@ -96,7 +96,7 @@ ifeq ($(PLATFORM), LINUX)
 		endif
 	endif
 	COMMONFLAGS+= -DLINUX=1 -DPLATFORM_DESKTOP=1
-	SHADERS_HEADER= src/misc/shaders.h
+	SHADERS_HEADER= .generated/shaders.h
 	ifeq ($(TYPE), LIB)
 		COMMONFLAGS+= -fPIC -DLIB
 		LD_FLAGS+= -fPIC -shared
@@ -110,7 +110,7 @@ else ifeq ($(PLATFORM), WINDOWS)
 	CC= x86_64-w64-mingw32-gcc
 	COMMONFLAGS+= -Iexternal/glfw/include -DWINDOWS=1 -DPLATFORM_DESKTOP=1 -D_WIN32=1 -DWIN32_LEAN_AND_MEAN
 	SOURCE+= $(RL)/rglfw.c
-	SHADERS_HEADER= src/misc/shaders.h
+	SHADERS_HEADER= .generated/shaders.h
 	COMPILER= MINGW
 
 else ifeq ($(PLATFORM), WEB)
@@ -121,7 +121,7 @@ else ifeq ($(PLATFORM), WEB)
 	WARNING_FLAGS+= -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-newline-eof
 	LD_FLAGS= -sWASM_BIGINT -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH -sUSE_GLFW=3 -sUSE_WEBGL2=1 -sGL_ENABLE_GET_PROC_ADDRESS --shell-file=src/web/minshell.html
 	LD_FLAGS+= -sCHECK_NULL_WRITES=0 -sDISABLE_EXCEPTION_THROWING=1 -sFILESYSTEM=0 -sDYNAMIC_EXECUTION=0
-	SHADERS_HEADER= src/misc/shaders_web.h
+	SHADERS_HEADER= .generated/shaders_web.h
 	COMPILER= EMCC
 	ifeq ($(TYPE), LIB)
 		COMMONFLAGS+= -DLIB
@@ -152,8 +152,6 @@ ifeq ($(CONFIG), DEBUG)
 				 -fsanitize=address -fsanitize=leak \
 				 -fsanitize=undefined -fsanitize=signed-integer-overflow \
 				 -fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
-			else ifeq ($(TYPE), LIB)
-				COMMONFLAGS+= -DBR_HAS_HOTRELOAD=0
 			endif
 			COMMONFLAGS+= -pg
 		endif
@@ -187,10 +185,10 @@ ifeq ($(TYPE), EXE)
 else
 	ifeq ($(STATIC), YES)
 		PREFIX_BUILD= $(shell echo 'build/slib/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
-		OUTPUT= bin/brplot.a
+		OUTPUT= bin/$(shell echo 'bin/libbrplot_$(GUI)_$(PLATFORM)_$(CONFIG)_$(COMPILER).a' | tr '[A-Z]' '[a-z]')
 	else
 		PREFIX_BUILD= $(shell echo 'build/lib/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
-		OUTPUT= bin/libbrplot.so
+		OUTPUT= $(shell echo 'bin/libbrplot_$(GUI)_$(PLATFORM)_$(CONFIG)_$(COMPILER).so' | tr '[A-Z]' '[a-z]')
 	endif
 endif
 
@@ -230,7 +228,7 @@ $(PREFIX_BUILD)/%.o: %.c
 
 $(OBJS): $(NOBS)
 
-src/help.c: src/misc/default_font.h
+src/help.c: .generated/default_font.h
 ifeq ($(CONFIG), DEBUG)
 endif
 src/shaders.c: $(SHADERS_HEADER)
@@ -275,8 +273,9 @@ bench: bin/bench
 	./bin/bench >> bench.txt
 	cat bench.txt
 
-src/misc/default_font.h: bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf
-	bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf > src/misc/default_font.h
+.generated/default_font.h: bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf
+	test -d .generated || mkdir .generated
+	bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf > .generated/default_font.h
 
 bin/font_export: tools/font_export.c
 	$(NATIVE_CC) -o bin/font_export tools/font_export.c -lm
