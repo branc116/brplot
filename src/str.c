@@ -247,7 +247,7 @@ void br_scrach_free(void) {
 }
 
 #ifndef _MSC_VER
-#include "misc/tests.h"
+#include "external/tests.h"
 TEST_CASE(str_tests) {
   char c[128];
   br_str_t br = br_str_malloc(2);

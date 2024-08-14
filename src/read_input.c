@@ -779,7 +779,7 @@ void read_input_main_worker(br_plotter_t* gv) {
 
 #ifndef _MSC_VER
 #ifndef RELEASE
-#include "misc/tests.h"
+#include "external/tests.h"
 
 int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
   lex_state_t s;
