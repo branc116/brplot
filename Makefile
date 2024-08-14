@@ -27,13 +27,15 @@ LTO       ?= YES
 BACKEND   ?= GLFW
 # YES | NO
 ifeq ($(GUI)_$(PLATFORM), RAYLIB_LINUX)
-USE_CXX   ?= NO
+	USE_CXX   ?= NO
 else
-USE_CXX   ?= YES
+	USE_CXX   ?= YES
 endif
+# Only when TYPE=LIB
+STATIC   ?= NO
 
-RL                 = ./external/raylib-5.0/src
-IM                 = ./external/imgui-docking
+RL                 = external/raylib-5.0/src
+IM                 = external/imgui-docking
 RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
 SOURCE             = src/main.c           src/help.c       src/data.c        src/smol_mesh.c   src/q.c       src/read_input.c \
 										 src/keybindings.c    src/str.c        src/resampling2.c src/graph_utils.c src/shaders.c src/plotter.c    \
@@ -42,7 +44,7 @@ SOURCE             = src/main.c           src/help.c       src/data.c        src
 ifeq ($(USE_CXX), YES)
 	SOURCE+= src/filesystem++.cpp src/gui++.cpp src/memory.cpp
 endif
-COMMONFLAGS        = -I. -I./external/glfw/include/ -I./external/Tracy -I$(RL) -MMD -MP
+COMMONFLAGS        = -I. -Iexternal/glfw/include/ -Iexternal/Tracy -I$(RL) -MMD -MP
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra -Wshadow
 LD_FLAGS           =
 
@@ -89,12 +91,14 @@ ifeq ($(PLATFORM), LINUX)
 	  SOURCE+= $(RL)/rglfw.c
 		COMMONFLAGS+= -Iexternal/glfw/include -D_GLFW_WAYLAND  -I/home/branimir/Documents/github.com/glfw/glfw/build/src
 	else ifeq ($(BACKEND), GLFW)
-		LIBS= `pkg-config --static --libs glfw3` -pthread
+		ifeq ($(STATIC), NO)
+			LIBS= `pkg-config --static --libs glfw3` -pthread
+		endif
 	endif
 	COMMONFLAGS+= -DLINUX=1 -DPLATFORM_DESKTOP=1
 	SHADERS_HEADER= src/misc/shaders.h
 	ifeq ($(TYPE), LIB)
-		COMMONFLAGS+= -DLIB -fPIC
+		COMMONFLAGS+= -fPIC -DLIB
 		LD_FLAGS+= -fPIC -shared
 	endif
 	LIBS+= -lm
@@ -171,14 +175,6 @@ ifeq ($(TRACY), YES)
 	LD_FLAGS+= -ltracy
 endif
 
-ifeq ($(BACKEND), GLFW)
-	PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
-else
-	PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)/$(BACKEND)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
-endif
-OBJSA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE))
-OBJS+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
-MAKE_INCLUDES= $(patsubst %.o, %.d, $(OBJS))
 CXXFLAGS= $(COMMONFLAGS) -fno-exceptions -std=gnu++17
 CCFLAGS= $(COMMONFLAGS) -std=gnu11
 ifeq ($(TYPE), EXE)
@@ -189,14 +185,19 @@ ifeq ($(TYPE), EXE)
 		OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(BACKEND)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
 	endif
 else
-	PREFIX_BUILD= $(shell echo 'build/lib/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
-	OUTPUT= bin/libbrplot.so
+	ifeq ($(STATIC), YES)
+		PREFIX_BUILD= $(shell echo 'build/slib/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
+		OUTPUT= bin/brplot.a
+	else
+		PREFIX_BUILD= $(shell echo 'build/lib/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
+		OUTPUT= bin/libbrplot.so
+	endif
 endif
 
-OBJSDIR= $(sort $(dir $(OBJS)))
-$(shell $(foreach var,$(OBJSDIR), test -d $(var) || mkdir -p $(var);))
-$(shell test -d $(dir $(OUTPUT)) || mkdir $(dir $(OUTPUT)))
-$(shell test -d bin || mkdir bin)
+OBJSA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE))
+OBJS+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
+MAKE_INCLUDES= $(patsubst %.o, %.d, $(OBJS))
+NOBS= $(patsubst %.o, %.nob.dir, $(OBJS))
 
 ifeq ($(USE_CXX), YES)
 	LD= $(CXX)
@@ -204,21 +205,30 @@ else
 	LD= $(CC)
 endif
 
+$(OUTPUT):
+
+ifeq ($(STATIC), YES)
+%.a: $(OBJS)
+	ar rcs $@ $^
+else
 $(OUTPUT): $(OBJS)
 	$(LD) $(COMMONFLAGS) $(LD_FLAGS) -o $@ $(OBJS) $(LIBS)
 	ln -fs $@ brplot
+endif
 
-$(PREFIX_BUILD)/src/%.o:src/%.c
+$(PREFIX_BUILD)/src/%.o: src/%.c
 	$(CC) $(CCFLAGS) $(WARNING_FLAGS) -c -o $@ $<
 
-$(PREFIX_BUILD)/src/%.o:src/%.cpp
+$(PREFIX_BUILD)/src/%.o: src/%.cpp
 	$(CXX) $(CXXFLAGS) $(WARNING_FLAGS) -c -o $@ $<
 
-$(PREFIX_BUILD)/%.o:%.cpp
+$(PREFIX_BUILD)/%.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-$(PREFIX_BUILD)/%.o:%.c
+$(PREFIX_BUILD)/%.o: %.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
+
+$(OBJS): $(NOBS)
 
 src/help.c: src/misc/default_font.h
 ifeq ($(CONFIG), DEBUG)
@@ -271,21 +281,18 @@ src/misc/default_font.h: bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf
 bin/font_export: tools/font_export.c
 	$(NATIVE_CC) -o bin/font_export tools/font_export.c -lm
 
-bin/shaders_bake: ./tools/shaders_bake.c ./src/br_shaders.h ./src/str.c
-	$(NATIVE_CC) -I. -I./external/raylib-5.0/src -O3 -o bin/shaders_bake src/str.c tools/shaders_bake.c
+bin/shaders_bake: tools/shaders_bake.c src/br_shaders.h src/str.c
+	$(NATIVE_CC) -I. -Iexternal/raylib-5.0/src -O3 -o bin/shaders_bake src/str.c tools/shaders_bake.c
 
-$(SHADERS_HEADER): ./src/desktop/shaders/* bin/shaders_bake
+$(SHADERS_HEADER): src/desktop/shaders/* bin/shaders_bake
 	bin/shaders_bake $(PLATFORM) > $(SHADERS_HEADER)
 
 
 SOURCE_BENCH= ./src/misc/benchmark.c ./src/resampling2.c ./src/smol_mesh.c ./src/shaders.c ./src/plotter.c ./src/help.c ./src/gui.c ./src/data.c ./src/str.c ./src/plot.c ./src/q.c ./src/keybindings.c ./src/memory.cpp ./src/graph_utils.c ./src/data_generator.c ./src/platform.c  ./src/permastate.c ./src/filesystem.c ./src/filesystem++.cpp
 OBJSA_BENCH= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE_BENCH))
 OBJS_BENCH+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA_BENCH))
-OBJSDIR_BENCH= $(sort $(dir $(OBJS_BENCH)))
-$(shell $(foreach var,$(OBJSDIR_BENCH), test -d $(var) || mkdir -p $(var);))
 bin/bench: $(OBJS_BENCH)
 	$(CXX) $(LD_FLAGS) -o bin/bench $(COMMONFLAGS) $(LIBS) $(OBJS_BENCH)
-
 
 COMPILE_FLAGS_JSONA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.json, $(SOURCE))
 COMPILE_FLAGS_JSON= $(patsubst %.c, $(PREFIX_BUILD)/%.json, $(COMPILE_FLAGS_JSONA))
@@ -326,3 +333,7 @@ $(PREFIX_BUILD)/%.json:%.cpp
 	echo '},' >> $@
 
 -include $(MAKE_INCLUDES)
+
+%nob.dir:
+	mkdir -p $(dir $@)
+	touch $@
