@@ -1,7 +1,10 @@
 #pragma once
+#include "br_pp.h"
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,6 +56,8 @@ char*      br_str_move_to_c_str(br_str_t* s);
 br_str_t   br_str_copy(br_str_t s);
 br_str_t   br_str_from_c_str(const char* str);
 void       br_str_to_c_str1(br_str_t s, char* out_s);
+char*      br_str_to_scrach(br_str_t s);
+char*      br_str_move_to_scrach(br_str_t s);
 
 bool       br_strv_eq(br_strv_t s1, br_strv_t s2);
 char*      br_strv_to_scrach(br_strv_t s);
@@ -61,8 +66,28 @@ void       br_strv_to_c_str1(br_strv_t s, char* out_s);
 br_strv_t  br_strv_from_c_str(const char* s);
 int        br_strv_to_int(br_strv_t str);
 
+#if defined(RELEASE)
 char*      br_scrach_get(size_t len);
 void       br_scrach_free(void);
+#else
+char*      _br_scrach_get(size_t len);
+void       _br_scrach_free(void);
+extern const char* br_scrach_alloc_at;
+extern int br_scrach_alloc_at_line;
+extern bool is_taken;
+bool br_scrach_check_is_taken(void);
+#define br_scrach_get(len) ( \
+    br_scrach_check_is_taken(), \
+    br_scrach_alloc_at = __FILE__, \
+    br_scrach_alloc_at_line = __LINE__, \
+    is_taken = true, \
+    _br_scrach_get(len))
+#define br_scrach_free() do { \
+  is_taken = false; \
+  _br_scrach_free(); \
+} while(0)
+
+#endif
 
 #ifdef __cplusplus
 }

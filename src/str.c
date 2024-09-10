@@ -189,6 +189,18 @@ void br_str_to_c_str1(br_str_t s, char* out_s) {
   out_s[s.len] = 0;
 }
 
+char* br_str_to_scrach(br_str_t s) {
+  char* scrach = br_scrach_get(s.len + 1);
+  br_str_to_c_str1(s, scrach);
+  return scrach;
+}
+
+char* br_str_move_to_scrach(br_str_t s) {
+  char* ret = br_str_to_scrach(s);
+  br_str_free(s);
+  return ret;
+}
+
 char* br_strv_to_scrach(br_strv_t s) {
   char* scrach = br_scrach_get(s.len + 1);
   br_strv_to_c_str1(s, scrach);
@@ -223,7 +235,25 @@ static _Thread_local char*  scrach = NULL;
 static _Thread_local size_t scrach_cur_cap = 0;
 static _Thread_local bool   scrach_is_taken = false;
 
-char* br_scrach_get(size_t size) {
+#if defined(RELEASE)
+#define SCRACH_GET_NAME br_scrach_get
+#define SCRACH_FREE_NAME br_scrach_free
+#else
+#define SCRACH_GET_NAME _br_scrach_get
+#define SCRACH_FREE_NAME _br_scrach_free
+const char* br_scrach_alloc_at;
+int br_scrach_alloc_at_line;
+bool is_taken;
+bool br_scrach_check_is_taken(void) {
+  if (is_taken) {
+    LOGEF("Trying to get a scrach but already allocated at: %s:%d", br_scrach_alloc_at, br_scrach_alloc_at_line);
+    BR_ASSERT(false);
+    exit(1);
+  }
+  return true;
+}
+#endif
+char* SCRACH_GET_NAME(size_t size) {
   BR_ASSERT(false == scrach_is_taken);
   scrach_is_taken = true;
   if (NULL == scrach) {
@@ -240,7 +270,7 @@ char* br_scrach_get(size_t size) {
   return scrach;
 }
 
-void br_scrach_free(void) {
+void SCRACH_FREE_NAME(void) {
   BR_ASSERT(scrach_is_taken == true);
   scrach_is_taken = false;
 }

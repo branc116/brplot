@@ -281,8 +281,8 @@ static bool resampling2_nodes_3d_push_point(resampling2_nodes_3d_allocator_t* no
 }
 
 static int size_t_cmp(void const* a, void const* b) {
-  size_t const* ap = a, *bp = b;
-  return (int)((long long)*ap - (long long)*bp);
+  long long const* ap = a, *bp = b;
+  return (int)(*ap - *bp);
 }
 
 static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot, br_shaders_t* const shaders) {
@@ -310,7 +310,7 @@ static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nod
       node.base.max_index_y,
       node.base.index_start + node.base.len - (is_end ? 1 : 0)
     };
-    qsort(indexies, sizeof(indexies)/sizeof(indexies[0]), sizeof(indexies), &size_t_cmp);
+    qsort(indexies, sizeof(indexies)/sizeof(indexies[0]), sizeof(indexies[0]), &size_t_cmp);
     Vector2 pss[] = {
       {xs[indexies[0]], ys[indexies[0]]}, {xs[indexies[1]], ys[indexies[0]]},
       {xs[indexies[2]], ys[indexies[2]]}, {xs[indexies[3]], ys[indexies[3]]},
@@ -351,7 +351,7 @@ static void resampling2_draw32(resampling2_nodes_2d_allocator_t const* const nod
       node.base.max_index_y,
       node.base.index_start + node.base.len - (is_end ? 1 : 0)
     };
-    qsort(indexies, sizeof(indexies)/sizeof(indexies[0]), sizeof(indexies), &size_t_cmp);
+    qsort(indexies, sizeof(indexies)/sizeof(indexies[0]), sizeof(indexies[0]), &size_t_cmp);
     Vector2 pss[] = {
       { xs[indexies[0]], ys[indexies[0]] }, { xs[indexies[1]], ys[indexies[1]] },
       { xs[indexies[2]], ys[indexies[2]] }, { xs[indexies[3]], ys[indexies[3]] },

@@ -110,6 +110,7 @@ BR_ALL_SHADERS(X, X_VEC, X_BUF)
 #undef X_VEC
 #undef X_BUF
 
+#define SET_VEC_TEX(NAME) rlSetUniformSampler(shader->NAME ## _u, shader->uvs.NAME ## _uv)
 #define SET_VEC16(NAME) rlSetUniformMatrix(shader->NAME ## _u, shader->uvs.NAME ## _uv)
 #define SET_VEC4(NAME)  rlSetUniform(shader->NAME ## _u, &shader->uvs.NAME ## _uv, RL_SHADER_UNIFORM_VEC4, 1)
 #define SET_VEC3(NAME)  rlSetUniform(shader->NAME ## _u, &shader->uvs.NAME ## _uv, RL_SHADER_UNIFORM_VEC3, 1)

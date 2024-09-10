@@ -5,6 +5,9 @@
 #include "string.h"
 #include "src/br_plot.h"
 
+#define STB_RECT_PACK_IMPLEMENTATION
+#include "external/stb_rect_pack.h"
+
 #define RLAPI
 
 #if !defined(_MSC_VER)
@@ -607,3 +610,9 @@ bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2)
 
 void rlDisableDepthTest(void) {}
 void rlEnableDepthTest(void) {}
+
+unsigned char *LoadFileData(const char *fileName, int *dataSize) { return NULL; }
+void rlSetUniformSampler(int locIndex, unsigned int textureId) { }
+void rlUnloadTexture(unsigned int id) { }
+unsigned int rlLoadTexture(const void *data, int width, int height, int format, int mipmapCount) { return 0; }
+void DrawTexture(Texture2D texture, int posX, int posY, Color tint) { }

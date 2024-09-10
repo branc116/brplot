@@ -5,6 +5,7 @@
 #include "br_resampling2.h"
 #include "br_q.h"
 #include "br_permastate.h"
+#include "src/br_text_renderer.h"
 
 #include <math.h>
 #include <string.h>
@@ -32,6 +33,7 @@ BR_API void br_plotter_init(br_plotter_t* br, bool use_permaste) {
     .plots = {0},
     .shaders = {0},
     .dagens = {0},
+    .text = NULL,
     .commands = NULL,
 #if BR_HAS_SHADER_RELOAD
     .shaders_dirty = false,
@@ -53,7 +55,6 @@ BR_API void br_plotter_init(br_plotter_t* br, bool use_permaste) {
     exit(1);
   }
   context.font_scale = 1.8f;
-  memset(context.buff, 0, sizeof(context.buff));
   if (use_permaste) br->loaded = br_permastate_load(br);
   if (false == br->loaded) {
     br_datas_deinit(&br->groups);
@@ -144,15 +145,16 @@ int br_plotter_add_plot_3d(br_plotter_t* br) {
   return br->plots.len - 1;
 }
 
-BR_API void br_plotter_free(br_plotter_t* gv) {
-  br_shaders_free(gv->shaders);
-  br_datas_deinit(&gv->groups);
-  q_free(gv->commands);
-  for (int i = 0; i < gv->plots.len; ++i) {
-    BR_FREE(gv->plots.arr[i].groups_to_show.arr);
+BR_API void br_plotter_free(br_plotter_t* br) {
+  br_text_renderer_free(br->text);
+  br_shaders_free(br->shaders);
+  br_datas_deinit(&br->groups);
+  q_free(br->commands);
+  for (int i = 0; i < br->plots.len; ++i) {
+    BR_FREE(br->plots.arr[i].groups_to_show.arr);
   }
-  BR_FREE(gv->plots.arr);
-  br_dagens_free(&gv->dagens);
+  BR_FREE(br->plots.arr);
+  br_dagens_free(&br->dagens);
 }
 
 void br_plotter_update_variables(br_plotter_t* br) {
@@ -167,15 +169,14 @@ void br_plotter_update_variables(br_plotter_t* br) {
   handle_all_commands(br, br->commands);
 }
 
-BR_API void br_plotter_frame_end(br_plotter_t* gv) {
-  (void)gv;
-  for (size_t i = 0; i < gv->groups.len; ++i) {
-    if (gv->groups.arr[i].is_new == false) continue;
-    for (int j = 0; j < gv->plots.len; ++j) {
-      if (gv->plots.arr[j].kind == br_plot_kind_2d && gv->groups.arr[i].kind == br_data_kind_3d) continue;
-      br_da_push_t(int, gv->plots.arr[j].groups_to_show, gv->groups.arr[i].group_id);
+BR_API void br_plotter_frame_end(br_plotter_t* br) {
+  for (size_t i = 0; i < br->groups.len; ++i) {
+    if (br->groups.arr[i].is_new == false) continue;
+    for (int j = 0; j < br->plots.len; ++j) {
+      if (br->plots.arr[j].kind == br_plot_kind_2d && br->groups.arr[i].kind == br_data_kind_3d) continue;
+      br_da_push_t(int, br->plots.arr[j].groups_to_show, br->groups.arr[i].group_id);
     }
-    gv->groups.arr[i].is_new = false;
+    br->groups.arr[i].is_new = false;
   }
   //gv->lines_mesh->draw_calls = 0;
   //gv->lines_mesh->points_drawn = 0;
@@ -214,7 +215,7 @@ void br_plotter_update_context(br_plotter_t* br, Vector2 mouse_pos) {
   for (int i = 0; i < br->plots.len; ++i) br_plot_update_context(&br->plots.arr[i], mouse_pos);
 }
 
-void draw_grid_numbers(br_plot_t* plot) {
+void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
   // TODO 2D/3D
   //assert(plot->kind == br_plot_kind_2d);
   if(plot->kind != br_plot_kind_2d) return;
@@ -222,8 +223,9 @@ void draw_grid_numbers(br_plot_t* plot) {
   TracyCFrameMarkStart("draw_grid_numbers");
   Rectangle r = plot->dd.graph_rect;
   Rectangle graph_screen_rect = plot->graph_screen_rect;
-  float font_size = 15.f * context.font_scale;
+  int font_size = (int)(18.f * context.font_scale);
   char fmt[16];
+  char* scrach = br_scrach_get(128);
 
   if (r.height > 0.f) {
     float exp = floorf(log10f(r.height / 2.f));
@@ -237,12 +239,10 @@ void draw_grid_numbers(br_plot_t* plot) {
       while (base * i < r.height) {
         float cur = start - base * i;
         i += 1.f;
-        sprintf(context.buff, fmt, cur);
-        help_trim_zeros(context.buff);
-        Vector2 sz = help_measure_text(context.buff, font_size);
+        sprintf(scrach, fmt, cur);
+        help_trim_zeros(scrach);
         float y = graph_screen_rect.y + (graph_screen_rect.height / r.height) * (r.y - cur);
-        y -= sz.y / 2.f;
-        help_draw_text(context.buff, (Vector2){ .x = graph_screen_rect.x - sz.x - 2.f, .y = y }, font_size, RAYWHITE);
+        br_text_renderer_push2(tr, graph_screen_rect.x - 2.f, y, font_size, BR_COLOR_PUN(RAYWHITE), scrach, br_text_renderer_ancor_right_mid);
       }
     }
   }
@@ -260,17 +260,18 @@ void draw_grid_numbers(br_plot_t* plot) {
       while (base * i < r.width) {
         float cur = start + base * i;
         i += 1.f;
-        sprintf(context.buff, fmt, cur);
-        help_trim_zeros(context.buff);
-        Vector2 sz = help_measure_text(context.buff, font_size);
+        sprintf(scrach, fmt, cur);
+        help_trim_zeros(scrach);
+        //Vector2 sz = help_measure_text(scrach, font_size);
         float x = graph_screen_rect.x + (graph_screen_rect.width / r.width) * (cur - r.x);
-        x -= sz.x / 2.f;
-        if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
-        x_last_max = x + sz.x;
-        help_draw_text(context.buff, (Vector2){ .x = x, .y = graph_screen_rect.y + graph_screen_rect.height }, font_size, RAYWHITE);
+        //x -= sz.x / 2.f;
+        //if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
+        //x_last_max = x + sz.x;
+        br_text_renderer_push2(tr, x, graph_screen_rect.y + graph_screen_rect.height, font_size, BR_COLOR_PUN(RAYWHITE), scrach, br_text_renderer_ancor_mid_up);
       }
     }
   }
   end: TracyCFrameMarkEnd("draw_grid_numbers");
+  br_scrach_free();
 }
 

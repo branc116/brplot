@@ -2,6 +2,7 @@
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
 #include "src/br_da.h"
+#include "src/br_str.h"
 #include "src/imgui/imgui_extensions.h"
 
 ImVec4 operator-(float f, ImVec4 v) {
@@ -20,6 +21,7 @@ extern "C" float line_3d_size;
 
 namespace br {
   void ui_settings(br_plotter_t* br) {
+    char* scrach = br_scrach_get(128);
     ImGui::SetNextWindowBgAlpha(0.7f);
     if (ImGui::Begin("Settings")) {
 //      raw_c = 0;
@@ -42,16 +44,16 @@ namespace br {
             br_plotter_add_plot_3d(br);
           }
           for (int i = 0; i < br->plots.len; ++i) {
-            snprintf(context.buff, IM_ARRAYSIZE(context.buff), "Plot #%d", i);
+            snprintf(scrach, 128, "Plot #%d", i);
             bool open = true;
-            if (ImGui::BeginTabItem(context.buff, &open, ImGuiTabItemFlags_None)) {
+            if (ImGui::BeginTabItem(scrach, &open, ImGuiTabItemFlags_None)) {
               ImGui::PushID(i);
               for (size_t j = 0; j < br->groups.len; ++j) {
                 bool contains = false;
                 int group_id = br->groups.arr[j].group_id;
                 br_da_contains_t(int, br->plots.arr[i].groups_to_show, group_id, contains);
-                br_str_to_c_str1(br->groups.arr[j].name, context.buff);
-                if (ImGui::Checkbox(context.buff, &contains)) {
+                br_str_to_c_str1(br->groups.arr[j].name, scrach);
+                if (ImGui::Checkbox(scrach, &contains)) {
                   if (contains) br_da_push_t(int, br->plots.arr[i].groups_to_show, group_id);
                   else br_da_remove(br->plots.arr[i].groups_to_show, group_id);
                 }
@@ -74,22 +76,22 @@ namespace br {
           ImVec4 imcol = {colors[0], colors[1], colors[2], 1.f};
           ImVec4 imcol_inv = 1.f - imcol;
           imcol_inv.w = 1.f;
-          sprintf(&context.buff[2], "Data Group %d", br->groups.arr[i].group_id);
+          sprintf(&scrach[2], "Data Group %d", br->groups.arr[i].group_id);
           ImGui::PushStyleColor(ImGuiCol_Text, imcol);
           ImGui::PushStyleColor(ImGuiCol_HeaderActive, imcol_inv);
           ImGui::PushStyleColor(ImGuiCol_HeaderHovered, imcol_inv);
-          if (ImGui::TreeNodeEx(&context.buff[2], ImGuiTreeNodeFlags_DefaultOpen)) {
+          if (ImGui::TreeNodeEx(&scrach[2], ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::PopStyleColor(3);
-            sprintf(context.buff, "Clear##P%zu", i);
-            if (ImGui::Button(context.buff)) {
+            sprintf(scrach, "Clear##P%zu", i);
+            if (ImGui::Button(scrach)) {
               br_data_clear(&br->groups, &br->plots, br->groups.arr[i].group_id);
             }
             ImGui::SetNextItemWidth(60.f);
-            sprintf(context.buff, "PlotColor_%zu", i);
-            ImGui::ColorPicker3(context.buff, colors, ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoSidePreview);
+            sprintf(scrach, "PlotColor_%zu", i);
+            ImGui::ColorPicker3(scrach, colors, ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoSidePreview);
             br->groups.arr[i].color = { (unsigned char)(colors[0] * 255.f), (unsigned char)(colors[1] * 255.f), (unsigned char)(colors[2] * 255.f), (unsigned char)(colors[3] * 255.f) };
-            sprintf(context.buff, "%zu##%zu", br->groups.arr[i].len, i);
-            ImGui::LabelText(context.buff, "Number of points");
+            sprintf(scrach, "%zu##%zu", br->groups.arr[i].len, i);
+            ImGui::LabelText(scrach, "Number of points");
             br::ui_textbox("Name", &br->groups.arr[i].name);
             ImGui::TreePop();
           } else ImGui::PopStyleColor(3);
@@ -136,5 +138,6 @@ namespace br {
       }
     }
     ImGui::End();
+    br_scrach_free();
   }
 }

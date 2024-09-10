@@ -102,7 +102,7 @@ static inline void br_keybinding_recoil_big(br_plotter_t* br, br_plot_t* plot, b
 
 static inline void br_keybinding_screenshot(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
   (void)cs;
-  br_plot_screenshot(plot, &br->shaders, br->groups, "test.png"); // TODO set a sensible name
+  br_plot_screenshot(br->text, plot, &br->shaders, br->groups, "test.png"); // TODO set a sensible name
 }
 
 static inline void br_keybinding_switch_2d(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {

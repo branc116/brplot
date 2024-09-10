@@ -289,7 +289,7 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot, br_shaders_t* shaders) {
       br_shader_line_draw(shaders->line);
       shaders->line->len = 0;
     }
-    rlSetBlendMode(BLEND_ALPHA);
+    //rlSetBlendMode(BLEND_ALPHA);
     TracyCFrameMarkEnd("br_datas_draw_2d");
   } else {
     TracyCFrameMarkStart("br_datas_draw_3d");

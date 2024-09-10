@@ -6,7 +6,7 @@
 #include "src/br_da.h"
 #include <assert.h>
 #ifdef RELEASE
-#include "misc/shaders.h"
+#include "src/misc/shaders.h"
 #endif
 
 #define IS_SPECIAL_TOKEN(c) ((c) == '\n' || (c) == '\r' || (c) == '.' || (c) == ',' || (c) == '{' || (c) == '}' || (c) == ' ')
@@ -46,12 +46,14 @@ TOKENS(X)
 #undef X
 } token_kind_t;
 
+#define _TEX 20
 typedef enum {
   variable_type_float = 1,
   variable_type_vec2 = 2,
   variable_type_vec3 = 3,
   variable_type_vec4 = 4,
   variable_type_mat4 = 16,
+  variable_type_tex = 20
 } variable_type_t;
 
 typedef enum {
@@ -195,6 +197,7 @@ variable_type_t get_variable_type(shader_t const* shader, size_t token_index) {
       }
     } 
   } else if (strcmp(s, "float") == 0) return variable_type_float;
+  else if (strcmp(s, "sampler2D") == 0) return variable_type_tex;
   FATAL(shader, t.line, t.start, "Unknown variable type: %s", s);
 }
 

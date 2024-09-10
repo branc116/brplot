@@ -1,6 +1,8 @@
 #include "br_plot.h"
 #include "br_help.h"
+#include "br_text_renderer.h"
 #include "misc/default_font.h"
+#include "src/br_str.h"
 
 #define RAYMATH_STATIC_INLINE
 #include "raylib.h"
@@ -25,19 +27,19 @@ void help_trim_zeros(char * buff) {
   }
 }
 
-void help_draw_text(const char *text, Vector2 pos, float fontSize, Color color) {
-  float defaultFontSize = 10.f;
-  if (fontSize < defaultFontSize) fontSize = defaultFontSize;
-  DrawTextEx(default_font, text, (Vector2){roundf(pos.x), roundf(pos.y)}, floorf(fontSize), 1.0f, color);
+void help_draw_text(br_text_renderer_t* r, char const* text, Vector2 pos, int font_size, br_color_t color) {
+  int default_font_size = 10;
+  if (font_size < default_font_size) font_size = default_font_size;
+  br_text_renderer_push(r, pos.x, pos.y, font_size, color, text);
 }
 
-Vector2 help_measure_text(const char* txt, float font_size) {
+Vector2 help_measure_text(const char* txt, int font_size) {
   Vector2 textSize = { 0.0f, 0.0f };
 
-  float defaultFontSize = 10;   // Default Font chars height in pixel
+  int defaultFontSize = 10;   // Default Font chars height in pixel
   if (font_size < defaultFontSize) font_size = defaultFontSize;
 
-  textSize = MeasureTextEx(default_font, txt, floorf(font_size), 1.0f);
+  textSize = MeasureTextEx(default_font, txt, (float)font_size, 1.0f);
 
   return textSize;
 }
@@ -50,16 +52,17 @@ void help_load_default_font(void) {
 }
 
 // Draw current FPS
-void help_draw_fps(int posX, int posY)
-{
+void help_draw_fps(br_text_renderer_t* r, int posX, int posY) {
     Color color = LIME;                         // Good FPS
     int fps = GetFPS();
 
     if ((fps < 30) && (fps >= 15)) color = ORANGE;  // Warning FPS
     else if (fps < 15) color = RED;             // Low FPS
 
-    sprintf(context.buff, "%2i FPS", fps);
-    help_draw_text(context.buff, (Vector2) { (float)posX, (float)posY }, 24, color);
+    char* scrach = br_scrach_get(128);
+    sprintf(scrach, "%2d FPS", fps); 
+    help_draw_text(r, scrach, (Vector2) { (float)posX, (float)posY }, 24, BR_COLOR_PUN(color));
+    br_scrach_free();
 }
 
 min_distances_t min_distances_get(Vector2 const* points, size_t points_len, Vector2 to) {

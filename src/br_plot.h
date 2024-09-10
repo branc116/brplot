@@ -1,9 +1,9 @@
 #pragma once
 #include "raylib.h"
 #include <stddef.h>
-#include <stdio.h>
 #include "br_shaders.h"
 #include "br_data.h"
+#include "br_text_renderer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,7 +66,6 @@ typedef struct context_t {
   float font_scale;
   bool debug_bounds;
   size_t alloc_size, alloc_count, alloc_total_size, alloc_total_count, alloc_max_size, alloc_max_count, free_of_unknown_memory;
-  char buff[128];
   struct {
     float min_dist_sqr;
     float min_dist_loc;
@@ -81,7 +80,7 @@ Vector2 br_graph_to_screen(Rectangle graph_rect, Rectangle screen_rect, Vector2 
 
 typedef struct br_plotter_t br_plotter_t;
 
-void br_plot_screenshot(br_plot_t* br, br_shaders_t* shaders, br_datas_t groups, char const* path);
+void br_plot_screenshot(br_text_renderer_t* tr, br_plot_t* br, br_shaders_t* shaders, br_datas_t groups, char const* path);
 void br_keybinding_handle_keys(br_plotter_t* br, br_plot_t* plot);
 
 #if BR_HAS_SHADER_RELOAD
@@ -95,18 +94,18 @@ void read_input_main_worker(br_plotter_t* br);
 int  read_input_read_next(void);
 void read_input_stop(void);
 
-#ifndef IMGUI
-int     ui_draw_button(bool* is_pressed, float x, float y, float font_size, const char* str, ...);
-void    ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size);
+#if !defined(IMGUI)
+int     ui_draw_button(br_text_renderer_t* tr, bool* is_pressed, float x, float y, int font_size, const char* str, ...);
+void    ui_stack_buttons_init(Vector2 pos, float* scroll_position, int font_size);
 void    ui_stack_set_size(Vector2 v);
-int     ui_stack_buttons_add(bool* is_pressed, const char* str, ...);
+int     ui_stack_buttons_add(br_text_renderer_t* tr, bool* is_pressed, const char* str, ...);
 Vector2 ui_stack_buttons_end(void);
 #endif
 
 void    help_trim_zeros(char* buff);
-void    help_draw_text(const char *text, Vector2 pos, float fontSize, Color color);
-Vector2 help_measure_text(const char* txt, float font_size);
-void    help_draw_fps(int posX, int posY);
+void    help_draw_text(br_text_renderer_t* renderer, char const* text, Vector2 pos, int font_size, br_color_t color);
+Vector2 help_measure_text(char const* txt, int font_size);
+void    help_draw_fps(br_text_renderer_t* renderer, int posX, int posY);
 void    help_load_default_font(void);
 min_distances_t min_distances_get(Vector2 const* points, size_t points_len, Vector2 to);
 void min_distances_get1(min_distances_t* m, Vector2 const* points, size_t points_len, Vector2 to);

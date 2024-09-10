@@ -36,12 +36,14 @@ float map_outer(vec2 fragCoord) {
 }
 
 void main(void) {
-  float aa = 1.;
+  float aa = 0.;
   vec2 d = vec2(dFdx(fragTexCoord.x), dFdy(fragTexCoord.y)) * 1.;
   float c = aa*2.+1.;
   float res = 0.;
   for( float x = -aa ; x <= aa ; ++x)
     for( float y = -aa ; y <= aa ; ++y)
       res += map_outer(fragTexCoord+vec2(x*d.x, y*d.y)/(aa+1.))/(c*c);
-  out_color = vec4(0.2, 0.3, 0.5, 1.0) * smoothstep(-0.0002, 0.001, res);
+
+  float s = smoothstep(-0.0002, 0.001, res);
+  out_color = vec4(0.2, 0.3, 0.5, 1.0) * (s > 0.4 ? s : -1.0);
 }

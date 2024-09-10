@@ -20,53 +20,53 @@ void br_gui_init_specifics_gui(br_plotter_t* br) {
 
 BR_API void br_plotter_draw(br_plotter_t* br) {
   BeginDrawing();
-  ClearBackground(BLACK);
+  ClearBackground((Color) { 0, 0, 0, 1 });
   update_resolution(br);
   br_plotter_update_variables(br);
-  help_draw_fps(0, 0);
+  help_draw_fps(br->text, 0, 0);
   br_plot_t* plot = &br->plots.arr[br->active_plot_index];
   br_plot_update_variables(br, plot, br->groups, GetMousePosition());
   br_plot_update_shader_values(plot, &br->shaders);
-  draw_grid_numbers(plot);
+  draw_grid_numbers(br->text, plot);
   smol_mesh_grid_draw(plot, &br->shaders);
   br_datas_draw(br->groups, plot, &br->shaders);
   draw_left_panel(br);
+  br_text_renderer_dump(br->text);
   EndDrawing();
 }
 
 static float sp = 0.f;
 static void draw_left_panel(br_plotter_t* br) {
-#if 1
   br_plot_t* plot = &br->plots.arr[0];
-  ui_stack_buttons_init((Vector2){.x = 30.f, .y = 25.f}, NULL, context.font_scale * 15);
-  ui_stack_buttons_add(&plot->follow, "Follow");
-  if (ui_stack_buttons_add(NULL, "Export") == 2) {
+  ui_stack_buttons_init((Vector2){.x = 30.f, .y = 25.f}, NULL, (int)(context.font_scale * 15));
+  ui_stack_buttons_add(br->text, &plot->follow, "Follow");
+  if (ui_stack_buttons_add(br->text, NULL, "Export") == 2) {
     br_plotter_export(br, "test.brp");
   }
-  if (ui_stack_buttons_add(NULL, "Export CSV") == 2) {
+  if (ui_stack_buttons_add(br->text, NULL, "Export CSV") == 2) {
     br_plotter_export_csv(br, "test.csv");
   }
   if (context.debug_bounds) {
-    ui_stack_buttons_add(&context.debug_bounds, "Debug view");
-    ui_stack_buttons_add(&plot->jump_around, "Jump Around");
+    ui_stack_buttons_add(br->text, &context.debug_bounds, "Debug view");
+    ui_stack_buttons_add(br->text, &plot->jump_around, "Jump Around");
     //ui_stack_buttons_add(NULL, "Line draw calls: %d", gv->lines_mesh->draw_calls);
     //ui_stack_buttons_add(NULL, "Points drawn: %d", gv->lines_mesh->points_drawn);
-    ui_stack_buttons_add(NULL, "Recoil: %f", plot->dd.recoil);
-    if (2 == ui_stack_buttons_add(NULL, "Add test points")) {
+    ui_stack_buttons_add(br->text, NULL, "Recoil: %f", plot->dd.recoil);
+    if (2 == ui_stack_buttons_add(br->text, NULL, "Add test points")) {
       br_datas_add_test_points(&br->groups);
     }
   }
   Vector2 new_pos = ui_stack_buttons_end();
   new_pos.y += 50;
-  ui_stack_buttons_init(new_pos, &sp, context.font_scale * 15);
+  ui_stack_buttons_init(new_pos, &sp, (int)(context.font_scale * 15));
   for(size_t j = 0; j < br->groups.len; ++j) {
     int res = 0;
     bool yes = true;
     if (context.debug_bounds) {
-      res = ui_stack_buttons_add(&yes, "Line #%d: %d;",
+      res = ui_stack_buttons_add(br->text, &yes, "Line #%d: %d;",
         br->groups.arr[j].group_id, br->groups.arr[j].len);
     } else {
-      res = ui_stack_buttons_add(&yes, "Line #%d: %d", br->groups.arr[j].group_id, br->groups.arr[j].len);
+      res = ui_stack_buttons_add(br->text, &yes, "Line #%d: %d", br->groups.arr[j].group_id, br->groups.arr[j].len);
     }
     if (res > 0) {
       if (IsKeyPressed(KEY_C)) {
@@ -80,7 +80,6 @@ static void draw_left_panel(br_plotter_t* br) {
     }
   }
   ui_stack_buttons_end();
-#endif
 }
 
 // TODO 2D/3D
@@ -94,7 +93,7 @@ static void update_resolution(br_plotter_t* br) {
   plot->graph_screen_rect.height = h;
 }
 
-void br_plot_screenshot(br_plot_t* plot, br_shaders_t* shaders, br_datas_t groups, char const* path) {
+void br_plot_screenshot(br_text_renderer_t* tr, br_plot_t* plot, br_shaders_t* shaders, br_datas_t groups, char const* path) {
   float left_pad = 80.f;
   float bottom_pad = 80.f;
   plot->resolution = (Vector2){1280, 720};
@@ -105,7 +104,7 @@ void br_plot_screenshot(br_plot_t* plot, br_shaders_t* shaders, br_datas_t group
   BeginTextureMode(target);
     smol_mesh_grid_draw(plot, shaders);
     br_datas_draw(groups, plot, shaders);
-    draw_grid_numbers(plot);
+    draw_grid_numbers(tr, plot);
   EndTextureMode();
   Image img = LoadImageFromTexture(target.texture);
   ImageFlipVertical(&img);

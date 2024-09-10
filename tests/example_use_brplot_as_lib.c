@@ -11,7 +11,6 @@ void example_v1(void) {
   br_data_add_v1n(plotter, data, (float[]){1.f, 2.f, 3.f}, 3);
   br_data_add_v1ns(plotter, data, (float[]){1.f, 2.f, 3.f, 4.f}, 4, 2, 1);
   // data point should be 10, 1, 2, 3, 2, 4
-  br_plotter_wait(plotter);
 }
 
 void example_v2(void) {

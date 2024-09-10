@@ -5,11 +5,7 @@
 #include "stdlib.h"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifndef RELEASE
+#if !defined(RELEASE)
 #define grid_fs "src/desktop/shaders/grid.fs"
 #define grid_vs "src/desktop/shaders/grid.vs"
 #define line_fs "src/desktop/shaders/line.fs"
@@ -23,6 +19,9 @@ extern "C" {
 #define line_3d_vs "src/desktop/shaders/line_3d.vs"
 #define line_3d_simple_fs "src/desktop/shaders/line_3d_simple.fs"
 #define line_3d_simple_vs "src/desktop/shaders/line_3d_simple.vs"
+
+#define font_fs "src/desktop/shaders/font.fs"
+#define font_vs "src/desktop/shaders/font.vs"
 #endif
 
 #define NOP2(N, M)
@@ -69,12 +68,22 @@ extern "C" {
       X_VEC(screen, 2),                 \
                                         \
       X_BUF(vertexPosition, 2)          \
+    )                                   \
+  X(font, 1024,                         \
+      X_VEC(resolution, 2)              \
+      X_VEC(sub_pix_aa_map, 3)          \
+      X_VEC(sub_pix_aa_scale, 1)        \
+      X_VEC(atlas, _TEX),               \
+                                        \
+      X_BUF(pos, 4)                     \
     )
 
+#define VEC_TYPE1 float
 #define VEC_TYPE2 Vector2
 #define VEC_TYPE3 Vector3
 #define VEC_TYPE4 Vector4
 #define VEC_TYPE16 Matrix
+#define VEC_TYPE_TEX unsigned int
 #define X_U(NAME, DIM) VEC_TYPE ## DIM NAME ## _uv;
 #define X(NAME, CAP, U_VEC, BUFFS) \
   typedef struct {                 \
@@ -83,10 +92,12 @@ extern "C" {
 BR_ALL_SHADERS(X, X_U, NOP2)
 #undef X
 #undef X_U
+#undef VEC_TYPE_TEX
 #undef VEC_TYPE16
 #undef VEC_TYPE4
 #undef VEC_TYPE3
 #undef VEC_TYPE2
+#undef VEC_TYPE1
 
 #define X_U(NAME, DIM) int NAME ## _u;
 #define X_B(NAME, DIM)                \
@@ -94,7 +105,7 @@ BR_ALL_SHADERS(X, X_U, NOP2)
   int NAME ## _loc;                   \
   float* NAME ## _vbo;
 #define X(NAME, CAP, U_VEC, BUFFS)    \
-  typedef struct {                    \
+  typedef struct br_shader_ ## NAME ## _t { \
     br_shader_ ## NAME ## _uvs_t uvs; \
     U_VEC                             \
     BUFFS                             \
@@ -106,6 +117,10 @@ BR_ALL_SHADERS(X, X_U, X_B)
 #undef X
 #undef X_B
 #undef X_U
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct br_shaders_t {
 #define X(NAME, CAP, UNIF, BUFF) br_shader_ ## NAME ## _t* NAME;

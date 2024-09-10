@@ -10,6 +10,7 @@ extern "C" {
 
 struct br_plotter_t;
 typedef struct q_commands q_commands;
+typedef struct br_text_renderer_t br_text_renderer_t;
 
 #if BR_HAS_HOTRELOAD
 typedef struct br_hotreload_state_t {
@@ -27,6 +28,7 @@ typedef struct br_plotter_t {
   br_shaders_t shaders;
   br_dagens_t dagens;
 
+  br_text_renderer_t* text;
   // Any thread can write to this q, only render thread can pop
   q_commands* commands;
 #if BR_HAS_HOTRELOAD

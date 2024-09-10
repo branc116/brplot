@@ -8,6 +8,7 @@
 #include "imgui_extensions.h"
 
 #include "file_saver.cpp"
+#include "src/br_str.h"
 #ifndef RELEASE
 #  include "external/imgui-docking/imgui_demo.cpp"
 #endif
@@ -48,7 +49,7 @@
 "  DockNode  ID=0x00000001 Parent=0x8B93E3BD SizeRef=1005,720\n" \
 "  DockNode  ID=0x00000002 Parent=0x8B93E3BD SizeRef=273,720\n"
 
-static void br_plot_screenshot_imgui(br_plot_t br, br_datas_t groups, br_shaders_t* shaders, char* path);
+static void br_plot_screenshot_imgui(br_plot_t br, br_datas_t groups, br_text_renderer_t* text, br_shaders_t* shaders, char* path);
 
 static int screenshot_file_save = 0;
 static struct br_file_saver_s* fs = nullptr;
@@ -93,7 +94,7 @@ extern "C" void br_gui_free_specifics(br_plotter_t* br) {
   ImGui::DestroyContext();
 }
 
-void graph_draw_min(br_datas_t groups, br_plot_t* plot, br_shaders_t* shaders, float posx, float posy, float width, float height, float padding) {
+void graph_draw_min(br_datas_t groups, br_plot_t* plot, br_shaders_t* shaders, br_text_renderer_t* text, float posx, float posy, float width, float height, float padding) {
   TracyCFrameMarkStart("graph_draw_min");
   plot->resolution.x = (float)GetScreenWidth();
   plot->resolution.y = (float)GetScreenHeight();
@@ -115,7 +116,7 @@ void graph_draw_min(br_datas_t groups, br_plot_t* plot, br_shaders_t* shaders, f
   br_plot_update_shader_values(plot, shaders);
 
   //DrawRectangleRec(plot->graph_screen_rect, BLACK);
-  draw_grid_numbers(plot);
+  draw_grid_numbers(text, plot);
   smol_mesh_grid_draw(plot, shaders);
   br_datas_draw(groups, plot, shaders);
   TracyCFrameMarkEnd("graph_draw_min");
@@ -146,18 +147,22 @@ extern "C" void br_plotter_draw(br_plotter_t* br) {
 
   for (int i = 0; i < br->plots.len; ++i) {
     ImGui::PushID(i);
-    snprintf(context.buff, IM_ARRAYSIZE(context.buff), "Plot #%d", i);
+    char* scrach = br_scrach_get(128);
+    snprintf(scrach, 128, "Plot #%d", i);
     ImGui::SetNextWindowDockID(prev, ImGuiCond_FirstUseEver);
     if (switching && br->active_plot_index == i) {
       ImGui::SetNextWindowFocus();
       br->switch_to_active = false;
     }
-    if ( ImGui::Begin(context.buff) && false == ImGui::IsWindowHidden() && ((false == switching) || (switching && br->active_plot_index == i))){
+    if ( ImGui::Begin(scrach) && false == ImGui::IsWindowHidden() && ((false == switching) || (switching && br->active_plot_index == i))){
+      br_scrach_free();
       br_plot_update_variables(br, &br->plots.arr[i], br->groups, mouse_pos); // Invalidates plots
       ImVec2 p = ImGui::GetWindowPos();
       ImVec2 size = ImGui::GetWindowSize();
-      graph_draw_min(br->groups,  &br->plots.arr[i], &br->shaders, p.x, p.y, size.x, size.y, padding);
+      graph_draw_min(br->groups, &br->plots.arr[i], &br->shaders, br->text, p.x, p.y, size.x, size.y, padding);
       br->active_plot_index = switching ? br->active_plot_index : i;
+    } else {
+      br_scrach_free();
     }
     switching = false;
     prev = ImGui::GetWindowDockID();
@@ -182,7 +187,7 @@ extern "C" void br_plotter_draw(br_plotter_t* br) {
       case file_saver_state_accept: {
         br_str_t s = br_str_malloc(64);
         br_file_saver_get_path(fs, &s);
-        br_plot_screenshot_imgui(*br_file_saver_get_plot_instance(fs), br->groups, &br->shaders, br_str_move_to_c_str(&s));
+        br_plot_screenshot_imgui(*br_file_saver_get_plot_instance(fs), br->groups, br->text, &br->shaders, br_str_move_to_c_str(&s));
       } // FALLTHROUGH
       case file_saver_state_cancle: {
         br_file_saver_free(fs);
@@ -205,14 +210,14 @@ extern "C" void br_plotter_draw(br_plotter_t* br) {
 #endif
 }
 
-extern "C" void br_plot_screenshot(br_plot_t* plot, br_shaders_t* shaders, br_datas_t, char const*) {
+extern "C" void br_plot_screenshot(br_text_renderer_t* text, br_plot_t* plot, br_shaders_t* shaders, br_datas_t, char const*) {
   (void) shaders;
   fs = br_file_saver_malloc("Save screenshot", std::getenv("HOME"), plot);
   screenshot_file_save = 1;
   return;
 }
 
-static void br_plot_screenshot_imgui(br_plot_t plot, br_datas_t groups, br_shaders_t* shaders, char* path) {
+static void br_plot_screenshot_imgui(br_plot_t plot, br_datas_t groups, br_text_renderer_t* text, br_shaders_t* shaders, char* path) {
   float left_pad = 80.f;
   float bottom_pad = 80.f;
   Vector2 is = {1280, 720};
@@ -224,7 +229,7 @@ static void br_plot_screenshot_imgui(br_plot_t plot, br_datas_t groups, br_shade
   BeginTextureMode(target);
     smol_mesh_grid_draw(&plot, shaders);
     br_datas_draw(groups, &plot, shaders);
-    draw_grid_numbers(&plot);
+    draw_grid_numbers(text, &plot);
   EndTextureMode();
   Image img = LoadImageFromTexture(target.texture);
   ImageFlipVertical(&img);
