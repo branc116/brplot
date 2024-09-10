@@ -1,5 +1,6 @@
 bin
 build
+build-cmake
 www
 src/misc/shaders.h
 src/misc/shaders_web.h

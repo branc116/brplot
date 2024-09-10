@@ -49,16 +49,16 @@ int ui_draw_button(br_text_renderer_t* tr, bool* is_pressed, float x, float y, i
   return ret;
 }
 
-_Thread_local static Vector2 stack_pos;
-_Thread_local static bool stack_is_inited = false;
-_Thread_local static float* stack_scroll_position;
-_Thread_local static Vector2 stack_button_size;
-_Thread_local static float stack_offset;
-_Thread_local static int stack_font_size;
-_Thread_local static int stack_count;
-_Thread_local static Vector2 stack_maxsize;
-_Thread_local static bool stack_size_set;
-_Thread_local static Vector2 stack_size;
+static RL_THREAD_LOCAL Vector2 stack_pos;
+static RL_THREAD_LOCAL bool stack_is_inited = false;
+static RL_THREAD_LOCAL float* stack_scroll_position;
+static RL_THREAD_LOCAL Vector2 stack_button_size;
+static RL_THREAD_LOCAL float stack_offset;
+static RL_THREAD_LOCAL float stack_font_size;
+static RL_THREAD_LOCAL int stack_count;
+static RL_THREAD_LOCAL Vector2 stack_maxsize;
+static RL_THREAD_LOCAL bool stack_size_set;
+static RL_THREAD_LOCAL Vector2 stack_size;
 
 void ui_stack_buttons_init(Vector2 pos, float* scroll_position, int font_size) {
   assert(!stack_is_inited);

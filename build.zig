@@ -160,7 +160,7 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
         "./src/plotter.c",
         "./src/q.c",
         "./src/read_input.c",
-        "./src/resampling2.cpp",
+        "./src/resampling2.c",
         "./src/shaders.c",
         "./src/smol_mesh.c",
         "./src/str.c",

@@ -398,7 +398,7 @@ static void resampling2_draw33(resampling2_nodes_3d_allocator_t const* const nod
       node.base.index_start + node.base.len - (is_end ? 1 : 0)
     };
 
-    qsort(indexies, sizeof(indexies)/sizeof(indexies[0]), sizeof(indexies), &size_t_cmp);
+    qsort(indexies, sizeof(indexies)/sizeof(indexies[0]), sizeof(indexies[0]), &size_t_cmp);
     size_t cur = indexies[0];
     for (size_t i = 1; i < 8; ++i) {
       if (cur == indexies[i]) continue;

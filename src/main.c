@@ -1,5 +1,4 @@
 #include "br_plotter.h"
-#include "include/brplot.h"
 #include "src/br_data.h"
 #include "src/br_pp.h"
 #include "src/br_q.h"
@@ -8,7 +7,6 @@
 #include "br_da.h"
 #include "br_text_renderer.h"
 #include "tracy/TracyC.h"
-#include <unistd.h>
 
 void br_gui_init_specifics_gui(br_plotter_t* plotter);
 static void* main_gui(void* plotter) {
@@ -97,6 +95,8 @@ int main(void) {
 #if defined(LIB)
 #include "br_plotter.h"
 #include "br_threads.h"
+#include "include/brplot.h"
+#include <unistd.h>
 
 #define VERSION 1
 
