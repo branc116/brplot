@@ -55,10 +55,14 @@ struct br_plotter_ctor_int_t {
   int width, height;
   br_plotter_ui_kind_t kind;
   bool use_permastate;
+  bool use_stdin;
 };
 
 struct br_plot_ctor_int_t {
   br_plot_kind_t kind;
+  float width; // From 0 to 1
+  float height; // From 0 to 1
+  bool rearange_others;
 };
 
 struct br_data_ctor_int_t {

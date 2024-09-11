@@ -1,6 +1,7 @@
 #include "br_plot.h"
 #include "br_help.h"
 #include "br_gui_internal.h"
+#include "br_resampling2.h"
 #include "src/br_da.h"
 
 #define RAYMATH_STATIC_INLINE
@@ -8,6 +9,55 @@
 #include "tracy/TracyC.h"
 
 #include "assert.h"
+
+#define GL_SRC_ALPHA 0x0302
+#define GL_DST_ALPHA 0x0304
+#define GL_MAX 0x8008
+static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
+  TracyCFrameMarkStart("br_datas_draw_2d");
+  rlSetBlendFactors(GL_SRC_ALPHA, GL_DST_ALPHA, GL_MAX);
+  rlSetBlendMode(BLEND_CUSTOM);
+  for (int j = 0; j < plot->groups_to_show.len; ++j) {
+    int group = plot->groups_to_show.arr[j];
+    br_data_t const* g = br_data_get1(datas, group);
+    if (g->len == 0) continue;
+    resampling2_draw(g->resampling, g, plot, shaders);
+  }
+  if (shaders->line->len > 0) {
+    br_shader_line_draw(shaders->line);
+    shaders->line->len = 0;
+  }
+}
+
+static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
+  TracyCFrameMarkStart("br_datas_draw_3d");
+  int h = (int)plot->graph_screen_rect.height;
+  rlViewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
+  rlDisableBackfaceCulling();
+  rlEnableDepthTest();
+  for (int j = 0; j < plot->groups_to_show.len; ++j) {
+    int group = plot->groups_to_show.arr[j];
+    br_data_t const* g = br_data_get1(datas, group);
+    if (g->len == 0) continue;
+    resampling2_draw(g->resampling, g, plot, shaders);
+  }
+  if (shaders->line_3d->len > 0) {
+    br_shader_line_3d_draw(shaders->line_3d);
+    shaders->line_3d->len = 0;
+  }
+  rlDisableDepthTest();
+  rlEnableBackfaceCulling();
+  rlViewport(0, 0, (int)plot->resolution.x, (int)plot->resolution.y);
+  TracyCFrameMarkEnd("br_datas_draw_3d");
+}
+
+void br_plot_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
+  switch (plot->kind) {
+    case br_plot_kind_2d: br_plot_2d_draw(plot, datas, shaders); break;
+    case br_plot_kind_3d: br_plot_3d_draw(plot, datas, shaders); break;
+    default: BR_ASSERT(0);
+  }
+}
 
 void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t groups, Vector2 mouse_pos) {
     switch (plot->kind) {
@@ -160,16 +210,25 @@ void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
   }
 }
 
+Vector2 br_plot_2d_get_mouse_position(br_plot_t* plot) {
+  Vector2 mouse_pos = GetMousePosition();
+  Vector2 mp_in_graph = { mouse_pos.x - plot->graph_screen_rect.x, mouse_pos.y - plot->graph_screen_rect.y };
+  return (Vector2) {
+  -(plot->graph_screen_rect.width  - 2.f*mp_in_graph.x)/plot->graph_screen_rect.height*plot->dd.zoom.x/2.f + plot->dd.offset.x,
+   (plot->graph_screen_rect.height - 2.f*mp_in_graph.y)/plot->graph_screen_rect.height*plot->dd.zoom.y/2.f + plot->dd.offset.y};
+}
+
 void br_plot_update_context(br_plot_t* plot, Vector2 mouse_pos) {
   Vector2 mp_in_graph = { mouse_pos.x - plot->graph_screen_rect.x, mouse_pos.y - plot->graph_screen_rect.y };
   plot->mouse_inside_graph = CheckCollisionPointRec(mouse_pos, plot->graph_screen_rect);
   if (plot->kind == br_plot_kind_2d) {
+    float aspect = plot->graph_screen_rect.width/plot->graph_screen_rect.height;
     plot->dd.mouse_pos = (Vector2) {
     -(plot->graph_screen_rect.width  - 2.f*mp_in_graph.x)/plot->graph_screen_rect.height*plot->dd.zoom.x/2.f + plot->dd.offset.x,
      (plot->graph_screen_rect.height - 2.f*mp_in_graph.y)/plot->graph_screen_rect.height*plot->dd.zoom.y/2.f + plot->dd.offset.y};
-    plot->dd.graph_rect = (Rectangle){-plot->graph_screen_rect.width/plot->graph_screen_rect.height*plot->dd.zoom.x/2.f + plot->dd.offset.x,
+    plot->dd.graph_rect = (Rectangle){-aspect*plot->dd.zoom.x/2.f + plot->dd.offset.x,
       plot->dd.zoom.y/2.f + plot->dd.offset.y,
-      plot->graph_screen_rect.width/plot->graph_screen_rect.height*plot->dd.zoom.x,
+      aspect*plot->dd.zoom.x,
       plot->dd.zoom.y};
   } else {
     // TODO 2D/3D

@@ -49,6 +49,7 @@ typedef struct br_plot_t {
   bool jump_around;
   bool mouse_inside_graph;
   bool is_deleted;
+  bool is_visible;
 
   br_plot_kind_t kind;
   union {
@@ -81,40 +82,31 @@ Vector2 br_graph_to_screen(Rectangle graph_rect, Rectangle screen_rect, Vector2 
 
 typedef struct br_plotter_t br_plotter_t;
 
+void br_plot_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders);
 void br_plot_screenshot(br_plot_t* br, br_shaders_t* shaders, br_datas_t groups, char const* path);
 void br_keybinding_handle_keys(br_plotter_t* br, br_plot_t* plot);
-
-#if BR_HAS_SHADER_RELOAD
-// Start watching shaders folder for changes and
-// mark gv->shader_dirty flag to true if there were any change to shaders.
-void start_refreshing_shaders(br_plotter_t* br);
-#endif
 
 void read_input_start(br_plotter_t* br);
 void read_input_main_worker(br_plotter_t* br);
 int  read_input_read_next(void);
 void read_input_stop(void);
 
-#ifndef IMGUI
-int     ui_draw_button(bool* is_pressed, float x, float y, float font_size, const char* str, ...);
-void    ui_stack_buttons_init(Vector2 pos, float* scroll_position, float font_size);
-void    ui_stack_set_size(Vector2 v);
-int     ui_stack_buttons_add(bool* is_pressed, const char* str, ...);
-Vector2 ui_stack_buttons_end(void);
-#endif
-
-void    help_trim_zeros(char* buff);
-void    help_draw_text(const char *text, Vector2 pos, float fontSize, Color color);
-Vector2 help_measure_text(const char* txt, float font_size);
-void    help_draw_fps(int posX, int posY);
-void    help_load_default_font(void);
+void            help_trim_zeros(char* buff);
+void            help_draw_text(const char *text, Vector2 pos, float fontSize, Color color);
+Vector2         help_measure_text(const char* txt, float font_size);
+void            help_draw_fps(int posX, int posY);
+void            help_load_default_font(void);
 min_distances_t min_distances_get(Vector2 const* points, size_t points_len, Vector2 to);
-void min_distances_get1(min_distances_t* m, Vector2 const* points, size_t points_len, Vector2 to);
+void            min_distances_get1(min_distances_t* m, Vector2 const* points, size_t points_len, Vector2 to);
 
-#ifdef IMGUI
-#ifndef RELEASE
-void br_hotreload_start(br_hotreload_state_t* s);
+
+#if BR_HAS_SHADER_RELOAD
+// Start watching shaders folder for changes and
+// mark gv->shader_dirty flag to true if there were any change to shaders.
+void start_refreshing_shaders(br_plotter_t* br);
 #endif
+#if BR_HAS_HOTRELOAD
+void br_hotreload_start(br_hotreload_state_t* s);
 #endif
 
 #ifdef __cplusplus
