@@ -273,7 +273,7 @@ bin/font_bake: tools/font_bake.c
 bin/shaders_bake: ./tools/shaders_bake.c ./src/br_shaders.h ./src/str.c
 	$(NATIVE_CC) -I. -I./external/raylib-5.0/src -O3 -o bin/shaders_bake src/str.c tools/shaders_bake.c
 
-$(SHADERS_HEADER): ./src/desktop/shaders/* bin/shaders_bake
+$(SHADERS_HEADER): ./src/shaders/* bin/shaders_bake
 	bin/shaders_bake $(PLATFORM) > $(SHADERS_HEADER)
 
 

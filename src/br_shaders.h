@@ -6,22 +6,22 @@
 #endif
 
 #if !defined(RELEASE)
-#define grid_fs "src/desktop/shaders/grid.fs"
-#define grid_vs "src/desktop/shaders/grid.vs"
-#define line_fs "src/desktop/shaders/line.fs"
-#define line_vs "src/desktop/shaders/line.vs"
-#define quad_fs "src/desktop/shaders/quad.fs"
-#define quad_vs "src/desktop/shaders/quad.vs"
+#define grid_fs "src/shaders/grid.fs"
+#define grid_vs "src/shaders/grid.vs"
+#define line_fs "src/shaders/line.fs"
+#define line_vs "src/shaders/line.vs"
+#define quad_fs "src/shaders/quad.fs"
+#define quad_vs "src/shaders/quad.vs"
 
-#define grid_3d_fs "src/desktop/shaders/grid_3d.fs"
-#define grid_3d_vs "src/desktop/shaders/grid_3d.vs"
-#define line_3d_fs "src/desktop/shaders/line_3d.fs"
-#define line_3d_vs "src/desktop/shaders/line_3d.vs"
-#define line_3d_simple_fs "src/desktop/shaders/line_3d_simple.fs"
-#define line_3d_simple_vs "src/desktop/shaders/line_3d_simple.vs"
+#define grid_3d_fs "src/shaders/grid_3d.fs"
+#define grid_3d_vs "src/shaders/grid_3d.vs"
+#define line_3d_fs "src/shaders/line_3d.fs"
+#define line_3d_vs "src/shaders/line_3d.vs"
+#define line_3d_simple_fs "src/shaders/line_3d_simple.fs"
+#define line_3d_simple_vs "src/shaders/line_3d_simple.vs"
 
-#define font_fs "src/desktop/shaders/font.fs"
-#define font_vs "src/desktop/shaders/font.vs"
+#define font_fs "src/shaders/font.fs"
+#define font_vs "src/shaders/font.vs"
 #endif
 
 #define NOP2(N, M)

@@ -5,8 +5,8 @@
 #include "src/br_plot.h"
 #include "src/br_da.h"
 #include <assert.h>
-#ifdef RELEASE
-#include "src/misc/shaders.h"
+#if defined(RELEASE)
+#  include "src/misc/shaders.h"
 #endif
 
 #define IS_SPECIAL_TOKEN(c) ((c) == '\n' || (c) == '\r' || (c) == '.' || (c) == ',' || (c) == '{' || (c) == '}' || (c) == ' ')
