@@ -1,7 +1,6 @@
 #include "br_plot.h"
 #include "br_help.h"
 #include "br_text_renderer.h"
-#include "misc/default_font.h"
 #include "src/br_str.h"
 
 #define RAYMATH_STATIC_INLINE
@@ -9,7 +8,6 @@
 #include "raymath.h"
 
 #include <string.h>
-#include <math.h>
 #include <stdio.h>
 
 void help_trim_zeros(char * buff) {
@@ -34,21 +32,8 @@ void help_draw_text(br_text_renderer_t* r, char const* text, Vector2 pos, int fo
 }
 
 Vector2 help_measure_text(const char* txt, int font_size) {
-  Vector2 textSize = { 0.0f, 0.0f };
-
-  int defaultFontSize = 10;   // Default Font chars height in pixel
-  if (font_size < defaultFontSize) font_size = defaultFontSize;
-
-  textSize = MeasureTextEx(default_font, txt, (float)font_size, 1.0f);
-
-  return textSize;
-}
-
-void help_load_default_font(void) {
-  Image atlas = GenImageFontAtlas(default_font.glyphs, &default_font.recs, default_font.glyphCount, default_font.baseSize, default_font.glyphPadding, 0);
-  default_font.texture = LoadTextureFromImage(atlas);
-  SetTextureFilter(default_font.texture, TEXTURE_FILTER_BILINEAR);
-  UnloadImage(atlas);
+  //Todo
+  return (Vector2){ (float)strlen(txt), (float)font_size };
 }
 
 // Draw current FPS
@@ -60,7 +45,7 @@ void help_draw_fps(br_text_renderer_t* r, int posX, int posY) {
     else if (fps < 15) color = RED;             // Low FPS
 
     char* scrach = br_scrach_get(128);
-    sprintf(scrach, "%2d FPS", fps); 
+    sprintf(scrach, "%2d FPS", fps);
     help_draw_text(r, scrach, (Vector2) { (float)posX, (float)posY }, 24, BR_COLOR_PUN(color));
     br_scrach_free();
 }

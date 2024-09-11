@@ -1,11 +1,9 @@
 #include "br_plotter.h"
-#include "src/br_data.h"
 #include "src/br_pp.h"
 #include "src/br_q.h"
-#include "src/br_resampling2.h"
 #include "br_permastate.h"
-#include "br_da.h"
 #include "br_text_renderer.h"
+#include "br_help.h"
 #include "tracy/TracyC.h"
 
 void br_gui_init_specifics_gui(br_plotter_t* plotter);
@@ -15,28 +13,16 @@ static void* main_gui(void* plotter) {
   InitWindow((int)br->width, (int)br->height, "brplot");
   SetWindowState(FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
   br->shaders = br_shaders_malloc();
-  unsigned char * font_data = LoadFileData("/home/branimir/Documents/github.com/branc116/brplot/fonts/PlayfairDisplayRegular-ywLOY.ttf", &(int) { 0 });
-  br->text = br_text_renderer_malloc(1024, 1024, font_data, &br->shaders.font);
-  help_load_default_font();
+  br->text = br_text_renderer_malloc(1024, 1024, br_font_data, &br->shaders.font);
   br_gui_init_specifics_gui(br);
   while(!WindowShouldClose() && !br->should_close) {
-    if (IsKeyDown(KEY_T)) {
-      BeginDrawing();
-      ClearBackground(BLACK);
-      help_draw_fps(br->text, 0, 0);
-      br_text_renderer_push(br->text, 0, 20, 16, BR_COLOR_PUN(BLACK), "Hi");
-      br_text_renderer_dump(br->text);
-      EndDrawing();
-    } else {
-      TracyCFrameMark;
-      br_plotter_draw(br);
-      br_dagens_handle(&br->groups, &br->dagens, &br->plots, GetTime() + 0.010);
-      TracyCFrameMarkStart("plotter_frame_end");
-      br_plotter_frame_end(br);
-      TracyCFrameMarkEnd("plotter_frame_end");
-    }
+    TracyCFrameMark;
+    br_plotter_draw(br);
+    br_dagens_handle(&br->groups, &br->dagens, &br->plots, GetTime() + 0.010);
+    TracyCFrameMarkStart("plotter_frame_end");
+    br_plotter_frame_end(br);
+    TracyCFrameMarkEnd("plotter_frame_end");
   }
-  BR_FREE(font_data);
   br->should_close = true;
   
   return 0;

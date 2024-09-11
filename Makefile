@@ -38,7 +38,7 @@ RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextur
 SOURCE             = src/main.c           src/help.c       src/data.c        src/smol_mesh.c   src/q.c       src/read_input.c \
 										 src/keybindings.c    src/str.c        src/resampling2.c src/graph_utils.c src/shaders.c src/plotter.c    \
 										 src/plot.c           src/permastate.c src/filesystem.c  src/gui.c         src/text_renderer.c \
-										 src/data_generator.c src/platform.c   src/threads.c
+										 src/data_generator.c src/platform.c   src/threads.c     build/default_font.c
 ifeq ($(USE_CXX), YES)
 	SOURCE+= src/filesystem++.cpp src/gui++.cpp src/memory.cpp
 endif
@@ -220,7 +220,6 @@ $(PREFIX_BUILD)/%.o:%.cpp
 $(PREFIX_BUILD)/%.o:%.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
-src/help.c: src/misc/default_font.h
 ifeq ($(CONFIG), DEBUG)
 endif
 src/shaders.c: $(SHADERS_HEADER)
@@ -265,11 +264,11 @@ bench: bin/bench
 	./bin/bench >> bench.txt
 	cat bench.txt
 
-src/misc/default_font.h: bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf
-	bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf > src/misc/default_font.h
+build/default_font.c: bin/font_bake fonts/PlayfairDisplayRegular-ywLOY.ttf
+	bin/font_bake fonts/PlayfairDisplayRegular-ywLOY.ttf > build/default_font.c
 
-bin/font_export: tools/font_export.c
-	$(NATIVE_CC) -o bin/font_export tools/font_export.c -lm
+bin/font_bake: tools/font_bake.c
+	$(NATIVE_CC) -O3 -o bin/font_bake tools/font_bake.c
 
 bin/shaders_bake: ./tools/shaders_bake.c ./src/br_shaders.h ./src/str.c
 	$(NATIVE_CC) -I. -I./external/raylib-5.0/src -O3 -o bin/shaders_bake src/str.c tools/shaders_bake.c

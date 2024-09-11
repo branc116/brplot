@@ -60,12 +60,12 @@ typedef struct br_text_renderer_t {
   int bitmap_pixels_width;
   unsigned int bitmap_texture_id;
   stbtt_pack_context pack_cntx;
-  unsigned char* font_data;
+  unsigned char const* font_data;
 
   struct {stbtt_aligned_quad* arr; size_t len, cap; } tmp_quads;
 } br_text_renderer_t;
 
-br_text_renderer_t* br_text_renderer_malloc(int bitmap_width, int bitmap_height, unsigned char* font_data, br_shader_font_t** shader) {
+br_text_renderer_t* br_text_renderer_malloc(int bitmap_width, int bitmap_height, unsigned char const* font_data, br_shader_font_t** shader) {
   size_t total_mem = sizeof(br_text_renderer_t) + (size_t)bitmap_width * (size_t)bitmap_height;
   struct tmp {
     br_text_renderer_t r;

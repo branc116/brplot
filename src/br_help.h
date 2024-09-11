@@ -37,3 +37,7 @@ static inline int signi(int a) {
 static inline bool help_near_zero(float value) {
   return absf(value) < 1e-6;
 }
+
+extern unsigned char const br_font_data[];
+extern long long const br_font_data_size;
+

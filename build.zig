@@ -12,15 +12,12 @@ pub fn generate_fonts(b: *std.Build) !*std.Build.Step.Run {
         .target = native_target,
         .optimize = full,
     });
-    generateFont.addCSourceFile(.{ .file = b.path("./tools/font_export.c") });
-    generateFont.addCSourceFile(.{ .file = b.path("./src/str.c") });
-    generateFont.addIncludePath(b.path("."));
-    generateFont.addIncludePath(b.path("./external/raylib-5.0/src"));
+    generateFont.addCSourceFile(.{ .file = b.path("./tools/font_bake.c") });
     generateFont.linkLibrary(native_rl);
     generateFont.linkLibC();
     var ret = b.addRunArtifact(generateFont);
     ret.addArg("./fonts/PlayfairDisplayRegular-ywLOY.ttf");
-    ret.addArg("src/misc/default_font.h");
+    ret.addArg("build/default_font.c");
     return ret;
 }
 
@@ -144,18 +141,18 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
     const imgui = build_imgui(b, target, optimize);
 
     exe.addCSourceFiles(.{ .files = &.{
+        "./build/default_font.c",
         "./src/data.c",
         "./src/data_generator.c",
-        "./src/filesystem++.cpp",
         "./src/filesystem.c",
         "./src/graph_utils.c",
-        "./src/gui++.cpp",
         "./src/gui.c",
         "./src/help.c",
         "./src/keybindings.c",
         "./src/main.c",
         "./src/memory.cpp",
         "./src/permastate.c",
+        "./src/platform.c",
         "./src/plot.c",
         "./src/plotter.c",
         "./src/q.c",
@@ -164,7 +161,7 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
         "./src/shaders.c",
         "./src/smol_mesh.c",
         "./src/str.c",
-        "./src/platform.c",
+        "./src/text_renderer.c",
     } });
     exe.addIncludePath(b.path("."));
     exe.addIncludePath(b.path("./src"));
@@ -189,13 +186,17 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
             exe.addIncludePath(b.path("./external/imgui-docking"));
             exe.addIncludePath(b.path("./src/imgui"));
             exe.defineCMacro("IMGUI", null);
+            exe.linkLibCpp();
+            exe.addCSourceFiles(.{ .files = &.{
+                "./src/filesystem++.cpp",
+                "./src/gui++.cpp",
+            } });
         },
         .headless => {
             exe.defineCMacro("NUMBER_OF_STEPS", "100");
             exe.defineCMacro("HEADLESS", null);
         },
     }
-    exe.linkLibCpp();
 
     exe.step.dependOn(&(try generate_fonts(b)).step);
     return exe;

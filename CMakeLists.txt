@@ -37,24 +37,13 @@ add_library(raylib STATIC
 )
 target_include_directories(raylib PUBLIC . ./external/glfw/include)
 
-add_library(imgui STATIC
-  ./external/imgui-docking/imgui.cpp
-  ./external/imgui-docking/imgui_draw.cpp
-  ./external/imgui-docking/imgui_tables.cpp
-  ./external/imgui-docking/imgui_widgets.cpp
-  ./external/imgui-docking/backends/imgui_impl_glfw.cpp
-  ./external/imgui-docking/backends/imgui_impl_opengl3.cpp
-)
-target_include_directories(imgui PUBLIC ./external/imgui-docking/ ./external/glfw/include)
-
 add_executable(brplot
-  src/main.c          src/help.c        src/data.c        src/smol_mesh.c  src/q.c
-  src/read_input.c    src/plotter.c     src/keybindings.c src/str.c        src/memory.cpp 
-  src/resampling2.c   src/graph_utils.c src/shaders.c     src/plot.c       src/filesystem++.cpp
-  src/permastate.c    src/gui++.cpp     src/gui.c         src/filesystem.c src/data_generator.c
-  src/platform.c
+  src/main.c           src/help.c        src/data.c           src/smol_mesh.c src/q.c
+  src/read_input.c     src/plotter.c     src/keybindings.c    src/str.c       src/memory.cpp
+  src/resampling2.c    src/graph_utils.c src/shaders.c        src/plot.c      src/permastate.c
+  src/gui.c            src/filesystem.c  src/data_generator.c src/platform.c  src/text_renderer.c
+  build/default_font.c
 )
-target_compile_features(brplot PUBLIC cxx_std_17)
 
 if (MSVC)
 else ()
@@ -73,17 +62,11 @@ if (USE_HOTRELOAD)
   target_compile_options(brplot PUBLIC -fpie)
 endif ()
 
-add_executable(font_export tools/font_export.c)
-add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/misc/default_font.h
-  COMMAND font_export fonts/PlayfairDisplayRegular-ywLOY.ttf src/misc/default_font.h
-  DEPENDS font_export fonts/PlayfairDisplayRegular-ywLOY.ttf
+add_executable(font_bake tools/font_bake.c)
+add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/build/default_font.c
+  COMMAND font_bake fonts/PlayfairDisplayRegular-ywLOY.ttf ${CMAKE_CURRENT_SOURCE_DIR}/build/default_font.c
+  DEPENDS font_bake fonts/PlayfairDisplayRegular-ywLOY.ttf
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-
-if (MSVC)
-else ()
-  target_link_libraries(font_export PUBLIC m)
-endif ()
-target_sources(brplot PRIVATE src/misc/default_font.h)
 
 if (CMAKE_BUILD_TYPE STREQUAL Debug)
   target_compile_definitions(brplot PUBLIC DEBUG)
@@ -91,11 +74,13 @@ elseif (CMAKE_BUILD_TYPE STREQUAL Release)
   target_compile_definitions(brplot PUBLIC RELEASE IMGUI_DISABLE_DEMO_WINDOWS IMGUI_DISABLE_DEBUG_TOOLS)
   if (MSVC)
   else ()
-    target_compile_options(imgui PUBLIC -fdata-sections -ffunction-sections)
+    if (GUI STREQUAL imgui)
+      target_compile_options(imgui PUBLIC -fdata-sections -ffunction-sections)
+      target_link_options(imgui PUBLIC -fdata-sections -ffunction-sections -Wl,--gc-sections)
+    endif ()
     target_compile_options(raylib PUBLIC -fdata-sections -ffunction-sections)
     target_compile_options(brplot PUBLIC -fdata-sections -ffunction-sections)
     target_link_options(raylib PUBLIC -fdata-sections -ffunction-sections -Wl,--gc-sections)
-    target_link_options(imgui PUBLIC -fdata-sections -ffunction-sections -Wl,--gc-sections)
     target_link_options(brplot PUBLIC -fdata-sections -ffunction-sections -Wl,--gc-sections)
   endif ()
   add_executable(shaders_bake tools/shaders_bake.c src/str.c)
@@ -116,9 +101,21 @@ if (GUI STREQUAL raylib)
   target_compile_definitions(brplot PUBLIC RAYLIB)
   target_link_libraries(brplot raylib)
 elseif (GUI STREQUAL imgui)
+  add_library(imgui STATIC
+    ./external/imgui-docking/imgui.cpp
+    ./external/imgui-docking/imgui_draw.cpp
+    ./external/imgui-docking/imgui_tables.cpp
+    ./external/imgui-docking/imgui_widgets.cpp
+    ./external/imgui-docking/backends/imgui_impl_glfw.cpp
+    ./external/imgui-docking/backends/imgui_impl_opengl3.cpp
+  )
+  target_include_directories(imgui PUBLIC ./external/imgui-docking/ ./external/glfw/include)
+
   target_compile_definitions(brplot PUBLIC IMGUI)
   target_link_libraries(brplot imgui raylib)
   target_include_directories(brplot PUBLIC external/imgui-docking)
+  target_sources(brplot PRIVATE src/gui++.cpp src/filesystem++.cpp)
+  target_compile_features(brplot PUBLIC cxx_std_17)
 elseif (GUI STREQUAL headless)
   target_compile_definitions(brplot PUBLIC HEADLESS)
 else ()

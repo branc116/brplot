@@ -9,6 +9,7 @@
 
 #include "file_saver.cpp"
 #include "src/br_str.h"
+#include "src/br_text_renderer.h"
 #ifndef RELEASE
 #  include "external/imgui-docking/imgui_demo.cpp"
 #endif
@@ -203,6 +204,7 @@ extern "C" void br_plotter_draw(br_plotter_t* br) {
   glViewport(0, 0, display_w, display_h);
   glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+  br_text_renderer_dump(br->text);
   TracyCFrameMarkEnd("BeginDrawing");
   EndDrawing();
 #if !defined(PLATFORM_WEB)

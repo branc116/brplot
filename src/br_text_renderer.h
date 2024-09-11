@@ -40,7 +40,7 @@ typedef struct {
 extern "C" {
 #endif
 
-br_text_renderer_t* br_text_renderer_malloc(int bitmap_width, int bitmap_height, unsigned char* font_data, br_shader_font_t** shader);
+br_text_renderer_t* br_text_renderer_malloc(int bitmap_width, int bitmap_height, unsigned char const* font_data, br_shader_font_t** shader);
 void br_text_renderer_free(br_text_renderer_t* r);
 void br_text_renderer_dump(br_text_renderer_t* r);
 br_text_renderer_extent_t br_text_renderer_push(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, const char* text);
