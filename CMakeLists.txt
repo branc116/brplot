@@ -36,13 +36,13 @@ add_library(raylib STATIC
   ./external/raylib-5.0/src/rcore.c
 )
 target_include_directories(raylib PUBLIC . ./external/glfw/include)
+set_target_properties(raylib PROPERTIES LINKER_LANGUAGE C)
 
 add_executable(brplot
   src/main.c           src/help.c        src/data.c           src/smol_mesh.c src/q.c
   src/read_input.c     src/plotter.c     src/keybindings.c    src/str.c       src/memory.cpp
   src/resampling2.c    src/graph_utils.c src/shaders.c        src/plot.c      src/permastate.c
   src/gui.c            src/filesystem.c  src/data_generator.c src/platform.c  src/text_renderer.c
-  build/default_font.c
 )
 
 if (MSVC)
@@ -98,6 +98,7 @@ endif()
 if (GUI STREQUAL raylib)
   target_compile_definitions(brplot PUBLIC RAYLIB)
   target_link_libraries(brplot raylib)
+  set_target_properties(brplot PROPERTIES LINKER_LANGUAGE C)
 elseif (GUI STREQUAL imgui)
   add_library(imgui STATIC
     ./external/imgui-docking/imgui.cpp
