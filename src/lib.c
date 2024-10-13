@@ -76,7 +76,7 @@ static void* main_loop(void* plotterv) {
       if (plot->is_visible) {
         br_plot_update_variables(plotter, plot, plotter->groups, GetMousePosition());
         br_plot_update_shader_values(plot, &plotter->shaders);
-        draw_grid_numbers(plot);
+        draw_grid_numbers(plotter->text, plot);
         smol_mesh_grid_draw(plot, &plotter->shaders);
         br_plot_draw(plot, plotter->groups, &plotter->shaders);
       }

@@ -40,7 +40,7 @@ RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextur
 SOURCE             = src/main.c           src/help.c       src/data.c        src/smol_mesh.c   src/q.c       src/read_input.c \
 										 src/keybindings.c    src/str.c        src/resampling2.c src/graph_utils.c src/shaders.c src/plotter.c    \
 										 src/plot.c           src/permastate.c src/filesystem.c  src/gui.c         src/text_renderer.c \
-										 src/data_generator.c src/platform.c   src/threads.c     build/default_font.c
+										 src/data_generator.c src/platform.c   src/threads.c
 ifeq ($(USE_CXX), YES)
 	SOURCE+= src/filesystem++.cpp src/gui++.cpp src/memory.cpp
 endif
@@ -196,6 +196,7 @@ OBJSA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE))
 OBJS+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
 MAKE_INCLUDES= $(patsubst %.o, %.d, $(OBJS))
 NOBS= $(patsubst %.o, %.nob.dir, $(OBJS))
+NOBS+= bin/.nob.dir
 
 ifeq ($(USE_CXX), YES)
 	LD= $(CXX)
@@ -273,14 +274,14 @@ bench: bin/bench
 	./bin/bench >> bench.txt
 	cat bench.txt
 
-.generated/default_font.h: bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf
+.generated/default_font.h: bin/font_bake fonts/PlayfairDisplayRegular-ywLOY.ttf
 	test -d .generated || mkdir .generated
-	bin/font_export fonts/PlayfairDisplayRegular-ywLOY.ttf > .generated/default_font.h
+	bin/font_bake fonts/PlayfairDisplayRegular-ywLOY.ttf > .generated/default_font.h
 
-bin/font_bake: tools/font_bake.c
+bin/font_bake: tools/font_bake.c $(NOBS)
 	$(NATIVE_CC) -O3 -o bin/font_bake tools/font_bake.c
 
-bin/shaders_bake: tools/shaders_bake.c src/br_shaders.h src/str.c
+bin/shaders_bake: tools/shaders_bake.c src/br_shaders.h src/str.c $(NOBS)
 	$(NATIVE_CC) -I. -Iexternal/raylib-5.0/src -O3 -o bin/shaders_bake src/str.c tools/shaders_bake.c
 
 $(SHADERS_HEADER): ./src/shaders/* bin/shaders_bake
@@ -290,7 +291,8 @@ $(SHADERS_HEADER): ./src/shaders/* bin/shaders_bake
 SOURCE_BENCH= ./src/misc/benchmark.c ./src/resampling2.c ./src/smol_mesh.c ./src/shaders.c ./src/plotter.c ./src/help.c ./src/gui.c ./src/data.c ./src/str.c ./src/plot.c ./src/q.c ./src/keybindings.c ./src/memory.cpp ./src/graph_utils.c ./src/data_generator.c ./src/platform.c  ./src/permastate.c ./src/filesystem.c ./src/filesystem++.cpp
 OBJSA_BENCH= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE_BENCH))
 OBJS_BENCH+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA_BENCH))
-bin/bench: $(OBJS_BENCH)
+
+bin/bench: $(OBJS_BENCH) $(NOBS)
 	$(CXX) $(LD_FLAGS) -o bin/bench $(COMMONFLAGS) $(LIBS) $(OBJS_BENCH)
 
 COMPILE_FLAGS_JSONA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.json, $(SOURCE))

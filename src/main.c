@@ -3,6 +3,7 @@
 #include "src/br_q.h"
 #include "src/br_permastate.h"
 #include "src/br_text_renderer.h"
+#include "src/br_help.h"
 #include "tracy/TracyC.h"
 
 void br_gui_init_specifics_gui(br_plotter_t* plotter);
