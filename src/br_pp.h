@@ -68,7 +68,7 @@ void  br_imgui_free(void* p, void* user_data);
 #  define BR_IMGUI_FREE br_imgui_free
 #  include <assert.h>
 //#  define BR_ASSERT(x) assert(x)
-#  define BR_ASSERT(x) if (!(x)) *(volatile int*)0
+#  define BR_ASSERT(x) if (!(x)) *(volatile int*)0, assert(0)
 #else
 #  include <assert.h>
 #  define BR_ASSERT(x) assert(x)

@@ -76,6 +76,7 @@
       X_VEC(atlas, _TEX),               \
                                         \
       X_BUF(pos, 4)                     \
+      X_BUF(color, 4)                   \
     )
 
 #define VEC_TYPE1 float

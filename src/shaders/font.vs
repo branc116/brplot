@@ -3,8 +3,10 @@
 precision mediump float;
 
 in vec4 pos;
+in vec4 color;
 
 out vec2 out_tpos;
+out vec4 vs_color;
 
 uniform vec2 resolution;
 
@@ -14,6 +16,7 @@ void main() {
   norm += vec2(-1.0, 1.0);
 
   out_tpos = pos.zw;
+  vs_color = color;
 
   gl_Position = vec4(norm, 0.0, 1.0);
 }

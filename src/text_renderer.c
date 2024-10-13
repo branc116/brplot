@@ -177,7 +177,7 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
 }
 
 static void br_text_draw_quad(Vector4* v, int* len, float x0, float y0, float s0, float t0,
-                              float x1, float y1, float s1, float t1) {
+                                                    float x1, float y1, float s1, float t1) {
   v[(*len)++] = (Vector4) { x0, y0, s0, t0 };
   v[(*len)++] = (Vector4) { x0, y1, s0, t1 };
   v[(*len)++] = (Vector4) { x1, y1, s1, t1 };
@@ -197,11 +197,12 @@ br_text_renderer_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x,
   br_shader_font_t* simp = *r->shader;
   int len_pos = simp->len * 3;
   Vector4* pos = (Vector4*)simp->pos_vbo;
+  Vector4* colors = (Vector4*)simp->color_vbo;
   r->tmp_quads.len = 0;
 
   if (size_index == -1) {
     for (const char* c = text; *c != '\0'; ++c) {
-      stbds_hmput(r->to_bake, ((char_sz){.size = font_size, .ch = *c}), 0);
+      stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = *c }), 0);
     }
   } else {
     size_to_font s = r->sizes[size_index];
@@ -215,7 +216,7 @@ br_text_renderer_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x,
       }
       if (*c == '\r') continue;
       if (char_index == -1) {
-        stbds_hmput(r->to_bake, ((char_sz){.size = font_size, .ch = *c}), 0);
+        stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = *c }), 0);
       } else {
         stbtt_aligned_quad q;
         stbtt_packedchar ch = s.value[char_index].value;
@@ -248,7 +249,9 @@ br_text_renderer_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x,
       br_text_renderer_dump(r);
       len_pos = 0;
       pos = (void*)simp->pos_vbo;
+      colors = (Vector4*)simp->color_vbo;
     }
+    for (int i = 0; i < 6; ++i) colors[len_pos + i] = BR_COLOR_TO_VEC4(color);
     br_text_draw_quad(pos, &len_pos,
         r->tmp_quads.arr[i].x0 - x_off, 
         r->tmp_quads.arr[i].y0 - y_off,
