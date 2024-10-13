@@ -251,7 +251,7 @@ br_text_renderer_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x,
       pos = (void*)simp->pos_vbo;
       colors = (Vector4*)simp->color_vbo;
     }
-    for (int i = 0; i < 6; ++i) colors[len_pos + i] = BR_COLOR_TO_VEC4(color);
+    for (int j = 0; j < 6; ++j) colors[len_pos + j] = BR_COLOR_TO_VEC4(color);
     br_text_draw_quad(pos, &len_pos,
         r->tmp_quads.arr[i].x0 - x_off, 
         r->tmp_quads.arr[i].y0 - y_off,
