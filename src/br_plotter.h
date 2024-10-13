@@ -38,7 +38,7 @@ typedef struct br_plotter_t {
 #if BR_HAS_SHADER_RELOAD
   bool shaders_dirty;
 #endif
-  float width, height;
+  int  width, height;
   bool file_saver_inited;
   bool should_close;
   bool switch_to_active;
@@ -46,23 +46,23 @@ typedef struct br_plotter_t {
 } br_plotter_t;
 
 BR_API br_plotter_t* br_plotter_malloc(void);
-BR_API void br_plotter_init(br_plotter_t* br, bool use_permaste);
-BR_API void br_plotter_resize(br_plotter_t* br, float width, float height);
+BR_API void        br_plotter_init(br_plotter_t* br, bool use_permaste);
+BR_API void        br_plotter_resize(br_plotter_t* br, float width, float height);
 BR_API br_datas_t* br_plotter_get_br_datas(br_plotter_t* br);
-BR_API void br_plotter_switch_2d(br_plotter_t* br);
-BR_API void br_plotter_switch_3d(br_plotter_t* br);
-BR_API void br_plotter_set_bottom_left(br_plot_t* plot, float left, float bottom);
-BR_API void br_plotter_set_top_right(br_plot_t* plot, float right, float top);
-BR_API void br_plots_focus_visible(br_plots_t plot, br_datas_t groups);
-BR_API void br_plot_focus_visible(br_plot_t* plot, br_datas_t groups);
-int br_plotter_add_plot_2d(br_plotter_t* br);
-int br_plotter_add_plot_3d(br_plotter_t* br);
-void br_plotter_export(br_plotter_t const* br, char const* path);
-void br_plotter_export_csv(br_plotter_t const* br, char const* path);
-BR_API void br_plotter_free(br_plotter_t* br);
-BR_API void br_plotter_draw(br_plotter_t* br);
-BR_API void br_plotter_minimal(br_plotter_t* br);
-BR_API void br_plotter_frame_end(br_plotter_t* br);
+BR_API void        br_plotter_switch_2d(br_plotter_t* br);
+BR_API void        br_plotter_switch_3d(br_plotter_t* br);
+BR_API void        br_plotter_set_bottom_left(br_plot_t* plot, float left, float bottom);
+BR_API void        br_plotter_set_top_right(br_plot_t* plot, float right, float top);
+BR_API void        br_plots_focus_visible(br_plots_t plot, br_datas_t groups);
+BR_API void        br_plot_focus_visible(br_plot_t* plot, br_datas_t groups);
+int                br_plotter_add_plot_2d(br_plotter_t* br);
+int                br_plotter_add_plot_3d(br_plotter_t* br);
+void               br_plotter_export(br_plotter_t const* br, char const* path);
+void               br_plotter_export_csv(br_plotter_t const* br, char const* path);
+BR_API void        br_plotter_free(br_plotter_t* br);
+BR_API void        br_plotter_draw(br_plotter_t* br);
+BR_API void        br_plotter_minimal(br_plotter_t* br);
+BR_API void        br_plotter_frame_end(br_plotter_t* br);
 
 
 // Platform specific

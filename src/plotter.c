@@ -104,11 +104,12 @@ BR_API void br_plotter_switch_3d(br_plotter_t* br) {
 int br_plotter_add_plot_2d(br_plotter_t* br) {
   br_plot_t plot = {
     .groups_to_show = { 0 },
-    .graph_screen_rect = { GRAPH_LEFT_PAD, 50, (float)GetScreenWidth() - GRAPH_LEFT_PAD - 60, (float)GetScreenHeight() - 110 },
-    .resolution = { (float)GetScreenWidth(), (float)GetScreenHeight() },
+    .graph_screen_rect = { GRAPH_LEFT_PAD, 50, (float)br->width - GRAPH_LEFT_PAD - 60, (float)br->height - 110 },
+    .resolution = { (float)br->width, (float)br->height },
     .follow = false,
     .jump_around = false,
     .mouse_inside_graph = false,
+    .is_visible = true,
     .kind = br_plot_kind_2d,
     .dd =  {
       .zoom = { 1.f, 1.f },
@@ -124,8 +125,8 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
 int br_plotter_add_plot_3d(br_plotter_t* br) {
   br_plot_t plot = {
     .groups_to_show = { 0 },
-    .graph_screen_rect = { GRAPH_LEFT_PAD, 50, (float)GetScreenWidth() - GRAPH_LEFT_PAD - 60, (float)GetScreenHeight() - 110 },
-    .resolution = { (float)GetScreenWidth(), (float)GetScreenHeight() },
+    .graph_screen_rect = { GRAPH_LEFT_PAD, 50, (float)br->width - GRAPH_LEFT_PAD - 60, (float)br->height - 110 },
+    .resolution = { (float)br->width, (float)br->height },
     .follow = false,
     .jump_around = false,
     .mouse_inside_graph = false,

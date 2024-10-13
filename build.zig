@@ -42,7 +42,7 @@ pub fn generate_shaders(b: *std.Build) !*std.Build.Step.Run {
     shaderGen.linkLibrary(native_rl);
     var ret = b.addRunArtifact(shaderGen);
     ret.addArg("WINDOWS");
-    ret.addArg("./src/misc/shaders.h");
+    ret.addArg(".generated/shaders.h");
     return ret;
 }
 

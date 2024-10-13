@@ -1,7 +1,7 @@
 #include "src/br_str.h"
 #include "src/br_filesystem.h"
 
-#include "src/misc/tests.h"
+#include "external/tests.h"
 
 bool br_fs_up_dir(br_str_t* cwd) {
 start:

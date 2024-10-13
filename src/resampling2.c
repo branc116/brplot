@@ -473,7 +473,7 @@ float br_resampling2_get_something2(resampling2_t* res) {
       context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-#include "misc/tests.h"
+#include "external/tests.h"
 TEST_CASE(resampling) {
   float xs[] = { 0, 1, 2, 3};
   float ys[] = {  1, 2,  4, 2 };

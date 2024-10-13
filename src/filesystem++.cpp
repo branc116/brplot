@@ -1,9 +1,9 @@
 #include "br_filesystem.h"
-#include "br_str.h"
-#include "br_pp.h"
 
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
 #elif defined(_WIN32) || defined(__CYGWIN__)
+#  include "br_str.h"
+#  include "br_pp.h"
 #  include "desktop/win/filesystem.cpp"
 #  include <filesystem>
 

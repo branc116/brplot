@@ -13,3 +13,4 @@ default_font.h
 compile_commands.json
 imgui.ini
 brplot
+.generated
