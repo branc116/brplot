@@ -134,7 +134,7 @@ else
 endif
 
 ifeq ($(CONFIG), DEBUG)
-	COMMONFLAGS+= -g
+	COMMONFLAGS+= -ggdb
 	SHADERS_HEADER=
 	ifeq ($(PLATFORM), LINUX)
 		COMMONFLAGS+= -DUNIT_TEST

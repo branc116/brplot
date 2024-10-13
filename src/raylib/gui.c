@@ -24,12 +24,13 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   update_resolution(br);
   br_plotter_update_variables(br);
   help_draw_fps(br->text, 0, 0);
-  br_plot_t* plot = &br->plots.arr[br->active_plot_index];
-  br_plot_update_variables(br, plot, br->groups, GetMousePosition());
-  br_plot_update_shader_values(plot, &br->shaders);
-  draw_grid_numbers(br->text, plot);
-  smol_mesh_grid_draw(plot, &br->shaders);
-  br_datas_draw(br->groups, plot, &br->shaders);
+#define PLOT &br->plots.arr[br->active_plot_index]
+  br_plot_update_variables(br, PLOT, br->groups, GetMousePosition());
+  br_plot_update_shader_values(PLOT, &br->shaders);
+  draw_grid_numbers(br->text, PLOT);
+  smol_mesh_grid_draw(PLOT, &br->shaders);
+  br_datas_draw(br->groups, PLOT, &br->shaders);
+#undef PLOT
   draw_left_panel(br);
   br_text_renderer_dump(br->text);
   EndDrawing();
@@ -38,7 +39,7 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
 static float sp = 0.f;
 static void draw_left_panel(br_plotter_t* br) {
   br_plot_t* plot = &br->plots.arr[0];
-  ui_stack_buttons_init((Vector2){.x = 30.f, .y = 25.f}, NULL, (int)(context.font_scale * 15));
+  ui_stack_buttons_init((Vector2){ .x = 30.f, .y = 25.f }, NULL, (int)(context.font_scale * 15));
   ui_stack_buttons_add(br->text, &plot->follow, "Follow");
   if (ui_stack_buttons_add(br->text, NULL, "Export") == 2) {
     br_plotter_export(br, "test.brp");

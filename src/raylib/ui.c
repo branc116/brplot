@@ -54,7 +54,7 @@ static RL_THREAD_LOCAL bool stack_is_inited = false;
 static RL_THREAD_LOCAL float* stack_scroll_position;
 static RL_THREAD_LOCAL Vector2 stack_button_size;
 static RL_THREAD_LOCAL float stack_offset;
-static RL_THREAD_LOCAL float stack_font_size;
+static RL_THREAD_LOCAL int stack_font_size;
 static RL_THREAD_LOCAL int stack_count;
 static RL_THREAD_LOCAL Vector2 stack_maxsize;
 static RL_THREAD_LOCAL bool stack_size_set;
