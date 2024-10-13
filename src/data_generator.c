@@ -540,7 +540,7 @@ TEST_ONLY static void expr_to_str(br_str_t* out, br_dagen_exprs_t* arena, uint32
 
 
 #ifndef _MSC_VER
-#include "misc/tests.h"
+#include "external/tests.h"
 
 #define INIT \
   br_datas_t datas = {0}; \

@@ -301,16 +301,6 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot, br_shaders_t* shaders) {
       int group = plot->groups_to_show.arr[j];
       br_data_t const* g = br_data_get1(pg, group);
       if (g->len == 0) continue;
-#if !defined(RELEASE)
-      if (NULL == g) {
-        // TODO: Rename groups to datas
-        LOGE("Trying to get a group with id = group, but that groups don't exist..\n"
-             "NOTE: Groups that exist are:\n");
-        for (int i = 0; pg.len; ++i) {
-        LOGI("      *%d (len = %zu)\n", pg.arr[i].group_id, pg.arr[i].len);
-        }
-      }
-#endif
       resampling2_draw(g->resampling, g, plot, shaders);
     }
     if (shaders->line_3d->len > 0) {

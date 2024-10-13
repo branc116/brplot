@@ -6,7 +6,7 @@ typedef struct {
 } test_arr;
 
 #ifndef _MSC_VER
-#include "misc/tests.h"
+#include "external/tests.h"
 TEST_CASE(da) {
   test_arr a = {0};
   br_da_push(a, 1);

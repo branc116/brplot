@@ -2,11 +2,11 @@
 #include "string.h"
 #include "errno.h"
 #include "src/br_shaders.h"
-#include "src/br_plot.h"
 #include "src/br_da.h"
+#include "src/br_str.h"
 #include <assert.h>
 #if defined(RELEASE)
-#  include "src/misc/shaders.h"
+#  include ".generated/shaders.h"
 #endif
 
 #define IS_SPECIAL_TOKEN(c) ((c) == '\n' || (c) == '\r' || (c) == '.' || (c) == ',' || (c) == '{' || (c) == '}' || (c) == ' ')

@@ -1,5 +1,4 @@
 #include "include/brplot.h"
-#include "src/br_plotter.h"
 #include <unistd.h>
 
 void example_v1(void) {
@@ -41,4 +40,5 @@ int main(void) {
 
 // gcc -I . -L bin -o example ./tests/example_use_brplot_as_lib.c -lbrplot
 // gcc -I . -L bin -o example.o -c ./tests/example_use_brplot_as_lib.c && g++ -L bin example.o -lbrplot
-// make BACKEND=X11 USE_CXX=NO TYPE=LIB GUI=RAYLIB CONFIG=RELEASE && gcc -ggdb -I . -L bin ./tests/example_use_brplot_as_lib.c -lbrplot && LD_LIBRARY_PATH="$PWD/bin" ./a.out
+// make BACKEND=X11 USE_CXX=NO TYPE=LIB GUI=RAYLIB CONFIG=RELEASE && gcc -ggdb -I . -L bin ./tests/example_use_brplot_as_lib.c -lbrplot_raylib_linux_debug_gcc && LD_LIBRARY_PATH="$PWD/bin" ./a.out
+// LD_LIBRARY_PATH="$PWD/bin" gdb ./a.out

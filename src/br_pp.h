@@ -13,7 +13,6 @@
 #  undef UNIT_TEST
 #endif
 
-
 // This is the size of buffer used to transfer points from cpu to gpu.
 #define PTOM_COUNT (1<<10)
 
@@ -81,7 +80,7 @@ void  br_imgui_free(void* p, void* user_data);
 #endif
 
 #if !defined(BR_HAS_HOTRELOAD)
-#  if !defined(RELEASE) && defined(IMGUI) && defined(__linux__)
+#  if !defined(RELEASE) && defined(IMGUI) && defined(__linux__) && !defined(LIB)
 #    define BR_HAS_HOTRELOAD 1
 #  else
 #    define BR_HAS_HOTRELOAD 0
