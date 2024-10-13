@@ -1,6 +1,7 @@
 #include "br_filesystem.h"
 
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
+// Defined in src/filesystem.c
 #elif defined(_WIN32) || defined(__CYGWIN__)
 #  include "br_str.h"
 #  include "br_pp.h"
@@ -27,7 +28,7 @@ bool br_fs_exists(br_strv_t path) {
 #  error "Unsupported Platform"
 #endif
 
-#ifdef IMGUI
+#if defined(IMGUI)
 #include "imgui_internal.h"
 uint32_t br_fs_crc(const void* data, size_t len, uint32_t seed) {
   return ImHashData(data, len, seed);
