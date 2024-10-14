@@ -244,7 +244,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         help_trim_zeros(scrach);
         float y = graph_screen_rect.y + (graph_screen_rect.height / r.height) * (r.y - cur);
         if (y > graph_screen_rect.y + graph_screen_rect.height) break;
-        br_text_renderer_push2(tr, graph_screen_rect.x - 2.f, y, font_size, BR_COLOR_PUN(RAYWHITE), scrach, br_text_renderer_ancor_right_mid);
+        br_text_renderer_push2(tr, graph_screen_rect.x - 2.f, y, font_size, BR_COLOR_PUN(RAYWHITE), br_strv_from_c_str(scrach), br_text_renderer_ancor_right_mid);
       }
     }
   }
@@ -270,7 +270,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         //if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
         //x_last_max = x + sz.x;
         if (x > graph_screen_rect.x + graph_screen_rect.width) break;
-        br_text_renderer_push2(tr, x, graph_screen_rect.y + graph_screen_rect.height, font_size, BR_COLOR_PUN(RAYWHITE), scrach, br_text_renderer_ancor_mid_up);
+        br_text_renderer_push2(tr, x, graph_screen_rect.y + graph_screen_rect.height, font_size, BR_COLOR_PUN(RAYWHITE), br_strv_from_c_str(scrach), br_text_renderer_ancor_mid_up);
       }
     }
   }

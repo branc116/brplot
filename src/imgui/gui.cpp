@@ -51,12 +51,9 @@
 "  DockNode  ID=0x00000002 Parent=0x8B93E3BD SizeRef=273,720\n"
 
 static void br_plot_screenshot_imgui(br_plot_t br, br_datas_t groups, br_text_renderer_t* text, br_shaders_t* shaders, char* path);
-
 static int screenshot_file_save = 0;
 static struct br_file_saver_s* fs = nullptr;
-
 static ImVec4 clear_color = ImVec4(.0f, .0f, .0f, 1.00f);
-
 static GLFWwindow* ctx;
 
 extern "C" void br_gui_init_specifics_gui(br_plotter_t* br) {
@@ -82,9 +79,9 @@ extern "C" void br_gui_init_specifics_gui(br_plotter_t* br) {
 #if BR_HAS_HOTRELOAD
   br_hotreload_start(&br->hot_state);
 #endif
-    ImGui::LoadIniSettingsFromMemory(DEFAULT_INI);
+  ImGui::LoadIniSettingsFromMemory(DEFAULT_INI);
 #if !defined(PLATFORM_WEB)
-    ImGui::LoadIniSettingsFromDisk("imgui.ini");
+  ImGui::LoadIniSettingsFromDisk("imgui.ini");
 #endif
 }
 
@@ -141,6 +138,9 @@ extern "C" void br_plotter_draw(br_plotter_t* br) {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui::NewFrame();
   ImGui::DockSpaceOverViewport();
+#if !defined(PLATFORM_WEB)
+  ClearBackground(BLACK);
+#endif
   br_plotter_update_variables(br);
   Vector2 mouse_pos = GetMousePosition();
   ImGuiID prev = 0;
@@ -197,19 +197,12 @@ extern "C" void br_plotter_draw(br_plotter_t* br) {
     }
   }
 
-  br_plotter_frame_end(br);
-  ImGui::Render();
-  int display_h = 0, display_w = 0;
-  glfwGetFramebufferSize(ctx, &display_w, &display_h);
-  glViewport(0, 0, display_w, display_h);
-  glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   br_text_renderer_dump(br->text);
+  ImGui::Render();
+  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+  br_plotter_frame_end(br);
   TracyCFrameMarkEnd("BeginDrawing");
   EndDrawing();
-#if !defined(PLATFORM_WEB)
-  ClearBackground(BLACK);
-#endif
 }
 
 extern "C" void br_plot_screenshot(br_text_renderer_t* text, br_plot_t* plot, br_shaders_t* shaders, br_datas_t, char const*) {
@@ -222,10 +215,10 @@ extern "C" void br_plot_screenshot(br_text_renderer_t* text, br_plot_t* plot, br
 static void br_plot_screenshot_imgui(br_plot_t plot, br_datas_t groups, br_text_renderer_t* text, br_shaders_t* shaders, char* path) {
   float left_pad = 80.f;
   float bottom_pad = 80.f;
-  Vector2 is = {1280, 720};
+  Vector2 is = { 1280, 720 };
   RenderTexture2D target = LoadRenderTexture((int)is.x, (int)is.y); // TODO: make this values user defined.
-  plot.graph_screen_rect = {left_pad, 0.f, is.x - left_pad, is.y - bottom_pad};
-  plot.resolution = {is.x, is.y};
+  plot.graph_screen_rect = { left_pad, 0.f, is.x - left_pad, is.y - bottom_pad };
+  plot.resolution = { is.x, is.y };
   br_plot_update_context(&plot, GetMousePosition());
   br_plot_update_shader_values(&plot, shaders);
   BeginTextureMode(target);

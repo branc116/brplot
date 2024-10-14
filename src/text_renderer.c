@@ -187,10 +187,14 @@ static void br_text_draw_quad(Vector4* v, int* len, float x0, float y0, float s0
 }
 
 br_text_renderer_extent_t br_text_renderer_push(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, const char* text) {
+  return br_text_renderer_push2(r, x, y, font_size, color, br_strv_from_c_str(text), br_text_renderer_ancor_left_up);
+}
+
+br_text_renderer_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, br_strv_t text) {
   return br_text_renderer_push2(r, x, y, font_size, color, text, br_text_renderer_ancor_left_up);
 }
 
-br_text_renderer_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, const char* text, br_text_renderer_ancor_t ancor) {
+br_text_renderer_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, br_strv_t text, br_text_renderer_ancor_t ancor) {
   Vector2 loc = { x, y };
   long size_index = stbds_hmgeti(r->sizes, font_size);
   float og_x = loc.x;
@@ -201,22 +205,22 @@ br_text_renderer_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x,
   r->tmp_quads.len = 0;
 
   if (size_index == -1) {
-    for (const char* c = text; *c != '\0'; ++c) {
-      stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = *c }), 0);
+    for (size_t i = 0; i < text.len; ++i) {
+      stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = text.str[i] }), 0);
     }
   } else {
     size_to_font s = r->sizes[size_index];
 
-    for (const char* c = text; *c != '\0'; ++c) {
-      long char_index = stbds_hmgeti(s.value, *c);
-      if (*c == '\n') {
+    for (size_t i = 0; i < text.len; ++i) {
+      long char_index = stbds_hmgeti(s.value, text.str[i]);
+      if (text.str[i] == '\n') {
         loc.y += (float)font_size * 1.1f;
         loc.x = og_x;
         continue;
       }
-      if (*c == '\r') continue;
+      if (text.str[i] == '\r') continue;
       if (char_index == -1) {
-        stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = *c }), 0);
+        stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = text.str[i] }), 0);
       } else {
         stbtt_aligned_quad q;
         stbtt_packedchar ch = s.value[char_index].value;
