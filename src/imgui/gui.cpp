@@ -1,21 +1,21 @@
+#include "src/br_gui_internal.h"
+#include "src/br_permastate.h"
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
-#include "src/br_gui_internal.h"
 #include "src/br_pp.h"
 #include "src/br_shaders.h"
 #include "src/br_smol_mesh.h"
-#include "src/br_permastate.h"
-#include "imgui_extensions.h"
-
-#include "file_saver.cpp"
 #include "src/br_str.h"
 #include "src/br_text_renderer.h"
-#ifndef RELEASE
-#  include "external/imgui-docking/imgui_demo.cpp"
-#endif
+#include "src/imgui/imgui_extensions.h"
+
+#include "file_saver.cpp"
 #include "imgui_extensions.cpp"
 #include "ui_info.cpp"
 #include "ui_settings.cpp"
+#ifndef RELEASE
+#  include "external/imgui-docking/imgui_demo.cpp"
+#endif
 
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
@@ -23,10 +23,9 @@
 #if !defined(PLATFORM_WEB)
 #  include "backends/imgui_impl_opengl3_loader.h"
 #endif
+
 #include "external/glfw/include/GLFW/glfw3.h"
 #include "tracy/TracyC.h"
-
-#include <cstdlib>
 
 #define DEFAULT_INI "" \
 "[Window][DockSpaceViewport_11111111]\n" \
@@ -53,13 +52,11 @@
 static void br_plot_screenshot_imgui(br_plot_t br, br_datas_t groups, br_text_renderer_t* text, br_shaders_t* shaders, char* path);
 static int screenshot_file_save = 0;
 static struct br_file_saver_s* fs = nullptr;
-static ImVec4 clear_color = ImVec4(.0f, .0f, .0f, 1.00f);
-static GLFWwindow* ctx;
 
 extern "C" void br_gui_init_specifics_gui(br_plotter_t* br) {
   if (false == br->loaded) br_plotter_add_plot_2d(br);
 
-  ctx = glfwGetCurrentContext();
+  GLFWwindow* ctx = glfwGetCurrentContext();
   ImGui::SetAllocatorFunctions(BR_IMGUI_MALLOC, BR_IMGUI_FREE, nullptr);
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO();
@@ -155,15 +152,13 @@ extern "C" void br_plotter_draw(br_plotter_t* br) {
       ImGui::SetNextWindowFocus();
       br->switch_to_active = false;
     }
-    if ( ImGui::Begin(scrach) && false == ImGui::IsWindowHidden() && ((false == switching) || (switching && br->active_plot_index == i))){
-      br_scrach_free();
+    br_scrach_free();
+    if (ImGui::Begin(scrach) && false == ImGui::IsWindowHidden() && ((false == switching) || (switching && br->active_plot_index == i))) {
       br_plot_update_variables(br, &br->plots.arr[i], br->groups, mouse_pos); // Invalidates plots
       ImVec2 p = ImGui::GetWindowPos();
       ImVec2 size = ImGui::GetWindowSize();
       graph_draw_min(br->groups, &br->plots.arr[i], &br->shaders, br->text, p.x, p.y, size.x, size.y, padding);
       br->active_plot_index = switching ? br->active_plot_index : i;
-    } else {
-      br_scrach_free();
     }
     switching = false;
     prev = ImGui::GetWindowDockID();
