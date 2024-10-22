@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
+set -ex
 
-clang -I. -fsanitize=fuzzer -I./external/Tracy -I./external/raylib-5.0/src -DNUMBER_OF_STEPS=100 -DLINUX=1 -DHEADLESS -DPLATFORM_DESKTOP=1 -g \
+clang -I. -fsanitize=fuzzer -I./external/Tracy -I./external/raylib-5.0/src -DNUMBER_OF_STEPS=100 -DLINUX=1 -DHEADLESS -DPLATFORM_DESKTOP=1 -DFUZZ -g \
   -DUNIT_TEST -fpie -pg -fsanitize=address -fsanitize=leak -fsanitize=undefined -fsanitize=signed-integer-overflow -fsanitize=integer-divide-by-zero \
   -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow \
   -Wconversion -Wall -Wpedantic -Wextra -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-newline-eof \

@@ -778,28 +778,43 @@ void read_input_main_worker(br_plotter_t* gv) {
 }
 
 #ifndef _MSC_VER
-#ifndef RELEASE
+#if !defined(RELEASE)
 #include "external/tests.h"
 
+#if defined(FUZZ)
+#include "src/br_data_generator.h"
+#include "src/br_plotter.h"
+#include "src/br_gui_internal.h"
+#include "src/br_help.h"
+#include "raylib.h"
 int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
   lex_state_t s;
-  br_plotter_t br = {0};
-  br.commands = q_malloc();
+  br_plotter_t* br = br_plotter_malloc();
+  br_plotter_init(br, true);
+  br->shaders = br_shaders_malloc();
+  br->text = br_text_renderer_malloc(1024, 1024, br_font_data, &br->shaders.font);
+  br_gui_init_specifics_gui(br);
   for (size_t i = 0; i < str_len;) {
     if (s.read_next) {
       s.c = str[i++];
-      lex_step_extractor(&br, &s);
+      lex_step_extractor(br, &s);
     } else s.read_next = true;
-    lex_step(&br, &s);
+    lex_step(br, &s);
+    br_plotter_draw(br);
+    br_dagens_handle(&br->groups, &br->dagens, &br->plots, GetTime() + 0.010);
   }
   s.c = 0;
   while (s.tokens_len > 0) {
-    lex_step(&br, &s);
-    input_tokens_reduce(&br, &s, true);
+    lex_step(br, &s);
+    input_tokens_reduce(br, &s, true);
+    br_plotter_draw(br);
+    br_dagens_handle(&br->groups, &br->dagens, &br->plots, GetTime() + 0.010);
   }
-  q_free(br.commands);
+  br_plotter_free(br);
+  BR_FREE(br);
   return 0;  // Values other than 0 and -1 are reserved for future use.
 }
+#endif
 
 #define TEST_COMMAND_SET_ZOOM(q, AXIS, VALUE) do { \
   q_command c = q_pop(q); \

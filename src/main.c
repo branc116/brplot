@@ -4,7 +4,9 @@
 #include "src/br_permastate.h"
 #include "src/br_text_renderer.h"
 #include "src/br_help.h"
+
 #include "tracy/TracyC.h"
+#include "raylib.h"
 
 void br_gui_init_specifics_gui(br_plotter_t* plotter);
 static void* main_gui(void* plotter) {
