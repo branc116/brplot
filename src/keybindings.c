@@ -52,7 +52,7 @@ static inline void br_keybinding_gui_reset(br_plotter_t* br, br_plot_t* plot, br
 
 static inline void br_keybinding_clear(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
   (void)plot;
-  if (cs.shift) br_datas_deinit(&br->groups);
+  if (cs.shift) br_plotter_datas_deinit(br);
   else          br_datas_empty(&br->groups);
 }
 

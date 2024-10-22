@@ -27,7 +27,7 @@ namespace br {
 //      raw_c = 0;
 //      not_raw_c = 0;
       if (ImGui::Button("Clear all")) {
-        br_datas_deinit(&br->groups);
+        br_plotter_datas_deinit(br);
       }
       ImGui::SameLine();
       if (ImGui::Button("Empty all")) {

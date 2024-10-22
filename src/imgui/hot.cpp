@@ -2,20 +2,19 @@
 #include "src/br_gui_internal.h"
 #include "src/br_plotter.h"
 #include "src/br_str.h"
-#include "src/resampling2.hpp"
+#include "src/resampling2_internal.h"
 
 #define RAYMATH_STATIC_INLINE
 #include "external/glad.h"
 #include "imgui.h"
 #include "raylib.h"
-#include "raymath.h"
 #include "rlgl.h"
 
-extern "C" void br_hot_init(br_plotter_t* gv) {
+extern "C" void br_hot_init(br_plotter_t*) {
   fprintf(stderr, "First call\n");
 }
-
-void draw_node(const resampling2_nodes_3d_t* const nodes, br_data_t* d, int index, int depth) {
+--
+void draw_node(const resampling2_nodes_3d_t* const nodes, br_data_t* d, size_t index, int depth) {
   resampling2_nodes_3d_t node = nodes[index];
   ImGui::Indent((float)depth * 1.5f);
   ImGui::Text("%zd %zd %.3f %.3f %.3f %.3f-%.3f %.3f-%.3f %.3f-%3f", node.base.child1, node.base.child2,

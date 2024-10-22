@@ -65,6 +65,7 @@ BR_API void        br_plotter_free(br_plotter_t* br);
 BR_API void        br_plotter_draw(br_plotter_t* br);
 BR_API void        br_plotter_minimal(br_plotter_t* br);
 BR_API void        br_plotter_frame_end(br_plotter_t* br);
+BR_API void        br_plotter_datas_deinit(br_plotter_t* br);
 
 
 // Platform specific

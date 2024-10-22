@@ -278,3 +278,11 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
   br_scrach_free();
 }
 
+void br_plotter_datas_deinit(br_plotter_t* br) {
+  br_datas_deinit(&br->groups);
+  for (int i = 0; i < br->plots.len; ++i) {
+    br->plots.arr[i].groups_to_show.len = 0;
+  }
+  br_dagens_free(&br->dagens);
+}
+

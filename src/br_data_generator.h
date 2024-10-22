@@ -71,6 +71,7 @@ extern "C" {
 bool br_dagen_push_expr_xy(br_dagens_t* dagens, br_datas_t* datas, br_dagen_exprs_t arena, uint32_t x, uint32_t y, int group_id);
 bool br_dagens_add_expr_str(br_dagens_t* dagens, br_datas_t* datas, br_strv_t str, int group_id);
 bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* temp_data, FILE* file);
+void br_dagens_remove_dependent(br_datas_t* datas, int group_id);
 void br_dagens_handle(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots, double until);
 void br_dagens_free(br_dagens_t* dagens);
 #if defined(__cplusplus)
