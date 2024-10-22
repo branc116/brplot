@@ -1,13 +1,9 @@
-#include "stdbool.h"
+#define BR_VERSION {0, 0, 1}
 
 #if defined(__GNUC__)
 #  define BR_EXPORT __attribute__((visibility ("default")))
 #else
 #  define BR_EXPORT
-#endif
-
-#if defined(__cplusplus)
-extern "C" {
 #endif
 
 /*
@@ -72,6 +68,11 @@ struct br_data_ctor_int_t {
 PADDED_STRUCT(br_plotter_ctor_t, br_plotter_ctor_int_t);
 PADDED_STRUCT(br_plot_ctor_t, br_plot_ctor_int_t);
 PADDED_STRUCT(br_data_ctor_t, br_data_ctor_int_t);
+
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 BR_EXPORT br_plotter_ctor_t* br_plotter_default_ctor(void);
 BR_EXPORT br_plotter_t* br_plotter_new(br_plotter_ctor_t const* ctor);

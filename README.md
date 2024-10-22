@@ -1,6 +1,6 @@
 # Brplot
 brplot - [b]etter [r]l[plot]
-Small application that plots lines that are sent to the application's stdin.
+Small application and library that plots lines that are sent to the application's stdin.
 
 ## Running brplot
 brplot is designed in such a way that it plays nicely with other unix tools. You can just pipe the output of your program to brplot and brplot will do it's best to plot your data.
