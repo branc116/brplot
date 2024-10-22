@@ -46,7 +46,7 @@
 // Gestures module is included (rgestures.h) to support gestures detection: tap, hold, swipe, drag
 #define SUPPORT_GESTURES_SYSTEM         1
 // Include pseudo-random numbers generator (rprand.h), based on Xoshiro128** and SplitMix64
-#define SUPPORT_RPRAND_GENERATOR        1
+//#define SUPPORT_RPRAND_GENERATOR        1
 // Mouse gestures are directly mapped like touches and processed by gestures system
 #define SUPPORT_MOUSE_GESTURES          1
 // Reconfigure standard input to receive key inputs, works with SSH connection.
@@ -235,7 +235,7 @@
 //#define AUDIO_DEVICE_CHANNELS              2    // Device output channels: stereo
 //#define AUDIO_DEVICE_SAMPLE_RATE           0    // Device sample rate (device default)
 
-#define MAX_AUDIO_BUFFER_POOL_CHANNELS    16    // Maximum number of audio pool channels
+//#define MAX_AUDIO_BUFFER_POOL_CHANNELS    16    // Maximum number of audio pool channels
 
 //------------------------------------------------------------------------------------
 // Module: utils - Configuration Flags
@@ -244,7 +244,7 @@
 #define SUPPORT_STANDARD_FILEIO         1
 // Show TRACELOG() output messages
 // NOTE: By default LOG_DEBUG traces not shown
-#if 1 || !defined(RELEASE)
+#if !defined(RELEASE)
 #  define SUPPORT_TRACELOG                1
 #endif
 #define SUPPORT_TRACELOG_DEBUG          1
