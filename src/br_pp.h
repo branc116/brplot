@@ -16,9 +16,6 @@
 // This is the size of buffer used to transfer points from cpu to gpu.
 #define PTOM_COUNT (1<<10)
 
-//TODO: Do something with this...
-#define GRAPH_LEFT_PAD 500
-
 #ifdef __linux__
 #  define LOCK_T pthread_mutex_t
 #endif
@@ -31,9 +28,9 @@
 
 #if !defined(BR_DISABLE_LOG)
 #  define LOG(...)
-#  define LOGI(...) fprintf(stderr, __VA_ARGS__)
-#  define LOGE(text) fprintf(stderr, "ERROR: [%s:%d]" text, __FILE__, __LINE__)
-#  define LOGEF(format, ...) fprintf(stderr, "ERROR: [%s:%d]" format, __FILE__, __LINE__,  __VA_ARGS__)
+#  define LOGI(...) fprintf(stderr, ##__VA_ARGS__)
+#  define LOGE(format, ...) fprintf(stderr, "ERROR: [%s:%d]" format "\n", __FILE__, __LINE__,  ##__VA_ARGS__)
+#  define LOGF(format, ...) (fprintf(stderr, "FATAL: [%s:%d]" format "\n", __FILE__, __LINE__,  ##__VA_ARGS__), exit(1))
 #else
 #  define LOG(...)
 #  define LOGI(...)

@@ -18,7 +18,7 @@ void br_gui_init_specifics_gui(br_plotter_t* br) {
     .resolution = { 1280, 720 },
     .graph_screen_rect = { 0, 0, 1280, 720 },
     .dd = (br_plot_2d_t) {
-      .zoom = { 1, 1},
+      .zoom = { 1, 1 },
       .offset = { 0 },
     }
   };

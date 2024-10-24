@@ -15,7 +15,6 @@
 #endif
 
 #include "raylib.h"
-#include "rlgl.h"
 #include "src/br_pp.h"
 #include "tracy/TracyC.h"
 
@@ -60,7 +59,6 @@ BR_API void br_plotter_init(br_plotter_t* br, bool use_permaste) {
     br_datas_deinit(&br->groups);
     br->plots.len = 0;
   }
-  br_gui_init_specifics_platform(br);
 }
 
 BR_API void br_plotter_resize(br_plotter_t* br, float width, float height) {
@@ -103,9 +101,10 @@ BR_API void br_plotter_switch_3d(br_plotter_t* br) {
 }
 
 int br_plotter_add_plot_2d(br_plotter_t* br) {
+  float x = 400;
   br_plot_t plot = {
     .groups_to_show = { 0 },
-    .graph_screen_rect = { GRAPH_LEFT_PAD, 50, (float)br->width - GRAPH_LEFT_PAD - 60, (float)br->height - 110 },
+    .graph_screen_rect = { x, 50, (float)br->width - x - 60, (float)br->height - 110 },
     .resolution = { (float)br->width, (float)br->height },
     .follow = false,
     .jump_around = false,
@@ -126,7 +125,7 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
 int br_plotter_add_plot_3d(br_plotter_t* br) {
   br_plot_t plot = {
     .groups_to_show = { 0 },
-    .graph_screen_rect = { GRAPH_LEFT_PAD, 50, (float)br->width - GRAPH_LEFT_PAD - 60, (float)br->height - 110 },
+    .graph_screen_rect = { 500, 50, (float)br->width - 500 - 60, (float)br->height - 110 },
     .resolution = { (float)br->width, (float)br->height },
     .follow = false,
     .jump_around = false,

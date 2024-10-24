@@ -247,7 +247,7 @@ error:
   if (0 == plots_len)                  LOGI("Failed to read a file: %d(%s)\n", errno, strerror(errno));
   else if (NULL == plots)              LOGI("Failed to allocated memory for array of %zu plots\n", plots_len);
   else if (read_plots != plots_len)    LOGI("Failed to read right amount of plots, wanted %zu, but got %zu\n", plots_len, read_plots);
-  else if (calculated_crc != read_crc) LOGEF("Crc check failed expected %u, but got %u\n", calculated_crc, read_crc);
+  else if (calculated_crc != read_crc) LOGE("Crc check failed expected %u, but got %u\n", calculated_crc, read_crc);
   return false;
 }
 

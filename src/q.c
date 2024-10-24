@@ -56,7 +56,7 @@ void handle_all_commands(br_plotter_t* br, q_commands* commands) {
           if (br->dagens.arr[i].group_id == group) {
             if (br->dagens.arr[i].kind == br_dagen_kind_file) return;
             else if (br->dagens.arr[i].kind == br_dagen_kind_expr) {
-              LOGEF("Trying to push points to data grenerated by experession id: %d\n", group);
+              LOGE("Trying to push points to data grenerated by experession id: %d\n", group);
             }
           }
         }
@@ -80,7 +80,7 @@ void handle_all_commands(br_plotter_t* br, q_commands* commands) {
       case q_command_show:          BR_ASSERT(0);
       case q_command_set_name:      br_data_set_name(&br->groups, comm.set_quoted_str.group, comm.set_quoted_str.str);  break;
       case q_command_focus:         br_plots_focus_visible(br->plots, br->groups); break;
-      default:                      LOGEF("Unknown command(%zu,%zu): %d\n", commands->read_index, commands->write_index, comm.type); BR_ASSERT(false);
+      default:                      LOGE("Unknown command(%zu,%zu): %d\n", commands->read_index, commands->write_index, comm.type); BR_ASSERT(false);
     }
   }
 }

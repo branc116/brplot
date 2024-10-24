@@ -2,6 +2,7 @@
 #include "br_shaders.h"
 #include "br_pp.h"
 #include "br_da.h"
+#include "br_gl.h"
 
 #include "external/stb_rect_pack.h"
 
@@ -20,8 +21,6 @@
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop
 #endif
-
-#include "raylib.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -98,7 +97,7 @@ void br_text_renderer_free(br_text_renderer_t* r) {
   }
   stbds_hmfree(r->sizes);
   stbtt_PackEnd(&r->pack_cntx);
-  rlUnloadTexture((*r->shader)->uvs.atlas_uv);
+  brgl_unload_texture((*r->shader)->uvs.atlas_uv);
   br_da_free(r->tmp_quads);
   BR_FREE(r);
 }
@@ -151,27 +150,16 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
     }
 
     stbds_hmfree(r->to_bake);
-    rlUnloadTexture(r->bitmap_texture_id);
-    r->bitmap_texture_id = rlLoadTexture(r->bitmap_pixels, r->bitmap_pixels_width, r->bitmap_pixels_height, RL_PIXELFORMAT_UNCOMPRESSED_GRAYSCALE, 1);
-    Texture tex = {
-        .id = r->bitmap_texture_id,
-        .width = r->bitmap_pixels_width,
-        .height = r->bitmap_pixels_height,
-        .mipmaps = 1,
-        .format = RL_PIXELFORMAT_UNCOMPRESSED_GRAYSCALE
-    };
-    DrawTexture(tex, 10000, 10000, WHITE);
+    brgl_unload_texture(r->bitmap_texture_id);
+    r->bitmap_texture_id = brgl_load_texture(r->bitmap_pixels, r->bitmap_pixels_width, r->bitmap_pixels_height, BRGL_TEX_GRAY);
   }
   br_shader_font_t* simp = *r->shader;
   simp->uvs.resolution_uv = (Vector2) { (float)GetScreenWidth(), (float)GetScreenHeight() };
   simp->uvs.atlas_uv = r->bitmap_texture_id;
   simp->uvs.sub_pix_aa_map_uv = (Vector3) { -1, 0, 1};
   simp->uvs.sub_pix_aa_scale_uv = 0.2f;
-#define GL_SRC_ALPHA 0x0302
-#define GL_DST_ALPHA 0x0304
-#define GL_MAX 0x8008
-  rlSetBlendMode(BLEND_CUSTOM);
-  rlSetBlendFactors(GL_DST_ALPHA, GL_DST_ALPHA, GL_MAX); // Set blending mode factor and equation (using OpenGL factors)
+  brgl_blend_func(GL_DST_ALPHA, GL_DST_ALPHA);
+  brgl_blend_equation(GL_MAX);
   br_shader_font_draw(*r->shader);
   simp->len = 0;
 }

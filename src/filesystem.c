@@ -45,7 +45,7 @@ bool br_fs_mkdir(br_strv_t path) {
   if (br_fs_exists(path)) return true;
   char* scrach = br_strv_to_scrach(path);
   int ret = mkdir(scrach, ACCESSPERMS);
-  if (ret == -1) LOGEF("Failed to create directory `%s`: %s", scrach, strerror(errno));
+  if (ret == -1) LOGE("Failed to create directory `%s`: %s", scrach, strerror(errno));
   br_scrach_free();
   return ret == 0;
 }

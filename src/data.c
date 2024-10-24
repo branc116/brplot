@@ -6,9 +6,9 @@
 #include "br_pp.h"
 #include "br_resampling2.h"
 #include "br_str.h"
+#include "br_gl.h"
 
 #include "tracy/TracyC.h"
-#include "rlgl.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -270,15 +270,12 @@ void br_datas_add_test_points(br_datas_t* pg) {
 }
 
 // Custom Blend Modes
-#define GL_SRC_ALPHA 0x0302
-#define GL_DST_ALPHA 0x0304
-#define GL_MAX 0x8008
 
 void br_datas_draw(br_datas_t pg, br_plot_t* plot, br_shaders_t* shaders) {
   if (plot->kind == br_plot_kind_2d) {
     TracyCFrameMarkStart("br_datas_draw_2d");
-    rlSetBlendFactors(GL_SRC_ALPHA, GL_DST_ALPHA, GL_MAX);
-    rlSetBlendMode(BLEND_CUSTOM);
+    brgl_blend_func(GL_SRC_ALPHA, GL_DST_ALPHA);
+    brgl_blend_equation(GL_MAX);
     for (int j = 0; j < plot->groups_to_show.len; ++j) {
       int group = plot->groups_to_show.arr[j];
       br_data_t const* g = br_data_get1(pg, group);
@@ -289,14 +286,13 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot, br_shaders_t* shaders) {
       br_shader_line_draw(shaders->line);
       shaders->line->len = 0;
     }
-    //rlSetBlendMode(BLEND_ALPHA);
     TracyCFrameMarkEnd("br_datas_draw_2d");
   } else {
     TracyCFrameMarkStart("br_datas_draw_3d");
     int h = (int)plot->graph_screen_rect.height;
-    rlViewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
-    rlDisableBackfaceCulling();
-    rlEnableDepthTest();
+    brgl_viewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
+    brgl_disable_back_face_cull();
+    brgl_enable_depth_test();
     for (int j = 0; j < plot->groups_to_show.len; ++j) {
       int group = plot->groups_to_show.arr[j];
       br_data_t const* g = br_data_get1(pg, group);
@@ -307,9 +303,9 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot, br_shaders_t* shaders) {
       br_shader_line_3d_draw(shaders->line_3d);
       shaders->line_3d->len = 0;
     }
-    rlDisableDepthTest();
-    rlEnableBackfaceCulling();
-    rlViewport(0, 0, (int)plot->resolution.x, (int)plot->resolution.y);
+    brgl_disable_depth_test();
+    brgl_enable_back_face_cull();
+    brgl_viewport(0, 0, (int)plot->resolution.x, (int)plot->resolution.y);
     TracyCFrameMarkEnd("br_datas_draw_3d");
   }
   resampling2_change_something(pg);

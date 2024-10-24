@@ -11,6 +11,7 @@ extern "C" {
 struct br_plotter_t;
 typedef struct q_commands q_commands;
 typedef struct br_text_renderer_t br_text_renderer_t;
+typedef struct GLFWwindow GLFWwindow;
 
 #if BR_HAS_HOTRELOAD
 typedef struct br_hotreload_state_t {
@@ -31,6 +32,14 @@ typedef struct br_plotter_t {
   br_text_renderer_t* text;
   // Any thread can write to this q, only render thread can pop
   q_commands* commands;
+
+  GLFWwindow* glfw_window;
+  struct {
+    double old; 
+    double now; 
+    double frame; 
+  } time;
+
 #if BR_HAS_HOTRELOAD
   br_hotreload_state_t hot_state;
 #endif
@@ -70,6 +79,9 @@ BR_API void        br_plotter_datas_deinit(br_plotter_t* br);
 
 // Platform specific
 void br_plotter_wait(br_plotter_t const* br);
+void br_plotter_init_specifics_platform(br_plotter_t* br);
+void br_plotter_begin_drawing(br_plotter_t* br);
+void br_plotter_end_drawing(br_plotter_t* br);
 
 #ifdef __cplusplus
 }

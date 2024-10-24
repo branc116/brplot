@@ -247,7 +247,7 @@ int br_scrach_alloc_at_line;
 bool is_taken;
 bool br_scrach_check_is_taken(void) {
   if (is_taken) {
-    LOGEF("Trying to get a scrach but already allocated at: %s:%d", br_scrach_alloc_at, br_scrach_alloc_at_line);
+    LOGE("Trying to get a scrach but already allocated at: %s:%d", br_scrach_alloc_at, br_scrach_alloc_at_line);
     BR_ASSERT(false);
     exit(1);
   }

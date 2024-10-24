@@ -1,5 +1,6 @@
 #include "br_smol_mesh.h"
 #include "br_plot.h"
+#include "br_gl.h"
 
 #define RAYMATH_STATIC_INLINE
 #include "raymath.h"
@@ -244,7 +245,7 @@ void smol_mesh_gen_quad_3d_simple(br_shader_grid_3d_t* shader, Vector3 p1, Vecto
 void smol_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
   // TODO 2D/3D
   int h = (int)plot->graph_screen_rect.height;
-  rlViewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
+  brgl_viewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
   switch (plot->kind) {
     case br_plot_kind_2d: {
       TracyCFrameMarkStart("grid_draw_2d");
@@ -264,17 +265,17 @@ void smol_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
     case br_plot_kind_3d: {
       TracyCFrameMarkStart("grid_draw_3d");
       float sz = 10000.f;
-      rlDisableBackfaceCulling();
+      brgl_disable_back_face_cull();
       //smol_mesh_gen_quad_simple(gv->graph_mesh_3d, r3, Color {0, 0, 1, 0});
       smol_mesh_gen_quad_3d_simple(shaders->grid_3d, (Vector3){ -sz, 0, -sz }, (Vector3){ sz, 0, -sz }, (Vector3){ sz, 0, sz }, (Vector3){ -sz, 0, sz }, (Color){0, 1, 0, 0});
       smol_mesh_gen_quad_3d_simple(shaders->grid_3d, (Vector3){ -sz, -sz, 0 }, (Vector3){ sz, -sz, 0 }, (Vector3){ sz, sz, 0 }, (Vector3){ -sz, sz, 0 }, (Color){0, 0, 1, 0});
       br_shader_grid_3d_draw(shaders->grid_3d);
       shaders->grid_3d->len = 0;
-      rlEnableBackfaceCulling();
+      brgl_enable_back_face_cull();
       TracyCFrameMarkEnd("grid_draw_3d");
     } break;
     default: assert(0);
   }
-  rlViewport(0, 0, (int)plot->resolution.x, (int)plot->resolution.y);
+  brgl_viewport(0, 0, (int)plot->resolution.x, (int)plot->resolution.y);
 }
 

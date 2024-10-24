@@ -3,15 +3,11 @@ vim.keymap.set("n", "<F7>", function()
 end)
 
 vim.keymap.set("n", "<F6>", function()
-  vim.cmd(":GdbStart gdb -q ./bin/brplot_imgui_linux_debug");
+  vim.cmd[[term make CONFIG=DEBUG GUI=RAYLIB && ./brplot]]
 end)
 
 vim.keymap.set("n", "<F7>", function()
   vim.cmd(":term sudo ./tools/gdb_attach.sh");
-end)
-
-vim.keymap.set("n", "<F5>", function()
-  vim.cmd(":term ./tools/gdb_start.sh");
 end)
 
 vim.opt.smartindent = true

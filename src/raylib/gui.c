@@ -19,8 +19,7 @@ void br_gui_init_specifics_gui(br_plotter_t* br) {
 }
 
 BR_API void br_plotter_draw(br_plotter_t* br) {
-  BeginDrawing();
-  ClearBackground((Color) { 0, 0, 0, 1 });
+  br_plotter_begin_drawing(br);
   update_resolution(br);
   br_plotter_update_variables(br);
   help_draw_fps(br->text, 0, 0);
@@ -33,7 +32,7 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
 #undef PLOT
   draw_left_panel(br);
   br_text_renderer_dump(br->text);
-  EndDrawing();
+  br_plotter_end_drawing(br);
 }
 
 static float sp = 0.f;
@@ -87,8 +86,8 @@ static void draw_left_panel(br_plotter_t* br) {
 static void update_resolution(br_plotter_t* br) {
   br_plot_t* plot = &br->plots.arr[br->active_plot_index];
   plot->resolution = (Vector2) { (float)GetScreenWidth(), (float)GetScreenHeight() };
-  float w = (float)plot->resolution.x - GRAPH_LEFT_PAD - 25.f, h = (float)plot->resolution.y - 50.f;
-  plot->graph_screen_rect.x = GRAPH_LEFT_PAD;
+  float w = (float)plot->resolution.x - 400 - 25.f, h = (float)plot->resolution.y - 50.f;
+  plot->graph_screen_rect.x = 400;
   plot->graph_screen_rect.y = 25.f;
   plot->graph_screen_rect.width = w;
   plot->graph_screen_rect.height = h;

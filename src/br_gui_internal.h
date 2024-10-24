@@ -19,7 +19,6 @@ void br_plot_update_context(br_plot_t* plot, Vector2 mouse_pos);
 void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders);
 
 void br_gui_init_specifics_gui(br_plotter_t* br);
-void br_gui_init_specifics_platform(br_plotter_t* br);
 void br_gui_free_specifics(br_plotter_t* br);
 
 #ifdef __cplusplus

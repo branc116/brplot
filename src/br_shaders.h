@@ -1,7 +1,6 @@
 #pragma once
 #ifndef DEBUG_MACROS
 #include "raylib.h"
-#include "rlgl.h"
 #include "stdlib.h"
 #endif
 

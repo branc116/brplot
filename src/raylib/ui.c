@@ -32,9 +32,9 @@ static int ui_draw_button_va(br_text_renderer_t* tr, bool* is_pressed, float x, 
     }
   }
   if (is_pressed && *is_pressed) {
-    DrawRectangleRec(box, BLUE);
+    //DrawRectangleRec(box, BLUE);
   } else if (is_in) {
-    DrawRectangleRec(box, RED);
+    //DrawRectangleRec(box, RED);
   }
   br_scrach_free();
   if (size_out) *size_out = (Vector2) { .x = box.width, .y = box.height };
@@ -117,7 +117,7 @@ Vector2 ui_stack_buttons_end(void) {
     *stack_scroll_position = minf((float)stack_count - 3.f , *stack_scroll_position);
     *stack_scroll_position = maxf(0.f, *stack_scroll_position);
   }
-  DrawBoundingBox(bb, RAYWHITE);
+  //DrawBoundingBox(bb, RAYWHITE);
   return (Vector2) { stack_pos.x, stack_pos.y + stack_offset };
 }
 

@@ -8,7 +8,6 @@
 #include "external/glad.h"
 #include "imgui.h"
 #include "raylib.h"
-#include "rlgl.h"
 
 extern "C" void br_hot_init(br_plotter_t*) {
   fprintf(stderr, "First call\n");

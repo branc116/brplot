@@ -1,8 +1,9 @@
-#include "br_plot.h"
-#include "br_help.h"
-#include "br_gui_internal.h"
-#include "br_resampling2.h"
+#include "src/br_plot.h"
+#include "src/br_help.h"
+#include "src/br_gui_internal.h"
+#include "src/br_resampling2.h"
 #include "src/br_da.h"
+#include "src/br_gl.h"
 
 #define RAYMATH_STATIC_INLINE
 #include "raymath.h"
@@ -15,8 +16,8 @@
 #define GL_MAX 0x8008
 static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
   TracyCFrameMarkStart("br_datas_draw_2d");
-  rlSetBlendFactors(GL_SRC_ALPHA, GL_DST_ALPHA, GL_MAX);
-  rlSetBlendMode(BLEND_CUSTOM);
+  brgl_blend_func(GL_SRC_ALPHA, GL_DST_ALPHA);
+  brgl_blend_equation(GL_MAX);
   for (int j = 0; j < plot->groups_to_show.len; ++j) {
     int group = plot->groups_to_show.arr[j];
     br_data_t const* g = br_data_get1(datas, group);
@@ -32,9 +33,9 @@ static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* sha
 static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
   TracyCFrameMarkStart("br_datas_draw_3d");
   int h = (int)plot->graph_screen_rect.height;
-  rlViewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
-  rlDisableBackfaceCulling();
-  rlEnableDepthTest();
+  brgl_viewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
+  brgl_disable_back_face_cull();
+  brgl_enable_depth_test();
   for (int j = 0; j < plot->groups_to_show.len; ++j) {
     int group = plot->groups_to_show.arr[j];
     br_data_t const* g = br_data_get1(datas, group);
@@ -45,9 +46,9 @@ static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* sha
     br_shader_line_3d_draw(shaders->line_3d);
     shaders->line_3d->len = 0;
   }
-  rlDisableDepthTest();
-  rlEnableBackfaceCulling();
-  rlViewport(0, 0, (int)plot->resolution.x, (int)plot->resolution.y);
+  brgl_disable_depth_test();
+  brgl_enable_back_face_cull();
+  brgl_viewport(0, 0, (int)plot->resolution.x, (int)plot->resolution.y);
   TracyCFrameMarkEnd("br_datas_draw_3d");
 }
 
@@ -122,7 +123,7 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, Vecto
         plot->dd.offset.y -= now.y - old.y;
       }
     }
-    if (plot->jump_around) {
+    if (false && plot->jump_around) {
       plot->graph_screen_rect.x += 100.f * (float)sin(GetTime());
       plot->graph_screen_rect.y += 77.f * (float)cos(GetTime());
       plot->graph_screen_rect.width += 130.f * (float)sin(GetTime());

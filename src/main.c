@@ -11,13 +11,8 @@
 void br_gui_init_specifics_gui(br_plotter_t* plotter);
 static void* main_gui(void* plotter) {
   br_plotter_t* br = (br_plotter_t*)plotter;
-  SetConfigFlags(FLAG_MSAA_4X_HINT);
-  InitWindow(br->width, br->height, "brplot");
-  SetWindowState(FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
-  br->shaders = br_shaders_malloc();
-  br->text = br_text_renderer_malloc(1024, 1024, br_font_data, &br->shaders.font);
-  br_gui_init_specifics_gui(br);
-  while(!WindowShouldClose() && !br->should_close) {
+  br_plotter_init_specifics_platform(br);
+  while(!br->should_close) {
     TracyCFrameMark;
     br_plotter_draw(br);
     br_dagens_handle(&br->groups, &br->dagens, &br->plots, GetTime() + 0.010);
@@ -50,9 +45,9 @@ int main(void) {
     LOGE("Failed to malloc br plotter, exiting...\n");
     exit(1);
   }
+  br_plotter_init(br, true);
   br->height = HEIGHT;
   br->width = WIDTH;
-  br_plotter_init(br, true);
 #if BR_HAS_SHADER_RELOAD
   start_refreshing_shaders(br);
 #endif

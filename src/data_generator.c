@@ -164,7 +164,7 @@ bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* 
   return true;
 
 error:
-  LOGEF("Failed to read plot file: %d(%s)\n", errno, strerror(errno));
+  LOGE("Failed to read plot file: %d(%s)\n", errno, strerror(errno));
   if (file != NULL) fclose(file);
   return false;
 }
@@ -239,7 +239,7 @@ static void br_dagen_handle(br_dagen_t* dagen, br_data_t* data, br_datas_t datas
       }
       return;
 error:
-      LOGEF("Failed to read data for a plot %s: %d(%s)\n", br_str_to_c_str(data->name), errno, strerror(errno));
+      LOGE("Failed to read data for a plot %s: %d(%s)\n", br_str_to_c_str(data->name), errno, strerror(errno));
       fclose(dagen->file.file);
       dagen->state = br_dagen_state_failed;
     } break;
@@ -270,7 +270,7 @@ error:
             resampling2_add_point(data->resampling, data, (uint32_t)(read_index + i));
           }
         } break;
-        default: LOGEF("Unsupported data kind: %d\n", data->kind); BR_ASSERT(0);
+        default: LOGE("Unsupported data kind: %d\n", data->kind); BR_ASSERT(0);
       }
     } break;
     default: BR_ASSERT(0);
@@ -427,7 +427,7 @@ static bool tokens_get(tokens_t* tokens, br_strv_t str) {
         goto push_token;
       case ' ': case '\t': case '\n': case '\r': continue;
       default:
-        LOGEF("[Tokenizer] Unknown character '%c' while tokenizing expression `%.*s`\n", str.str[i], str.len, str.str);
+        LOGE("[Tokenizer] Unknown character '%c' while tokenizing expression `%.*s`\n", str.str[i], str.len, str.str);
         return false;
     }
     continue;
@@ -472,7 +472,7 @@ static bool expr_parse(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out)
       br_da_push(*arena, expr);
       return true;
     }
-    LOGEF("[Parser] Unexpected token %s(%d,%.*s) at position %zu, expected tokens `+`|`*`\n", token_to_str(t.kind), t.kind, t.str.len, t.str.str, t.position);
+    LOGE("[Parser] Unexpected token %s(%d,%.*s) at position %zu, expected tokens `+`|`*`\n", token_to_str(t.kind), t.kind, t.str.len, t.str.str, t.position);
     return false;
   } else {
     *out = ref1;
@@ -482,7 +482,7 @@ static bool expr_parse(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out)
 
 #define EXPECT_TOKEN(TOKEN, EXPECTED) do { \
   if ((TOKEN).kind != (EXPECTED)) { \
-    LOGEF("[Parser] Unexpected token %s(%d,%.*s) at position %zu, expected token %s\n", \
+    LOGE("[Parser] Unexpected token %s(%d,%.*s) at position %zu, expected token %s\n", \
         token_to_str((TOKEN).kind), (TOKEN).kind, (TOKEN).str.len, (TOKEN).str.str, (TOKEN).position, token_to_str(EXPECTED)); \
     return false; \
   } \
@@ -490,7 +490,7 @@ static bool expr_parse(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out)
 
 #define GET_TOKEN(TOKEN_OUT, TOKENS, EXPECTED) do { \
   if ((TOKENS)->pos >= (TOKENS)->len) { \
-    LOGEF("[Parser] Expected '%s' but got end of stream\n", token_to_str((EXPECTED))); \
+    LOGE("[Parser] Expected '%s' but got end of stream\n", token_to_str((EXPECTED))); \
     return false; \
   } \
   (TOKEN_OUT) = (TOKENS)->arr[(TOKENS)->pos++]; \
@@ -509,7 +509,7 @@ static bool expr_parse_ref(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* 
     case 'x': kind = br_dagen_expr_kind_reference_x; break;
     case 'y': kind = br_dagen_expr_kind_reference_y; break;
     case 'z': kind = br_dagen_expr_kind_reference_z; break;
-    default: LOGEF("[Parser] Unexpected identifier '%.*s' at location %zu. Expected: 'x'|'y'|'z'\n", t.str.len, t.str.str, t.position); return false;
+    default: LOGE("[Parser] Unexpected identifier '%.*s' at location %zu. Expected: 'x'|'y'|'z'\n", t.str.len, t.str.str, t.position); return false;
   }
   br_dagen_expr_t expr = { .kind = kind, .group_id = group_id };
   *out = (uint32_t)arena->len;

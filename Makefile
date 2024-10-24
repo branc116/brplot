@@ -40,7 +40,7 @@ RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextur
 SOURCE             = src/main.c           src/help.c       src/data.c        src/smol_mesh.c   src/q.c       src/read_input.c \
 										 src/keybindings.c    src/str.c        src/resampling2.c src/graph_utils.c src/shaders.c src/plotter.c    \
 										 src/plot.c           src/permastate.c src/filesystem.c  src/gui.c         src/text_renderer.c \
-										 src/data_generator.c src/platform.c   src/threads.c
+										 src/data_generator.c src/platform.c   src/threads.c     src/gl.c
 ifeq ($(USE_CXX), YES)
 	SOURCE+= src/filesystem++.cpp src/gui++.cpp src/memory.cpp
 endif
