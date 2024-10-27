@@ -9,6 +9,13 @@
 #  error "Gui is not selected add define flag e.g. -DIMGUI for imgui gui, or -DRAYLIB for raylib gui, or -DHEADLESS for headless gui."
 #endif
 
+#define GL_COLOR_BUFFER_BIT 0x00004000
+#define GL_DEPTH_BUFFER_BIT 0x00000100
+#define GL_TEXTURE_MAG_FILTER 0x2800
+#define GL_TEXTURE_MIN_FILTER 0x2801
+#define GL_NEAREST 0x2600
+#define GL_LINEAR 0x2601
+
 BR_GL(GLuint, glCreateProgram)(void);
 BR_GL(GLuint, glCreateShader)(GLenum type);
 BR_GL(void, glShaderSource)(GLuint shader, GLsizei count, const GLchar *const* string, const GLint * length);
@@ -56,6 +63,10 @@ BR_GL(void, glUniform3fv)(GLint location, GLsizei count, GLfloat const* value);
 BR_GL(void, glUniform4fv)(GLint location, GLsizei count, GLfloat const* value);
 BR_GL(void, glDrawArrays)(GLenum mode, GLint first, GLsizei count);
 BR_GL(void, glEnableVertexAttribArray)(GLuint index);
+BR_GL(void, glClearColor)(GLfloat r, GLfloat g, GLfloat b, GLfloat a);
+BR_GL(void, glClear)(GLbitfield en);
+BR_GL(void, glTexParameteri)(GLenum target, GLenum pname, GLint param);
+
 
 #if defined(IMGUI) || defined(RAYLIB)
 #  include "src/desktop/gl.c"
@@ -161,7 +172,6 @@ void brgl_viewport(GLint x, GLint y, GLsizei width, GLsizei height) {
   glViewport(x, y, width, height);
 }
 
-
 GLuint brgl_load_texture(const void* data, int width, int height, int format) {
   BR_ASSERT(format == BRGL_TEX_GRAY);
   GLuint id = 0;
@@ -171,6 +181,8 @@ GLuint brgl_load_texture(const void* data, int width, int height, int format) {
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glGenTextures(1, &id);
   glBindTexture(GL_TEXTURE_2D, id);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
   GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_ONE };
@@ -241,11 +253,11 @@ void brgl_set_vattr(GLuint index, GLint compSize, GLenum type, GLboolean normali
 void brgl_set_usamp(GLint uni, GLuint tex) {
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, tex);
-  glUniform1i(uni, 1);
+  glUniform1i(uni, 0);
 }
 
-void brgl_set_umatrix(GLint uni, float tex[16]) {
-  glUniformMatrix4fv(uni, 1, false, tex);
+void brgl_set_umatrix(GLint uni, float* tex) {
+  glUniformMatrix4fv(uni, 1, true, tex);
 }
 
 void brgl_set_u(GLint uni, float* value, int els, int n) {
@@ -255,7 +267,7 @@ void brgl_set_u(GLint uni, float* value, int els, int n) {
         case 2: glUniform2fv(uni, n, value); break;
         case 3: glUniform3fv(uni, n, value); break;
         case 4: glUniform4fv(uni, n, value); break;
-        default: BR_ASSERT(("Unknown uniform n", 0));
+        default: BR_ASSERT(0);
     }
 }
 
@@ -267,3 +279,10 @@ GLint brgl_get_locu(GLuint shader_id, char const* name) {
   return glGetUniformLocation(shader_id, name);
 }
 
+void brgl_clear_color(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
+    glClearColor(r, g, b, a);
+}
+
+void brgl_clear(void) {
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}

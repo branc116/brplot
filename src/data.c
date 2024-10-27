@@ -274,8 +274,6 @@ void br_datas_add_test_points(br_datas_t* pg) {
 void br_datas_draw(br_datas_t pg, br_plot_t* plot, br_shaders_t* shaders) {
   if (plot->kind == br_plot_kind_2d) {
     TracyCFrameMarkStart("br_datas_draw_2d");
-    brgl_blend_func(GL_SRC_ALPHA, GL_DST_ALPHA);
-    brgl_blend_equation(GL_MAX);
     for (int j = 0; j < plot->groups_to_show.len; ++j) {
       int group = plot->groups_to_show.arr[j];
       br_data_t const* g = br_data_get1(pg, group);
@@ -290,9 +288,7 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot, br_shaders_t* shaders) {
   } else {
     TracyCFrameMarkStart("br_datas_draw_3d");
     int h = (int)plot->graph_screen_rect.height;
-    brgl_viewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
-    brgl_disable_back_face_cull();
-    brgl_enable_depth_test();
+    brgl_viewport((int)plot->graph_screen_rect.x, plot->resolution.height - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
     for (int j = 0; j < plot->groups_to_show.len; ++j) {
       int group = plot->groups_to_show.arr[j];
       br_data_t const* g = br_data_get1(pg, group);
@@ -303,9 +299,7 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot, br_shaders_t* shaders) {
       br_shader_line_3d_draw(shaders->line_3d);
       shaders->line_3d->len = 0;
     }
-    brgl_disable_depth_test();
-    brgl_enable_back_face_cull();
-    brgl_viewport(0, 0, (int)plot->resolution.x, (int)plot->resolution.y);
+    brgl_viewport(0, 0, plot->resolution.width, (int)plot->resolution.height);
     TracyCFrameMarkEnd("br_datas_draw_3d");
   }
   resampling2_change_something(pg);

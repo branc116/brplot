@@ -3,6 +3,7 @@
 #include "br_plot.h"
 #include "br_pp.h"
 #include "br_data_generator.h"
+#include "br_math.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,7 +34,32 @@ typedef struct br_plotter_t {
   // Any thread can write to this q, only render thread can pop
   q_commands* commands;
 
-  GLFWwindow* glfw_window;
+  struct {
+    GLFWwindow* glfw;
+    br_sizei_t size;
+  } win;
+
+  struct {
+    br_vec2_t old_pos;
+    br_vec2_t pos;
+    br_vec2_t delta;
+    br_vec2_t scroll;
+    struct {
+      bool left:1;
+      bool right:1;
+    } down;
+    struct {
+      bool left:1;
+      bool right:1;
+    } pressed;
+  } mouse;
+
+  struct {
+    bool down[64];
+    bool pressed[64];
+    int mod;
+  } key;
+
   struct {
     double old; 
     double now; 
@@ -75,7 +101,6 @@ BR_API void        br_plotter_draw(br_plotter_t* br);
 BR_API void        br_plotter_minimal(br_plotter_t* br);
 BR_API void        br_plotter_frame_end(br_plotter_t* br);
 BR_API void        br_plotter_datas_deinit(br_plotter_t* br);
-
 
 // Platform specific
 void br_plotter_wait(br_plotter_t const* br);

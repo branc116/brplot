@@ -6,6 +6,7 @@
 #include "br_q.h"
 #include "br_permastate.h"
 #include "src/br_text_renderer.h"
+#include "src/br_tl.h"
 
 #include <math.h>
 #include <string.h>
@@ -101,11 +102,11 @@ BR_API void br_plotter_switch_3d(br_plotter_t* br) {
 }
 
 int br_plotter_add_plot_2d(br_plotter_t* br) {
-  float x = 400;
+  int x = 400;
   br_plot_t plot = {
     .groups_to_show = { 0 },
-    .graph_screen_rect = { x, 50, (float)br->width - x - 60, (float)br->height - 110 },
-    .resolution = { (float)br->width, (float)br->height },
+    .graph_screen_rect = BR_EXTENTI( x, 50, br->width - x - 60, br->height - 110 ),
+    .resolution = BR_SIZEI(br->width, br->height),
     .follow = false,
     .jump_around = false,
     .mouse_inside_graph = false,
@@ -125,8 +126,8 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
 int br_plotter_add_plot_3d(br_plotter_t* br) {
   br_plot_t plot = {
     .groups_to_show = { 0 },
-    .graph_screen_rect = { 500, 50, (float)br->width - 500 - 60, (float)br->height - 110 },
-    .resolution = { (float)br->width, (float)br->height },
+    .graph_screen_rect = BR_EXTENTI(500, 50, br->width - 500 - 60, br->height - 110),
+    .resolution = BR_SIZEI(br->width, br->height),
     .follow = false,
     .jump_around = false,
     .mouse_inside_graph = false,
@@ -164,8 +165,10 @@ void br_plotter_update_variables(br_plotter_t* br) {
     br->shaders_dirty = false;
   }
 #endif
-  Vector2 mouse_pos = GetMousePosition();
-  br_plotter_update_context(br, mouse_pos);
+  br->shaders.font->uvs.resolution_uv = (Vector2) { (float)br->win.size.width, (float)br->win.size.height };
+  br->shaders.font->uvs.sub_pix_aa_map_uv = (Vector3) { -1, 0, 1 };
+  br->shaders.font->uvs.sub_pix_aa_scale_uv = 0.2f;
+  br_plotter_update_context(br, brtl_mouse_get_pos());
   handle_all_commands(br, br->commands);
 }
 
@@ -210,7 +213,7 @@ void br_plotter_export_csv(br_plotter_t const* br, char const * path) {
   fclose(file);
 }
 
-void br_plotter_update_context(br_plotter_t* br, Vector2 mouse_pos) {
+void br_plotter_update_context(br_plotter_t* br, br_vec2_t mouse_pos) {
 // TODO 2D/3D
   for (int i = 0; i < br->plots.len; ++i) br_plot_update_context(&br->plots.arr[i], mouse_pos);
 }
@@ -222,7 +225,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
 
   TracyCFrameMarkStart("draw_grid_numbers");
   Rectangle r = plot->dd.graph_rect;
-  Rectangle graph_screen_rect = plot->graph_screen_rect;
+  br_extent_t gex = BR_EXTENTI_TOF(plot->graph_screen_rect);
   int font_size = (int)(18.f * context.font_scale);
   char fmt[16];
   char* scrach = br_scrach_get(128);
@@ -241,9 +244,9 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         i += 1.f;
         sprintf(scrach, fmt, cur);
         help_trim_zeros(scrach);
-        float y = graph_screen_rect.y + (graph_screen_rect.height / r.height) * (r.y - cur);
-        if (y > graph_screen_rect.y + graph_screen_rect.height) break;
-        br_text_renderer_push2(tr, graph_screen_rect.x - 2.f, y, font_size, BR_COLOR_PUN(RAYWHITE), br_strv_from_c_str(scrach), br_text_renderer_ancor_right_mid);
+        float y = gex.y + (gex.height / r.height) * (r.y - cur);
+        if (y > gex.y + gex.height) break;
+        br_text_renderer_push2(tr, gex.x - 2.f, y, font_size, BR_COLOR_PUN(RAYWHITE), br_strv_from_c_str(scrach), br_text_renderer_ancor_right_mid);
       }
     }
   }
@@ -256,7 +259,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
       float start = ceilf(r.x / base) * base;
       if (exp >= 0) strcpy(fmt, "%f");
       else sprintf(fmt, "%%.%df", -(int)exp);
-      float x_last_max = -INFINITY;
+      //float x_last_max = -INFINITY;
       float i = 0;
       while (i < 50.f) {
         float cur = start + base * i;
@@ -264,12 +267,12 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         sprintf(scrach, fmt, cur);
         help_trim_zeros(scrach);
         //Vector2 sz = help_measure_text(scrach, font_size);
-        float x = graph_screen_rect.x + (graph_screen_rect.width / r.width) * (cur - r.x);
+        float x = gex.x + (gex.width / r.width) * (cur - r.x);
         //x -= sz.x / 2.f;
         //if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
         //x_last_max = x + sz.x;
-        if (x > graph_screen_rect.x + graph_screen_rect.width) break;
-        br_text_renderer_push2(tr, x, graph_screen_rect.y + graph_screen_rect.height, font_size, BR_COLOR_PUN(RAYWHITE), br_strv_from_c_str(scrach), br_text_renderer_ancor_mid_up);
+        if (x > gex.x + gex.width) break;
+        br_text_renderer_push2(tr, x, gex.y + gex.height, font_size, BR_COLOR_PUN(RAYWHITE), br_strv_from_c_str(scrach), br_text_renderer_ancor_mid_up);
       }
     }
   }

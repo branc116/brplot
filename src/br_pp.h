@@ -28,7 +28,8 @@
 
 #if !defined(BR_DISABLE_LOG)
 #  define LOG(...)
-#  define LOGI(...) fprintf(stderr, ##__VA_ARGS__)
+#  define LOGI(format, ...) fprintf(stderr, "[INFO][" __FILE__ ":%d]" format "\n", __LINE__, ##__VA_ARGS__)
+#  define LOGW(format, ...) fprintf(stderr, "[WARNING][" __FILE__ ":%d]" format "\n", __LINE__, ##__VA_ARGS__)
 #  define LOGE(format, ...) fprintf(stderr, "ERROR: [%s:%d]" format "\n", __FILE__, __LINE__,  ##__VA_ARGS__)
 #  define LOGF(format, ...) (fprintf(stderr, "FATAL: [%s:%d]" format "\n", __FILE__, __LINE__,  ##__VA_ARGS__), exit(1))
 #else

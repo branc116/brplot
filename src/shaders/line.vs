@@ -46,6 +46,6 @@ void main(void)
     uv += vec2(-1., 1.);
     uv += resolution.xy/screen.xy*vec2(2., -2.);
     uv += resolution.zw/screen.xy*vec2(1., -1.);
-    gl_Position = vec4(uv, 0., 1.0);
+    gl_Position = vec4(uv, 0.0, 1.0);
 }
 

@@ -41,7 +41,7 @@
       X_BUF(vertexNormal, 3)            \
       X_BUF(vertexColor, 3)             \
     )                                   \
-  X(grid_3d, 2,                         \
+  X(grid_3d, 8,                         \
       X_VEC(eye, 3)                     \
       X_VEC(look_dir, 3)                \
       X_VEC(m_mvp, 16)                  \

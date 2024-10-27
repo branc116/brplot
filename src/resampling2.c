@@ -6,6 +6,7 @@
 #include "br_smol_mesh.h"
 #include "br_da.h"
 #include "src/br_shaders.h"
+#include "src/br_tl.h"
 
 #ifdef __GNUC__
 #  pragma GCC diagnostic push
@@ -414,7 +415,7 @@ static void resampling2_draw33(resampling2_nodes_3d_allocator_t const* const nod
 void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, br_shaders_t* shaders) {
   //ZoneScopedN("resampline2_draw0");
 
-  double start = GetTime();
+  double start = brtl_get_time();
   if (res->common.len == 0) return;
   switch (pg->kind) {
     case br_data_kind_2d: {
@@ -433,7 +434,7 @@ void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, 
     }
     default: assert(0);
   }
-  res->render_time = GetTime() - start;
+  res->render_time = brtl_get_time() - start;
   ++res->draw_count;
 }
 

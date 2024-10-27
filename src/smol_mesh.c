@@ -224,14 +224,14 @@ void smol_mesh_gen_quad_3d_simple(br_shader_grid_3d_t* shader, Vector3 p1, Vecto
     shader->len = 2;
     c = 0;
   }
-  c*=18;
-  Vector3 vc = {color.r/255.f, color.g/255.f, color.b/255.f};
+  c*=9;
+  Vector3 vc = {color.r, color.g, color.b};
   for (int i = 0; i < 18; i += 3) {
     shader->vertexColor_vbo[c+i+0] = vc.x;
     shader->vertexColor_vbo[c+i+1] = vc.y;
     shader->vertexColor_vbo[c+i+2] = vc.z;
   }
-  Vector3* points = (Vector3*)&shader->vertexPosition_vbo[c];
+  Vector3* points = (Vector3*)&(shader->vertexPosition_vbo[c]);
   points[0] = p1;
   points[1] = p2;
   points[2] = p3;
@@ -244,8 +244,9 @@ void smol_mesh_gen_quad_3d_simple(br_shader_grid_3d_t* shader, Vector3 p1, Vecto
 // TODO: This should be split to _gen and _draw
 void smol_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
   // TODO 2D/3D
-  int h = (int)plot->graph_screen_rect.height;
-  brgl_viewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
+  int h = plot->graph_screen_rect.height;
+  br_extenti_t ex = plot->graph_screen_rect;
+  brgl_viewport(ex.x, plot->resolution.height - h - ex.y, ex.width, h);
   switch (plot->kind) {
     case br_plot_kind_2d: {
       TracyCFrameMarkStart("grid_draw_2d");
@@ -265,17 +266,15 @@ void smol_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
     case br_plot_kind_3d: {
       TracyCFrameMarkStart("grid_draw_3d");
       float sz = 10000.f;
-      brgl_disable_back_face_cull();
       //smol_mesh_gen_quad_simple(gv->graph_mesh_3d, r3, Color {0, 0, 1, 0});
       smol_mesh_gen_quad_3d_simple(shaders->grid_3d, (Vector3){ -sz, 0, -sz }, (Vector3){ sz, 0, -sz }, (Vector3){ sz, 0, sz }, (Vector3){ -sz, 0, sz }, (Color){0, 1, 0, 0});
       smol_mesh_gen_quad_3d_simple(shaders->grid_3d, (Vector3){ -sz, -sz, 0 }, (Vector3){ sz, -sz, 0 }, (Vector3){ sz, sz, 0 }, (Vector3){ -sz, sz, 0 }, (Color){0, 0, 1, 0});
       br_shader_grid_3d_draw(shaders->grid_3d);
       shaders->grid_3d->len = 0;
-      brgl_enable_back_face_cull();
       TracyCFrameMarkEnd("grid_draw_3d");
     } break;
     default: assert(0);
   }
-  brgl_viewport(0, 0, (int)plot->resolution.x, (int)plot->resolution.y);
+  brgl_viewport(0, 0, plot->resolution.width, plot->resolution.height);
 }
 

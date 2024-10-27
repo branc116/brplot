@@ -89,7 +89,7 @@ ifeq ($(PLATFORM), LINUX)
 		COMMONFLAGS+= -Iexternal/glfw/include
 	else ifeq ($(BACKEND), WAYLAND)
 	  SOURCE+= $(RL)/rglfw.c
-		COMMONFLAGS+= -Iexternal/glfw/include -D_GLFW_WAYLAND  -I/home/branimir/Documents/github.com/glfw/glfw/build/src
+		COMMONFLAGS+= -Iexternal/glfw/include -D_GLFW_WAYLAND
 	else ifeq ($(BACKEND), GLFW)
 		ifeq ($(STATIC), NO)
 			LIBS= `pkg-config --static --libs glfw3` -pthread

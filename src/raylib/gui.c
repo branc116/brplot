@@ -24,11 +24,11 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   br_plotter_update_variables(br);
   help_draw_fps(br->text, 0, 0);
 #define PLOT &br->plots.arr[br->active_plot_index]
-  br_plot_update_variables(br, PLOT, br->groups, GetMousePosition());
+  br_plot_update_variables(br, PLOT, br->groups, brtl_mouse_get_pos());
   br_plot_update_shader_values(PLOT, &br->shaders);
   draw_grid_numbers(br->text, PLOT);
-  smol_mesh_grid_draw(PLOT, &br->shaders);
   br_datas_draw(br->groups, PLOT, &br->shaders);
+  smol_mesh_grid_draw(PLOT, &br->shaders);
 #undef PLOT
   draw_left_panel(br);
   br_text_renderer_dump(br->text);
@@ -85,21 +85,18 @@ static void draw_left_panel(br_plotter_t* br) {
 // TODO 2D/3D
 static void update_resolution(br_plotter_t* br) {
   br_plot_t* plot = &br->plots.arr[br->active_plot_index];
-  plot->resolution = (Vector2) { (float)GetScreenWidth(), (float)GetScreenHeight() };
-  float w = (float)plot->resolution.x - 400 - 25.f, h = (float)plot->resolution.y - 50.f;
-  plot->graph_screen_rect.x = 400;
-  plot->graph_screen_rect.y = 25.f;
-  plot->graph_screen_rect.width = w;
-  plot->graph_screen_rect.height = h;
+  plot->resolution = br->win.size;
+  int w = plot->resolution.width - 400 - 25, h = plot->resolution.height - 50;
+  plot->graph_screen_rect = BR_EXTENTI(400, 25, w, h);
 }
 
 void br_plot_screenshot(br_text_renderer_t* tr, br_plot_t* plot, br_shaders_t* shaders, br_datas_t groups, char const* path) {
-  float left_pad = 80.f;
-  float bottom_pad = 80.f;
-  plot->resolution = (Vector2){1280, 720};
-  RenderTexture2D target = LoadRenderTexture((int)plot->resolution.x, (int)plot->resolution.y); // TODO: make this values user defined.
-  plot->graph_screen_rect = (Rectangle){left_pad, 0.f, plot->resolution.x - left_pad, plot->resolution.y - bottom_pad};
-  br_plot_update_context(plot, GetMousePosition());
+  int left_pad = 80;
+  int bottom_pad = 80;
+  plot->resolution = BR_SIZEI(1280, 720);
+  RenderTexture2D target = LoadRenderTexture(plot->resolution.width, plot->resolution.height); // TODO: make this values user defined.
+  plot->graph_screen_rect = BR_EXTENTI(left_pad, 0, plot->resolution.width - left_pad, plot->resolution.height - bottom_pad);
+  br_plot_update_context(plot, brtl_mouse_get_pos());
   br_plot_update_shader_values(plot, shaders);
   BeginTextureMode(target);
     smol_mesh_grid_draw(plot, shaders);

@@ -4,6 +4,7 @@
 #include "br_shaders.h"
 #include "br_data.h"
 #include "br_text_renderer.h"
+#include "br_math.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,8 +44,8 @@ typedef struct br_plot_t {
   } groups_to_show;
   // graph_screen_rect is in the screen coordinates.
   //                   That is if you resize the whole plot, or move the plot around the screen this value will change.
-  Rectangle graph_screen_rect;
-  Vector2 resolution;
+  br_extenti_t graph_screen_rect;
+  br_sizei_t resolution;
   bool follow;
   bool jump_around;
   bool mouse_inside_graph;

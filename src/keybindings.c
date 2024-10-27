@@ -1,5 +1,6 @@
 #include "br_plot.h"
 #include "br_plotter.h"
+#include "br_tl.h"
 
 #include "raylib.h"
 
@@ -31,8 +32,8 @@ KEY_BINDINGS(X)
 #undef X
 
 void br_keybinding_handle_keys(br_plotter_t* br, br_plot_t* plot) {
-  br_keybinding_ctrl_shift_t meta = {IsKeyDown(KEY_LEFT_CONTROL), IsKeyDown(KEY_LEFT_SHIFT)};
-#define X(key, kind, name) if (((kind) == KEY_PRESS && IsKeyPressed(key)) || ((kind) == KEY_DOWN && IsKeyDown(key))) name(br, plot, meta);
+  br_keybinding_ctrl_shift_t meta = { brtl_key_ctrl(), brtl_key_shift() };
+#define X(key, kind, name) if (((kind) == KEY_PRESS && brtl_key_is_pressed(key)) || ((kind) == KEY_DOWN && brtl_key_is_down(key))) name(br, plot, meta);
   KEY_BINDINGS(X)
 #undef X
 }

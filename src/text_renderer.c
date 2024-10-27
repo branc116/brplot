@@ -154,12 +154,7 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
     r->bitmap_texture_id = brgl_load_texture(r->bitmap_pixels, r->bitmap_pixels_width, r->bitmap_pixels_height, BRGL_TEX_GRAY);
   }
   br_shader_font_t* simp = *r->shader;
-  simp->uvs.resolution_uv = (Vector2) { (float)GetScreenWidth(), (float)GetScreenHeight() };
   simp->uvs.atlas_uv = r->bitmap_texture_id;
-  simp->uvs.sub_pix_aa_map_uv = (Vector3) { -1, 0, 1};
-  simp->uvs.sub_pix_aa_scale_uv = 0.2f;
-  brgl_blend_func(GL_DST_ALPHA, GL_DST_ALPHA);
-  brgl_blend_equation(GL_MAX);
   br_shader_font_draw(*r->shader);
   simp->len = 0;
 }

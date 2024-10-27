@@ -12,10 +12,10 @@ void br_gui_init_specifics_gui(br_plotter_t* plotter);
 static void* main_gui(void* plotter) {
   br_plotter_t* br = (br_plotter_t*)plotter;
   br_plotter_init_specifics_platform(br);
-  while(!br->should_close) {
+  while(br->should_close == false) {
     TracyCFrameMark;
     br_plotter_draw(br);
-    br_dagens_handle(&br->groups, &br->dagens, &br->plots, GetTime() + 0.010);
+    //br_dagens_handle(&br->groups, &br->dagens, &br->plots, GetTime() + 0.010);
     TracyCFrameMarkStart("plotter_frame_end");
     br_plotter_frame_end(br);
     TracyCFrameMarkEnd("plotter_frame_end");

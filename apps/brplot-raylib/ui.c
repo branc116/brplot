@@ -1,5 +1,6 @@
 #include "src/br_plot.h"
 #include "src/br_help.h"
+#include "src/br_tl.h"
 
 #define RAYMATH_STATIC_INLINE
 #include "raylib.h"
@@ -109,7 +110,7 @@ Vector2 ui_stack_buttons_end(void) {
   }
   if (stack_scroll_position != NULL) {
     if (CheckCollisionPointRec(GetMousePosition(), (Rectangle) {.x = bb.min.x, .y = bb.min.y, .width = bb.max.x - bb.min.x, .height = bb.max.y - bb.min.y })) {
-      Vector2 mouse_scroll = GetMouseWheelMoveV();
+      Vector2 mouse_scroll = brtl_get_scroll().y;
       *stack_scroll_position += mouse_scroll.y;
     }
     *stack_scroll_position = minf((float)stack_count - 3.f , *stack_scroll_position);

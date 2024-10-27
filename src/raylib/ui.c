@@ -2,6 +2,7 @@
 #include "src/br_help.h"
 #include "src/br_str.h"
 #include "src/br_text_renderer.h"
+#include "src/br_tl.h"
 
 #define RAYMATH_STATIC_INLINE
 #include "raylib.h"
@@ -25,7 +26,7 @@ static int ui_draw_button_va(br_text_renderer_t* tr, bool* is_pressed, float x, 
   Rectangle box = { e.x0 - pad, e.y0 - pad, e.x1 - e.x0 + 2 * pad, e.y1 - e.y0 + 2 * pad};
   bool is_in = CheckCollisionPointRec(GetMousePosition(), box);
   if (is_in) {
-    bool is_p = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+    bool is_p = brtl_mouse_is_pressed_l();
     c = is_p ? 2 : 1;
     if (is_p && is_pressed) {
       *is_pressed = !*is_pressed;
@@ -111,8 +112,8 @@ Vector2 ui_stack_buttons_end(void) {
   }
   if (stack_scroll_position != NULL) {
     if (CheckCollisionPointRec(GetMousePosition(), (Rectangle) {.x = bb.min.x, .y = bb.min.y, .width = bb.max.x - bb.min.x, .height = bb.max.y - bb.min.y })) {
-      Vector2 mouse_scroll = GetMouseWheelMoveV();
-      *stack_scroll_position += mouse_scroll.y;
+      float mouse_scroll = brtl_get_scroll().y;
+      *stack_scroll_position += mouse_scroll;
     }
     *stack_scroll_position = minf((float)stack_count - 3.f , *stack_scroll_position);
     *stack_scroll_position = maxf(0.f, *stack_scroll_position);

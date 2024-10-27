@@ -35,6 +35,7 @@ typedef int GLsizei;
 typedef char GLchar;
 typedef unsigned char GLboolean;
 typedef float GLfloat;
+typedef unsigned int GLbitfield;
 
 #if defined(_WIN64)
 typedef signed   long long int GLsizeiptr;
@@ -48,7 +49,7 @@ typedef signed   long  int     GLintptr;
 typedef unsigned long  int     khronos_uintptr_t;
 #endif
 
-void brgl_load();
+void brgl_load(void);
 unsigned int brgl_load_shader(const char* vs, const char* fs);
 unsigned int brgl_compile_shader(const char* code, GLenum type);
 void brgl_unload_shader(GLuint id);
@@ -67,7 +68,7 @@ void brgl_unload_texture(GLuint tex_id);
 
 GLuint brgl_load_vao(void);
 void brgl_enable_vao(GLuint vao);
-void brgl_draw_vao();
+void brgl_draw_vao(GLint first, GLsizei count);
 void brgl_disable_vao(void);
 void brgl_unload_vao(GLuint id);
 
@@ -79,8 +80,10 @@ void brgl_unload_vbo(GLuint id);
 void brgl_enable_vattr(GLuint id);
 void brgl_set_vattr(GLuint index, GLint compSize, GLenum type, GLboolean normalized, GLint stride, void const* pointer);
 void brgl_set_usamp(GLint uni, GLuint tex);
-void brgl_set_umatrix(GLint uni, float tex[16]);
+void brgl_set_umatrix(GLint uni, float* tex);
 void brgl_set_u(GLint uni, float* tex, int els, int n);
 GLint brgl_get_loca(GLuint shader_id, char const* name);
 GLint brgl_get_locu(GLuint shader_id, char const* name);
 
+void brgl_clear_color(float r, float g, float b, float a);
+void brgl_clear(void);

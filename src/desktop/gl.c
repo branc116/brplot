@@ -47,8 +47,16 @@
   X(void, glUniform4fv) \
   X(void, glDrawArrays) \
   X(void, glEnableVertexAttribArray) \
+  X(void, glClearColor) \
+  X(void, glClear) \
+  X(void, glTexParameteri) \
 
 
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wpedantic"
+#  pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
+#endif
 int gladLoadGL( void* load);
 void* glfwGetProcAddress(void*);
 
@@ -66,3 +74,7 @@ void brgl_load(void) {
   TO_LOAD(X)
 #undef X
 }
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif

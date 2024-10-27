@@ -4,6 +4,7 @@
 #include "src/br_resampling2.h"
 #include "src/br_da.h"
 #include "src/br_gl.h"
+#include "src/br_tl.h"
 
 #define RAYMATH_STATIC_INLINE
 #include "raymath.h"
@@ -16,8 +17,6 @@
 #define GL_MAX 0x8008
 static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
   TracyCFrameMarkStart("br_datas_draw_2d");
-  brgl_blend_func(GL_SRC_ALPHA, GL_DST_ALPHA);
-  brgl_blend_equation(GL_MAX);
   for (int j = 0; j < plot->groups_to_show.len; ++j) {
     int group = plot->groups_to_show.arr[j];
     br_data_t const* g = br_data_get1(datas, group);
@@ -32,10 +31,8 @@ static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* sha
 
 static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
   TracyCFrameMarkStart("br_datas_draw_3d");
-  int h = (int)plot->graph_screen_rect.height;
-  brgl_viewport((int)plot->graph_screen_rect.x, (int)plot->resolution.y - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
-  brgl_disable_back_face_cull();
-  brgl_enable_depth_test();
+  int h = plot->graph_screen_rect.height;
+  brgl_viewport(plot->graph_screen_rect.x, plot->resolution.height - h - plot->graph_screen_rect.y, plot->graph_screen_rect.width, h);
   for (int j = 0; j < plot->groups_to_show.len; ++j) {
     int group = plot->groups_to_show.arr[j];
     br_data_t const* g = br_data_get1(datas, group);
@@ -46,9 +43,7 @@ static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* sha
     br_shader_line_3d_draw(shaders->line_3d);
     shaders->line_3d->len = 0;
   }
-  brgl_disable_depth_test();
-  brgl_enable_back_face_cull();
-  brgl_viewport(0, 0, (int)plot->resolution.x, (int)plot->resolution.y);
+  brgl_viewport(0, 0, plot->resolution.width, plot->resolution.height);
   TracyCFrameMarkEnd("br_datas_draw_3d");
 }
 
@@ -60,7 +55,7 @@ void br_plot_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
   }
 }
 
-void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t groups, Vector2 mouse_pos) {
+void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t groups, br_vec2_t mouse_pos) {
     switch (plot->kind) {
       case br_plot_kind_2d: {
         if (br_plot_update_variables_2d(plot, groups, mouse_pos))
@@ -74,7 +69,7 @@ void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t grou
     }
 }
 
-bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, Vector2 mouse_pos) {
+bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos) {
   assert(plot->kind == br_plot_kind_2d);
   if (plot->follow) {
     Rectangle sr = plot->dd.graph_rect;
@@ -97,14 +92,14 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, Vecto
     // TODO: Move this to br_keybindings.c
     // Stuff related to zoom
     {
-      float mw = -GetMouseWheelMove();
+      float mw = -brtl_get_scroll().y;
       Vector2 old = plot->dd.mouse_pos;
       bool any = false;
       if (false == help_near_zero(mw)) {
         float mw_scale = (1 + mw/10);
-        if (IsKeyDown(KEY_X)) {
+        if (brtl_key_is_down(KEY_X)) {
           plot->dd.zoom.x *= mw_scale;
-        } else if (IsKeyDown(KEY_Y)) {
+        } else if (brtl_key_is_down(KEY_Y)) {
           plot->dd.zoom.y *= mw_scale;
         } else {
           plot->dd.zoom.x *= mw_scale;
@@ -112,10 +107,10 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, Vecto
         }
         any = true;
       }
-      if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_SHIFT)) any = true,   plot->dd.zoom.x *= 1.1f;
-      if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_SHIFT)) any = true,   plot->dd.zoom.y *= 1.1f;
-      if (IsKeyDown(KEY_X) && IsKeyDown(KEY_LEFT_CONTROL)) any = true, plot->dd.zoom.x *= .9f;
-      if (IsKeyDown(KEY_Y) && IsKeyDown(KEY_LEFT_CONTROL)) any = true, plot->dd.zoom.y *= .9f;
+      if (brtl_key_is_down(KEY_X) && brtl_key_shift()) any = true, plot->dd.zoom.x *= 1.1f;
+      if (brtl_key_is_down(KEY_Y) && brtl_key_shift()) any = true, plot->dd.zoom.y *= 1.1f;
+      if (brtl_key_is_down(KEY_X) && brtl_key_ctrl())  any = true, plot->dd.zoom.x *= .9f;
+      if (brtl_key_is_down(KEY_Y) && brtl_key_ctrl())  any = true, plot->dd.zoom.y *= .9f;
       if (any) {
         br_plot_update_context(plot, mouse_pos);
         Vector2 now = plot->dd.mouse_pos;
@@ -124,31 +119,30 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, Vecto
       }
     }
     if (false && plot->jump_around) {
-      plot->graph_screen_rect.x += 100.f * (float)sin(GetTime());
-      plot->graph_screen_rect.y += 77.f * (float)cos(GetTime());
-      plot->graph_screen_rect.width += 130.f * (float)sin(GetTime());
-      plot->graph_screen_rect.height += 177.f * (float)cos(GetTime());
+      float t = brtl_get_time();
+      plot->graph_screen_rect.x += (int)(100.f * sinf(t));
+      plot->graph_screen_rect.y += (int)(77.f * cosf(t));
+      plot->graph_screen_rect.width += (int)(130.f * sinf(t));
+      plot->graph_screen_rect.height += (int)(177.f * cosf(t));
     }
-    if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
-      Vector2 delt = GetMouseDelta();
-      //float speed = 1.f;
-      if (IsKeyDown(KEY_W)) {
-        //Vector3 diff = Vector3Subtract(br->eye, br->target);
-      }
-      plot->dd.offset.x -= plot->dd.zoom.x*delt.x/plot->graph_screen_rect.height;
-      plot->dd.offset.y += plot->dd.zoom.y*delt.y/plot->graph_screen_rect.height;
+    if (brtl_mouse_is_down_r()) {
+      br_vec2_t delt = brtl_mouse_get_delta();
+      float height = (float)plot->graph_screen_rect.height;
+      plot->dd.offset.x -= plot->dd.zoom.x*delt.x/height;
+      plot->dd.offset.y += plot->dd.zoom.y*delt.y/height;
       return false;
     } else return true;
   }
   return false;
 }
 
-bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, Vector2 mouse_pos) {
+bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos) {
   (void)groups; (void)mouse_pos;
   assert(plot->kind == br_plot_kind_3d);
   if (!plot->mouse_inside_graph) return false;
-  if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-    Vector2 md = Vector2Scale(GetMouseDelta(), -0.003f);
+  if (brtl_mouse_is_down_r()) {
+    br_vec2_t m = brtl_mouse_get_delta();
+    Vector2 md = Vector2Scale((Vector2) { m.x, m.y }, -0.003f);
     Vector3 zeroed = Vector3Subtract(plot->ddd.eye, plot->ddd.target);
     Vector3 rotated_up = Vector3RotateByAxisAngle(zeroed, plot->ddd.up, md.x);
     Vector3 right = Vector3CrossProduct(plot->ddd.up, Vector3Normalize(zeroed));
@@ -159,7 +153,7 @@ bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, Vecto
     return false;
   }
   {
-    float mw = GetMouseWheelMove();
+    float mw = brtl_get_scroll().y;
     float mw_scale = (1 + mw/10);
     Vector3 zeroed = Vector3Subtract(plot->ddd.eye, plot->ddd.target);
     float len = Vector3Length(zeroed);
@@ -171,6 +165,7 @@ bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, Vecto
 
 
 void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
+  br_extent_t ex = BR_EXTENTI_TOF(plot->graph_screen_rect);
   switch (plot->kind) {
     case br_plot_kind_2d: {
       TracyCFrameMarkStart("update_shader_values_2d");
@@ -181,20 +176,19 @@ void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
       Vector2 off_zoom = Vector2Multiply(plot->dd.offset, zoom_log);
       Vector2 off = Vector2Divide(off_zoom, (Vector2) { 10, 10 });
       shaders->grid->uvs.offset_uv = Vector2Subtract(off_zoom, (Vector2) { floorf(off.x) * 10.f, floorf(off.y) * 10.f });
-
-      shaders->grid->uvs.screen_uv = (Vector2) { .x = plot->graph_screen_rect.width, .y = plot->graph_screen_rect.height };
-
+      shaders->grid->uvs.screen_uv = (Vector2) { .x = ex.width, .y = ex.height };
       shaders->line->uvs.zoom_uv = plot->dd.zoom;
       shaders->line->uvs.offset_uv = plot->dd.offset;
-      shaders->line->uvs.screen_uv = plot->resolution;
-      shaders->line->uvs.resolution_uv = *(Vector4*)&plot->graph_screen_rect.x;
+      shaders->line->uvs.screen_uv.x = (float)plot->resolution.width;
+      shaders->line->uvs.screen_uv.y = (float)plot->resolution.height;
+      shaders->line->uvs.resolution_uv = (Vector4){ ex.x, ex.y, ex.width, ex.height };
       TracyCFrameMarkEnd("update_shader_values_2d");
     } break;
     case br_plot_kind_3d: {
       TracyCFrameMarkStart("update_shader_values_3d");
-      Vector2 re = shaders->grid_3d->uvs.resolution_uv = (Vector2) { .x = plot->graph_screen_rect.width, .y = plot->graph_screen_rect.height };
+      Vector2 re = shaders->grid_3d->uvs.resolution_uv = (Vector2) { .x = ex.width, .y = ex.height };
       Vector3 eye_zero = Vector3Subtract(plot->ddd.eye, plot->ddd.target);
-      float eye_scale = 10.f * powf(10.f, -floorf(log10f(fmaxf(fmaxf(fabsf(eye_zero.x), fabsf(eye_zero.y)), fabsf(eye_zero.z)))));
+      float eye_scale = 1.f * powf(10.f, -floorf(log10f(fmaxf(fmaxf(fabsf(eye_zero.x), fabsf(eye_zero.y)), fabsf(eye_zero.z)))));
       Vector3 eye_final = Vector3Add(Vector3Scale(eye_zero, eye_scale), plot->ddd.target);
       Matrix per = MatrixPerspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
       Matrix look_grid = MatrixLookAt(eye_final, plot->ddd.target, plot->ddd.up);
@@ -211,22 +205,24 @@ void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
   }
 }
 
-Vector2 br_plot_2d_get_mouse_position(br_plot_t* plot) {
-  Vector2 mouse_pos = GetMousePosition();
-  Vector2 mp_in_graph = { mouse_pos.x - plot->graph_screen_rect.x, mouse_pos.y - plot->graph_screen_rect.y };
+Vector2 br_plot_2d_get_mouse_position(br_plot_t* plot, br_vec2_t screen_mouse_pos) {
+  br_extenti_t ex = plot->graph_screen_rect;
+  br_vec2i_t mouse_pos = BR_VEC2_TOI(screen_mouse_pos);
+  br_vec2i_t mp_in_graph = BR_VEC2I_SUB(mouse_pos, ex.pos);
+  br_vec2i_t a = BR_VEC2I_SCALE(mp_in_graph, 2);
+  br_vec2_t b = br_vec2i_tof(BR_VEC2I_SUB(plot->graph_screen_rect.size.vec, a));
+  br_vec2_t c = br_vec2_scale(b, 1.f/(float)ex.height);
   return (Vector2) {
-  -(plot->graph_screen_rect.width  - 2.f*mp_in_graph.x)/plot->graph_screen_rect.height*plot->dd.zoom.x/2.f + plot->dd.offset.x,
-   (plot->graph_screen_rect.height - 2.f*mp_in_graph.y)/plot->graph_screen_rect.height*plot->dd.zoom.y/2.f + plot->dd.offset.y};
+  -c.x*plot->dd.zoom.x/2.f + plot->dd.offset.x,
+   c.y*plot->dd.zoom.y/2.f + plot->dd.offset.y};
 }
 
-void br_plot_update_context(br_plot_t* plot, Vector2 mouse_pos) {
-  Vector2 mp_in_graph = { mouse_pos.x - plot->graph_screen_rect.x, mouse_pos.y - plot->graph_screen_rect.y };
-  plot->mouse_inside_graph = CheckCollisionPointRec(mouse_pos, plot->graph_screen_rect);
+void br_plot_update_context(br_plot_t* plot, br_vec2_t mouse_pos) {
+  br_extent_t ex = BR_EXTENTI_TOF(plot->graph_screen_rect);
+  plot->mouse_inside_graph = CheckCollisionPointRec((Vector2) { mouse_pos.x, mouse_pos.y }, BR_EXTENT_REC(ex));
   if (plot->kind == br_plot_kind_2d) {
-    float aspect = plot->graph_screen_rect.width/plot->graph_screen_rect.height;
-    plot->dd.mouse_pos = (Vector2) {
-    -(plot->graph_screen_rect.width  - 2.f*mp_in_graph.x)/plot->graph_screen_rect.height*plot->dd.zoom.x/2.f + plot->dd.offset.x,
-     (plot->graph_screen_rect.height - 2.f*mp_in_graph.y)/plot->graph_screen_rect.height*plot->dd.zoom.y/2.f + plot->dd.offset.y};
+    float aspect = ex.width/ex.height;
+    plot->dd.mouse_pos = br_plot_2d_get_mouse_position(plot, mouse_pos);
     plot->dd.graph_rect = (Rectangle){-aspect*plot->dd.zoom.x/2.f + plot->dd.offset.x,
       plot->dd.zoom.y/2.f + plot->dd.offset.y,
       aspect*plot->dd.zoom.x,
