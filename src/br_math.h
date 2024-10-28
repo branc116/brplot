@@ -243,8 +243,9 @@ static inline br_vec3_t br_vec3_normalize(br_vec3_t a) {
   if (fabsf(len2) > FLT_EPSILON) {
     float len = sqrtf(len2);
     for (size_t i = 0; i < BR_VEC_ELS(a); ++i) a.arr[i] /= len;
+    return a;
   }
-  return BR_VEC3(1,0,0);
+  return BR_VEC3(0,0,0);
 }
 
 // TODO: This look sus...
@@ -329,10 +330,10 @@ static inline br_mat_t br_mat_look_at(br_vec3_t eye, br_vec3_t target, br_vec3_t
   br_vec3_t vy = br_vec3_cross(vz, vx);
 
   return (br_mat_t) { .rows = {
-    BR_VEC4(vx.x, vy.x, vz.x, 0.f),
-    BR_VEC4(vx.y, vy.y, vz.y, 0.f),
-    BR_VEC4(vx.z, vy.z, vz.z, 0.f),
-    BR_VEC4(br_vec3_dot(vx, eye), br_vec3_dot(vy, eye), br_vec3_dot(vz, eye), 1.f)
+    BR_VEC4(vx.x, vx.y, vx.z, br_vec3_dot(vx, eye)),
+    BR_VEC4(vy.x, vy.y, vy.z, br_vec3_dot(vy, eye)),
+    BR_VEC4(vx.x, vz.y, vz.z, br_vec3_dot(vz, eye)),
+    BR_VEC4(   0,    0,    0,                  1.f)
   }};
 }
 
