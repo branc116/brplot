@@ -1,7 +1,8 @@
 #pragma once
 #ifndef DEBUG_MACROS
-#include "raylib.h"
-#include "stdlib.h"
+#  include "src/br_math.h"
+
+#  include <stdlib.h>
 #endif
 
 #if !defined(RELEASE)
@@ -79,10 +80,10 @@
     )
 
 #define VEC_TYPE1 float
-#define VEC_TYPE2 Vector2
-#define VEC_TYPE3 Vector3
-#define VEC_TYPE4 Vector4
-#define VEC_TYPE16 Matrix
+#define VEC_TYPE2 br_vec2_t
+#define VEC_TYPE3 br_vec3_t
+#define VEC_TYPE4 br_vec4_t
+#define VEC_TYPE16 br_mat_t
 #define VEC_TYPE_TEX unsigned int
 #define X_U(NAME, DIM) VEC_TYPE ## DIM NAME ## _uv;
 #define X(NAME, CAP, U_VEC, BUFFS) \

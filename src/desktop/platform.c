@@ -130,7 +130,7 @@ void br_plotter_begin_drawing(br_plotter_t* br) {
   br->time.frame = br->time.now - br->time.old;
 
   glfwPollEvents();
-  br->mouse.delta = BR_VEC2_SUB(br->mouse.pos, br->mouse.old_pos);
+  br->mouse.delta = br_vec2_sub(br->mouse.pos, br->mouse.old_pos);
   br->mouse.old_pos = br->mouse.pos;
 
   brgl_clear_color(0,0,0,0);

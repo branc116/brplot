@@ -4,7 +4,6 @@
 #include "raylib.h"
 
 #include <stdint.h>
-#include <stdlib.h>
 
 typedef struct resampling2_nodes_t {
   uint32_t index_start, len;
@@ -22,7 +21,7 @@ typedef struct resampling2_nodes_2d_t {
 typedef struct resampling2_nodes_3d_t {
   resampling2_nodes_t base;
   uint32_t min_index_z, max_index_z;
-  Vector3 curvature;
+  br_vec3_t curvature;
 } resampling2_nodes_3d_t;
 
 typedef struct resampling2_nodes_2d_allocator_t {
@@ -54,9 +53,9 @@ typedef struct resampling2_t {
 } resampling2_t;
 
 bool resampling2_nodes_2d_is_inside(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, Rectangle rect);
-bool resampling2_nodes_2d_is_inside_3d(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, Matrix mat);
-Vector2 resampling2_nodes_2d_get_ratios(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, float screen_width, float screen_height);
-Vector2 resampling2_nodes_2d_get_ratios_3d(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, Matrix mvp);
+bool resampling2_nodes_2d_is_inside_3d(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mat);
+br_vec2_t resampling2_nodes_2d_get_ratios(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, float screen_width, float screen_height);
+br_vec2_t resampling2_nodes_2d_get_ratios_3d(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mvp);
 
-bool resampling2_nodes_3d_is_inside(resampling2_nodes_3d_t const* res, br_data_3d_t const* data, Matrix mvp);
-Vector2 resampling2_nodes_3d_get_ratios(resampling2_nodes_3d_t const* res, br_data_3d_t const* data, Vector3 eye, Vector3 look_dir);
+bool resampling2_nodes_3d_is_inside(resampling2_nodes_3d_t const* res, br_data_3d_t const* data, br_mat_t mvp);
+br_vec2_t resampling2_nodes_3d_get_ratios(resampling2_nodes_3d_t const* res, br_data_3d_t const* data, br_vec3_t eye, br_vec3_t look_dir);

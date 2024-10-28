@@ -25,15 +25,15 @@ typedef struct br_plot_2d_t {
   //            That is if you zoom in and out, graph_rect will change.
   Rectangle graph_rect;
   float recoil;
-  Vector2 mouse_pos;
-  Vector2 zoom;
-  Vector2 offset;
-  Vector2 delta;
+  br_vec2_t mouse_pos;
+  br_vec2_t zoom;
+  br_vec2_t offset;
+  br_vec2_t delta;
   bool show_closest, show_x_closest, show_y_closest;
 } br_plot_2d_t;
 
 typedef struct br_plot_3d_t {
-  Vector3 eye, target, up;
+  br_vec3_t eye, target, up;
   float fov_y, near_plane, far_plane;
 } br_plot_3d_t;
 
@@ -78,7 +78,7 @@ typedef struct context_t {
 
 extern context_t context;
 
-Vector2 br_graph_to_screen(Rectangle graph_rect, Rectangle screen_rect, Vector2 point);
+br_vec2_t br_graph_to_screen(br_extent_t graph_rect, Rectangle screen_rect, br_vec2_t point);
 
 typedef struct br_plotter_t br_plotter_t;
 
@@ -93,20 +93,20 @@ void read_input_stop(void);
 
 #if !defined(IMGUI)
 int     ui_draw_button(br_text_renderer_t* tr, bool* is_pressed, float x, float y, int font_size, const char* str, ...);
-void    ui_stack_buttons_init(Vector2 pos, float* scroll_position, int font_size);
-void    ui_stack_set_size(Vector2 v);
+void    ui_stack_buttons_init(br_vec2_t pos, float* scroll_position, int font_size);
+void    ui_stack_set_size(br_vec2_t v);
 int     ui_stack_buttons_add(br_text_renderer_t* tr, bool* is_pressed, const char* str, ...);
-Vector2 ui_stack_buttons_end(void);
+br_vec2_t ui_stack_buttons_end(void);
 #endif
 
 void    help_trim_zeros(char* buff);
-void    help_draw_text(br_text_renderer_t* renderer, char const* text, Vector2 pos, int font_size, br_color_t color);
-Vector2 help_measure_text(char const* txt, int font_size);
+void    help_draw_text(br_text_renderer_t* renderer, char const* text, br_vec2_t pos, int font_size, br_color_t color);
+br_vec2_t help_measure_text(char const* txt, int font_size);
 void    help_draw_fps(br_text_renderer_t* renderer, int posX, int posY);
 void    help_load_default_font(void);
 
-min_distances_t min_distances_get(Vector2 const* points, size_t points_len, Vector2 to);
-void            min_distances_get1(min_distances_t* m, Vector2 const* points, size_t points_len, Vector2 to);
+min_distances_t min_distances_get(br_vec2_t const* points, size_t points_len, br_vec2_t to);
+void            min_distances_get1(min_distances_t* m, br_vec2_t const* points, size_t points_len, br_vec2_t to);
 
 
 #if BR_HAS_SHADER_RELOAD

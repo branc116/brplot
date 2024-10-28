@@ -159,14 +159,14 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
   simp->len = 0;
 }
 
-static void br_text_draw_quad(Vector4* v, int* len, float x0, float y0, float s0, float t0,
+static void br_text_draw_quad(br_vec4_t* v, int* len, float x0, float y0, float s0, float t0,
                                                     float x1, float y1, float s1, float t1) {
-  v[(*len)++] = (Vector4) { x0, y0, s0, t0 };
-  v[(*len)++] = (Vector4) { x0, y1, s0, t1 };
-  v[(*len)++] = (Vector4) { x1, y1, s1, t1 };
-  v[(*len)++] = (Vector4) { x0, y0, s0, t0 };
-  v[(*len)++] = (Vector4) { x1, y1, s1, t1 };
-  v[(*len)++] = (Vector4) { x1, y0, s1, t0 };
+  v[(*len)++] =  BR_VEC4(x0, y0, s0, t0);
+  v[(*len)++] =  BR_VEC4(x0, y1, s0, t1);
+  v[(*len)++] =  BR_VEC4(x1, y1, s1, t1);
+  v[(*len)++] =  BR_VEC4(x0, y0, s0, t0);
+  v[(*len)++] =  BR_VEC4(x1, y1, s1, t1);
+  v[(*len)++] =  BR_VEC4(x1, y0, s1, t0);
 }
 
 br_text_renderer_extent_t br_text_renderer_push(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, const char* text) {
@@ -178,13 +178,13 @@ br_text_renderer_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, floa
 }
 
 br_text_renderer_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, br_strv_t text, br_text_renderer_ancor_t ancor) {
-  Vector2 loc = { x, y };
+  br_vec2_t loc = BR_VEC2(x, y);
   long size_index = stbds_hmgeti(r->sizes, font_size);
   float og_x = loc.x;
   br_shader_font_t* simp = *r->shader;
   int len_pos = simp->len * 3;
-  Vector4* pos = (Vector4*)simp->pos_vbo;
-  Vector4* colors = (Vector4*)simp->color_vbo;
+  br_vec4_t* pos = (br_vec4_t*)simp->pos_vbo;
+  br_vec4_t* colors = (br_vec4_t*)simp->color_vbo;
   r->tmp_quads.len = 0;
 
   if (size_index == -1) {
@@ -236,9 +236,9 @@ br_text_renderer_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x,
       br_text_renderer_dump(r);
       len_pos = 0;
       pos = (void*)simp->pos_vbo;
-      colors = (Vector4*)simp->color_vbo;
+      colors = (br_vec4_t*)simp->color_vbo;
     }
-    for (int j = 0; j < 6; ++j) colors[len_pos + j] = BR_COLOR_TO_VEC4(color);
+    for (int j = 0; j < 6; ++j) colors[len_pos + j] = BR_COLOR_TO4(color);
     br_text_draw_quad(pos, &len_pos,
         r->tmp_quads.arr[i].x0 - x_off, 
         r->tmp_quads.arr[i].y0 - y_off,

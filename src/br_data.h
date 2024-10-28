@@ -16,9 +16,9 @@ typedef struct br_plots_t br_plots_t;
 typedef struct br_dagens_t br_dagens_t;
 
 typedef struct min_distances_t {
-  Vector2 graph_point;
-  Vector2 graph_point_x;
-  Vector2 graph_point_y;
+  br_vec2_t graph_point;
+  br_vec2_t graph_point_x;
+  br_vec2_t graph_point_y;
 } min_distances_t;
 
 typedef struct bb_3d_t {

@@ -45,9 +45,9 @@ static inline void br_keybinding_gui_reset(br_plotter_t* br, br_plot_t* plot, br
     if (!cs.shift) plot->dd.offset.x = plot->dd.offset.y = 0;
   } else {
     br_plot_3d_t* pi3 = &plot->ddd;
-    pi3->eye = (Vector3){ 0, 0, 100 };
-    pi3->target = (Vector3){ 0, 0, 0 };
-    pi3->up = (Vector3){ 0, 1, 0 };
+    pi3->eye = BR_VEC3(0, 0, 100);
+    pi3->target = BR_VEC3(0, 0, 0);
+    pi3->up = BR_VEC3(0, 1, 0);
   }
 }
 

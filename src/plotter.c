@@ -113,9 +113,9 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
     .is_visible = true,
     .kind = br_plot_kind_2d,
     .dd =  {
-      .zoom = { 1.f, 1.f },
-      .offset = { 0.f, 0.f },
-      .delta = { 0 },
+      .zoom = BR_VEC2(1.f, 1.f),
+      .offset = BR_VEC2(0.f, 0.f),
+      .delta = BR_VEC2(0, 0),
     }
   };
   br_da_push_t(int, (br->plots), plot);
@@ -133,9 +133,9 @@ int br_plotter_add_plot_3d(br_plotter_t* br) {
     .mouse_inside_graph = false,
     .kind = br_plot_kind_3d,
     .ddd =  {
-      .eye = { 0, 0, 100 },
-      .target = { 0, 0, 0},
-      .up = { 0, 1, 0},
+      .eye = BR_VEC3(0, 0, 100),
+      .target = BR_VEC3(0, 0, 0),
+      .up = BR_VEC3(0, 1, 0),
       .fov_y = 1,
       .near_plane = 0.001f,
       .far_plane = 10e7f,
@@ -165,8 +165,8 @@ void br_plotter_update_variables(br_plotter_t* br) {
     br->shaders_dirty = false;
   }
 #endif
-  br->shaders.font->uvs.resolution_uv = (Vector2) { (float)br->win.size.width, (float)br->win.size.height };
-  br->shaders.font->uvs.sub_pix_aa_map_uv = (Vector3) { -1, 0, 1 };
+  br->shaders.font->uvs.resolution_uv = BR_VEC2((float)br->win.size.width, (float)br->win.size.height);
+  br->shaders.font->uvs.sub_pix_aa_map_uv =  BR_VEC3(-1, 0, 1);
   br->shaders.font->uvs.sub_pix_aa_scale_uv = 0.2f;
   br_plotter_update_context(br, brtl_mouse_get_pos());
   handle_all_commands(br, br->commands);
@@ -246,7 +246,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         help_trim_zeros(scrach);
         float y = gex.y + (gex.height / r.height) * (r.y - cur);
         if (y > gex.y + gex.height) break;
-        br_text_renderer_push2(tr, gex.x - 2.f, y, font_size, BR_COLOR_PUN(RAYWHITE), br_strv_from_c_str(scrach), br_text_renderer_ancor_right_mid);
+        br_text_renderer_push2(tr, gex.x - 2.f, y, font_size, BR_WHITE, br_strv_from_c_str(scrach), br_text_renderer_ancor_right_mid);
       }
     }
   }
@@ -272,7 +272,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         //if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
         //x_last_max = x + sz.x;
         if (x > gex.x + gex.width) break;
-        br_text_renderer_push2(tr, x, gex.y + gex.height, font_size, BR_COLOR_PUN(RAYWHITE), br_strv_from_c_str(scrach), br_text_renderer_ancor_mid_up);
+        br_text_renderer_push2(tr, x, gex.y + gex.height, font_size, BR_WHITE, br_strv_from_c_str(scrach), br_text_renderer_ancor_mid_up);
       }
     }
   }

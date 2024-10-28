@@ -4,27 +4,25 @@
 #include "src/br_text_renderer.h"
 #include "src/br_tl.h"
 
-#define RAYMATH_STATIC_INLINE
 #include "raylib.h"
-#include "raymath.h"
 
 #include <stdarg.h>
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 
-//int ui_draw_text_box(bool focused, float x, float y, float font_size, Vector2* size_out, char* str) {
+//int ui_draw_text_box(bool focused, float x, float y, float font_size, br_vec2_t* size_out, char* str) {
 //  return 0;
 //}
 
-static int ui_draw_button_va(br_text_renderer_t* tr, bool* is_pressed, float x, float y, int font_size, Vector2* size_out, const char* str, va_list va) {
+static int ui_draw_button_va(br_text_renderer_t* tr, bool* is_pressed, float x, float y, int font_size, br_vec2_t* size_out, const char* str, va_list va) {
   int c = 0;
   char* scrach = br_scrach_get(128);
   vsprintf(scrach, str, va);
   float pad = 5.f;
-  br_text_renderer_extent_t e = br_text_renderer_push(tr, x + pad, y + pad, font_size, BR_COLOR_PUN(WHITE), scrach);
-  Rectangle box = { e.x0 - pad, e.y0 - pad, e.x1 - e.x0 + 2 * pad, e.y1 - e.y0 + 2 * pad};
-  bool is_in = CheckCollisionPointRec(GetMousePosition(), box);
+  br_text_renderer_extent_t e = br_text_renderer_push(tr, x + pad, y + pad, font_size, BR_WHITE, scrach);
+  br_extent_t box = BR_EXTENT(e.x0 - pad, e.y0 - pad, e.x1 - e.x0 + 2 * pad, e.y1 - e.y0 + 2 * pad);
+  bool is_in = br_col_vec2_extent(box, brtl_mouse_get_pos());
   if (is_in) {
     bool is_p = brtl_mouse_is_pressed_l();
     c = is_p ? 2 : 1;
@@ -38,7 +36,7 @@ static int ui_draw_button_va(br_text_renderer_t* tr, bool* is_pressed, float x, 
     //DrawRectangleRec(box, RED);
   }
   br_scrach_free();
-  if (size_out) *size_out = (Vector2) { .x = box.width, .y = box.height };
+  if (size_out) *size_out = (br_vec2_t) { .x = box.width, .y = box.height };
   return c;
 }
 
@@ -50,18 +48,18 @@ int ui_draw_button(br_text_renderer_t* tr, bool* is_pressed, float x, float y, i
   return ret;
 }
 
-static RL_THREAD_LOCAL Vector2 stack_pos;
+static RL_THREAD_LOCAL br_vec2_t stack_pos;
 static RL_THREAD_LOCAL bool stack_is_inited = false;
 static RL_THREAD_LOCAL float* stack_scroll_position;
-static RL_THREAD_LOCAL Vector2 stack_button_size;
+static RL_THREAD_LOCAL br_vec2_t stack_button_size;
 static RL_THREAD_LOCAL float stack_offset;
 static RL_THREAD_LOCAL int stack_font_size;
 static RL_THREAD_LOCAL int stack_count;
-static RL_THREAD_LOCAL Vector2 stack_maxsize;
+static RL_THREAD_LOCAL br_vec2_t stack_maxsize;
 static RL_THREAD_LOCAL bool stack_size_set;
-static RL_THREAD_LOCAL Vector2 stack_size;
+static RL_THREAD_LOCAL br_vec2_t stack_size;
 
-void ui_stack_buttons_init(Vector2 pos, float* scroll_position, int font_size) {
+void ui_stack_buttons_init(br_vec2_t pos, float* scroll_position, int font_size) {
   assert(!stack_is_inited);
   stack_pos = pos;
   stack_is_inited = true;
@@ -70,14 +68,14 @@ void ui_stack_buttons_init(Vector2 pos, float* scroll_position, int font_size) {
   stack_offset = -stack_button_size.y * (scroll_position == NULL ? 0.f : *scroll_position);
   stack_font_size = font_size;
   stack_count = 0;
-  stack_maxsize = (Vector2){0};
+  stack_maxsize = (br_vec2_t){0};
   stack_size_set = false;
-  stack_size = (Vector2){0};
+  stack_size = (br_vec2_t){0};
 }
 
 int ui_stack_buttons_add(br_text_renderer_t* tr, bool* is_pressed, char const* str, ...) {
   assert(stack_is_inited);
-  Vector2 s = stack_button_size;
+  br_vec2_t s = stack_button_size;
   ++stack_count;
   if (stack_size_set) {
     if (stack_offset + s.y > stack_size.y) return 0;
@@ -96,12 +94,12 @@ int ui_stack_buttons_add(br_text_renderer_t* tr, bool* is_pressed, char const* s
   return 0;
 }
 
-void ui_stack_set_size(Vector2 v) {
+void ui_stack_set_size(br_vec2_t v) {
   stack_size = v; 
   stack_size_set = true;
 }
 
-Vector2 ui_stack_buttons_end(void) {
+br_vec2_t ui_stack_buttons_end(void) {
   assert(stack_is_inited);
   stack_is_inited = false;
   if (stack_count == 0) return stack_pos;
@@ -119,6 +117,6 @@ Vector2 ui_stack_buttons_end(void) {
     *stack_scroll_position = maxf(0.f, *stack_scroll_position);
   }
   //DrawBoundingBox(bb, RAYWHITE);
-  return (Vector2) { stack_pos.x, stack_pos.y + stack_offset };
+  return BR_VEC2(stack_pos.x, stack_pos.y + stack_offset);
 }
 

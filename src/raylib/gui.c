@@ -38,7 +38,7 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
 static float sp = 0.f;
 static void draw_left_panel(br_plotter_t* br) {
   br_plot_t* plot = &br->plots.arr[0];
-  ui_stack_buttons_init((Vector2){ .x = 30.f, .y = 25.f }, NULL, (int)(context.font_scale * 15));
+  ui_stack_buttons_init(BR_VEC2(30.f, 25.f), NULL, (int)(context.font_scale * 15));
   ui_stack_buttons_add(br->text, &plot->follow, "Follow");
   if (ui_stack_buttons_add(br->text, NULL, "Export") == 2) {
     br_plotter_export(br, "test.brp");
@@ -56,7 +56,7 @@ static void draw_left_panel(br_plotter_t* br) {
       br_datas_add_test_points(&br->groups);
     }
   }
-  Vector2 new_pos = ui_stack_buttons_end();
+  br_vec2_t new_pos = ui_stack_buttons_end();
   new_pos.y += 50;
   ui_stack_buttons_init(new_pos, &sp, (int)(context.font_scale * 15));
   for(size_t j = 0; j < br->groups.len; ++j) {

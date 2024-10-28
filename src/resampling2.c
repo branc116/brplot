@@ -13,8 +13,6 @@
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
 #include "raylib.h"
-#define RAYMATH_STATIC_INLINE
-#include "raymath.h"
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop
 #endif
@@ -49,12 +47,12 @@ bool resampling2_nodes_2d_is_inside(resampling2_nodes_2d_t const* res, float con
   return !((miny > rect.y) || (maxy < rect.y - rect.height) || (minx > rect.x + rect.width) || (maxx < rect.x));
 }
 
-bool resampling2_nodes_2d_is_inside_3d(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, Matrix mat) {
+bool resampling2_nodes_2d_is_inside_3d(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mat) {
   if (res->base.len == 0) return false;
-  Vector3 minx = Vector2TransformScale(CLITERAL(Vector2) { xs[res->base.min_index_x], ys[res->base.min_index_x] }, mat),
-          miny = Vector2TransformScale(CLITERAL(Vector2) { xs[res->base.min_index_y], ys[res->base.min_index_y] }, mat),
-          maxx = Vector2TransformScale(CLITERAL(Vector2) { xs[res->base.max_index_x], ys[res->base.max_index_x] }, mat),
-          maxy = Vector2TransformScale(CLITERAL(Vector2) { xs[res->base.max_index_y], ys[res->base.max_index_y] }, mat);
+  br_vec3_t minx = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_x], ys[res->base.min_index_x]), mat),
+            miny = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_y], ys[res->base.min_index_y]), mat),
+            maxx = br_vec2_transform_scale(BR_VEC2(xs[res->base.max_index_x], ys[res->base.max_index_x]), mat),
+            maxy = br_vec2_transform_scale(BR_VEC2(xs[res->base.max_index_y], ys[res->base.max_index_y]), mat);
   float mx = min4(minx.x, miny.x, maxy.x, maxx.x);
   float Mx = max4(minx.x, miny.x, maxy.x, maxx.x);
   float my = min4(minx.y, miny.y, maxy.y, maxx.y);
@@ -66,34 +64,34 @@ bool resampling2_nodes_2d_is_inside_3d(resampling2_nodes_2d_t const* res, float 
   return Mz > 0.f && CheckCollisionRecs(rect, (Rectangle){ mx, my, Mx - mx, My - my });
 }
 
-Vector2 resampling2_nodes_2d_get_ratios(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, float screen_width, float screen_height) {
+br_vec2_t resampling2_nodes_2d_get_ratios(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, float screen_width, float screen_height) {
   float xr = xs[res->base.max_index_x] - xs[res->base.min_index_x], yr = ys[res->base.max_index_y] - ys[res->base.min_index_y];
-  return (Vector2){xr / screen_width, yr / screen_height};
+  return BR_VEC2(xr / screen_width, yr / screen_height);
 }
 
-Vector2 resampling2_nodes_2d_get_ratios_3d(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, Matrix mvp) {
-  Vector3 minx = Vector2TransformScale(CLITERAL(Vector2) { xs[res->base.min_index_x], ys[res->base.min_index_x] }, mvp),
-          miny = Vector2TransformScale(CLITERAL(Vector2) { xs[res->base.min_index_y], ys[res->base.min_index_y] }, mvp),
-          maxx = Vector2TransformScale(CLITERAL(Vector2) { xs[res->base.max_index_x], ys[res->base.max_index_x] }, mvp),
-          maxy = Vector2TransformScale(CLITERAL(Vector2) { xs[res->base.max_index_y], ys[res->base.max_index_y] }, mvp);
+br_vec2_t resampling2_nodes_2d_get_ratios_3d(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mvp) {
+  br_vec3_t minx = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_x], ys[res->base.min_index_x]), mvp),
+            miny = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_y], ys[res->base.min_index_y]), mvp),
+            maxx = br_vec2_transform_scale(BR_VEC2(xs[res->base.max_index_x], ys[res->base.max_index_x]), mvp),
+            maxy = br_vec2_transform_scale(BR_VEC2(xs[res->base.max_index_y], ys[res->base.max_index_y]), mvp);
   float mx = min4(minx.x, miny.x, maxy.x, maxx.x);
   float my = min4(minx.y, miny.y, maxy.y, maxx.y);
   float Mx = max4(minx.x, miny.x, maxy.x, maxx.x);
   float My = max4(minx.y, miny.y, maxy.y, maxx.y);
-  return (Vector2){(Mx - mx) / 2.f, (My - my) / 2.f};
+  return BR_VEC2((Mx - mx) / 2.f, (My - my) / 2.f);
 }
 
-Vector3 br_data_3d_get_v3(br_data_3d_t const* data, uint32_t index) {
-  return CLITERAL(Vector3) { data->xs[index], data->ys[index], data->zs[index] };
+br_vec3_t br_data_3d_get_v3(br_data_3d_t const* data, uint32_t index) {
+  return BR_VEC3(data->xs[index], data->ys[index], data->zs[index]);
 }
 
-bool resampling2_nodes_3d_is_inside(resampling2_nodes_3d_t const* res, br_data_3d_t const* data, Matrix mvp) {
-  Vector3 minx = Vector3TransformScale(br_data_3d_get_v3(data, res->base.min_index_x), mvp),
-          miny = Vector3TransformScale(br_data_3d_get_v3(data, res->base.min_index_y), mvp),
-          minz = Vector3TransformScale(br_data_3d_get_v3(data, res->min_index_z), mvp),
-          maxx = Vector3TransformScale(br_data_3d_get_v3(data, res->base.max_index_x), mvp),
-          maxy = Vector3TransformScale(br_data_3d_get_v3(data, res->base.max_index_y), mvp),
-          maxz = Vector3TransformScale(br_data_3d_get_v3(data, res->max_index_z), mvp);
+bool resampling2_nodes_3d_is_inside(resampling2_nodes_3d_t const* res, br_data_3d_t const* data, br_mat_t mvp) {
+  br_vec3_t minx = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.min_index_x), mvp),
+          miny = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.min_index_y), mvp),
+          minz = br_vec3_transform_scale(br_data_3d_get_v3(data, res->min_index_z), mvp),
+          maxx = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.max_index_x), mvp),
+          maxy = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.max_index_y), mvp),
+          maxz = br_vec3_transform_scale(br_data_3d_get_v3(data, res->max_index_z), mvp);
   float my = min6(minx.y, miny.y, maxy.y, maxx.y, minz.y, maxz.y);
   float mx = min6(minx.x, miny.x, maxy.x, maxx.x, minz.x, maxz.x);
   float My = max6(minx.y, miny.y, maxy.y, maxx.y, minz.y, maxz.y);
@@ -105,30 +103,30 @@ bool resampling2_nodes_3d_is_inside(resampling2_nodes_3d_t const* res, br_data_3
   return Mz > 0.f && CheckCollisionRecs(rect, (Rectangle){ mx, my, Mx - mx, My - my });
 }
 
-Vector2 resampling2_nodes_3d_get_ratios(resampling2_nodes_3d_t const* res, br_data_3d_t const* data, Vector3 eye, Vector3 look_dir) {
-  Vector3 minx = br_data_3d_get_v3(data, res->base.min_index_x),
+br_vec2_t resampling2_nodes_3d_get_ratios(resampling2_nodes_3d_t const* res, br_data_3d_t const* data, br_vec3_t eye, br_vec3_t look_dir) {
+  br_vec3_t minx = br_data_3d_get_v3(data, res->base.min_index_x),
           miny = br_data_3d_get_v3(data, res->base.min_index_y),
           minz = br_data_3d_get_v3(data, res->min_index_z),
           maxx = br_data_3d_get_v3(data, res->base.max_index_x),
           maxy = br_data_3d_get_v3(data, res->base.max_index_y),
           maxz = br_data_3d_get_v3(data, res->max_index_z);
-  Vector3 M = { maxx.x, maxy.y, maxz.z };
-  Vector3 m = { minx.x, miny.y, minz.z };
-  float dist = Vector3DistanceSqr(minx, eye);
-  float pot_dist = Vector3DistanceSqr(miny, eye);
+  br_vec3_t M = BR_VEC3(maxx.x, maxy.y, maxz.z);
+  br_vec3_t m = BR_VEC3(minx.x, miny.y, minz.z);
+  float dist = br_vec3_dist2(minx, eye);
+  float pot_dist = br_vec3_dist2(miny, eye);
   if (pot_dist < dist) dist = pot_dist;
-  pot_dist = Vector3DistanceSqr(minz, eye); if (pot_dist < dist) dist = pot_dist;
-  pot_dist = Vector3DistanceSqr(maxx, eye); if (pot_dist < dist) dist = pot_dist;
-  pot_dist = Vector3DistanceSqr(maxy, eye); if (pot_dist < dist) dist = pot_dist;
-  pot_dist = Vector3DistanceSqr(maxz, eye); if (pot_dist < dist) dist = pot_dist;
+  pot_dist = br_vec3_dist2(minz, eye); if (pot_dist < dist) dist = pot_dist;
+  pot_dist = br_vec3_dist2(maxx, eye); if (pot_dist < dist) dist = pot_dist;
+  pot_dist = br_vec3_dist2(maxy, eye); if (pot_dist < dist) dist = pot_dist;
+  pot_dist = br_vec3_dist2(maxz, eye); if (pot_dist < dist) dist = pot_dist;
   dist = sqrtf(dist);
 
-  Vector3 rot_axis = Vector3CrossProduct((Vector3){0, 0, 1.f}, look_dir);
-  float angle = Vector3Angle((Vector3){0, 0, 1.f}, look_dir);
-  Vector3 nA = Vector3RotateByAxisAngle(Vector3Subtract(M, m), rot_axis, angle);
-  Vector3 nC = Vector3RotateByAxisAngle(res->curvature, rot_axis, angle);
-  Vector3 out = Vector3Scale(Vector3Pow(Vector3Multiply(nA, nC), 2.0f), 1/dist);
-  return (Vector2){ fabsf(out.x), fabsf(out.y) };
+  br_vec3_t rot_axis = br_vec3_cross(BR_VEC3(0, 0, 1.f), look_dir);
+  float angle = br_vec3_angle(BR_VEC3(0, 0, 1.f), look_dir);
+  br_vec3_t nA = br_vec3_rot(br_vec3_sub(M, m), rot_axis, angle);
+  br_vec3_t nC = br_vec3_rot(res->curvature, rot_axis, angle);
+  br_vec3_t out = br_vec3_scale(br_vec3_pow(br_vec3_mul(nA, nC), 2.0f), 1/dist);
+  return BR_VEC2(fabsf(out.x), fabsf(out.y));
 }
 
 static uint32_t powers[32] = {0};
@@ -239,9 +237,9 @@ static bool resampling2_nodes_3d_push_point(resampling2_nodes_3d_allocator_t* no
     node.base.min_index_y =
     node.base.max_index_x = 
     node.base.min_index_x = index;
-    node.curvature = (Vector3){0, 0, 0};
+    node.curvature = BR_VEC3(0, 0, 0);
   } else {
-    Vector3 v = { xs[index], ys[index], zs[index] };
+    br_vec3_t v = BR_VEC3(xs[index], ys[index], zs[index]);
     if (zs[index] < zs[node.min_index_z]) node.min_index_z = index;
     if (zs[index] > zs[node.max_index_z]) node.max_index_z = index;
     if (ys[index] < ys[node.base.min_index_y]) node.base.min_index_y = index;
@@ -250,15 +248,15 @@ static bool resampling2_nodes_3d_push_point(resampling2_nodes_3d_allocator_t* no
     if (xs[index] > xs[node.base.max_index_x]) node.base.max_index_x = index;
     if (index > 2) {
       // TODO: This needs not be calculated on every depth...
-      Vector3 m1 = { xs[index - 1], ys[index - 1], zs[index - 1] };
-      Vector3 m2 = { xs[index - 2], ys[index - 2], zs[index - 2] };
-      Vector3 d1 = Vector3Subtract(v, m1);
-      Vector3 d2 = Vector3Subtract(m1, m2);
-      Vector3 cur = Vector3Subtract(Vector3Normalize(d1), Vector3Normalize(d2));
+      br_vec3_t m1 = BR_VEC3(xs[index - 1], ys[index - 1], zs[index - 1]);
+      br_vec3_t m2 = BR_VEC3(xs[index - 2], ys[index - 2], zs[index - 2]);
+      br_vec3_t d1 = br_vec3_sub(v, m1);
+      br_vec3_t d2 = br_vec3_sub(m1, m2);
+      br_vec3_t cur = br_vec3_sub(br_vec3_normalize(d1), br_vec3_normalize(d2));
       cur.x = fabsf(cur.x);
       cur.y = fabsf(cur.y);
       cur.z = fabsf(cur.z);
-      node.curvature = Vector3Add(node.curvature, cur);
+      node.curvature = br_vec3_add(node.curvature, cur);
     }
     if (node.base.depth > 0) {
       if (false == resampling2_nodes_3d_push_point(nodes, node.base.child2, index, xs, ys, zs)) {
@@ -300,7 +298,7 @@ static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nod
     smol_mesh_gen_line_strip2(shaders->line, &xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1), pg->color);
     return;
   }
-  Vector2 ratios = resampling2_nodes_2d_get_ratios(&node, xs, ys, rect.width, rect.height);
+  br_vec2_t ratios = resampling2_nodes_2d_get_ratios(&node, xs, ys, rect.width, rect.height);
   float rmin = fminf(ratios.x, ratios.y);
   if (rmin < (node.base.depth == 1 ? pg->resampling->something : pg->resampling->something2)) {
     size_t indexies[] = {
@@ -312,10 +310,10 @@ static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nod
       node.base.index_start + node.base.len - (is_end ? 1 : 0)
     };
     qsort(indexies, sizeof(indexies)/sizeof(indexies[0]), sizeof(indexies[0]), &size_t_cmp);
-    Vector2 pss[] = {
-      {xs[indexies[0]], ys[indexies[0]]}, {xs[indexies[1]], ys[indexies[0]]},
-      {xs[indexies[2]], ys[indexies[2]]}, {xs[indexies[3]], ys[indexies[3]]},
-      {xs[indexies[4]], ys[indexies[4]]}, {xs[indexies[5]], ys[indexies[5]]},
+    br_vec2_t pss[] = {
+      BR_VEC2(xs[indexies[0]], ys[indexies[0]]), BR_VEC2(xs[indexies[1]], ys[indexies[0]]),
+      BR_VEC2(xs[indexies[2]], ys[indexies[2]]), BR_VEC2(xs[indexies[3]], ys[indexies[3]]),
+      BR_VEC2(xs[indexies[4]], ys[indexies[4]]), BR_VEC2(xs[indexies[5]], ys[indexies[5]]),
     };
     //if (context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.base.min_index_x].x, ps[node.base.min_index_y].y, ps[node.base.max_index_x].x, ps[node.base.max_index_y].y }, RAYWHITE);
     smol_mesh_gen_line_strip(shaders->line, pss, 6, pg->color);
@@ -334,14 +332,14 @@ static void resampling2_draw32(resampling2_nodes_2d_allocator_t const* const nod
   float const* xs = pg->dd.xs;
   float const* ys = pg->dd.ys;
   resampling2_nodes_2d_t node = nodes->arr[index];
-  Matrix mvp = shaders->line_3d->uvs.m_mvp_uv;
+  br_mat_t mvp = shaders->line_3d->uvs.m_mvp_uv;
   if (false == resampling2_nodes_2d_is_inside_3d(&node, xs, ys, mvp)) return;
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
     smol_mesh_3d_gen_line_strip3(shaders->line_3d, &xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1), pg->color);
     return;
   }
-  Vector2 ratios = resampling2_nodes_2d_get_ratios_3d(&node, xs, ys, mvp);
+  br_vec2_t ratios = resampling2_nodes_2d_get_ratios_3d(&node, xs, ys, mvp);
   float rmin = fminf(ratios.x, ratios.y);
   if (rmin < (node.base.depth == 1 ? 0.01f : 0.02f)) {
     size_t indexies[] = {
@@ -353,10 +351,10 @@ static void resampling2_draw32(resampling2_nodes_2d_allocator_t const* const nod
       node.base.index_start + node.base.len - (is_end ? 1 : 0)
     };
     qsort(indexies, sizeof(indexies)/sizeof(indexies[0]), sizeof(indexies[0]), &size_t_cmp);
-    Vector2 pss[] = {
-      { xs[indexies[0]], ys[indexies[0]] }, { xs[indexies[1]], ys[indexies[1]] },
-      { xs[indexies[2]], ys[indexies[2]] }, { xs[indexies[3]], ys[indexies[3]] },
-      { xs[indexies[4]], ys[indexies[4]] }, { xs[indexies[5]], ys[indexies[5]] },
+    br_vec2_t pss[] = {
+      BR_VEC2(xs[indexies[0]], ys[indexies[0]]), BR_VEC2(xs[indexies[1]], ys[indexies[1]]),
+      BR_VEC2(xs[indexies[2]], ys[indexies[2]]), BR_VEC2(xs[indexies[3]], ys[indexies[3]]),
+      BR_VEC2(xs[indexies[4]], ys[indexies[4]]), BR_VEC2(xs[indexies[5]], ys[indexies[5]]),
     };
     smol_mesh_3d_gen_line_strip2(shaders->line_3d, pss, 6, pg->color);
   } else {
@@ -373,9 +371,9 @@ static void resampling2_draw33(resampling2_nodes_3d_allocator_t const* const nod
   float const* ys = pg->ddd.ys;
   float const* zs = pg->ddd.zs;
   resampling2_nodes_3d_t node = nodes->arr[index];
-  Matrix mvp = shaders->line_3d->uvs.m_mvp_uv;
-  Vector3 eye = plot->ddd.eye;
-  Vector3 target = plot->ddd.target;
+  br_mat_t mvp = shaders->line_3d->uvs.m_mvp_uv;
+  br_vec3_t eye = plot->ddd.eye;
+  br_vec3_t target = plot->ddd.target;
   if (false == resampling2_nodes_3d_is_inside(&node, &pg->ddd, mvp)) return;
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
@@ -383,7 +381,7 @@ static void resampling2_draw33(resampling2_nodes_3d_allocator_t const* const nod
     smol_mesh_3d_gen_line_strip1(shaders->line_3d, &xs[st], &ys[st], &zs[st], node.base.len + (is_end ? 0 : 1), pg->color);
     return;
   }
-  Vector2 ratios = resampling2_nodes_3d_get_ratios(&node, &pg->ddd, eye, Vector3Subtract(target, eye));
+  br_vec2_t ratios = resampling2_nodes_3d_get_ratios(&node, &pg->ddd, eye, br_vec3_sub(target, eye));
   assert(ratios.x > 0);
   assert(ratios.y > 0);
   float rmin = fmaxf(ratios.x, ratios.y);
@@ -403,7 +401,7 @@ static void resampling2_draw33(resampling2_nodes_3d_allocator_t const* const nod
     size_t cur = indexies[0];
     for (size_t i = 1; i < 8; ++i) {
       if (cur == indexies[i]) continue;
-      smol_mesh_3d_gen_line(shaders->line_3d, CLITERAL(Vector3) { xs[cur], ys[cur], zs[cur] }, CLITERAL(Vector3) { xs[indexies[i]], ys[indexies[i]], zs[indexies[i]] }, pg->color);
+      smol_mesh_3d_gen_line(shaders->line_3d,  BR_VEC3(xs[cur], ys[cur], zs[cur]),  BR_VEC3(xs[indexies[i]], ys[indexies[i]], zs[indexies[i]]), pg->color);
       cur = indexies[i];
     }
   } else {

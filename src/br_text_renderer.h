@@ -1,17 +1,11 @@
 #pragma once
 #include "src/br_str.h"
+#include "src/br_math.h"
 
 typedef struct br_text_renderer_t br_text_renderer_t;
 #if !defined(br_shader_font_t)
 typedef struct br_shader_font_t br_shader_font_t;
 #endif
-
-#define BR_COLOR_PUN(x) *(br_color_t*)((void*)(&(x)))
-#define BR_COLOR_TO_VEC4(x) (Vector4) { (float)((x).r) / 255.f, (float)((x).g) / 255.f, (float)((x).b) / 255.f, (float)((x).a) / 255.f }
-
-typedef struct {
-  unsigned char r, g, b, a;
-} br_color_t;
 
 typedef enum {
   br_text_renderer_ancor_x_left  = 1 << 1,

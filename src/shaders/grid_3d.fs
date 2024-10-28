@@ -40,8 +40,8 @@ float map(vec2 cPos, vec2 zoom_level) {
 
 float map_outer(vec2 fragCoord) {
   float scale = length(eye - fragTexCoord);
-  float scale2 = (1.0 - abs(dot(normal, normalize(look_dir))));
-  scale *= scale2;
+  //float scale2 = (1.0 - abs(dot(normal, normalize(look_dir))));
+  //scale *= scale2;
   return map(fragCoord, vec2(2.5 * scale));
 }
 
