@@ -8,18 +8,16 @@
 #ifndef NUMBER_OF_STEPS
 #define NUMBER_OF_STEPS 100
 #endif
-#include "raylib_headless.c"
 
-#include "raylib.h"
 
 void br_gui_init_specifics_gui(br_plotter_t* br) {
   br_plot_t plot = { 
     .kind = br_plot_kind_2d,
-    .resolution = { 1280, 720 },
-    .graph_screen_rect = { 0, 0, 1280, 720 },
+    .resolution = BR_SIZEI( 1280, 720 ),
+    .graph_screen_rect = BR_EXTENTI(0, 0, 1280, 720),
     .dd = (br_plot_2d_t) {
-      .zoom = { 1, 1 },
-      .offset = { 0 },
+      .zoom = BR_VEC2(1, 1),
+      .offset = {0},
     }
   };
   br_da_push_t(int, br->plots, plot);

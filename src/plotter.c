@@ -1,12 +1,13 @@
-#include "br_plot.h"
-#include "br_plotter.h"
-#include "br_gui_internal.h"
-#include "br_da.h"
-#include "br_resampling2.h"
-#include "br_q.h"
-#include "br_permastate.h"
+#include "src/br_plot.h"
+#include "src/br_plotter.h"
+#include "src/br_gui_internal.h"
+#include "src/br_da.h"
+#include "src/br_resampling2.h"
+#include "src/br_q.h"
+#include "src/br_permastate.h"
 #include "src/br_text_renderer.h"
 #include "src/br_tl.h"
+#include "src/br_pp.h"
 
 #include <math.h>
 #include <string.h>
@@ -15,8 +16,6 @@
 #  include <pthread.h>
 #endif
 
-#include "raylib.h"
-#include "src/br_pp.h"
 #include "tracy/TracyC.h"
 
 context_t context;
@@ -64,7 +63,7 @@ BR_API void br_plotter_init(br_plotter_t* br, bool use_permaste) {
 
 BR_API void br_plotter_resize(br_plotter_t* br, float width, float height) {
   (void)br;
-  SetWindowSize((int)width, (int)height);
+  brtl_window_set_size((int)width, (int)height);
 }
 
 BR_API br_datas_t* br_plotter_get_br_datas(br_plotter_t* br) {
@@ -224,7 +223,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
   if(plot->kind != br_plot_kind_2d) return;
 
   TracyCFrameMarkStart("draw_grid_numbers");
-  Rectangle r = plot->dd.graph_rect;
+  br_extent_t r = plot->dd.graph_rect;
   br_extent_t gex = BR_EXTENTI_TOF(plot->graph_screen_rect);
   int font_size = (int)(18.f * context.font_scale);
   char fmt[16];

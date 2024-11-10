@@ -6,7 +6,6 @@
 #include "src/imgui/imgui_extensions.h"
 
 #include "imgui.h"
-#include "raylib.h"
 
 void br::ui_info(br_plotter_t* br) {
   ImGui::SetNextWindowBgAlpha(0.7f);

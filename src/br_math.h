@@ -13,6 +13,8 @@
 #define BR_EXTENT_ASPECT(E) ((float)(E).height / (float)(E).width)
 #define BR_EXTENT(X, Y, WIDTH, HEIGHT) (br_extent_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
 #define BR_EXTENTI(X, Y, WIDTH, HEIGHT) (br_extenti_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
+#define BR_BB(Xm, Ym, XM, YM) (br_bb_t) { .arr = { (Xm), (Ym), (XM), (YM) } }
+#define BR_BB_TOEX(BB) (br_extent_t) { .arr = { (BB).min_x, (BB).min_y, (BB).max_x - (BB).min_x, (BB).max_y - (BB).min_y } }
 #define BR_VEC4(X, Y, Z, W) ((br_vec4_t) { .x = (X), .y = (Y), .z = (Z), .w = (W) }) 
 #define BR_VEC3(X, Y, Z) ((br_vec3_t) { .x = (X), .y = (Y), .z = (Z) }) 
 #define BR_VEC_ELS(X) (sizeof((X).arr) / sizeof((X).arr[0]))
@@ -23,6 +25,13 @@
 #define BR_LIME BR_COLOR(10, 200, 10, 255)
 #define BR_ORANGE BR_COLOR(180, 180, 10, 255)
 #define BR_WHITE BR_COLOR(180, 180, 180, 255)
+#define BR_GREEN BR_COLOR(10, 200, 10, 255)
+#define BR_BLUE BR_COLOR(10, 10, 200, 255)
+#define BR_LIGHTGRAY BR_COLOR(100, 100, 100, 255)
+#define BR_PINK BR_COLOR(150, 80, 80, 255)
+#define BR_GOLD BR_COLOR(50, 180, 50, 255)
+#define BR_VIOLET BR_COLOR(180, 10, 180, 255)
+#define BR_DARKPURPLE BR_COLOR(80, 10, 80, 255)
 
 #define BR_PI 3.14159265358979323846f
 
@@ -98,6 +107,19 @@ typedef struct {
     float arr[4];
   };
 } br_extent_t;
+
+typedef struct {
+  union {
+    struct {
+      float min_x, min_y, max_x, max_y;
+    };
+    struct {
+      br_vec2_t min;
+      br_vec2_t max;
+    };
+    float arr[4];
+  };
+} br_bb_t;
 
 typedef struct {
   union {
@@ -361,4 +383,9 @@ static inline br_mat_t br_mat_mul(br_mat_t left, br_mat_t right) {
 // collisions
 static inline bool br_col_vec2_extent(br_extent_t ex, br_vec2_t point) {
   return (point.x >= ex.x) && (point.x < (ex.x + ex.width)) && (point.y >= ex.y) && (point.y < (ex.y + ex.height));
+}
+
+static inline bool br_col_extents(br_extent_t a, br_extent_t b) {
+  return ((a.x < (b.x + b.width) && (a.x + a.width) > b.x) &&
+          (a.y < (b.y + b.height) && (a.y + a.height) > b.y));
 }

@@ -2,11 +2,9 @@
 #include "src/br_pp.h"
 #include "src/br_q.h"
 #include "src/br_permastate.h"
-#include "src/br_text_renderer.h"
-#include "src/br_help.h"
+#include "src/br_tl.h"
 
 #include "tracy/TracyC.h"
-#include "raylib.h"
 
 void br_gui_init_specifics_gui(br_plotter_t* plotter);
 static void* main_gui(void* plotter) {
@@ -29,17 +27,10 @@ static void* main_gui(void* plotter) {
 #include "br_plot.h"
 #include "br_pp.h"
 
-#include "raylib.h"
-
 #define WIDTH 1280
 #define HEIGHT 720
 
 int main(void) {
-#if !defined(RELEASE)
-  SetTraceLogLevel(LOG_ALL);
-#else
-  SetTraceLogLevel(LOG_ERROR);
-#endif
   br_plotter_t* br = br_plotter_malloc();
   if (NULL == br) {
     LOGE("Failed to malloc br plotter, exiting...\n");
@@ -52,15 +43,15 @@ int main(void) {
   start_refreshing_shaders(br);
 #endif
   read_input_start(br);
-  SetExitKey(KEY_NULL);
+  //SetExitKey(KEY_NULL);
   main_gui(br);
 
   // CLEAN UP
   read_input_stop();
   br_permastate_save(br);
   br_plotter_free(br);
+  brtl_window_close();
   BR_FREE(br);
-  CloseWindow();
   return 0;
 }
 #endif

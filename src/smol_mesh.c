@@ -1,14 +1,13 @@
-#include "br_smol_mesh.h"
-#include "br_plot.h"
-#include "br_gl.h"
+#include "src/br_smol_mesh.h"
+#include "src/br_plot.h"
+#include "src/br_gl.h"
 #include "src/br_math.h"
 
-#define RAYMATH_STATIC_INLINE
 #include "tracy/TracyC.h"
 
 #include <assert.h>
 
-void smol_mesh_gen_bb(br_shader_line_t* shader, bb_t bb, Color color) {
+void smol_mesh_gen_bb(br_shader_line_t* shader, bb_t bb, br_color_t color) {
   float xmi = bb.xmin, ymi = bb.ymin , xma = bb.xmax, yma = bb.ymax;
   br_vec2_t v[5] = {
     BR_VEC2(xmi, ymi),
@@ -21,7 +20,7 @@ void smol_mesh_gen_bb(br_shader_line_t* shader, bb_t bb, Color color) {
   smol_mesh_gen_line_strip(shader, v, 5, color);
 }
 
-void smol_mesh_gen_point(br_shader_line_t* shader, br_vec2_t point, Color color) {
+void smol_mesh_gen_point(br_shader_line_t* shader, br_vec2_t point, br_color_t color) {
   br_vec2_t size = BR_VEC2(shader->uvs.zoom_uv.x * .01f, shader->uvs.zoom_uv.y * .01f);
   smol_mesh_gen_bb(shader, (bb_t){
       .xmin = point.x - size.x / 2,
@@ -31,7 +30,7 @@ void smol_mesh_gen_point(br_shader_line_t* shader, br_vec2_t point, Color color)
   }, color);
 }
 
-void smol_mesh_gen_point1(br_shader_line_t* shader, br_vec2_t point, br_vec2_t size, Color color) {
+void smol_mesh_gen_point1(br_shader_line_t* shader, br_vec2_t point, br_vec2_t size, br_color_t color) {
   smol_mesh_gen_bb(shader, (bb_t){
       .xmin = point.x - size.x / 2,
       .ymin = point.y - size.y / 2,
@@ -40,7 +39,7 @@ void smol_mesh_gen_point1(br_shader_line_t* shader, br_vec2_t point, br_vec2_t s
   }, color);
 }
 
-void smol_mesh_gen_line(br_shader_line_t* shader, br_vec2_t startPos, br_vec2_t endPos, Color const color) {
+void smol_mesh_gen_line(br_shader_line_t* shader, br_vec2_t startPos, br_vec2_t endPos, br_color_t const color) {
   br_vec3_t const cv = BR_VEC3(color.r/255.f, color.g/255.f, color.b/255.f);
   int c = shader->len;
   if (c + 1 >= shader->cap) {
@@ -83,20 +82,20 @@ void smol_mesh_gen_line(br_shader_line_t* shader, br_vec2_t startPos, br_vec2_t 
 
   if (context.debug_bounds) {
     context.debug_bounds = false;
-    smol_mesh_gen_point(shader, startPos, WHITE);
-    smol_mesh_gen_point(shader, endPos, WHITE);
+    smol_mesh_gen_point(shader, startPos, BR_WHITE);
+    smol_mesh_gen_point(shader, endPos, BR_WHITE);
     context.debug_bounds = true;
   }
 }
 
-void smol_mesh_gen_line_strip(br_shader_line_t* shader, br_vec2_t const * points, size_t len, Color color) {
+void smol_mesh_gen_line_strip(br_shader_line_t* shader, br_vec2_t const * points, size_t len, br_color_t color) {
   TracyCZoneN(gen_line_strip_ctx, "GenLineStrip", true);
   TracyCZoneValue(gen_line_strip_ctx, len);
   for (size_t v = 0; v < (len - 1); ++v) smol_mesh_gen_line(shader, points[v], points[v + 1], color);
   TracyCZoneEnd(gen_line_strip_ctx);
 }
 
-void smol_mesh_gen_line_strip2(br_shader_line_t* shader, float const* xs, float const* ys, size_t len, Color color) {
+void smol_mesh_gen_line_strip2(br_shader_line_t* shader, float const* xs, float const* ys, size_t len, br_color_t color) {
   TracyCZoneN(gen_line_strip_ctx, "GenLineStrip2", true);
   TracyCZoneValue(gen_line_strip_ctx, len);
   for (size_t v = 0; v < (len - 1); ++v)
@@ -104,7 +103,7 @@ void smol_mesh_gen_line_strip2(br_shader_line_t* shader, float const* xs, float 
   TracyCZoneEnd(gen_line_strip_ctx);
 }
 
-void smol_mesh_3d_gen_line_simple(br_shader_line_3d_simple_t* shader, br_vec3_t p1, br_vec3_t p2, Color color, br_vec3_t eye) {
+void smol_mesh_3d_gen_line_simple(br_shader_line_3d_simple_t* shader, br_vec3_t p1, br_vec3_t p2, br_color_t color, br_vec3_t eye) {
   int i = shader->len;
   shader->len += 2;
   if (shader->len > shader->cap) {
@@ -143,21 +142,21 @@ void smol_mesh_3d_gen_line_simple(br_shader_line_3d_simple_t* shader, br_vec3_t 
   for (int j = 0; j < 6; ++j) colors[j] = cv;
 }
 
-void smol_mesh_3d_gen_line_strip(br_shader_line_3d_t* shader, br_vec3_t const* ps, size_t len, Color color) {
+void smol_mesh_3d_gen_line_strip(br_shader_line_3d_t* shader, br_vec3_t const* ps, size_t len, br_color_t color) {
   for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(shader, ps[i], ps[i + 1], color);
 }
-void smol_mesh_3d_gen_line_strip1(br_shader_line_3d_t* shader, float const* xs, float const* ys, float const* zs, size_t len, Color color) {
+void smol_mesh_3d_gen_line_strip1(br_shader_line_3d_t* shader, float const* xs, float const* ys, float const* zs, size_t len, br_color_t color) {
   for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(shader, BR_VEC3(xs[i], ys[i], zs[i]), BR_VEC3(xs[i + 1], ys[i + 1], zs[i + 1]), color);
 
 }
 
-void smol_mesh_3d_gen_line_strip2(br_shader_line_3d_t* shader, br_vec2_t const* ps, size_t len, Color color) {
+void smol_mesh_3d_gen_line_strip2(br_shader_line_3d_t* shader, br_vec2_t const* ps, size_t len, br_color_t color) {
   for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(shader,
       BR_VEC3(ps[i].x, ps[i].y, 0),
       BR_VEC3(ps[i+1].x, ps[i+1].y, 0), color);
 }
 
-void smol_mesh_3d_gen_line_strip3(br_shader_line_3d_t* shader, float const* xs, float const* ys, size_t len, Color color) {
+void smol_mesh_3d_gen_line_strip3(br_shader_line_3d_t* shader, float const* xs, float const* ys, size_t len, br_color_t color) {
   for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(shader,
       BR_VEC3(xs[i], ys[i], 0),
       BR_VEC3(xs[i+1], ys[i+1], 0), color);
@@ -165,7 +164,7 @@ void smol_mesh_3d_gen_line_strip3(br_shader_line_3d_t* shader, float const* xs, 
 
 float line_3d_size = 0.02f;
 
-void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, br_vec3_t p1, br_vec3_t p2, Color color) {
+void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, br_vec3_t p1, br_vec3_t p2, br_color_t color) {
   br_vec3_t const cv = BR_VEC3(color.r/255.f, color.g/255.f, color.b/255.f);
   br_vec3_t diff  = br_vec3_normalize(br_vec3_sub(p2, p1));
   br_vec3_t norm = br_vec3_perpendicular(diff);
@@ -173,7 +172,7 @@ void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, br_vec3_t p1, br_vec3_t 
   float dist2 = 0.1f * br_vec3_dist(shader->uvs.eye_uv, p2);
   int n = (int)(6.f/fminf(dist1, dist2)) + 6;
   for (int k = 0; k <= n; ++k) {
-    br_vec3_t next = br_vec3_normalize(br_vec3_rot(norm, diff, (float)PI * 2 / (float)n));
+    br_vec3_t next = br_vec3_normalize(br_vec3_rot(norm, diff, BR_PI * 2 / (float)n));
     int i = shader->len;
     shader->len += 2;
     if (shader->len > shader->cap) {
@@ -206,7 +205,7 @@ void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, br_vec3_t p1, br_vec3_t 
   }
 }
 
-void smol_mesh_gen_line_strip_stride(br_shader_line_t* shader, br_vec2_t const * points, ssize_t len, Color const color, int stride) {
+void smol_mesh_gen_line_strip_stride(br_shader_line_t* shader, br_vec2_t const * points, ssize_t len, br_color_t const color, int stride) {
   ssize_t v = 0;
   for (; v < (len - stride); v += stride) {
     smol_mesh_gen_line(shader, points[v], points[v + stride], color);
@@ -214,7 +213,7 @@ void smol_mesh_gen_line_strip_stride(br_shader_line_t* shader, br_vec2_t const *
   if (v != len - 1) smol_mesh_gen_line(shader, points[v], points[len - 1], color);
 }
 
-void smol_mesh_gen_quad_3d_simple(br_shader_grid_3d_t* shader, br_vec3_t p1, br_vec3_t p2, br_vec3_t p3, br_vec3_t p4, Color color) {
+void smol_mesh_gen_quad_3d_simple(br_shader_grid_3d_t* shader, br_vec3_t p1, br_vec3_t p2, br_vec3_t p3, br_vec3_t p4, br_color_t color) {
   int c = shader->len;
   shader->len += 2;
   if (c >= shader->cap) {
@@ -264,9 +263,9 @@ void smol_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
     case br_plot_kind_3d: {
       TracyCFrameMarkStart("grid_draw_3d");
       float sz = 10000.f;
-      //smol_mesh_gen_quad_simple(gv->graph_mesh_3d, r3, Color {0, 0, 1, 0});
-      smol_mesh_gen_quad_3d_simple(shaders->grid_3d, BR_VEC3(-sz, 0, -sz), BR_VEC3(sz, 0, -sz), BR_VEC3(sz, 0, sz), BR_VEC3(-sz, 0, sz), (Color){0, 1, 0, 0});
-      smol_mesh_gen_quad_3d_simple(shaders->grid_3d, BR_VEC3(-sz, -sz, 0), BR_VEC3(sz, -sz, 0), BR_VEC3(sz, sz, 0), BR_VEC3(-sz, sz, 0), (Color){0, 0, 1, 0});
+      //smol_mesh_gen_quad_simple(gv->graph_mesh_3d, r3, br_color_t {0, 0, 1, 0});
+      smol_mesh_gen_quad_3d_simple(shaders->grid_3d, BR_VEC3(-sz, 0, -sz), BR_VEC3(sz, 0, -sz), BR_VEC3(sz, 0, sz), BR_VEC3(-sz, 0, sz), (br_color_t){0, 1, 0, 0});
+      smol_mesh_gen_quad_3d_simple(shaders->grid_3d, BR_VEC3(-sz, -sz, 0), BR_VEC3(sz, -sz, 0), BR_VEC3(sz, sz, 0), BR_VEC3(-sz, sz, 0), (br_color_t){0, 0, 1, 0});
       br_shader_grid_3d_draw(shaders->grid_3d);
       shaders->grid_3d->len = 0;
       TracyCFrameMarkEnd("grid_draw_3d");

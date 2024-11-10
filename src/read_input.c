@@ -786,7 +786,6 @@ void read_input_main_worker(br_plotter_t* gv) {
 #include "src/br_plotter.h"
 #include "src/br_gui_internal.h"
 #include "src/br_help.h"
-#include "raylib.h"
 int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
   lex_state_t s;
   br_plotter_t* br = br_plotter_malloc();

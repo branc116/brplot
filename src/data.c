@@ -1,12 +1,13 @@
-#include "br_data.h"
-#include "br_da.h"
-#include "br_data_generator.h"
-#include "br_gui_internal.h"
-#include "br_plot.h"
-#include "br_pp.h"
-#include "br_resampling2.h"
-#include "br_str.h"
-#include "br_gl.h"
+#include "src/br_data.h"
+#include "src/br_da.h"
+#include "src/br_data_generator.h"
+#include "src/br_gui_internal.h"
+#include "src/br_plot.h"
+#include "src/br_pp.h"
+#include "src/br_resampling2.h"
+#include "src/br_str.h"
+#include "src/br_gl.h"
+#include "src/br_math.h"
 
 #include "tracy/TracyC.h"
 
@@ -19,23 +20,23 @@
 #define DEF_CAP 1024
 
 static br_data_t* br_data_init(br_data_t* g, int group_id, br_data_kind_t kind);
-static void br_data_push_point2(br_data_t* g, Vector2 v);
-static void br_data_push_point3(br_data_t* g, Vector3 v);
+static void br_data_push_point2(br_data_t* g, br_vec2_t v);
+static void br_data_push_point3(br_data_t* g, br_vec3_t v);
 static void br_data_deinit(br_data_t* g);
-static void br_bb_expand_with_point(bb_t* bb, Vector2 v);
-static void br_bb_3d_expand_with_point(bb_3d_t* bb, Vector3 v);
+static void br_bb_expand_with_point(bb_t* bb, br_vec2_t v);
+static void br_bb_3d_expand_with_point(bb_3d_t* bb, br_vec3_t v);
 
-static Color base_colors[8];
+static br_color_t base_colors[8];
 
 void br_data_construct(void) {
-  base_colors[0] = RED;
-  base_colors[1] = GREEN;
-  base_colors[2] = BLUE;
-  base_colors[3] = LIGHTGRAY;
-  base_colors[4] = PINK;
-  base_colors[5] = GOLD;
-  base_colors[6] = VIOLET;
-  base_colors[7] = DARKPURPLE;
+  base_colors[0] = BR_RED;
+  base_colors[1] = BR_GREEN;
+  base_colors[2] = BR_BLUE;
+  base_colors[3] = BR_LIGHTGRAY;
+  base_colors[4] = BR_PINK;
+  base_colors[5] = BR_GOLD;
+  base_colors[6] = BR_VIOLET;
+  base_colors[7] = BR_DARKPURPLE;
 }
 
 int br_datas_get_new_id(br_datas_t *datas) {
@@ -58,7 +59,7 @@ BR_API br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_
   return &datas->arr[index];
 }
 
-BR_API br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, Color color, size_t cap, br_str_t name) {
+BR_API br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, br_color_t color, size_t cap, br_str_t name) {
   BR_ASSERT(kind == br_data_kind_2d || kind == br_data_kind_3d);
   br_data_t* ret = NULL;
 
@@ -88,26 +89,26 @@ BR_API void br_data_push_y(br_datas_t* pg_array, float y, int group) {
   br_data_t* pg = br_data_get(pg_array, group);
   if (pg == NULL) return;
   float x = pg->len == 0 ? 0.f : (pg->dd.xs[pg->len - 1] + 1.f);
-  br_data_push_point2(pg, (Vector2){ .x = x, .y = y });
+  br_data_push_point2(pg, (br_vec2_t){ .x = x, .y = y });
 }
 
 BR_API void br_data_push_x(br_datas_t* pg_array, float x, int group) {
   br_data_t* pg = br_data_get(pg_array, group);
   if (pg == NULL) return;
   float y = pg->len == 0 ? 0.f : (pg->dd.ys[pg->len - 1] + 1.f);
-  br_data_push_point2(pg, (Vector2){ .x = x, .y = y });
+  br_data_push_point2(pg, (br_vec2_t){ .x = x, .y = y });
 }
 
 BR_API void br_data_push_xy(br_datas_t* pg_array, float x, float y, int group) {
   br_data_t* pg = br_data_get(pg_array, group);
   if (pg == NULL) return;
-  br_data_push_point2(pg, (Vector2){ .x = x, .y = y });
+  br_data_push_point2(pg, (br_vec2_t){ .x = x, .y = y });
 }
 
 BR_API void br_data_push_xyz(br_datas_t* pg_array, float x, float y, float z, int group) {
   br_data_t* pg = br_data_get2(pg_array, group, br_data_kind_3d);
   if (pg == NULL) return;
-  br_data_push_point3(pg, (Vector3){ .x = x, .y = y, .z = z });
+  br_data_push_point3(pg, (br_vec3_t){ .x = x, .y = y, .z = z });
 }
 
 //void br_data_push_expr_xy(br_datas_t* datas, br_data_expr_t x, br_data_expr_t y, int group) {
@@ -141,12 +142,12 @@ void br_data_export(br_data_t const* pg, FILE* file) {
   for (size_t i = 0; i < pg->len; ++i) {
     switch(pg->kind) {
       case br_data_kind_2d: {
-        Vector2 point = { pg->dd.xs[i], pg->dd.ys[i] };
+        br_vec2_t point = BR_VEC2(pg->dd.xs[i], pg->dd.ys[i]);
         fprintf(file, "%f,%f;%d\n", point.x, point.y, pg->group_id);
         break;
       }
       case br_data_kind_3d: {
-        Vector3 point = { pg->ddd.xs[i], pg->ddd.ys[i], pg->ddd.zs[i] };
+        br_vec3_t point = BR_VEC3(pg->ddd.xs[i], pg->ddd.ys[i], pg->ddd.zs[i]);
         fprintf(file, "%f,%f,%f;%d\n", point.x, point.y, point.z, pg->group_id);
         break;
       }
@@ -160,12 +161,12 @@ void br_data_export_csv(br_data_t const* pg, FILE* file) {
   for (size_t i = 0; i < pg->len; ++i) {
     switch(pg->kind) {
       case br_data_kind_2d: {
-        Vector2 point = { pg->dd.xs[i], pg->dd.ys[i] };
+        br_vec2_t point = BR_VEC2(pg->dd.xs[i], pg->dd.ys[i]);
         fprintf(file, "%d,%zu,%f,%f,\n", pg->group_id, i, point.x, point.y);
         break;
       }
       case br_data_kind_3d: {
-        Vector3 point = { pg->ddd.xs[i], pg->ddd.ys[i], pg->ddd.zs[i] };
+        br_vec3_t point = BR_VEC3(pg->ddd.xs[i], pg->ddd.ys[i], pg->ddd.zs[i]);
         fprintf(file, "%d,%zu,%f,%f,%f\n", pg->group_id, i, point.x, point.y, point.z);
         break;
       }
@@ -187,12 +188,12 @@ void br_datas_export_csv(br_datas_t const* pg_array, FILE* file) {
     for (size_t i = 0; i < pg->len; ++i) {
       switch(pg->kind) {
         case br_data_kind_2d: {
-          Vector2 point = { pg->dd.xs[i], pg->dd.ys[i] };
+          br_vec2_t point = BR_VEC2(pg->dd.xs[i], pg->dd.ys[i]);
           fprintf(file, "%d,%zu,%f,%f,\n", pg->group_id, i, point.x, point.y);
           break;
         }
         case br_data_kind_3d: {
-          Vector3 point = { pg->ddd.xs[i], pg->ddd.ys[i], pg->ddd.zs[i] };
+          br_vec3_t point = BR_VEC3(pg->ddd.xs[i], pg->ddd.ys[i], pg->ddd.zs[i]);
           fprintf(file, "%d,%zu,%f,%f,%f\n", pg->group_id, i, point.x, point.y, point.z);
           break;
         }
@@ -218,14 +219,14 @@ void br_datas_add_test_points(br_datas_t* pg) {
     br_data_t* g = br_data_get(pg, group);
     if (NULL == g) return;
     for (int i = 0; i < 1024; ++i)
-      br_data_push_point2(g, (Vector2){(float)g->len/128.f, sinf((float)g->len/128.f)});
+      br_data_push_point2(g, BR_VEC2((float)g->len/128.f, sinf((float)g->len/128.f)));
   }
   {
     int group = 1;
     br_data_t* g = br_data_get(pg, group);
     if (NULL == g) return;
     for (int i = 0; i < 10*1024; ++i)
-      br_data_push_point2(g, (Vector2){-(float)g->len/128.f, sinf((float)g->len/128.f)});
+      br_data_push_point2(g, BR_VEC2(-(float)g->len/128.f, sinf((float)g->len/128.f)));
   }
   {
     int group = 5;
@@ -235,7 +236,7 @@ void br_datas_add_test_points(br_datas_t* pg) {
       float t = (float)(1 + g->len)*.1f;
       float x = sqrtf(t)*cosf(log2f(t));
       float y = sqrtf(t)*sinf(log2f(t));
-      Vector2 p = {x, y};
+      br_vec2_t p = BR_VEC2(x, y);
       br_data_push_point2(g, p);
     }
   }
@@ -247,7 +248,7 @@ void br_datas_add_test_points(br_datas_t* pg) {
       for(int j = 0; j < 0; ++j) {
         int x = -50 + j + l;
         int y = (-50 + (i - j) + l) * (i % 2 == 0 ? 1 : -1);
-        Vector2 p = {(float)x, (float)y};
+        br_vec2_t p = BR_VEC2(x, y);
         br_data_push_point2(g, p);
       }
     }
@@ -260,7 +261,7 @@ void br_datas_add_test_points(br_datas_t* pg) {
       float x = sqrtf(t)*cosf(log2f(t));
       float y = sqrtf(t)*sinf(log2f(t));
       float z = 2.f * sinf(t*0.05f);
-      Vector3 p = {x, y, z};
+      br_vec3_t p = BR_VEC3(x, y, z);
       br_data_push_point3(g, p);
     }
   }
@@ -320,7 +321,7 @@ static br_data_t* br_data_init(br_data_t* g, int group_id, br_data_kind_t kind) 
   if (NULL == g->resampling)                                                                   goto error;
   if (NULL == (g->dd.xs = BR_MALLOC(sizeof(float) * DEF_CAP)))                                 goto error;
   if (NULL == (g->dd.ys = BR_MALLOC(sizeof(float) * DEF_CAP)))                                 goto error;
-  if (kind == br_data_kind_3d) if (NULL == (g->ddd.zs = BR_MALLOC(sizeof(Vector3) * DEF_CAP))) goto error;
+  if (kind == br_data_kind_3d) if (NULL == (g->ddd.zs = BR_MALLOC(sizeof(br_vec3_t) * DEF_CAP))) goto error;
   if (false == br_str_push_literal(&g->name, "Data #"))                                        goto error;
   if (false == br_str_push_int(&g->name, group_id))                                            goto error;
   return g;
@@ -330,11 +331,11 @@ error:
   return NULL;
 }
 
-Color br_data_get_default_color(int group_id) {
+br_color_t br_data_get_default_color(int group_id) {
   group_id = abs(group_id);
-  static int base_colors_count = sizeof(base_colors)/sizeof(Color);
+  static int base_colors_count = sizeof(base_colors)/sizeof(br_color_t);
   float count = 2.f;
-  Color c = base_colors[group_id%base_colors_count];
+  br_color_t c = base_colors[group_id%base_colors_count];
   group_id /= base_colors_count;
   while (group_id > 0) {
     c.r = (unsigned char)(((float)c.r + (float)base_colors[group_id%base_colors_count].r) / count);
@@ -426,13 +427,13 @@ BR_API void br_data_set_name(br_datas_t* pg, int group, br_str_t name) {
 
 size_t br_data_element_size(br_data_kind_t kind) {
   switch (kind) {
-    case br_data_kind_2d:      return sizeof(Vector2);
-    case br_data_kind_3d:      return sizeof(Vector3);
+    case br_data_kind_2d:      return sizeof(br_vec2_t);
+    case br_data_kind_3d:      return sizeof(br_vec3_t);
     default: BR_ASSERT(0); return 0;
   }
 }
 
-static void br_data_push_point2(br_data_t* g, Vector2 v) {
+static void br_data_push_point2(br_data_t* g, br_vec2_t v) {
   if (g->len >= g->cap && false == br_data_realloc(g, g->cap * 2)) return;
   if (g->len == 0) g->dd.bounding_box = (bb_t) { v.x, v.y, v.x, v.y };
   else             br_bb_expand_with_point(&g->dd.bounding_box, v);
@@ -442,7 +443,7 @@ static void br_data_push_point2(br_data_t* g, Vector2 v) {
   ++g->len;
 }
 
-static void br_data_push_point3(br_data_t* g, Vector3 v) {
+static void br_data_push_point3(br_data_t* g, br_vec3_t v) {
   if (g->len >= g->cap && false == br_data_realloc(g, g->cap * 2)) return;
   if (g->len == 0) g->ddd.bounding_box = (bb_3d_t) { v.x, v.y, v.z, v.x, v.y, v.z };
   else             br_bb_3d_expand_with_point(&g->ddd.bounding_box, v);
@@ -464,14 +465,14 @@ static void br_data_deinit(br_data_t* g) {
   g->len = g->cap = 0;
 }
 
-static void br_bb_expand_with_point(bb_t* bb, Vector2 v) {
+static void br_bb_expand_with_point(bb_t* bb, br_vec2_t v) {
   bb->xmax = fmaxf(bb->xmax, v.x);
   bb->xmin = fminf(bb->xmin, v.x);
   bb->ymax = fmaxf(bb->ymax, v.y);
   bb->ymin = fminf(bb->ymin, v.y);
 }
 
-static void br_bb_3d_expand_with_point(bb_3d_t* bb, Vector3 v) {
+static void br_bb_3d_expand_with_point(bb_3d_t* bb, br_vec3_t v) {
   bb->xmax = fmaxf(bb->xmax, v.x);
   bb->xmin = fminf(bb->xmin, v.x);
   bb->ymax = fmaxf(bb->ymax, v.y);

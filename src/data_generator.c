@@ -1,11 +1,12 @@
-#include "br_data_generator.h"
-#include "br_da.h"
-#include "br_data.h"
-#include "br_permastate.h"
-#include "br_plot.h"
-#include "br_pp.h"
-#include "br_resampling2.h"
+#include "src/br_data_generator.h"
+#include "src/br_da.h"
+#include "src/br_data.h"
+#include "src/br_permastate.h"
+#include "src/br_plot.h"
+#include "src/br_pp.h"
+#include "src/br_resampling2.h"
 #include "src/br_str.h"
+#include "src/br_tl.h"
 
 #include <stdio.h>
 #include <errno.h>
@@ -121,7 +122,7 @@ bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* 
   br_save_state_command_t command = br_save_state_command_save_plots;
   size_t data_left = 0;
   br_data_kind_t kind;
-  Color color;
+  br_color_t color;
   size_t cap;
 
   if (1 != fread(&command, sizeof(command), 1, file)) goto error;
@@ -170,7 +171,7 @@ error:
 }
 
 void br_dagens_handle(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots, double until) {
-  while (GetTime() < until) br_dagens_handle_once(datas, dagens, plots);
+  while (brtl_get_time() < until) br_dagens_handle_once(datas, dagens, plots);
 }
 
 void br_dagens_free(br_dagens_t* dagens) {

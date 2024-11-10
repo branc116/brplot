@@ -1,12 +1,13 @@
+#include "src/imgui/imgui_extensions.h"
+#include "src/br_plot.h"
+
+#include "imgui.h"
+#include "imgui_internal.h"
+
 #include <string>
 #include <vector>
 #include <chrono>
 #include <filesystem>
-#include "imgui.h"
-#include "imgui_internal.h"
-#include "src/imgui/imgui_extensions.h"
-#include "raylib.h"
-#include "src/br_plot.h"
 
 typedef struct br_file_saver_s {
   std::filesystem::path last_read = {};

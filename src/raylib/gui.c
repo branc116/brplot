@@ -4,10 +4,8 @@
 #include "src/br_shaders.h"
 #include "src/br_smol_mesh.h"
 #include "src/br_permastate.h"
-
-#include "ui.c"
-
-#include "raylib.h"
+#include "src/raylib/ui.c"
+#include "src/br_gl.h"
 
 static void update_resolution(br_plotter_t* gv);
 static void draw_left_panel(br_plotter_t* gv);
@@ -69,8 +67,8 @@ static void draw_left_panel(br_plotter_t* br) {
       res = ui_stack_buttons_add(br->text, &yes, "Line #%d: %d", br->groups.arr[j].group_id, br->groups.arr[j].len);
     }
     if (res > 0) {
-      if (IsKeyPressed(KEY_C)) {
-        if (IsKeyDown(KEY_LEFT_SHIFT)) {
+      if (brtl_key_is_pressed(BR_KEY_C)) {
+        if (brtl_key_shift()) {
           br_data_clear(&br->groups, &br->plots, br->groups.arr[j].group_id);
         }
         else {
@@ -91,21 +89,22 @@ static void update_resolution(br_plotter_t* br) {
 }
 
 void br_plot_screenshot(br_text_renderer_t* tr, br_plot_t* plot, br_shaders_t* shaders, br_datas_t groups, char const* path) {
-  int left_pad = 80;
-  int bottom_pad = 80;
-  plot->resolution = BR_SIZEI(1280, 720);
-  RenderTexture2D target = LoadRenderTexture(plot->resolution.width, plot->resolution.height); // TODO: make this values user defined.
-  plot->graph_screen_rect = BR_EXTENTI(left_pad, 0, plot->resolution.width - left_pad, plot->resolution.height - bottom_pad);
-  br_plot_update_context(plot, brtl_mouse_get_pos());
-  br_plot_update_shader_values(plot, shaders);
-  BeginTextureMode(target);
-    smol_mesh_grid_draw(plot, shaders);
-    br_datas_draw(groups, plot, shaders);
-    draw_grid_numbers(tr, plot);
-  EndTextureMode();
-  Image img = LoadImageFromTexture(target.texture);
-  ImageFlipVertical(&img);
-  ExportImage(img, path);
-  UnloadImage(img);
-  UnloadRenderTexture(target);
+#// TODO: Make this more better...
+//  int left_pad = 80;
+//  int bottom_pad = 80;
+//  plot->resolution = BR_SIZEI(1280, 720);
+//  RenderTexture2D target = LoadRenderTexture(plot->resolution.width, plot->resolution.height); // TODO: make this values user defined.
+//  plot->graph_screen_rect = BR_EXTENTI(left_pad, 0, plot->resolution.width - left_pad, plot->resolution.height - bottom_pad);
+//  br_plot_update_context(plot, brtl_mouse_get_pos());
+//  br_plot_update_shader_values(plot, shaders);
+//  BeginTextureMode(target);
+//    smol_mesh_grid_draw(plot, shaders);
+//    br_datas_draw(groups, plot, shaders);
+//    draw_grid_numbers(tr, plot);
+//  EndTextureMode();
+//  Image img = LoadImageFromTexture(target.texture);
+//  ImageFlipVertical(&img);
+//  ExportImage(img, path);
+//  UnloadImage(img);
+//  UnloadRenderTexture(target);
 }

@@ -4,15 +4,13 @@
 #include "src/br_str.h"
 #include "src/resampling2_internal.h"
 
-#define RAYMATH_STATIC_INLINE
 #include "external/glad.h"
 #include "imgui.h"
-#include "raylib.h"
 
 extern "C" void br_hot_init(br_plotter_t*) {
   fprintf(stderr, "First call\n");
 }
---
+
 void draw_node(const resampling2_nodes_3d_t* const nodes, br_data_t* d, size_t index, int depth) {
   resampling2_nodes_3d_t node = nodes[index];
   ImGui::Indent((float)depth * 1.5f);

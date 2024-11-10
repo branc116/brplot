@@ -11,9 +11,6 @@
 
 #include "assert.h"
 
-#define GL_SRC_ALPHA 0x0302
-#define GL_DST_ALPHA 0x0304
-#define GL_MAX 0x8008
 static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
   TracyCFrameMarkStart("br_datas_draw_2d");
   for (int j = 0; j < plot->groups_to_show.len; ++j) {
@@ -71,7 +68,7 @@ void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t grou
 bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos) {
   assert(plot->kind == br_plot_kind_2d);
   if (plot->follow) {
-    Rectangle sr = plot->dd.graph_rect;
+    br_extent_t sr = plot->dd.graph_rect;
     br_vec2_t middle = BR_VEC2(sr.x + sr.width/2, sr.y - sr.height/2);
     for (size_t i = 0; i < groups.len; ++i) {
       br_data_t* pg = &groups.arr[i];
@@ -96,9 +93,9 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_ve
       bool any = false;
       if (false == help_near_zero(mw)) {
         float mw_scale = (1 + mw/10);
-        if (brtl_key_is_down(KEY_X)) {
+        if (brtl_key_is_down(BR_KEY_X)) {
           plot->dd.zoom.x *= mw_scale;
-        } else if (brtl_key_is_down(KEY_Y)) {
+        } else if (brtl_key_is_down(BR_KEY_Y)) {
           plot->dd.zoom.y *= mw_scale;
         } else {
           plot->dd.zoom.x *= mw_scale;
@@ -106,10 +103,10 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_ve
         }
         any = true;
       }
-      if (brtl_key_is_down(KEY_X) && brtl_key_shift()) any = true, plot->dd.zoom.x *= 1.1f;
-      if (brtl_key_is_down(KEY_Y) && brtl_key_shift()) any = true, plot->dd.zoom.y *= 1.1f;
-      if (brtl_key_is_down(KEY_X) && brtl_key_ctrl())  any = true, plot->dd.zoom.x *= .9f;
-      if (brtl_key_is_down(KEY_Y) && brtl_key_ctrl())  any = true, plot->dd.zoom.y *= .9f;
+      if (brtl_key_is_down(BR_KEY_X) && brtl_key_shift()) any = true, plot->dd.zoom.x *= 1.1f;
+      if (brtl_key_is_down(BR_KEY_Y) && brtl_key_shift()) any = true, plot->dd.zoom.y *= 1.1f;
+      if (brtl_key_is_down(BR_KEY_X) && brtl_key_ctrl())  any = true, plot->dd.zoom.x *= .9f;
+      if (brtl_key_is_down(BR_KEY_Y) && brtl_key_ctrl())  any = true, plot->dd.zoom.y *= .9f;
       if (any) {
         br_plot_update_context(plot, mouse_pos);
         br_vec2_t now = plot->dd.mouse_pos;
@@ -222,10 +219,11 @@ void br_plot_update_context(br_plot_t* plot, br_vec2_t mouse_pos) {
   if (plot->kind == br_plot_kind_2d) {
     float aspect = ex.width/ex.height;
     plot->dd.mouse_pos = br_plot_2d_get_mouse_position(plot, mouse_pos);
-    plot->dd.graph_rect = (Rectangle){-aspect*plot->dd.zoom.x/2.f + plot->dd.offset.x,
+    plot->dd.graph_rect = BR_EXTENT(
+      -aspect*plot->dd.zoom.x/2.f + plot->dd.offset.x,
       plot->dd.zoom.y/2.f + plot->dd.offset.y,
       aspect*plot->dd.zoom.x,
-      plot->dd.zoom.y};
+      plot->dd.zoom.y);
   } else {
     // TODO 2D/3D
     //assert(false);

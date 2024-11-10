@@ -5,8 +5,6 @@
 #include "src/br_math.h"
 #include "src/br_data.h"
 
-#include "raylib.h"
-
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -26,7 +24,7 @@ typedef enum {
 typedef struct br_plot_2d_t {
   // graph_rect is in the graph coordinates.
   //            That is if you zoom in and out, graph_rect will change.
-  Rectangle graph_rect;
+  br_extent_t graph_rect;
   float recoil;
   br_vec2_t mouse_pos;
   br_vec2_t zoom;
@@ -75,7 +73,7 @@ typedef struct context_t {
 
 extern context_t context;
 
-br_vec2_t br_graph_to_screen(br_extent_t graph_rect, Rectangle screen_rect, br_vec2_t point);
+br_vec2_t br_graph_to_screen(br_extent_t graph_rect, br_extenti_t screen_rect, br_vec2_t point);
 
 typedef struct br_plotter_t br_plotter_t;
 

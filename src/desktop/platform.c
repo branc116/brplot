@@ -127,7 +127,7 @@ static void log_glfw_errors(int level, const char* error) {
 void br_plotter_begin_drawing(br_plotter_t* br) {
   br->time.old = br->time.now;
   br->time.now = glfwGetTime();
-  br->time.frame = br->time.now - br->time.old;
+  br->time.frame = (br->time.now - br->time.old);
 
   glfwPollEvents();
   br->mouse.delta = br_vec2_sub(br->mouse.pos, br->mouse.old_pos);
@@ -164,7 +164,12 @@ br_vec2_t brtl_mouse_get_delta(void) {
 }
 
 float brtl_get_time(void) {
-  return (float)stl_br->time.now;
+  return  (float)glfwGetTime();
+}
+
+int brtl_get_fps(void) {
+  printf("%f ", (float)stl_br->time.frame);
+  return (int)(1.f/(float)stl_br->time.frame);
 }
 
 bool brtl_mouse_is_down_l(void) {
@@ -211,6 +216,15 @@ bool brtl_key_alt(void) {
 
 bool brtl_key_shift(void) {
   return (stl_br->key.mod & GLFW_MOD_SHIFT) == GLFW_MOD_SHIFT;
+}
+
+void brtl_window_set_size(int width, int height) {
+  glfwSetWindowSize(stl_br->win.glfw, width, height);
+}
+
+void brtl_window_close(void) {
+  glfwDestroyWindow(stl_br->win.glfw);
+  glfwTerminate();
 }
 
 br_plotter_t* brtl_get_plotter(void) {

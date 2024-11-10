@@ -28,6 +28,20 @@
 #define GL_INFO_LOG_LENGTH 0x8B84
 #define GL_TEXTURE_SWIZZLE_RGBA 0x8E46
 
+#define BR_KEY_TWO 50
+#define BR_KEY_THREE 51
+#define BR_KEY_C 67
+#define BR_KEY_D 68
+#define BR_KEY_F 70
+#define BR_KEY_H 72
+#define BR_KEY_J 74
+#define BR_KEY_K 75
+#define BR_KEY_R 82
+#define BR_KEY_S 83
+#define BR_KEY_T 84
+#define BR_KEY_X 88
+#define BR_KEY_Y 89
+
 typedef int GLint;
 typedef unsigned int GLenum;
 typedef unsigned int GLuint;

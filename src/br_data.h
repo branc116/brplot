@@ -1,9 +1,8 @@
 #pragma once
-#include "br_pp.h"
-#include "br_str.h"
-#include "br_shaders.h"
-
-#include "raylib.h"
+#include "src/br_pp.h"
+#include "src/br_str.h"
+#include "src/br_shaders.h"
+#include "src/br_math.h"
 
 #include <stdio.h>
 
@@ -56,7 +55,7 @@ typedef struct br_data_t {
   size_t cap, len;
   br_data_kind_t kind;
   int group_id;
-  Color color;
+  br_color_t color;
   br_str_t name;
   bool is_new;
   union {
@@ -84,7 +83,7 @@ void br_data_construct(void);
 int br_datas_get_new_id(br_datas_t* datas);
 BR_API br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind);
 BR_API br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind);
-BR_API br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, Color color, size_t cap, br_str_t name);
+BR_API br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, br_color_t color, size_t cap, br_str_t name);
 BR_API br_data_t* br_data_get(br_datas_t* pg_array, int group);
 BR_API br_data_t* br_data_get1(br_datas_t pg, int group);
 BR_API br_data_t* br_data_get2(br_datas_t* pg_array, int group, br_data_kind_t kind);
@@ -106,7 +105,7 @@ void br_datas_deinit(br_datas_t* pg_array);
 BR_API void br_datas_empty(br_datas_t* pg_array);
 void br_datas_export(br_datas_t const* pg_array, FILE* file);
 void br_datas_export_csv(br_datas_t const* pg_array, FILE* file);
-Color br_data_get_default_color(int group_id);
+br_color_t br_data_get_default_color(int group_id);
 bool br_data_is_generated(br_dagens_t const* dagens, int groups_id);
 bool br_data_realloc(br_data_t* data, size_t new_cap);
 

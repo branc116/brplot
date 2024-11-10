@@ -1,15 +1,15 @@
-#include "br_plot.h"
-#include "br_plotter.h"
+#include "src/br_plot.h"
+#include "src/br_plotter.h"
 
-#include "math.h"
-#include "assert.h"
+#include <math.h>
+#include <assert.h>
 
 // TODO: rename to br_plot_
 BR_API void br_plotter_set_bottom_left(br_plot_t* plot, float left, float bottom) {
   // TODO 2D/3D
   assert(plot->kind == br_plot_kind_2d);
-  Vector2 bl = {left, bottom};
-  Vector2 tr = {plot->dd.graph_rect.x + plot->dd.graph_rect.width, plot->dd.graph_rect.y};
+  br_vec2_t bl = BR_VEC2(left, bottom);
+  br_vec2_t tr = BR_VEC2(plot->dd.graph_rect.x + plot->dd.graph_rect.width, plot->dd.graph_rect.y);
   float newWidth = (tr.x - bl.x);
   float newHeight = (tr.y - bl.y);
   plot->dd.zoom.x = BR_EXTENT_ASPECT(plot->graph_screen_rect) * newWidth;
@@ -21,8 +21,8 @@ BR_API void br_plotter_set_bottom_left(br_plot_t* plot, float left, float bottom
 BR_API void br_plotter_set_top_right(br_plot_t* plot, float right, float top) {
   // TODO 2D/3D
   assert(plot->kind == br_plot_kind_2d);
-  Vector2 tr = {right, top};
-  Vector2 bl = {plot->dd.graph_rect.x, plot->dd.graph_rect.y - plot->dd.graph_rect.height};
+  br_vec2_t tr = BR_VEC2(right, top);
+  br_vec2_t bl = BR_VEC2(plot->dd.graph_rect.x, plot->dd.graph_rect.y - plot->dd.graph_rect.height);
   float newWidth = (tr.x - bl.x);
   float newHeight = (tr.y - bl.y);
   plot->dd.zoom.x = BR_EXTENT_ASPECT(plot->graph_screen_rect) * newWidth;
@@ -67,7 +67,7 @@ BR_API void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups) {
   bb.ymin -= newHeight * 0.1f;
   newWidth = (bb.xmax - bb.xmin);
   newHeight = (bb.ymax - bb.ymin);
-  Vector2 bl = {bb.xmin, bb.ymin};
+  br_vec2_t bl = BR_VEC2(bb.xmin, bb.ymin);
   float maxSize = fmaxf(newWidth, newHeight);
   plot->dd.zoom.x = BR_EXTENT_ASPECT(plot->graph_screen_rect) * maxSize; 
   plot->dd.offset.x = bl.x + maxSize / 2.f;

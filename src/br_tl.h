@@ -14,6 +14,7 @@ br_vec2_t brtl_get_scroll(void);
 br_vec2_t brtl_mouse_get_pos(void);
 br_vec2_t brtl_mouse_get_delta(void);
 float brtl_get_time(void);
+int brtl_get_fps(void);
 bool brtl_mouse_is_down_l(void);
 bool brtl_mouse_is_down_r(void);
 bool brtl_mouse_is_pressed_l(void);
@@ -23,6 +24,10 @@ bool brtl_key_is_pressed(int key);
 bool brtl_key_ctrl(void);
 bool brtl_key_alt(void);
 bool brtl_key_shift(void);
+
+void brtl_window_set_size(int width, int height);
+void brtl_window_close(void);
+
 br_plotter_t* brtl_get_plotter(void);
 
 #ifdef __cplusplus

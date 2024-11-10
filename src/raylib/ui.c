@@ -4,8 +4,6 @@
 #include "src/br_text_renderer.h"
 #include "src/br_tl.h"
 
-#include "raylib.h"
-
 #include <stdarg.h>
 #include <assert.h>
 #include <stdbool.h>
@@ -48,16 +46,16 @@ int ui_draw_button(br_text_renderer_t* tr, bool* is_pressed, float x, float y, i
   return ret;
 }
 
-static RL_THREAD_LOCAL br_vec2_t stack_pos;
-static RL_THREAD_LOCAL bool stack_is_inited = false;
-static RL_THREAD_LOCAL float* stack_scroll_position;
-static RL_THREAD_LOCAL br_vec2_t stack_button_size;
-static RL_THREAD_LOCAL float stack_offset;
-static RL_THREAD_LOCAL int stack_font_size;
-static RL_THREAD_LOCAL int stack_count;
-static RL_THREAD_LOCAL br_vec2_t stack_maxsize;
-static RL_THREAD_LOCAL bool stack_size_set;
-static RL_THREAD_LOCAL br_vec2_t stack_size;
+static BR_THREAD_LOCAL br_vec2_t stack_pos;
+static BR_THREAD_LOCAL bool stack_is_inited = false;
+static BR_THREAD_LOCAL float* stack_scroll_position;
+static BR_THREAD_LOCAL br_vec2_t stack_button_size;
+static BR_THREAD_LOCAL float stack_offset;
+static BR_THREAD_LOCAL int stack_font_size;
+static BR_THREAD_LOCAL int stack_count;
+static BR_THREAD_LOCAL br_vec2_t stack_maxsize;
+static BR_THREAD_LOCAL bool stack_size_set;
+static BR_THREAD_LOCAL br_vec2_t stack_size;
 
 void ui_stack_buttons_init(br_vec2_t pos, float* scroll_position, int font_size) {
   assert(!stack_is_inited);
@@ -103,13 +101,13 @@ br_vec2_t ui_stack_buttons_end(void) {
   assert(stack_is_inited);
   stack_is_inited = false;
   if (stack_count == 0) return stack_pos;
-  BoundingBox bb = {.min = {stack_pos.x, stack_pos.y, 0.f}, .max = { stack_pos.x + stack_maxsize.x, stack_pos.y + stack_maxsize.y + stack_offset - stack_button_size.y, 0.f} };
+  br_bb_t bb = BR_BB(stack_pos.x, stack_pos.y, stack_pos.x + stack_maxsize.x, stack_pos.y + stack_maxsize.y + stack_offset - stack_button_size.y);
   if (stack_size_set) {
     bb.max.x = bb.min.x + stack_size.x;
     bb.max.y = bb.min.y + stack_size.y;
   }
   if (stack_scroll_position != NULL) {
-    if (CheckCollisionPointRec(GetMousePosition(), (Rectangle) {.x = bb.min.x, .y = bb.min.y, .width = bb.max.x - bb.min.x, .height = bb.max.y - bb.min.y })) {
+    if (br_col_vec2_extent(BR_BB_TOEX(bb), brtl_mouse_get_pos())) {
       float mouse_scroll = brtl_get_scroll().y;
       *stack_scroll_position += mouse_scroll;
     }

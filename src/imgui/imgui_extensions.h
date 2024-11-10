@@ -1,7 +1,6 @@
 #pragma once
 #include "src/br_plot.h"
 
-#include "raylib.h"
 #include "imgui.h"
 
 #include <algorithm>

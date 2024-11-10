@@ -1,7 +1,6 @@
 #pragma once
-#include "br_data.h"
-
-#include "raylib.h"
+#include "src/br_data.h"
+#include "src/br_math.h"
 
 #include <stdint.h>
 
@@ -52,7 +51,7 @@ typedef struct resampling2_t {
   uint32_t draw_count;
 } resampling2_t;
 
-bool resampling2_nodes_2d_is_inside(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, Rectangle rect);
+bool resampling2_nodes_2d_is_inside(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, br_extent_t rect);
 bool resampling2_nodes_2d_is_inside_3d(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mat);
 br_vec2_t resampling2_nodes_2d_get_ratios(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, float screen_width, float screen_height);
 br_vec2_t resampling2_nodes_2d_get_ratios_3d(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mvp);

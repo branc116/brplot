@@ -1,8 +1,7 @@
-#include "br_plot.h"
-#include "br_plotter.h"
-#include "br_tl.h"
-
-#include "raylib.h"
+#include "src/br_plot.h"
+#include "src/br_plotter.h"
+#include "src/br_tl.h"
+#include "src/br_gl.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -15,17 +14,17 @@ typedef struct {
 #define KEY_PRESS 2
 
 #define KEY_BINDINGS(x) \
-  x(KEY_R, KEY_PRESS, br_keybinding_gui_reset) \
-  x(KEY_C, KEY_PRESS, br_keybinding_clear) \
-  x(KEY_H, KEY_PRESS, br_keybinding_hide) \
-  x(KEY_T, KEY_PRESS, br_keybinding_test_points) \
-  x(KEY_F, KEY_PRESS, br_keybinding_follow) \
-  x(KEY_D, KEY_PRESS, br_keybinding_debug) \
-  x(KEY_J, KEY_DOWN,  br_keybinding_recoil_smol) \
-  x(KEY_K, KEY_DOWN,  br_keybinding_recoil_big) \
-  x(KEY_S, KEY_PRESS, br_keybinding_screenshot) \
-  x(KEY_THREE, KEY_PRESS, br_keybinding_switch_3d) \
-  x(KEY_TWO, KEY_PRESS, br_keybinding_switch_2d)
+  x(BR_KEY_R, KEY_PRESS, br_keybinding_gui_reset) \
+  x(BR_KEY_C, KEY_PRESS, br_keybinding_clear) \
+  x(BR_KEY_H, KEY_PRESS, br_keybinding_hide) \
+  x(BR_KEY_T, KEY_PRESS, br_keybinding_test_points) \
+  x(BR_KEY_F, KEY_PRESS, br_keybinding_follow) \
+  x(BR_KEY_D, KEY_PRESS, br_keybinding_debug) \
+  x(BR_KEY_J, KEY_DOWN,  br_keybinding_recoil_smol) \
+  x(BR_KEY_K, KEY_DOWN,  br_keybinding_recoil_big) \
+  x(BR_KEY_S, KEY_PRESS, br_keybinding_screenshot) \
+  x(BR_KEY_THREE, KEY_PRESS, br_keybinding_switch_3d) \
+  x(BR_KEY_TWO, KEY_PRESS, br_keybinding_switch_2d)
 
 #define X(key, kind, name) static inline void name(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t meta);
 KEY_BINDINGS(X)

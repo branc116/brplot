@@ -1,21 +1,13 @@
-#include "br_resampling2.h"
-#include "resampling2_internal.h"
-#include "br_pp.h"
-#include "br_data.h"
-#include "br_plot.h"
-#include "br_smol_mesh.h"
-#include "br_da.h"
+#include "src/br_resampling2.h"
+#include "src/resampling2_internal.h"
+#include "src/br_pp.h"
+#include "src/br_data.h"
+#include "src/br_plot.h"
+#include "src/br_smol_mesh.h"
+#include "src/br_da.h"
 #include "src/br_shaders.h"
 #include "src/br_tl.h"
 
-#ifdef __GNUC__
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-#endif
-#include "raylib.h"
-#ifdef __GNUC__
-#  pragma GCC diagnostic pop
-#endif
 #include "tracy/TracyC.h"
 
 #include <stdint.h>
@@ -41,7 +33,7 @@ float max6(float a, float b, float c, float d, float e, float f) {
   return fmaxf(max4(a, b, c, d), fmaxf(e, f));
 }
 
-bool resampling2_nodes_2d_is_inside(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, Rectangle rect) {
+bool resampling2_nodes_2d_is_inside(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, br_extent_t rect) {
   if (res->base.len == 0) return false;
   float minx = xs[res->base.min_index_x], miny = ys[res->base.min_index_y], maxx = xs[res->base.max_index_x], maxy = ys[res->base.max_index_y];
   return !((miny > rect.y) || (maxy < rect.y - rect.height) || (minx > rect.x + rect.width) || (maxx < rect.x));
@@ -60,8 +52,8 @@ bool resampling2_nodes_2d_is_inside_3d(resampling2_nodes_2d_t const* res, float 
   float Mz = max4(minx.z, miny.z, maxy.z, maxx.z);
   float quad_size = 2.1f;
   
-  Rectangle rect = { quad_size / -2, quad_size / -2, quad_size, quad_size };
-  return Mz > 0.f && CheckCollisionRecs(rect, (Rectangle){ mx, my, Mx - mx, My - my });
+  br_extent_t rect = BR_EXTENT(quad_size / -2, quad_size / -2, quad_size, quad_size);
+  return Mz > 0.f && br_col_extents(rect, BR_EXTENT(mx, my, Mx - mx, My - my));
 }
 
 br_vec2_t resampling2_nodes_2d_get_ratios(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, float screen_width, float screen_height) {
@@ -99,8 +91,8 @@ bool resampling2_nodes_3d_is_inside(resampling2_nodes_3d_t const* res, br_data_3
   float Mz = max6(minx.z, miny.z, maxy.z, maxx.z, minz.z, maxz.z);
   float quad_size = 2.1f;
   
-  Rectangle rect = { quad_size / -2, quad_size / -2, quad_size, quad_size };
-  return Mz > 0.f && CheckCollisionRecs(rect, (Rectangle){ mx, my, Mx - mx, My - my });
+  br_extent_t rect = BR_EXTENT(quad_size / -2, quad_size / -2, quad_size, quad_size);
+  return Mz > 0.f && br_col_extents(rect, BR_EXTENT(mx, my, Mx - mx, My - my));
 }
 
 br_vec2_t resampling2_nodes_3d_get_ratios(resampling2_nodes_3d_t const* res, br_data_3d_t const* data, br_vec3_t eye, br_vec3_t look_dir) {
@@ -290,7 +282,7 @@ static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nod
   //ZoneScopedN("resampling2_2d");
   float const* xs = pg->dd.xs;
   float const* ys = pg->dd.ys;
-  Rectangle rect = plot->dd.graph_rect;
+  br_extent_t rect = plot->dd.graph_rect;
   resampling2_nodes_2d_t node = nodes->arr[index];
   if (false == resampling2_nodes_2d_is_inside(&node, xs, ys, rect)) return;
   bool is_end = pg->len == node.base.index_start + node.base.len;
