@@ -328,10 +328,10 @@ static inline br_mat_t br_mat_look_at(br_vec3_t eye, br_vec3_t target, br_vec3_t
   br_vec3_t vy = br_vec3_cross(vz, vx);
 
   return (br_mat_t) { .rows = {
-    BR_VEC4(vx.x, vx.y, vx.z, br_vec3_dot(vx, eye)),
-    BR_VEC4(vy.x, vy.y, vy.z, br_vec3_dot(vy, eye)),
-    BR_VEC4(vx.x, vz.y, vz.z, br_vec3_dot(vz, eye)),
-    BR_VEC4(   0,    0,    0,                  1.f)
+    BR_VEC4(vx.x, vx.y, vx.z, -br_vec3_dot(vx, eye)),
+    BR_VEC4(vy.x, vy.y, vy.z, -br_vec3_dot(vy, eye)),
+    BR_VEC4(vz.x, vz.y, vz.z, -br_vec3_dot(vz, eye)),
+    BR_VEC4(   0,    0,    0,                   1.f)
   }};
 }
 
