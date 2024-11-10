@@ -24,6 +24,8 @@
 #define BR_ORANGE BR_COLOR(180, 180, 10, 255)
 #define BR_WHITE BR_COLOR(180, 180, 180, 255)
 
+#define BR_PI 3.14159265358979323846f
+
 typedef struct {
   union {
     struct {
@@ -128,11 +130,11 @@ typedef struct {
       float m3, m7, m11, m15;
     };
     float arr[16];
-    br_vec4_t rows[16];
+    br_vec4_t rows[4];
   };
 } br_mat_t;
 
-// vec2
+//------------------------vec2------------------------------
 
 static inline br_vec2_t br_vec2i_tof(br_vec2i_t v) {
   return (br_vec2_t) { .x = (float)v.x, .y = (float)v.y };
@@ -171,10 +173,8 @@ static inline float br_vec2_dist2(br_vec2_t a, br_vec2_t b) {
 
 static inline br_vec3_t br_vec2_transform_scale(br_vec2_t v, br_mat_t mat) {
   br_vec3_t result = { 0 };
-
   float x = v.x;
   float y = v.y;
-
   result.x = (mat.m0*x + mat.m4*y + mat.m12);
   result.y = (mat.m1*x + mat.m5*y + mat.m13);
   result.z = (mat.m2*x + mat.m6*y + mat.m14);
@@ -182,11 +182,10 @@ static inline br_vec3_t br_vec2_transform_scale(br_vec2_t v, br_mat_t mat) {
     result.x /= fabsf(result.z);
     result.y /= fabsf(result.z);
   }
-
   return result;
 }
 
-// vec3
+//------------------------vec3------------------------------
 
 static inline br_vec3_t br_vec3_add(br_vec3_t a, br_vec3_t b) {
   return BR_VEC3(a.x + b.x, a.y + b.y, a.z + b.z);
@@ -280,7 +279,7 @@ static inline br_vec3_t br_vec3_rot(br_vec3_t v, br_vec3_t axis, float angle) {
   br_vec3_t wwv = br_vec3_cross(w, wv);
   wv = br_vec3_scale(wv, cosf(angle) * 2.f);
   v = br_vec3_add(v, wv);
-  v = br_vec3_add(v, wwv);
+  v = br_vec3_add(v, br_vec3_scale(wwv, 2.f));
   return v;
 }
 
@@ -297,8 +296,7 @@ static inline br_vec3_t br_vec3_perpendicular(br_vec3_t v) {
   return br_vec3_cross(v, ord);
 }
 
-// br_mat_t
-//
+// ------------------br_mat_t--------------------
 static inline br_mat_t br_mat_perspective(float fovY, float aspect, float nearPlane, float farPlane) {
   br_mat_t result = { 0 };
 

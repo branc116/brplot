@@ -1,8 +1,9 @@
 #pragma once
 #include "br_pp.h"
 #include "br_str.h"
-#include "raylib.h"
 #include "br_shaders.h"
+
+#include "raylib.h"
 
 #include <stdio.h>
 

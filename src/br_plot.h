@@ -1,10 +1,13 @@
 #pragma once
+#include "src/br_shaders.h"
+#include "src/br_data.h"
+#include "src/br_text_renderer.h"
+#include "src/br_math.h"
+#include "src/br_data.h"
+
 #include "raylib.h"
+
 #include <stddef.h>
-#include "br_shaders.h"
-#include "br_data.h"
-#include "br_text_renderer.h"
-#include "br_math.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,12 +71,6 @@ typedef struct context_t {
   float font_scale;
   bool debug_bounds;
   size_t alloc_size, alloc_count, alloc_total_size, alloc_total_count, alloc_max_size, alloc_max_count, free_of_unknown_memory;
-  struct {
-    float min_dist_sqr;
-    float min_dist_loc;
-    br_data_t* closest_to;
-  } hover;
-  br_datas_t* datas;
 } context_t;
 
 extern context_t context;

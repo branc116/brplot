@@ -142,6 +142,7 @@ ifeq ($(CONFIG), DEBUG)
 	SHADERS_HEADER=
 	ifeq ($(PLATFORM), LINUX)
 		COMMONFLAGS+= -DUNIT_TEST
+		SOURCE+= tests/src/math.c
 		ifeq ($(COMPILER), GCC)
 		  COMMONFLAGS+= -fsanitize=bounds-strict
 		endif

@@ -167,10 +167,8 @@ float line_3d_size = 0.02f;
 
 void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, br_vec3_t p1, br_vec3_t p2, Color color) {
   br_vec3_t const cv = BR_VEC3(color.r/255.f, color.g/255.f, color.b/255.f);
-  //br_vec3_t mid   = br_vec3_scale(br_vec3_add(p1, p2), 0.5f);
   br_vec3_t diff  = br_vec3_normalize(br_vec3_sub(p2, p1));
-  br_vec3_t norm = BR_VEC3(diff.z, -diff.x, diff.y); 
-  norm = br_vec3_perpendicular(diff);
+  br_vec3_t norm = br_vec3_perpendicular(diff);
   float dist1 = 0.1f * br_vec3_dist(shader->uvs.eye_uv, p1);
   float dist2 = 0.1f * br_vec3_dist(shader->uvs.eye_uv, p2);
   int n = (int)(6.f/fminf(dist1, dist2)) + 6;

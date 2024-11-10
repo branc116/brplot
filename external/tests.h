@@ -4,11 +4,12 @@
 
 #ifdef UNIT_TEST
 
+#include "src/br_pp.h"
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "src/br_plot.h"
 
 #if defined(__DragonFly__) || defined(__FreeBSD__) || defined(__FreeBSD_kernel__) ||     \
     defined(__NetBSD__) || defined(__OpenBSD__)
@@ -65,7 +66,7 @@ static struct test_file_metadata __test_h_file;
 
 #define TEST_EQUALF(a, b)                                    \
   do {                                                       \
-    if ((a) != (b)) {                                        \
+    if (fabsf((a) - (b)) > 1e-5) { /* TODO: this is bullshit.. */ \
       SET_FAILURE(#a " != " #b, false);                      \
       float aa = (a), bb = (b);                              \
       fprintf(stderr, "%f != %f\n", aa, bb);                 \

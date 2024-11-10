@@ -4,7 +4,7 @@
 #if defined(IMGUI) || defined(RAYLIB)
 #  define BR_GL(ret_type, name) static ret_type (*name)
 #elif defined(HEADLESS)
-#  error "HEADLESS Gl not implemented yet."
+#  define BR_GL(ret_type, name) ret_type name
 #else
 #  error "Gui is not selected add define flag e.g. -DIMGUI for imgui gui, or -DRAYLIB for raylib gui, or -DHEADLESS for headless gui."
 #endif
@@ -71,7 +71,7 @@ BR_GL(void, glTexParameteri)(GLenum target, GLenum pname, GLint param);
 #if defined(IMGUI) || defined(RAYLIB)
 #  include "src/desktop/gl.c"
 #elif defined(HEADLESS)
-#  error "HEADLESS Gl not implemented yet."
+#  include "src/headless/gl.c"
 #else
 #  error "Gui is not selected add define flag e.g. -DIMGUI for imgui gui, or -DRAYLIB for raylib gui, or -DHEADLESS for headless gui."
 #endif
