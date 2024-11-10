@@ -1,10 +1,12 @@
-#include "br_da.h"
-#include "br_plotter.h"
-#include "br_gui_internal.h"
-#include "br_resampling2.h"
-#include "br_threads.h"
-#include "br_q.h"
-#include "br_smol_mesh.h"
+#include "src/br_da.h"
+#include "src/br_math.h"
+#include "src/br_plotter.h"
+#include "src/br_gui_internal.h"
+#include "src/br_resampling2.h"
+#include "src/br_threads.h"
+#include "src/br_q.h"
+#include "src/br_smol_mesh.h"
+#include "src/br_tl.h"
 #include "include/brplot.h"
 
 #include <unistd.h>
@@ -25,66 +27,44 @@ static void even_split(br_plots_t plots) {
   int col_c =  (int)(0.5f + sqrtf((float)visible_c));
   int row_c = visible_c / col_c;
   if (col_c * row_c < visible_c) row_c++;
-  float w = (float)GetScreenWidth();
-  float h = (float)GetScreenHeight();
-  float padding_left = 50.f,
-        padding_right = 10.f,
-        padding_top = 10.f,
-        padding_bot = 50.f;
+  br_sizei_t win_size = brtl_window_size();
+  
+  int padding_left = 50,
+        padding_right = 10,
+        padding_top = 10,
+        padding_bot = 50;
   for (int i = 0; i < plots.len; ++i) {
-    plots.arr[i].graph_screen_rect = (Rectangle) {
-      padding_left + (float)(i % col_c) * w/(float)col_c,
-      padding_top + (float)(i / row_c) * h/(float)row_c,
-      w / (float)col_c - padding_left - padding_right,
-      h / (float)row_c - padding_top - padding_bot
-    };
+    plots.arr[i].graph_screen_rect =  BR_EXTENTI(
+      padding_left + (i % col_c) * win_size.width/col_c,
+      padding_top + (i / row_c) * win_size.height/row_c,
+      win_size.width / col_c - padding_left - padding_right,
+      win_size.height / row_c - padding_top - padding_bot
+    );
   }
 }
 
 static void* main_loop(void* plotterv) {
   br_plotter_t* plotter = plotterv;
-  SetConfigFlags(FLAG_MSAA_4X_HINT);
-  InitWindow(plotter->width, plotter->height, "brplot");
-  SetWindowState(FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
-  plotter->shaders = br_shaders_malloc();
-  help_load_default_font();
-  while (WindowShouldClose() == false) {
-    BeginDrawing();
-    ClearBackground(BLACK);
-    int new_w = GetScreenWidth(), new_h = GetScreenHeight();
-    if (plotter->width == 0 || plotter->height == 0) {
-      plotter->width = new_w;
-      plotter->height = new_h;
-    } else if (plotter->width != new_w || plotter->height != new_h) {
-      float wd = (float)new_w / (float)plotter->width;
-      float hd = (float)new_h / (float)plotter->height;
-      for (int i = 0; i < plotter->plots.len; ++i) {
-        Rectangle old = plotter->plots.arr[i].graph_screen_rect;
-        plotter->plots.arr[i].resolution = (Vector2) { (float)new_w, (float)new_h };
-        plotter->plots.arr[i].graph_screen_rect = (Rectangle) {
-          old.x * wd,
-          old.y * hd,
-          old.width * wd,
-          old.height * hd
-        };
-      }
-    }
+  br_plotter_init_specifics_platform(plotter);
+  while (plotter->should_close == false) {
+    br_plotter_begin_drawing(plotter);
     even_split(plotter->plots);
-    br_plotter_update_variables(plotter);
+    //br_plotter_update_variables(plotter);
+    help_draw_fps(plotter->text, 0, 0);
     for (int i = 0; i < plotter->plots.len; ++i) {
       br_plot_t* plot = &plotter->plots.arr[i];
       if (plot->is_visible) {
-        br_plot_update_variables(plotter, plot, plotter->groups, GetMousePosition());
+        br_plot_update_context(plot, brtl_mouse_get_pos());
+        br_plot_update_variables(plotter, plot, plotter->groups, brtl_mouse_get_pos());
         br_plot_update_shader_values(plot, &plotter->shaders);
         draw_grid_numbers(plotter->text, plot);
         smol_mesh_grid_draw(plot, &plotter->shaders);
         br_plot_draw(plot, plotter->groups, &plotter->shaders);
       }
     }
-    EndDrawing();
+    br_plotter_end_drawing(plotter);
   }
-  CloseWindow();
-  plotter->should_close = true;
+  brtl_window_close();
   return NULL;
 }
 

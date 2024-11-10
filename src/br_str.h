@@ -72,9 +72,9 @@ void       br_scrach_free(void);
 #else
 char*      _br_scrach_get(size_t len);
 void       _br_scrach_free(void);
-extern const char* br_scrach_alloc_at;
-extern int br_scrach_alloc_at_line;
-extern bool is_taken;
+extern BR_THREAD_LOCAL const char* br_scrach_alloc_at;
+extern BR_THREAD_LOCAL int br_scrach_alloc_at_line;
+extern BR_THREAD_LOCAL bool is_taken;
 bool br_scrach_check_is_taken(void);
 #define br_scrach_get(len) ( \
     br_scrach_check_is_taken(), \

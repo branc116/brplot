@@ -25,6 +25,7 @@ bool brtl_key_ctrl(void);
 bool brtl_key_alt(void);
 bool brtl_key_shift(void);
 
+br_sizei_t brtl_window_size(void);
 void brtl_window_set_size(int width, int height);
 void brtl_window_close(void);
 

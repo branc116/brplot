@@ -14,6 +14,8 @@ uint32_t br_fs_crc(const void* data, size_t len, uint32_t seed);
 bool br_fs_up_dir(br_str_t* cwd);
 bool br_fs_cd(br_str_t* cwd, br_strv_t path);
 
+char* br_fs_read(const char* path);
+
 #ifdef __cplusplus
 }
 #endif

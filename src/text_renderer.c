@@ -4,6 +4,7 @@
 #include "br_da.h"
 #include "br_gl.h"
 
+#define STB_RECT_PACK_IMPLEMENTATION
 #include "external/stb_rect_pack.h"
 
 #ifdef __GNUC__

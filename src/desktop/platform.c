@@ -4,6 +4,7 @@
 #include "src/br_help.h"
 #include "src/br_gl.h"
 #include "src/br_tl.h"
+#include "src/br_q.h"
 
 #include <string.h>
 
@@ -11,6 +12,12 @@
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
 #  include <time.h>
 #endif
+
+#define GLAD_MALLOC BR_MALLOC
+#define GLAD_FREE BR_FREE
+
+#define GLAD_GL_IMPLEMENTATION
+#include "external/glad.h"
 
 #include "GLFW/glfw3.h"
 
@@ -105,7 +112,6 @@ static void br_glfw_on_mouse_button(struct GLFWwindow* window, int button, int a
 
 static void br_glfw_on_key(struct GLFWwindow* window, int key, int scancode, int action, int mods) {
   (void)window;
-  LOGI("ctrl: %d | %d", mods & GLFW_MOD_CONTROL, mods);
   stl_br->key.mod = mods;
   if (key == GLFW_KEY_LEFT_ALT) return;
   if (scancode < 0 || scancode >= 64) {
@@ -135,10 +141,15 @@ void br_plotter_begin_drawing(br_plotter_t* br) {
 
   brgl_clear_color(0,0,0,0);
   brgl_clear();
+  br->shaders.font->uvs.resolution_uv = BR_VEC2((float)br->win.size.width, (float)br->win.size.height);
+  br->shaders.font->uvs.sub_pix_aa_map_uv =  BR_VEC3(-1, 0, 1);
+  br->shaders.font->uvs.sub_pix_aa_scale_uv = 0.2f;
 }
 
 void br_plotter_end_drawing(br_plotter_t* br) {
+  br_text_renderer_dump(br->text);
   glfwSwapBuffers(br->win.glfw);
+  handle_all_commands(br, br->commands);
 
   br->mouse.scroll = BR_VEC2(0, 0);
   br->mouse.pressed.right = br->mouse.pressed.left = false;
@@ -168,7 +179,6 @@ float brtl_get_time(void) {
 }
 
 int brtl_get_fps(void) {
-  printf("%f ", (float)stl_br->time.frame);
   return (int)(1.f/(float)stl_br->time.frame);
 }
 
@@ -216,6 +226,12 @@ bool brtl_key_alt(void) {
 
 bool brtl_key_shift(void) {
   return (stl_br->key.mod & GLFW_MOD_SHIFT) == GLFW_MOD_SHIFT;
+}
+
+br_sizei_t brtl_window_size(void) {
+  br_sizei_t s;
+  glfwGetWindowSize(stl_br->win.glfw, &s.width, &s.height);
+  return s;
 }
 
 void brtl_window_set_size(int width, int height) {

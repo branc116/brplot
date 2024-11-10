@@ -34,9 +34,7 @@ endif
 # Only when TYPE=LIB
 STATIC   ?= NO
 
-RL                 = external/raylib-5.0/src
 IM                 = external/imgui-docking
-RAYLIB_SOURCES     = $(RL)/rmodels.c $(RL)/rshapes.c $(RL)/rtext.c $(RL)/rtextures.c $(RL)/utils.c $(RL)/rcore.c
 SOURCE             = src/main.c           src/help.c       src/data.c        src/smol_mesh.c   src/q.c       src/read_input.c \
 										 src/keybindings.c    src/str.c        src/resampling2.c src/graph_utils.c src/shaders.c src/plotter.c    \
 										 src/plot.c           src/permastate.c src/filesystem.c  src/gui.c         src/text_renderer.c \
@@ -44,7 +42,7 @@ SOURCE             = src/main.c           src/help.c       src/data.c        src
 ifeq ($(USE_CXX), YES)
 	SOURCE+= src/filesystem++.cpp src/gui++.cpp src/memory.cpp
 endif
-COMMONFLAGS        = -I. -Iexternal/glfw/include/ -Iexternal/Tracy -I$(RL) -MMD -MP -fvisibility=hidden
+COMMONFLAGS        = -I. -Iexternal/glfw/include/ -Iexternal/Tracy -MMD -MP -fvisibility=hidden
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra -Wshadow
 LD_FLAGS           =
 
@@ -68,12 +66,10 @@ endif
 
 ifeq ($(GUI), IMGUI)
 	SOURCE+= $(IM)/imgui.cpp $(IM)/imgui_draw.cpp $(IM)/imgui_tables.cpp \
-				  $(IM)/imgui_widgets.cpp $(IM)/backends/imgui_impl_glfw.cpp $(IM)/backends/imgui_impl_opengl3.cpp \
-					$(RAYLIB_SOURCES)
+				  $(IM)/imgui_widgets.cpp $(IM)/backends/imgui_impl_glfw.cpp $(IM)/backends/imgui_impl_opengl3.cpp
 	COMMONFLAGS+= -I$(IM) -DIMGUI
 
 else ifeq ($(GUI), RAYLIB)
-	SOURCE+= $(RAYLIB_SOURCES)
 	COMMONFLAGS+= -DRAYLIB
 
 else ifeq ($(GUI), HEADLESS)
@@ -213,7 +209,11 @@ ifeq ($(STATIC), YES)
 else
 $(OUTPUT): $(OBJS)
 	$(LD) $(COMMONFLAGS) $(LD_FLAGS) -o $@ $(OBJS) $(LIBS)
+ifeq ($(TYPE), EXE)
 	ln -fs $@ brplot
+else
+	ln -fs $@ libbrplot.so
+endif
 endif
 
 $(PREFIX_BUILD)/src/%.o: src/%.c

@@ -95,3 +95,44 @@ uint32_t br_fs_crc(const void* data_p, size_t data_size, uint32_t seed) // Stole
     return ~crc;
 }
 #endif
+
+char* br_fs_read(const char* path) {
+  char* content = NULL;
+  FILE* file = fopen(path, "rb");
+
+  if (file == NULL) {
+    LOGE("Failed to open file %s: %s", path, strerror(errno));
+    goto error;
+  }
+  if (-1 == fseek(file, 0, SEEK_END)) {
+    LOGE("Failed to seek file %s: %s", path, strerror(errno));
+    goto error;
+  }
+  long size = ftell(file);
+  if (-1 == size) {
+    LOGE("Failed to get the file size %s: %s", path, strerror(errno));
+    goto error;
+  }
+  if (-1 == fseek(file, 0, SEEK_SET)) {
+    LOGE("Failed to get seek set file %s: %s", path, strerror(errno));
+    goto error;
+  }
+  content = BR_MALLOC((size_t)size + 1);
+  if (NULL == content) {
+    LOGE("Failed to malloc file %s: %s", path, strerror(errno));
+    goto error;
+  }
+  if (size != (long)fread(content, 1, (size_t)size, file)) {
+    LOGE("Failed to read file %s: %s", path, strerror(errno));
+    goto error;
+  }
+  content[size] = '\0';
+  goto done;
+
+error:
+  BR_FREE(content);
+  content = NULL;
+done:
+  fclose(file);
+  return content;
+}

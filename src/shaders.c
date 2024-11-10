@@ -91,8 +91,8 @@ BR_ALL_SHADERS(X, X_VEC, X_BUF)
 #  define FREE_FILE_CONTENT(file)
 #  define FILE_CONTNET_TYPE const char*
 #else
-#  include "raylib.h"
-#  define READ_FILE(file_name) LoadFileText(file_name)
+#  include "br_filesystem.h"
+#  define READ_FILE(file_name) br_fs_read(file_name)
 #  define FREE_FILE_CONTENT(file) BR_FREE(file)
 #  define FILE_CONTNET_TYPE char*
 #endif

@@ -240,9 +240,9 @@ static BR_THREAD_LOCAL bool   scrach_is_taken = false;
 #else
 #define SCRACH_GET_NAME _br_scrach_get
 #define SCRACH_FREE_NAME _br_scrach_free
-const char* br_scrach_alloc_at;
-int br_scrach_alloc_at_line;
-bool is_taken;
+BR_THREAD_LOCAL const char* br_scrach_alloc_at;
+BR_THREAD_LOCAL int br_scrach_alloc_at_line;
+BR_THREAD_LOCAL bool is_taken;
 bool br_scrach_check_is_taken(void) {
   if (is_taken) {
     LOGE("Trying to get a scrach but already allocated at: %s:%d", br_scrach_alloc_at, br_scrach_alloc_at_line);

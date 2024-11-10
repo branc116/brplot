@@ -1,5 +1,7 @@
 #define BR_VERSION {0, 0, 1}
 
+#include <stdbool.h>
+
 #if defined(__GNUC__)
 #  define BR_EXPORT __attribute__((visibility ("default")))
 #else
