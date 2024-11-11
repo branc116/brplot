@@ -12,9 +12,9 @@
 
 
 #ifdef RELEASE
-#  if defined(PLATFORM_DESKTOP)
+#  if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(_WIN32) || defined(__CYGWIN__)
 #    include ".generated/shaders.h"
-#  elif defined(PLATFORM_WEB)
+#  elif defined(__EMSCRIPTEN__)
 #    include ".generated/shaders_web.h"
 #  else
 #    error "Shaders for this platform arn't defined"

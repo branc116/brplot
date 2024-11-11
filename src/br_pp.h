@@ -1,7 +1,7 @@
 #pragma once
 #include <stddef.h>
 
-#ifdef PLATFORM_WEB
+#if defined(__EMSCRIPTEN__)
 #  include <emscripten.h>
 #  define BR_API EMSCRIPTEN_KEEPALIVE
 #else

@@ -235,11 +235,12 @@ static BR_THREAD_LOCAL size_t scrach_cur_cap = 0;
 static BR_THREAD_LOCAL bool   scrach_is_taken = false;
 
 #if defined(RELEASE)
-#define SCRACH_GET_NAME br_scrach_get
-#define SCRACH_FREE_NAME br_scrach_free
+#  define SCRACH_GET_NAME br_scrach_get
+#  define SCRACH_FREE_NAME br_scrach_free
 #else
-#define SCRACH_GET_NAME _br_scrach_get
-#define SCRACH_FREE_NAME _br_scrach_free
+#  define SCRACH_GET_NAME _br_scrach_get
+#  define SCRACH_FREE_NAME _br_scrach_free
+
 BR_THREAD_LOCAL const char* br_scrach_alloc_at;
 BR_THREAD_LOCAL int br_scrach_alloc_at_line;
 BR_THREAD_LOCAL bool is_taken;

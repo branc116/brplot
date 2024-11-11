@@ -8,8 +8,7 @@
 CONFIG    ?= RELEASE
 # LINUX | WEB | WINDOWS
 PLATFORM  ?= LINUX
-# IMGUI | RAYLIB | HEADLESS
-GUI       ?= IMGUI
+HEADLESS  ?= NO
 # EXE | LIB
 TYPE      ?= EXE
 # GCC | CLANG ( Only for linux build )
@@ -25,12 +24,6 @@ TRACY     ?= NO
 LTO       ?= YES
 # GLFW | X11 | WAYLAND
 BACKEND   ?= GLFW
-# YES | NO
-ifeq ($(GUI)_$(PLATFORM), RAYLIB_LINUX)
-	USE_CXX   ?= NO
-else
-	USE_CXX   ?= YES
-endif
 # Only when TYPE=LIB
 STATIC   ?= NO
 
@@ -64,19 +57,8 @@ else ifeq ($(PLATFORM)_$(COMPILER), LINUX_COSMO)
 	CC= cosmocc
 endif
 
-ifeq ($(GUI), IMGUI)
-	SOURCE+= $(IM)/imgui.cpp $(IM)/imgui_draw.cpp $(IM)/imgui_tables.cpp \
-				  $(IM)/imgui_widgets.cpp $(IM)/backends/imgui_impl_glfw.cpp $(IM)/backends/imgui_impl_opengl3.cpp
-	COMMONFLAGS+= -I$(IM) -DIMGUI
-
-else ifeq ($(GUI), RAYLIB)
-	COMMONFLAGS+= -DRAYLIB
-
-else ifeq ($(GUI), HEADLESS)
+ifeq ($(HEADLESS), YES)
 	COMMONFLAGS+= -DNUMBER_OF_STEPS=100 -DHEADLESS
-
-else
-	echo "Valid GUI parameters are IMGUI, RAYLIB, HEADLESS" && exit -1
 endif
 
 ifeq ($(PLATFORM), LINUX)
@@ -84,14 +66,12 @@ ifeq ($(PLATFORM), LINUX)
 	  SOURCE+= $(RL)/rglfw.c
 		COMMONFLAGS+= -Iexternal/glfw/include
 	else ifeq ($(BACKEND), WAYLAND)
-	  SOURCE+= $(RL)/rglfw.c
 		COMMONFLAGS+= -Iexternal/glfw/include -D_GLFW_WAYLAND
 	else ifeq ($(BACKEND), GLFW)
 		ifeq ($(STATIC), NO)
 			LIBS= `pkg-config --static --libs glfw3` -pthread
 		endif
 	endif
-	COMMONFLAGS+= -DLINUX=1 -DPLATFORM_DESKTOP=1
 	SHADERS_HEADER= .generated/shaders.h
 	ifeq ($(TYPE), LIB)
 		COMMONFLAGS+= -fPIC -DLIB
@@ -104,7 +84,7 @@ else ifeq ($(PLATFORM), WINDOWS)
 	LIBS= -lopengl32 -lgdi32 -lwinmm
 	CXX= x86_64-w64-mingw32-g++
 	CC= x86_64-w64-mingw32-gcc
-	COMMONFLAGS+= -Iexternal/glfw/include -DWINDOWS=1 -DPLATFORM_DESKTOP=1 -D_WIN32=1 -DWIN32_LEAN_AND_MEAN
+	COMMONFLAGS+= -Iexternal/glfw/include -D_WIN32=1 -DWIN32_LEAN_AND_MEAN
 	SOURCE+= $(RL)/rglfw.c
 	SHADERS_HEADER= .generated/shaders.h
 	COMPILER= MINGW
@@ -113,7 +93,7 @@ else ifeq ($(PLATFORM), WEB)
 	BACKEND= GLFW
 	CXX= $(EMSCRIPTEN)em++
 	CC= $(EMSCRIPTEN)emcc
-	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES3=1 -DPLATFORM_WEB=1
+	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES3=1
 	WARNING_FLAGS+= -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-newline-eof
 	LD_FLAGS= -sWASM_BIGINT -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH -sUSE_GLFW=3 -sUSE_WEBGL2=1 -sGL_ENABLE_GET_PROC_ADDRESS --shell-file=src/web/minshell.html
 	LD_FLAGS+= -sCHECK_NULL_WRITES=0 -sDISABLE_EXCEPTION_THROWING=1 -sFILESYSTEM=0 -sDYNAMIC_EXECUTION=0
@@ -122,9 +102,9 @@ else ifeq ($(PLATFORM), WEB)
 	ifeq ($(TYPE), LIB)
 		COMMONFLAGS+= -DLIB
 		LD_FLAGS+= -sMODULARIZE=1 -sEXPORT_ES6=1
-		OUTPUT= $(shell echo 'www/brplot_$(GUI)_$(CONFIG)_lib.js' | tr '[A-Z]' '[a-z]')
+		OUTPUT= $(shell echo 'www/brplot_$(HEADLESS)_$(CONFIG)_lib.js' | tr '[A-Z]' '[a-z]')
 	else ifeq ($(TYPE), EXE)
-		OUTPUT= $(shell echo 'www/brplot_$(GUI)_$(CONFIG).html' | tr '[A-Z]' '[a-z]')
+		OUTPUT= $(shell echo 'www/brplot_$(HEADLESS)_$(CONFIG).html' | tr '[A-Z]' '[a-z]')
 		LD_FLAGS+= -sASYNCIFY
 	else
 		echo "Valid TYPE parameter values are LIB, EXE" && exit -1
@@ -154,9 +134,7 @@ ifeq ($(CONFIG), DEBUG)
 		endif
 	endif
 else ifeq ($(CONFIG), RELEASE)
-	COMMONFLAGS+= -fdata-sections -ffunction-sections -Os -DRELEASE=1 \
-		-DIMGUI_DISABLE_DEMO_WINDOWS \
-		-DIMGUI_DISABLE_DEBUG_TOOLS
+	COMMONFLAGS+= -fdata-sections -ffunction-sections -Os -DRELEASE=1
 	LD_FLAGS+= -fdata-sections -ffunction-sections -Wl,--gc-sections
 	ifeq ($(PATFORM)_$(LTO), LINUX_YES)
 		LD_FLAGS+= -flto=auto
@@ -174,18 +152,18 @@ CXXFLAGS= $(COMMONFLAGS) -fno-exceptions -std=gnu++17
 CCFLAGS= $(COMMONFLAGS) -std=gnu11
 ifeq ($(TYPE), EXE)
 	ifeq ($(BACKEND), GLFW)
-		PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
-		OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
+		PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(HEADLESS)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
+		OUTPUT?= $(shell echo 'bin/brplot_$(HEADLESS)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
 	else
-		OUTPUT?= $(shell echo 'bin/brplot_$(GUI)_$(BACKEND)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
+		OUTPUT?= $(shell echo 'bin/brplot_$(HEADLESS)_$(BACKEND)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
 	endif
 else
 	ifeq ($(STATIC), YES)
-		PREFIX_BUILD= $(shell echo 'build/slib/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
-		OUTPUT= bin/$(shell echo 'bin/libbrplot_$(GUI)_$(PLATFORM)_$(CONFIG)_$(COMPILER).a' | tr '[A-Z]' '[a-z]')
+		PREFIX_BUILD= $(shell echo 'build/slib/$(PLATFORM)/$(CONFIG)/$(HEADLESS)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
+		OUTPUT= bin/$(shell echo 'bin/libbrplot_$(HEADLESS)_$(PLATFORM)_$(CONFIG)_$(COMPILER).a' | tr '[A-Z]' '[a-z]')
 	else
-		PREFIX_BUILD= $(shell echo 'build/lib/$(PLATFORM)/$(CONFIG)/$(GUI)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
-		OUTPUT= $(shell echo 'bin/libbrplot_$(GUI)_$(PLATFORM)_$(CONFIG)_$(COMPILER).so' | tr '[A-Z]' '[a-z]')
+		PREFIX_BUILD= $(shell echo 'build/lib/$(PLATFORM)/$(CONFIG)/$(HEADLESS)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
+		OUTPUT= $(shell echo 'bin/libbrplot_$(HEADLESS)_$(PLATFORM)_$(CONFIG)_$(COMPILER).so' | tr '[A-Z]' '[a-z]')
 	endif
 endif
 
@@ -248,21 +226,23 @@ clean:
 
 .PHONY: fuzz
 fuzz:
-	make CONFIG=DEBUG GUI=HEADLESS && \
+	make CONFIG=DEBUG HEADLESS=YES && \
 	cat /dev/random | ./bin/brplot_headless_linux_debug_gcc > /dev/null && echo "Fuzz test OK"
 
 .PHONY: test
 test:
-	make GUI=HEADLESS CONFIG=DEBUG && \
+	make HEADLESS=YES CONFIG=DEBUG && \
 	./bin/brplot_headless_linux_debug_gcc --unittest
 
 .PHONY: test-gdb
 test-gdb:
-	make GUI=HEADLESS CONFIG=DEBUG && \
+	make HEADLESS=YES CONFIG=DEBUG && \
 	gdb -ex "r --unittest" ./bin/brplot_headless_linux_debug_gcc --tui
 
 .PHONY: npm-imgui
 npm-imgui:
+	echo "TODO"
+	exit 1
 	make GUI=IMGUI CONFIG=RELEASE TYPE=LIB PLATFORM=WEB && \
 	cp ./www/brplot_imgui_release_lib.js packages/npm/brplot.js && \
 	cp ./www/brplot_imgui_release_lib.wasm packages/npm && \

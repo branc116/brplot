@@ -1,12 +1,10 @@
 #include "src/br_gl.h"
 #include "src/br_str.h"
 
-#if defined(IMGUI) || defined(RAYLIB)
-#  define BR_GL(ret_type, name) static ret_type (*name)
-#elif defined(HEADLESS)
+#if defined(HEADLESS)
 #  define BR_GL(ret_type, name) ret_type name
 #else
-#  error "Gui is not selected add define flag e.g. -DIMGUI for imgui gui, or -DRAYLIB for raylib gui, or -DHEADLESS for headless gui."
+#  define BR_GL(ret_type, name) static ret_type (*name)
 #endif
 
 #define GL_COLOR_BUFFER_BIT 0x00004000
@@ -68,12 +66,10 @@ BR_GL(void, glClear)(GLbitfield en);
 BR_GL(void, glTexParameteri)(GLenum target, GLenum pname, GLint param);
 
 
-#if defined(IMGUI) || defined(RAYLIB)
-#  include "src/desktop/gl.c"
-#elif defined(HEADLESS)
+#if defined(HEADLESS)
 #  include "src/headless/gl.c"
 #else
-#  error "Gui is not selected add define flag e.g. -DIMGUI for imgui gui, or -DRAYLIB for raylib gui, or -DHEADLESS for headless gui."
+#  include "src/desktop/gl.c"
 #endif
 
 unsigned int brgl_load_shader(const char* vs, const char* fs) {
