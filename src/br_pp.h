@@ -100,12 +100,12 @@ void  br_imgui_free(void* p, void* user_data);
 
 #if defined(__cplusplus) &&  __cplusplus >= 201103L
 #  define BR_THREAD_LOCAL       thread_local
-#elif defined(__GNUC__) && __GNUC__ < 5
-#  define BR_THREAD_LOCAL       __thread
 #elif defined(_MSC_VER)
 #  define BR_THREAD_LOCAL       __declspec(thread)
 #elif defined (__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
 #  define BR_THREAD_LOCAL       _Thread_local
+#elif defined(__GNUC__) && __GNUC__ < 5
+#  define BR_THREAD_LOCAL       __thread
 #elif defined(__GNUC__)
 #  define BR_THREAD_LOCAL       __thread
 #endif

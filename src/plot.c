@@ -11,36 +11,11 @@
 
 #include "assert.h"
 
-static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
-  TracyCFrameMarkStart("br_datas_draw_2d");
-  for (int j = 0; j < plot->groups_to_show.len; ++j) {
-    int group = plot->groups_to_show.arr[j];
-    br_data_t const* g = br_data_get1(datas, group);
-    if (g->len == 0) continue;
-    resampling2_draw(g->resampling, g, plot, shaders);
-  }
-  if (shaders->line->len > 0) {
-    br_shader_line_draw(shaders->line);
-    shaders->line->len = 0;
-  }
-}
+static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders);
+static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders);
 
-static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
-  TracyCFrameMarkStart("br_datas_draw_3d");
-  int h = plot->graph_screen_rect.height;
-  brgl_viewport(plot->graph_screen_rect.x, plot->resolution.height - h - plot->graph_screen_rect.y, plot->graph_screen_rect.width, h);
-  for (int j = 0; j < plot->groups_to_show.len; ++j) {
-    int group = plot->groups_to_show.arr[j];
-    br_data_t const* g = br_data_get1(datas, group);
-    if (g->len == 0) continue;
-    resampling2_draw(g->resampling, g, plot, shaders);
-  }
-  if (shaders->line_3d->len > 0) {
-    br_shader_line_3d_draw(shaders->line_3d);
-    shaders->line_3d->len = 0;
-  }
-  brgl_viewport(0, 0, plot->resolution.width, plot->resolution.height);
-  TracyCFrameMarkEnd("br_datas_draw_3d");
+void br_plot_create_texture(br_plot_t* br) {
+  br->texture_id = brgl_create_framebuffer(br->graph_screen_rect.width, br->graph_screen_rect.height);
 }
 
 void br_plot_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
@@ -49,6 +24,7 @@ void br_plot_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
     case br_plot_kind_3d: br_plot_3d_draw(plot, datas, shaders); break;
     default: BR_ASSERT(0);
   }
+  brgl_enable_framebuffer(0);
 }
 
 void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t groups, br_vec2_t mouse_pos) {
@@ -235,3 +211,36 @@ void br_plot_remove_group(br_plots_t plots, int group) {
     br_da_remove(plots.arr[i].groups_to_show, group);
   }
 }
+
+static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
+  TracyCFrameMarkStart("br_datas_draw_2d");
+  for (int j = 0; j < plot->groups_to_show.len; ++j) {
+    int group = plot->groups_to_show.arr[j];
+    br_data_t const* g = br_data_get1(datas, group);
+    if (g->len == 0) continue;
+    resampling2_draw(g->resampling, g, plot, shaders);
+  }
+  if (shaders->line->len > 0) {
+    br_shader_line_draw(shaders->line);
+    shaders->line->len = 0;
+  }
+}
+
+static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
+  TracyCFrameMarkStart("br_datas_draw_3d");
+  int h = plot->graph_screen_rect.height;
+  brgl_viewport(plot->graph_screen_rect.x, plot->resolution.height - h - plot->graph_screen_rect.y, plot->graph_screen_rect.width, h);
+  for (int j = 0; j < plot->groups_to_show.len; ++j) {
+    int group = plot->groups_to_show.arr[j];
+    br_data_t const* g = br_data_get1(datas, group);
+    if (g->len == 0) continue;
+    resampling2_draw(g->resampling, g, plot, shaders);
+  }
+  if (shaders->line_3d->len > 0) {
+    br_shader_line_3d_draw(shaders->line_3d);
+    shaders->line_3d->len = 0;
+  }
+  brgl_viewport(0, 0, plot->resolution.width, plot->resolution.height);
+  TracyCFrameMarkEnd("br_datas_draw_3d");
+}
+

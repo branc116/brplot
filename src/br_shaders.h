@@ -134,6 +134,7 @@ BR_ALL_SHADERS(X, NOP2, NOP2)
 #undef X
 
 br_shaders_t br_shaders_malloc(void);
+void br_shaders_draw_all(br_shaders_t shaders);
 void br_shaders_free(br_shaders_t shaders);
 void br_shaders_refresh(br_shaders_t shaders);
 

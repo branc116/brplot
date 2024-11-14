@@ -50,6 +50,10 @@
   X(void, glClearColor) \
   X(void, glClear) \
   X(void, glTexParameteri) \
+  X(void, glFramebufferTexture) \
+  X(void, glDrawBuffers) \
+  X(void, glBindFramebuffer) \
+  X(void, glGenFramebuffers) \
 
 
 #if !defined(_MSC_VER)

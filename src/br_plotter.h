@@ -83,7 +83,7 @@ typedef struct br_plotter_t {
 } br_plotter_t;
 
 BR_API br_plotter_t* br_plotter_malloc(void);
-BR_API void        br_plotter_init(br_plotter_t* br, bool use_permaste);
+BR_API void        br_plotter_init(br_plotter_t* br);
 BR_API void        br_plotter_resize(br_plotter_t* br, float width, float height);
 BR_API br_datas_t* br_plotter_get_br_datas(br_plotter_t* br);
 BR_API void        br_plotter_switch_2d(br_plotter_t* br);

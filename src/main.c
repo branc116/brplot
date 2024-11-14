@@ -3,13 +3,26 @@
 #include "src/br_q.h"
 #include "src/br_permastate.h"
 #include "src/br_tl.h"
+#include "src/br_gl.h"
 
 #include "tracy/TracyC.h"
 
 void br_gui_init_specifics_gui(br_plotter_t* plotter);
 static void* main_gui(void* plotter) {
+  bool use_permastate = true;
   br_plotter_t* br = (br_plotter_t*)plotter;
   br_plotter_init_specifics_platform(br);
+  if (use_permastate) br->loaded = br_permastate_load(br);
+  if (false == br->loaded) {
+    br_datas_deinit(&br->groups);
+    br->plots.len = 0;
+    br_plotter_add_plot_2d(br);
+  } else {
+    for (int i = 0; i < br->plots.len; ++i) {
+      br_plot_t* p = &br->plots.arr[i];
+      br->plots.arr[i].texture_id = brgl_create_framebuffer(p->graph_screen_rect.width, p->graph_screen_rect.height);
+    }
+  }
   while(br->should_close == false) {
     TracyCFrameMark;
     br_plotter_draw(br);
@@ -36,7 +49,7 @@ int main(void) {
     LOGE("Failed to malloc br plotter, exiting...\n");
     exit(1);
   }
-  br_plotter_init(br, true);
+  br_plotter_init(br);
   br->height = HEIGHT;
   br->width = WIDTH;
 #if BR_HAS_SHADER_RELOAD

@@ -160,6 +160,16 @@ br_shaders_t br_shaders_malloc(void) {
   return ret;
 }
 
+void br_shaders_draw_all(br_shaders_t shaders) {
+#define X(NAME, CAP, V, B) \
+  if (shaders.NAME->len != 0) { \
+    br_shader_ ## NAME ## _draw(shaders.NAME); \
+    shaders.NAME->len = 0; \
+  }
+  BR_ALL_SHADERS(X, NOP2, NOP2)
+#undef X
+}
+
 void br_shaders_free(br_shaders_t shaders) {
 #define X(NAME, CAP, V, B) br_shader_ ## NAME ## _free(shaders.NAME);
   BR_ALL_SHADERS(X, NOP2, NOP2)

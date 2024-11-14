@@ -26,7 +26,7 @@ BR_API br_plotter_t* br_plotter_malloc(void) {
   return BR_MALLOC(sizeof(br_plotter_t));
 }
 
-BR_API void br_plotter_init(br_plotter_t* br, bool use_permaste) {
+BR_API void br_plotter_init(br_plotter_t* br) {
   *br = (br_plotter_t){
     .groups = {0},
     .plots = {0},
@@ -54,12 +54,6 @@ BR_API void br_plotter_init(br_plotter_t* br, bool use_permaste) {
     exit(1);
   }
   context.font_scale = 1.8f;
-  if (use_permaste) br->loaded = br_permastate_load(br);
-  if (false == br->loaded) {
-    br_datas_deinit(&br->groups);
-    br->plots.len = 0;
-    br_plotter_add_plot_2d(br);
-  }
 }
 
 BR_API void br_plotter_resize(br_plotter_t* br, float width, float height) {
@@ -118,6 +112,7 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
       .delta = BR_VEC2(0, 0),
     }
   };
+  br_plot_create_texture(&plot);
   br_da_push_t(int, (br->plots), plot);
   br->any_2d = true;
   return br->plots.len - 1;

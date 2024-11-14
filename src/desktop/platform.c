@@ -355,8 +355,12 @@ void brtl_window_close(void) {
   glfwTerminate();
 }
 
-br_plotter_t* brtl_get_plotter(void) {
+br_plotter_t* brtl_plotter(void) {
   return stl_br;
+}
+
+br_shaders_t* brtl_shaders(void) {
+  return &stl_br->shaders;
 }
 
 static void br_help_sleep(double seconds) {

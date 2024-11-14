@@ -16,6 +16,7 @@
 #define GL_TEXTURE0 0x84C0
 #define GL_FLOAT 0x1406
 #define GL_RED 0x1903
+#define GL_RGB 0x1907
 #define GL_MAX 0x8008
 #define GL_R8 0x8229
 #define GL_ARRAY_BUFFER 0x8892
@@ -26,6 +27,8 @@
 #define GL_COMPILE_STATUS 0x8B81
 #define GL_LINK_STATUS 0x8B82
 #define GL_INFO_LOG_LENGTH 0x8B84
+#define GL_COLOR_ATTACHMENT0 0x8CE0
+#define GL_FRAMEBUFFER 0x8D40
 #define GL_TEXTURE_SWIZZLE_RGBA 0x8E46
 
 #define BR_KEY_TWO 50
@@ -79,6 +82,10 @@ void brgl_disable_depth_test(void);
 void brgl_viewport(GLint x, GLint y, GLsizei width, GLsizei height);
 GLuint brgl_load_texture(const void* data, int width, int height, int format);
 void brgl_unload_texture(GLuint tex_id);
+
+GLuint brgl_create_framebuffer(int width, int height);
+void brgl_enable_framebuffer(GLuint fb_id);
+void brgl_destroy_framebuffer(GLuint fb_id);
 
 GLuint brgl_load_vao(void);
 void brgl_enable_vao(GLuint vao);

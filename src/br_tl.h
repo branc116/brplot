@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 typedef struct br_plotter_t br_plotter_t;
+typedef struct br_shaders_t br_shaders_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +30,8 @@ br_sizei_t brtl_window_size(void);
 void brtl_window_set_size(int width, int height);
 void brtl_window_close(void);
 
-br_plotter_t* brtl_get_plotter(void);
+br_plotter_t* brtl_plotter(void);
+br_shaders_t* brtl_shaders(void);
 
 #ifdef __cplusplus
 }

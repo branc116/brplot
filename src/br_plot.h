@@ -47,6 +47,9 @@ typedef struct br_plot_t {
   //                   That is if you resize the whole plot, or move the plot around the screen this value will change.
   br_extenti_t graph_screen_rect;
   br_sizei_t resolution;
+
+  unsigned int texture_id;
+
   bool follow;
   bool jump_around;
   bool mouse_inside_graph;
@@ -77,22 +80,22 @@ br_vec2_t br_graph_to_screen(br_extent_t graph_rect, br_extenti_t screen_rect, b
 
 typedef struct br_plotter_t br_plotter_t;
 
+void br_plot_create_texture(br_plot_t* br);
 void br_plot_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders);
 void br_plot_screenshot(br_text_renderer_t* tr, br_plot_t* br, br_shaders_t* shaders, br_datas_t groups, char const* path);
 void br_keybinding_handle_keys(br_plotter_t* br, br_plot_t* plot);
+
 
 void read_input_start(br_plotter_t* br);
 void read_input_main_worker(br_plotter_t* br);
 int  read_input_read_next(void);
 void read_input_stop(void);
 
-#if !defined(IMGUI)
 int     ui_draw_button(br_text_renderer_t* tr, bool* is_pressed, float x, float y, int font_size, const char* str, ...);
 void    ui_stack_buttons_init(br_vec2_t pos, float* scroll_position, int font_size);
 void    ui_stack_set_size(br_vec2_t v);
 int     ui_stack_buttons_add(br_text_renderer_t* tr, bool* is_pressed, const char* str, ...);
 br_vec2_t ui_stack_buttons_end(void);
-#endif
 
 void    help_trim_zeros(char* buff);
 void    help_draw_text(br_text_renderer_t* renderer, char const* text, br_vec2_t pos, int font_size, br_color_t color);
