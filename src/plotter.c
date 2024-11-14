@@ -58,6 +58,7 @@ BR_API void br_plotter_init(br_plotter_t* br, bool use_permaste) {
   if (false == br->loaded) {
     br_datas_deinit(&br->groups);
     br->plots.len = 0;
+    br_plotter_add_plot_2d(br);
   }
 }
 

@@ -71,9 +71,10 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
 //
 static GLFWbool loadLibraries(void)
 {
-    if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+    static long long int DICK_BUTT = 0;
+    if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
                                 GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                            (const WCHAR*) &_glfw,
+                            (const CHAR*) &DICK_BUTT,
                             (HMODULE*) &_glfw.win32.instance))
     {
         _glfwInputErrorWin32(GLFW_PLATFORM_ERROR,
@@ -335,34 +336,6 @@ static void createKeyTables(void)
 //
 static LRESULT CALLBACK helperWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    switch (uMsg)
-    {
-        case WM_DISPLAYCHANGE:
-            _glfwPollMonitorsWin32();
-            break;
-
-        case WM_DEVICECHANGE:
-        {
-            if (!_glfw.joysticksInitialized)
-                break;
-
-            if (wParam == DBT_DEVICEARRIVAL)
-            {
-                DEV_BROADCAST_HDR* dbh = (DEV_BROADCAST_HDR*) lParam;
-                if (dbh && dbh->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE)
-                    _glfwDetectJoystickConnectionWin32();
-            }
-            else if (wParam == DBT_DEVICEREMOVECOMPLETE)
-            {
-                DEV_BROADCAST_HDR* dbh = (DEV_BROADCAST_HDR*) lParam;
-                if (dbh && dbh->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE)
-                    _glfwDetectJoystickDisconnectionWin32();
-            }
-
-            break;
-        }
-    }
-
     return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 }
 
@@ -387,9 +360,9 @@ static GLFWbool createHelperWindow(void)
     }
 
     _glfw.win32.helperWindowHandle =
-        CreateWindowExW(WS_EX_OVERLAPPEDWINDOW,
+        CreateWindowExA(WS_EX_OVERLAPPEDWINDOW,
                         MAKEINTATOM(_glfw.win32.helperWindowClass),
-                        L"GLFW message window",
+                        "GLFW message window",
                         WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
                         0, 0, 1, 1,
                         NULL, NULL,
@@ -619,11 +592,11 @@ GLFWbool _glfwConnectWin32(int platformID, _GLFWplatform* platform)
         _glfwGetKeyScancodeWin32,
         _glfwSetClipboardStringWin32,
         _glfwGetClipboardStringWin32,
-        _glfwInitJoysticksWin32,
-        _glfwTerminateJoysticksWin32,
-        _glfwPollJoystickWin32,
-        _glfwGetMappingNameWin32,
-        _glfwUpdateGamepadGUIDWin32,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
         _glfwFreeMonitorWin32,
         _glfwGetMonitorPosWin32,
         _glfwGetMonitorContentScaleWin32,
@@ -711,9 +684,9 @@ void _glfwTerminateWin32(void)
     if (_glfw.win32.helperWindowHandle)
         DestroyWindow(_glfw.win32.helperWindowHandle);
     if (_glfw.win32.helperWindowClass)
-        UnregisterClassW(MAKEINTATOM(_glfw.win32.helperWindowClass), _glfw.win32.instance);
+        UnregisterClassA(MAKEINTATOM(_glfw.win32.helperWindowClass), _glfw.win32.instance);
     if (_glfw.win32.mainWindowClass)
-        UnregisterClassW(MAKEINTATOM(_glfw.win32.mainWindowClass), _glfw.win32.instance);
+        UnregisterClassA(MAKEINTATOM(_glfw.win32.mainWindowClass), _glfw.win32.instance);
 
     _glfw_free(_glfw.win32.clipboardString);
     _glfw_free(_glfw.win32.rawInput);

@@ -68,7 +68,7 @@ void  br_imgui_free(void* p, void* user_data);
 #  define BR_ASSERT(x) if (!(x)) *(volatile int*)0; assert(x)
 #else
 #  include <assert.h>
-#  define BR_ASSERT(x) assert(x)
+#  define BR_ASSERT(x) if (!(x)) { *(volatile int*)0; exit(0); } assert(x)
 #  define BR_MALLOC malloc
 #  define BR_CALLOC calloc
 #  define BR_REALLOC realloc

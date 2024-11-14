@@ -44,9 +44,6 @@
 #undef APIENTRY
 
 // GLFW on Windows is Unicode only and does not work in MBCS mode
-#ifndef UNICODE
- #define UNICODE
-#endif
 
 // GLFW requires Windows XP or later
 #if WINVER < 0x0501
@@ -461,7 +458,7 @@ typedef struct _GLFWlibraryWin32
     struct {
         HINSTANCE                       instance;
         PFN_DirectInput8Create          Create;
-        IDirectInput8W*                 api;
+        IDirectInput8A*                 api;
     } dinput8;
 
     struct {

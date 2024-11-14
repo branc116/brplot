@@ -41,7 +41,7 @@
 //
 typedef struct _GLFWobjenumWin32
 {
-    IDirectInputDevice8W*   device;
+    IDirectInputDevice8A*   device;
     _GLFWjoyobjectWin32*    objects;
     int                     objectCount;
     int                     axisCount;
@@ -271,7 +271,7 @@ static void closeJoystick(_GLFWjoystick* js)
 // DirectInput device object enumeration callback
 // Insights gleaned from SDL
 //
-static BOOL CALLBACK deviceObjectCallback(const DIDEVICEOBJECTINSTANCEW* doi,
+static BOOL CALLBACK deviceObjectCallback(const DIDEVICEOBJECTINSTANCEA* doi,
                                           void* user)
 {
     _GLFWobjenumWin32* data = user;

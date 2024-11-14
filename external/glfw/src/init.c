@@ -41,7 +41,7 @@
 
 // This contains all mutable state shared between compilation units of GLFW
 //
-_GLFWlibrary RL_THREAD_LOCAL _glfw = { GLFW_FALSE };
+RL_THREAD_LOCAL _GLFWlibrary _glfw = { GLFW_FALSE };
 
 // These are outside of _glfw so they can be used before initialization and
 // after termination without special handling when _glfw is cleared to zero
@@ -115,8 +115,6 @@ static void terminate(void)
     _glfw.mappings = NULL;
     _glfw.mappingCount = 0;
 
-    _glfwTerminateVulkan();
-    _glfw.platform.terminateJoysticks();
     _glfw.platform.terminate();
 
     _glfw.initialized = GLFW_FALSE;

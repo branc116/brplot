@@ -8,20 +8,132 @@
 
 #include <string.h>
 
-
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
-#  include <time.h>
-#endif
-
 #define GLAD_MALLOC BR_MALLOC
 #define GLAD_FREE BR_FREE
+
+#if !defined(_MSC_VER)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wreturn-type"
+#  pragma GCC diagnostic ignored "-Wunused-parameter"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wsign-compare"
+#  pragma GCC diagnostic ignored "-Wfloat-conversion"
+#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#  pragma GCC diagnostic ignored "-Wpedantic"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#endif
 
 #define GLAD_GL_IMPLEMENTATION
 #include "external/glad.h"
 
 #include "GLFW/glfw3.h"
 
-static _Thread_local br_plotter_t* stl_br = NULL;
+#if defined(_WIN32) || defined(__CYGWIN__)
+#  define _GLFW_WIN32
+#endif
+
+#if defined(__linux__)
+#  if !defined(_GLFW_WAYLAND)     // Required for Wayland windowing
+#    define _GLFW_X11
+#  endif
+#endif
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
+#  define _GLFW_X11
+#endif
+#if defined(__APPLE__)
+#  define _GLFW_COCOA
+#  define _GLFW_USE_MENUBAR       // To create and populate the menu bar when the first window is created
+#  define _GLFW_USE_RETINA        // To have windows use the full resolution of Retina displays
+#endif
+#if defined(__TINYC__)
+#  define _WIN32_WINNT_WINXP      0x0501
+#endif
+
+// Common modules to all platforms
+#include "external/glfw/src/init.c"
+#include "external/glfw/src/platform.c"
+#include "external/glfw/src/context.c"
+#include "external/glfw/src/monitor.c"
+#include "external/glfw/src/window.c"
+#include "external/glfw/src/input.c"
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+#  include "external/glfw/src/win32_init.c"
+#  include "external/glfw/src/win32_module.c"
+#  include "external/glfw/src/win32_monitor.c"
+#  include "external/glfw/src/win32_window.c"
+#  include "external/glfw/src/win32_time.c"
+#  include "external/glfw/src/win32_thread.c"
+#  include "external/glfw/src/wgl_context.c"
+
+#  include "external/glfw/src/egl_context.c"
+#  include "external/glfw/src/osmesa_context.c"
+#endif
+
+#if defined(__linux__)
+#  include "external/glfw/src/posix_module.c"
+#  include "external/glfw/src/posix_thread.c"
+#  include "external/glfw/src/posix_time.c"
+#  include "external/glfw/src/posix_poll.c"
+#  include "external/glfw/src/xkb_unicode.c"
+
+#  include "external/glfw/src/egl_context.c"
+#  include "external/glfw/src/osmesa_context.c"
+
+#  if defined(_GLFW_WAYLAND)
+#    include "external/glfw/src/wl_init.c"
+#    include "external/glfw/src/wl_monitor.c"
+#    include "external/glfw/src/wl_window.c"
+#  endif
+#  if defined(_GLFW_X11)
+#    include "external/glfw/src/x11_init.c"
+#    include "external/glfw/src/x11_monitor.c"
+#    include "external/glfw/src/x11_window.c"
+#    include "external/glfw/src/glx_context.c"
+#  endif
+#endif
+
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__)
+#  include "external/glfw/src/posix_module.c"
+#  include "external/glfw/src/posix_thread.c"
+#  include "external/glfw/src/posix_time.c"
+#  include "external/glfw/src/posix_poll.c"
+#  include "external/glfw/src/xkb_unicode.c"
+
+#  include "external/glfw/src/x11_init.c"
+#  include "external/glfw/src/x11_monitor.c"
+#  include "external/glfw/src/x11_window.c"
+#  include "external/glfw/src/glx_context.c"
+
+#  include "external/glfw/src/egl_context.c"
+#  include "external/glfw/src/osmesa_context.c"
+#endif
+
+#if defined(__APPLE__)
+#  include "external/glfw/src/posix_module.c"
+#  include "external/glfw/src/posix_thread.c"
+#  include "external/glfw/src/cocoa_init.m"
+#  include "external/glfw/src/cocoa_monitor.m"
+#  include "external/glfw/src/cocoa_window.m"
+#  include "external/glfw/src/cocoa_time.c"
+#  include "external/glfw/src/nsgl_context.m"
+
+#  include "external/glfw/src/egl_context.c"
+#  include "external/glfw/src/osmesa_context.c"
+#endif
+
+#if !defined(_MSC_VER)
+#  pragma GCC diagnostic pop
+#endif
+
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
+#  include <time.h>
+#elif defined(_WIN32)
+#  include "Windows.h"
+#  include "synchapi.h"
+#endif
+
+static BR_THREAD_LOCAL br_plotter_t* stl_br = NULL;
 
 static void log_glfw_errors(int level, const char* error);
 static void br_help_sleep(double seconds);
@@ -71,7 +183,7 @@ void br_plotter_init_specifics_platform(br_plotter_t* br) {
   brgl_enable(GL_BLEND);
   brgl_blend_func(GL_SRC_ALPHA, GL_DST_ALPHA);
   brgl_blend_equation(GL_MAX);
- 
+
   br->shaders = br_shaders_malloc();
   br->text = br_text_renderer_malloc(1024, 1024, br_font_data, &br->shaders.font);
   glfwGetWindowSize(br->win.glfw, &br->win.size.width, &br->win.size.height);
@@ -250,7 +362,7 @@ br_plotter_t* brtl_get_plotter(void) {
 static void br_help_sleep(double seconds) {
   if (seconds <= 0.0) return;
 #if defined(_WIN32)
-  Sleep((unsigned long)(sleepSeconds*1000.0));
+  Sleep((unsigned long)(seconds * 1000.0));
 #endif
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__EMSCRIPTEN__)
   struct timespec req = { 0 };

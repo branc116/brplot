@@ -11,6 +11,7 @@
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
 #  include "desktop/linux/filesystem.c"
 #elif defined(_WIN32) || defined(__CYGWIN__)
+#  include "desktop/win/filesystem.c"
 #elif defined(__EMSCRIPTEN__)
 #  include "web/filesystem.c"
 #else
@@ -57,6 +58,7 @@ bool br_fs_exists(br_strv_t path) {
   br_scrach_free();
   return 0 != ((s.st_mode & S_IFMT) & (S_IFDIR | S_IFCHR | S_IFBLK | S_IFREG));
 }
+#elif defined(_WIN32) || defined(__CYGWIN__)
 #elif defined(__EMSCRIPTEN__)
 bool br_fs_mkdir(br_strv_t path) { return false; }
 bool br_fs_exists(br_strv_t path) { return false; }
@@ -133,6 +135,6 @@ error:
   BR_FREE(content);
   content = NULL;
 done:
-  fclose(file);
+  if (file != NULL) fclose(file);
   return content;
 }

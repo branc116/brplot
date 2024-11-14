@@ -1,8 +1,9 @@
 #include "src/br_gl.h"
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wreturn-type"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
+#if !defined(_MSC_VER)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wreturn-type"
+#  pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
 
 void brgl_load(void) {}
 
@@ -54,4 +55,6 @@ void glClearColor(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {}
 void glClear(GLbitfield en) {}
 void glTexParameteri(GLenum target, GLenum pname, GLint param) {}
 
-#pragma GCC diagnostic pop
+#if !defined(_MSC_VER)
+#  pragma GCC diagnostic pop
+#endif

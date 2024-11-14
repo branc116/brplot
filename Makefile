@@ -22,8 +22,8 @@ FUZZ      ?= NO
 TRACY     ?= NO
 # YES | NO
 LTO       ?= YES
-# GLFW | X11 | WAYLAND
-BACKEND   ?= GLFW
+# X11 | WAYLAND
+BACKEND   ?= X11
 # Only when TYPE=LIB
 STATIC   ?= NO
 
@@ -32,9 +32,6 @@ SOURCE             = src/main.c           src/help.c       src/data.c        src
 										 src/keybindings.c    src/str.c        src/resampling2.c src/graph_utils.c src/shaders.c src/plotter.c    \
 										 src/plot.c           src/permastate.c src/filesystem.c  src/gui.c         src/text_renderer.c \
 										 src/data_generator.c src/platform.c   src/threads.c     src/gl.c
-ifeq ($(USE_CXX), YES)
-	SOURCE+= src/filesystem++.cpp src/gui++.cpp src/memory.cpp
-endif
 COMMONFLAGS        = -I. -Iexternal/glfw/include/ -Iexternal/Tracy -MMD -MP -fvisibility=hidden
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra -Wshadow
 LD_FLAGS           =
@@ -47,13 +44,10 @@ ifeq ($(PLATFORM)_$(COMPILER), LINUX_CLANG)
 		COMMONFLAGS+= -fsanitize=fuzzer
 	endif
 	WARNING_FLAGS+= -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-newline-eof
-	CXX= clang++
 	CC= clang
 else ifeq ($(PLATFORM)_$(COMPILER), LINUX_GCC)
-	CXX= g++
 	CC= gcc
 else ifeq ($(PLATFORM)_$(COMPILER), LINUX_COSMO)
-	CXX= cosmoc++
 	CC= cosmocc
 endif
 
@@ -62,15 +56,8 @@ ifeq ($(HEADLESS), YES)
 endif
 
 ifeq ($(PLATFORM), LINUX)
-	ifeq ($(BACKEND), X11)
-	  SOURCE+= $(RL)/rglfw.c
-		COMMONFLAGS+= -Iexternal/glfw/include
-	else ifeq ($(BACKEND), WAYLAND)
+	ifeq ($(BACKEND), WAYLAND)
 		COMMONFLAGS+= -Iexternal/glfw/include -D_GLFW_WAYLAND
-	else ifeq ($(BACKEND), GLFW)
-		ifeq ($(STATIC), NO)
-			LIBS= `pkg-config --static --libs glfw3` -pthread
-		endif
 	endif
 	SHADERS_HEADER= .generated/shaders.h
 	ifeq ($(TYPE), LIB)
@@ -151,12 +138,8 @@ endif
 CXXFLAGS= $(COMMONFLAGS) -fno-exceptions -std=gnu++17
 CCFLAGS= $(COMMONFLAGS) -std=gnu11
 ifeq ($(TYPE), EXE)
-	ifeq ($(BACKEND), GLFW)
-		PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(HEADLESS)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
-		OUTPUT?= $(shell echo 'bin/brplot_$(HEADLESS)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
-	else
-		OUTPUT?= $(shell echo 'bin/brplot_$(HEADLESS)_$(BACKEND)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
-	endif
+	PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(HEADLESS)/$(BACKEND)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
+	OUTPUT?= $(shell echo 'bin/brplot_$(HEADLESS)_$(BACKEND)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
 else
 	ifeq ($(STATIC), YES)
 		PREFIX_BUILD= $(shell echo 'build/slib/$(PLATFORM)/$(CONFIG)/$(HEADLESS)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
@@ -167,17 +150,12 @@ else
 	endif
 endif
 
-OBJSA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE))
-OBJS+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA))
+OBJS= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(SOURCE))
 MAKE_INCLUDES= $(patsubst %.o, %.d, $(OBJS))
 NOBS= $(patsubst %.o, %.nob.dir, $(OBJS))
 NOBS+= bin/.nob.dir
 
-ifeq ($(USE_CXX), YES)
-	LD= $(CXX)
-else
-	LD= $(CC)
-endif
+LD= gcc
 
 $(OUTPUT):
 
@@ -197,20 +175,12 @@ endif
 $(PREFIX_BUILD)/src/%.o: src/%.c
 	$(CC) $(CCFLAGS) $(WARNING_FLAGS) -c -o $@ $<
 
-$(PREFIX_BUILD)/src/%.o: src/%.cpp
-	$(CXX) $(CXXFLAGS) $(WARNING_FLAGS) -c -o $@ $<
-
-$(PREFIX_BUILD)/%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
 $(PREFIX_BUILD)/%.o: %.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
 $(OBJS): $(NOBS)
 
 src/help.c: .generated/default_font.h
-ifeq ($(CONFIG), DEBUG)
-endif
 src/shaders.c: $(SHADERS_HEADER)
 
 .PHONY: clean
@@ -269,7 +239,7 @@ $(SHADERS_HEADER): ./src/shaders/* bin/shaders_bake
 	bin/shaders_bake $(PLATFORM) > $(SHADERS_HEADER)
 
 
-SOURCE_BENCH= ./src/misc/benchmark.c ./src/resampling2.c ./src/smol_mesh.c ./src/shaders.c ./src/plotter.c ./src/help.c ./src/gui.c ./src/data.c ./src/str.c ./src/plot.c ./src/q.c ./src/keybindings.c ./src/memory.cpp ./src/graph_utils.c ./src/data_generator.c ./src/platform.c  ./src/permastate.c ./src/filesystem.c ./src/filesystem++.cpp
+SOURCE_BENCH= ./src/misc/benchmark.c ./src/resampling2.c ./src/smol_mesh.c ./src/shaders.c ./src/plotter.c ./src/help.c ./src/gui.c ./src/data.c ./src/str.c ./src/plot.c ./src/q.c ./src/keybindings.c ./src/graph_utils.c ./src/data_generator.c ./src/platform.c  ./src/permastate.c ./src/filesystem.c
 OBJSA_BENCH= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE_BENCH))
 OBJS_BENCH+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA_BENCH))
 

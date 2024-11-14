@@ -1,10 +1,10 @@
-#include "src/br_math.h"
-
 #if !defined(_MSC_VER)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-#include "external/tests.h"
-#pragma GCC diagnostic pop
+#  include "src/br_math.h"
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#  include "external/tests.h"
+#  pragma GCC diagnostic pop
+
 TEST_CASE(vec2s) {
   br_vec2_t a = BR_VEC2(1.f, 2.f), b = BR_VEC2(3.f, 5.f);
   br_vec2_t res = br_vec2_scale(a, 10.f);

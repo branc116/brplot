@@ -52,7 +52,7 @@
   X(void, glTexParameteri) \
 
 
-#ifdef __GNUC__
+#if !defined(_MSC_VER)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wpedantic"
 #  pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
@@ -75,6 +75,6 @@ void brgl_load(void) {
 #undef X
 }
 
-#ifdef __GNUC__
+#if !defined(_MSC_VER)
 #  pragma GCC diagnostic pop
 #endif

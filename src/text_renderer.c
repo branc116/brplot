@@ -132,7 +132,8 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
         k = stbds_hmgeti(r->sizes, old_size);
       }
       for (int j = 0; j < p_len; ++j) {
-        stbds_hmput(r->sizes[k].value, (char)(r->to_bake[pack_from].key.ch + j), charz[j]);
+        char key = ((char)(r->to_bake[pack_from].key.ch + j));
+        stbds_hmput(r->sizes[k].value, key, charz[j]);
       }
       old_size = new_size;
       pack_from = i;
@@ -146,7 +147,8 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
         k = stbds_hmgeti(r->sizes, old_size);
       }
       for (int j = 0; j < s_len; ++j) {
-        stbds_hmput(r->sizes[k].value, r->to_bake[pack_from].key.ch + (char)j, charz[j]);
+        char key = r->to_bake[pack_from].key.ch + (char)j;
+        stbds_hmput(r->sizes[k].value, key, charz[j]);
       }
     }
 

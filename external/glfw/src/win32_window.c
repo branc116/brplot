@@ -244,7 +244,7 @@ static void updateCursorImage(_GLFWwindow* window)
         if (window->cursor)
             SetCursor(window->cursor->win32.handle);
         else
-            SetCursor(LoadCursorW(NULL, IDC_ARROW));
+            SetCursor(LoadCursorA(NULL, IDC_ARROW));
     }
     else
         SetCursor(NULL);
@@ -1264,7 +1264,7 @@ static int createNativeWindow(_GLFWwindow* window,
                               const _GLFWfbconfig* fbconfig)
 {
     int xpos, ypos, fullWidth, fullHeight;
-    WCHAR* wideTitle;
+    const CHAR* wideTitle;
     DWORD style = getWindowStyle(window);
     DWORD exStyle = getWindowExStyle(window);
 
@@ -1274,7 +1274,7 @@ static int createNativeWindow(_GLFWwindow* window,
         wc.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
         wc.lpfnWndProc   = windowProc;
         wc.hInstance     = _glfw.win32.instance;
-        wc.hCursor       = LoadCursorW(NULL, IDC_ARROW);
+        wc.hCursor       = LoadCursorA(NULL, IDC_ARROW);
 #if defined(_GLFW_WNDCLASSNAME)
         wc.lpszClassName = _GLFW_WNDCLASSNAME;
 #else
@@ -1287,7 +1287,7 @@ static int createNativeWindow(_GLFWwindow* window,
         if (!wc.hIcon)
         {
             // No user-provided icon found, load default icon
-            wc.hIcon = LoadImageW(NULL,
+            wc.hIcon = LoadImageA(NULL,
                                   IDI_APPLICATION, IMAGE_ICON,
                                   0, 0, LR_DEFAULTSIZE | LR_SHARED);
         }
@@ -1339,11 +1339,9 @@ static int createNativeWindow(_GLFWwindow* window,
         fullHeight = rect.bottom - rect.top;
     }
 
-    wideTitle = _glfwCreateWideStringFromUTF8Win32(wndconfig->title);
-    if (!wideTitle)
-        return GLFW_FALSE;
-
-    window->win32.handle = CreateWindowExW(exStyle,
+    wideTitle = wndconfig->title;
+    
+    window->win32.handle = CreateWindowExA(exStyle,
                                            MAKEINTATOM(_glfw.win32.mainWindowClass),
                                            wideTitle,
                                            style,
@@ -1354,8 +1352,6 @@ static int createNativeWindow(_GLFWwindow* window,
                                            _glfw.win32.instance,
                                            (LPVOID) wndconfig);
 
-    _glfw_free(wideTitle);
-
     if (!window->win32.handle)
     {
         _glfwInputErrorWin32(GLFW_PLATFORM_ERROR,
@@ -1363,7 +1359,7 @@ static int createNativeWindow(_GLFWwindow* window,
         return GLFW_FALSE;
     }
 
-    SetPropW(window->win32.handle, L"GLFW", window);
+    SetPropA(window->win32.handle, "GLFW", window);
 
     if (IsWindows7OrGreater())
     {

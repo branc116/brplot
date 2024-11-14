@@ -2781,10 +2781,6 @@ void _glfwPollEventsX11(void)
 {
     drainEmptyEvents();
 
-#if defined(__linux__)
-    if (_glfw.joysticksInitialized)
-        _glfwDetectJoystickConnectionLinux();
-#endif
     XPending(_glfw.x11.display);
 
     while (QLength(_glfw.x11.display))
@@ -3208,74 +3204,7 @@ VkResult _glfwCreateWindowSurfaceX11(VkInstance instance,
                                      const VkAllocationCallbacks* allocator,
                                      VkSurfaceKHR* surface)
 {
-    if (_glfw.vk.KHR_xcb_surface && _glfw.x11.x11xcb.handle)
-    {
-        VkResult err;
-        VkXcbSurfaceCreateInfoKHR sci;
-        PFN_vkCreateXcbSurfaceKHR vkCreateXcbSurfaceKHR;
-
-        xcb_connection_t* connection = XGetXCBConnection(_glfw.x11.display);
-        if (!connection)
-        {
-            _glfwInputError(GLFW_PLATFORM_ERROR,
-                            "X11: Failed to retrieve XCB connection");
-            return VK_ERROR_EXTENSION_NOT_PRESENT;
-        }
-
-        vkCreateXcbSurfaceKHR = (PFN_vkCreateXcbSurfaceKHR)
-            vkGetInstanceProcAddr(instance, "vkCreateXcbSurfaceKHR");
-        if (!vkCreateXcbSurfaceKHR)
-        {
-            _glfwInputError(GLFW_API_UNAVAILABLE,
-                            "X11: Vulkan instance missing VK_KHR_xcb_surface extension");
-            return VK_ERROR_EXTENSION_NOT_PRESENT;
-        }
-
-        memset(&sci, 0, sizeof(sci));
-        sci.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-        sci.connection = connection;
-        sci.window = window->x11.handle;
-
-        err = vkCreateXcbSurfaceKHR(instance, &sci, allocator, surface);
-        if (err)
-        {
-            _glfwInputError(GLFW_PLATFORM_ERROR,
-                            "X11: Failed to create Vulkan XCB surface: %s",
-                            _glfwGetVulkanResultString(err));
-        }
-
-        return err;
-    }
-    else
-    {
-        VkResult err;
-        VkXlibSurfaceCreateInfoKHR sci;
-        PFN_vkCreateXlibSurfaceKHR vkCreateXlibSurfaceKHR;
-
-        vkCreateXlibSurfaceKHR = (PFN_vkCreateXlibSurfaceKHR)
-            vkGetInstanceProcAddr(instance, "vkCreateXlibSurfaceKHR");
-        if (!vkCreateXlibSurfaceKHR)
-        {
-            _glfwInputError(GLFW_API_UNAVAILABLE,
-                            "X11: Vulkan instance missing VK_KHR_xlib_surface extension");
-            return VK_ERROR_EXTENSION_NOT_PRESENT;
-        }
-
-        memset(&sci, 0, sizeof(sci));
-        sci.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-        sci.dpy = _glfw.x11.display;
-        sci.window = window->x11.handle;
-
-        err = vkCreateXlibSurfaceKHR(instance, &sci, allocator, surface);
-        if (err)
-        {
-            _glfwInputError(GLFW_PLATFORM_ERROR,
-                            "X11: Failed to create Vulkan X11 surface: %s",
-                            _glfwGetVulkanResultString(err));
-        }
-
-        return err;
-    }
+  *(volatile int*)0;
 }
 
 
