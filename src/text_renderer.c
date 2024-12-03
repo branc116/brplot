@@ -158,8 +158,6 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
   }
   br_shader_font_t* simp = *r->shader;
   simp->uvs.atlas_uv = r->bitmap_texture_id;
-  br_shader_font_draw(*r->shader);
-  simp->len = 0;
 }
 
 static void br_text_draw_quad(br_vec4_t* v, int* len, float x0, float y0, float s0, float t0,

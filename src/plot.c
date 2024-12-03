@@ -15,7 +15,7 @@ static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* sha
 static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders);
 
 void br_plot_create_texture(br_plot_t* br) {
-  br->texture_id = brgl_create_framebuffer(br->graph_screen_rect.width, br->graph_screen_rect.height);
+  //br->texture_id = brgl_create_framebuffer(br->graph_screen_rect.width, br->graph_screen_rect.height);
 }
 
 void br_plot_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
@@ -24,7 +24,6 @@ void br_plot_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
     case br_plot_kind_3d: br_plot_3d_draw(plot, datas, shaders); break;
     default: BR_ASSERT(0);
   }
-  brgl_enable_framebuffer(0);
 }
 
 void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t groups, br_vec2_t mouse_pos) {

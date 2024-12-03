@@ -2,6 +2,7 @@
 #include "src/br_plot.h"
 #include "src/br_gl.h"
 #include "src/br_math.h"
+#include "src/br_tl.h"
 
 #include "tracy/TracyC.h"
 
@@ -22,7 +23,7 @@ void smol_mesh_gen_bb(br_shader_line_t* shader, bb_t bb, br_color_t color) {
 
 void smol_mesh_gen_point(br_shader_line_t* shader, br_vec2_t point, br_color_t color) {
   br_vec2_t size = BR_VEC2(shader->uvs.zoom_uv.x * .01f, shader->uvs.zoom_uv.y * .01f);
-  smol_mesh_gen_bb(shader, (bb_t){
+  smol_mesh_gen_bb(shader, (bb_t) {
       .xmin = point.x - size.x / 2,
       .ymin = point.y - size.y / 2,
       .xmax = point.x + size.x / 2,
@@ -31,7 +32,7 @@ void smol_mesh_gen_point(br_shader_line_t* shader, br_vec2_t point, br_color_t c
 }
 
 void smol_mesh_gen_point1(br_shader_line_t* shader, br_vec2_t point, br_vec2_t size, br_color_t color) {
-  smol_mesh_gen_bb(shader, (bb_t){
+  smol_mesh_gen_bb(shader, (bb_t) {
       .xmin = point.x - size.x / 2,
       .ymin = point.y - size.y / 2,
       .xmax = point.x + size.x / 2,
@@ -145,9 +146,9 @@ void smol_mesh_3d_gen_line_simple(br_shader_line_3d_simple_t* shader, br_vec3_t 
 void smol_mesh_3d_gen_line_strip(br_shader_line_3d_t* shader, br_vec3_t const* ps, size_t len, br_color_t color) {
   for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(shader, ps[i], ps[i + 1], color);
 }
+
 void smol_mesh_3d_gen_line_strip1(br_shader_line_3d_t* shader, float const* xs, float const* ys, float const* zs, size_t len, br_color_t color) {
   for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(shader, BR_VEC3(xs[i], ys[i], zs[i]), BR_VEC3(xs[i + 1], ys[i + 1], zs[i + 1]), color);
-
 }
 
 void smol_mesh_3d_gen_line_strip2(br_shader_line_3d_t* shader, br_vec2_t const* ps, size_t len, br_color_t color) {
@@ -241,9 +242,6 @@ void smol_mesh_gen_quad_3d_simple(br_shader_grid_3d_t* shader, br_vec3_t p1, br_
 // TODO: This should be split to _gen and _draw
 void smol_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
   // TODO 2D/3D
-  int h = plot->graph_screen_rect.height;
-  br_extenti_t ex = plot->graph_screen_rect;
-  brgl_viewport(ex.x, plot->resolution.height - h - ex.y, ex.width, h);
   switch (plot->kind) {
     case br_plot_kind_2d: {
       TracyCFrameMarkStart("grid_draw_2d");
@@ -272,6 +270,19 @@ void smol_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
     } break;
     default: assert(0);
   }
-  brgl_viewport(0, 0, plot->resolution.width, plot->resolution.height);
+}
+
+void smol_mesh_img_draw(br_plot_t* plot, br_shaders_t* shaders) {
+  shaders->img->uvs.image_uv = brgl_framebuffer_to_texture(plot->texture_id);
+  shaders->img->uvs.resolution_uv = br_vec2i_tof(brtl_window_size().vec);
+  br_extent_t ex = BR_EXTENTI_TOF(plot->graph_screen_rect);
+  br_vec4_t* p = (br_vec4_t*)shaders->img->pos_vbo;
+  p[0] = BR_VEC4(ex.x           , ex.y,             0, 0);
+  p[1] = BR_VEC4(ex.x + ex.width, ex.y,             1, 0);
+  p[2] = BR_VEC4(ex.x + ex.width, ex.y + ex.height, 1, 1);
+  p[3] = BR_VEC4(ex.x           , ex.y,             0, 0);
+  p[4] = BR_VEC4(ex.x + ex.width, ex.y + ex.height, 1, 1);
+  p[5] = BR_VEC4(ex.x           , ex.y + ex.height, 0, 1);
+  //shaders->img->len += 2;
 }
 

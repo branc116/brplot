@@ -22,6 +22,10 @@
 
 #define font_fs "src/shaders/font.fs"
 #define font_vs "src/shaders/font.vs"
+
+#define img_fs "src/shaders/img.fs"
+#define img_vs "src/shaders/img.vs"
+
 #endif
 
 #define NOP2(N, M)
@@ -77,6 +81,12 @@
                                         \
       X_BUF(pos, 4)                     \
       X_BUF(color, 4)                   \
+    )                                   \
+  X(img, 2,                             \
+      X_VEC(resolution, 2)              \
+      X_VEC(image, _TEX),               \
+                                        \
+      X_BUF(pos, 4)                     \
     )
 
 #define VEC_TYPE1 float

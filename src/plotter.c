@@ -112,7 +112,7 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
       .delta = BR_VEC2(0, 0),
     }
   };
-  br_plot_create_texture(&plot);
+  //br_plot_create_texture(&plot);
   br_da_push_t(int, (br->plots), plot);
   br->any_2d = true;
   return br->plots.len - 1;

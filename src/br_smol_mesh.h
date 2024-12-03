@@ -21,6 +21,7 @@ void smol_mesh_gen_line_strip2(br_shader_line_t* shader, float const* xs, float 
 void smol_mesh_gen_line_strip_stride(br_shader_line_t* mesh, br_vec2_t const * points, ssize_t len, br_color_t color, int stride);
 void smol_mesh_gen_bb(br_shader_line_t* mesh, bb_t bb, br_color_t color);
 void smol_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders);
+void smol_mesh_img_draw(br_plot_t* plot, br_shaders_t* shaders);
 
 void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, br_vec3_t p1, br_vec3_t p2, br_color_t color);
 

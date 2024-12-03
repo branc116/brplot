@@ -18,20 +18,21 @@ void br_gui_init_specifics_gui(br_plotter_t* br) {
 
 BR_API void br_plotter_draw(br_plotter_t* br) {
   br_plotter_begin_drawing(br);
+  brgl_enable_framebuffer(0);
   update_resolution(br);
   br_plotter_update_variables(br);
   help_draw_fps(br->text, 0, 0);
 #define PLOT (&br->plots.arr[br->active_plot_index])
   br_plot_update_variables(br, PLOT, br->groups, brtl_mouse_get_pos());
   br_plot_update_shader_values(PLOT, &br->shaders);
-  brgl_enable_framebuffer(PLOT->texture_id);
-  draw_grid_numbers(br->text, PLOT);
-  br_datas_draw(br->groups, PLOT, &br->shaders);
-  smol_mesh_grid_draw(PLOT, &br->shaders);
-  brgl_enable_framebuffer(0);
+  //brgl_enable_framebuffer(PLOT->texture_id);
+  //draw_grid_numbers(br->text, PLOT);
+  //br_datas_draw(br->groups, PLOT, &br->shaders);
+  //smol_mesh_grid_draw(PLOT, &br->shaders);
+  //brgl_enable_framebuffer(0);
+  //smol_mesh_img_draw(PLOT, &br->shaders);
 #undef PLOT
   draw_left_panel(br);
-  br_text_renderer_dump(br->text);
   br_plotter_end_drawing(br);
 }
 

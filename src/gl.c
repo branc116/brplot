@@ -235,6 +235,10 @@ GLuint brgl_create_framebuffer(int width, int height) {
   return br_id;
 }
 
+GLuint brgl_framebuffer_to_texture(GLuint br_id) {
+  return br_framebuffers[br_id].tx_id;
+}
+
 void brgl_enable_framebuffer(GLuint br_id) {
   GLuint fb_id = br_framebuffers[br_id].fb_id;
   GLuint tx_id = br_framebuffers[br_id].tx_id;

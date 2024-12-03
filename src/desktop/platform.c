@@ -260,6 +260,7 @@ void br_plotter_begin_drawing(br_plotter_t* br) {
 
 void br_plotter_end_drawing(br_plotter_t* br) {
   br_text_renderer_dump(br->text);
+  br_shaders_draw_all(br->shaders);
   glfwSwapBuffers(br->win.glfw);
   handle_all_commands(br, br->commands);
 
