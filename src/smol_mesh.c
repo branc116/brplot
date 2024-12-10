@@ -283,6 +283,6 @@ void smol_mesh_img_draw(br_plot_t* plot, br_shaders_t* shaders) {
   p[3] = BR_VEC4(ex.x           , ex.y,             0, 0);
   p[4] = BR_VEC4(ex.x + ex.width, ex.y + ex.height, 1, 1);
   p[5] = BR_VEC4(ex.x           , ex.y + ex.height, 0, 1);
-  //shaders->img->len += 2;
+  shaders->img->len += 2;
 }
 

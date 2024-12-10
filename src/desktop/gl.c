@@ -1,3 +1,4 @@
+#include "src/br_gl.h"
 
 #define TO_LOAD(X) \
   X(GLuint, glCreateProgram) \
@@ -54,6 +55,12 @@
   X(void, glDrawBuffers) \
   X(void, glBindFramebuffer) \
   X(void, glGenFramebuffers) \
+  X(void, glDebugMessageCallback) \
+  X(void, glFramebufferTexture2D) \
+  X(void, glGenRenderbuffers) \
+  X(void, glFramebufferRenderbuffer) \
+  X(void, glBindRenderbuffer) \
+  X(void, glRenderbufferStorage) \
 
 
 #if !defined(_MSC_VER)
@@ -69,6 +76,11 @@ void dumby_func() {
   BR_ASSERT(0);
 }
 
+void glDebug(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam) {
+  (void)userParam;
+  LOGE("GLERROR: %d %d %d %d %.*s", source, type, id, severity, length, message);
+}
+
 void brgl_load(void) {
   gladLoadGL(glfwGetProcAddress);
 #define X(type, name) name = (void*)glfwGetProcAddress(#name);
@@ -77,6 +89,7 @@ void brgl_load(void) {
 #define X(type, name) name = name ? name : (void*)dumby_func;
   TO_LOAD(X)
 #undef X
+  glDebugMessageCallback(glDebug, NULL);
 }
 
 #if !defined(_MSC_VER)

@@ -26,7 +26,7 @@
 #  define LOCK(x)
 #endif
 
-#if !defined(BR_DISABLE_LOG)
+#if 1 || !defined(BR_DISABLE_LOG)
 #  define LOG(...)
 #  define LOGI(format, ...) fprintf(stderr, "[INFO][" __FILE__ ":%d]" format "\n", __LINE__, ##__VA_ARGS__)
 #  define LOGW(format, ...) fprintf(stderr, "[WARNING][" __FILE__ ":%d]" format "\n", __LINE__, ##__VA_ARGS__)

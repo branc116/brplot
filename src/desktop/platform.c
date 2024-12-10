@@ -143,11 +143,10 @@ static void br_glfw_on_mouse_button(struct GLFWwindow* window, int button, int a
 static void br_glfw_on_key(struct GLFWwindow* window, int key, int scancode, int action, int mods);
 
 void br_plotter_init_specifics_platform(br_plotter_t* br) {
-  br->win.glfw =  glfwGetCurrentContext();
+  br->win.glfw = glfwGetCurrentContext();
   if (br->win.glfw) {
     LOGI("GLFW window alrady initialized: %p", (void*)br->win.glfw);
   } else {
-
     glfwSetErrorCallback(log_glfw_errors);
     int result = glfwInit();
     if (result == GLFW_FALSE) LOGF("GLFW: Failed to initialize GLFW");
@@ -160,10 +159,10 @@ void br_plotter_init_specifics_platform(br_plotter_t* br) {
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_FALSE);
     glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_FALSE);
     glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_FALSE);
-    glfwWindowHint(GLFW_SAMPLES, 4);
+    //glfwWindowHint(GLFW_SAMPLES, 1);
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
 #if defined(__APPLE__)
@@ -183,6 +182,8 @@ void br_plotter_init_specifics_platform(br_plotter_t* br) {
   brgl_enable(GL_BLEND);
   brgl_blend_func(GL_SRC_ALPHA, GL_DST_ALPHA);
   brgl_blend_equation(GL_MAX);
+  br_sizei_t size = brtl_window_size();
+  brgl_viewport(0, 0, size.width, size.height);
 
   br->shaders = br_shaders_malloc();
   br->text = br_text_renderer_malloc(1024, 1024, br_font_data, &br->shaders.font);
@@ -251,8 +252,9 @@ void br_plotter_begin_drawing(br_plotter_t* br) {
   br->mouse.delta = br_vec2_sub(br->mouse.pos, br->mouse.old_pos);
   br->mouse.old_pos = br->mouse.pos;
 
-  brgl_clear_color(0,0,0,0);
-  brgl_clear();
+  //brgl_enable_framebuffer(0);
+  //brgl_clear_color(0,0,0,0);
+  //brgl_clear();
   br->shaders.font->uvs.resolution_uv = BR_VEC2((float)br->win.size.width, (float)br->win.size.height);
   br->shaders.font->uvs.sub_pix_aa_map_uv =  BR_VEC3(-1, 0, 1);
   br->shaders.font->uvs.sub_pix_aa_scale_uv = 0.2f;

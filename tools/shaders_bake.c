@@ -13,7 +13,7 @@
 #define IS_NUMBER_TOKEN(c) ((c) >= '0' && (c) <= '9')
 #define IS_ALPHA_TOKEN(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
 #define FATAL(shader, line, offset, msg, ...) do { \
-  fprintf(stderr, "|%s:%d:%d|ERROR: "msg"\n", br_str_to_c_str(shader->path), line, offset, __VA_ARGS__); \
+  fprintf(stderr, "|" __FILE__ ":%d||%s:%d:%d|ERROR: "msg"\n", __LINE__, br_str_to_c_str(shader->path), line, offset, __VA_ARGS__); \
   exit(1); \
 } while(0)
 

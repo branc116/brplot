@@ -69,8 +69,14 @@ BR_GL(void, glTexParameteri)(GLenum target, GLenum pname, GLint param);
 BR_GL(void, glFramebufferTexture)(GLenum target, GLenum attachment, GLuint texture, GLint level);
 BR_GL(void, glDrawBuffers)(GLsizei n, GLenum const* bufs);
 BR_GL(void, glBindFramebuffer)(GLenum target, GLuint framebuffer);
-
+typedef void (*glDebugProc)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
+BR_GL(void, glDebugMessageCallback)(glDebugProc callback, const void * userParam);
 BR_GL(void, glGenFramebuffers)(GLsizei n, GLuint * framebuffers);
+BR_GL(void, glFramebufferTexture2D)(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+BR_GL(void, glGenRenderbuffers)(GLsizei n, GLuint *renderbuffers);
+BR_GL(void, glFramebufferRenderbuffer)(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
+BR_GL(void, glBindRenderbuffer)(GLenum target, GLuint renderbuffer);
+BR_GL(void, glRenderbufferStorage)(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
 
 
 #if defined(HEADLESS)
@@ -174,7 +180,7 @@ void brgl_disable_depth_test(void) {
 #define BR_FRAMEBUFFERS 16
 #define BR_FRAMEBUFFER_STACK 16
 BR_THREAD_LOCAL static struct {
-  GLuint fb_id, tx_id;
+  GLuint fb_id, tx_id, rb_id;
   int width, height;
 } br_framebuffers[BR_FRAMEBUFFERS] = { 0 };
 
@@ -217,6 +223,7 @@ GLuint brgl_create_framebuffer(int width, int height) {
   GLuint br_id = 1;
   GLuint tx_id = 0;
   GLuint fb_id = 0;
+  GLuint rb_id = 0;
 
   for (; brgl_fb_is_set(br_id); ++br_id);
   glGenFramebuffers(1, &fb_id);
@@ -224,12 +231,19 @@ GLuint brgl_create_framebuffer(int width, int height) {
 
   glGenTextures(1, &tx_id);
   glBindTexture(GL_TEXTURE_2D, tx_id);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tx_id, 0);
+
+  glGenRenderbuffers(1, &rb_id);
+  glBindRenderbuffer(GL_RENDERBUFFER, rb_id);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rb_id);
 
   br_framebuffers[br_id].tx_id = tx_id;
   br_framebuffers[br_id].fb_id = fb_id;
+  br_framebuffers[br_id].rb_id = rb_id;
   br_framebuffers[br_id].width = width;
   br_framebuffers[br_id].height = height;
   return br_id;
@@ -241,17 +255,13 @@ GLuint brgl_framebuffer_to_texture(GLuint br_id) {
 
 void brgl_enable_framebuffer(GLuint br_id) {
   GLuint fb_id = br_framebuffers[br_id].fb_id;
-  GLuint tx_id = br_framebuffers[br_id].tx_id;
   int width = br_framebuffers[br_id].width;
   int height = br_framebuffers[br_id].height;
-  GLenum DrawBuffers = GL_COLOR_ATTACHMENT0;
 
   br_shaders_draw_all(*brtl_shaders());
 
-  glBindFramebuffer(GL_FRAMEBUFFER, fb_id);
+  glBindFramebuffer(fb_id ? GL_FRAMEBUFFER : GL_DRAW_FRAMEBUFFER, fb_id);
   glViewport(0, 0, width, height);
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tx_id, 0);
-  glDrawBuffers(1, &DrawBuffers);
 }
 
 void brgl_destroy_framebuffer(GLuint br_id) {
