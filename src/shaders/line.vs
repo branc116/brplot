@@ -12,7 +12,6 @@ out vec2 normal;
 out vec3 color;
 
 uniform vec2 offset;
-uniform vec4 resolution;
 uniform vec2 zoom;
 uniform vec2 screen;
 
@@ -34,18 +33,12 @@ void main(void)
     vec2 dif = normal * thick;
     position -= dif * max(zoom * 0.1, position / 7e5);
 
-    vec2 size = resolution.zw;
-
-    float aspect = size.y / screen.y * 2.0;
+    float aspect = 2.0;
 
     vec2 fact = screen.xy / screen.yy;
-    vec2 fact2 = resolution.ww / screen.xy;
     vec2 uv = position * aspect;
-    uv -= offset * fact2 * fact * 2.;
+    uv -= offset * 2.;
     uv /= zoom * fact;
-    uv += vec2(-1., 1.);
-    uv += resolution.xy/screen.xy*vec2(2., -2.);
-    uv += resolution.zw/screen.xy*vec2(1., -1.);
     gl_Position = vec4(uv, 0.0, 1.0);
 }
 

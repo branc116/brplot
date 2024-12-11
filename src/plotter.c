@@ -100,7 +100,6 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
   br_plot_t plot = {
     .groups_to_show = { 0 },
     .graph_screen_rect = BR_EXTENTI( x, 50, br->width - x - 60, br->height - 110 ),
-    .resolution = BR_SIZEI(br->width, br->height),
     .follow = false,
     .jump_around = false,
     .mouse_inside_graph = false,
@@ -122,7 +121,6 @@ int br_plotter_add_plot_3d(br_plotter_t* br) {
   br_plot_t plot = {
     .groups_to_show = { 0 },
     .graph_screen_rect = BR_EXTENTI(500, 50, br->width - 500 - 60, br->height - 110),
-    .resolution = BR_SIZEI(br->width, br->height),
     .follow = false,
     .jump_around = false,
     .mouse_inside_graph = false,
@@ -220,7 +218,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
 
   TracyCFrameMarkStart("draw_grid_numbers");
   br_extent_t r = plot->dd.graph_rect;
-  br_extent_t gex = BR_EXTENTI_TOF(plot->graph_screen_rect);
+  br_size_t sz = BR_SIZEI_TOF(plot->graph_screen_rect.size);
   int font_size = (int)(18.f * context.font_scale);
   char fmt[16];
   char* scrach = br_scrach_get(128);
@@ -239,9 +237,9 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         i += 1.f;
         sprintf(scrach, fmt, cur);
         help_trim_zeros(scrach);
-        float y = gex.y + (gex.height / r.height) * (r.y - cur);
-        if (y > gex.y + gex.height) break;
-        br_text_renderer_push2(tr, gex.x - 2.f, y, font_size, BR_WHITE, br_strv_from_c_str(scrach), br_text_renderer_ancor_right_mid);
+        float y = sz.height / r.height * (r.y - cur);
+        if (y > sz.height) break;
+        br_text_renderer_push2(tr, 2.f, y, font_size, BR_WHITE, br_strv_from_c_str(scrach), br_text_renderer_ancor_left_mid);
       }
     }
   }
@@ -262,12 +260,12 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         sprintf(scrach, fmt, cur);
         help_trim_zeros(scrach);
         //Vector2 sz = help_measure_text(scrach, font_size);
-        float x = gex.x + (gex.width / r.width) * (cur - r.x);
+        float x = (sz.width / r.width) * (cur - r.x);
         //x -= sz.x / 2.f;
         //if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
         //x_last_max = x + sz.x;
-        if (x > gex.x + gex.width) break;
-        br_text_renderer_push2(tr, x, gex.y + gex.height, font_size, BR_WHITE, br_strv_from_c_str(scrach), br_text_renderer_ancor_mid_up);
+        if (x > sz.width) break;
+        br_text_renderer_push2(tr, x, sz.height, font_size, BR_WHITE, br_strv_from_c_str(scrach), br_text_renderer_ancor_mid_up);
       }
     }
   }

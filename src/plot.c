@@ -147,12 +147,10 @@ void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
       br_vec2_t off_zoom = br_vec2_mul(plot->dd.offset, zoom_log);
       br_vec2_t off = br_vec2_mul(off_zoom, BR_VEC2(0.1f, 0.1f));
       shaders->grid->uvs.offset_uv = br_vec2_sub(off_zoom, BR_VEC2(floorf(off.x) * 10.f, floorf(off.y) * 10.f));
-      shaders->grid->uvs.screen_uv = (br_vec2_t) { .x = ex.width, .y = ex.height };
+      shaders->grid->uvs.screen_uv = ex.size.vec;
       shaders->line->uvs.zoom_uv = plot->dd.zoom;
       shaders->line->uvs.offset_uv = plot->dd.offset;
-      shaders->line->uvs.screen_uv.x = (float)plot->resolution.width;
-      shaders->line->uvs.screen_uv.y = (float)plot->resolution.height;
-      shaders->line->uvs.resolution_uv = BR_VEC4(ex.x, ex.y, ex.width, ex.height);
+      shaders->line->uvs.screen_uv = BR_SIZEI_TOF(plot->graph_screen_rect).vec;
       TracyCFrameMarkEnd("update_shader_values_2d");
     } break;
     case br_plot_kind_3d: {
@@ -227,8 +225,6 @@ static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* sha
 
 static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
   TracyCFrameMarkStart("br_datas_draw_3d");
-  int h = plot->graph_screen_rect.height;
-  brgl_viewport(plot->graph_screen_rect.x, plot->resolution.height - h - plot->graph_screen_rect.y, plot->graph_screen_rect.width, h);
   for (int j = 0; j < plot->groups_to_show.len; ++j) {
     int group = plot->groups_to_show.arr[j];
     br_data_t const* g = br_data_get1(datas, group);
@@ -239,7 +235,6 @@ static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* sha
     br_shader_line_3d_draw(shaders->line_3d);
     shaders->line_3d->len = 0;
   }
-  brgl_viewport(0, 0, plot->resolution.width, plot->resolution.height);
   TracyCFrameMarkEnd("br_datas_draw_3d");
 }
 

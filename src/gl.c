@@ -262,6 +262,7 @@ void brgl_enable_framebuffer(GLuint br_id) {
 
   glBindFramebuffer(fb_id ? GL_FRAMEBUFFER : GL_DRAW_FRAMEBUFFER, fb_id);
   glViewport(0, 0, width, height);
+  brtl_shaders()->font->uvs.resolution_uv = BR_VEC2((float)width, (float)height);
 }
 
 void brgl_destroy_framebuffer(GLuint br_id) {

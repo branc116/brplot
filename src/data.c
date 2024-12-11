@@ -6,7 +6,6 @@
 #include "src/br_pp.h"
 #include "src/br_resampling2.h"
 #include "src/br_str.h"
-#include "src/br_gl.h"
 #include "src/br_math.h"
 
 #include "tracy/TracyC.h"
@@ -288,8 +287,6 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot, br_shaders_t* shaders) {
     TracyCFrameMarkEnd("br_datas_draw_2d");
   } else {
     TracyCFrameMarkStart("br_datas_draw_3d");
-    int h = (int)plot->graph_screen_rect.height;
-    brgl_viewport((int)plot->graph_screen_rect.x, plot->resolution.height - h - (int)plot->graph_screen_rect.y, (int)plot->graph_screen_rect.width, h);
     for (int j = 0; j < plot->groups_to_show.len; ++j) {
       int group = plot->groups_to_show.arr[j];
       br_data_t const* g = br_data_get1(pg, group);
@@ -300,7 +297,6 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot, br_shaders_t* shaders) {
       br_shader_line_3d_draw(shaders->line_3d);
       shaders->line_3d->len = 0;
     }
-    brgl_viewport(0, 0, plot->resolution.width, (int)plot->resolution.height);
     TracyCFrameMarkEnd("br_datas_draw_3d");
   }
   resampling2_change_something(pg);

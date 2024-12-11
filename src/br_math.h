@@ -9,6 +9,7 @@
 #define BR_VEC2I_SUB(A, B) ((br_vec2i_t) { .x = (A).x - (B).x, .y = (A).y - (B).y })
 #define BR_VEC2I_SCALE(V, B) ((br_vec2i_t) { .x = (V).x * (B), .y = (V).y * (B) })
 #define BR_SIZEI(WIDTH, HEIGHT) ((br_sizei_t) { .width = (WIDTH), .height = (HEIGHT) })
+#define BR_SIZEI_TOF(SZ) ((br_size_t) { .width = (float)((SZ).width), .height = (float)((SZ).height) })
 #define BR_EXTENTI_TOF(E) ((br_extent_t) { .arr = { (float)(E).arr[0], (float)(E).arr[1], (float)(E).arr[2], (float)(E).arr[3] } })
 #define BR_EXTENT_ASPECT(E) ((float)(E).height / (float)(E).width)
 #define BR_EXTENT(X, Y, WIDTH, HEIGHT) (br_extent_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }

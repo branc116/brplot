@@ -46,7 +46,6 @@ typedef struct br_plot_t {
   // graph_screen_rect is in the screen coordinates.
   //                   That is if you resize the whole plot, or move the plot around the screen this value will change.
   br_extenti_t graph_screen_rect;
-  br_sizei_t resolution;
 
   unsigned int texture_id;
 

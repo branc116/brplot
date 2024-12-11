@@ -110,12 +110,12 @@ static void draw_left_panel(br_plotter_t* br) {
 // TODO 2D/3D
 static void update_resolution(br_plotter_t* br) {
   br_plot_t* plot = &br->plots.arr[br->active_plot_index];
-  plot->resolution = br->win.size;
-  int w = plot->resolution.width - 400 - 25, h = plot->resolution.height - 50;
+  int w = br->win.size.width - 400 - 25, h = br->win.size.height - 50;
   plot->graph_screen_rect = BR_EXTENTI(400, 25, w, h);
 }
 
 void br_plot_screenshot(br_text_renderer_t* tr, br_plot_t* plot, br_shaders_t* shaders, br_datas_t groups, char const* path) {
+  (void)tr; (void)plot; (void)shaders; (void)groups; (void)path;
 #// TODO: Make this more better...
 //  int left_pad = 80;
 //  int bottom_pad = 80;

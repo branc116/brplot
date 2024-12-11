@@ -57,7 +57,6 @@
     )                                   \
   X(line, 1024,                         \
       X_VEC(offset, 2)                  \
-      X_VEC(resolution, 4)              \
       X_VEC(zoom, 2)                    \
       X_VEC(screen, 2),                 \
                                         \
