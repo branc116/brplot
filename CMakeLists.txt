@@ -51,8 +51,8 @@ endif ()
 
 add_executable(font_bake tools/font_bake.c)
 add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/.generated/default_font.h
-  COMMAND font_bake fonts/PlayfairDisplayRegular-ywLOY.ttf ${CMAKE_CURRENT_SOURCE_DIR}/.generated/default_font.h
-  DEPENDS font_bake fonts/PlayfairDisplayRegular-ywLOY.ttf
+  COMMAND font_bake content/PlayfairDisplayRegular-ywLOY.ttf ${CMAKE_CURRENT_SOURCE_DIR}/.generated/default_font.h
+  DEPENDS font_bake content/PlayfairDisplayRegular-ywLOY.ttf
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 target_sources(brplot PUBLIC .generated/default_font.h)
 

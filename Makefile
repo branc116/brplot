@@ -225,9 +225,9 @@ bench: bin/bench
 	./bin/bench >> bench.txt
 	cat bench.txt
 
-.generated/default_font.h: bin/font_bake fonts/PlayfairDisplayRegular-ywLOY.ttf
+.generated/default_font.h: bin/font_bake content/PlayfairDisplayRegular-ywLOY.ttf
 	test -d .generated || mkdir .generated
-	bin/font_bake fonts/PlayfairDisplayRegular-ywLOY.ttf > .generated/default_font.h
+	bin/font_bake content/PlayfairDisplayRegular-ywLOY.ttf > .generated/default_font.h
 
 bin/font_bake: tools/font_bake.c $(NOBS)
 	$(NATIVE_CC) -O3 -o bin/font_bake tools/font_bake.c

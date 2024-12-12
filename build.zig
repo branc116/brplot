@@ -16,7 +16,7 @@ pub fn generate_fonts(b: *std.Build) !*std.Build.Step.Run {
     generateFont.linkLibrary(native_rl);
     generateFont.linkLibC();
     var ret = b.addRunArtifact(generateFont);
-    ret.addArg("./fonts/PlayfairDisplayRegular-ywLOY.ttf");
+    ret.addArg("./content/PlayfairDisplayRegular-ywLOY.ttf");
     ret.addArg("build/default_font.c");
     return ret;
 }
