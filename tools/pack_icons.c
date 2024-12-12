@@ -54,6 +54,7 @@ int pack(int n, int* sizes, stbrp_rect** out_rects) {
     packed = stbrp_pack_rects(&rc, rects, n);
   }
   *out_rects = rects;
+  free(nodes);
   return cur;
 }
 
@@ -67,13 +68,15 @@ typedef struct {
   size_t len;
 }image_t;
 
-image_t imgs[] = { {
+image_t imgs[] = {
+  {
     .img = "menu",
     STATIC_ARRAY_INT(16, 32)
-  }, {
-    .img = "close",
-    STATIC_ARRAY_INT(16, 32)
-  }
+  },
+//  {
+//    .img = "close",
+//    STATIC_ARRAY_INT(16, 32)
+//  }
 };
 
 int* image_sizes(int n, image_t* imgs, int* out_len) {
@@ -105,12 +108,21 @@ void print_img(unsigned char* img, int w, int h, int c) {
   }
 }
 
+void write_to_atlas(unsigned char* atlas, int as, stbrp_rect rect, unsigned char* img) {
+  for (int i = 0; i < rect.h; ++i) {
+    for (int j = 0; j < rect.w; ++j) {
+      atlas[rect.x + j + (rect.y + i) * as] = img[j + rect.w * i];
+    }
+  }
+}
+
 int main(void) {
   stbrp_rect* rects = NULL;
   int len = 0;
   int* sizes = image_sizes(STATIC_ARRAY_SIZE(imgs), imgs, &len);
   int sz = pack(len, sizes, &rects);
-  unsigned char* atlas = calloc(sz, 1);
+  unsigned char* atlas = calloc(sz*sz, 1);
+  int rect_index = 0;
   for (int i = 0; i < STATIC_ARRAY_SIZE(imgs); ++i) {
     char path[4096] = { 0 };
     for (int j = 0; j < imgs[i].len; ++j) {
@@ -121,10 +133,21 @@ int main(void) {
         return 1;
       }
       int x, y, c;
-      stbi_uc* d = stbi_load_from_file(file, &x, &y, &c, 4);
+      stbi_uc* d = stbi_load_from_file(file, &x, &y, &c, 1);
+      if (c != 1) {
+        fprintf(stderr, "ERROR: Expeceted png to have only one channle but %s has %d. Consider using tools/extract_alpha.c tool.\n", path, c);
+        return 1;
+      }
       print_img(d, x, y, c);
-      continue;
+      write_to_atlas(atlas, sz, rects[rect_index], d);
+      ++rect_index;
+      free(d);
     }
   }
+  stbi_write_png("atlas.png", sz, sz, 1, atlas, sz);
+  free(sizes);
+  free(atlas);
+  free(rects);
   return 0;
 }
+// gcc -I. -o bin/pack_icons tools/pack_icons.c -lm
