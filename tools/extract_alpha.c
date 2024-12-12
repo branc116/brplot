@@ -8,13 +8,21 @@
 #include "external/stb_image_write.h"
 
 int main(int argc, char** argv) {
-  if (argc != 3) {
+  char* in_name = NULL;
+  char* out_name = NULL;
+
+  if (argc == 3) {
+    in_name = argv[1];
+    out_name = argv[2];
     fprintf(stderr, "ERROR: expected %s <input-png> <output-png>\n", argv[0]);
+  } else if (argc == 2) {
+    in_name = argv[1];
+    out_name = argv[1];
+  } else {
+    fprintf(stderr, "ERROR: expected %s <input-png> <output-png>\n"
+                    "       or       %s <in-out-png>\n", argv[0], argv[0]);
     return 1;
   }
-
-  char* in_name = argv[1];
-  char* out_name = argv[2];
 
   FILE* in = fopen(in_name, "rb");
   if (in == 0) {
@@ -41,3 +49,4 @@ int main(int argc, char** argv) {
   stbi_write_png(out_name, w, h, 1, out_data, w);
   return 0;
 }
+// gcc -I. -o bin/extract_alpha tools/extract_alpha.c -lm
