@@ -44,13 +44,13 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
 #define PLOT (&br->plots.arr[br->active_plot_index])
   br_plot_update_variables(br, PLOT, br->groups, brtl_mouse_get_pos());
   br_plot_update_shader_values(PLOT, &br->shaders);
-  brgl_enable_framebuffer(PLOT->texture_id);
+  brgl_enable_framebuffer(PLOT->texture_id, PLOT->graph_screen_rect.width, PLOT->graph_screen_rect.height);
   brgl_clear();
   draw_grid_numbers(br->text, PLOT);
   br_datas_draw(br->groups, PLOT, &br->shaders);
   smol_mesh_grid_draw(PLOT, &br->shaders);
 
-  brgl_enable_framebuffer(0);
+  brgl_enable_framebuffer(0, br->win.size.width, br->win.size.height);
   brgl_disable_depth_test();
   brgl_clear();
   help_draw_fps(br->text, 0, 0);

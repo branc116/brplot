@@ -89,7 +89,7 @@ void brgl_unload_texture(GLuint tex_id);
 
 GLuint brgl_create_framebuffer(int width, int height);
 GLuint brgl_framebuffer_to_texture(GLuint br_id);
-void brgl_enable_framebuffer(GLuint fb_id);
+void brgl_enable_framebuffer(GLuint fb_id, int new_width, int new_height);
 void brgl_destroy_framebuffer(GLuint fb_id);
 
 GLuint brgl_load_vao(void);

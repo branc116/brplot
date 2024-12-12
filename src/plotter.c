@@ -99,7 +99,7 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
   int x = 400;
   br_plot_t plot = {
     .groups_to_show = { 0 },
-    .graph_screen_rect = BR_EXTENTI( x, 50, br->width - x - 60, br->height - 110 ),
+    .graph_screen_rect = BR_EXTENTI( x, 50, br->win.size.width - x - 60, br->win.size.height - 110 ),
     .follow = false,
     .jump_around = false,
     .mouse_inside_graph = false,
@@ -111,7 +111,7 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
       .delta = BR_VEC2(0, 0),
     }
   };
-  //br_plot_create_texture(&plot);
+  br_plot_create_texture(&plot);
   br_da_push_t(int, (br->plots), plot);
   br->any_2d = true;
   return br->plots.len - 1;
@@ -120,7 +120,7 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
 int br_plotter_add_plot_3d(br_plotter_t* br) {
   br_plot_t plot = {
     .groups_to_show = { 0 },
-    .graph_screen_rect = BR_EXTENTI(500, 50, br->width - 500 - 60, br->height - 110),
+    .graph_screen_rect = BR_EXTENTI(500, 50, br->win.size.width - 500 - 60, br->win.size.height - 110),
     .follow = false,
     .jump_around = false,
     .mouse_inside_graph = false,
@@ -134,6 +134,7 @@ int br_plotter_add_plot_3d(br_plotter_t* br) {
       .far_plane = 10e7f,
     }
   };
+  br_plot_create_texture(&plot);
   br_da_push_t(int, (br->plots), plot);
   br->any_3d = true;
   return br->plots.len - 1;

@@ -75,7 +75,6 @@ typedef struct br_plotter_t {
 #if BR_HAS_SHADER_RELOAD
   bool shaders_dirty;
 #endif
-  int  width, height;
   bool file_saver_inited;
   bool should_close;
   bool switch_to_active;
@@ -104,7 +103,7 @@ BR_API void        br_plotter_datas_deinit(br_plotter_t* br);
 
 // Platform specific
 void br_plotter_wait(br_plotter_t const* br);
-void br_plotter_init_specifics_platform(br_plotter_t* br);
+void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height);
 void br_plotter_begin_drawing(br_plotter_t* br);
 void br_plotter_end_drawing(br_plotter_t* br);
 

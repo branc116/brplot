@@ -61,6 +61,7 @@
   X(void, glFramebufferRenderbuffer) \
   X(void, glBindRenderbuffer) \
   X(void, glRenderbufferStorage) \
+  X(void, glFramebufferParameteri) \
 
 
 #if !defined(_MSC_VER)

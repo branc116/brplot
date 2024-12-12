@@ -15,7 +15,7 @@ static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* sha
 static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders);
 
 void br_plot_create_texture(br_plot_t* br) {
-  //br->texture_id = brgl_create_framebuffer(br->graph_screen_rect.width, br->graph_screen_rect.height);
+  br->texture_id = brgl_create_framebuffer(br->graph_screen_rect.width, br->graph_screen_rect.height);
 }
 
 void br_plot_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
