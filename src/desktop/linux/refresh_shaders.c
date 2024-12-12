@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "unistd.h"
@@ -13,7 +14,12 @@
 static void* watch_shader_change(void* gv) {
   int fd = inotify_init();
   uint32_t buff[128];
-  inotify_add_watch(fd, "src/desktop/shaders", IN_MODIFY | IN_CLOSE_WRITE);
+  const char* path = "src/shaders";
+  if (-1 == inotify_add_watch(fd, path, IN_MODIFY | IN_CLOSE_WRITE)) {
+    LOGE("Failed to start watching shader chages on path %s/%s: %s", getenv("PWD"), path, strerror(errno));
+    return NULL;
+  }
+  LOGI("Sarting to watch shaders on path %s/%s", getenv("PWD"), path);
   br_plotter_t* gvt = gv;
   while(!gvt->should_close) {
     read(fd, buff, sizeof(buff));

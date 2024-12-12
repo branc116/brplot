@@ -26,18 +26,77 @@ void br_plot_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
   }
 }
 
+static inline bool br_plot_is_good_extent(br_extenti_t e, br_extenti_t parent) {
+  return e.x > parent.x &&
+    e.x + e.width < parent.x + parent.width &&
+    e.y > parent.y &&
+    e.y + e.height < parent.y + parent.height &&
+    e.height > 100 &&
+    e.width > 100;
+}
+
 void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t groups, br_vec2_t mouse_pos) {
-    switch (plot->kind) {
-      case br_plot_kind_2d: {
-        if (br_plot_update_variables_2d(plot, groups, mouse_pos))
-          br_keybinding_handle_keys(br, plot);
-      } break;
-      case br_plot_kind_3d: {
-        if (br_plot_update_variables_3d(plot, groups, mouse_pos))
-          br_keybinding_handle_keys(br, plot);
-      } break;
-      default: assert(0);
+  if (plot->drag_mode == br_drag_mode_none) {
+    if (brtl_mouse_is_down_l()) {
+      br_drag_mode_t new_mode = br_drag_mode_none;
+      br_vec2_t pos = mouse_pos;
+      br_extent_t ex = BR_EXTENTI_TOF(plot->graph_screen_rect);
+      float slack = 10.f;
+      if (br_col_vec2_extent(ex, pos)) {
+        if      (ex.x + slack > pos.x)             new_mode |= br_drag_mode_left;
+        else if (ex.x + ex.width  - slack < pos.x) new_mode |= br_drag_mode_right;
+        if      (ex.y + slack > pos.y)             new_mode |= br_drag_mode_top;
+        else if (ex.y + ex.height - slack < pos.y) new_mode |= br_drag_mode_bottom;
+        if (new_mode == br_drag_mode_none) new_mode = br_drag_mode_move;
+      }
+      if (new_mode != br_drag_mode_none) {
+        plot->drag_point = pos;
+        plot->drag_mode = new_mode;
+        plot->drag_rect_before = plot->graph_screen_rect;
+      }  
     }
+  } else {
+    if (brtl_mouse_is_down_l()) {
+      br_extenti_t new_extent = plot->graph_screen_rect;
+      if (plot->drag_mode == br_drag_mode_move) {
+        new_extent.pos = br_vec2i_sub(plot->drag_rect_before.pos, br_vec2_toi(br_vec2_sub(plot->drag_point, mouse_pos)));
+      } else {
+        if (plot->drag_mode & br_drag_mode_left) {
+          float dif = plot->drag_point.x - mouse_pos.x;
+          new_extent.width = plot->drag_rect_before.width + (int)dif;
+          new_extent.x = plot->drag_rect_before.x - (int)dif;
+        } else if (plot->drag_mode & br_drag_mode_right) {
+          float dif = plot->drag_point.x - mouse_pos.x;
+          new_extent.width = plot->drag_rect_before.width - (int)dif;
+        }
+        if (plot->drag_mode & br_drag_mode_top) {
+          float dif = plot->drag_point.y - mouse_pos.y;
+          new_extent.y = plot->drag_rect_before.y - (int)dif;
+          new_extent.height = plot->drag_rect_before.height + (int)dif;
+        } else if (plot->drag_mode & br_drag_mode_bottom) {
+          float dif = plot->drag_point.y - mouse_pos.y;
+          new_extent.height = plot->drag_rect_before.height - (int)dif;
+        }
+      }
+      if (true  == br_plot_is_good_extent(new_extent,              plot->drag_parent_extent) ||
+          false == br_plot_is_good_extent(plot->graph_screen_rect, plot->drag_parent_extent)) plot->graph_screen_rect = new_extent;
+      else plot->drag_point = br_vec2_sub(plot->drag_point, br_vec2i_tof(br_vec2i_sub(plot->graph_screen_rect.pos, new_extent.pos)));
+    } else {
+      plot->drag_mode = br_drag_mode_none;
+    }
+  }
+
+  switch (plot->kind) {
+    case br_plot_kind_2d: {
+      if (br_plot_update_variables_2d(plot, groups, mouse_pos))
+        br_keybinding_handle_keys(br, plot);
+    } break;
+    case br_plot_kind_3d: {
+      if (br_plot_update_variables_3d(plot, groups, mouse_pos))
+        br_keybinding_handle_keys(br, plot);
+    } break;
+    default: assert(0);
+  }
 }
 
 bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos) {
@@ -182,8 +241,9 @@ br_vec2_t br_plot_2d_get_mouse_position(br_plot_t* plot, br_vec2_t screen_mouse_
   br_vec2_t b = br_vec2i_tof(BR_VEC2I_SUB(plot->graph_screen_rect.size.vec, a));
   br_vec2_t c = br_vec2_scale(b, 1.f/(float)ex.height);
   return  BR_VEC2(
-  -c.x*plot->dd.zoom.x/2.f + plot->dd.offset.x,
-   c.y*plot->dd.zoom.y/2.f + plot->dd.offset.y);
+    -c.x*plot->dd.zoom.x/2.f + plot->dd.offset.x,
+     c.y*plot->dd.zoom.y/2.f + plot->dd.offset.y
+  );
 }
 
 void br_plot_update_context(br_plot_t* plot, br_vec2_t mouse_pos) {

@@ -275,6 +275,8 @@ void smol_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
 void smol_mesh_img_draw(br_plot_t* plot, br_shaders_t* shaders) {
   shaders->img->uvs.image_uv = brgl_framebuffer_to_texture(plot->texture_id);
   shaders->img->uvs.resolution_uv = br_vec2i_tof(brtl_window_size().vec);
+  shaders->img->uvs.mouse_uv = br_vec2_sub(brtl_mouse_get_pos(), br_vec2i_tof(plot->graph_screen_rect.pos));
+  shaders->img->uvs.size_uv = br_vec2i_tof(plot->graph_screen_rect.size.vec);
   br_extent_t ex = BR_EXTENTI_TOF(plot->graph_screen_rect);
   br_vec4_t* p = (br_vec4_t*)shaders->img->pos_vbo;
   p[0] = BR_VEC4(ex.x           , ex.y,             0, 0);

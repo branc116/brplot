@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #define BR_VEC2(X, Y) ((br_vec2_t) { .x = (float)(X), .y = (float)(Y) })
+#define BR_VEC2I(X, Y) ((br_vec2i_t) { .x = (int)(X), .y = (int)(Y) })
 #define BR_VEC2_TOI(V) ((br_vec2i_t) { .x = (int)(V).x, .y = (int)(V).y })
 #define BR_VEC2I_SUB(A, B) ((br_vec2i_t) { .x = (A).x - (B).x, .y = (A).y - (B).y })
 #define BR_VEC2I_SCALE(V, B) ((br_vec2i_t) { .x = (V).x * (B), .y = (V).y * (B) })
@@ -175,6 +176,14 @@ static inline br_vec2_t br_vec2_sub(br_vec2_t a, br_vec2_t b) {
   return BR_VEC2(a.x - b.x, a.y - b.y);
 }
 
+static inline br_vec2i_t br_vec2i_add(br_vec2i_t a, br_vec2i_t b) {
+  return BR_VEC2I(a.x + b.x, a.y + b.y);
+}
+
+static inline br_vec2i_t br_vec2i_sub(br_vec2i_t a, br_vec2i_t b) {
+  return BR_VEC2I(a.x - b.x, a.y - b.y);
+}
+
 static inline float br_vec2_len2(br_vec2_t a) {
   float sum = 0.f;
   for (size_t i = 0; i < BR_VEC_ELS(a); ++i) sum += a.arr[i] * a.arr[i];
@@ -206,6 +215,12 @@ static inline br_vec3_t br_vec2_transform_scale(br_vec2_t v, br_mat_t mat) {
     result.y /= fabsf(result.z);
   }
   return result;
+}
+
+//------------------------size------------------------------
+
+static inline br_sizei_t br_sizei_sub(br_sizei_t a, br_sizei_t b) {
+  return BR_SIZEI(a.width - b.width, a.height - b.height);
 }
 
 //------------------------vec3------------------------------

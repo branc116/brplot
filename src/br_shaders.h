@@ -83,6 +83,8 @@
     )                                   \
   X(img, 2,                             \
       X_VEC(resolution, 2)              \
+      X_VEC(mouse, 2)                   \
+      X_VEC(size, 2)                    \
       X_VEC(image, _TEX),               \
                                         \
       X_BUF(pos, 4)                     \
