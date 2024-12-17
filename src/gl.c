@@ -92,7 +92,7 @@ BR_GL(void, glRenderbufferStorage)(GLenum target, GLenum internalformat, GLsizei
 #  include "src/desktop/gl.c"
 #endif
 
-unsigned int brgl_load_shader(const char* vs, const char* fs) {
+unsigned int brgl_load_shader(const char* vs, const char* fs, int* ok) {
   GLuint vsid = brgl_compile_shader(vs, GL_VERTEX_SHADER);
   GLuint fsid = brgl_compile_shader(fs, GL_FRAGMENT_SHADER);
   GLuint program = glCreateProgram();
@@ -113,8 +113,10 @@ unsigned int brgl_load_shader(const char* vs, const char* fs) {
       br_scrach_free();
     }
     glDeleteProgram(program);
+    *ok = 0;
   } else {
     LOGI("Shader compile successfully");
+    *ok = 1;
   }
   glDeleteShader(vsid);
   glDeleteShader(fsid);
@@ -268,7 +270,6 @@ void brgl_enable_framebuffer(GLuint br_id, int new_width, int new_height) {
   int height = br_framebuffers[br_id].height;
   glBindFramebuffer(fb_id ? GL_FRAMEBUFFER : GL_DRAW_FRAMEBUFFER, fb_id);
   if (fb_id != 0 && (width != new_width || height != new_height)) {
-    LOGI("New size: %d %d", new_width, new_height);
     GLuint tx_id = br_framebuffers[br_id].tx_id;
     GLuint rb_id = br_framebuffers[br_id].rb_id;
     glBindTexture(GL_TEXTURE_2D, tx_id);

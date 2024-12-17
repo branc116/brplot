@@ -4,7 +4,6 @@
 
 #include "raylib.h"
 
-static void update_resolution(br_plotter_t* gv);
 static void draw_left_panel(br_plotter_t* gv);
 static br_plot_id plot_id;
 
@@ -15,7 +14,6 @@ void br_gui_init_specifics_gui(br_plotter_t* br) {
 BR_API void br_plotter_draw(br_plotter_t* br) {
   BeginDrawing();
   ClearBackground(BLACK);
-  update_resolution(br);
   //br_plotter_update_variables(br);
   help_draw_fps(0, 0);
   br_plot_update_variables(br, plot, br->groups, GetMousePosition());
@@ -74,17 +72,6 @@ static void draw_left_panel(br_plotter_t* br) {
   }
   ui_stack_buttons_end();
 #endif
-}
-
-// TODO 2D/3D
-static void update_resolution(br_plotter_t* br) {
-  br_plot_t* plot = &br->plots.arr[br->active_plot_index];
-  plot->resolution = (Vector2) { (float)GetScreenWidth(), (float)GetScreenHeight() };
-  float w = (float)plot->resolution.x - GRAPH_LEFT_PAD - 25.f, h = (float)plot->resolution.y - 50.f;
-  plot->graph_screen_rect.x = GRAPH_LEFT_PAD;
-  plot->graph_screen_rect.y = 25.f;
-  plot->graph_screen_rect.width = w;
-  plot->graph_screen_rect.height = h;
 }
 
 void br_plot_screenshot(br_plot_t* plot, br_shaders_t* shaders, br_datas_t groups, char const* path) {

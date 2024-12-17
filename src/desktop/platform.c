@@ -256,6 +256,7 @@ void br_plotter_begin_drawing(br_plotter_t* br) {
   //brgl_enable_framebuffer(0);
   //brgl_clear_color(0,0,0,0);
   //brgl_clear();
+  br->shaders.font->uvs.mouse_uv = brtl_mouse_get_pos();
   br->shaders.font->uvs.resolution_uv = BR_VEC2((float)br->win.size.width, (float)br->win.size.height);
   br->shaders.font->uvs.sub_pix_aa_map_uv =  BR_VEC3(-1, 0, 1);
   br->shaders.font->uvs.sub_pix_aa_scale_uv = 0.2f;
@@ -267,6 +268,12 @@ void br_plotter_end_drawing(br_plotter_t* br) {
   br_shaders_draw_all(br->shaders);
   glfwSwapBuffers(br->win.glfw);
   handle_all_commands(br, br->commands);
+#if BR_HAS_SHADER_RELOAD
+  if (br->shaders_dirty) {
+    br_shaders_refresh(br->shaders);
+    br->shaders_dirty = false;
+  }
+#endif
 
   br->mouse.scroll = BR_VEC2(0, 0);
   br->mouse.pressed.right = br->mouse.pressed.left = false;
@@ -274,7 +281,7 @@ void br_plotter_end_drawing(br_plotter_t* br) {
 
   double target_frame_time = 1/60.0;
   double frame_time = glfwGetTime() - br->time.now;
-  //br_help_sleep(target_frame_time - frame_time);
+  br_help_sleep(target_frame_time - frame_time);
   br->should_close = glfwWindowShouldClose(br->win.glfw);
   glfwSetWindowShouldClose(br->win.glfw, GLFW_FALSE);
 }

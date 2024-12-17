@@ -152,20 +152,6 @@ BR_API void br_plotter_free(br_plotter_t* br) {
   br_dagens_free(&br->dagens);
 }
 
-void br_plotter_update_variables(br_plotter_t* br) {
-#if BR_HAS_SHADER_RELOAD
-  if (br->shaders_dirty) {
-    br_shaders_refresh(br->shaders);
-    br->shaders_dirty = false;
-  }
-#endif
-  br->shaders.font->uvs.resolution_uv = BR_VEC2((float)br->win.size.width, (float)br->win.size.height);
-  br->shaders.font->uvs.sub_pix_aa_map_uv =  BR_VEC3(-1, 0, 1);
-  br->shaders.font->uvs.sub_pix_aa_scale_uv = 0.2f;
-  br_plotter_update_context(br, brtl_mouse_get_pos());
-  handle_all_commands(br, br->commands);
-}
-
 BR_API void br_plotter_frame_end(br_plotter_t* br) {
   for (size_t i = 0; i < br->groups.len; ++i) {
     if (br->groups.arr[i].is_new == false) continue;
@@ -233,6 +219,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
       else sprintf(fmt, "%%.%df", -(int)exp);
 
       float i = 0.f;
+      float x = - r.x * sz.width / r.width; // - r.x, 0.f, sz.width);
       while (i < 50.f) {
         float cur = start - base * i;
         i += 1.f;
@@ -240,7 +227,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         help_trim_zeros(scrach);
         float y = sz.height / r.height * (r.y - cur);
         if (y > sz.height) break;
-        br_text_renderer_push2(tr, 2.f, y, font_size, BR_WHITE, br_strv_from_c_str(scrach), br_text_renderer_ancor_left_mid);
+        br_text_renderer_push2(tr, x, y, font_size, BR_WHITE, br_strv_from_c_str(scrach), br_text_renderer_ancor_mid_mid);
       }
     }
   }

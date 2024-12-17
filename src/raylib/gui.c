@@ -1,13 +1,15 @@
+#include "src/br_icons.h"
+#include "src/br_math.h"
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
 #include "src/br_gui_internal.h"
 #include "src/br_shaders.h"
 #include "src/br_smol_mesh.h"
 #include "src/br_permastate.h"
+#include "src/br_tl.h"
 #include "src/raylib/ui.c"
 #include "src/br_gl.h"
 
-//static void update_resolution(br_plotter_t* gv);
 static void draw_left_panel(br_plotter_t* gv);
 void br_gui_init_specifics_gui(br_plotter_t* br) {
   if (false == br->loaded) {
@@ -18,12 +20,13 @@ void br_gui_init_specifics_gui(br_plotter_t* br) {
 
 BR_API void br_plotter_draw(br_plotter_t* br) {
   br_plotter_begin_drawing(br);
-  //update_resolution(br);
-  br_plotter_update_variables(br);
+
 #define PLOT (&br->plots.arr[br->active_plot_index])
   PLOT->drag_parent_extent.pos = BR_VEC2I(50, 50);
   PLOT->drag_parent_extent.size = br_sizei_sub(br->win.size, BR_SIZEI(100, 100));
+  brgl_enable(GL_BLEND);
   br_plot_update_variables(br, PLOT, br->groups, brtl_mouse_get_pos());
+  br_plot_update_context(PLOT, brtl_mouse_get_pos());
   br_plot_update_shader_values(PLOT, &br->shaders);
   brgl_enable_framebuffer(PLOT->texture_id, PLOT->graph_screen_rect.width, PLOT->graph_screen_rect.height);
   brgl_clear();
@@ -32,10 +35,37 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   smol_mesh_grid_draw(PLOT, &br->shaders);
 
   brgl_enable_framebuffer(0, br->win.size.width, br->win.size.height);
-  brgl_disable_depth_test();
+  brgl_disable(GL_BLEND);
+  brgl_enable_depth_test();
+  brgl_blend_func(GL_SRC_ALPHA, GL_DST_ALPHA);
+  brgl_blend_equation(GL_MAX);
   brgl_clear();
   help_draw_fps(br->text, 0, 0);
   smol_mesh_img_draw(PLOT, &br->shaders);
+
+  if (PLOT->draw_settings == false) {
+    br_extent_t icon_ex = BR_EXTENT((float)PLOT->graph_screen_rect.x + (float)PLOT->graph_screen_rect.width - 32.f - 5.f, (float)PLOT->graph_screen_rect.y + 5.f, 32.f, 32.f);
+
+    br_vec4_t fg = BR_VEC4(255, 255, 255, 255);
+    br_vec4_t bg = BR_VEC4(0, 0, 0, 0);
+    if (br_col_vec2_extent(icon_ex, brtl_mouse_get_pos())) {
+      bg = BR_VEC4(45, 45, 45, 255);
+      br_icons_draw(br->shaders.icon, icon_ex, br_icons.menu.size_32, bg, fg);
+      if (brtl_mouse_is_pressed_l()) {
+        PLOT->drag_mode = br_drag_mode_none;
+        PLOT->draw_settings = true;
+      }
+    } else {
+      float dist2 = br_vec2_dist2(icon_ex.pos, brtl_mouse_get_pos());
+      if (dist2 < 10000) {
+        fg.x = fg.y = fg.z = fg.w = (unsigned char)((10000.f - dist2) / 10000.f * 255.f); 
+        br_icons_draw(br->shaders.icon, icon_ex, br_icons.menu.size_32, bg, fg);
+      }
+    }
+  } else {
+    br_extenti_t panel = BR_EXTENTI(PLOT->graph_screen_rect.x + PLOT->graph_screen_rect.width - 100, PLOT->graph_screen_rect.y, 100, PLOT->graph_screen_rect.height);
+    br_icons_draw(br->shaders.icon, BR_EXTENTI_TOF(panel), BR_EXTENT(0,0,0,0), BR_VEC4(0.1f,0.1f,0.1f,2.f), BR_VEC4(0.1f,0.1f,0.1f,2.f));
+  }
 #undef PLOT
   draw_left_panel(br);
   br_plotter_end_drawing(br);
@@ -87,13 +117,6 @@ static void draw_left_panel(br_plotter_t* br) {
   }
   ui_stack_buttons_end();
 }
-
-// TODO 2D/3D
-//static void update_resolution(br_plotter_t* br) {
-  //br_plot_t* plot = &br->plots.arr[br->active_plot_index];
-  //int w = br->win.size.width - 400 - 25, h = br->win.size.height - 50;
-  //plot->graph_screen_rect = BR_EXTENTI(400, 25, w, h);
-//}
 
 void br_plot_screenshot(br_text_renderer_t* tr, br_plot_t* plot, br_shaders_t* shaders, br_datas_t groups, char const* path) {
   (void)tr; (void)plot; (void)shaders; (void)groups; (void)path;

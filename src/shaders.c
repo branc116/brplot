@@ -102,7 +102,12 @@ BR_ALL_SHADERS(X, X_VEC, X_BUF)
   inline static void br_shader_ ## NAME ## _compile(br_shader_ ## NAME ## _t* shader) { \
     FILE_CONTNET_TYPE vs = READ_FILE(NAME ## _vs); \
     FILE_CONTNET_TYPE fs = READ_FILE(NAME ## _fs); \
-    shader->id = brgl_load_shader(vs, fs); \
+    int ok = 0; \
+    shader->id = brgl_load_shader(vs, fs, &ok); \
+    if (ok == 0) { \
+      LOGE("Failed to load shader: " #NAME); \
+      exit(1); \
+    } \
     FREE_FILE_CONTENT(fs); \
     FREE_FILE_CONTENT(vs); \
     BUFF \
@@ -193,7 +198,11 @@ void br_shaders_refresh(br_shaders_t shaders) {
      {                                                        \
        FILE_CONTNET_TYPE vs = READ_FILE(NAME ## _vs);         \
        FILE_CONTNET_TYPE fs = READ_FILE(NAME ## _fs);         \
-       unsigned int new_shader_id = brgl_load_shader(vs, fs); \
+       int ok = false;                                        \
+       unsigned int new_shader_id = brgl_load_shader(vs, fs, &ok); \
+       if (ok == false) {                                     \
+         LOGE("Failed to load shader: " #NAME);               \
+       }                                                      \
        if (new_shader_id > 0) {                               \
          br_shader_ ## NAME ## _t* shader = shaders.NAME;     \
          shader->id = new_shader_id;                          \

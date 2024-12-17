@@ -10,6 +10,7 @@
 #define GL_DST_ALPHA 0x0304
 #define GL_CULL_FACE 0x0B44
 #define GL_DEPTH_TEST 0x0B71
+#define GL_BLEND 0x0BE2
 #define GL_UNPACK_ALIGNMENT 0x0CF5
 #define GL_TEXTURE_2D 0x0DE1
 #define GL_UNSIGNED_BYTE 0x1401
@@ -71,7 +72,7 @@ typedef unsigned long  int     khronos_uintptr_t;
 #endif
 
 void brgl_load(void);
-unsigned int brgl_load_shader(const char* vs, const char* fs);
+unsigned int brgl_load_shader(const char* vs, const char* fs, int* out_ok);
 unsigned int brgl_compile_shader(const char* code, GLenum type);
 void brgl_unload_shader(GLuint id);
 void brgl_enable_shader(GLuint id);

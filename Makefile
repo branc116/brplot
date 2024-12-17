@@ -31,7 +31,7 @@ IM                 = external/imgui-docking
 SOURCE             = src/main.c           src/help.c       src/data.c        src/smol_mesh.c   src/q.c       src/read_input.c \
 										 src/keybindings.c    src/str.c        src/resampling2.c src/graph_utils.c src/shaders.c src/plotter.c    \
 										 src/plot.c           src/permastate.c src/filesystem.c  src/gui.c         src/text_renderer.c \
-										 src/data_generator.c src/platform.c   src/threads.c     src/gl.c
+										 src/data_generator.c src/platform.c   src/threads.c     src/gl.c          src/icons.c
 COMMONFLAGS        = -I. -Iexternal/glfw/include/ -Iexternal/Tracy -MMD -MP -fvisibility=hidden
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra -Wshadow
 LD_FLAGS           =
@@ -180,6 +180,7 @@ $(PREFIX_BUILD)/%.o: %.c
 
 $(OBJS): $(NOBS)
 
+src/icons.c: .generated/icons.h .generated/icons.c
 src/help.c: .generated/default_font.h
 src/shaders.c: $(SHADERS_HEADER)
 
@@ -219,12 +220,6 @@ npm-imgui:
 	  ((cd packages/npm && \
 	   npm publish || cd ../..) && cd ../..)
 
-.PHONY: bench
-bench: bin/bench
-	date >> bench.txt
-	./bin/bench >> bench.txt
-	cat bench.txt
-
 .generated/default_font.h: bin/font_bake content/PlayfairDisplayRegular-ywLOY.ttf
 	test -d .generated || mkdir .generated
 	bin/font_bake content/PlayfairDisplayRegular-ywLOY.ttf > .generated/default_font.h
@@ -238,6 +233,17 @@ bin/shaders_bake: tools/shaders_bake.c src/br_shaders.h src/str.c $(NOBS)
 $(SHADERS_HEADER): ./src/shaders/* bin/shaders_bake
 	bin/shaders_bake $(PLATFORM) > $(SHADERS_HEADER)
 
+.generated/icons.h .generated/icons.c: bin/pack_icons content/*.png
+	bin/pack_icons
+
+bin/pack_icons: tools/pack_icons.c $(NOBS)
+	$(NATIVE_CC) -I. -O0 -o bin/pack_icons tools/pack_icons.c -lm
+
+.PHONY: bench
+bench: bin/bench
+	date >> bench.txt
+	./bin/bench >> bench.txt
+	cat bench.txt
 
 SOURCE_BENCH= ./src/misc/benchmark.c ./src/resampling2.c ./src/smol_mesh.c ./src/shaders.c ./src/plotter.c ./src/help.c ./src/gui.c ./src/data.c ./src/str.c ./src/plot.c ./src/q.c ./src/keybindings.c ./src/graph_utils.c ./src/data_generator.c ./src/platform.c  ./src/permastate.c ./src/filesystem.c
 OBJSA_BENCH= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE_BENCH))

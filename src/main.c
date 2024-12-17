@@ -4,6 +4,7 @@
 #include "src/br_permastate.h"
 #include "src/br_tl.h"
 #include "src/br_gl.h"
+#include "src/br_icons.h"
 
 #include "tracy/TracyC.h"
 
@@ -23,6 +24,7 @@ static void* main_gui(void* plotter) {
       br->plots.arr[i].texture_id = brgl_create_framebuffer(p->graph_screen_rect.width, p->graph_screen_rect.height);
     }
   }
+  br_icons_init(br->shaders.icon);
   while(br->should_close == false) {
     TracyCFrameMark;
     br_plotter_draw(br);
@@ -31,6 +33,7 @@ static void* main_gui(void* plotter) {
     br_plotter_frame_end(br);
     TracyCFrameMarkEnd("plotter_frame_end");
   }
+  br_icons_deinit();
   br->should_close = true;
   
   return 0;

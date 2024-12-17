@@ -26,6 +26,9 @@
 #define img_fs "src/shaders/img.fs"
 #define img_vs "src/shaders/img.vs"
 
+#define icon_fs "src/shaders/icon.fs"
+#define icon_vs "src/shaders/icon.vs"
+
 #endif
 
 #define NOP2(N, M)
@@ -74,6 +77,7 @@
     )                                   \
   X(font, 1024,                         \
       X_VEC(resolution, 2)              \
+      X_VEC(mouse, 2)                   \
       X_VEC(sub_pix_aa_map, 3)          \
       X_VEC(sub_pix_aa_scale, 1)        \
       X_VEC(atlas, _TEX),               \
@@ -88,6 +92,13 @@
       X_VEC(image, _TEX),               \
                                         \
       X_BUF(pos, 4)                     \
+    )                                   \
+  X(icon, 1024,                         \
+      X_VEC(atlas, _TEX),               \
+                                        \
+      X_BUF(pos, 4)                     \
+      X_BUF(fg, 4)                      \
+      X_BUF(bg, 4)                      \
     )
 
 #define VEC_TYPE1 float

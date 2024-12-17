@@ -13,7 +13,7 @@
 #define BR_SIZEI_TOF(SZ) ((br_size_t) { .width = (float)((SZ).width), .height = (float)((SZ).height) })
 #define BR_EXTENTI_TOF(E) ((br_extent_t) { .arr = { (float)(E).arr[0], (float)(E).arr[1], (float)(E).arr[2], (float)(E).arr[3] } })
 #define BR_EXTENT_ASPECT(E) ((float)(E).height / (float)(E).width)
-#define BR_EXTENT(X, Y, WIDTH, HEIGHT) (br_extent_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
+#define BR_EXTENT(X, Y, WIDTH, HEIGHT) (const br_extent_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
 #define BR_EXTENTI(X, Y, WIDTH, HEIGHT) (br_extenti_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
 #define BR_BB(Xm, Ym, XM, YM) (br_bb_t) { .arr = { (Xm), (Ym), (XM), (YM) } }
 #define BR_BB_TOEX(BB) (br_extent_t) { .arr = { (BB).min_x, (BB).min_y, (BB).max_x - (BB).min_x, (BB).max_y - (BB).min_y } }
@@ -137,6 +137,10 @@ typedef struct {
     struct {
       float x, y, z, w;
     };
+    struct {
+      br_vec2_t xy;
+      br_vec2_t zw;
+    };
     float arr[4];
   };
 }  br_vec4_t;
@@ -215,6 +219,10 @@ static inline br_vec3_t br_vec2_transform_scale(br_vec2_t v, br_mat_t mat) {
     result.y /= fabsf(result.z);
   }
   return result;
+}
+
+static inline br_vec2_t br_vec2_stog(br_vec2_t v, br_sizei_t screen) {
+  return BR_VEC2(v.x / (float)screen.width * 2.f - 1.f, (1.f - v.y / (float)screen.height) * 2.f - 1.f);
 }
 
 //------------------------size------------------------------
@@ -332,6 +340,19 @@ static inline br_vec3_t br_vec3_perpendicular(br_vec3_t v) {
   }
   ord.arr[min] = 1;
   return br_vec3_cross(v, ord);
+}
+// ------------------br_extent_t-----------------
+
+static inline br_vec2_t br_extent_top_right(br_extent_t extent) {
+  return BR_VEC2(extent.x + extent.width, extent.y);
+}
+
+static inline br_vec2_t br_extent_bottom_left(br_extent_t extent) {
+  return BR_VEC2(extent.x, extent.y + extent.height);
+}
+
+static inline br_vec2_t br_extent_bottom_right(br_extent_t extent) {
+  return BR_VEC2(extent.x + extent.width, extent.y + extent.height);
 }
 
 // ------------------br_mat_t--------------------
