@@ -208,7 +208,6 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
   br_extent_t gr = BR_EXTENTI_TOF(plot->graph_screen_rect);
   br_size_t sz = gr.size;
   int font_size = (int)(18.f * context.font_scale);
-  char fmt[16];
   char* scrach = br_scrach_get(128);
 
   if (r.height > 0.f) {
@@ -216,8 +215,6 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
     if (false == isnan(exp)) {
       float base = powf(10.f, exp);
       float start = floorf(r.y / base) * base;
-      if (exp >= 0) strcpy(fmt, "%f");
-      else sprintf(fmt, "%%.%df", -(int)exp);
 
       float i = 0.f;
       float x = -r.x * sz.width / r.width; // - r.x, 0.f, sz.width);
@@ -229,7 +226,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
       while (i < 50.f) {
         float cur = start - base * i;
         i += 1.f;
-        sprintf(scrach, fmt, cur);
+        sprintf(scrach, "%.*f", exp < 0 ? -(int)exp : 1, cur);
         help_trim_zeros(scrach);
         float y = sz.height / r.height * (r.y - cur);
         if (y > sz.height) break;
@@ -244,9 +241,6 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
       float base = powf(10.f, exp);
       if (isnan(base) || isinf(base)) goto end;
       float start = ceilf(r.x / base) * base;
-      if (exp >= 0) strcpy(fmt, "%f");
-      else sprintf(fmt, "%%.%df", -(int)exp);
-      //float x_last_max = -INFINITY;
       float i = 0;
       float y = r.y * sz.height / r.height; //(float)plot->graph_screen_rect.y + sz.height / 2;
       const float padding = 10.f;
@@ -256,13 +250,9 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
       while (i < 50.f) {
         float cur = start + base * i;
         i += 1.f;
-        sprintf(scrach, fmt, cur);
+        sprintf(scrach, "%.*f", exp < 0 ? -(int)exp : 0, cur);
         help_trim_zeros(scrach);
-        //Vector2 sz = help_measure_text(scrach, font_size);
         float x = (sz.width / r.width) * (cur - r.x);
-        //x -= sz.x / 2.f;
-        //if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
-        //x_last_max = x + sz.x;
         if (x > sz.width) break;
         br_text_renderer_push2(tr, x, y, font_size, BR_WHITE, br_strv_from_c_str(scrach), ancor);
       }
