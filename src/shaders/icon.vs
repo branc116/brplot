@@ -13,6 +13,7 @@ out vec4 outin_bg;
 void main() {
   out_tpos = pos.zw;
   outin_fg = fg;
-  outin_bg = bg;
-  gl_Position = vec4(pos.xy, -1., 1.0);
+  outin_bg = fract(bg);
+  float z = -bg.a/128.0;
+  gl_Position = vec4(pos.xy, z, 1.0);
 }

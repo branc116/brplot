@@ -4,23 +4,25 @@
 #include <float.h>
 #include <stdbool.h>
 
-#define BR_VEC2(X, Y) ((br_vec2_t) { .x = (float)(X), .y = (float)(Y) })
-#define BR_VEC2I(X, Y) ((br_vec2i_t) { .x = (int)(X), .y = (int)(Y) })
-#define BR_VEC2_TOI(V) ((br_vec2i_t) { .x = (int)(V).x, .y = (int)(V).y })
+#define BR_VEC2(X, Y) ((br_vec2_t) { .x = (X), .y = (Y) })
+#define BR_VEC2I(X, Y) ((br_vec2i_t) { .x = (X), .y = (Y) })
+#define BR_VEC2_TOI(V) ((br_vec2i_t) { .x = (V).x, .y = (V).y })
 #define BR_VEC2I_SUB(A, B) ((br_vec2i_t) { .x = (A).x - (B).x, .y = (A).y - (B).y })
 #define BR_VEC2I_SCALE(V, B) ((br_vec2i_t) { .x = (V).x * (B), .y = (V).y * (B) })
+#define BR_SIZE(WIDTH, HEIGHT) ((br_size_t) { .width = (WIDTH), .height = (HEIGHT) })
 #define BR_SIZEI(WIDTH, HEIGHT) ((br_sizei_t) { .width = (WIDTH), .height = (HEIGHT) })
-#define BR_SIZEI_TOF(SZ) ((br_size_t) { .width = (float)((SZ).width), .height = (float)((SZ).height) })
+#define BR_SIZEI_TOF(SZ) ((br_size_t) { .width = ((SZ).width), .height = ((SZ).height) })
 #define BR_EXTENTI_TOF(E) ((br_extent_t) { .arr = { (float)(E).arr[0], (float)(E).arr[1], (float)(E).arr[2], (float)(E).arr[3] } })
-#define BR_EXTENT_ASPECT(E) ((float)(E).height / (float)(E).width)
-#define BR_EXTENT(X, Y, WIDTH, HEIGHT) (const br_extent_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
+#define BR_EXTENT_ASPECT(E) ((E).height / (E).width)
+#define BR_EXTENT(X, Y, WIDTH, HEIGHT) (br_extent_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
+#define BR_EXTENTPS(POS, SIZE) (br_extent_t) { .size = (SIZE), .pos = (POS) }
 #define BR_EXTENTI(X, Y, WIDTH, HEIGHT) (br_extenti_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
 #define BR_BB(Xm, Ym, XM, YM) (br_bb_t) { .arr = { (Xm), (Ym), (XM), (YM) } }
 #define BR_BB_TOEX(BB) (br_extent_t) { .arr = { (BB).min_x, (BB).min_y, (BB).max_x - (BB).min_x, (BB).max_y - (BB).min_y } }
 #define BR_VEC4(X, Y, Z, W) ((br_vec4_t) { .x = (X), .y = (Y), .z = (Z), .w = (W) }) 
 #define BR_VEC3(X, Y, Z) ((br_vec3_t) { .x = (X), .y = (Y), .z = (Z) }) 
 #define BR_VEC_ELS(X) (sizeof((X).arr) / sizeof((X).arr[0]))
-#define BR_COLOR_TO4(X)  BR_VEC4((float)((X).r) / 255.f, (float)((X).g) / 255.f, (float)((X).b) / 255.f, (float)((X).a) / 255.f)
+#define BR_COLOR_TO4(X)  BR_VEC4(((X).r) / 255.f, ((X).g) / 255.f, ((X).b) / 255.f, ((X).a) / 255.f)
 #define BR_COLOR(R, G, B, A) ((br_color_t) { .r = (R), .g = (G), .b = (B), .a = (A) })
 
 #define BR_RED BR_COLOR(200, 10, 10, 255)
@@ -174,6 +176,10 @@ static inline br_vec2i_t br_vec2_toi(br_vec2_t v) {
 
 static inline br_vec2_t br_vec2_scale(br_vec2_t v, float s) {
   return ((br_vec2_t) { .x = v.x * s, .y = v.y * s });
+}
+
+static inline br_vec2_t br_vec2_adds(br_vec2_t a, br_size_t b) {
+  return BR_VEC2(a.x + b.width, a.y + b.height);
 }
 
 static inline br_vec2_t br_vec2_sub(br_vec2_t a, br_vec2_t b) {
@@ -353,6 +359,14 @@ static inline br_vec2_t br_extent_bottom_left(br_extent_t extent) {
 
 static inline br_vec2_t br_extent_bottom_right(br_extent_t extent) {
   return BR_VEC2(extent.x + extent.width, extent.y + extent.height);
+}
+
+static inline br_vec2_t br_extent_tl(br_extent_t extent, float x, float y) {
+  return BR_VEC2(extent.x + x, extent.y + y);
+}
+
+static inline br_vec2_t br_extent_tr(br_extent_t extent, float x, float y) {
+  return BR_VEC2(extent.x + extent.width - x, extent.y + y);
 }
 
 // ------------------br_mat_t--------------------

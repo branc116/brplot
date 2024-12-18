@@ -16,9 +16,9 @@ void br_icons_init(br_shader_icon_t* shader) {
 
 void br_icons_draw(br_shader_icon_t* shader, br_extent_t screen, br_extent_t atlas, br_vec4_t bg, br_vec4_t fg) {
   br_sizei_t res = brtl_window_size();
-  br_vec4_t* vecs = (br_vec4_t*)&shader->pos_vbo[shader->len];
-  br_vec4_t* fgs = (br_vec4_t*)&shader->fg_vbo[shader->len];
-  br_vec4_t* bgs = (br_vec4_t*)&shader->bg_vbo[shader->len];
+  br_vec4_t* vecs = (br_vec4_t*)&shader->pos_vbo[3*4*shader->len];
+  br_vec4_t* fgs = (br_vec4_t*)&shader->fg_vbo[3*4*shader->len];
+  br_vec4_t* bgs = (br_vec4_t*)&shader->bg_vbo[3*4*shader->len];
   vecs[0] = (br_vec4_t) { .xy = br_vec2_stog(screen.pos, res), .zw = atlas.pos };
   vecs[1] = (br_vec4_t) { .xy = br_vec2_stog(br_extent_top_right(screen), res), .zw = br_extent_top_right(atlas) };
   vecs[2] = (br_vec4_t) { .xy = br_vec2_stog(br_extent_bottom_right(screen), res), .zw = br_extent_bottom_right(atlas) };
@@ -32,4 +32,10 @@ void br_icons_draw(br_shader_icon_t* shader, br_extent_t screen, br_extent_t atl
 
 void br_icons_deinit(void) {
   brgl_unload_texture(icons_id);
+}
+
+br_extent_t br_icons_y_mirror(br_extent_t icon) {
+  icon.x += icon.width;
+  icon.width *= -1.f;
+  return icon;
 }

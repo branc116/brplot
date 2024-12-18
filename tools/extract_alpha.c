@@ -40,7 +40,12 @@ int main(int argc, char** argv) {
   unsigned char* out_data = calloc(w*h, 1);
   for (int i = 0; i < h; ++i) {
     for (int j = 0; j < w; ++j) {
-      unsigned char d = out_data[j + i*w] = img[(c - 1) + j * c + i * w * c];
+      int sum = 0;
+      unsigned char* pix = &img[j * c + i * w * c];
+      for (int k = 0; k < c; ++k) {
+        sum += pix[k];
+      }
+      unsigned char d = out_data[j + i*w] = sum / c;
       printf("%s", d > 0 ? "##" : "..");
     }
     printf("\n");

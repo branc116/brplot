@@ -13,5 +13,5 @@ void main() {
   norm += vec2(-1.0, 1.0);
 
   out_tpos = vec2(pos.z, 1.0 - pos.w);
-  gl_Position = vec4(norm, -0.2, 1.0);
+  gl_Position = vec4(norm, 0.99, 1.0);
 }

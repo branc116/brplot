@@ -39,6 +39,6 @@ void main(void)
     vec2 uv = position * aspect;
     uv -= offset * 2.;
     uv /= zoom * fact;
-    gl_Position = vec4(uv, 0.0, 1.0);
+    gl_Position = vec4(uv, 0.98, 1.0);
 }
 

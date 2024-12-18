@@ -1,3 +1,4 @@
+#include ".generated/icons.h"
 #include "src/br_icons.h"
 #include "src/br_math.h"
 #include "src/br_plot.h"
@@ -15,6 +16,24 @@ void br_gui_init_specifics_gui(br_plotter_t* br) {
   if (false == br->loaded) {
     br_plotter_add_plot_2d(br);
     br_plotter_add_plot_3d(br);
+  }
+}
+
+bool br_icon_button(br_extent_t pos, br_extent_t atlas, br_vec4_t bg, bool hide_when_not_near) {
+  br_vec4_t fg = BR_VEC4(200, 200, 200, 255); 
+  if (br_col_vec2_extent(pos, brtl_mouse_get_pos())) {
+    bg = BR_VEC4(45, 45, 45, bg.w);
+    br_icons_draw(brtl_shaders()->icon, pos, atlas, bg, fg);
+    return brtl_mouse_is_pressed_l();
+  } else {
+    if (hide_when_not_near) {
+      float dist2 = br_vec2_dist2(pos.pos, brtl_mouse_get_pos());
+      if (dist2 < 10000) {
+        fg.x = fg.y = fg.z = fg.w = (unsigned char)((10000.f - dist2) / 10000.f * 255.f); 
+        br_icons_draw(brtl_shaders()->icon, pos, atlas, bg, fg);
+      }
+    } else br_icons_draw(brtl_shaders()->icon, pos, atlas, bg, fg);
+    return false;
   }
 }
 
@@ -45,26 +64,19 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
 
   if (PLOT->draw_settings == false) {
     br_extent_t icon_ex = BR_EXTENT((float)PLOT->graph_screen_rect.x + (float)PLOT->graph_screen_rect.width - 32.f - 5.f, (float)PLOT->graph_screen_rect.y + 5.f, 32.f, 32.f);
-
-    br_vec4_t fg = BR_VEC4(255, 255, 255, 255);
-    br_vec4_t bg = BR_VEC4(0, 0, 0, 0);
-    if (br_col_vec2_extent(icon_ex, brtl_mouse_get_pos())) {
-      bg = BR_VEC4(45, 45, 45, 255);
-      br_icons_draw(br->shaders.icon, icon_ex, br_icons.menu.size_32, bg, fg);
-      if (brtl_mouse_is_pressed_l()) {
+    if (br_icon_button(icon_ex, br_icons.menu.size_32, BR_VEC4(0, 0, 0, 1), true)) {
         PLOT->drag_mode = br_drag_mode_none;
         PLOT->draw_settings = true;
-      }
-    } else {
-      float dist2 = br_vec2_dist2(icon_ex.pos, brtl_mouse_get_pos());
-      if (dist2 < 10000) {
-        fg.x = fg.y = fg.z = fg.w = (unsigned char)((10000.f - dist2) / 10000.f * 255.f); 
-        br_icons_draw(br->shaders.icon, icon_ex, br_icons.menu.size_32, bg, fg);
-      }
     }
   } else {
-    br_extenti_t panel = BR_EXTENTI(PLOT->graph_screen_rect.x + PLOT->graph_screen_rect.width - 100, PLOT->graph_screen_rect.y, 100, PLOT->graph_screen_rect.height);
-    br_icons_draw(br->shaders.icon, BR_EXTENTI_TOF(panel), BR_EXTENT(0,0,0,0), BR_VEC4(0.1f,0.1f,0.1f,2.f), BR_VEC4(0.1f,0.1f,0.1f,2.f));
+    br_extent_t panel = BR_EXTENTPS(br_extent_tr(BR_EXTENTI_TOF(PLOT->graph_screen_rect), 200, 0), BR_SIZE(200, p.height));
+    br_vec4_t panel_color = BR_VEC4(0.1f,0.1f,0.1f,2.f);
+    br_icons_draw(br->shaders.icon, panel, BR_EXTENT(0,0,0,0), panel_color, panel_color);
+    panel_color.w = 3;
+    if (br_icon_button(BR_EXTENTPS(br_extent_tl(panel, 4, 4), BR_SIZE(32, 32)), br_icons_y_mirror(br_icons.back.size_32), panel_color, false)) {
+        PLOT->drag_mode = br_drag_mode_none;
+        PLOT->draw_settings = false;
+    }
   }
 #undef PLOT
   draw_left_panel(br);

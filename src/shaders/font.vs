@@ -20,5 +20,5 @@ void main() {
   out_tpos = pos.zw;
   vs_color = color;
 
-  gl_Position = vec4(norm, -0.1, 1.0);
+  gl_Position = vec4(norm, 0.9, 1.0);
 }

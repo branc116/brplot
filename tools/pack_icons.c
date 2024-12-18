@@ -71,6 +71,10 @@ image_t imgs[] = {
     .img = "menu",
     STATIC_ARRAY_INT(16, 32)
   },
+  {
+    .img = "back",
+    STATIC_ARRAY_INT(32)
+  },
 //  {
 //    .img = "close",
 //    STATIC_ARRAY_INT(16, 32)
