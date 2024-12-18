@@ -23,6 +23,7 @@
 #define GL_MAX_FRAMEBUFFER_WIDTH 0x9315
 #define GL_MAX_FRAMEBUFFER_HEIGHT 0x9316
 
+typedef void (*glDebugProc)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
 BR_GL(GLuint, glCreateProgram)(void);
 BR_GL(GLuint, glCreateShader)(GLenum type);
 BR_GL(void, glShaderSource)(GLuint shader, GLsizei count, const GLchar *const* string, const GLint * length);
@@ -78,7 +79,6 @@ BR_GL(void, glTexParameteri)(GLenum target, GLenum pname, GLint param);
 BR_GL(void, glFramebufferTexture)(GLenum target, GLenum attachment, GLuint texture, GLint level);
 BR_GL(void, glDrawBuffers)(GLsizei n, GLenum const* bufs);
 BR_GL(void, glBindFramebuffer)(GLenum target, GLuint framebuffer);
-typedef void (*glDebugProc)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
 BR_GL(void, glDebugMessageCallback)(glDebugProc callback, const void * userParam);
 BR_GL(void, glGenFramebuffers)(GLsizei n, GLuint * framebuffers);
 BR_GL(void, glDeleteFramebuffers)(GLsizei n, GLuint *framebuffers);

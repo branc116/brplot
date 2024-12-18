@@ -65,21 +65,21 @@ ifeq ($(PLATFORM), LINUX)
 		LD_FLAGS+= -fPIC -shared
 	endif
 	LIBS+= -lm
+	LD= gcc
 
 else ifeq ($(PLATFORM), WINDOWS)
 	BACKEND= GLFW
-	LIBS= -lopengl32 -lgdi32 -lwinmm
-	CXX= x86_64-w64-mingw32-g++
+	# LIBS= -lopengl32 -lgdi32 -lwinmm
 	CC= x86_64-w64-mingw32-gcc
+	LD= x86_64-w64-mingw32-gcc
 	COMMONFLAGS+= -Iexternal/glfw/include -D_WIN32=1 -DWIN32_LEAN_AND_MEAN
-	SOURCE+= $(RL)/rglfw.c
 	SHADERS_HEADER= .generated/shaders.h
 	COMPILER= MINGW
 
 else ifeq ($(PLATFORM), WEB)
 	BACKEND= GLFW
-	CXX= $(EMSCRIPTEN)em++
 	CC= $(EMSCRIPTEN)emcc
+	LD= $(EMSCRIPTEN)emcc
 	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES3=1
 	WARNING_FLAGS+= -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-newline-eof
 	LD_FLAGS= -sWASM_BIGINT -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH -sUSE_GLFW=3 -sUSE_WEBGL2=1 -sGL_ENABLE_GET_PROC_ADDRESS --shell-file=src/web/minshell.html
@@ -154,8 +154,6 @@ OBJS= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(SOURCE))
 MAKE_INCLUDES= $(patsubst %.o, %.d, $(OBJS))
 NOBS= $(patsubst %.o, %.nob.dir, $(OBJS))
 NOBS+= bin/.nob.dir
-
-LD= gcc
 
 $(OUTPUT):
 
