@@ -3,6 +3,8 @@
 #include "src/br_tl.h"
 #include "src/br_shaders.h"
 
+#include <string.h>
+
 #if defined(HEADLESS)
 #  define BR_GL(ret_type, name) ret_type name
 #else
@@ -46,7 +48,7 @@ BR_GL(void, glPixelStorei)(GLenum pname, GLint param);
 BR_GL(void, glGenTextures)(GLsizei n, GLuint* textures);
 BR_GL(void, glTexParameteriv)(GLenum target, GLenum pname, const GLint* params);
 BR_GL(void, glFramebufferParameteri)(GLenum target, GLenum pname, GLint param);
-BR_GL(void, glTexParameterfv)(GLenum target, GLenum pname, const GLfloat * params);
+//BR_GL(void, glTexParameterfv)(GLenum target, GLenum pname, const GLfloat * params);
 BR_GL(void, glGenBuffers)(GLsizei n, GLuint* buffers);
 BR_GL(void, glBindBuffer)(GLenum target, GLuint buffer);
 BR_GL(void, glBufferData)(GLenum target, GLsizeiptr size, void const* data, GLenum usage);
@@ -79,8 +81,10 @@ BR_GL(void, glBindFramebuffer)(GLenum target, GLuint framebuffer);
 typedef void (*glDebugProc)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
 BR_GL(void, glDebugMessageCallback)(glDebugProc callback, const void * userParam);
 BR_GL(void, glGenFramebuffers)(GLsizei n, GLuint * framebuffers);
+BR_GL(void, glDeleteFramebuffers)(GLsizei n, GLuint *framebuffers);
 BR_GL(void, glFramebufferTexture2D)(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
 BR_GL(void, glGenRenderbuffers)(GLsizei n, GLuint *renderbuffers);
+BR_GL(void, glDeleteRenderbuffers)(GLsizei n, GLuint *renderbuffers);
 BR_GL(void, glFramebufferRenderbuffer)(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
 BR_GL(void, glBindRenderbuffer)(GLenum target, GLuint renderbuffer);
 BR_GL(void, glRenderbufferStorage)(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
@@ -284,6 +288,10 @@ void brgl_enable_framebuffer(GLuint br_id, int new_width, int new_height) {
 }
 
 void brgl_destroy_framebuffer(GLuint br_id) {
+  glDeleteRenderbuffers(1, &br_framebuffers[br_id].rb_id);
+  glDeleteTextures(1, &br_framebuffers[br_id].tx_id);
+  glDeleteFramebuffers(1, &br_framebuffers[br_id].fb_id);
+  memset(&br_framebuffers[br_id], 0, sizeof(br_framebuffers[0]));
 }
 
 GLuint brgl_load_vao(void) {

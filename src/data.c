@@ -247,7 +247,7 @@ void br_datas_add_test_points(br_datas_t* pg) {
       for(int j = 0; j < 0; ++j) {
         int x = -50 + j + l;
         int y = (-50 + (i - j) + l) * (i % 2 == 0 ? 1 : -1);
-        br_vec2_t p = BR_VEC2(x, y);
+        br_vec2_t p = BR_VEC2((float)x, (float)y);
         br_data_push_point2(g, p);
       }
     }

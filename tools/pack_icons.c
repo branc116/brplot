@@ -175,8 +175,8 @@ void generate_code(unsigned char* atlas, int sz, stbrp_rect* rects) {
     fprintf(f, "\n");
   }
   fprintf(f, "};\n");
-  fprintf(f, "extern const int br_icons_atlas_width = %d;\n", sz);
-  fprintf(f, "extern const int br_icons_atlas_height = %d;\n", sz);
+  fprintf(f, "const int br_icons_atlas_width = %d;\n", sz);
+  fprintf(f, "const int br_icons_atlas_height = %d;\n", sz);
   fclose(f);
 }
 

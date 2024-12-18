@@ -4,14 +4,14 @@
 #include "br_da.h"
 #include "br_gl.h"
 
-#define STB_RECT_PACK_IMPLEMENTATION
-#include "external/stb_rect_pack.h"
-
 #ifdef __GNUC__
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsign-conversion"
 #  pragma GCC diagnostic ignored "-Wconversion"
 #endif
+
+#define STB_RECT_PACK_IMPLEMENTATION
+#include "external/stb_rect_pack.h"
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "external/stb_truetype.h"
