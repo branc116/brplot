@@ -205,7 +205,8 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
 
   TracyCFrameMarkStart("draw_grid_numbers");
   br_extent_t r = plot->dd.graph_rect;
-  br_size_t sz = BR_SIZEI_TOF(plot->graph_screen_rect.size);
+  br_extent_t gr = BR_EXTENTI_TOF(plot->graph_screen_rect);
+  br_size_t sz = gr.size;
   int font_size = (int)(18.f * context.font_scale);
   char fmt[16];
   char* scrach = br_scrach_get(128);
@@ -219,7 +220,12 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
       else sprintf(fmt, "%%.%df", -(int)exp);
 
       float i = 0.f;
-      float x = - r.x * sz.width / r.width; // - r.x, 0.f, sz.width);
+      float x = -r.x * sz.width / r.width; // - r.x, 0.f, sz.width);
+      LOGI("x=%f", x);
+      br_text_renderer_ancor_t ancor = br_text_renderer_ancor_mid_mid;
+      const float padding = 10.f;
+      if (x < padding) x = padding, ancor = br_text_renderer_ancor_left_mid;
+      else if (x > sz.width - padding) x = sz.width - padding, ancor = br_text_renderer_ancor_right_mid;
       while (i < 50.f) {
         float cur = start - base * i;
         i += 1.f;
@@ -227,7 +233,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         help_trim_zeros(scrach);
         float y = sz.height / r.height * (r.y - cur);
         if (y > sz.height) break;
-        br_text_renderer_push2(tr, x, y, font_size, BR_WHITE, br_strv_from_c_str(scrach), br_text_renderer_ancor_mid_mid);
+        br_text_renderer_push2(tr, x, y, font_size, BR_WHITE, br_strv_from_c_str(scrach), ancor);
       }
     }
   }
@@ -242,6 +248,11 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
       else sprintf(fmt, "%%.%df", -(int)exp);
       //float x_last_max = -INFINITY;
       float i = 0;
+      float y = r.y * sz.height / r.height; //(float)plot->graph_screen_rect.y + sz.height / 2;
+      const float padding = 10.f;
+      br_text_renderer_ancor_t ancor = br_text_renderer_ancor_mid_mid;
+      if (y < padding) y = padding, ancor = br_text_renderer_ancor_mid_up;
+      else if (y > sz.height - padding) y = sz.height - padding, ancor = br_text_renderer_ancor_mid_down;
       while (i < 50.f) {
         float cur = start + base * i;
         i += 1.f;
@@ -253,7 +264,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         //if (x - 5.f < x_last_max) continue; // Don't print if it will overlap with the previous text. 5.f is padding.
         //x_last_max = x + sz.x;
         if (x > sz.width) break;
-        br_text_renderer_push2(tr, x, sz.height, font_size, BR_WHITE, br_strv_from_c_str(scrach), br_text_renderer_ancor_mid_up);
+        br_text_renderer_push2(tr, x, y, font_size, BR_WHITE, br_strv_from_c_str(scrach), ancor);
       }
     }
   }
