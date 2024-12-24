@@ -4,8 +4,6 @@
 #include "src/br_math.h"
 #include "src/br_tl.h"
 
-#include "tracy/TracyC.h"
-
 #include <assert.h>
 
 void smol_mesh_gen_bb(br_shader_line_t* shader, bb_t bb, br_color_t color) {

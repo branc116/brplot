@@ -1,5 +1,7 @@
 #include "src/br_gl.h"
 
+#include "external/glfw/include/GLFW/glfw3.h"
+
 #define TO_LOAD(X) \
   X(GLuint, glCreateProgram) \
   X(GLuint, glCreateShader) \
@@ -68,9 +70,11 @@
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wpedantic"
 #  pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
+#  if defined(__clang__)
+#    pragma GCC diagnostic ignored "-Wpointer-type-mismatch"
+#  endif
 #endif
 int gladLoadGL( void* load);
-void* glfwGetProcAddress(void*);
 
 void dumby_func() {
   LOGE("Func not loaded...");

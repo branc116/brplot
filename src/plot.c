@@ -7,8 +7,6 @@
 #include "src/br_gl.h"
 #include "src/br_tl.h"
 
-#include "tracy/TracyC.h"
-
 #include "assert.h"
 
 static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders);

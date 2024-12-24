@@ -135,14 +135,14 @@ void generate_code(unsigned char* atlas, int sz, stbrp_rect* rects) {
     fprintf(f, "  } %s;\n", imgs[i].img);
   }
   fprintf(f, "} br_icons_t;\n");
-  fprintf(f, "extern const br_icons_t br_icons;\n");
+  fprintf(f, "extern br_icons_t br_icons;\n");
   fprintf(f, "extern const unsigned char br_icons_atlas[%d*%d];\n", sz, sz);
   fprintf(f, "extern const int br_icons_atlas_width;\n");
   fprintf(f, "extern const int br_icons_atlas_height;\n");
   fclose(f);
   f = fopen(".generated/icons.c", "wb+");
   fprintf(f, "#include \".generated/icons.h\"\n");
-  fprintf(f, "const br_icons_t br_icons = {\n");
+  fprintf(f, "br_icons_t br_icons = {\n");
   int rect_index = 0;
   for (int i = 0; i < STATIC_ARRAY_SIZE(imgs); ++i) {
     fprintf(f, "  {\n");
@@ -151,7 +151,7 @@ void generate_code(unsigned char* atlas, int sz, stbrp_rect* rects) {
       float y      = (float)rects[rect_index].y / (float)sz;
       float width  = (float)rects[rect_index].w / (float)sz;
       float height = (float)rects[rect_index].h / (float)sz;
-      fprintf(f, "    BR_EXTENT(%ff, %ff, %ff, %ff),\n", x, y, width, height);
+      fprintf(f, "    {{{%ff, %ff, %ff, %ff}}},\n", x, y, width, height);
       ++rect_index;
     }
     fprintf(f, "  },\n");
@@ -175,8 +175,8 @@ void generate_code(unsigned char* atlas, int sz, stbrp_rect* rects) {
     fprintf(f, "\n");
   }
   fprintf(f, "};\n");
-  fprintf(f, "extern const int br_icons_atlas_width = %d;\n", sz);
-  fprintf(f, "extern const int br_icons_atlas_height = %d;\n", sz);
+  fprintf(f, "const int br_icons_atlas_width = %d;\n", sz);
+  fprintf(f, "const int br_icons_atlas_height = %d;\n", sz);
   fclose(f);
 }
 

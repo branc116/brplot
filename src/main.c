@@ -6,8 +6,6 @@
 #include "src/br_gl.h"
 #include "src/br_icons.h"
 
-#include "tracy/TracyC.h"
-
 void br_gui_init_specifics_gui(br_plotter_t* plotter);
 static void* main_gui(void* plotter) {
   bool use_permastate = true;

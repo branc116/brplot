@@ -16,8 +16,6 @@
 #  include <pthread.h>
 #endif
 
-#include "tracy/TracyC.h"
-
 context_t context;
 
 BR_API br_plotter_t* br_plotter_malloc(void) {

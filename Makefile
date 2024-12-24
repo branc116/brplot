@@ -34,12 +34,11 @@ ifeq ($(PLATFORM), LINUX)
 	SANITIZE    ?= YES
 endif
 
-IM                 = external/imgui-docking
 SOURCE             = src/main.c           src/help.c       src/data.c        src/smol_mesh.c   src/q.c       src/read_input.c \
 										 src/keybindings.c    src/str.c        src/resampling2.c src/graph_utils.c src/shaders.c src/plotter.c    \
 										 src/plot.c           src/permastate.c src/filesystem.c  src/gui.c         src/text_renderer.c \
 										 src/data_generator.c src/platform.c   src/threads.c     src/gl.c          src/icons.c
-COMMONFLAGS        = -I. -Iexternal -Iexternal/glfw/include/ -Iexternal/Tracy -MMD -MP -fvisibility=hidden -std=gnu11
+COMMONFLAGS        = -I. -MMD -MP -fvisibility=hidden -std=gnu11
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra -Wshadow -D_GNU_SOURCE
 LD_FLAGS           =
 
@@ -50,7 +49,7 @@ ifeq ($(PLATFORM)_$(COMPILER), LINUX_CLANG)
 	ifeq ($(FUZZ), YES)
 		COMMONFLAGS+= -fsanitize=fuzzer
 	endif
-	WARNING_FLAGS+= -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-newline-eof
+	WARNING_FLAGS+= -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-newline-eof -Wno-gnu-zero-variadic-macro-arguments
 	CC= clang
 else ifeq ($(PLATFORM)_$(COMPILER), LINUX_GCC)
 	CC= gcc
@@ -89,8 +88,7 @@ else ifeq ($(PLATFORM), WINDOWS)
 	LIBS= -lopengl32 -lgdi32 -lwinmm
 	CXX= x86_64-w64-mingw32-g++
 	CC= x86_64-w64-mingw32-gcc
-	COMMONFLAGS+= -Iexternal/glfw/include -D_WIN32=1 -DWIN32_LEAN_AND_MEAN
-	SOURCE+= $(RL)/rglfw.c
+	COMMONFLAGS+= -D_WIN32=1 -DWIN32_LEAN_AND_MEAN
 	SHADERS_HEADER= .generated/shaders.h
 	COMPILER= MINGW
 
@@ -253,7 +251,7 @@ test-gdb:
 npm-imgui:
 	echo "TODO"
 	exit 1
-	make GUI=IMGUI CONFIG=RELEASE TYPE=LIB PLATFORM=WEB && \
+	make CONFIG=RELEASE TYPE=LIB PLATFORM=WEB && \
 	cp ./www/brplot_imgui_release_lib.js packages/npm/brplot.js && \
 	cp ./www/brplot_imgui_release_lib.wasm packages/npm && \
 	  ((cd packages/npm && \

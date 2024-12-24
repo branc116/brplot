@@ -21,9 +21,10 @@
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #  pragma GCC diagnostic ignored "-Wpedantic"
 #  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wshadow"
 #endif
 
-#include "GLFW/glfw3.h"
+#include "external/glfw/include/GLFW/glfw3.h"
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #  define _GLFW_WIN32
@@ -206,7 +207,7 @@ static void br_glfw_on_scroll(GLFWwindow* window, double x, double y) {
 
 static void br_glfw_on_mouse_move(struct GLFWwindow * window, double x, double y) {
   (void)window;
-  stl_br->mouse.pos = BR_VEC2(x, y);
+  stl_br->mouse.pos = BR_VEC2((float)x, (float)y);
 }
 
 static void br_glfw_on_mouse_button(struct GLFWwindow* window, int button, int action, int mods) {

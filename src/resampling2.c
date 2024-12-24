@@ -8,8 +8,6 @@
 #include "src/br_shaders.h"
 #include "src/br_tl.h"
 
-#include "tracy/TracyC.h"
-
 #include <stdint.h>
 #include <math.h>
 #include <string.h>

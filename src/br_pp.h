@@ -1,5 +1,6 @@
 #pragma once
 #include <stddef.h>
+#include "external/Tracy/tracy/TracyC.h"
 
 #if defined(__EMSCRIPTEN__)
 #  include <emscripten.h>
@@ -16,7 +17,8 @@
 // This is the size of buffer used to transfer points from cpu to gpu.
 #define PTOM_COUNT (1<<10)
 
-#ifdef __linux__
+#if defined(BR_MUSL)
+#elif defined(__linux__)
 #  define LOCK_T pthread_mutex_t
 #endif
 
@@ -109,3 +111,11 @@ void  br_imgui_free(void* p, void* user_data);
 #elif defined(__GNUC__)
 #  define BR_THREAD_LOCAL       __thread
 #endif
+
+#if defined(DEBUG) || defined(RELEASE) || defined(BR_RELEASE)
+#  error "Please don't define DEBUG or RELEASE or BR_RELEASE macros"
+#endif
+#if !defined(BR_DEBUG)
+#  define BR_RELEASE
+#endif
+

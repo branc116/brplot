@@ -25,7 +25,6 @@
 #endif
 
 #include "external/glfw/include/GLFW/glfw3.h"
-#include "tracy/TracyC.h"
 
 #define DEFAULT_INI "" \
 "[Window][DockSpaceViewport_11111111]\n" \
