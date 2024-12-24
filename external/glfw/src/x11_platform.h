@@ -29,26 +29,26 @@
 #include <signal.h>
 #include <stdint.h>
 
-#include <X11/Xlib.h>
-#include <X11/keysym.h>
-#include <X11/Xatom.h>
-#include <X11/Xresource.h>
-#include <X11/Xcursor/Xcursor.h>
+#include "external/X11/Xlib.h"
+#include "external/X11/keysym.h"
+#include "external/X11/Xatom.h"
+#include "external/X11/Xresource.h"
+#include "external/X11/Xcursor/Xcursor.h"
 
 // The XRandR extension provides mode setting and gamma control
-#include <X11/extensions/Xrandr.h>
+#include "external/X11/extensions/Xrandr.h"
 
 // The Xkb extension provides improved keyboard support
-#include <X11/XKBlib.h>
+#include "external/X11/XKBlib.h"
 
 // The Xinerama extension provides legacy monitor indices
-#include <X11/extensions/Xinerama.h>
+#include "external/X11/extensions/Xinerama.h"
 
 // The XInput extension provides raw mouse motion input
-#include <X11/extensions/XInput2.h>
+#include "external/X11/extensions/XInput2.h"
 
 // The Shape extension provides custom window shapes
-#include <X11/extensions/shape.h>
+#include "external/X11/extensions/shape.h"
 
 #define GLX_VENDOR 1
 #define GLX_RGBA_BIT 0x00000001

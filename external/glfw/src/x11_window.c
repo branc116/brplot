@@ -29,8 +29,8 @@
 
 #if defined(_GLFW_X11)
 
-#include <X11/cursorfont.h>
-#include <X11/Xmd.h>
+#include "external/X11/cursorfont.h"
+#include "external/X11/Xmd.h"
 
 #include <poll.h>
 

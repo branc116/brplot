@@ -24,9 +24,9 @@
 //
 //========================================================================
 
-#include <wayland-client-core.h>
-#include <xkbcommon/xkbcommon.h>
-#include <xkbcommon/xkbcommon-compose.h>
+#include "external/wayland/wayland-client-core.h"
+#include "external/xkbcommon/xkbcommon.h"
+#include "external/xkbcommon/xkbcommon-compose.h"
 
 #include <stdbool.h>
 
