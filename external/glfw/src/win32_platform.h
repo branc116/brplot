@@ -44,6 +44,9 @@
 #undef APIENTRY
 
 // GLFW on Windows is Unicode only and does not work in MBCS mode
+#ifndef UNICODE
+ #define UNICODE
+#endif
 
 // GLFW requires Windows XP or later
 #if WINVER < 0x0501
@@ -421,6 +424,7 @@ typedef struct _GLFWwindowWin32
     GLFWbool            transparent;
     GLFWbool            scaleToMonitor;
     GLFWbool            keymenu;
+    GLFWbool            showDefault;
 
     // Cached size used to filter out duplicate events
     int                 width, height;
@@ -454,11 +458,13 @@ typedef struct _GLFWlibraryWin32
     RAWINPUT*           rawInput;
     int                 rawInputSize;
     UINT                mouseTrailSize;
+    // The cursor handle to use to hide the cursor (NULL or a transparent cursor)
+    HCURSOR             blankCursor;
 
     struct {
         HINSTANCE                       instance;
         PFN_DirectInput8Create          Create;
-        IDirectInput8A*                 api;
+        IDirectInput8W*                 api;
     } dinput8;
 
     struct {
@@ -603,15 +609,11 @@ void _glfwGetMonitorPosWin32(_GLFWmonitor* monitor, int* xpos, int* ypos);
 void _glfwGetMonitorContentScaleWin32(_GLFWmonitor* monitor, float* xscale, float* yscale);
 void _glfwGetMonitorWorkareaWin32(_GLFWmonitor* monitor, int* xpos, int* ypos, int* width, int* height);
 GLFWvidmode* _glfwGetVideoModesWin32(_GLFWmonitor* monitor, int* count);
-void _glfwGetVideoModeWin32(_GLFWmonitor* monitor, GLFWvidmode* mode);
+GLFWbool _glfwGetVideoModeWin32(_GLFWmonitor* monitor, GLFWvidmode* mode);
 GLFWbool _glfwGetGammaRampWin32(_GLFWmonitor* monitor, GLFWgammaramp* ramp);
 void _glfwSetGammaRampWin32(_GLFWmonitor* monitor, const GLFWgammaramp* ramp);
 
-GLFWbool _glfwInitJoysticksWin32(void);
-void _glfwTerminateJoysticksWin32(void);
-GLFWbool _glfwPollJoystickWin32(_GLFWjoystick* js, int mode);
 const char* _glfwGetMappingNameWin32(void);
-void _glfwUpdateGamepadGUIDWin32(char* guid);
 
 GLFWbool _glfwInitWGL(void);
 void _glfwTerminateWGL(void);

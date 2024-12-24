@@ -85,7 +85,6 @@ void glDebug(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei len
 }
 
 void brgl_load(void) {
-  gladLoadGL(glfwGetProcAddress);
 #define X(type, name) name = (void*)glfwGetProcAddress(#name);
   TO_LOAD(X)
 #undef X

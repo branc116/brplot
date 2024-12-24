@@ -24,10 +24,9 @@
 //    distribution.
 //
 //========================================================================
-// Please use C89 style variable declarations in this file because VS 2010
-//========================================================================
 
 #include "internal.h"
+#include "src/br_pp.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -41,7 +40,7 @@
 
 // This contains all mutable state shared between compilation units of GLFW
 //
-RL_THREAD_LOCAL _GLFWlibrary _glfw = { GLFW_FALSE };
+BR_THREAD_LOCAL _GLFWlibrary _glfw = { GLFW_FALSE };
 
 // These are outside of _glfw so they can be used before initialization and
 // after termination without special handling when _glfw is cleared to zero
@@ -51,16 +50,21 @@ static GLFWerrorfun _glfwErrorCallback;
 static GLFWallocator _glfwInitAllocator;
 static _GLFWinitconfig _glfwInitHints =
 {
-    GLFW_TRUE,      // hat buttons
-    GLFW_ANGLE_PLATFORM_TYPE_NONE, // ANGLE backend
-    GLFW_ANY_PLATFORM, // preferred platform
-    NULL,           // vkGetInstanceProcAddr function
+    .angleType = GLFW_ANGLE_PLATFORM_TYPE_NONE,
+    .platformID = GLFW_ANY_PLATFORM,
+    .vulkanLoader = NULL,
+    .ns =
     {
-        GLFW_TRUE,  // macOS menu bar
-        GLFW_TRUE   // macOS bundle chdir
+        .menubar = GLFW_TRUE,
+        .chdir = GLFW_TRUE
     },
+    .x11 =
     {
-        GLFW_TRUE,  // X11 XCB Vulkan surface
+        .xcbVulkanSurface = GLFW_TRUE,
+    },
+    .wl =
+    {
+        .libdecorMode = GLFW_WAYLAND_PREFER_LIBDECOR
     },
 };
 
@@ -240,30 +244,6 @@ int _glfw_max(int a, int b)
     return a > b ? a : b;
 }
 
-float _glfw_fminf(float a, float b)
-{
-    if (a != a)
-        return b;
-    else if (b != b)
-        return a;
-    else if (a < b)
-        return a;
-    else
-        return b;
-}
-
-float _glfw_fmaxf(float a, float b)
-{
-    if (a != a)
-        return b;
-    else if (b != b)
-        return a;
-    else if (a > b)
-        return a;
-    else
-        return b;
-}
-
 void* _glfw_calloc(size_t count, size_t size)
 {
     if (count && size)
@@ -436,8 +416,6 @@ GLFWAPI int glfwInit(void)
 
     _glfwPlatformSetTls(&_glfw.errorSlot, &_glfwMainThreadError);
 
-    _glfwInitGamepadMappings();
-
     _glfwPlatformInitTimer();
     _glfw.timer.offset = _glfwPlatformGetTimerValue();
 
@@ -459,9 +437,6 @@ GLFWAPI void glfwInitHint(int hint, int value)
 {
     switch (hint)
     {
-        case GLFW_JOYSTICK_HAT_BUTTONS:
-            _glfwInitHints.hatButtons = value;
-            return;
         case GLFW_ANGLE_PLATFORM_TYPE:
             _glfwInitHints.angleType = value;
             return;
@@ -476,6 +451,9 @@ GLFWAPI void glfwInitHint(int hint, int value)
             return;
         case GLFW_X11_XCB_VULKAN_SURFACE:
             _glfwInitHints.x11.xcbVulkanSurface = value;
+            return;
+        case GLFW_WAYLAND_LIBDECOR:
+            _glfwInitHints.wl.libdecorMode = value;
             return;
     }
 
