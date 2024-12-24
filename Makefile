@@ -254,9 +254,9 @@ npm-imgui:
 	  ((cd packages/npm && \
 	   npm publish || cd ../..) && cd ../..)
 
-.generated/default_font.h: bin/font_bake content/font.subset.ttf
+.generated/default_font.h: bin/font_bake content/font.ttf
 	test -d .generated || mkdir .generated
-	bin/font_bake  content/font.subset.ttf > .generated/default_font.h
+	bin/font_bake  content/font.ttf > .generated/default_font.h
 
 bin/font_bake: tools/font_bake.c $(NOBS)
 	$(NATIVE_CC) -O3 -o bin/font_bake tools/font_bake.c
