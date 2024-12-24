@@ -69,7 +69,8 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
         PLOT->draw_settings = true;
     }
   } else {
-    br_extent_t panel = BR_EXTENTPS(br_extent_tr(BR_EXTENTI_TOF(PLOT->graph_screen_rect), 200, 0), BR_SIZE(200, (float)PLOT->graph_screen_rect.height));
+    br_extent_t p = BR_EXTENTI_TOF(PLOT->graph_screen_rect);
+    br_extent_t panel = BR_EXTENTPS(br_extent_tr(p, 200, 0), BR_SIZE(200, p.height));
     br_vec4_t panel_color = BR_VEC4(0.1f,0.1f,0.1f,2.f);
     br_icons_draw(br->shaders.icon, panel, BR_EXTENT(0,0,0,0), panel_color, panel_color);
     panel_color.w = 3;

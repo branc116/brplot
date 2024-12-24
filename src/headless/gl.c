@@ -30,6 +30,7 @@ void glDeleteTextures(GLsizei n, const GLuint * textures) {}
 void glPixelStorei(GLenum pname, GLint param) {}
 void glGenTextures(GLsizei n, GLuint* textures) {}
 void glTexParameteriv(GLenum target, GLenum pname, const GLint* params) {}
+void glFramebufferParameteri(GLenum target, GLenum pname, GLint param) {}
 void glGenBuffers(GLsizei n, GLuint* buffers) {}
 void glBindBuffer(GLenum target, GLuint buffer) {}
 void glBufferData(GLenum target, GLsizeiptr size, void const* data, GLenum usage) {}
@@ -54,6 +55,18 @@ void glEnableVertexAttribArray(GLuint index) {}
 void glClearColor(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {}
 void glClear(GLbitfield en) {}
 void glTexParameteri(GLenum target, GLenum pname, GLint param) {}
+void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level) {}
+void glDrawBuffers(GLsizei n, GLenum const* bufs) {}
+void glBindFramebuffer(GLenum target, GLuint framebuffer) {}
+void glDebugMessageCallback(glDebugProc callback, const void * userParam) {}
+void glGenFramebuffers(GLsizei n, GLuint * framebuffers) {}
+void glDeleteFramebuffers(GLsizei n, GLuint *framebuffers) {}
+void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) {}
+void glGenRenderbuffers(GLsizei n, GLuint *renderbuffers) {}
+void glDeleteRenderbuffers(GLsizei n, GLuint *renderbuffers) {}
+void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer) {}
+void glBindRenderbuffer(GLenum target, GLuint renderbuffer) {}
+void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height) {}
 
 #if !defined(_MSC_VER)
 #  pragma GCC diagnostic pop

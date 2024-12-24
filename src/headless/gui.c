@@ -13,7 +13,6 @@
 void br_gui_init_specifics_gui(br_plotter_t* br) {
   br_plot_t plot = { 
     .kind = br_plot_kind_2d,
-    .resolution = BR_SIZEI( 1280, 720 ),
     .graph_screen_rect = BR_EXTENTI(0, 0, 1280, 720),
     .dd = (br_plot_2d_t) {
       .zoom = BR_VEC2(1, 1),
@@ -25,14 +24,12 @@ void br_gui_init_specifics_gui(br_plotter_t* br) {
 
 void br_plotter_draw(br_plotter_t* br) {
   br_plot_t* plot = &br->plots.arr[0];
-  BeginDrawing();
-  br_plotter_update_variables(br);
+  br_plotter_begin_drawing(br);
   help_draw_fps(br->text, 0, 0);
   draw_grid_numbers(br->text, plot);
   smol_mesh_grid_draw(plot, &br->shaders);
   br_datas_draw(br->groups, plot, &br->shaders);
-  ClearBackground(BLACK);
-  EndDrawing();
+  br_plotter_end_drawing(br);
 }
 
 void br_plot_screenshot(br_text_renderer_t* text, br_plot_t* br, br_shaders_t* shaders, br_datas_t groups, const char* path) {

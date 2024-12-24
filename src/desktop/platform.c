@@ -58,7 +58,7 @@
 #include "external/glfw/src/window.c"
 #include "external/glfw/src/input.c"
 
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
 #  include "external/glfw/src/win32_init.c"
 #  include "external/glfw/src/win32_module.c"
 #  include "external/glfw/src/win32_monitor.c"
@@ -128,7 +128,7 @@
 #  pragma GCC diagnostic pop
 #endif
 
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)
 #  include <time.h>
 #elif defined(_WIN32)
 #  include "Windows.h"
@@ -379,7 +379,7 @@ br_shaders_t* brtl_shaders(void) {
 
 static void br_help_sleep(double seconds) {
   if (seconds <= 0.0) return;
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__MINGW32__) || defined(__CYGWIN__)
   Sleep((unsigned long)(seconds * 1000.0));
 #endif
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__EMSCRIPTEN__)

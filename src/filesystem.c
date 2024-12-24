@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 
 
-#if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
+#if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(__MINGW32__)
 #  include "desktop/linux/filesystem.c"
 #elif defined(_WIN32) || defined(__CYGWIN__)
 #  include "desktop/win/filesystem.c"
@@ -58,6 +58,9 @@ bool br_fs_exists(br_strv_t path) {
   br_scrach_free();
   return 0 != ((s.st_mode & S_IFMT) & (S_IFDIR | S_IFCHR | S_IFBLK | S_IFREG));
 }
+#elif defined(__MINGW32__)
+bool br_fs_mkdir(br_strv_t path) { }
+bool br_fs_exists(br_strv_t path) { }
 #elif defined(_WIN32) || defined(__CYGWIN__)
 #elif defined(__EMSCRIPTEN__)
 bool br_fs_mkdir(br_strv_t path) { return false; }

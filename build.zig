@@ -17,7 +17,7 @@ pub fn generate_fonts(b: *std.Build) !*std.Build.Step.Run {
     generateFont.linkLibC();
     var ret = b.addRunArtifact(generateFont);
     ret.addArg("./content/PlayfairDisplayRegular-ywLOY.ttf");
-    ret.addArg("build/default_font.c");
+    ret.addArg(".generated/default_font.h");
     return ret;
 }
 
@@ -100,49 +100,20 @@ pub fn build_raylib(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
     return raylib;
 }
 
-pub fn build_imgui(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) *std.Build.Step.Compile {
-    const imgui = b.addStaticLibrary(.{
-        .name = b.fmt("imgui_{s}_{s}", .{ @tagName(target.result.os.tag), @tagName(optimize) }),
-        .target = target,
-        .optimize = optimize,
-    });
-
-    const imguiSources = .{
-        "./external/imgui-docking/imgui.cpp",
-        "./external/imgui-docking/imgui.cpp",
-        "./external/imgui-docking/imgui_draw.cpp",
-        "./external/imgui-docking/imgui_tables.cpp",
-        "./external/imgui-docking/imgui_widgets.cpp",
-        "./external/imgui-docking/backends/imgui_impl_glfw.cpp",
-        "./external/imgui-docking/backends/imgui_impl_opengl3.cpp",
-    };
-    inline for (imguiSources) |source| {
-        imgui.addCSourceFile(.{ .file = b.path(source) });
-    }
-
-    imgui.linkLibC();
-    imgui.linkLibCpp();
-    imgui.addIncludePath(b.path("./external/imgui-docking"));
-    imgui.addIncludePath(b.path("./external/glfw/include"));
-    return imgui;
-}
-
-const gui_kind_t = enum { imgui, raylib, headless };
-
-pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, kind: gui_kind_t) !*std.Build.Step.Compile {
+pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, is_headless: bool) !*std.Build.Step.Compile {
     is_release = optimize != std.builtin.OptimizeMode.Debug;
 
     const exe = b.addExecutable(.{
-        .name = b.fmt("brplot_{s}_{s}_{s}", .{ @tagName(kind), @tagName(target.result.os.tag), @tagName(optimize) }),
+        .name = b.fmt("brplot_{}_{s}_{s}", .{ is_headless, @tagName(target.result.os.tag), @tagName(optimize) }),
         .target = target,
         .optimize = optimize,
     });
-    const raylib = try build_raylib(b, target, optimize);
-    const imgui = build_imgui(b, target, optimize);
 
     exe.addCSourceFiles(.{ .files = &.{
-        "./build/default_font.c",
         "./src/data.c",
+        "./src/gl.c",
+        "./src/icons.c",
+        "./src/platform.c",
         "./src/data_generator.c",
         "./src/filesystem.c",
         "./src/graph_utils.c",
@@ -150,9 +121,8 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
         "./src/help.c",
         "./src/keybindings.c",
         "./src/main.c",
-        "./src/memory.cpp",
+        "./src/memory.c",
         "./src/permastate.c",
-        "./src/platform.c",
         "./src/plot.c",
         "./src/plotter.c",
         "./src/q.c",
@@ -165,7 +135,6 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
     } });
     exe.addIncludePath(b.path("."));
     exe.addIncludePath(b.path("./src"));
-    exe.addIncludePath(b.path("./external/raylib-5.0/src"));
     exe.addIncludePath(b.path("./external/Tracy"));
     exe.linkLibC();
     exe.defineCMacro("PLATFORM_DESKTOP", "1");
@@ -175,24 +144,11 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
         exe.step.dependOn(&(try generate_shaders(b)).step);
     }
 
-    switch (kind) {
-        .raylib => {
-            exe.linkLibrary(raylib);
+    switch (is_headless) {
+        false => {
             exe.defineCMacro("RAYLIB", null);
         },
-        .imgui => {
-            exe.linkLibrary(raylib);
-            exe.linkLibrary(imgui);
-            exe.addIncludePath(b.path("./external/imgui-docking"));
-            exe.addIncludePath(b.path("./src/imgui"));
-            exe.defineCMacro("IMGUI", null);
-            exe.linkLibCpp();
-            exe.addCSourceFiles(.{ .files = &.{
-                "./src/filesystem++.cpp",
-                "./src/gui++.cpp",
-            } });
-        },
-        .headless => {
+        true => {
             exe.defineCMacro("NUMBER_OF_STEPS", "100");
             exe.defineCMacro("HEADLESS", null);
         },
@@ -204,8 +160,12 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
 
 pub fn build_all(b: *std.Build, target: std.Build.ResolvedTarget) !void {
     inline for (std.meta.fields(std.builtin.OptimizeMode)) |optim| {
-        inline for (std.meta.fields(gui_kind_t)) |kind| {
-            const brplot = try build_brplot(b, target, @enumFromInt(optim.value), @enumFromInt(kind.value));
+        {
+            const brplot = try build_brplot(b, target, @enumFromInt(optim.value), true);
+            b.installArtifact(brplot);
+        }
+        {
+            const brplot = try build_brplot(b, target, @enumFromInt(optim.value), false);
             b.installArtifact(brplot);
         }
     }
@@ -216,7 +176,7 @@ pub fn build(b: *std.Build) !void {
 
     const optimize = b.standardOptimizeOption(.{});
 
-    const gui_kind = b.option(gui_kind_t, "Gui", "Gui Kind") orelse gui_kind_t.imgui;
+    const gui_kind = b.option(bool, "Headless", "Build headless") orelse false;
     const all = b.option(bool, "All", "Build all targets") orelse false;
     if (all) {
         try build_all(b, target);

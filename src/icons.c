@@ -1,4 +1,17 @@
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wpedantic"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 #include ".generated/icons.c"
+#if defined(__clang__)
+#  pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic pop
+#endif
+
 #include "src/br_gl.h"
 #include "src/br_icons.h"
 #include "src/br_shaders.h"

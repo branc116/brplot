@@ -13,7 +13,7 @@ void br_thread_start(void *(*function)(void *), void* args) {
 #include <windows.h>
 #include <processthreadsapi.h>
 
-void br_thread_start(void *(*function)(void *), void* args) {
+void br_thread_start(long unsigned int(*function)(void *), void* args) {
   CreateThread(NULL, 0, function, args, 0, NULL);
 }
 #elif defined(__EMSCRIPTEN__)

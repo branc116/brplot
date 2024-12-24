@@ -86,14 +86,12 @@ ifeq ($(PLATFORM), LINUX)
 
 else ifeq ($(PLATFORM), WINDOWS)
 	LIBS= -lopengl32 -lgdi32 -lwinmm
-	CXX= x86_64-w64-mingw32-g++
 	CC= x86_64-w64-mingw32-gcc
 	COMMONFLAGS+= -D_WIN32=1 -DWIN32_LEAN_AND_MEAN
 	SHADERS_HEADER= .generated/shaders.h
 	COMPILER= MINGW
 
 else ifeq ($(PLATFORM), WEB)
-	CXX= $(EMSCRIPTEN)em++
 	CC= $(EMSCRIPTEN)emcc
 	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES3=1
 	WARNING_FLAGS+= -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-newline-eof
@@ -170,7 +168,6 @@ else
 	$(error This is not valid configuration)
 endif
 
-CXXFLAGS= $(COMMONFLAGS) -fno-exceptions -std=gnu++17
 CCFLAGS= $(COMMONFLAGS) -std=gnu11
 ifeq ($(TYPE), EXE)
 	PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(BACKENDS)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
@@ -286,7 +283,7 @@ SOURCE_BENCH= ./src/misc/benchmark.c ./src/resampling2.c ./src/smol_mesh.c ./src
 OBJS_BENCH= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(SOURCE_BENCH))
 
 bin/bench: $(OBJS_BENCH) $(NOBS)
-	$(CXX) $(LD_FLAGS) -o bin/bench $(COMMONFLAGS) $(LIBS) $(OBJS_BENCH)
+	$(CC) $(LD_FLAGS) -o bin/bench $(COMMONFLAGS) $(LIBS) $(OBJS_BENCH)
 
 COMPILE_FLAGS_JSON= $(patsubst %.c, $(PREFIX_BUILD)/%.json, $(SOURCE))
 
