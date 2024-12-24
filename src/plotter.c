@@ -247,7 +247,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
       while (i < 50.f) {
         float cur = start + base * i;
         i += 1.f;
-        sprintf(scrach, "%.*f", exp < 0 ? -(int)exp : 0, cur);
+        sprintf(scrach, "%.*f", exp < 0 ? -(int)exp : 1, cur);
         help_trim_zeros(scrach);
         float x = (sz.width / r.width) * (cur - r.x);
         if (x > sz.width) break;

@@ -158,6 +158,8 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
   }
   br_shader_font_t* simp = *r->shader;
   simp->uvs.atlas_uv = r->bitmap_texture_id;
+  br_shader_font_draw(simp);
+  simp->len = 0;
 }
 
 static void br_text_draw_quad(br_vec4_t* v, int* len, float x0, float y0, float s0, float t0,
@@ -233,7 +235,7 @@ br_text_renderer_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x,
   else if (ancor & br_text_renderer_ancor_x_mid)   x_off = (max_x + min_x) * 0.5f - x;
   else if (ancor & br_text_renderer_ancor_x_right) x_off = max_x - x;
   for (size_t i = 0; i < r->tmp_quads.len; ++i) {
-    if (simp->len * 3 >= simp->cap) {
+    if (simp->len >= simp->cap) {
       br_text_renderer_dump(r);
       len_pos = 0;
       pos = (void*)simp->pos_vbo;
