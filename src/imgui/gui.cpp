@@ -13,7 +13,7 @@
 #include "imgui_extensions.cpp"
 #include "ui_info.cpp"
 #include "ui_settings.cpp"
-#ifndef RELEASE
+#if defined(BR_DEBUG)
 #  include "external/imgui-docking/imgui_demo.cpp"
 #endif
 

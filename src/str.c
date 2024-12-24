@@ -234,7 +234,7 @@ static BR_THREAD_LOCAL char*  scrach = NULL;
 static BR_THREAD_LOCAL size_t scrach_cur_cap = 0;
 static BR_THREAD_LOCAL bool   scrach_is_taken = false;
 
-#if defined(RELEASE)
+#if defined(BR_RELEASE)
 #  define SCRACH_GET_NAME br_scrach_get
 #  define SCRACH_FREE_NAME br_scrach_free
 #else

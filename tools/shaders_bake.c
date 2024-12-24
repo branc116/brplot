@@ -1,13 +1,12 @@
-#include "stdio.h"
-#include "string.h"
-#include "errno.h"
+#define BR_SHADER_TOOL
 #include "src/br_shaders.h"
 #include "src/br_da.h"
 #include "src/br_str.h"
+
 #include <assert.h>
-#if defined(RELEASE)
-#  include ".generated/shaders.h"
-#endif
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
 
 #define IS_SPECIAL_TOKEN(c) ((c) == '\n' || (c) == '\r' || (c) == '.' || (c) == ',' || (c) == '{' || (c) == '}' || (c) == ' ')
 #define IS_NUMBER_TOKEN(c) ((c) >= '0' && (c) <= '9')

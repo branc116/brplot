@@ -65,7 +65,7 @@ int main(void) {
 }
 #endif
 
-#if defined(__linux__) && !defined(RELEASE)
+#if defined(__linux__) && defined(BR_DEBUG)
 const char* __asan_default_options(void) {
   return "verbosity=0:"
     "sleep_before_dying=120:"
@@ -77,6 +77,6 @@ const char* __asan_default_options(void) {
 #endif
 
 #if defined(LIB)
-#include "lib.c"
+#  include "lib.c"
 #endif
 

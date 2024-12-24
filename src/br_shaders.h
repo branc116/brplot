@@ -5,30 +5,25 @@
 #  include <stdlib.h>
 #endif
 
-#if !defined(RELEASE)
-#define grid_fs "src/shaders/grid.fs"
-#define grid_vs "src/shaders/grid.vs"
-#define line_fs "src/shaders/line.fs"
-#define line_vs "src/shaders/line.vs"
-#define quad_fs "src/shaders/quad.fs"
-#define quad_vs "src/shaders/quad.vs"
-
-#define grid_3d_fs "src/shaders/grid_3d.fs"
-#define grid_3d_vs "src/shaders/grid_3d.vs"
-#define line_3d_fs "src/shaders/line_3d.fs"
-#define line_3d_vs "src/shaders/line_3d.vs"
-#define line_3d_simple_fs "src/shaders/line_3d_simple.fs"
-#define line_3d_simple_vs "src/shaders/line_3d_simple.vs"
-
-#define font_fs "src/shaders/font.fs"
-#define font_vs "src/shaders/font.vs"
-
-#define img_fs "src/shaders/img.fs"
-#define img_vs "src/shaders/img.vs"
-
-#define icon_fs "src/shaders/icon.fs"
-#define icon_vs "src/shaders/icon.vs"
-
+#if defined(BR_SHADER_TOOL) || defined(BR_DEBUG)
+#  define grid_fs           "src/shaders/grid.fs"
+#  define grid_vs           "src/shaders/grid.vs"
+#  define line_fs           "src/shaders/line.fs"
+#  define line_vs           "src/shaders/line.vs"
+#  define quad_fs           "src/shaders/quad.fs"
+#  define quad_vs           "src/shaders/quad.vs"
+#  define grid_3d_fs        "src/shaders/grid_3d.fs"
+#  define grid_3d_vs        "src/shaders/grid_3d.vs"
+#  define line_3d_fs        "src/shaders/line_3d.fs"
+#  define line_3d_vs        "src/shaders/line_3d.vs"
+#  define line_3d_simple_fs "src/shaders/line_3d_simple.fs"
+#  define line_3d_simple_vs "src/shaders/line_3d_simple.vs"
+#  define font_fs           "src/shaders/font.fs"
+#  define font_vs           "src/shaders/font.vs"
+#  define img_fs            "src/shaders/img.fs"
+#  define img_vs            "src/shaders/img.vs"
+#  define icon_fs           "src/shaders/icon.fs"
+#  define icon_vs           "src/shaders/icon.vs"
 #endif
 
 #define NOP2(N, M)

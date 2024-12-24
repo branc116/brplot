@@ -66,7 +66,7 @@ void       br_strv_to_c_str1(br_strv_t s, char* out_s);
 br_strv_t  br_strv_from_c_str(const char* s);
 int        br_strv_to_int(br_strv_t str);
 
-#if defined(RELEASE)
+#if defined(BR_RELEASE)
 char*      br_scrach_get(size_t len);
 void       br_scrach_free(void);
 #else

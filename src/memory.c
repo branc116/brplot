@@ -1,8 +1,8 @@
 #include "src/br_pp.h"
 
-#include "stdlib.h"
+#include <stdlib.h>
 
-#if defined(__linux__) && !defined(RELEASE)
+#if defined(__linux__) && defined(BR_DEBUG)
 void* br_malloc(size_t size) {
   void* ret = malloc(size);
   return ret;

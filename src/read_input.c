@@ -777,8 +777,7 @@ void read_input_main_worker(br_plotter_t* gv) {
   lex(gv);
 }
 
-#ifndef _MSC_VER
-#if !defined(RELEASE)
+#if !defined(_MSC_VER) && defined(BR_DEBUG)
 #include "external/tests.h"
 
 #if defined(FUZZ)
@@ -953,5 +952,4 @@ TEST_CASE(Extractors) {
   VALXY("%y.%x", "12.13.14.15", 14.15f, 12.13f);
 }
 
-#endif
 #endif

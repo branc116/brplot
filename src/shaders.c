@@ -3,6 +3,15 @@
 #if !defined(DEBUG_MACROS)
 #  include "br_pp.h"
 #  include "br_gl.h"
+#  if defined(BR_RELEASE)
+#    if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(_WIN32) || defined(__CYGWIN__)
+#      include ".generated/shaders.h"
+#    elif defined(__EMSCRIPTEN__)
+#      include ".generated/shaders_web.h"
+#    else
+#      error "Shaders for this platform arn't defined"
+#    endif
+#  endif
 
 #  include <stdio.h>
 #  include <stdint.h>
@@ -10,16 +19,6 @@
 #  include <stdbool.h>
 #endif
 
-
-#ifdef RELEASE
-#  if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(_WIN32) || defined(__CYGWIN__)
-#    include ".generated/shaders.h"
-#  elif defined(__EMSCRIPTEN__)
-#    include ".generated/shaders_web.h"
-#  else
-#    error "Shaders for this platform arn't defined"
-#  endif
-#endif
 
 #define X_BUF(NAME, LEN)                                                         \
   do {                                                                           \
@@ -86,7 +85,7 @@ BR_ALL_SHADERS(X, X_VEC, X_BUF)
 #undef X_VEC
 #undef X_BUF
 
-#ifdef RELEASE
+#if defined(BR_RELEASE)
 #  define READ_FILE(file_name) file_name
 #  define FREE_FILE_CONTENT(file)
 #  define FILE_CONTNET_TYPE const char*

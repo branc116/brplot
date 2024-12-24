@@ -2,6 +2,13 @@
 #include <stddef.h>
 #include "external/Tracy/tracy/TracyC.h"
 
+#if defined(DEBUG) || defined(RELEASE) || defined(BR_RELEASE)
+#  error "Please don't define DEBUG or RELEASE or BR_RELEASE macros"
+#endif
+#if !defined(BR_DEBUG)
+#  define BR_RELEASE
+#endif
+
 #if defined(__EMSCRIPTEN__)
 #  include <emscripten.h>
 #  define BR_API EMSCRIPTEN_KEEPALIVE
@@ -9,7 +16,7 @@
 #  define BR_API
 #endif
 
-#if !defined(RELEASE) && !defined(__linux__) && defined(UNIT_TEST)
+#if defined(BR_DEBUG) && !defined(__linux__) && defined(UNIT_TEST)
    // IT don't work on windows....
 #  undef UNIT_TEST
 #endif
@@ -58,7 +65,7 @@ void  br_imgui_free(void* p, void* user_data);
 }
 #endif
 
-#if !defined(RELEASE) && defined(__linux__)
+#if defined(BR_DEBUG) && defined(__linux__)
 #  define BR_MALLOC(size) malloc(size)
 #  define BR_CALLOC calloc
 #  define BR_REALLOC realloc
@@ -80,14 +87,14 @@ void  br_imgui_free(void* p, void* user_data);
 #endif
 
 #if !defined(BR_HAS_HOTRELOAD)
-#  if !defined(RELEASE) && defined(IMGUI) && defined(__linux__) && !defined(LIB)
+#  if defined(BR_DEBUG) && defined(IMGUI) && defined(__linux__) && !defined(LIB)
 #    define BR_HAS_HOTRELOAD 1
 #  else
 #    define BR_HAS_HOTRELOAD 0
 #  endif
 #endif
 
-#if !defined(RELEASE) && defined(__linux__)
+#if defined(BR_DEBUG) && defined(__linux__)
 #  define BR_HAS_SHADER_RELOAD 1
 #else
 #  define BR_HAS_SHADER_RELOAD 0
@@ -110,12 +117,5 @@ void  br_imgui_free(void* p, void* user_data);
 #  define BR_THREAD_LOCAL       __thread
 #elif defined(__GNUC__)
 #  define BR_THREAD_LOCAL       __thread
-#endif
-
-#if defined(DEBUG) || defined(RELEASE) || defined(BR_RELEASE)
-#  error "Please don't define DEBUG or RELEASE or BR_RELEASE macros"
-#endif
-#if !defined(BR_DEBUG)
-#  define BR_RELEASE
 #endif
 

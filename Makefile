@@ -114,7 +114,7 @@ else
 endif
 
 ifeq ($(CONFIG), DEBUG)
-	COMMONFLAGS+= -ggdb
+	COMMONFLAGS+= -ggdb -DBR_DEBUG
 	SHADERS_HEADER=
 	ifeq ($(PLATFORM), LINUX)
 		COMMONFLAGS+= -DUNIT_TEST
@@ -136,7 +136,7 @@ ifeq ($(CONFIG), DEBUG)
 		endif
 	endif
 else ifeq ($(CONFIG), RELEASE)
-	COMMONFLAGS+= -fdata-sections -ffunction-sections -Os -DRELEASE=1
+	COMMONFLAGS+= -fdata-sections -ffunction-sections -Os
 	LD_FLAGS+= -fdata-sections -ffunction-sections -Wl,--gc-sections
 	ifeq ($(PATFORM)_$(LTO), LINUX_YES)
 		LD_FLAGS+= -flto=auto
@@ -254,9 +254,9 @@ npm-imgui:
 	  ((cd packages/npm && \
 	   npm publish || cd ../..) && cd ../..)
 
-.generated/default_font.h: bin/font_bake content/PlayfairDisplayRegular-ywLOY.ttf
+.generated/default_font.h: bin/font_bake content/font.ttf
 	test -d .generated || mkdir .generated
-	bin/font_bake content/PlayfairDisplayRegular-ywLOY.ttf > .generated/default_font.h
+	bin/font_bake content/font.ttf > .generated/default_font.h
 
 bin/font_bake: tools/font_bake.c $(NOBS)
 	$(NATIVE_CC) -O3 -o bin/font_bake tools/font_bake.c

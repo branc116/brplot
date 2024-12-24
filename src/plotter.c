@@ -215,8 +215,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
       float start = floorf(r.y / base) * base;
 
       float i = 0.f;
-      float x = -r.x * sz.width / r.width; // - r.x, 0.f, sz.width);
-      LOGI("x=%f", x);
+      float x = -r.x * sz.width / r.width;
       br_text_renderer_ancor_t ancor = br_text_renderer_ancor_mid_mid;
       const float padding = 10.f;
       if (x < padding) x = padding, ancor = br_text_renderer_ancor_left_mid;
@@ -240,7 +239,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
       if (isnan(base) || isinf(base)) goto end;
       float start = ceilf(r.x / base) * base;
       float i = 0;
-      float y = r.y * sz.height / r.height; //(float)plot->graph_screen_rect.y + sz.height / 2;
+      float y = r.y * sz.height / r.height;
       const float padding = 10.f;
       br_text_renderer_ancor_t ancor = br_text_renderer_ancor_mid_mid;
       if (y < padding) y = padding, ancor = br_text_renderer_ancor_mid_up;
