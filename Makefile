@@ -1,6 +1,6 @@
 # This are the configuration options.
 # default configuration (calling make with 0 arguments) call is:
-# $ make CONFIG=RELEASE PLATFORM=LINUX GUI=IMGUI TYPE=EXE COMPILER=GCC
+# $ make CONFIG=RELEASE PLATFORM=LINUX TYPE=EXE COMPILER=GCC
 # But you can change it by changing one param e.g. use clang:
 # $ make COMPILER=CLANG
 
@@ -11,29 +11,36 @@ PLATFORM  ?= LINUX
 HEADLESS  ?= NO
 # EXE | LIB
 TYPE      ?= EXE
-# GCC | CLANG ( Only for linux build )
-COMPILER  ?= GCC
 NATIVE_CC ?= gcc
-# YES | NO
-COVERAGE  ?= NO
-# YES | NO
-FUZZ      ?= NO
-# YES | NO
-TRACY     ?= NO
-# YES | NO
-LTO       ?= YES
-# X11 | WAYLAND
-BACKEND   ?= X11
-# Only when TYPE=LIB
-STATIC   ?= NO
+
+# Only flags for linux development
+ifeq ($(PLATFORM), LINUX)
+	# GCC | CLANG | MUSL | COSMO | ZIG
+	COMPILER    ?= GCC
+	# YES | NO
+	COVERAGE    ?= NO
+	# YES | NO
+	FUZZ        ?= NO
+	# YES | NO
+	TRACY       ?= NO
+	# YES | NO
+	LTO         ?= YES
+	# X11 | WAYLAND
+	HAS_X11     ?= YES
+	HAS_WAYLAND ?= YES
+	# Only when TYPE=LIB
+	STATIC      ?= NO
+	# Only in debug build
+	SANITIZE    ?= YES
+endif
 
 IM                 = external/imgui-docking
 SOURCE             = src/main.c           src/help.c       src/data.c        src/smol_mesh.c   src/q.c       src/read_input.c \
 										 src/keybindings.c    src/str.c        src/resampling2.c src/graph_utils.c src/shaders.c src/plotter.c    \
 										 src/plot.c           src/permastate.c src/filesystem.c  src/gui.c         src/text_renderer.c \
 										 src/data_generator.c src/platform.c   src/threads.c     src/gl.c          src/icons.c
-COMMONFLAGS        = -I. -Iexternal/glfw/include/ -Iexternal/Tracy -MMD -MP -fvisibility=hidden
-WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra -Wshadow
+COMMONFLAGS        = -I. -Iexternal -Iexternal/glfw/include/ -Iexternal/Tracy -MMD -MP -fvisibility=hidden -std=gnu11
+WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra -Wshadow -D_GNU_SOURCE
 LD_FLAGS           =
 
 ifeq ($(PLATFORM)_$(COMPILER), LINUX_CLANG)
@@ -49,6 +56,11 @@ else ifeq ($(PLATFORM)_$(COMPILER), LINUX_GCC)
 	CC= gcc
 else ifeq ($(PLATFORM)_$(COMPILER), LINUX_COSMO)
 	CC= cosmocc
+else ifeq ($(PLATFORM)_$(COMPILER), LINUX_MUSL)
+	CC= musl-gcc
+	COMMONFLAGS+= -DBR_MUSL
+else ifeq ($(PLATFORM)_$(COMPILER), LINUX_ZIG)
+	CC= zig cc
 endif
 
 ifeq ($(HEADLESS), YES)
@@ -56,18 +68,24 @@ ifeq ($(HEADLESS), YES)
 endif
 
 ifeq ($(PLATFORM), LINUX)
-	ifeq ($(BACKEND), WAYLAND)
-		COMMONFLAGS+= -Iexternal/glfw/include -D_GLFW_WAYLAND
-	endif
 	SHADERS_HEADER= .generated/shaders.h
 	ifeq ($(TYPE), LIB)
 		COMMONFLAGS+= -fPIC -DLIB
 		LD_FLAGS+= -fPIC -shared
 	endif
-	LIBS+= -lm
+	ifeq ($(COMPILER), MUSL)
+		LIBS+= -l:libm.a -l:libdl.a -l:libc.a
+	else
+		LIBS+= -lm
+	endif
+	ifeq ($(HAS_WAYLAND), NO)
+		COMMONFLAGS+= -DBR_NO_WAYLAND
+	endif
+	ifeq ($(HAS_X11), NO)
+		COMMONFLAGS+= -DBR_NO_X11
+	endif
 
 else ifeq ($(PLATFORM), WINDOWS)
-	BACKEND= GLFW
 	LIBS= -lopengl32 -lgdi32 -lwinmm
 	CXX= x86_64-w64-mingw32-g++
 	CC= x86_64-w64-mingw32-gcc
@@ -77,7 +95,6 @@ else ifeq ($(PLATFORM), WINDOWS)
 	COMPILER= MINGW
 
 else ifeq ($(PLATFORM), WEB)
-	BACKEND= GLFW
 	CXX= $(EMSCRIPTEN)em++
 	CC= $(EMSCRIPTEN)emcc
 	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES3=1
@@ -106,18 +123,20 @@ ifeq ($(CONFIG), DEBUG)
 	ifeq ($(PLATFORM), LINUX)
 		COMMONFLAGS+= -DUNIT_TEST
 		SOURCE+= tests/src/math.c
-		ifeq ($(COMPILER), GCC)
-		  COMMONFLAGS+= -fsanitize=bounds-strict
-		endif
-		ifeq ($(COVERAGE), NO)
-			LD_FLAGS+= -rdynamic
-			ifeq ($(TYPE), EXE)
-				COMMONFLAGS+= -fpie \
-				 -fsanitize=address -fsanitize=leak \
-				 -fsanitize=undefined -fsanitize=signed-integer-overflow \
-				 -fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
+		ifeq ($(SANITIZE), YES)
+			ifeq ($(COMPILER), GCC)
+				COMMONFLAGS+= -fsanitize=bounds-strict
 			endif
-			COMMONFLAGS+= -pg
+			ifeq ($(COVERAGE), NO)
+				LD_FLAGS+= -rdynamic
+				ifeq ($(TYPE), EXE)
+					COMMONFLAGS+= -fpie \
+					 -fsanitize=address -fsanitize=leak \
+					 -fsanitize=undefined -fsanitize=signed-integer-overflow \
+					 -fsanitize=integer-divide-by-zero -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
+				endif
+				COMMONFLAGS+= -pg
+			endif
 		endif
 	endif
 else ifeq ($(CONFIG), RELEASE)
@@ -135,18 +154,36 @@ ifeq ($(TRACY), YES)
 	LD_FLAGS+= -ltracy
 endif
 
+ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), YES_YES_YES)
+	BACKENDS= HWX
+else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), YES_YES_NO)
+	BACKENDS= HW
+else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), YES_NO_YES)
+	BACKENDS= HX
+else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), YES_NO_NO)
+	BACKENDS= H
+else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), NO_YES_YES)
+	BACKENDS= WX
+else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), NO_YES_NO)
+	BACKENDS= W
+else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), NO_NO_YES)
+	BACKENDS= X
+else
+	$(error This is not valid configuration)
+endif
+
 CXXFLAGS= $(COMMONFLAGS) -fno-exceptions -std=gnu++17
 CCFLAGS= $(COMMONFLAGS) -std=gnu11
 ifeq ($(TYPE), EXE)
-	PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(HEADLESS)/$(BACKEND)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
-	OUTPUT?= $(shell echo 'bin/brplot_$(HEADLESS)_$(BACKEND)_$(PLATFORM)_$(CONFIG)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
+	PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(BACKENDS)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
+	OUTPUT?= $(shell echo 'bin/brplot_$(PLATFORM)_$(CONFIG)_$(BACKENDS)_$(COMPILER)' | tr '[A-Z]' '[a-z]')
 else
 	ifeq ($(STATIC), YES)
-		PREFIX_BUILD= $(shell echo 'build/slib/$(PLATFORM)/$(CONFIG)/$(HEADLESS)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
-		OUTPUT= bin/$(shell echo 'bin/libbrplot_$(HEADLESS)_$(PLATFORM)_$(CONFIG)_$(COMPILER).a' | tr '[A-Z]' '[a-z]')
+		PREFIX_BUILD= $(shell echo 'build/slib/$(PLATFORM)/$(CONFIG)/$(BACKENDS)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
+		OUTPUT?= $(shell echo   'bin/libbrplot_$(PLATFORM)_$(CONFIG)_$(BACKENDS)_$(COMPILER).a' | tr '[A-Z]' '[a-z]')
 	else
-		PREFIX_BUILD= $(shell echo 'build/lib/$(PLATFORM)/$(CONFIG)/$(HEADLESS)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
-		OUTPUT= $(shell echo 'bin/libbrplot_$(HEADLESS)_$(PLATFORM)_$(CONFIG)_$(COMPILER).so' | tr '[A-Z]' '[a-z]')
+		PREFIX_BUILD= $(shell echo 'build/dlib/$(PLATFORM)/$(CONFIG)/$(BACKENDS)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
+		OUTPUT?= $(shell echo   'bin/libbrplot_$(PLATFORM)_$(CONFIG)_$(BACKENDS)_$(COMPILER).so' | tr '[A-Z]' '[a-z]')
 	endif
 endif
 
@@ -155,7 +192,7 @@ MAKE_INCLUDES= $(patsubst %.o, %.d, $(OBJS))
 NOBS= $(patsubst %.o, %.nob.dir, $(OBJS))
 NOBS+= bin/.nob.dir
 
-LD= gcc
+LD= $(CC)
 
 $(OUTPUT):
 
@@ -180,6 +217,8 @@ $(PREFIX_BUILD)/%.o: %.c
 
 $(OBJS): $(NOBS)
 
+src/main.c: .generated/icons.h .generated/icons.c
+src/gui.c: .generated/icons.h .generated/icons.c
 src/icons.c: .generated/icons.h .generated/icons.c
 src/help.c: .generated/default_font.h
 src/shaders.c: $(SHADERS_HEADER)
@@ -246,14 +285,12 @@ bench: bin/bench
 	cat bench.txt
 
 SOURCE_BENCH= ./src/misc/benchmark.c ./src/resampling2.c ./src/smol_mesh.c ./src/shaders.c ./src/plotter.c ./src/help.c ./src/gui.c ./src/data.c ./src/str.c ./src/plot.c ./src/q.c ./src/keybindings.c ./src/graph_utils.c ./src/data_generator.c ./src/platform.c  ./src/permastate.c ./src/filesystem.c
-OBJSA_BENCH= $(patsubst %.cpp, $(PREFIX_BUILD)/%.o, $(SOURCE_BENCH))
-OBJS_BENCH+= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(OBJSA_BENCH))
+OBJS_BENCH= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(SOURCE_BENCH))
 
 bin/bench: $(OBJS_BENCH) $(NOBS)
 	$(CXX) $(LD_FLAGS) -o bin/bench $(COMMONFLAGS) $(LIBS) $(OBJS_BENCH)
 
-COMPILE_FLAGS_JSONA= $(patsubst %.cpp, $(PREFIX_BUILD)/%.json, $(SOURCE))
-COMPILE_FLAGS_JSON= $(patsubst %.c, $(PREFIX_BUILD)/%.json, $(COMPILE_FLAGS_JSONA))
+COMPILE_FLAGS_JSON= $(patsubst %.c, $(PREFIX_BUILD)/%.json, $(SOURCE))
 
 PWD= $(shell pwd)
 
@@ -269,24 +306,10 @@ $(PREFIX_BUILD)/src/%.json:src/%.c
   echo '"file": "$<"' >> $@ && \
 	echo '},' >> $@
 
-$(PREFIX_BUILD)/src/%.json:src/%.cpp
-	echo '{' > $@ && \
-  echo '"directory": "$(PWD)",' >> $@ && \
-  echo '"command": "$(CXX) $(CXXFLAGS) $(WARNING_FLAGS) -c $<",' >> $@ && \
-  echo '"file": "$<"' >> $@ && \
-	echo '},' >> $@
-
 $(PREFIX_BUILD)/%.json:%.c
 	echo '{' > $@ && \
   echo '"directory": "$(PWD)",' >> $@ && \
   echo '"command": "$(CC) $(CCFLAGS) -c $<",' >> $@ && \
-  echo '"file": "$<"' >> $@ && \
-	echo '},' >> $@
-
-$(PREFIX_BUILD)/%.json:%.cpp
-	echo '{' > $@ && \
-  echo '"directory": "$(PWD)",' >> $@ && \
-  echo '"command": "$(CXX) $(CXXFLAGS) -c $<",' >> $@ && \
   echo '"file": "$<"' >> $@ && \
 	echo '},' >> $@
 

@@ -40,56 +40,25 @@
 #include <time.h>
 #include <assert.h>
 
-#include "wayland-client-protocol.h"
-#include "xdg-shell-client-protocol.h"
-#include "xdg-decoration-unstable-v1-client-protocol.h"
-#include "viewporter-client-protocol.h"
-#include "relative-pointer-unstable-v1-client-protocol.h"
-#include "pointer-constraints-unstable-v1-client-protocol.h"
-#include "fractional-scale-v1-client-protocol.h"
-#include "xdg-activation-v1-client-protocol.h"
-#include "idle-inhibit-unstable-v1-client-protocol.h"
+#include "external/wayland/wayland-private.c"
+#include "external/wayland/xdg-shell-private.c"
+#include "external/wayland/xdg-decoration-unstable-v1-private.c"
+#include "external/wayland/viewporter-private.c"
+#include "external/wayland/relative-pointer-unstable-v1-private.c"
+#include "external/wayland/pointer-constraints-unstable-v1-private.c"
+#include "external/wayland/fractional-scale-v1-private.c"
+#include "external/wayland/xdg-activation-v1-private.c"
+#include "external/wayland/idle-inhibit-unstable-v1-private.c"
 
-// NOTE: Versions of wayland-scanner prior to 1.17.91 named every global array of
-//       wl_interface pointers 'types', making it impossible to combine several unmodified
-//       private-code files into a single compilation unit
-// HACK: We override this name with a macro for each file, allowing them to coexist
-
-#define types _glfw_wayland_types
-#include "wayland-client-protocol-code.h"
-#undef types
-
-#define types _glfw_xdg_shell_types
-#include "xdg-shell-client-protocol-code.h"
-#undef types
-
-#define types _glfw_xdg_decoration_types
-#include "xdg-decoration-unstable-v1-client-protocol-code.h"
-#undef types
-
-#define types _glfw_viewporter_types
-#include "viewporter-client-protocol-code.h"
-#undef types
-
-#define types _glfw_relative_pointer_types
-#include "relative-pointer-unstable-v1-client-protocol-code.h"
-#undef types
-
-#define types _glfw_pointer_constraints_types
-#include "pointer-constraints-unstable-v1-client-protocol-code.h"
-#undef types
-
-#define types _glfw_fractional_scale_types
-#include "fractional-scale-v1-client-protocol-code.h"
-#undef types
-
-#define types _glfw_xdg_activation_types
-#include "xdg-activation-v1-client-protocol-code.h"
-#undef types
-
-#define types _glfw_idle_inhibit_types
-#include "idle-inhibit-unstable-v1-client-protocol-code.h"
-#undef types
+#include "external/wayland/wayland.h"
+#include "external/wayland/xdg-shell.h"
+#include "external/wayland/xdg-decoration-unstable-v1.h"
+#include "external/wayland/viewporter.h"
+#include "external/wayland/relative-pointer-unstable-v1.h"
+#include "external/wayland/pointer-constraints-unstable-v1.h"
+#include "external/wayland/fractional-scale-v1.h"
+#include "external/wayland/xdg-activation-v1.h"
+#include "external/wayland/idle-inhibit-unstable-v1.h"
 
 static void wmBaseHandlePing(void* userData,
                              struct xdg_wm_base* wmBase,
@@ -257,7 +226,7 @@ static const struct wl_callback_listener libdecorReadyListener =
 
 // Create key code translation tables
 //
-static void createKeyTables(void)
+static void createKeyTables_wl(void)
 {
     memset(_glfw.wl.keycodes, -1, sizeof(_glfw.wl.keycodes));
     memset(_glfw.wl.scancodes, -1, sizeof(_glfw.wl.scancodes));
@@ -495,7 +464,7 @@ GLFWbool _glfwConnectWayland(int platformID, _GLFWplatform* platform)
         .getEGLNativeWindow = _glfwGetEGLNativeWindowWayland,
         .getRequiredInstanceExtensions = _glfwGetRequiredInstanceExtensionsWayland,
         .getPhysicalDevicePresentationSupport = _glfwGetPhysicalDevicePresentationSupportWayland,
-        .createWindowSurface = _glfwCreateWindowSurfaceWayland
+        .createWindowSurface = NULL
     };
 
     void* module = _glfwPlatformLoadModule("libwayland-client.so.0");
@@ -808,7 +777,7 @@ int _glfwInitWayland(void)
     _glfw.wl.registry = wl_display_get_registry(_glfw.wl.display);
     wl_registry_add_listener(_glfw.wl.registry, &registryListener, NULL);
 
-    createKeyTables();
+    createKeyTables_wl();
 
     _glfw.wl.xkb.context = xkb_context_new(0);
     if (!_glfw.wl.xkb.context)

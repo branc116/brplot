@@ -23,9 +23,6 @@
 #  pragma GCC diagnostic ignored "-Wconversion"
 #endif
 
-#define GLAD_GL_IMPLEMENTATION
-#include "external/glad.h"
-
 #include "GLFW/glfw3.h"
 
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -33,8 +30,11 @@
 #endif
 
 #if defined(__linux__)
-#  if !defined(_GLFW_WAYLAND)     // Required for Wayland windowing
+#  if !defined(BR_NO_X11)
 #    define _GLFW_X11
+#  endif
+#  if !defined(BR_NO_WAYLAND)
+#    define _GLFW_WAYLAND
 #  endif
 #endif
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
@@ -85,6 +85,7 @@
 #    include "external/glfw/src/wl_monitor.c"
 #    include "external/glfw/src/wl_window.c"
 #  endif
+
 #  if defined(_GLFW_X11)
 #    include "external/glfw/src/x11_init.c"
 #    include "external/glfw/src/x11_monitor.c"
@@ -200,7 +201,7 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
 
 static void br_glfw_on_scroll(GLFWwindow* window, double x, double y) {
   (void)window;
-  stl_br->mouse.scroll = BR_VEC2(x, y);
+  stl_br->mouse.scroll = BR_VEC2((float)x, (float)y);
 }
 
 static void br_glfw_on_mouse_move(struct GLFWwindow * window, double x, double y) {

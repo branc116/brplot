@@ -210,7 +210,7 @@ static int translateKeySyms(const KeySym* keysyms, int width)
 
 // Create key code translation tables
 //
-static void createKeyTables(void)
+static void createKeyTables_x11(void)
 {
     int scancodeMin, scancodeMax;
 
@@ -908,7 +908,7 @@ static GLFWbool initExtensions(void)
     // Update the key code LUT
     // FIXME: We should listen to XkbMapNotify events to track changes to
     // the keyboard mapping.
-    createKeyTables();
+    createKeyTables_x11();
 
     // String format atoms
     _glfw.x11.NULL_ = XInternAtom(_glfw.x11.display, "NULL", False);
@@ -1248,6 +1248,7 @@ GLFWbool _glfwConnectX11(int platformID, _GLFWplatform* platform)
     void* module = _glfwPlatformLoadModule("libX11.so");
 #else
     void* module = _glfwPlatformLoadModule("libX11.so.6");
+    if (module == NULL) _glfwPlatformLoadModule("libX11.so");
 #endif
     if (!module)
     {

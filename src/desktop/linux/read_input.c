@@ -1,11 +1,12 @@
 #include "src/br_plot.h"
-#include "pthread.h"
+
+#include <pthread.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
-#include "sys/poll.h"
-#include "assert.h"
+#include <poll.h>
+#include <assert.h>
 
 static int br_pipes[2];
 static pthread_t thread;

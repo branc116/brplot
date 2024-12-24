@@ -40,15 +40,15 @@
 #include <poll.h>
 #include <linux/input-event-codes.h>
 
-#include "wayland-client-protocol.h"
-#include "xdg-shell-client-protocol.h"
-#include "xdg-decoration-unstable-v1-client-protocol.h"
-#include "viewporter-client-protocol.h"
-#include "relative-pointer-unstable-v1-client-protocol.h"
-#include "pointer-constraints-unstable-v1-client-protocol.h"
-#include "xdg-activation-v1-client-protocol.h"
-#include "idle-inhibit-unstable-v1-client-protocol.h"
-#include "fractional-scale-v1-client-protocol.h"
+#include "external/wayland/wayland.h"
+#include "external/wayland/xdg-shell.h"
+#include "external/wayland/xdg-decoration-unstable-v1.h"
+#include "external/wayland/viewporter.h"
+#include "external/wayland/relative-pointer-unstable-v1.h"
+#include "external/wayland/pointer-constraints-unstable-v1.h"
+#include "external/wayland/xdg-activation-v1.h"
+#include "external/wayland/idle-inhibit-unstable-v1.h"
+#include "external/wayland/fractional-scale-v1.h"
 
 #define GLFW_BORDER_SIZE    4
 #define GLFW_CAPTION_HEIGHT 24
@@ -496,7 +496,7 @@ static void setIdleInhibitor(_GLFWwindow* window, GLFWbool enable)
 
 // Make the specified window and its video mode active on its monitor
 //
-static void acquireMonitor(_GLFWwindow* window)
+static void acquireMonitor_wl(_GLFWwindow* window)
 {
     if (window->wl.libdecor.frame)
     {
@@ -517,7 +517,7 @@ static void acquireMonitor(_GLFWwindow* window)
 
 // Remove the window and restore the original video mode
 //
-static void releaseMonitor(_GLFWwindow* window)
+static void releaseMonitor_wl(_GLFWwindow* window)
 {
     if (window->wl.libdecor.frame)
         libdecor_frame_unset_fullscreen(window->wl.libdecor.frame);
@@ -1154,7 +1154,7 @@ static GLFWbool flushDisplay(void)
     return GLFW_TRUE;
 }
 
-static int translateKey(uint32_t scancode)
+static int translateKey_wl(uint32_t scancode)
 {
     if (scancode < sizeof(_glfw.wl.keycodes) / sizeof(_glfw.wl.keycodes[0]))
         return _glfw.wl.keycodes[scancode];
@@ -1263,7 +1263,7 @@ static void handleEvents(double* timeout)
                 for (uint64_t i = 0; i < repeats; i++)
                 {
                     _glfwInputKey(_glfw.wl.keyboardFocus,
-                                  translateKey(_glfw.wl.keyRepeatScancode),
+                                  translateKey_wl(_glfw.wl.keyRepeatScancode),
                                   _glfw.wl.keyRepeatScancode,
                                   GLFW_PRESS,
                                   _glfw.wl.xkb.modifiers);
@@ -1766,7 +1766,7 @@ static void keyboardHandleKey(void* userData,
     if (!window)
         return;
 
-    const int key = translateKey(scancode);
+    const int key = translateKey_wl(scancode);
     const int action =
         state == WL_KEYBOARD_KEY_STATE_PRESSED ? GLFW_PRESS : GLFW_RELEASE;
 
@@ -2502,12 +2502,12 @@ void _glfwSetWindowMonitorWayland(_GLFWwindow* window,
     }
 
     if (window->monitor)
-        releaseMonitor(window);
+        releaseMonitor_wl(window);
 
     _glfwInputWindowMonitor(window, monitor);
 
     if (window->monitor)
-        acquireMonitor(window);
+        acquireMonitor_wl(window);
     else
         _glfwSetWindowSizeWayland(window, width, height);
 }
@@ -3227,40 +3227,6 @@ GLFWbool _glfwGetPhysicalDevicePresentationSupportWayland(VkInstance instance,
     return vkGetPhysicalDeviceWaylandPresentationSupportKHR(device,
                                                             queuefamily,
                                                             _glfw.wl.display);
-}
-
-VkResult _glfwCreateWindowSurfaceWayland(VkInstance instance,
-                                         _GLFWwindow* window,
-                                         const VkAllocationCallbacks* allocator,
-                                         VkSurfaceKHR* surface)
-{
-    VkResult err;
-    VkWaylandSurfaceCreateInfoKHR sci;
-    PFN_vkCreateWaylandSurfaceKHR vkCreateWaylandSurfaceKHR;
-
-    vkCreateWaylandSurfaceKHR = (PFN_vkCreateWaylandSurfaceKHR)
-        vkGetInstanceProcAddr(instance, "vkCreateWaylandSurfaceKHR");
-    if (!vkCreateWaylandSurfaceKHR)
-    {
-        _glfwInputError(GLFW_API_UNAVAILABLE,
-                        "Wayland: Vulkan instance missing VK_KHR_wayland_surface extension");
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-
-    memset(&sci, 0, sizeof(sci));
-    sci.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
-    sci.display = _glfw.wl.display;
-    sci.surface = window->wl.surface;
-
-    err = vkCreateWaylandSurfaceKHR(instance, &sci, allocator, surface);
-    if (err)
-    {
-        _glfwInputError(GLFW_PLATFORM_ERROR,
-                        "Wayland: Failed to create Vulkan surface: %s",
-                        _glfwGetVulkanResultString(err));
-    }
-
-    return err;
 }
 
 
