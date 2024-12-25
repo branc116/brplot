@@ -100,7 +100,7 @@ unsigned int brgl_load_shader(const char* vs, const char* fs, int* ok) {
   GLuint vsid = brgl_compile_shader(vs, GL_VERTEX_SHADER);
   GLuint fsid = brgl_compile_shader(fs, GL_FRAGMENT_SHADER);
   GLuint program = glCreateProgram();
-  GLint status;
+  GLint status = 1;
 
   glAttachShader(program, vsid);
   glAttachShader(program, fsid);
@@ -295,7 +295,7 @@ void brgl_destroy_framebuffer(GLuint br_id) {
 }
 
 GLuint brgl_load_vao(void) {
-  GLuint vao;
+  GLuint vao = 0;
   glGenVertexArrays(1, &vao);
   return vao;
 }

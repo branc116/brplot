@@ -37,6 +37,9 @@
 #  if !defined(BR_NO_WAYLAND)
 #    define _GLFW_WAYLAND
 #  endif
+#  if defined(HEADLESS)
+#    define _GLFW_NULL
+#  endif
 #endif
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
 #  define _GLFW_X11
@@ -92,6 +95,12 @@
 #    include "external/glfw/src/x11_monitor.c"
 #    include "external/glfw/src/x11_window.c"
 #    include "external/glfw/src/glx_context.c"
+#  endif
+
+#  if defined(_GLFW_NULL)
+#    include "external/glfw/src/null_init.c"
+#    include "external/glfw/src/null_monitor.c"
+#    include "external/glfw/src/null_window.c"
 #  endif
 #endif
 
