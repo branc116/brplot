@@ -26,7 +26,7 @@ static void* main_gui(void* plotter) {
   while(br->should_close == false) {
     TracyCFrameMark;
     br_plotter_draw(br);
-    //br_dagens_handle(&br->groups, &br->dagens, &br->plots, GetTime() + 0.010);
+    br_dagens_handle(&br->groups, &br->dagens, &br->plots, brtl_get_time() + 0.010);
     TracyCFrameMarkStart("plotter_frame_end");
     br_plotter_frame_end(br);
     TracyCFrameMarkEnd("plotter_frame_end");
