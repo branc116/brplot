@@ -5,6 +5,10 @@
 #include "src/br_smol_mesh.h"
 #include "src/br_text_renderer.h"
 
+#define PORTABLEGL_IMPLEMENTATION
+#include "external/portablegl.h"
+
+
 #ifndef NUMBER_OF_STEPS
 #define NUMBER_OF_STEPS 100
 #endif
