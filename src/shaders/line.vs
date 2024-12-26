@@ -8,7 +8,7 @@ in vec3 vertexColor;
 // This is not normal. This is dx, dy, and length of the line.
 in vec2 delta;
 
-out vec2 normal;
+out float edge_dist;
 out vec3 color;
 
 uniform vec2 offset;
@@ -22,14 +22,15 @@ void main(void)
     float thick = 0.05;
     vec2 tg = delta;
     vec2 position = vec2(vertexX, vertexY);
-    float dir = 1.0; color.b >= 0.0 ? 1.0 : -1.0; 
+    float dir = 1.0;
     if (color.b > 1.5) {
       dir = -1.0;
       color.b -= 2.0;
     }
+    edge_dist = dir;
     color = abs(color);
 
-    normal = -dir * normalize(tg.yx * zoom * vec2(-1.0, 1.0));
+    vec2 normal = -dir * normalize(tg.yx * zoom * vec2(-1.0, 1.0));
     vec2 dif = normal * thick;
     position -= dif * max(zoom * 0.1, position / 7e5);
 

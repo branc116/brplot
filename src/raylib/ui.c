@@ -18,8 +18,7 @@ static int ui_draw_button_va(br_text_renderer_t* tr, bool* is_pressed, float x, 
   char* scrach = br_scrach_get(128);
   vsprintf(scrach, str, va);
   float pad = 5.f;
-  br_text_renderer_extent_t e = br_text_renderer_push(tr, x + pad, y + pad, font_size, BR_WHITE, scrach);
-  br_extent_t box = BR_EXTENT(e.x0 - pad, e.y0 - pad, e.x1 - e.x0 + 2 * pad, e.y1 - e.y0 + 2 * pad);
+  br_extent_t box  = br_text_renderer_push(tr, x + pad, y + pad, font_size, BR_WHITE, scrach);
   bool is_in = br_col_vec2_extent(box, brtl_mouse_get_pos());
   if (is_in) {
     bool is_p = brtl_mouse_is_pressed_l();
@@ -85,7 +84,7 @@ int ui_stack_buttons_add(br_text_renderer_t* tr, bool* is_pressed, char const* s
     va_end(args);
     if (s.x > stack_maxsize.x) stack_maxsize.x = s.x;
     if (s.y > stack_maxsize.y) stack_maxsize.y = s.y;
-    stack_offset += s.y;
+    stack_offset += fmaxf(s.y, (float)stack_font_size + 2);
     return ret;
   }
   stack_offset += s.y;

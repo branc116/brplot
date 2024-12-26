@@ -3,6 +3,7 @@
 #include "src/br_gl.h"
 #include "src/br_math.h"
 #include "src/br_tl.h"
+#include "src/br_theme.h"
 
 #include <assert.h>
 
@@ -252,8 +253,9 @@ void smol_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
       p[4] = (br_vec2_t) { .x = 1,  .y = 1 };
       p[5] = (br_vec2_t) { .x = -1, .y = 1 };
       shaders->grid->len = 2;
+      shaders->grid->uvs.bg_color_uv = BR_COLOR_TO4(br_theme.colors.plot_bg);
+      shaders->grid->uvs.lines_color_uv = BR_COLOR_TO4(br_theme.colors.grid_lines);
       br_shader_grid_draw(shaders->grid);
-      shaders->grid->len = 0;
       TracyCFrameMarkEnd("grid_draw_2d");
     } break;
     case br_plot_kind_3d: {

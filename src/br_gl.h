@@ -6,8 +6,11 @@
 #define GL_FALSE 0
 #define GL_ONE 1
 #define GL_TRIANGLES 0x0004
+#define GL_SRC_COLOR 0x0300
+#define GL_ONE_MINUS_SRC_COLOR 0x0301
 #define GL_SRC_ALPHA 0x0302
 #define GL_DST_ALPHA 0x0304
+#define GL_DST_COLOR 0x0306
 #define GL_CULL_FACE 0x0B44
 #define GL_DEPTH_TEST 0x0B71
 #define GL_BLEND 0x0BE2
@@ -18,6 +21,8 @@
 #define GL_FLOAT 0x1406
 #define GL_RED 0x1903
 #define GL_RGB 0x1907
+#define GL_RGBA	0x1908
+#define GL_FUNC_ADD	0x8006
 #define GL_MAX 0x8008
 #define GL_R8 0x8229
 #define GL_ARRAY_BUFFER 0x8892

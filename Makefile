@@ -37,7 +37,7 @@ endif
 SOURCE             = src/main.c           src/help.c       src/data.c        src/smol_mesh.c   src/q.c       src/read_input.c \
 										 src/keybindings.c    src/str.c        src/resampling2.c src/graph_utils.c src/shaders.c src/plotter.c    \
 										 src/plot.c           src/permastate.c src/filesystem.c  src/gui.c         src/text_renderer.c \
-										 src/data_generator.c src/platform.c   src/threads.c     src/gl.c          src/icons.c
+										 src/data_generator.c src/platform.c   src/threads.c     src/gl.c          src/icons.c   src/theme.c
 COMMONFLAGS        = -I. -MMD -MP -fvisibility=hidden -std=gnu11
 WARNING_FLAGS      = -Wconversion -Wall -Wpedantic -Wextra -Wshadow -D_GNU_SOURCE
 LD_FLAGS           =

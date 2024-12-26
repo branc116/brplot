@@ -30,6 +30,9 @@ br_sizei_t brtl_window_size(void);
 void brtl_window_set_size(int width, int height);
 void brtl_window_close(void);
 
+br_extenti_t brtl_viewport(void);
+void brtl_viewport_set(br_extenti_t ex);
+
 br_plotter_t* brtl_plotter(void);
 br_shaders_t* brtl_shaders(void);
 

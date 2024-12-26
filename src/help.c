@@ -3,6 +3,7 @@
 #include "src/br_text_renderer.h"
 #include "src/br_math.h"
 #include "src/br_tl.h"
+#include "src/br_theme.h"
 
 #include ".generated/default_font.h"
 
@@ -27,7 +28,7 @@ void help_trim_zeros(char * buff) {
 void help_draw_text(br_text_renderer_t* r, char const* text, br_vec2_t pos, int font_size, br_color_t color) {
   int default_font_size = 10;
   if (font_size < default_font_size) font_size = default_font_size;
-  br_text_renderer_push(r, pos.x, pos.y, font_size, color, text);
+  br_text_background(br_text_renderer_push(r, pos.x, pos.y, font_size, color, text), br_theme.colors.btn_inactive, 0, 3);
 }
 
 br_vec2_t help_measure_text(const char* txt, int font_size) {

@@ -37,6 +37,7 @@ typedef struct br_plotter_t {
   struct {
     GLFWwindow* glfw;
     br_sizei_t size;
+    br_extenti_t viewport;
   } win;
 
   struct {

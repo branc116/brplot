@@ -88,6 +88,7 @@ BR_GL(void, glDeleteRenderbuffers)(GLsizei n, GLuint *renderbuffers);
 BR_GL(void, glFramebufferRenderbuffer)(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
 BR_GL(void, glBindRenderbuffer)(GLenum target, GLuint renderbuffer);
 BR_GL(void, glRenderbufferStorage)(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
+BR_GL(void, glDepthFunc)(GLenum func);
 
 
 #if defined(HEADLESS)
@@ -182,8 +183,10 @@ void brgl_disable_back_face_cull(void) {
   brgl_disable(GL_CULL_FACE);
 }
 
+#define GL_LEQUAL				0x0203
 void brgl_enable_depth_test(void) {
   brgl_enable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
 }
 
 void brgl_disable_depth_test(void) {
@@ -198,6 +201,7 @@ BR_THREAD_LOCAL static struct {
 } br_framebuffers[BR_FRAMEBUFFERS] = { 0 };
 
 void brgl_viewport(GLint x, GLint y, GLsizei width, GLsizei height) {
+  brtl_viewport_set(BR_EXTENTI(x, y, width, height));
   br_framebuffers[0].fb_id = 0;
   br_framebuffers[0].tx_id = 0;
   br_framebuffers[0].width = width;
@@ -244,7 +248,7 @@ GLuint brgl_create_framebuffer(int width, int height) {
 
   glGenTextures(1, &tx_id);
   glBindTexture(GL_TEXTURE_2D, tx_id);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tx_id, 0);
@@ -277,14 +281,13 @@ void brgl_enable_framebuffer(GLuint br_id, int new_width, int new_height) {
     GLuint tx_id = br_framebuffers[br_id].tx_id;
     GLuint rb_id = br_framebuffers[br_id].rb_id;
     glBindTexture(GL_TEXTURE_2D, tx_id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, new_width, new_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, new_width, new_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glBindRenderbuffer(GL_RENDERBUFFER, rb_id);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, new_width, new_height);
   }
   br_framebuffers[br_id].width = new_width;
   br_framebuffers[br_id].height = new_height;
-  glViewport(0, 0, new_width, new_height);
-  brtl_shaders()->font->uvs.resolution_uv = BR_VEC2((float)width, (float)height);
+  brgl_viewport(0, 0, new_width, new_height);
 }
 
 void brgl_destroy_framebuffer(GLuint br_id) {

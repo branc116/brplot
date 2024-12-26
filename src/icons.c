@@ -27,19 +27,22 @@ void br_icons_init(br_shader_icon_t* shader) {
   shader->uvs.atlas_uv = icons_id;
 }
 
-void br_icons_draw(br_shader_icon_t* shader, br_extent_t screen, br_extent_t atlas, br_vec4_t bg, br_vec4_t fg) {
+// TODO: extent to bb
+void br_icons_draw(br_shader_icon_t* shader, br_extent_t screen, br_extent_t atlas, br_color_t bg, br_color_t fg, float z) {
   br_sizei_t res = brtl_window_size();
   br_vec4_t* vecs = (br_vec4_t*)&shader->pos_vbo[3*4*shader->len];
   br_vec4_t* fgs = (br_vec4_t*)&shader->fg_vbo[3*4*shader->len];
   br_vec4_t* bgs = (br_vec4_t*)&shader->bg_vbo[3*4*shader->len];
+  float* zs = (float*)&shader->z_vbo[3*shader->len];
   vecs[0] = (br_vec4_t) { .xy = br_vec2_stog(screen.pos, res), .zw = atlas.pos };
-  vecs[1] = (br_vec4_t) { .xy = br_vec2_stog(br_extent_top_right(screen), res), .zw = br_extent_top_right(atlas) };
-  vecs[2] = (br_vec4_t) { .xy = br_vec2_stog(br_extent_bottom_right(screen), res), .zw = br_extent_bottom_right(atlas) };
+  vecs[1] = (br_vec4_t) { .xy = br_vec2_stog(br_extent_tr(screen), res), .zw = br_extent_tr(atlas) };
+  vecs[2] = (br_vec4_t) { .xy = br_vec2_stog(br_extent_br(screen), res), .zw = br_extent_br(atlas) };
   vecs[3] = (br_vec4_t) { .xy = br_vec2_stog(screen.pos, res), .zw = atlas.pos };
-  vecs[4] = (br_vec4_t) { .xy = br_vec2_stog(br_extent_bottom_right(screen), res), .zw = br_extent_bottom_right(atlas) };
-  vecs[5] = (br_vec4_t) { .xy = br_vec2_stog(br_extent_bottom_left(screen), res), .zw = br_extent_bottom_left(atlas) };
-  for (int i = 0; i < 6; ++i) bgs[i] = (bg);
-  for (int i = 0; i < 6; ++i) fgs[i] = (fg);
+  vecs[4] = (br_vec4_t) { .xy = br_vec2_stog(br_extent_br(screen), res), .zw = br_extent_br(atlas) };
+  vecs[5] = (br_vec4_t) { .xy = br_vec2_stog(br_extent_bl(screen), res), .zw = br_extent_bl(atlas) };
+  for (int i = 0; i < 6; ++i) bgs[i] = BR_COLOR_TO4(bg);
+  for (int i = 0; i < 6; ++i) fgs[i] = BR_COLOR_TO4(fg);
+  for (int i = 0; i < 6; ++i) zs[i]  = z;
   shader->len += 2;
 }
 

@@ -5,6 +5,7 @@
 #include "src/br_tl.h"
 #include "src/br_gl.h"
 #include "src/br_icons.h"
+#include "src/br_theme.h"
 
 void br_gui_init_specifics_gui(br_plotter_t* plotter);
 static void* main_gui(void* plotter) {
@@ -23,6 +24,7 @@ static void* main_gui(void* plotter) {
     }
   }
   br_icons_init(br->shaders.icon);
+  br_theme_dark();
   while(br->should_close == false) {
     TracyCFrameMark;
     br_plotter_draw(br);

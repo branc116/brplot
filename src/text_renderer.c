@@ -3,6 +3,7 @@
 #include "br_pp.h"
 #include "br_da.h"
 #include "br_gl.h"
+#include "br_tl.h"
 
 #ifdef __GNUC__
 #  pragma GCC diagnostic push
@@ -51,7 +52,8 @@ typedef struct {
 } to_bake_t;
 
 typedef struct br_text_renderer_t {
-  br_shader_font_t** shader;
+  br_shader_font_t** shader_f;
+  br_shader_fontbg_t** shader_bg;
   size_to_font* sizes;
   to_bake_t* to_bake;
   unsigned char* bitmap_pixels;
@@ -74,7 +76,7 @@ br_text_renderer_t* br_text_renderer_malloc(int bitmap_width, int bitmap_height,
   
   struct tmp* t = BR_MALLOC(total_mem);
   t->r = (br_text_renderer_t) {
-    .shader = shader,
+    .shader_f = shader,
     .sizes = NULL,
     .to_bake = NULL,
     .bitmap_pixels = t->data,
@@ -98,7 +100,7 @@ void br_text_renderer_free(br_text_renderer_t* r) {
   }
   stbds_hmfree(r->sizes);
   stbtt_PackEnd(&r->pack_cntx);
-  brgl_unload_texture((*r->shader)->uvs.atlas_uv);
+  brgl_unload_texture((*r->shader_f)->uvs.atlas_uv);
   br_da_free(r->tmp_quads);
   BR_FREE(r);
 }
@@ -156,47 +158,45 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
     brgl_unload_texture(r->bitmap_texture_id);
     r->bitmap_texture_id = brgl_load_texture(r->bitmap_pixels, r->bitmap_pixels_width, r->bitmap_pixels_height, BRGL_TEX_GRAY);
   }
-  br_shader_font_t* simp = *r->shader;
+  br_shader_font_t* simp = *r->shader_f;
   simp->uvs.atlas_uv = r->bitmap_texture_id;
   br_shader_font_draw(simp);
   simp->len = 0;
 }
 
-static void br_text_draw_quad(br_vec4_t* v, int* len, float x0, float y0, float s0, float t0,
-                                                    float x1, float y1, float s1, float t1) {
-  v[(*len)++] =  BR_VEC4(x0, y0, s0, t0);
-  v[(*len)++] =  BR_VEC4(x0, y1, s0, t1);
-  v[(*len)++] =  BR_VEC4(x1, y1, s1, t1);
-  v[(*len)++] =  BR_VEC4(x0, y0, s0, t0);
-  v[(*len)++] =  BR_VEC4(x1, y1, s1, t1);
-  v[(*len)++] =  BR_VEC4(x1, y0, s1, t0);
+static void br_text_draw_quad(br_vec4_t* v, int* len, br_bb_t screen, br_bb_t tex) {
+  br_sizei_t ss = brtl_viewport().size;
+  v[(*len)++] = BR_VEC42(br_vec2_stog(screen.min,       ss), tex.min);
+  v[(*len)++] = BR_VEC42(br_vec2_stog(br_bb_tr(screen), ss), br_bb_tr(tex));
+  v[(*len)++] = BR_VEC42(br_vec2_stog(screen.max,       ss), tex.max);
+  v[(*len)++] = BR_VEC42(br_vec2_stog(screen.min,       ss), tex.min);
+  v[(*len)++] = BR_VEC42(br_vec2_stog(screen.max,       ss), tex.max);
+  v[(*len)++] = BR_VEC42(br_vec2_stog(br_bb_bl(screen), ss), br_bb_bl(tex));
 }
 
-br_text_renderer_extent_t br_text_renderer_push(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, const char* text) {
+br_extent_t br_text_renderer_push(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, const char* text) {
   return br_text_renderer_push2(r, x, y, font_size, color, br_strv_from_c_str(text), br_text_renderer_ancor_left_up);
 }
 
-br_text_renderer_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, br_strv_t text) {
+br_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, br_strv_t text) {
   return br_text_renderer_push2(r, x, y, font_size, color, text, br_text_renderer_ancor_left_up);
 }
 
-br_text_renderer_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, br_strv_t text, br_text_renderer_ancor_t ancor) {
+br_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, br_strv_t text, br_text_renderer_ancor_t ancor) {
   br_vec2_t loc = BR_VEC2(x, y);
   long size_index = stbds_hmgeti(r->sizes, font_size);
   float og_x = loc.x;
-  br_shader_font_t* simp = *r->shader;
+  br_shader_font_t* simp = *r->shader_f;
   int len_pos = simp->len * 3;
   br_vec4_t* pos = (br_vec4_t*)simp->pos_vbo;
   br_vec4_t* colors = (br_vec4_t*)simp->color_vbo;
   r->tmp_quads.len = 0;
-
   if (size_index == -1) {
     for (size_t i = 0; i < text.len; ++i) {
       stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = text.str[i] }), 0);
     }
   } else {
     size_to_font s = r->sizes[size_index];
-
     for (size_t i = 0; i < text.len; ++i) {
       long char_index = stbds_hmgeti(s.value, text.str[i]);
       if (text.str[i] == '\n') {
@@ -243,19 +243,15 @@ br_text_renderer_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x,
     }
     for (int j = 0; j < 6; ++j) colors[len_pos + j] = BR_COLOR_TO4(color);
     br_text_draw_quad(pos, &len_pos,
-        r->tmp_quads.arr[i].x0 - x_off, 
-        r->tmp_quads.arr[i].y0 - y_off,
-        r->tmp_quads.arr[i].s0,
-        r->tmp_quads.arr[i].t0,
-        r->tmp_quads.arr[i].x1 - x_off, 
-        r->tmp_quads.arr[i].y1 - y_off,
-        r->tmp_quads.arr[i].s1,
-        r->tmp_quads.arr[i].t1);
+        br_bb_sub(BR_BB(r->tmp_quads.arr[i].x0, r->tmp_quads.arr[i].y0, r->tmp_quads.arr[i].x1, r->tmp_quads.arr[i].y1), BR_VEC2(x_off, y_off)),
+        BR_BB(r->tmp_quads.arr[i].s0, r->tmp_quads.arr[i].t0, r->tmp_quads.arr[i].s1, r->tmp_quads.arr[i].t1));
     simp->len += 2;
   }
-  return (br_text_renderer_extent_t){ min_x - x_off, min_y - y_off, max_x - x_off, max_y - y_off };
+  return BR_EXTENT(min_x - x_off, min_y - y_off, max_x - min_x, max_y - min_y);
 }
 
+void br_text_background(br_extent_t extent, br_color_t color, float padding, float z) {
+}
 // gcc -fsanitize=address -ggdb main.c -lm -lraylib && ./a.out
 // gcc -O3 main.c -lm -lraylib && ./a.out
 // C:\cygwin64\bin\gcc.exe -O3 main.c -lm

@@ -10,6 +10,7 @@
 #include "src/br_tl.h"
 #include "src/raylib/ui.c"
 #include "src/br_gl.h"
+#include "src/br_theme.h"
 
 static void draw_left_panel(br_plotter_t* gv);
 void br_gui_init_specifics_gui(br_plotter_t* br) {
@@ -19,20 +20,23 @@ void br_gui_init_specifics_gui(br_plotter_t* br) {
   }
 }
 
-bool br_icon_button(br_extent_t pos, br_extent_t atlas, br_vec4_t bg, bool hide_when_not_near) {
-  br_vec4_t fg = BR_VEC4(200, 200, 200, 255); 
+bool br_icon_button(br_extent_t pos, br_extent_t atlas, bool hide_when_not_near, float z) {
   if (br_col_vec2_extent(pos, brtl_mouse_get_pos())) {
-    bg = BR_VEC4(45, 45, 45, bg.w);
-    br_icons_draw(brtl_shaders()->icon, pos, atlas, bg, fg);
+    br_color_t fg = br_theme.colors.btn_txt_hovered;
+    br_color_t bg = br_theme.colors.btn_hovered;
+    br_icons_draw(brtl_shaders()->icon, pos, atlas, bg, fg, z);
     return brtl_mouse_is_pressed_l();
   } else {
+    br_color_t fg = br_theme.colors.btn_txt_inactive;
+    br_color_t bg = br_theme.colors.btn_inactive;
     if (hide_when_not_near) {
       float dist2 = br_vec2_dist2(pos.pos, brtl_mouse_get_pos());
       if (dist2 < 10000) {
-        fg.x = fg.y = fg.z = fg.w = (unsigned char)((10000.f - dist2) / 10000.f * 255.f); 
-        br_icons_draw(brtl_shaders()->icon, pos, atlas, bg, fg);
+        fg.a = (unsigned char)((float)fg.a * (10000.f - dist2) / 10000.f);
+        bg.a = (unsigned char)((float)bg.a * (10000.f - dist2) / 10000.f);
+        br_icons_draw(brtl_shaders()->icon, pos, atlas, bg, fg, z);
       }
-    } else br_icons_draw(brtl_shaders()->icon, pos, atlas, bg, fg);
+    } else br_icons_draw(brtl_shaders()->icon, pos, atlas, bg, fg, z);
     return false;
   }
 }
@@ -43,18 +47,19 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
 #define PLOT (&br->plots.arr[br->active_plot_index])
   PLOT->drag_parent_extent.pos = BR_VEC2I(50, 50);
   PLOT->drag_parent_extent.size = br_sizei_sub(br->win.size, BR_SIZEI(100, 100));
-  brgl_enable(GL_BLEND);
   br_plot_update_variables(br, PLOT, br->groups, brtl_mouse_get_pos());
   br_plot_update_context(PLOT, brtl_mouse_get_pos());
   br_plot_update_shader_values(PLOT, &br->shaders);
   brgl_enable_framebuffer(PLOT->texture_id, PLOT->graph_screen_rect.width, PLOT->graph_screen_rect.height);
+  brgl_enable(GL_BLEND);
+  brgl_blend_func(GL_SRC_ALPHA, GL_DST_ALPHA);
+  brgl_blend_equation(GL_MAX);
   brgl_clear();
   draw_grid_numbers(br->text, PLOT);
   br_datas_draw(br->groups, PLOT, &br->shaders);
   smol_mesh_grid_draw(PLOT, &br->shaders);
 
   brgl_enable_framebuffer(0, br->win.size.width, br->win.size.height);
-  brgl_disable(GL_BLEND);
   brgl_enable_depth_test();
   brgl_blend_func(GL_SRC_ALPHA, GL_DST_ALPHA);
   brgl_blend_equation(GL_MAX);
@@ -64,17 +69,15 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
 
   if (PLOT->draw_settings == false) {
     br_extent_t icon_ex = BR_EXTENT((float)PLOT->graph_screen_rect.x + (float)PLOT->graph_screen_rect.width - 32.f - 5.f, (float)PLOT->graph_screen_rect.y + 5.f, 32.f, 32.f);
-    if (br_icon_button(icon_ex, br_icons.menu.size_32, BR_VEC4(0, 0, 0, 1), true)) {
+    if (br_icon_button(icon_ex, br_icons.menu.size_32, true, 1)) {
         PLOT->drag_mode = br_drag_mode_none;
         PLOT->draw_settings = true;
     }
   } else {
     br_extent_t p = BR_EXTENTI_TOF(PLOT->graph_screen_rect);
-    br_extent_t panel = BR_EXTENTPS(br_extent_tr(p, 200, 0), BR_SIZE(200, p.height));
-    br_vec4_t panel_color = BR_VEC4(0.1f,0.1f,0.1f,2.f);
-    br_icons_draw(br->shaders.icon, panel, BR_EXTENT(0,0,0,0), panel_color, panel_color);
-    panel_color.w = 3;
-    if (br_icon_button(BR_EXTENTPS(br_extent_tl(panel, 4, 4), BR_SIZE(32, 32)), br_icons_y_mirror(br_icons.back.size_32), panel_color, false)) {
+    br_extent_t panel = BR_EXTENTPS(br_extent_tr2(p, 200, 0), BR_SIZE(200, p.height));
+    br_icons_draw(br->shaders.icon, panel, BR_EXTENT(0,0,0,0), br_theme.colors.plot_menu_color, br_theme.colors.plot_menu_color, 2);
+    if (br_icon_button(BR_EXTENTPS(br_extent_tl2(panel, 4, 4), BR_SIZE(32, 32)), br_icons_y_mirror(br_icons.back.size_32), false, 3)) {
         PLOT->drag_mode = br_drag_mode_none;
         PLOT->draw_settings = false;
     }

@@ -66,7 +66,8 @@
   X(void, glFramebufferParameteri) \
   X(void, glDeleteRenderbuffers) \
   X(void, glDeleteFramebuffers) \
-
+  X(void, glDepthFunc) \
+ 
 
 #if !defined(_MSC_VER)
 #  pragma GCC diagnostic push

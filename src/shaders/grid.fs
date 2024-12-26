@@ -5,6 +5,8 @@ precision mediump float;
 uniform vec2 zoom;
 uniform vec2 offset;
 uniform vec2 screen;
+uniform vec4 bg_color;
+uniform vec4 lines_color;
 
 in vec2 fragTexCoord;
 out vec4 out_color;
@@ -45,5 +47,5 @@ void main(void) {
       res += map_outer(fragTexCoord+vec2(x*d.x, y*d.y)/(aa+1.))/(c*c);
 
   float s = smoothstep(-0.0002, 0.001, res);
-  out_color = vec4(0.2, 0.3, 0.5, 1.0) * (s > 0.4 ? s : -1.0);
+  out_color = mix(bg_color, lines_color, s > 0.4 ? s : 0.0);
 }

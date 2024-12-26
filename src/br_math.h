@@ -9,6 +9,7 @@
 #define BR_VEC2_TOI(V) ((br_vec2i_t) { .x = (int)(V).x, .y = (int)(V).y })
 #define BR_VEC2I_SUB(A, B) ((br_vec2i_t) { .x = (A).x - (B).x, .y = (A).y - (B).y })
 #define BR_VEC2I_SCALE(V, B) ((br_vec2i_t) { .x = (V).x * (B), .y = (V).y * (B) })
+#define BR_VEC3_TOC(V, A) ((br_color_t) { .r = (unsigned char)((V).x * 255.f), .g = (unsigned char)((V).y * 255.f), .b = (unsigned char)((V).z * 255.f), .a = (A) })
 #define BR_SIZE(WIDTH, HEIGHT) ((br_size_t) { .width = (WIDTH), .height = (HEIGHT) })
 #define BR_SIZEI(WIDTH, HEIGHT) ((br_sizei_t) { .width = (WIDTH), .height = (HEIGHT) })
 #define BR_SIZEI_TOF(SZ) ((br_size_t) { .width = (float)((SZ).width), .height = (float)((SZ).height) })
@@ -21,6 +22,7 @@
 #define BR_BB(Xm, Ym, XM, YM) (br_bb_t) { .arr = { (Xm), (Ym), (XM), (YM) } }
 #define BR_BB_TOEX(BB) (br_extent_t) { .arr = { (BB).min_x, (BB).min_y, (BB).max_x - (BB).min_x, (BB).max_y - (BB).min_y } }
 #define BR_VEC4(X, Y, Z, W) ((br_vec4_t) { .x = (X), .y = (Y), .z = (Z), .w = (W) }) 
+#define BR_VEC42(XY, ZW) ((br_vec4_t) { .xy = (XY), .zw = (ZW)  }) 
 #define BR_VEC3(X, Y, Z) ((br_vec3_t) { .x = (X), .y = (Y), .z = (Z) }) 
 #define BR_VEC_ELS(X) (sizeof((X).arr) / sizeof((X).arr[0]))
 #define BR_COLOR_TO4(X)  BR_VEC4(((X).r) / 255.f, ((X).g) / 255.f, ((X).b) / 255.f, ((X).a) / 255.f)
@@ -141,8 +143,14 @@ typedef struct {
       float x, y, z, w;
     };
     struct {
+      float r, g, b, a;
+    };
+    struct {
       br_vec2_t xy;
       br_vec2_t zw;
+    };
+    struct {
+      br_vec3_t xyz;
     };
     float arr[4];
   };
@@ -165,7 +173,15 @@ typedef struct {
   };
 } br_mat_t;
 
-//------------------------vec2------------------------------
+//------------------------float----------------------------------
+
+static inline float br_float_clamp(float x, float m, float M) {
+  if (x < m) return m;
+  if (x > M) return M;
+  return x;
+}
+
+//------------------------br_vec2_t------------------------------
 
 static inline br_vec2_t br_vec2i_tof(br_vec2i_t v) {
   return (br_vec2_t) { .x = (float)v.x, .y = (float)v.y };
@@ -348,25 +364,57 @@ static inline br_vec3_t br_vec3_perpendicular(br_vec3_t v) {
   ord.arr[min] = 1;
   return br_vec3_cross(v, ord);
 }
+
+static inline br_vec3_t br_vec3_clamp(br_vec3_t v, float m, float M) {
+  v.x = br_float_clamp(v.x, m, M);
+  v.y = br_float_clamp(v.y, m, M);
+  v.z = br_float_clamp(v.z, m, M);
+  return v;
+}
+
+// ------------------br_color_t-----------------
+
+static inline br_color_t br_color_lighter(br_color_t c, float factor) {
+  br_vec3_t cv = BR_COLOR_TO4(c).xyz;
+  br_vec3_t newc = br_vec3_clamp(br_vec3_scale(cv, factor + 1.f), 0.f, 1.f);
+  return BR_VEC3_TOC(newc, c.a);
+}
+
+static inline br_color_t br_color_darker(br_color_t c, float factor) {
+  return br_color_lighter(c, -factor);
+}
+
+static inline br_color_t br_color_greener(br_color_t c, float factor) {
+  br_vec3_t cv = BR_COLOR_TO4(c).xyz;
+  float g = (1+factor);
+  float g2 = g*g;
+  float k2 = 1 + (cv.y*cv.y)*(1.f - g2)/(cv.x*cv.x+cv.z*cv.z);
+  float k = sqrtf(k2);
+  cv.x *= k;
+  cv.y *= g;
+  cv.z *= k;
+  return BR_VEC3_TOC(cv, c.a);
+}
+
 // ------------------br_extent_t-----------------
 
-static inline br_vec2_t br_extent_top_right(br_extent_t extent) {
+static inline br_vec2_t br_extent_tr(br_extent_t extent) {
   return BR_VEC2(extent.x + extent.width, extent.y);
 }
 
-static inline br_vec2_t br_extent_bottom_left(br_extent_t extent) {
+static inline br_vec2_t br_extent_bl(br_extent_t extent) {
   return BR_VEC2(extent.x, extent.y + extent.height);
 }
 
-static inline br_vec2_t br_extent_bottom_right(br_extent_t extent) {
+static inline br_vec2_t br_extent_br(br_extent_t extent) {
   return BR_VEC2(extent.x + extent.width, extent.y + extent.height);
 }
 
-static inline br_vec2_t br_extent_tl(br_extent_t extent, float x, float y) {
+static inline br_vec2_t br_extent_tl2(br_extent_t extent, float x, float y) {
   return BR_VEC2(extent.x + x, extent.y + y);
 }
 
-static inline br_vec2_t br_extent_tr(br_extent_t extent, float x, float y) {
+static inline br_vec2_t br_extent_tr2(br_extent_t extent, float x, float y) {
   return BR_VEC2(extent.x + extent.width - x, extent.y + y);
 }
 
@@ -432,7 +480,7 @@ static inline br_mat_t br_mat_mul(br_mat_t left, br_mat_t right) {
   return result;
 }
 
-// collisions
+// ------------------collisions--------------------
 static inline bool br_col_vec2_extent(br_extent_t ex, br_vec2_t point) {
   return (point.x >= ex.x) && (point.x < (ex.x + ex.width)) && (point.y >= ex.y) && (point.y < (ex.y + ex.height));
 }
@@ -440,4 +488,18 @@ static inline bool br_col_vec2_extent(br_extent_t ex, br_vec2_t point) {
 static inline bool br_col_extents(br_extent_t a, br_extent_t b) {
   return ((a.x < (b.x + b.width) && (a.x + a.width) > b.x) &&
           (a.y < (b.y + b.height) && (a.y + a.height) > b.y));
+}
+
+// ----------------br_bb_t-------------------------
+
+static inline br_vec2_t br_bb_tr(br_bb_t bb) {
+  return BR_VEC2(bb.max.x, bb.min.y);
+}
+
+static inline br_vec2_t br_bb_bl(br_bb_t bb) {
+  return BR_VEC2(bb.min.x, bb.max.y);
+}
+
+static inline br_bb_t br_bb_sub(br_bb_t bb, br_vec2_t vec) {
+  return (br_bb_t) { .min = br_vec2_sub(bb.min, vec), .max = br_vec2_sub(bb.max, vec) };
 }

@@ -5,6 +5,7 @@
 #include "src/br_gl.h"
 #include "src/br_tl.h"
 #include "src/br_q.h"
+#include "src/br_theme.h"
 
 #include <string.h>
 
@@ -265,10 +266,9 @@ void br_plotter_begin_drawing(br_plotter_t* br) {
   br->mouse.old_pos = br->mouse.pos;
 
   //brgl_enable_framebuffer(0);
-  //brgl_clear_color(0,0,0,0);
+  br_vec4_t bg = BR_COLOR_TO4(br_theme.colors.bg);
+  brgl_clear_color(bg.r,bg.g,bg.b,bg.a);
   //brgl_clear();
-  br->shaders.font->uvs.mouse_uv = brtl_mouse_get_pos();
-  br->shaders.font->uvs.resolution_uv = BR_VEC2((float)br->win.size.width, (float)br->win.size.height);
   br->shaders.font->uvs.sub_pix_aa_map_uv =  BR_VEC3(-1, 0, 1);
   br->shaders.font->uvs.sub_pix_aa_scale_uv = 0.2f;
   glfwGetWindowSize(br->win.glfw, &br->win.size.width, &br->win.size.height);
@@ -376,6 +376,14 @@ void brtl_window_set_size(int width, int height) {
 void brtl_window_close(void) {
   glfwDestroyWindow(stl_br->win.glfw);
   glfwTerminate();
+}
+
+br_extenti_t brtl_viewport(void) {
+  return stl_br->win.viewport;
+}
+
+void brtl_viewport_set(br_extenti_t ex) {
+  stl_br->win.viewport = ex;
 }
 
 br_plotter_t* brtl_plotter(void) {

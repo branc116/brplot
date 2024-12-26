@@ -53,7 +53,7 @@
       X_BUF(vertexPosition, 3)          \
       X_BUF(vertexColor, 3)             \
     )                                   \
-  X(line, 1024,                         \
+  X(line, 2048,                         \
       X_VEC(offset, 2)                  \
       X_VEC(zoom, 2)                    \
       X_VEC(screen, 2),                 \
@@ -66,13 +66,13 @@
   X(grid, 2,                            \
       X_VEC(zoom, 2)                    \
       X_VEC(offset, 2)                  \
+      X_VEC(bg_color, 4)                \
+      X_VEC(lines_color, 4)             \
       X_VEC(screen, 2),                 \
                                         \
       X_BUF(vertexPosition, 2)          \
     )                                   \
   X(font, 1024,                         \
-      X_VEC(resolution, 2)              \
-      X_VEC(mouse, 2)                   \
       X_VEC(sub_pix_aa_map, 3)          \
       X_VEC(sub_pix_aa_scale, 1)        \
       X_VEC(atlas, _TEX),               \
@@ -94,6 +94,7 @@
       X_BUF(pos, 4)                     \
       X_BUF(fg, 4)                      \
       X_BUF(bg, 4)                      \
+      X_BUF(z, 1)                       \
     )
 
 #define VEC_TYPE1 float
