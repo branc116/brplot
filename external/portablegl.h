@@ -1694,11 +1694,6 @@ static inline float modulusf(float x, float y)
 	return x - y * floorf(x/y);
 }
 
-static inline float maxf(float x, float y)
-{
-	return (x > y) ? x : y;
-}
-
 static inline float clamp_01(float f)
 {
 	if (f < 0.0f) return 0.0f;
