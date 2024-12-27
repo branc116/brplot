@@ -23,5 +23,6 @@ void main() {
   float factor = smoothstep(edge_size, 0.0, min(moded.x, moded.y));
   out_color.rgb *= 1.0 - factor;
   out_color.rgb += factor * 0.2 * (1.0 + 3.0 * (1.0 - length(mouse_dist)) * p * smoothstep(0.2*edge_size, 0.0, min(pow(mouse_dist.y, 2.0), pow(mouse_dist.x, 2.0))));
+  out_color.a = 1.0;
 }
 

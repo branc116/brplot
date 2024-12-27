@@ -192,7 +192,8 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
   brgl_disable_back_face_cull();
   brgl_enable_depth_test();
   brgl_enable(GL_BLEND);
-  brgl_blend_func(GL_SRC_ALPHA, GL_DST_ALPHA);
+  //brgl_blend_func(GL_SRC_ALPHA, GL_DST_ALPHA);
+  brgl_blend_func_sep(GL_ONE_MINUS_SRC_COLOR, GL_ONE_MINUS_DST_COLOR, GL_SRC_ALPHA, GL_DST_ALPHA);
   brgl_blend_equation(GL_MAX);
   br_sizei_t size = brtl_window_size();
   brgl_viewport(0, 0, size.width, size.height);
@@ -275,8 +276,8 @@ void br_plotter_begin_drawing(br_plotter_t* br) {
 }
 
 void br_plotter_end_drawing(br_plotter_t* br) {
-  br_text_renderer_dump(br->text);
   br_shaders_draw_all(br->shaders);
+  br_text_renderer_dump(br->text);
   glfwSwapBuffers(br->win.glfw);
   handle_all_commands(br, br->commands);
 #if BR_HAS_SHADER_RELOAD

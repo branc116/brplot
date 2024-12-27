@@ -38,6 +38,7 @@ BR_GL(void, glCompileShader)(GLuint shader);
 BR_GL(void, glGetShaderiv)(GLuint shader, GLenum pname, GLint* params);
 BR_GL(void, glGetShaderInfoLog)(GLuint shader, GLsizei bufSize, GLsizei* length, GLchar* infoLog);
 BR_GL(void, glBlendFunc)(GLenum sfactor, GLenum dfactor);
+BR_GL(void, glBlendFuncSeparate)(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
 BR_GL(void, glBlendEquation)(GLenum mode);
 BR_GL(void, glEnable)(GLenum cap);
 BR_GL(void, glDisable)(GLenum cap);
@@ -163,6 +164,10 @@ void brgl_blend_func(GLenum sfactor, GLenum dfactor) {
   glBlendFunc(sfactor, dfactor);
 }
 
+void brgl_blend_func_sep(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha) {
+  glBlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);
+}
+
 void brgl_blend_equation(GLenum mode) {
   glBlendEquation(mode);
 }
@@ -185,8 +190,8 @@ void brgl_disable_back_face_cull(void) {
 
 #define GL_LEQUAL				0x0203
 void brgl_enable_depth_test(void) {
-  brgl_enable(GL_DEPTH_TEST);
   glDepthFunc(GL_LEQUAL);
+  brgl_enable(GL_DEPTH_TEST);
 }
 
 void brgl_disable_depth_test(void) {

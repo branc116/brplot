@@ -11,5 +11,4 @@ uniform sampler2D atlas;
 void main() {
   float v0 = texture(atlas, out_tpos).r;
   out_color = mix(outin_bg, outin_fg, v0);
-  //out_color = vec4(v0);
 }

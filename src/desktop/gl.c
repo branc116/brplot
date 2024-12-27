@@ -17,6 +17,7 @@
   X(void, glGetShaderiv) \
   X(void, glGetShaderInfoLog) \
   X(void, glBlendFunc) \
+  X(void, glBlendFuncSeparate) \
   X(void, glBlendEquation) \
   X(void, glEnable) \
   X(void, glDisable) \

@@ -51,9 +51,6 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   br_plot_update_context(PLOT, brtl_mouse_get_pos());
   br_plot_update_shader_values(PLOT, &br->shaders);
   brgl_enable_framebuffer(PLOT->texture_id, PLOT->graph_screen_rect.width, PLOT->graph_screen_rect.height);
-  brgl_enable(GL_BLEND);
-  brgl_blend_func(GL_SRC_ALPHA, GL_DST_ALPHA);
-  brgl_blend_equation(GL_MAX);
   brgl_clear();
   draw_grid_numbers(br->text, PLOT);
   br_datas_draw(br->groups, PLOT, &br->shaders);
@@ -61,8 +58,6 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
 
   brgl_enable_framebuffer(0, br->win.size.width, br->win.size.height);
   brgl_enable_depth_test();
-  brgl_blend_func(GL_SRC_ALPHA, GL_DST_ALPHA);
-  brgl_blend_equation(GL_MAX);
   brgl_clear();
   help_draw_fps(br->text, 0, 0);
   smol_mesh_img_draw(PLOT, &br->shaders);
@@ -76,8 +71,8 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   } else {
     br_extent_t p = BR_EXTENTI_TOF(PLOT->graph_screen_rect);
     br_extent_t panel = BR_EXTENTPS(br_extent_tr2(p, 200, 0), BR_SIZE(200, p.height));
-    br_icons_draw(br->shaders.icon, panel, BR_EXTENT(0,0,0,0), br_theme.colors.plot_menu_color, br_theme.colors.plot_menu_color, 2);
-    if (br_icon_button(BR_EXTENTPS(br_extent_tl2(panel, 4, 4), BR_SIZE(32, 32)), br_icons_y_mirror(br_icons.back.size_32), false, 3)) {
+    br_icons_draw(br->shaders.icon, panel, BR_EXTENT(0,0,0,0), br_theme.colors.plot_menu_color, br_theme.colors.plot_menu_color, 3);
+    if (br_icon_button(BR_EXTENTPS(br_extent_tl2(panel, 4, 4), BR_SIZE(32, 32)), br_icons_y_mirror(br_icons.back.size_32), false, 4)) {
         PLOT->drag_mode = br_drag_mode_none;
         PLOT->draw_settings = false;
     }

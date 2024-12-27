@@ -3,6 +3,37 @@
 #define BRGL_TEX_GRAY 1
 
 
+/* Stencil */
+#define GL_STENCIL_BITS				0x0D57
+#define GL_STENCIL_TEST				0x0B90
+#define GL_STENCIL_CLEAR_VALUE			0x0B91
+#define GL_STENCIL_FUNC				0x0B92
+#define GL_STENCIL_VALUE_MASK			0x0B93
+#define GL_STENCIL_FAIL				0x0B94
+#define GL_STENCIL_PASS_DEPTH_FAIL		0x0B95
+#define GL_STENCIL_PASS_DEPTH_PASS		0x0B96
+#define GL_STENCIL_REF				0x0B97
+#define GL_STENCIL_WRITEMASK			0x0B98
+#define GL_STENCIL_INDEX			0x1901
+#define GL_KEEP					0x1E00
+#define GL_REPLACE				0x1E01
+#define GL_INCR					0x1E02
+#define GL_DECR					0x1E03
+
+/* Blending */
+#define GL_BLEND				0x0BE2
+#define GL_BLEND_SRC				0x0BE1
+#define GL_BLEND_DST				0x0BE0
+#define GL_SRC_COLOR				0x0300
+#define GL_ONE_MINUS_SRC_COLOR			0x0301
+#define GL_SRC_ALPHA				0x0302
+#define GL_ONE_MINUS_SRC_ALPHA			0x0303
+#define GL_DST_ALPHA				0x0304
+#define GL_ONE_MINUS_DST_ALPHA			0x0305
+#define GL_DST_COLOR				0x0306
+#define GL_ONE_MINUS_DST_COLOR			0x0307
+#define GL_SRC_ALPHA_SATURATE			0x0308
+
 #define GL_FALSE 0
 #define GL_ONE 1
 #define GL_TRIANGLES 0x0004
@@ -23,6 +54,7 @@
 #define GL_RGB 0x1907
 #define GL_RGBA	0x1908
 #define GL_FUNC_ADD	0x8006
+#define GL_MIN					0x8007
 #define GL_MAX 0x8008
 #define GL_R8 0x8229
 #define GL_ARRAY_BUFFER 0x8892
@@ -83,6 +115,7 @@ void brgl_unload_shader(GLuint id);
 void brgl_enable_shader(GLuint id);
 void brgl_blend_equation(GLenum mode);
 void brgl_blend_func(GLenum sfactor, GLenum dfactor);
+void brgl_blend_func_sep(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
 void brgl_enable(GLenum mode);
 void brgl_disable(GLenum mode);
 void brgl_enable_back_face_cull(void);
