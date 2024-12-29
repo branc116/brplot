@@ -52,11 +52,19 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   br_plot_update_shader_values(PLOT, &br->shaders);
   brgl_enable_framebuffer(PLOT->texture_id, PLOT->graph_screen_rect.width, PLOT->graph_screen_rect.height);
   brgl_clear(BR_COLOR_COMPF(br_theme.colors.plot_bg));
-  smol_mesh_grid_draw(PLOT, &br->shaders);
-  br_shaders_draw_all(br->shaders);
-  br_datas_draw(br->groups, PLOT, &br->shaders);
-  br_shaders_draw_all(br->shaders);
-  draw_grid_numbers(br->text, PLOT);
+  if (PLOT->kind == br_plot_kind_2d) {
+    smol_mesh_grid_draw(PLOT, &br->shaders);
+    br_shaders_draw_all(br->shaders);
+    br_datas_draw(br->groups, PLOT, &br->shaders);
+    br_shaders_draw_all(br->shaders);
+    draw_grid_numbers(br->text, PLOT);
+  } else if (PLOT->kind == br_plot_kind_3d) {
+    br_datas_draw(br->groups, PLOT, &br->shaders);
+    br_shaders_draw_all(br->shaders);
+    smol_mesh_grid_draw(PLOT, &br->shaders);
+    br_shaders_draw_all(br->shaders);
+    draw_grid_numbers(br->text, PLOT);
+  }
 
   brgl_enable_framebuffer(0, br->win.size.width, br->win.size.height);
   brgl_clear(BR_COLOR_COMPF(br_theme.colors.bg));
