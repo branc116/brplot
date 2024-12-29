@@ -150,5 +150,4 @@ void brgl_set_u(GLint uni, float* tex, int els, int n);
 GLint brgl_get_loca(GLuint shader_id, char const* name);
 GLint brgl_get_locu(GLuint shader_id, char const* name);
 
-void brgl_clear_color(float r, float g, float b, float a);
-void brgl_clear(void);
+void brgl_clear(float r, float g, float b, float a);

@@ -26,6 +26,8 @@
 #define BR_VEC3(X, Y, Z) ((br_vec3_t) { .x = (X), .y = (Y), .z = (Z) }) 
 #define BR_VEC_ELS(X) (sizeof((X).arr) / sizeof((X).arr[0]))
 #define BR_COLOR_TO4(X)  BR_VEC4(((X).r) / 255.f, ((X).g) / 255.f, ((X).b) / 255.f, ((X).a) / 255.f)
+#define BR_COLOR_COMP(X)  ((X).r), ((X).g), ((X).b), ((X).a)
+#define BR_COLOR_COMPF(X)  ((float)(X).r / 255.f), ((float)(X).g / 255.f), ((float)(X).b / 255.f), ((float)(X).a / 255.f)
 #define BR_COLOR(R, G, B, A) ((br_color_t) { .r = (R), .g = (G), .b = (B), .a = (A) })
 
 #define BR_RED BR_COLOR(200, 10, 10, 255)

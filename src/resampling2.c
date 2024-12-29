@@ -438,8 +438,9 @@ void resampling2_change_something(br_datas_t pg) {
 
     pg.arr[i].resampling->something *= (float)mul;
     pg.arr[i].resampling->something2 *= (float)mul;
-    if (pg.arr[i].resampling->something < 0.00001f) pg.arr[i].resampling->something = 0.0001f;
-    if (pg.arr[i].resampling->something2 < 0.00001f) pg.arr[i].resampling->something2 = 0.0001f;
+    float mins = 0.001f;
+    if (pg.arr[i].resampling->something < mins) pg.arr[i].resampling->something = mins;
+    if (pg.arr[i].resampling->something2 < mins) pg.arr[i].resampling->something2 = mins;
     pg.arr[i].resampling->draw_count = 0;
   }
 }

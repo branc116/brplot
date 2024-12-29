@@ -51,16 +51,18 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   br_plot_update_context(PLOT, brtl_mouse_get_pos());
   br_plot_update_shader_values(PLOT, &br->shaders);
   brgl_enable_framebuffer(PLOT->texture_id, PLOT->graph_screen_rect.width, PLOT->graph_screen_rect.height);
-  brgl_clear();
-  draw_grid_numbers(br->text, PLOT);
-  br_datas_draw(br->groups, PLOT, &br->shaders);
+  brgl_clear(BR_COLOR_COMPF(br_theme.colors.plot_bg));
   smol_mesh_grid_draw(PLOT, &br->shaders);
+  br_shaders_draw_all(br->shaders);
+  br_datas_draw(br->groups, PLOT, &br->shaders);
+  br_shaders_draw_all(br->shaders);
+  draw_grid_numbers(br->text, PLOT);
 
   brgl_enable_framebuffer(0, br->win.size.width, br->win.size.height);
-  brgl_enable_depth_test();
-  brgl_clear();
+  brgl_clear(BR_COLOR_COMPF(br_theme.colors.bg));
   help_draw_fps(br->text, 0, 0);
   smol_mesh_img_draw(PLOT, &br->shaders);
+  br_shaders_draw_all(br->shaders);
 
   if (PLOT->draw_settings == false) {
     br_extent_t icon_ex = BR_EXTENT((float)PLOT->graph_screen_rect.x + (float)PLOT->graph_screen_rect.width - 32.f - 5.f, (float)PLOT->graph_screen_rect.y + 5.f, 32.f, 32.f);

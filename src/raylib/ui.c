@@ -3,6 +3,7 @@
 #include "src/br_str.h"
 #include "src/br_text_renderer.h"
 #include "src/br_tl.h"
+#include "src/br_theme.h"
 
 #include <stdarg.h>
 #include <assert.h>
@@ -18,7 +19,7 @@ static int ui_draw_button_va(br_text_renderer_t* tr, bool* is_pressed, float x, 
   char* scrach = br_scrach_get(128);
   vsprintf(scrach, str, va);
   float pad = 5.f;
-  br_extent_t box  = br_text_renderer_push(tr, x + pad, y + pad, font_size, BR_WHITE, scrach);
+  br_extent_t box  = br_text_renderer_push(tr, x + pad, y + pad, font_size, br_theme.colors.btn_txt_inactive, scrach);
   bool is_in = br_col_vec2_extent(box, brtl_mouse_get_pos());
   if (is_in) {
     bool is_p = brtl_mouse_is_pressed_l();

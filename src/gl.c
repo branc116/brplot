@@ -384,11 +384,8 @@ GLint brgl_get_locu(GLuint shader_id, char const* name) {
   return glGetUniformLocation(shader_id, name);
 }
 
-void brgl_clear_color(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
-    glClearColor(r, g, b, a);
-}
-
-void brgl_clear(void) {
+void brgl_clear(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
+  glClearColor(r, g, b, a);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

@@ -29,6 +29,24 @@
 #define NOP2(N, M)
 
 #define BR_ALL_SHADERS(X, X_VEC, X_BUF) \
+  X(grid, 2,                            \
+      X_VEC(zoom, 2)                    \
+      X_VEC(offset, 2)                  \
+      X_VEC(bg_color, 4)                \
+      X_VEC(lines_color, 4)             \
+      X_VEC(screen, 2),                 \
+                                        \
+      X_BUF(vertexPosition, 2)          \
+    )                                   \
+  X(grid_3d, 8,                         \
+      X_VEC(eye, 3)                     \
+      X_VEC(look_dir, 3)                \
+      X_VEC(m_mvp, 16)                  \
+      X_VEC(resolution, 2),             \
+                                        \
+      X_BUF(vertexPosition, 3)          \
+      X_BUF(vertexColor, 3)             \
+    )                                   \
   X(line_3d_simple, 1024,               \
       X_VEC(m_mvp, 16),                 \
                                         \
@@ -44,15 +62,6 @@
       X_BUF(vertexNormal, 3)            \
       X_BUF(vertexColor, 3)             \
     )                                   \
-  X(grid_3d, 8,                         \
-      X_VEC(eye, 3)                     \
-      X_VEC(look_dir, 3)                \
-      X_VEC(m_mvp, 16)                  \
-      X_VEC(resolution, 2),             \
-                                        \
-      X_BUF(vertexPosition, 3)          \
-      X_BUF(vertexColor, 3)             \
-    )                                   \
   X(line, 2048,                         \
       X_VEC(offset, 2)                  \
       X_VEC(zoom, 2)                    \
@@ -62,15 +71,6 @@
       X_BUF(vertexY, 1)                 \
       X_BUF(delta, 2)                   \
       X_BUF(vertexColor, 3)             \
-    )                                   \
-  X(grid, 2,                            \
-      X_VEC(zoom, 2)                    \
-      X_VEC(offset, 2)                  \
-      X_VEC(bg_color, 4)                \
-      X_VEC(lines_color, 4)             \
-      X_VEC(screen, 2),                 \
-                                        \
-      X_BUF(vertexPosition, 2)          \
     )                                   \
   X(icon, 1024,                         \
       X_VEC(atlas, _TEX),               \

@@ -278,10 +278,6 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot, br_shaders_t* shaders) {
       if (g->len == 0) continue;
       resampling2_draw(g->resampling, g, plot, shaders);
     }
-    if (shaders->line->len > 0) {
-      br_shader_line_draw(shaders->line);
-      shaders->line->len = 0;
-    }
     TracyCFrameMarkEnd("br_datas_draw_2d");
   } else {
     TracyCFrameMarkStart("br_datas_draw_3d");
@@ -290,10 +286,6 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot, br_shaders_t* shaders) {
       br_data_t const* g = br_data_get1(pg, group);
       if (g->len == 0) continue;
       resampling2_draw(g->resampling, g, plot, shaders);
-    }
-    if (shaders->line_3d->len > 0) {
-      br_shader_line_3d_draw(shaders->line_3d);
-      shaders->line_3d->len = 0;
     }
     TracyCFrameMarkEnd("br_datas_draw_3d");
   }

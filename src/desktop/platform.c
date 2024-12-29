@@ -5,7 +5,6 @@
 #include "src/br_gl.h"
 #include "src/br_tl.h"
 #include "src/br_q.h"
-#include "src/br_theme.h"
 
 #include <string.h>
 
@@ -192,13 +191,14 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
   brgl_disable_back_face_cull();
   brgl_enable_depth_test();
   brgl_enable(GL_BLEND);
-  //brgl_blend_func(GL_SRC_ALPHA, GL_DST_ALPHA);
-  brgl_blend_func_sep(GL_ONE_MINUS_SRC_COLOR, GL_ONE_MINUS_DST_COLOR, GL_SRC_ALPHA, GL_DST_ALPHA);
-  brgl_blend_equation(GL_MAX);
+  brgl_blend_func(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  brgl_blend_equation(GL_FUNC_ADD);
   br_sizei_t size = brtl_window_size();
   brgl_viewport(0, 0, size.width, size.height);
 
   br->shaders = br_shaders_malloc();
+  br->shaders.font->uvs.sub_pix_aa_map_uv =  BR_VEC3(-1, 0, 1);
+  br->shaders.font->uvs.sub_pix_aa_scale_uv = 0.2f;
   br->text = br_text_renderer_malloc(1024, 1024, br_font_data, &br->shaders.font);
   glfwGetWindowSize(br->win.glfw, &br->win.size.width, &br->win.size.height);
   br->time.now = glfwGetTime();
@@ -265,13 +265,6 @@ void br_plotter_begin_drawing(br_plotter_t* br) {
   glfwPollEvents();
   br->mouse.delta = br_vec2_sub(br->mouse.pos, br->mouse.old_pos);
   br->mouse.old_pos = br->mouse.pos;
-
-  //brgl_enable_framebuffer(0);
-  br_vec4_t bg = BR_COLOR_TO4(br_theme.colors.bg);
-  brgl_clear_color(bg.r,bg.g,bg.b,bg.a);
-  //brgl_clear();
-  br->shaders.font->uvs.sub_pix_aa_map_uv =  BR_VEC3(-1, 0, 1);
-  br->shaders.font->uvs.sub_pix_aa_scale_uv = 0.2f;
   glfwGetWindowSize(br->win.glfw, &br->win.size.width, &br->win.size.height);
 }
 
