@@ -111,6 +111,16 @@
 BR_ALL_SHADERS(X, X_U, NOP2)
 #undef X
 #undef X_U
+
+#define X_U(NAME, DIM) VEC_TYPE ## DIM NAME;
+#define X(NAME, CAP, U_VEC, BUFFS) \
+  typedef struct {                 \
+    BUFFS                          \
+  } br_shader_ ## NAME ## _el_t;
+BR_ALL_SHADERS(X, NOP2, X_U)
+#undef X
+#undef X_U
+
 #undef VEC_TYPE_TEX
 #undef VEC_TYPE16
 #undef VEC_TYPE4
@@ -155,6 +165,14 @@ br_shaders_t br_shaders_malloc(void);
 void br_shaders_draw_all(br_shaders_t shaders);
 void br_shaders_free(br_shaders_t shaders);
 void br_shaders_refresh(br_shaders_t shaders);
+
+#define X(NAME, CAP, U_VEC, BUFF) void br_shader_ ## NAME ## _push_tri(br_shader_ ## NAME ## _t* shader, br_shader_ ## NAME ## _el_t el[3]);
+BR_ALL_SHADERS(X, NOP2, NOP2)
+#undef X
+
+#define X(NAME, CAP, U_VEC, BUFF) void br_shader_ ## NAME ## _push_quad(br_shader_ ## NAME ## _t* shader, br_shader_ ## NAME ## _el_t el[4]);
+BR_ALL_SHADERS(X, NOP2, NOP2)
+#undef X
 
 #ifdef __cplusplus
 }

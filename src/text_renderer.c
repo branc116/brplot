@@ -164,16 +164,6 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
   simp->len = 0;
 }
 
-static void br_text_draw_quad(br_vec4_t* v, int* len, br_bb_t screen, br_bb_t tex) {
-  br_sizei_t ss = brtl_viewport().size;
-  v[(*len)++] = BR_VEC42(br_vec2_stog(screen.min,       ss), tex.min);
-  v[(*len)++] = BR_VEC42(br_vec2_stog(br_bb_tr(screen), ss), br_bb_tr(tex));
-  v[(*len)++] = BR_VEC42(br_vec2_stog(screen.max,       ss), tex.max);
-  v[(*len)++] = BR_VEC42(br_vec2_stog(screen.min,       ss), tex.min);
-  v[(*len)++] = BR_VEC42(br_vec2_stog(screen.max,       ss), tex.max);
-  v[(*len)++] = BR_VEC42(br_vec2_stog(br_bb_bl(screen), ss), br_bb_bl(tex));
-}
-
 br_extent_t br_text_renderer_push(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, const char* text) {
   return br_text_renderer_push2(r, x, y, font_size, color, br_strv_from_c_str(text), br_text_renderer_ancor_left_up);
 }
@@ -186,10 +176,6 @@ br_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x, float y, int 
   br_vec2_t loc = BR_VEC2(x, y);
   long size_index = stbds_hmgeti(r->sizes, font_size);
   float og_x = loc.x;
-  br_shader_font_t* simp = *r->shader_f;
-  int len_pos = simp->len * 3;
-  br_vec4_t* pos = (br_vec4_t*)simp->pos_vbo;
-  br_vec4_t* colors = (br_vec4_t*)simp->color_vbo;
   r->tmp_quads.len = 0;
   if (size_index == -1) {
     for (size_t i = 0; i < text.len; ++i) {
@@ -234,18 +220,17 @@ br_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x, float y, int 
   if (ancor & br_text_renderer_ancor_x_left)       x_off = min_x - x;
   else if (ancor & br_text_renderer_ancor_x_mid)   x_off = (max_x + min_x) * 0.5f - x;
   else if (ancor & br_text_renderer_ancor_x_right) x_off = max_x - x;
+  br_sizei_t sz = brtl_viewport().size;
+  br_vec4_t cv = BR_COLOR_TO4(color);
   for (size_t i = 0; i < r->tmp_quads.len; ++i) {
-    if (simp->len >= simp->cap) {
-      br_text_renderer_dump(r);
-      len_pos = 0;
-      pos = (void*)simp->pos_vbo;
-      colors = (br_vec4_t*)simp->color_vbo;
-    }
-    for (int j = 0; j < 6; ++j) colors[len_pos + j] = BR_COLOR_TO4(color);
-    br_text_draw_quad(pos, &len_pos,
-        br_bb_sub(BR_BB(r->tmp_quads.arr[i].x0, r->tmp_quads.arr[i].y0, r->tmp_quads.arr[i].x1, r->tmp_quads.arr[i].y1), BR_VEC2(x_off, y_off)),
-        BR_BB(r->tmp_quads.arr[i].s0, r->tmp_quads.arr[i].t0, r->tmp_quads.arr[i].s1, r->tmp_quads.arr[i].t1));
-    simp->len += 2;
+    br_bb_t bb = br_bb_sub(BR_BB(r->tmp_quads.arr[i].x0, r->tmp_quads.arr[i].y0, r->tmp_quads.arr[i].x1, r->tmp_quads.arr[i].y1), BR_VEC2(x_off, y_off));
+    br_bb_t tex = BR_BB(r->tmp_quads.arr[i].s0, r->tmp_quads.arr[i].t0, r->tmp_quads.arr[i].s1, r->tmp_quads.arr[i].t1);
+    br_shader_font_push_quad(*r->shader_f, (br_shader_font_el_t[4]) {
+        { .pos = BR_VEC42(br_vec2_stog(bb.min, sz), tex.min), .color = cv },
+        { .pos = BR_VEC42(br_vec2_stog(br_bb_tr(bb), sz), br_bb_tr(tex)), .color = cv },
+        { .pos = BR_VEC42(br_vec2_stog(bb.max, sz), tex.max), .color = cv },
+        { .pos = BR_VEC42(br_vec2_stog(br_bb_bl(bb), sz), br_bb_bl(tex)), .color = cv },
+    });
   }
   return BR_EXTENT(min_x - x_off, min_y - y_off, max_x - min_x, max_y - min_y);
 }

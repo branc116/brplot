@@ -40,45 +40,24 @@ void smol_mesh_gen_point1(br_shader_line_t* shader, br_vec2_t point, br_vec2_t s
 }
 
 void smol_mesh_gen_line(br_shader_line_t* shader, br_vec2_t startPos, br_vec2_t endPos, br_color_t const color) {
-  br_vec3_t const cv = BR_VEC3(color.r/255.f, color.g/255.f, color.b/255.f);
-  int c = shader->len;
-  if (c + 1 >= shader->cap) {
-    br_shader_line_draw(shader);
-    c = 0;
-    shader->len = 2;
-  } else {
-    shader->len += 2;
-  }
-  c *= 3;
-  br_vec2_t delta = BR_VEC2(endPos.x - startPos.x, endPos.y - startPos.y);
+  br_vec3_t const cv = BR_COLOR_TO4(color).xyz;
+  br_vec3_t const cv_upper = BR_VEC3(cv.x, cv.y, cv.z + 2.f);
+  br_vec2_t const delta = br_vec2_sub(endPos, startPos);
 
   br_vec2_t strip[2] = {
     BR_VEC2(startPos.x, startPos.y),
     BR_VEC2(endPos.x, endPos.y),
   };
-  //First triangle
-  shader->vertexX_vbo[c+0] = strip[0].x; shader->vertexY_vbo[c+0] = strip[0].y;
-  shader->vertexX_vbo[c+1] = strip[1].x; shader->vertexY_vbo[c+1] = strip[1].y;
-  shader->vertexX_vbo[c+2] = strip[0].x; shader->vertexY_vbo[c+2] = strip[0].y;
-  shader->vertexX_vbo[c+3] = strip[0].x; shader->vertexY_vbo[c+3] = strip[0].y;
-  shader->vertexX_vbo[c+4] = strip[1].x; shader->vertexY_vbo[c+4] = strip[1].y;
-  shader->vertexX_vbo[c+5] = strip[1].x; shader->vertexY_vbo[c+5] = strip[1].y;
-
-  br_vec2_t* normals = (br_vec2_t*)&shader->delta_vbo[2*c];
-  normals[0] = BR_VEC2(delta.x, delta.y);
-  normals[1] = BR_VEC2(delta.x, delta.y);
-  normals[2] = BR_VEC2(delta.x, delta.y);
-  normals[3] = BR_VEC2(delta.x, delta.y);
-  normals[4] = BR_VEC2(delta.x, delta.y);
-  normals[5] = BR_VEC2(delta.x, delta.y);
-
-  br_vec3_t* colors = (br_vec3_t*)&shader->vertexColor_vbo[3*c];
-  colors[0] = BR_VEC3(cv.x, cv.y, 2.f+cv.z);
-  colors[1] = BR_VEC3(cv.x, cv.y, 2.f+cv.z);
-  colors[2] = BR_VEC3(cv.x, cv.y, cv.z);
-  colors[3] = BR_VEC3(cv.x, cv.y, cv.z);
-  colors[4] = BR_VEC3(cv.x, cv.y, 2.f+cv.z);
-  colors[5] = BR_VEC3(cv.x, cv.y, cv.z);
+  br_shader_line_push_tri(shader, (br_shader_line_el_t[]) {
+      { .vertexX = strip[0].x, .vertexY = strip[0].y, .delta = delta, .vertexColor = cv_upper },
+      { .vertexX = strip[1].x, .vertexY = strip[1].y, .delta = delta, .vertexColor = cv_upper },
+      { .vertexX = strip[0].x, .vertexY = strip[0].y, .delta = delta, .vertexColor = cv },
+  });
+  br_shader_line_push_tri(shader, (br_shader_line_el_t[]) {
+      { .vertexX = strip[0].x, .vertexY = strip[0].y, .delta = delta, .vertexColor = cv },
+      { .vertexX = strip[1].x, .vertexY = strip[1].y, .delta = delta, .vertexColor = cv_upper },
+      { .vertexX = strip[1].x, .vertexY = strip[1].y, .delta = delta, .vertexColor = cv },
+  });
 
   if (context.debug_bounds) {
     context.debug_bounds = false;

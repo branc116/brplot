@@ -180,6 +180,35 @@ void br_shaders_free(br_shaders_t shaders) {
 #undef X
 }
 
+#define X_B(NAME, T) \
+  el_size = (int)sizeof(el[0].NAME) / (int)sizeof(float); \
+  for (int i = 0; i < el_size; ++i) { \
+    shader->NAME ## _vbo[el_size * (shader->len * 3 + k) + i] = ((float*)&(el[k].NAME))[i]; \
+  }
+#define X(NAME, CAP, V, B) \
+void br_shader_ ## NAME ## _push_tri(br_shader_ ## NAME ## _t *shader, br_shader_ ## NAME ## _el_t el[3]) { \
+  if (shader->len >= shader->cap) { \
+    br_shader_ ## NAME ## _draw(shader); \
+    shader->len = 0; \
+  } \
+  int el_size = 0; \
+  for (int k = 0; k < 3; ++k) { \
+    B \
+  } \
+  ++shader->len; \
+}
+BR_ALL_SHADERS(X, NOP2, X_B)
+#undef X
+#undef X_B
+
+#define X(NAME, CAP, V, B) \
+void br_shader_ ## NAME ## _push_quad(br_shader_ ## NAME ## _t *shader, br_shader_ ## NAME ## _el_t el[4]) { \
+  br_shader_ ## NAME ## _push_tri(shader, (br_shader_ ## NAME ## _el_t[3]) { el[0], el[1], el[2] }); \
+  br_shader_ ## NAME ## _push_tri(shader, (br_shader_ ## NAME ## _el_t[3]) { el[0], el[2], el[3] }); \
+}
+BR_ALL_SHADERS(X, NOP2, NOP2)
+#undef X
+
 #if BR_HAS_SHADER_RELOAD
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
 #  include "desktop/linux/refresh_shaders.c"
