@@ -103,19 +103,18 @@ br_vec2_t resampling2_nodes_3d_get_ratios(resampling2_nodes_3d_t const* res, br_
   br_vec3_t M = BR_VEC3(maxx.x, maxy.y, maxz.z);
   br_vec3_t m = BR_VEC3(minx.x, miny.y, minz.z);
   float dist = br_vec3_dist2(minx, eye);
-  float pot_dist = br_vec3_dist2(miny, eye);
-  if (pot_dist < dist) dist = pot_dist;
-  pot_dist = br_vec3_dist2(minz, eye); if (pot_dist < dist) dist = pot_dist;
-  pot_dist = br_vec3_dist2(maxx, eye); if (pot_dist < dist) dist = pot_dist;
-  pot_dist = br_vec3_dist2(maxy, eye); if (pot_dist < dist) dist = pot_dist;
-  pot_dist = br_vec3_dist2(maxz, eye); if (pot_dist < dist) dist = pot_dist;
-  dist = sqrtf(dist);
+  float pot_dist = br_vec3_dist2(miny, eye); if (pot_dist < dist) dist = pot_dist;
+        pot_dist = br_vec3_dist2(minz, eye); if (pot_dist < dist) dist = pot_dist;
+        pot_dist = br_vec3_dist2(maxx, eye); if (pot_dist < dist) dist = pot_dist;
+        pot_dist = br_vec3_dist2(maxy, eye); if (pot_dist < dist) dist = pot_dist;
+        pot_dist = br_vec3_dist2(maxz, eye); if (pot_dist < dist) dist = pot_dist;
+  //dist = sqrtf(dist);
 
-  br_vec3_t rot_axis = br_vec3_cross(BR_VEC3(0, 0, 1.f), look_dir);
+  br_vec3_t rot_axis = br_vec3_normalize(br_vec3_cross(BR_VEC3(0, 0, 1.f), look_dir));
   float angle = br_vec3_angle(BR_VEC3(0, 0, 1.f), look_dir);
   br_vec3_t nA = br_vec3_rot(br_vec3_sub(M, m), rot_axis, angle);
   br_vec3_t nC = br_vec3_rot(res->curvature, rot_axis, angle);
-  br_vec3_t out = br_vec3_scale(br_vec3_pow(br_vec3_mul(nA, nC), 2.0f), 1/dist);
+  br_vec3_t out = br_vec3_scale(br_vec3_pow(br_vec3_mul(nA, nC), 1.0f), 1/dist);
   return BR_VEC2(fabsf(out.x), fabsf(out.y));
 }
 
