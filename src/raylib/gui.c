@@ -1,4 +1,5 @@
 #include ".generated/icons.h"
+#include "src/br_da.h"
 #include "src/br_icons.h"
 #include "src/br_math.h"
 #include "src/br_plot.h"
@@ -7,10 +8,21 @@
 #include "src/br_shaders.h"
 #include "src/br_smol_mesh.h"
 #include "src/br_permastate.h"
+#include "src/br_str.h"
 #include "src/br_tl.h"
 #include "src/raylib/ui.c"
 #include "src/br_gl.h"
 #include "src/br_theme.h"
+
+void brui_begin(void);
+void brui_end(void);
+br_size_t brui_text(br_strv_t strv);
+bool brui_button(br_strv_t text);
+bool brui_checkbox(br_strv_t text, bool* checked);
+void brui_push(br_extent_t max);
+void brui_pop(void);
+void brui_z_set(float z);
+
 
 static void draw_left_panel(br_plotter_t* gv);
 void br_gui_init_specifics_gui(br_plotter_t* br) {
@@ -43,57 +55,112 @@ bool br_icon_button(br_extent_t pos, br_extent_t atlas, bool hide_when_not_near,
 
 BR_API void br_plotter_draw(br_plotter_t* br) {
   br_plotter_begin_drawing(br);
-
-#define PLOT (&br->plots.arr[br->active_plot_index])
-  PLOT->drag_parent_extent.pos = BR_VEC2I(50, 50);
-  PLOT->drag_parent_extent.size = br_sizei_sub(br->win.size, BR_SIZEI(100, 100));
-  br_plot_update_variables(br, PLOT, br->groups, brtl_mouse_get_pos());
-  br_plot_update_context(PLOT, brtl_mouse_get_pos());
-  br_plot_update_shader_values(PLOT, &br->shaders);
-  brgl_enable_framebuffer(PLOT->texture_id, PLOT->graph_screen_rect.width, PLOT->graph_screen_rect.height);
-  brgl_clear(BR_COLOR_COMPF(br_theme.colors.plot_bg));
-  if (PLOT->kind == br_plot_kind_2d) {
-    smol_mesh_grid_draw(PLOT, &br->shaders);
-    br_shaders_draw_all(br->shaders);
-    br_datas_draw(br->groups, PLOT, &br->shaders);
-    br_shaders_draw_all(br->shaders);
-    draw_grid_numbers(br->text, PLOT);
-  } else if (PLOT->kind == br_plot_kind_3d) {
-    br_datas_draw(br->groups, PLOT, &br->shaders);
-    br_shaders_draw_all(br->shaders);
-    smol_mesh_grid_draw(PLOT, &br->shaders);
-    br_shaders_draw_all(br->shaders);
-    draw_grid_numbers(br->text, PLOT);
+  for (int i = 0; i < br->plots.len; ++i) {
+#define PLOT (&br->plots.arr[i])
+    if (false == PLOT->is_visible) continue;
+    PLOT->drag_parent_extent.pos = BR_VEC2I(50, 50);
+    PLOT->drag_parent_extent.size = br_sizei_sub(br->win.size, BR_SIZEI(100, 100));
+    br_plot_update_variables(br, PLOT, br->groups, brtl_mouse_get_pos());
+    br_plot_update_context(PLOT, brtl_mouse_get_pos());
+    br_plot_update_shader_values(PLOT, &br->shaders);
+    brgl_enable_framebuffer(PLOT->texture_id, PLOT->graph_screen_rect.width, PLOT->graph_screen_rect.height);
+    brgl_clear(BR_COLOR_COMPF(br_theme.colors.plot_bg));
+    if (PLOT->kind == br_plot_kind_2d) {
+      smol_mesh_grid_draw(PLOT, &br->shaders);
+      br_shaders_draw_all(br->shaders);
+      br_datas_draw(br->groups, PLOT, &br->shaders);
+      br_shaders_draw_all(br->shaders);
+      draw_grid_numbers(br->text, PLOT);
+    } else if (PLOT->kind == br_plot_kind_3d) {
+      br_datas_draw(br->groups, PLOT, &br->shaders);
+      br_shaders_draw_all(br->shaders);
+      smol_mesh_grid_draw(PLOT, &br->shaders);
+      br_shaders_draw_all(br->shaders);
+      draw_grid_numbers(br->text, PLOT);
+    }
   }
 
   brgl_enable_framebuffer(0, br->win.size.width, br->win.size.height);
   brgl_clear(BR_COLOR_COMPF(br_theme.colors.bg));
   help_draw_fps(br->text, 0, 0);
-  smol_mesh_img_draw(PLOT, &br->shaders);
-  br_shaders_draw_all(br->shaders);
 
-  if (PLOT->draw_settings == false) {
-    br_extent_t icon_ex = BR_EXTENT((float)PLOT->graph_screen_rect.x + (float)PLOT->graph_screen_rect.width - 32.f - 5.f, (float)PLOT->graph_screen_rect.y + 5.f, 32.f, 32.f);
-    if (br_icon_button(icon_ex, br_icons.menu.size_32, true, 1)) {
-        PLOT->drag_mode = br_drag_mode_none;
-        PLOT->draw_settings = true;
+  for (int i = 0; i < br->plots.len; ++i) {
+    if (false == PLOT->is_visible) continue;
+    smol_mesh_img_draw(PLOT, &br->shaders);
+    br_shaders_draw_all(br->shaders);
+
+    if (PLOT->draw_settings == false) {
+      br_extent_t icon_ex = BR_EXTENT((float)PLOT->graph_screen_rect.x + (float)PLOT->graph_screen_rect.width - 32.f - 5.f, (float)PLOT->graph_screen_rect.y + 5.f, 32.f, 32.f);
+      if (br_icon_button(icon_ex, br_icons.menu.size_32, true, 1)) {
+          PLOT->drag_mode = br_drag_mode_none;
+          PLOT->draw_settings = true;
+      }
+    } else {
+      br_extent_t p = BR_EXTENTI_TOF(PLOT->graph_screen_rect);
+      br_extent_t panel = BR_EXTENTPS(br_extent_tr2(p, 200, 0), BR_SIZE(200, p.height));
+      br_icons_draw(br->shaders.icon, panel, BR_EXTENT(0,0,0,0), br_theme.colors.plot_menu_color, br_theme.colors.plot_menu_color, 3);
+      if (br_icon_button(BR_EXTENTPS(br_extent_tl2(panel, 4, 4), BR_SIZE(32, 32)), br_icons_y_mirror(br_icons.back.size_32), false, 4)) {
+          PLOT->drag_mode = br_drag_mode_none;
+          PLOT->draw_settings = false;
+      }
+      brui_begin();
+        brui_z_set(12.f);
+        brui_push(BR_EXTENTPS(br_extent_tr2(p, 190, 40), BR_SIZE(180, p.height - 50)));
+          brui_checkbox(br_strv_from_literal("Follow"), &PLOT->follow);
+          char* c = br_scrach_get(4096);
+          for (size_t k = 0; k < br->groups.len; ++k) {
+            bool is_shown = false;
+            br_data_t* data = &br->groups.arr[k];
+            for (int j = 0; j < PLOT->groups_to_show.len; ++j) {
+              if (PLOT->groups_to_show.arr[j] == data->group_id) {
+                is_shown = true;
+                break;
+              }
+            }
+
+            sprintf(c, "Data #%d", data->group_id);
+            if (brui_checkbox(br_strv_from_c_str(c), &is_shown)) {
+              if (false == is_shown) br_da_remove(PLOT->groups_to_show, data->group_id);
+              else br_da_push_t(int, PLOT->groups_to_show, data->group_id);
+            }
+          }
+          br_scrach_free();
+        brui_pop();
+      brui_end();
     }
-  } else {
-    br_extent_t p = BR_EXTENTI_TOF(PLOT->graph_screen_rect);
-    br_extent_t panel = BR_EXTENTPS(br_extent_tr2(p, 200, 0), BR_SIZE(200, p.height));
-    br_icons_draw(br->shaders.icon, panel, BR_EXTENT(0,0,0,0), br_theme.colors.plot_menu_color, br_theme.colors.plot_menu_color, 3);
-    if (br_icon_button(BR_EXTENTPS(br_extent_tl2(panel, 4, 4), BR_SIZE(32, 32)), br_icons_y_mirror(br_icons.back.size_32), false, 4)) {
-        PLOT->drag_mode = br_drag_mode_none;
-        PLOT->draw_settings = false;
-    }
-  }
 #undef PLOT
+  }
   draw_left_panel(br);
   br_plotter_end_drawing(br);
 }
 
 static float sp = 0.f;
 static void draw_left_panel(br_plotter_t* br) {
+  brui_begin();
+    brui_push(BR_EXTENT2(BR_VEC2(10,40), BR_SIZE(160, (float)brtl_viewport().height/2)));
+      char* scrach = br_scrach_get(4096);
+      for (int i = 0; i < br->plots.len; ++i) {
+        sprintf(scrach, "%s Plot %d", br->plots.arr[i].kind == br_plot_kind_2d ? "2D" : "3D", i);
+        brui_checkbox(br_strv_from_c_str(scrach), &br->plots.arr[i].is_visible);
+      }
+      br_scrach_free();
+      brui_checkbox(br_strv_from_literal("Debug"), &context.debug_bounds);
+      if (brui_checkbox(br_strv_from_literal("Dark Theme"), &br->dark_theme)) {
+        if (br->dark_theme) br_theme_dark();
+        else br_theme_light();
+      }
+      if (brui_button(br_strv_from_literal("Export"))) {
+        br_plotter_export(br, "test.brp");
+      }
+      if (brui_button(br_strv_from_literal("Export CSV"))) {
+        br_plotter_export_csv(br, "test.csv");
+      }
+      if (brui_button(br_strv_from_literal("Exit"))) {
+        br->should_close = true;
+      }
+    brui_pop();
+  brui_end();
+  return;
   br_plot_t* plot = &br->plots.arr[0];
   ui_stack_buttons_init(BR_VEC2(30.f, 25.f), NULL, (int)(context.font_scale * 15));
   ui_stack_buttons_add(br->text, &plot->follow, "Follow");

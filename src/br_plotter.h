@@ -76,6 +76,7 @@ typedef struct br_plotter_t {
 #if BR_HAS_SHADER_RELOAD
   bool shaders_dirty;
 #endif
+  bool dark_theme;
   bool file_saver_inited;
   bool should_close;
   bool switch_to_active;

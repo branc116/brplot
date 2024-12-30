@@ -35,9 +35,10 @@ extern "C" {
 br_text_renderer_t* br_text_renderer_malloc(int bitmap_width, int bitmap_height, unsigned char const* font_data, br_shader_font_t** shader);
 void br_text_renderer_free(br_text_renderer_t* r);
 void br_text_renderer_dump(br_text_renderer_t* r);
-br_extent_t br_text_renderer_push(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, const char* text);
-br_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, br_strv_t text);
-br_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x, float y, int font_size, br_color_t color, br_strv_t str, br_text_renderer_ancor_t ancor);
+br_strv_t br_text_renderer_fit(br_text_renderer_t* r, br_size_t size, int font_size, br_strv_t text);
+br_extent_t br_text_renderer_push(br_text_renderer_t* r, float x, float y, float z, int font_size, br_color_t color, const char* text);
+br_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, float x, float y, float z, int font_size, br_color_t color, br_strv_t text);
+br_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x, float y, float z, int font_size, br_color_t color, br_strv_t str, br_text_renderer_ancor_t ancor);
 void br_text_background(br_extent_t extent, br_color_t color, float padding, float z);
 
 #if defined(__cplusplus)

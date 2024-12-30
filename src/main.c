@@ -34,8 +34,6 @@ static void* main_gui(void* plotter) {
     TracyCFrameMarkEnd("plotter_frame_end");
   }
   br_icons_deinit();
-  br->should_close = true;
-  
   return 0;
 }
 

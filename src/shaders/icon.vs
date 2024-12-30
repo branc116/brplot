@@ -15,6 +15,6 @@ void main() {
   out_tpos = pos.zw;
   outin_fg = fg;
   outin_bg = bg;
-  float zr = -z/128.0;
+  float zr = -z/256.0;
   gl_Position = vec4(pos.xy, zr, 1.0);
 }

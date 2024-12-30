@@ -23,7 +23,7 @@
 static _Thread_local GLuint icons_id = 0;
 
 void br_icons_init(br_shader_icon_t* shader) {
-  icons_id = brgl_load_texture(br_icons_atlas, 64, 64, BRGL_TEX_GRAY);
+  icons_id = brgl_load_texture(br_icons_atlas, br_icons_atlas_width, br_icons_atlas_height, BRGL_TEX_GRAY);
   shader->uvs.atlas_uv = icons_id;
 }
 
@@ -47,5 +47,44 @@ void br_icons_deinit(void) {
 br_extent_t br_icons_y_mirror(br_extent_t icon) {
   icon.x += icon.width;
   icon.width *= -1.f;
+  return icon;
+}
+
+br_extent_t br_icons_top(br_extent_t icon, float percent) {
+  icon.height *= percent;
+  return icon;
+}
+
+br_extent_t br_icons_bot(br_extent_t icon, float percent);
+br_extent_t br_icons_left(br_extent_t icon, float percent);
+br_extent_t br_icons_right(br_extent_t icon, float percent);
+
+br_extent_t br_icons_tc(br_extent_t icon, float top, float center) {
+  icon.height *= top;
+  icon.x += icon.width * 0.5f * (1.f - center);
+  icon.width *= center;
+  return icon;
+}
+
+br_extent_t br_icons_lc(br_extent_t icon, float left, float center) {
+  icon.width *= left;
+  icon.y += icon.height * 0.5f * (1.f - center);
+  icon.height *= center;
+  return icon;
+}
+
+br_extent_t br_icons_bc(br_extent_t icon, float top, float center) {
+  icon.y += icon.height * (1.f - top);
+  icon.height *= top;
+  icon.x += icon.width * 0.5f * (1.f - center);
+  icon.width *= center;
+  return icon;
+}
+
+br_extent_t br_icons_rc(br_extent_t icon, float left, float center) {
+  icon.x += icon.width * (1.f - left);
+  icon.width *= left;
+  icon.y += icon.height * 0.5f * (1.f - center);
+  icon.height *= center;
   return icon;
 }

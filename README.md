@@ -394,6 +394,8 @@ sudo rm /usr/bin/brplot
   * Maybe add multipe points per line "Foo%1x %2y %2x %1y": "Foo10 11 12 13" -> [(10, 13), (12, 11)]
   * Current implementation is recursive, maybe think of a way to make it non recursive.
   * Current implementation runs each extractor one by one. Think of a way to run then in lock step.
+* Turn on or off datasets
+    * Icons for checkboxes
 
 ## Screenshots
 Here is a history of how brplot looked over time:

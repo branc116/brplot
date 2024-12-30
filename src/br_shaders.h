@@ -95,6 +95,7 @@
                                         \
       X_BUF(pos, 4)                     \
       X_BUF(color, 4)                   \
+      X_BUF(z, 1)                       \
     )                                   \
 
 #define VEC_TYPE1 float

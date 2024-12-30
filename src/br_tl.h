@@ -6,6 +6,7 @@
 
 typedef struct br_plotter_t br_plotter_t;
 typedef struct br_shaders_t br_shaders_t;
+typedef struct br_text_renderer_t br_text_renderer_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,6 +36,7 @@ void brtl_viewport_set(br_extenti_t ex);
 
 br_plotter_t* brtl_plotter(void);
 br_shaders_t* brtl_shaders(void);
+br_text_renderer_t* brtl_text_renderer(void);
 
 #ifdef __cplusplus
 }

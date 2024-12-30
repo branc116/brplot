@@ -75,10 +75,14 @@ image_t imgs[] = {
     .img = "back",
     STATIC_ARRAY_INT(32)
   },
-//  {
-//    .img = "close",
-//    STATIC_ARRAY_INT(16, 32)
-//  }
+  {
+    .img = "cb_0",
+    STATIC_ARRAY_INT(32)
+  },
+  {
+    .img = "cb_1",
+    STATIC_ARRAY_INT(32)
+  },
 };
 
 int* image_sizes(int n, image_t* imgs, int* out_len) {

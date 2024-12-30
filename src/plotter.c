@@ -36,6 +36,7 @@ BR_API void br_plotter_init(br_plotter_t* br) {
 #if BR_HAS_SHADER_RELOAD
     .shaders_dirty = false,
 #endif
+    .dark_theme = true,
     .file_saver_inited = false,
     .should_close = false,
     .switch_to_active = false,
@@ -228,7 +229,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         help_trim_zeros(scrach);
         float y = sz.height / r.height * (r.y - cur);
         if (y > sz.height) break;
-        br_text_renderer_push2(tr, x, y, font_size, br_theme.colors.grid_nums, br_strv_from_c_str(scrach), ancor);
+        br_text_renderer_push2(tr, x, y, 0.9f, font_size, br_theme.colors.grid_nums, br_strv_from_c_str(scrach), ancor);
       }
     }
   }
@@ -252,7 +253,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         help_trim_zeros(scrach);
         float x = (sz.width / r.width) * (cur - r.x);
         if (x > sz.width) break;
-        br_text_renderer_push2(tr, x, y, font_size, br_theme.colors.grid_nums, br_strv_from_c_str(scrach), ancor);
+        br_text_renderer_push2(tr, x, y, 0.9f, font_size, br_theme.colors.grid_nums, br_strv_from_c_str(scrach), ancor);
       }
     }
   }

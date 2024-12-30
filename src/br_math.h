@@ -17,8 +17,10 @@
 #define BR_EXTENT_ASPECT(E) ((E).height / (E).width)
 #define BR_EXTENTI_ASPECT(E) ((float)(E).height / (float)(E).width)
 #define BR_EXTENT(X, Y, WIDTH, HEIGHT) (br_extent_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
+#define BR_EXTENT2(POS, SIZE) (br_extent_t) { .pos = (POS), .size = (SIZE) }
 #define BR_EXTENTPS(POS, SIZE) (br_extent_t) { .size = (SIZE), .pos = (POS) }
 #define BR_EXTENTI(X, Y, WIDTH, HEIGHT) (br_extenti_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
+#define BR_EXTENTI2(POS, SIZE) (br_extenti_t) { { .pos = POS, .size = SIZE } }
 #define BR_BB(Xm, Ym, XM, YM) (br_bb_t) { .arr = { (Xm), (Ym), (XM), (YM) } }
 #define BR_BB_TOEX(BB) (br_extent_t) { .arr = { (BB).min_x, (BB).min_y, (BB).max_x - (BB).min_x, (BB).max_y - (BB).min_y } }
 #define BR_VEC4(X, Y, Z, W) ((br_vec4_t) { .x = (X), .y = (Y), .z = (Z), .w = (W) }) 
@@ -254,6 +256,18 @@ static inline br_vec2_t br_vec2_stog(br_vec2_t v, br_sizei_t screen) {
 
 static inline br_sizei_t br_sizei_sub(br_sizei_t a, br_sizei_t b) {
   return BR_SIZEI(a.width - b.width, a.height - b.height);
+}
+
+static inline br_size_t br_size_subv(br_size_t a, br_vec2_t b) {
+  return BR_SIZE(a.width - b.x, a.height - b.y);
+}
+
+static inline br_sizei_t br_sizei_subvi(br_sizei_t a, br_vec2i_t b) {
+  return BR_SIZEI(a.width - b.x, a.height - b.y);
+}
+
+static inline br_size_t br_size_addv(br_size_t a, br_vec2_t b) {
+  return BR_SIZE(a.width + b.x, a.height + b.y);
 }
 
 //------------------------vec3------------------------------

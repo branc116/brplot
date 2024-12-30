@@ -287,7 +287,7 @@ void br_plotter_end_drawing(br_plotter_t* br) {
   double target_frame_time = 1/60.0;
   double frame_time = glfwGetTime() - br->time.now;
   br_help_sleep(target_frame_time - frame_time);
-  br->should_close = glfwWindowShouldClose(br->win.glfw);
+  br->should_close = br->should_close || glfwWindowShouldClose(br->win.glfw);
   glfwSetWindowShouldClose(br->win.glfw, GLFW_FALSE);
 }
 
@@ -386,6 +386,9 @@ br_plotter_t* brtl_plotter(void) {
 
 br_shaders_t* brtl_shaders(void) {
   return &stl_br->shaders;
+}
+br_text_renderer_t* brtl_text_renderer(void) {
+  return stl_br->text;
 }
 
 static void br_help_sleep(double seconds) {
