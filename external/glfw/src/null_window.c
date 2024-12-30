@@ -72,7 +72,7 @@ static void releaseMonitor(_GLFWwindow* window)
     _glfwInputMonitorWindow(window->monitor, NULL);
 }
 
-static int createNativeWindow(_GLFWwindow* window,
+static int createNativeWindow_null(_GLFWwindow* window,
                               const _GLFWwndconfig* wndconfig,
                               const _GLFWfbconfig* fbconfig)
 {
@@ -115,7 +115,7 @@ GLFWbool _glfwCreateWindowNull(_GLFWwindow* window,
                                const _GLFWctxconfig* ctxconfig,
                                const _GLFWfbconfig* fbconfig)
 {
-    if (!createNativeWindow(window, wndconfig, fbconfig))
+    if (!createNativeWindow_null(window, wndconfig, fbconfig))
         return GLFW_FALSE;
 
     if (ctxconfig->client != GLFW_NO_API)

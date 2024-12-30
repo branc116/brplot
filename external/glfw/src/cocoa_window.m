@@ -771,7 +771,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 
 // Create the Cocoa window
 //
-static GLFWbool createNativeWindow(_GLFWwindow* window,
+static GLFWbool createNativeWindow_cocoa(_GLFWwindow* window,
                                    const _GLFWwndconfig* wndconfig,
                                    const _GLFWfbconfig* fbconfig)
 {
@@ -923,7 +923,7 @@ GLFWbool _glfwCreateWindowCocoa(_GLFWwindow* window,
 {
     @autoreleasepool {
 
-    if (!createNativeWindow(window, wndconfig, fbconfig))
+    if (!createNativeWindow_cocoa(window, wndconfig, fbconfig))
         return GLFW_FALSE;
 
     if (ctxconfig->client != GLFW_NO_API)

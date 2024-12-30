@@ -558,7 +558,7 @@ static void inputContextDestroyCallback(XIC ic, XPointer clientData, XPointer ca
 
 // Create the X11 window (and its colormap)
 //
-static GLFWbool createNativeWindow(_GLFWwindow* window,
+static GLFWbool createNativeWindow_x11(_GLFWwindow* window,
                                    const _GLFWwndconfig* wndconfig,
                                    Visual* visual, int depth)
 {
@@ -1988,7 +1988,7 @@ GLFWbool _glfwCreateWindowX11(_GLFWwindow* window,
         depth = DefaultDepth(_glfw.x11.display, _glfw.x11.screen);
     }
 
-    if (!createNativeWindow(window, wndconfig, visual, depth))
+    if (!createNativeWindow_x11(window, wndconfig, visual, depth))
         return GLFW_FALSE;
 
     if (ctxconfig->client != GLFW_NO_API)
