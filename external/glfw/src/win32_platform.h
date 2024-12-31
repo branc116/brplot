@@ -602,7 +602,6 @@ EGLNativeWindowType _glfwGetEGLNativeWindowWin32(_GLFWwindow* window);
 
 void _glfwGetRequiredInstanceExtensionsWin32(char** extensions);
 GLFWbool _glfwGetPhysicalDevicePresentationSupportWin32(VkInstance instance, VkPhysicalDevice device, uint32_t queuefamily);
-VkResult _glfwCreateWindowSurfaceWin32(VkInstance instance, _GLFWwindow* window, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface);
 
 void _glfwFreeMonitorWin32(_GLFWmonitor* monitor);
 void _glfwGetMonitorPosWin32(_GLFWmonitor* monitor, int* xpos, int* ypos);

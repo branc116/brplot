@@ -45,6 +45,10 @@ bool br_fs_get_config_dir(br_str_t* path) {
 bool br_fs_mkdir(br_strv_t path) {
   if (br_fs_exists(path)) return true;
   char* scrach = br_strv_to_scrach(path);
+#  if !defined(ACCESSPERMS)
+#    define ACCESSPERMS (S_IRWXU|S_IRWXG|S_IRWXO) /* 0777 */
+#  endif
+
   int ret = mkdir(scrach, ACCESSPERMS);
   if (ret == -1) LOGE("Failed to create directory `%s`: %s", scrach, strerror(errno));
   br_scrach_free();

@@ -56,7 +56,7 @@ static const struct
 #if defined(_GLFW_X11)
     { GLFW_PLATFORM_X11, _glfwConnectX11 },
 #endif
-#if defined(HEADLESS)
+#if defined(_GLFW_NULL)
     { GLFW_PLATFORM_X11, _glfwConnectNull },
 #endif
 };

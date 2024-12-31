@@ -72,6 +72,11 @@
 
 #  include "external/glfw/src/egl_context.c"
 #  include "external/glfw/src/osmesa_context.c"
+#  if defined(_GLFW_NULL)
+#    include "external/glfw/src/null_init.c"
+#    include "external/glfw/src/null_monitor.c"
+#    include "external/glfw/src/null_window.c"
+#  endif
 #endif
 
 #if defined(__linux__)

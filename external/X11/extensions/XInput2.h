@@ -30,7 +30,7 @@
 #include "external/X11/Xlib.h"
 #include "external/X11/extensions/XI2.h"
 #include "external/X11/extensions/Xge.h"
-#include "X11/extensions/Xfixes.h"
+#include "external/X11/extensions/Xfixes.h"
 
 /*******************************************************************
  *

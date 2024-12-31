@@ -56,10 +56,16 @@ else ifeq ($(PLATFORM)_$(COMPILER), LINUX_GCC)
 else ifeq ($(PLATFORM)_$(COMPILER), LINUX_COSMO)
 	CC= cosmocc
 else ifeq ($(PLATFORM)_$(COMPILER), LINUX_MUSL)
+	# Wayland doesn't work with MUSL... linux/input.h is missing...
+	HAS_WAYLAND = NO
 	CC= musl-gcc
 	COMMONFLAGS+= -DBR_MUSL
+	# MUSL fails with sanitizer...
+	SANITIZE= NO
 else ifeq ($(PLATFORM)_$(COMPILER), LINUX_ZIG)
 	CC= zig cc
+	# ZIG fails with sanitizer...
+	SANITIZE= NO
 endif
 
 ifeq ($(HEADLESS), YES)
@@ -83,6 +89,23 @@ ifeq ($(PLATFORM), LINUX)
 	ifeq ($(HAS_X11), NO)
 		COMMONFLAGS+= -DBR_NO_X11
 	endif
+	ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), YES_YES_YES)
+		BACKENDS= HWX
+	else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), YES_YES_NO)
+		BACKENDS= HW
+	else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), YES_NO_YES)
+		BACKENDS= HX
+	else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), YES_NO_NO)
+		BACKENDS= H
+	else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), NO_YES_YES)
+		BACKENDS= WX
+	else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), NO_YES_NO)
+		BACKENDS= W
+	else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), NO_NO_YES)
+		BACKENDS= X
+	else
+		$(error This is not valid configuration)
+	endif
 
 else ifeq ($(PLATFORM), WINDOWS)
 	LIBS= -lopengl32 -lgdi32 -lwinmm
@@ -90,6 +113,7 @@ else ifeq ($(PLATFORM), WINDOWS)
 	COMMONFLAGS+= -D_WIN32=1 -DWIN32_LEAN_AND_MEAN
 	SHADERS_HEADER= .generated/shaders.h
 	COMPILER= MINGW
+	BACKENDS= WINDOWS
 
 else ifeq ($(PLATFORM), WEB)
 	CC= $(EMSCRIPTEN)emcc
@@ -99,6 +123,7 @@ else ifeq ($(PLATFORM), WEB)
 	LD_FLAGS+= -sCHECK_NULL_WRITES=0 -sDISABLE_EXCEPTION_THROWING=1 -sFILESYSTEM=0 -sDYNAMIC_EXECUTION=0
 	SHADERS_HEADER= .generated/shaders_web.h
 	COMPILER= EMCC
+	NOBS+= www
 	ifeq ($(TYPE), LIB)
 		COMMONFLAGS+= -DLIB
 		LD_FLAGS+= -sMODULARIZE=1 -sEXPORT_ES6=1
@@ -150,24 +175,6 @@ ifeq ($(TRACY), YES)
 	LD_FLAGS+= -ltracy
 endif
 
-ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), YES_YES_YES)
-	BACKENDS= HWX
-else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), YES_YES_NO)
-	BACKENDS= HW
-else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), YES_NO_YES)
-	BACKENDS= HX
-else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), YES_NO_NO)
-	BACKENDS= H
-else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), NO_YES_YES)
-	BACKENDS= WX
-else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), NO_YES_NO)
-	BACKENDS= W
-else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), NO_NO_YES)
-	BACKENDS= X
-else
-	$(error This is not valid configuration)
-endif
-
 CCFLAGS= $(COMMONFLAGS) -std=gnu11
 ifeq ($(TYPE), EXE)
 	PREFIX_BUILD= $(shell echo 'build/$(PLATFORM)/$(CONFIG)/$(BACKENDS)/$(COMPILER)' | tr '[A-Z]' '[a-z]')
@@ -184,8 +191,9 @@ endif
 
 OBJS= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(SOURCE))
 MAKE_INCLUDES= $(patsubst %.o, %.d, $(OBJS))
-NOBS= $(patsubst %.o, %.nob.dir, $(OBJS))
+NOBS+= $(patsubst %.o, %.nob.dir, $(OBJS))
 NOBS+= bin/.nob.dir
+
 
 LD= $(CC)
 
