@@ -18,7 +18,6 @@ jobs:
     strategy:
       matrix:
         os: [ macos-12, macos-13, macos-14 ]
-        gui: [ raylib, imgui, headless ]
     steps:
     - uses: actions/checkout@v4.1.7
     - uses: goto-bus-stop/setup-zig@v2.2.0

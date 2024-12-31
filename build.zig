@@ -6,17 +6,15 @@ var is_release = true;
 pub fn generate_fonts(b: *std.Build) !*std.Build.Step.Run {
     const full = std.builtin.OptimizeMode.ReleaseSafe;
     const native_target = b.resolveTargetQuery(.{});
-    const native_rl = try build_raylib(b, native_target, full);
     var generateFont = b.addExecutable(.{
         .name = "generate_shaders",
         .target = native_target,
         .optimize = full,
     });
     generateFont.addCSourceFile(.{ .file = b.path("./tools/font_bake.c") });
-    generateFont.linkLibrary(native_rl);
     generateFont.linkLibC();
     var ret = b.addRunArtifact(generateFont);
-    ret.addArg("./content/PlayfairDisplayRegular-ywLOY.ttf");
+    ret.addArg("./content/font.ttf");
     ret.addArg(".generated/default_font.h");
     return ret;
 }
@@ -24,7 +22,6 @@ pub fn generate_fonts(b: *std.Build) !*std.Build.Step.Run {
 pub fn generate_shaders(b: *std.Build) !*std.Build.Step.Run {
     const full = std.builtin.OptimizeMode.ReleaseSafe;
     const native_target = b.resolveTargetQuery(.{});
-    const native_rl = try build_raylib(b, native_target, full);
     var shaderGen = b.addExecutable(.{
         .name = "generate_shaders",
         .target = native_target,
@@ -32,72 +29,26 @@ pub fn generate_shaders(b: *std.Build) !*std.Build.Step.Run {
     });
     shaderGen.addCSourceFile(.{ .file = b.path("./tools/shaders_bake.c") });
     shaderGen.addCSourceFile(.{ .file = b.path("./src/str.c") });
-    shaderGen.addIncludePath(b.path("./external/raylib-5.0/src"));
-    shaderGen.addIncludePath(b.path("./src"));
     shaderGen.addIncludePath(b.path("."));
     shaderGen.linkLibC();
-    shaderGen.linkLibrary(native_rl);
     var ret = b.addRunArtifact(shaderGen);
     ret.addArg("WINDOWS");
     ret.addArg(".generated/shaders.h");
     return ret;
 }
 
-pub fn build_raylib(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) !*std.Build.Step.Compile {
-    const raylib = b.addStaticLibrary(.{
-        .name = b.fmt("raylib_{s}_{s}", .{ @tagName(target.result.os.tag), @tagName(optimize) }),
-        .target = target,
-        .optimize = optimize,
+pub fn pack_icons(b: *std.Build) !*std.Build.Step.Run {
+    const full = std.builtin.OptimizeMode.ReleaseSafe;
+    const native_target = b.resolveTargetQuery(.{});
+    var shaderGen = b.addExecutable(.{
+        .name = "pack_icons",
+        .target = native_target,
+        .optimize = full,
     });
-
-    const raylibSources = .{
-        "./external/raylib-5.0/src/rmodels.c",
-        "./external/raylib-5.0/src/rshapes.c",
-        "./external/raylib-5.0/src/rtext.c",
-        "./external/raylib-5.0/src/rtextures.c",
-        "./external/raylib-5.0/src/utils.c",
-        "./external/raylib-5.0/src/rcore.c",
-    };
-    inline for (raylibSources) |source| {
-        raylib.addCSourceFile(.{ .file = b.path(source) });
-    }
-
-    switch (target.result.os.tag) {
-        .windows => {
-            raylib.addCSourceFile(.{ .file = b.path("./external/raylib-5.0/src/rglfw.c") });
-            raylib.linkSystemLibrary("winmm");
-            raylib.linkSystemLibrary("gdi32");
-            raylib.linkSystemLibrary("opengl32");
-            raylib.defineCMacro("PLATFORM_DESKTOP", null);
-        },
-        .linux, .freebsd => {
-            raylib.linkSystemLibrary("glfw");
-            raylib.defineCMacro("PLATFORM_DESKTOP", null);
-        },
-        .macos => {
-            var raylib_flags_arr: std.ArrayListUnmanaged([]const u8) = .{};
-            raylib_flags_arr.clearRetainingCapacity();
-            try raylib_flags_arr.append(b.allocator, "-ObjC");
-            raylib.addCSourceFile(.{
-                .file = b.path("./external/raylib-5.0/src/rglfw.c"),
-                .flags = raylib_flags_arr.items,
-            });
-            raylib_flags_arr.deinit(b.allocator);
-            raylib.linkFramework("Foundation");
-            raylib.linkFramework("CoreServices");
-            raylib.linkFramework("CoreGraphics");
-            raylib.linkFramework("AppKit");
-            raylib.linkFramework("IOKit");
-            raylib.defineCMacro("PLATFORM_DESKTOP", null);
-        },
-        else => {
-            unreachable();
-        },
-    }
-    raylib.linkLibC();
-    raylib.addIncludePath(b.path("."));
-    raylib.addIncludePath(b.path("./external/glfw/include"));
-    return raylib;
+    shaderGen.addCSourceFile(.{ .file = b.path("./tools/pack_icons.c") });
+    shaderGen.addIncludePath(b.path("."));
+    shaderGen.linkLibC();
+    return b.addRunArtifact(shaderGen);
 }
 
 pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, is_headless: bool) !*std.Build.Step.Compile {
@@ -132,28 +83,28 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
         "./src/smol_mesh.c",
         "./src/str.c",
         "./src/text_renderer.c",
+        "./src/theme.c",
     } });
     exe.addIncludePath(b.path("."));
     exe.addIncludePath(b.path("./src"));
-    exe.addIncludePath(b.path("./external/Tracy"));
     exe.linkLibC();
-    exe.defineCMacro("PLATFORM_DESKTOP", "1");
 
-    if (is_release) {
-        exe.defineCMacro("RELEASE", "1");
+    exe.defineCMacro("_GNU_SOURCE", null);
+    if (false == is_release) {
+        exe.defineCMacro("BR_DEBUG", "1");
+    } else {
         exe.step.dependOn(&(try generate_shaders(b)).step);
     }
 
     switch (is_headless) {
-        false => {
-            exe.defineCMacro("RAYLIB", null);
-        },
+        false => {},
         true => {
             exe.defineCMacro("NUMBER_OF_STEPS", "100");
             exe.defineCMacro("HEADLESS", null);
         },
     }
 
+    exe.step.dependOn(&(try pack_icons(b)).step);
     exe.step.dependOn(&(try generate_fonts(b)).step);
     return exe;
 }

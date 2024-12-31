@@ -192,7 +192,7 @@ endif
 OBJS= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(SOURCE))
 MAKE_INCLUDES= $(patsubst %.o, %.d, $(OBJS))
 NOBS+= $(patsubst %.o, %.nob.dir, $(OBJS))
-NOBS+= bin/.nob.dir
+NOBS+= bin/.nob.dir .generated/.nob.dir
 
 
 LD= $(CC)
@@ -228,6 +228,7 @@ src/shaders.c: $(SHADERS_HEADER)
 
 .PHONY: clean
 clean:
+	test -d .generated && rm .generated -rdf || echo "done"
 	test -d build &&  rm build -rdf || echo "done"
 	test -d bin &&  rm bin -rdf || echo "done"
 	test -d www &&  rm www -rdf || echo "done"
