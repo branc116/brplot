@@ -93,7 +93,7 @@ BR_GL(void, glDepthFunc)(GLenum func);
 
 
 #if defined(HEADLESS)
-#  include "src/headless/gl.c"
+//#  include "src/headless/gl.c"
 #else
 #  include "src/desktop/gl.c"
 #endif

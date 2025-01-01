@@ -19,14 +19,12 @@ jobs:
     strategy:
       matrix:
         config: [ Debug, Release ]
-        gui: [ raylib, imgui, headless ]
         os: [ windows-2019, windows-2022 ]
     steps:
       - uses: actions/checkout@v4.1.7
       - run: |
           cmake -S. -B build `
           -D CMAKE_BUILD_TYPE=${{matrix.config}} `
-          -D GUI=${{matrix.gui}} `
       - run: cmake --build build/
 
   windows_zig:

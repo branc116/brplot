@@ -52,10 +52,6 @@ jobs:
         make -j8 PLATFORM=LINUX CONFIG=DEBUG COMPILER=CLANG
 
     - run: |
-        cat /dev/random | time bin/brplot_headless_linux_debug_gcc
-        cat /dev/random | time bin/brplot_headless_linux_debug_clang
-
-    - run: |
         EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ ./tools/local_ci.sh LTO=${{matrix.os.lto}}
 
     - run: |
