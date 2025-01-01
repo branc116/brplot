@@ -26,10 +26,10 @@ endif ()
 
 add_executable(brplot
   src/main.c           src/help.c        src/data.c           src/smol_mesh.c src/q.c
-  src/read_input.c     src/plotter.c     src/keybindings.c    src/str.c       src/memory.cpp
+  src/read_input.c     src/plotter.c     src/keybindings.c    src/str.c       src/theme.c
   src/resampling2.c    src/graph_utils.c src/shaders.c        src/plot.c      src/permastate.c
   src/gui.c            src/filesystem.c  src/data_generator.c src/platform.c  src/text_renderer.c
-  src/gl.c
+  src/gl.c             src/icons.c
 )
 
 if (MSVC)
@@ -51,15 +51,23 @@ endif ()
 
 add_executable(font_bake tools/font_bake.c)
 add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/.generated/default_font.h
-  COMMAND font_bake content/PlayfairDisplayRegular-ywLOY.ttf ${CMAKE_CURRENT_SOURCE_DIR}/.generated/default_font.h
-  DEPENDS font_bake content/PlayfairDisplayRegular-ywLOY.ttf
+  COMMAND font_bake content/font.ttf ${CMAKE_CURRENT_SOURCE_DIR}/.generated/default_font.h
+  DEPENDS font_bake content/font.ttf
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-target_sources(brplot PUBLIC .generated/default_font.h)
+
+add_executable(pack_icons tools/pack_icons.c)
+target_include_directories(pack_icons PUBLIC .)
+target_link_libraries(pack_icons PUBLIC m)
+file(GLOB icons content/*.png)
+add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/.generated/icons.c ${CMAKE_CURRENT_SOURCE_DIR}/.generated/icons.h
+  COMMAND pack_icons
+  DEPENDS font_bake ${icons}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+target_sources(brplot PUBLIC .generated/icons.h)
 
 if (CMAKE_BUILD_TYPE STREQUAL Debug)
-  target_compile_definitions(brplot PUBLIC DEBUG)
+  target_compile_definitions(brplot PUBLIC BR_DEBUG)
 elseif (CMAKE_BUILD_TYPE STREQUAL Release)
-  target_compile_definitions(brplot PUBLIC RELEASE)
   if (MSVC)
   else ()
     target_compile_options(brplot PUBLIC -fdata-sections -ffunction-sections)
@@ -84,8 +92,10 @@ if (HEADLESS)
 endif ()
 
 if (CMAKE_SYSTEM_NAME STREQUAL Linux)
+  target_link_libraries(brplot dl m)
+  target_compile_definitions(brplot PUBLIC _GNU_SOURCE)
 elseif (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
-  target_include_directories(imgui PUBLIC /usr/local/include)
+  target_link_libraries(brplot dl m)
   target_link_directories(brplot PUBLIC /usr/local/lib /usr/lib)
 elseif (CMAKE_SYSTEM_NAME STREQUAL Windows)
   target_compile_definitions(brplot PUBLIC _WIN32=1 WIN32_LEAN_AND_MEAN=1)

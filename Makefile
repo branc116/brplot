@@ -81,7 +81,7 @@ ifeq ($(PLATFORM), LINUX)
 	ifeq ($(COMPILER), MUSL)
 		LIBS+= -l:libm.a -l:libdl.a -l:libc.a
 	else
-		LIBS+= -lm
+		LIBS+= -lm -ldl
 	endif
 	ifeq ($(HAS_WAYLAND), NO)
 		COMMONFLAGS+= -DBR_NO_WAYLAND
@@ -123,7 +123,7 @@ else ifeq ($(PLATFORM), WEB)
 	LD_FLAGS+= -sCHECK_NULL_WRITES=0 -sDISABLE_EXCEPTION_THROWING=1 -sFILESYSTEM=0 -sDYNAMIC_EXECUTION=0
 	SHADERS_HEADER= .generated/shaders_web.h
 	COMPILER= EMCC
-	NOBS+= www
+	NOBS+= www/.nob.dir
 	ifeq ($(TYPE), LIB)
 		COMMONFLAGS+= -DLIB
 		LD_FLAGS+= -sMODULARIZE=1 -sEXPORT_ES6=1
