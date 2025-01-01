@@ -57,7 +57,10 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/.generated/default_font.h
 
 add_executable(pack_icons tools/pack_icons.c)
 target_include_directories(pack_icons PUBLIC .)
-target_link_libraries(pack_icons PUBLIC m)
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+else ()
+  target_link_libraries(pack_icons PUBLIC m)
+endif ()
 file(GLOB icons content/*.png)
 add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/.generated/icons.c ${CMAKE_CURRENT_SOURCE_DIR}/.generated/icons.h
   COMMAND pack_icons

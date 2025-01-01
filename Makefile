@@ -81,7 +81,7 @@ ifeq ($(PLATFORM), LINUX)
 	ifeq ($(COMPILER), MUSL)
 		LIBS+= -l:libm.a -l:libdl.a -l:libc.a
 	else
-		LIBS+= -lm -ldl
+		LIBS+= -lm -ldl -pthread
 	endif
 	ifeq ($(HAS_WAYLAND), NO)
 		COMMONFLAGS+= -DBR_NO_WAYLAND

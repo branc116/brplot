@@ -129,6 +129,7 @@ pub fn build(b: *std.Build) !void {
 
     const gui_kind = b.option(bool, "Headless", "Build headless") orelse false;
     const all = b.option(bool, "All", "Build all targets") orelse false;
+    std.fs.cwd().makeDir(".generated") catch {};
     if (all) {
         try build_all(b, target);
     } else {
