@@ -89,6 +89,12 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
     exe.addIncludePath(b.path("./src"));
     exe.linkLibC();
 
+    if (target.result.os.tag == .windows) {
+        exe.link("gdi32");
+        exe.link("opengl32");
+        exe.link("winmm");
+    }
+
     exe.defineCMacro("_GNU_SOURCE", null);
     if (false == is_release) {
         exe.defineCMacro("BR_DEBUG", "1");

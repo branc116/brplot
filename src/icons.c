@@ -17,10 +17,11 @@
 #include "src/br_shaders.h"
 #include "src/br_tl.h"
 #include "src/br_math.h"
+#include "src/br_pp.h"
 
 
 #define SCREEN_TO_GL(point, screen) BR_VEC2((float)(point).x / (float)(screen).width * 2.f - 1.f, (float)(point).y / (float)(screen).height * 2.f - 1.f)
-static _Thread_local GLuint icons_id = 0;
+static BR_THREAD_LOCAL GLuint icons_id = 0;
 
 void br_icons_init(br_shader_icon_t* shader) {
   icons_id = brgl_load_texture(br_icons_atlas, br_icons_atlas_width, br_icons_atlas_height, BRGL_TEX_GRAY);
