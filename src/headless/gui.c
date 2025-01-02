@@ -5,9 +5,6 @@
 #include "src/br_smol_mesh.h"
 #include "src/br_text_renderer.h"
 
-#define PORTABLEGL_IMPLEMENTATION
-#include "external/portablegl.h"
-
 
 #ifndef NUMBER_OF_STEPS
 #define NUMBER_OF_STEPS 100
@@ -15,15 +12,7 @@
 
 
 void br_gui_init_specifics_gui(br_plotter_t* br) {
-  br_plot_t plot = { 
-    .kind = br_plot_kind_2d,
-    .graph_screen_rect = BR_EXTENTI(0, 0, 1280, 720),
-    .dd = (br_plot_2d_t) {
-      .zoom = BR_VEC2(1, 1),
-      .offset = {0},
-    }
-  };
-  br_da_push_t(int, br->plots, plot);
+  br_plotter_add_plot_2d(br);
 }
 
 void br_plotter_draw(br_plotter_t* br) {

@@ -159,7 +159,7 @@ brui_stack_el_t brui_stack_el(br_extent_t max) {
     return (brui_stack_el_t) {
       .cur = BR_VEC2(4, 4),
       .max = max,
-      .content = { 0 },
+      .content = BR_SIZE(0, 0),
       .padding = BR_VEC4(4, 4, 4, 4),
       .font_size = 26,
       .font_color = br_theme.colors.btn_txt_inactive,

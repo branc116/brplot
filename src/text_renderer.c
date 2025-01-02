@@ -7,7 +7,7 @@
 #include "src/br_math.h"
 #include "src/br_str.h"
 
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__CLANG__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsign-conversion"
 #  pragma GCC diagnostic ignored "-Wconversion"
@@ -22,7 +22,7 @@
 #define STB_DS_IMPLEMENTATION
 #include "external/stb_ds.h"
 
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__CLANG__)
 #  pragma GCC diagnostic pop
 #endif
 
@@ -279,8 +279,6 @@ br_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x, float y, floa
   return BR_EXTENT(min_x - x_off, min_y - y_off, max_x - min_x, max_y - min_y);
 }
 
-void br_text_background(br_extent_t extent, br_color_t color, float padding, float z) {
-}
 // gcc -fsanitize=address -ggdb main.c -lm -lraylib && ./a.out
 // gcc -O3 main.c -lm -lraylib && ./a.out
 // C:\cygwin64\bin\gcc.exe -O3 main.c -lm

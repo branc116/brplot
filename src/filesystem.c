@@ -67,8 +67,8 @@ bool br_fs_mkdir(br_strv_t path) { }
 bool br_fs_exists(br_strv_t path) { }
 #elif defined(_WIN32) || defined(__CYGWIN__)
 #elif defined(__EMSCRIPTEN__)
-bool br_fs_mkdir(br_strv_t path) { return false; }
-bool br_fs_exists(br_strv_t path) { return false; }
+bool br_fs_mkdir(br_strv_t path) { (void)path; return false; }
+bool br_fs_exists(br_strv_t path) { (void)path; return false; }
 #endif
 
 #if !defined(IMGUI)

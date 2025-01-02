@@ -5,12 +5,6 @@
 
 #include <string.h>
 
-#if defined(HEADLESS)
-#  define BR_GL(ret_type, name) ret_type name
-#else
-#  define BR_GL(ret_type, name) static ret_type (*name)
-#endif
-
 #define GL_COLOR_BUFFER_BIT 0x00004000
 #define GL_DEPTH_BUFFER_BIT 0x00000100
 #define GL_TEXTURE_MAG_FILTER 0x2800
@@ -24,79 +18,9 @@
 #define GL_MAX_FRAMEBUFFER_HEIGHT 0x9316
 
 typedef void (*glDebugProc)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
-BR_GL(GLuint, glCreateProgram)(void);
-BR_GL(GLuint, glCreateShader)(GLenum type);
-BR_GL(void, glShaderSource)(GLuint shader, GLsizei count, const GLchar *const* string, const GLint * length);
-BR_GL(void, glAttachShader)(GLuint program, GLuint shader);
-BR_GL(void, glLinkProgram)(GLuint program);
-BR_GL(void, glLinkProgram)(GLuint program);
-BR_GL(void, glGetProgramiv)(GLuint program, GLenum pname, GLint* params);
-BR_GL(void, glGetProgramInfoLog)(GLuint program, GLsizei bufSize, GLsizei* length, GLchar* infoLog);
-BR_GL(void, glDeleteProgram)(GLuint program);
-BR_GL(void, glDeleteShader)(GLuint shader);
-BR_GL(void, glCompileShader)(GLuint shader);
-BR_GL(void, glGetShaderiv)(GLuint shader, GLenum pname, GLint* params);
-BR_GL(void, glGetShaderInfoLog)(GLuint shader, GLsizei bufSize, GLsizei* length, GLchar* infoLog);
-BR_GL(void, glBlendFunc)(GLenum sfactor, GLenum dfactor);
-BR_GL(void, glBlendFuncSeparate)(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
-BR_GL(void, glBlendEquation)(GLenum mode);
-BR_GL(void, glEnable)(GLenum cap);
-BR_GL(void, glDisable)(GLenum cap);
-BR_GL(void, glViewport)(GLint x, GLint y, GLsizei width, GLsizei height);
-BR_GL(void, glTexImage2D)(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void * pixels);
-BR_GL(void, glBindTexture)(GLenum target, GLuint texture);
-BR_GL(void, glDeleteTextures)(GLsizei n, const GLuint * textures);
-BR_GL(void, glPixelStorei)(GLenum pname, GLint param);
-BR_GL(void, glGenTextures)(GLsizei n, GLuint* textures);
-BR_GL(void, glTexParameteriv)(GLenum target, GLenum pname, const GLint* params);
-BR_GL(void, glFramebufferParameteri)(GLenum target, GLenum pname, GLint param);
-//BR_GL(void, glTexParameterfv)(GLenum target, GLenum pname, const GLfloat * params);
-BR_GL(void, glGenBuffers)(GLsizei n, GLuint* buffers);
-BR_GL(void, glBindBuffer)(GLenum target, GLuint buffer);
-BR_GL(void, glBufferData)(GLenum target, GLsizeiptr size, void const* data, GLenum usage);
-BR_GL(void, glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* pointer);
-BR_GL(void, glUseProgram)(GLuint program);
-BR_GL(void, glGenVertexArrays)(GLsizei n, GLuint* arrays);
-BR_GL(void, glBindVertexArray)(GLuint array);
-BR_GL(void, glBufferData)(GLenum target, GLsizeiptr size, void const* data, GLenum usage);
-BR_GL(void, glDeleteVertexArrays)(GLsizei n, GLuint const* arrays);
-BR_GL(void, glBufferSubData)(GLenum target, GLintptr offset, GLsizeiptr size, void const* data);
-BR_GL(void, glDeleteBuffers)(GLsizei n, GLuint const* buffers);
-BR_GL(void, glDeleteShader)(GLuint shader);
-BR_GL(GLint, glGetAttribLocation)(GLuint program, GLchar const* name);
-BR_GL(GLint, glGetUniformLocation)(GLuint program, GLchar const* name);
-BR_GL(void, glActiveTexture)(GLenum texture);
-BR_GL(void, glUniform1i)(GLint location, GLint v0);
-BR_GL(void, glUniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, GLfloat const* value);
-BR_GL(void, glUniform1fv)(GLint location, GLsizei count, GLfloat const* value);
-BR_GL(void, glUniform2fv)(GLint location, GLsizei count, GLfloat const* value);
-BR_GL(void, glUniform3fv)(GLint location, GLsizei count, GLfloat const* value);
-BR_GL(void, glUniform4fv)(GLint location, GLsizei count, GLfloat const* value);
-BR_GL(void, glDrawArrays)(GLenum mode, GLint first, GLsizei count);
-BR_GL(void, glEnableVertexAttribArray)(GLuint index);
-BR_GL(void, glClearColor)(GLfloat r, GLfloat g, GLfloat b, GLfloat a);
-BR_GL(void, glClear)(GLbitfield en);
-BR_GL(void, glTexParameteri)(GLenum target, GLenum pname, GLint param);
-BR_GL(void, glFramebufferTexture)(GLenum target, GLenum attachment, GLuint texture, GLint level);
-BR_GL(void, glDrawBuffers)(GLsizei n, GLenum const* bufs);
-BR_GL(void, glBindFramebuffer)(GLenum target, GLuint framebuffer);
-BR_GL(void, glDebugMessageCallback)(glDebugProc callback, const void * userParam);
-BR_GL(void, glGenFramebuffers)(GLsizei n, GLuint * framebuffers);
-BR_GL(void, glDeleteFramebuffers)(GLsizei n, GLuint *framebuffers);
-BR_GL(void, glFramebufferTexture2D)(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
-BR_GL(void, glGenRenderbuffers)(GLsizei n, GLuint *renderbuffers);
-BR_GL(void, glDeleteRenderbuffers)(GLsizei n, GLuint *renderbuffers);
-BR_GL(void, glFramebufferRenderbuffer)(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
-BR_GL(void, glBindRenderbuffer)(GLenum target, GLuint renderbuffer);
-BR_GL(void, glRenderbufferStorage)(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
-BR_GL(void, glDepthFunc)(GLenum func);
 
 
-#if defined(HEADLESS)
-//#  include "src/headless/gl.c"
-#else
-#  include "src/desktop/gl.c"
-#endif
+#include ".generated/gl.c"
 
 unsigned int brgl_load_shader(const char* vs, const char* fs, int* ok) {
   GLuint vsid = brgl_compile_shader(vs, GL_VERTEX_SHADER);

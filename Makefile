@@ -64,6 +64,7 @@ else ifeq ($(PLATFORM)_$(COMPILER), LINUX_MUSL)
 	SANITIZE= NO
 else ifeq ($(PLATFORM)_$(COMPILER), LINUX_ZIG)
 	CC= zig cc
+	WARNING_FLAGS+= -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-newline-eof -Wno-gnu-zero-variadic-macro-arguments
 	# ZIG fails with sanitizer...
 	SANITIZE= NO
 endif
@@ -118,7 +119,7 @@ else ifeq ($(PLATFORM), WINDOWS)
 else ifeq ($(PLATFORM), WEB)
 	CC= $(EMSCRIPTEN)emcc
 	COMMONFLAGS+= -DGRAPHICS_API_OPENGL_ES3=1
-	WARNING_FLAGS+= -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-newline-eof
+	WARNING_FLAGS+= -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-newline-eof -Wno-gnu-zero-variadic-macro-arguments
 	LD_FLAGS= -sWASM_BIGINT -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH -sUSE_GLFW=3 -sUSE_WEBGL2=1 -sGL_ENABLE_GET_PROC_ADDRESS --shell-file=src/web/minshell.html
 	LD_FLAGS+= -sCHECK_NULL_WRITES=0 -sDISABLE_EXCEPTION_THROWING=1 -sFILESYSTEM=0 -sDYNAMIC_EXECUTION=0
 	SHADERS_HEADER= .generated/shaders_web.h
@@ -172,7 +173,8 @@ endif
 
 ifeq ($(TRACY), YES)
 	COMMONFLAGS+= -DTRACY_ENABLE=1
-	LD_FLAGS+= -ltracy
+	LD_FLAGS+=
+	LIBS+= /usr/lib/libTracyClient.a
 endif
 
 CCFLAGS= $(COMMONFLAGS) -std=gnu11
@@ -216,13 +218,14 @@ $(PREFIX_BUILD)/src/%.o: src/%.c
 	$(CC) $(CCFLAGS) $(WARNING_FLAGS) -c -o $@ $<
 
 $(PREFIX_BUILD)/%.o: %.c
-	$(CC) $(CCFLAGS) -c -o $@ $<
+	$(CC) $(CCFLAGS) $(WARNING_FLAGS) -c -o $@ $<
 
 $(OBJS): $(NOBS)
 
 src/main.c: .generated/icons.h .generated/icons.c
 src/gui.c: .generated/icons.h .generated/icons.c
 src/icons.c: .generated/icons.h .generated/icons.c
+src/gl.c: .generated/gl.c
 src/help.c: .generated/default_font.h
 src/shaders.c: $(SHADERS_HEADER)
 
@@ -264,7 +267,6 @@ npm-imgui:
 	   npm publish || cd ../..) && cd ../..)
 
 .generated/default_font.h: bin/font_bake content/font.ttf
-	test -d .generated || mkdir .generated
 	bin/font_bake  content/font.ttf > .generated/default_font.h
 
 bin/font_bake: tools/font_bake.c $(NOBS)
@@ -277,10 +279,16 @@ $(SHADERS_HEADER): ./src/shaders/* bin/shaders_bake
 	bin/shaders_bake $(PLATFORM) > $(SHADERS_HEADER)
 
 .generated/icons.h .generated/icons.c: bin/pack_icons content/*.png
-	bin/pack_icons
+	@bin/pack_icons > /dev/null
 
 bin/pack_icons: tools/pack_icons.c $(NOBS)
 	$(NATIVE_CC) -I. -O0 -o bin/pack_icons tools/pack_icons.c -lm
+
+.generated/gl.c: bin/gl_gen
+	bin/gl_gen
+
+bin/gl_gen: tools/gl_gen.c $(NOBS)
+	$(NATIVE_CC) -I. -O0 -ggdb -o bin/gl_gen tools/gl_gen.c src/str.c
 
 .PHONY: bench
 bench: bin/bench
@@ -320,5 +328,5 @@ $(PREFIX_BUILD)/%.json:%.c
 -include $(MAKE_INCLUDES)
 
 %nob.dir:
-	mkdir -p $(dir $@)
-	touch $@
+	@mkdir -p $(dir $@)
+	@touch $@

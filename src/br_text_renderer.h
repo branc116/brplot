@@ -39,7 +39,6 @@ br_strv_t br_text_renderer_fit(br_text_renderer_t* r, br_size_t size, int font_s
 br_extent_t br_text_renderer_push(br_text_renderer_t* r, float x, float y, float z, int font_size, br_color_t color, const char* text);
 br_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, float x, float y, float z, int font_size, br_color_t color, br_strv_t text);
 br_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x, float y, float z, int font_size, br_color_t color, br_strv_t str, br_text_renderer_ancor_t ancor);
-void br_text_background(br_extent_t extent, br_color_t color, float padding, float z);
 
 #if defined(__cplusplus)
 }
