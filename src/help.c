@@ -3,7 +3,6 @@
 #include "src/br_text_renderer.h"
 #include "src/br_math.h"
 #include "src/br_tl.h"
-#include "src/br_theme.h"
 
 #include ".generated/default_font.h"
 
@@ -41,7 +40,7 @@ br_vec2_t help_measure_text(const char* txt, int font_size) {
 void help_draw_fps(br_text_renderer_t* r, int posX, int posY) {
     br_color_t color = BR_LIME;
     int round = 5;
-    int fps = (int)((float)brtl_get_fps() + ((float)round / 2.f));
+    int fps = (int)((float)brtl_fps() + ((float)round / 2.f));
     fps = fps / round * round;
 
     if ((fps < 30) && (fps >= 15)) color = BR_ORANGE;

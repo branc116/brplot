@@ -301,43 +301,43 @@ void br_plotter_end_drawing(br_plotter_t* br) {
   glfwSetWindowShouldClose(br->win.glfw, GLFW_FALSE);
 }
 
-br_vec2_t brtl_get_scroll(void) {
+br_vec2_t brtl_mouse_scroll(void) {
   return stl_br->mouse.scroll;
 }
 
-br_vec2_t brtl_mouse_get_pos(void) {
+br_vec2_t brtl_mouse_pos(void) {
   return stl_br->mouse.pos;
 }
 
-br_vec2_t brtl_mouse_get_delta(void) {
+br_vec2_t brtl_mouse_delta(void) {
   return stl_br->mouse.delta;
 }
 
-float brtl_get_time(void) {
+float brtl_time(void) {
   return  (float)glfwGetTime();
 }
 
-int brtl_get_fps(void) {
+int brtl_fps(void) {
   return (int)(1.f/(float)stl_br->time.frame);
 }
 
-bool brtl_mouse_is_down_l(void) {
+bool brtl_mousel_down(void) {
   return stl_br->mouse.down.left;
 }
 
-bool brtl_mouse_is_down_r(void) {
+bool brtl_mouser_down(void) {
   return stl_br->mouse.down.right;
 }
 
-bool brtl_mouse_is_pressed_l(void) {
+bool brtl_mousel_pressed(void) {
   return stl_br->mouse.pressed.left;
 }
 
-bool brtl_mouse_is_pressed_r(void) {
+bool brtl_mouser_pressed(void) {
   return stl_br->mouse.pressed.right;
 }
 
-bool brtl_key_is_down(int key) {
+bool brtl_key_down(int key) {
   int code = glfwGetKeyScancode(key);
   if (code < 0 || code >= 64) {
     LOGW("Key %d, scancode %d is not valid", key, code);
@@ -345,7 +345,7 @@ bool brtl_key_is_down(int key) {
   return stl_br->key.down[code];
 }
 
-bool brtl_key_is_pressed(int key) {
+bool brtl_key_pressed(int key) {
   int code = glfwGetKeyScancode(key);
   if (code < 0 || code >= 64) {
     LOGW("Key %d, scancode %d is not valid", key, code);
@@ -373,7 +373,7 @@ br_sizei_t brtl_window_size(void) {
   return s;
 }
 
-void brtl_window_set_size(int width, int height) {
+void brtl_window_size_set(int width, int height) {
   glfwSetWindowSize(stl_br->win.glfw, width, height);
 }
 

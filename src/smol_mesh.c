@@ -188,9 +188,9 @@ void smol_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
 void smol_mesh_img_draw(br_plot_t* plot, br_shaders_t* shaders) {
   shaders->img->uvs.image_uv = brgl_framebuffer_to_texture(plot->texture_id);
   shaders->img->uvs.resolution_uv = br_vec2i_tof(brtl_window_size().vec);
-  shaders->img->uvs.mouse_uv = br_vec2_sub(brtl_mouse_get_pos(), br_vec2i_tof(plot->graph_screen_rect.pos));
-  shaders->img->uvs.size_uv = br_vec2i_tof(plot->graph_screen_rect.size.vec);
-  br_extent_t ex = BR_EXTENTI_TOF(plot->graph_screen_rect);
+  shaders->img->uvs.mouse_uv = br_vec2_sub(brtl_mouse_pos(), br_vec2i_tof(plot->cur_extent.pos));
+  shaders->img->uvs.size_uv = br_vec2i_tof(plot->cur_extent.size.vec);
+  br_extent_t ex = BR_EXTENTI_TOF(plot->cur_extent);
   br_shader_img_push_quad(shaders->img, (br_shader_img_el_t[4]) {
       { .pos = BR_VEC42(ex.pos, BR_VEC2(0, 0)) },
       { .pos = BR_VEC42(br_extent_tr(ex), BR_VEC2(1, 0)) },

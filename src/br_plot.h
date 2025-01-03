@@ -21,19 +21,6 @@ typedef enum {
 #define BR_PLOT_KIND_T
 #endif
 
-typedef enum {
-  br_drag_mode_none = 0,
-  br_drag_mode_left = 1,
-  br_drag_mode_right = 2,
-  br_drag_mode_top = 4,
-  br_drag_mode_bottom = 8,
-  br_drag_mode_move = 16,
-  br_drag_mode_left_top = br_drag_mode_left | br_drag_mode_top,
-  br_drag_mode_right_top = br_drag_mode_right | br_drag_mode_top,
-  br_drag_mode_left_bottom = br_drag_mode_left | br_drag_mode_bottom,
-  br_drag_mode_right_bottom = br_drag_mode_right | br_drag_mode_bottom,
-} br_drag_mode_t;
-
 typedef struct br_plot_2d_t {
   // graph_rect is in the graph coordinates.
   //            That is if you zoom in and out, graph_rect will change.
@@ -57,13 +44,8 @@ typedef struct br_plot_t {
     int* arr;
     int len, cap; 
   } groups_to_show;
-  // graph_screen_rect is in the screen coordinates.
-  //                   That is if you resize the whole plot, or move the plot around the screen this value will change.
-  br_extenti_t graph_screen_rect;
-  br_drag_mode_t drag_mode;
-  br_vec2_t drag_point;
-  br_extenti_t drag_rect_before;
-  br_extenti_t drag_parent_extent;
+  br_extenti_t cur_extent;
+  int extent_handle;
 
   unsigned int texture_id;
 

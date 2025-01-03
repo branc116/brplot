@@ -434,6 +434,14 @@ static inline br_vec2_t br_extent_tr2(br_extent_t extent, float x, float y) {
   return BR_VEC2(extent.x + extent.width - x, extent.y + y);
 }
 
+static inline bool br_extenti_eq(br_extenti_t a, br_extenti_t b) {
+  if (a.x != b.x) return false;
+  if (a.y != b.y) return false;
+  if (a.width != b.width) return false;
+  if (a.height != b.height) return false;
+  return true;
+}
+
 // ------------------br_mat_t--------------------
 static inline br_mat_t br_mat_perspective(float fovY, float aspect, float nearPlane, float farPlane) {
   br_mat_t result = { 0 };

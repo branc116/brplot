@@ -32,7 +32,7 @@ KEY_BINDINGS(X)
 
 void br_keybinding_handle_keys(br_plotter_t* br, br_plot_t* plot) {
   br_keybinding_ctrl_shift_t meta = { brtl_key_ctrl(), brtl_key_shift() };
-#define X(key, kind, name) if (((kind) == KEY_PRESS && brtl_key_is_pressed(key)) || ((kind) == KEY_DOWN && brtl_key_is_down(key))) name(br, plot, meta);
+#define X(key, kind, name) if (((kind) == KEY_PRESS && brtl_key_pressed(key)) || ((kind) == KEY_DOWN && brtl_key_down(key))) name(br, plot, meta);
   KEY_BINDINGS(X)
 #undef X
 }

@@ -1,5 +1,4 @@
 #include "src/br_resampling2.h"
-#include "src/resampling2_internal.h"
 #include "src/br_pp.h"
 #include "src/br_data.h"
 #include "src/br_plot.h"
@@ -15,19 +14,19 @@
 
 #define RESAMPLING_NODE_MAX_LEN 64
 
-float min4(float a, float b, float c, float d) {
+static inline float min4(float a, float b, float c, float d) {
   return fminf(fminf(a, b), fminf(c, d));
 }
 
-float min6(float a, float b, float c, float d, float e, float f) {
+static inline float min6(float a, float b, float c, float d, float e, float f) {
   return fminf(min4(a, b, c, d), fminf(e, f));
 }
 
-float max4(float a, float b, float c, float d) {
+static inline float max4(float a, float b, float c, float d) {
   return fmaxf(fmaxf(a, b), fmaxf(c, d));
 }
 
-float max6(float a, float b, float c, float d, float e, float f) {
+static inline float max6(float a, float b, float c, float d, float e, float f) {
   return fmaxf(max4(a, b, c, d), fmaxf(e, f));
 }
 
@@ -402,7 +401,7 @@ static void resampling2_draw33(resampling2_nodes_3d_allocator_t const* const nod
 void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, br_shaders_t* shaders) {
   //ZoneScopedN("resampline2_draw0");
 
-  double start = brtl_get_time();
+  double start = brtl_time();
   if (res->common.len == 0) return;
   switch (pg->kind) {
     case br_data_kind_2d: {
@@ -421,7 +420,7 @@ void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, 
     }
     default: assert(0);
   }
-  res->render_time = brtl_get_time() - start;
+  res->render_time = brtl_time() - start;
   ++res->draw_count;
 }
 

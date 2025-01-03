@@ -171,7 +171,7 @@ error:
 }
 
 void br_dagens_handle(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots, double until) {
-  while (brtl_get_time() < until) br_dagens_handle_once(datas, dagens, plots);
+  while (brtl_time() < until) br_dagens_handle_once(datas, dagens, plots);
 }
 
 void br_dagens_free(br_dagens_t* dagens) {

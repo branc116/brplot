@@ -12,23 +12,23 @@ typedef struct br_text_renderer_t br_text_renderer_t;
 extern "C" {
 #endif
 
-br_vec2_t brtl_get_scroll(void);
-br_vec2_t brtl_mouse_get_pos(void);
-br_vec2_t brtl_mouse_get_delta(void);
-float brtl_get_time(void);
-int brtl_get_fps(void);
-bool brtl_mouse_is_down_l(void);
-bool brtl_mouse_is_down_r(void);
-bool brtl_mouse_is_pressed_l(void);
-bool brtl_mouse_is_pressed_r(void);
-bool brtl_key_is_down(int key);
-bool brtl_key_is_pressed(int key);
+br_vec2_t brtl_mouse_scroll(void);
+br_vec2_t brtl_mouse_pos(void);
+br_vec2_t brtl_mouse_delta(void);
+bool brtl_mousel_down(void);
+bool brtl_mouser_down(void);
+bool brtl_mousel_pressed(void);
+bool brtl_mouser_pressed(void);
+float brtl_time(void);
+int brtl_fps(void);
+bool brtl_key_down(int key);
+bool brtl_key_pressed(int key);
 bool brtl_key_ctrl(void);
 bool brtl_key_alt(void);
 bool brtl_key_shift(void);
 
 br_sizei_t brtl_window_size(void);
-void brtl_window_set_size(int width, int height);
+void brtl_window_size_set(int width, int height);
 void brtl_window_close(void);
 
 br_extenti_t brtl_viewport(void);

@@ -13,7 +13,7 @@ static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* sha
 static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders);
 
 void br_plot_create_texture(br_plot_t* br) {
-  br->texture_id = brgl_create_framebuffer(br->graph_screen_rect.width, br->graph_screen_rect.height);
+  br->texture_id = brgl_create_framebuffer(br->cur_extent.width, br->cur_extent.height);
 }
 
 void br_plot_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
@@ -24,66 +24,7 @@ void br_plot_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
   }
 }
 
-static inline bool br_plot_is_good_extent(br_extenti_t e, br_extenti_t parent) {
-  return e.x > parent.x &&
-    e.x + e.width < parent.x + parent.width &&
-    e.y > parent.y &&
-    e.y + e.height < parent.y + parent.height &&
-    e.height > 100 &&
-    e.width > 100;
-}
-
 void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t groups, br_vec2_t mouse_pos) {
-  if (plot->drag_mode == br_drag_mode_none) {
-    if (brtl_mouse_is_down_l()) {
-      br_drag_mode_t new_mode = br_drag_mode_none;
-      br_vec2_t pos = mouse_pos;
-      br_extent_t ex = BR_EXTENTI_TOF(plot->graph_screen_rect);
-      float slack = 10.f;
-      if (br_col_vec2_extent(ex, pos)) {
-        if      (ex.x + slack > pos.x)             new_mode |= br_drag_mode_left;
-        else if (ex.x + ex.width  - slack < pos.x) new_mode |= br_drag_mode_right;
-        if      (ex.y + slack > pos.y)             new_mode |= br_drag_mode_top;
-        else if (ex.y + ex.height - slack < pos.y) new_mode |= br_drag_mode_bottom;
-        if (new_mode == br_drag_mode_none) new_mode = br_drag_mode_move;
-      }
-      if (new_mode != br_drag_mode_none) {
-        plot->drag_point = pos;
-        plot->drag_mode = new_mode;
-        plot->drag_rect_before = plot->graph_screen_rect;
-      }  
-    }
-  } else {
-    if (brtl_mouse_is_down_l()) {
-      br_extenti_t new_extent = plot->graph_screen_rect;
-      if (plot->drag_mode == br_drag_mode_move) {
-        new_extent.pos = br_vec2i_sub(plot->drag_rect_before.pos, br_vec2_toi(br_vec2_sub(plot->drag_point, mouse_pos)));
-      } else {
-        if (plot->drag_mode & br_drag_mode_left) {
-          float dif = plot->drag_point.x - mouse_pos.x;
-          new_extent.width = plot->drag_rect_before.width + (int)dif;
-          new_extent.x = plot->drag_rect_before.x - (int)dif;
-        } else if (plot->drag_mode & br_drag_mode_right) {
-          float dif = plot->drag_point.x - mouse_pos.x;
-          new_extent.width = plot->drag_rect_before.width - (int)dif;
-        }
-        if (plot->drag_mode & br_drag_mode_top) {
-          float dif = plot->drag_point.y - mouse_pos.y;
-          new_extent.y = plot->drag_rect_before.y - (int)dif;
-          new_extent.height = plot->drag_rect_before.height + (int)dif;
-        } else if (plot->drag_mode & br_drag_mode_bottom) {
-          float dif = plot->drag_point.y - mouse_pos.y;
-          new_extent.height = plot->drag_rect_before.height - (int)dif;
-        }
-      }
-      if (true  == br_plot_is_good_extent(new_extent,              plot->drag_parent_extent) ||
-          false == br_plot_is_good_extent(plot->graph_screen_rect, plot->drag_parent_extent)) plot->graph_screen_rect = new_extent;
-      else plot->drag_point = br_vec2_sub(plot->drag_point, br_vec2i_tof(br_vec2i_sub(plot->graph_screen_rect.pos, new_extent.pos)));
-    } else {
-      plot->drag_mode = br_drag_mode_none;
-    }
-  }
-
   switch (plot->kind) {
     case br_plot_kind_2d: {
       if (br_plot_update_variables_2d(plot, groups, mouse_pos))
@@ -120,14 +61,14 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_ve
     // TODO: Move this to br_keybindings.c
     // Stuff related to zoom
     {
-      float mw = -brtl_get_scroll().y;
+      float mw = -brtl_mouse_scroll().y;
       br_vec2_t old = plot->dd.mouse_pos;
       bool any = false;
       if (false == help_near_zero(mw)) {
         float mw_scale = (1 + mw/10);
-        if (brtl_key_is_down(BR_KEY_X)) {
+        if (brtl_key_down(BR_KEY_X)) {
           plot->dd.zoom.x *= mw_scale;
-        } else if (brtl_key_is_down(BR_KEY_Y)) {
+        } else if (brtl_key_down(BR_KEY_Y)) {
           plot->dd.zoom.y *= mw_scale;
         } else {
           plot->dd.zoom.x *= mw_scale;
@@ -135,10 +76,10 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_ve
         }
         any = true;
       }
-      if (brtl_key_is_down(BR_KEY_X) && brtl_key_shift()) any = true, plot->dd.zoom.x *= 1.1f;
-      if (brtl_key_is_down(BR_KEY_Y) && brtl_key_shift()) any = true, plot->dd.zoom.y *= 1.1f;
-      if (brtl_key_is_down(BR_KEY_X) && brtl_key_ctrl())  any = true, plot->dd.zoom.x *= .9f;
-      if (brtl_key_is_down(BR_KEY_Y) && brtl_key_ctrl())  any = true, plot->dd.zoom.y *= .9f;
+      if (brtl_key_down(BR_KEY_X) && brtl_key_shift()) any = true, plot->dd.zoom.x *= 1.1f;
+      if (brtl_key_down(BR_KEY_Y) && brtl_key_shift()) any = true, plot->dd.zoom.y *= 1.1f;
+      if (brtl_key_down(BR_KEY_X) && brtl_key_ctrl())  any = true, plot->dd.zoom.x *= .9f;
+      if (brtl_key_down(BR_KEY_Y) && brtl_key_ctrl())  any = true, plot->dd.zoom.y *= .9f;
       if (any) {
         br_plot_update_context(plot, mouse_pos);
         br_vec2_t now = plot->dd.mouse_pos;
@@ -147,15 +88,15 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_ve
       }
     }
     if (false && plot->jump_around) {
-      float t = brtl_get_time();
-      plot->graph_screen_rect.x += (int)(100.f * sinf(t));
-      plot->graph_screen_rect.y += (int)(77.f * cosf(t));
-      plot->graph_screen_rect.width += (int)(130.f * sinf(t));
-      plot->graph_screen_rect.height += (int)(177.f * cosf(t));
+      float t = brtl_time();
+      plot->cur_extent.x += (int)(100.f * sinf(t));
+      plot->cur_extent.y += (int)(77.f * cosf(t));
+      plot->cur_extent.width += (int)(130.f * sinf(t));
+      plot->cur_extent.height += (int)(177.f * cosf(t));
     }
-    if (brtl_mouse_is_down_r()) {
-      br_vec2_t delt = brtl_mouse_get_delta();
-      float height = (float)plot->graph_screen_rect.height;
+    if (brtl_mouser_down()) {
+      br_vec2_t delt = brtl_mouse_delta();
+      float height = (float)plot->cur_extent.height;
       plot->dd.offset.x -= plot->dd.zoom.x*delt.x/height;
       plot->dd.offset.y += plot->dd.zoom.y*delt.y/height;
       return false;
@@ -168,8 +109,8 @@ bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, br_ve
   (void)groups; (void)mouse_pos;
   assert(plot->kind == br_plot_kind_3d);
   if (!plot->mouse_inside_graph) return false;
-  if (brtl_mouse_is_down_r()) {
-    br_vec2_t m = brtl_mouse_get_delta();
+  if (brtl_mouser_down()) {
+    br_vec2_t m = brtl_mouse_delta();
     br_vec2_t md = br_vec2_scale(BR_VEC2(m.x, m.y), -0.003f);
     br_vec3_t zeroed = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
     br_vec3_t rotated_up = br_vec3_rot(zeroed, plot->ddd.up, md.x);
@@ -181,7 +122,7 @@ bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, br_ve
     return false;
   }
   {
-    float mw = brtl_get_scroll().y;
+    float mw = brtl_mouse_scroll().y;
     float mw_scale = (1 + mw/10);
     br_vec3_t zeroed = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
     float len = br_vec3_len(zeroed);
@@ -193,7 +134,7 @@ bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, br_ve
 
 
 void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
-  br_extent_t ex = BR_EXTENTI_TOF(plot->graph_screen_rect);
+  br_extent_t const ex = BR_EXTENTI_TOF(plot->cur_extent);
   switch (plot->kind) {
     case br_plot_kind_2d: {
       TracyCFrameMarkStart("update_shader_values_2d");
@@ -207,7 +148,7 @@ void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
       shaders->grid->uvs.screen_uv = ex.size.vec;
       shaders->line->uvs.zoom_uv = plot->dd.zoom;
       shaders->line->uvs.offset_uv = plot->dd.offset;
-      shaders->line->uvs.screen_uv = BR_SIZEI_TOF(plot->graph_screen_rect).vec;
+      shaders->line->uvs.screen_uv = ex.size.vec;
       TracyCFrameMarkEnd("update_shader_values_2d");
     } break;
     case br_plot_kind_3d: {
@@ -232,11 +173,11 @@ void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
 }
 
 br_vec2_t br_plot_2d_get_mouse_position(br_plot_t* plot, br_vec2_t screen_mouse_pos) {
-  br_extenti_t ex = plot->graph_screen_rect;
+  br_extenti_t ex = plot->cur_extent;
   br_vec2i_t mouse_pos = BR_VEC2_TOI(screen_mouse_pos);
   br_vec2i_t mp_in_graph = BR_VEC2I_SUB(mouse_pos, ex.pos);
   br_vec2i_t a = BR_VEC2I_SCALE(mp_in_graph, 2);
-  br_vec2_t b = br_vec2i_tof(BR_VEC2I_SUB(plot->graph_screen_rect.size.vec, a));
+  br_vec2_t b = br_vec2i_tof(BR_VEC2I_SUB(plot->cur_extent.size.vec, a));
   br_vec2_t c = br_vec2_scale(b, 1.f/(float)ex.height);
   return  BR_VEC2(
     -c.x*plot->dd.zoom.x/2.f + plot->dd.offset.x,
@@ -245,7 +186,7 @@ br_vec2_t br_plot_2d_get_mouse_position(br_plot_t* plot, br_vec2_t screen_mouse_
 }
 
 void br_plot_update_context(br_plot_t* plot, br_vec2_t mouse_pos) {
-  br_extent_t ex = BR_EXTENTI_TOF(plot->graph_screen_rect);
+  br_extent_t ex = BR_EXTENTI_TOF(plot->cur_extent);
   plot->mouse_inside_graph = br_col_vec2_extent(ex, BR_VEC2(mouse_pos.x, mouse_pos.y));
   if (plot->kind == br_plot_kind_2d) {
     float aspect = ex.width/ex.height;

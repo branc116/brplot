@@ -58,7 +58,7 @@ BR_API void br_plotter_init(br_plotter_t* br) {
 
 BR_API void br_plotter_resize(br_plotter_t* br, float width, float height) {
   (void)br;
-  brtl_window_set_size((int)width, (int)height);
+  brtl_window_size_set((int)width, (int)height);
 }
 
 BR_API br_datas_t* br_plotter_get_br_datas(br_plotter_t* br) {
@@ -99,7 +99,7 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
   int x = 400;
   br_plot_t plot = {
     .groups_to_show = { 0 },
-    .graph_screen_rect = BR_EXTENTI( x, 50, br->win.size.width - x - 60, br->win.size.height - 110 ),
+    .cur_extent = BR_EXTENTI( x, 50, br->win.size.width - x - 60, br->win.size.height - 110 ),
     .follow = false,
     .jump_around = false,
     .mouse_inside_graph = false,
@@ -120,7 +120,7 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
 int br_plotter_add_plot_3d(br_plotter_t* br) {
   br_plot_t plot = {
     .groups_to_show = { 0 },
-    .graph_screen_rect = BR_EXTENTI(500, 50, br->win.size.width - 500 - 60, br->win.size.height - 110),
+    .cur_extent = BR_EXTENTI(500, 50, br->win.size.width - 500 - 60, br->win.size.height - 110),
     .follow = false,
     .jump_around = false,
     .mouse_inside_graph = false,
@@ -193,11 +193,6 @@ void br_plotter_export_csv(br_plotter_t const* br, char const * path) {
   fclose(file);
 }
 
-void br_plotter_update_context(br_plotter_t* br, br_vec2_t mouse_pos) {
-// TODO 2D/3D
-  for (int i = 0; i < br->plots.len; ++i) br_plot_update_context(&br->plots.arr[i], mouse_pos);
-}
-
 void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
   // TODO 2D/3D
   //assert(plot->kind == br_plot_kind_2d);
@@ -205,7 +200,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
 
   TracyCFrameMarkStart("draw_grid_numbers");
   br_extent_t r = plot->dd.graph_rect;
-  br_extent_t gr = BR_EXTENTI_TOF(plot->graph_screen_rect);
+  br_extent_t gr = BR_EXTENTI_TOF(plot->cur_extent);
   br_size_t sz = gr.size;
   int font_size = (int)(18.f * context.font_scale);
   char* scrach = br_scrach_get(128);

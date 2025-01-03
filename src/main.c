@@ -6,6 +6,7 @@
 #include "src/br_gl.h"
 #include "src/br_icons.h"
 #include "src/br_theme.h"
+#include "src/br_ui.h"
 
 void br_gui_init_specifics_gui(br_plotter_t* plotter);
 static void* main_gui(void* plotter) {
@@ -20,15 +21,16 @@ static void* main_gui(void* plotter) {
   } else {
     for (int i = 0; i < br->plots.len; ++i) {
       br_plot_t* p = &br->plots.arr[i];
-      br->plots.arr[i].texture_id = brgl_create_framebuffer(p->graph_screen_rect.width, p->graph_screen_rect.height);
+      br->plots.arr[i].texture_id = brgl_create_framebuffer(p->cur_extent.width, p->cur_extent.height);
     }
   }
   br_icons_init(br->shaders.icon);
   br_theme_dark();
+  brui_resizable_init();
   while(br->should_close == false) {
     TracyCFrameMark;
     br_plotter_draw(br);
-    br_dagens_handle(&br->groups, &br->dagens, &br->plots, brtl_get_time() + 0.010);
+    br_dagens_handle(&br->groups, &br->dagens, &br->plots, brtl_time() + 0.010);
     TracyCFrameMarkStart("plotter_frame_end");
     br_plotter_frame_end(br);
     TracyCFrameMarkEnd("plotter_frame_end");
