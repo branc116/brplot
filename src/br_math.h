@@ -13,6 +13,7 @@
 #define BR_SIZE(WIDTH, HEIGHT) ((br_size_t) { .width = (WIDTH), .height = (HEIGHT) })
 #define BR_SIZEI(WIDTH, HEIGHT) ((br_sizei_t) { .width = (WIDTH), .height = (HEIGHT) })
 #define BR_SIZEI_TOF(SZ) ((br_size_t) { .width = (float)((SZ).width), .height = (float)((SZ).height) })
+
 #define BR_EXTENTI_TOF(E) ((br_extent_t) { .arr = { (float)(E).arr[0], (float)(E).arr[1], (float)(E).arr[2], (float)(E).arr[3] } })
 #define BR_EXTENT_ASPECT(E) ((E).height / (E).width)
 #define BR_EXTENTI_ASPECT(E) ((float)(E).height / (float)(E).width)
@@ -21,6 +22,8 @@
 #define BR_EXTENTPS(POS, SIZE) (br_extent_t) { .size = (SIZE), .pos = (POS) }
 #define BR_EXTENTI(X, Y, WIDTH, HEIGHT) (br_extenti_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
 #define BR_EXTENTI2(POS, SIZE) (br_extenti_t) { { .pos = POS, .size = SIZE } }
+#define BR_EXTENT_(EX) (EX).x, (EX).y, (EX).width, (EX).height
+
 #define BR_BB(Xm, Ym, XM, YM) (br_bb_t) { .arr = { (Xm), (Ym), (XM), (YM) } }
 #define BR_BB_TOEX(BB) (br_extent_t) { .arr = { (BB).min_x, (BB).min_y, (BB).max_x - (BB).min_x, (BB).max_y - (BB).min_y } }
 #define BR_VEC4(X, Y, Z, W) ((br_vec4_t) { .x = (X), .y = (Y), .z = (Z), .w = (W) }) 
@@ -45,6 +48,9 @@
 #define BR_DARKPURPLE BR_COLOR(80, 10, 80, 255)
 
 #define BR_PI 3.14159265358979323846f
+#define BR_Z_MAX 2000000
+#define BR_Z_TO_GL(Z) (1 - 2.f*((float)Z/(float)BR_Z_MAX))
+#define BR_SCREEN_TO_GL(point, screen) BR_VEC2((float)(point).x / (float)(screen).width * 2.f - 1.f, (float)(point).y / (float)(screen).height * 2.f - 1.f)
 
 typedef struct {
   union {

@@ -71,6 +71,7 @@ typedef struct br_plotter_t {
   br_hotreload_state_t hot_state;
 #endif
   int active_plot_index;
+  int menu_extent_handle;
 
   bool loaded;
 #if BR_HAS_SHADER_RELOAD

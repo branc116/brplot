@@ -31,7 +31,7 @@ typedef enum {
 typedef struct {
   br_extenti_t cur_extent;
   brui_ancor_t ancor;
-  float z;
+  int z;
   bool hidden;
   int parent;
 } brui_resizable_t;
@@ -42,14 +42,21 @@ void brui_end(void);
 br_size_t brui_text(br_strv_t strv);
 bool brui_button(br_strv_t text);
 bool brui_checkbox(br_strv_t text, bool* checked);
+void brui_img(int texture_id);
+bool brui_button_icon(br_sizei_t size, br_extent_t icon);
+
 void brui_push(br_extent_t max);
 void brui_pop(void);
-void brui_z_set(float z);
+
+void brui_ancor_set(brui_ancor_t ancor);
+void brui_z_set(int z);
 
 void brui_resizable_init(void);
-brui_resizable_t* brui_resizable_new(br_extenti_t init_extent, int parent);
+int brui_resizable_new(br_extenti_t init_extent, int parent);
 void brui_resizable_update(void);
 brui_resizable_t* brui_resizable_get(int id);
+void brui_resizable_push(int id);
+void brui_resizable_pop(void);
 
 void brui_resizable_save(FILE* file);
 void brui_resizable_load(FILE* file);

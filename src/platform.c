@@ -182,8 +182,8 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
     glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_FALSE);
     //glfwWindowHint(GLFW_SAMPLES, 1);
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
 #if defined(__APPLE__)

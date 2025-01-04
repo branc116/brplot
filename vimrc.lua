@@ -1,9 +1,5 @@
-vim.keymap.set("n", "<F7>", function()
-  pcall(vim.api.nvim_exec2(":term make PLATFORM=LINUX CONFIG=DEBUG GUI=IMGUI", {output= false}));
-end)
-
 vim.keymap.set("n", "<F6>", function()
-  vim.cmd[[term make CONFIG=DEBUG GUI=RAYLIB && ./brplot]]
+  vim.cmd[[term make CONFIG=DEBUG && ./brplot]]
 end)
 
 vim.keymap.set("n", "<F7>", function()

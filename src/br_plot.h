@@ -53,7 +53,6 @@ typedef struct br_plot_t {
   bool jump_around;
   bool mouse_inside_graph;
   bool is_deleted;
-  bool is_visible;
   bool draw_settings;
 
   br_plot_kind_t kind;

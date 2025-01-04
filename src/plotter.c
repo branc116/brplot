@@ -9,6 +9,7 @@
 #include "src/br_tl.h"
 #include "src/br_pp.h"
 #include "src/br_theme.h"
+#include "src/br_ui.h"
 
 #include <math.h>
 #include <string.h>
@@ -103,7 +104,6 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
     .follow = false,
     .jump_around = false,
     .mouse_inside_graph = false,
-    .is_visible = true,
     .kind = br_plot_kind_2d,
     .dd =  {
       .zoom = BR_VEC2(1.f, 1.f),
@@ -112,6 +112,7 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
     }
   };
   br_plot_create_texture(&plot);
+  plot.extent_handle = brui_resizable_new(BR_EXTENTI(x, 50, br->win.size.width - x - 60, br->win.size.height - 110), 0);
   br_da_push_t(int, (br->plots), plot);
   br->any_2d = true;
   return br->plots.len - 1;
@@ -135,6 +136,7 @@ int br_plotter_add_plot_3d(br_plotter_t* br) {
     }
   };
   br_plot_create_texture(&plot);
+  plot.extent_handle = brui_resizable_new(BR_EXTENTI(500, 50, br->win.size.width - 500 - 60, br->win.size.height - 110), 0);
   br_da_push_t(int, (br->plots), plot);
   br->any_3d = true;
   return br->plots.len - 1;

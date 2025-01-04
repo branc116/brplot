@@ -1,13 +1,14 @@
-#include "br_plotter.h"
-#include "br_str.h"
-#include "br_plot.h"
-#include "br_pp.h"
-#include "br_filesystem.h"
-#include "br_resampling2.h"
-#include "br_permastate.h"
-#include "br_data.h"
-#include "br_data_generator.h"
-#include "br_da.h"
+#include "src/br_plotter.h"
+#include "src/br_str.h"
+#include "src/br_plot.h"
+#include "src/br_pp.h"
+#include "src/br_filesystem.h"
+#include "src/br_resampling2.h"
+#include "src/br_permastate.h"
+#include "src/br_data.h"
+#include "src/br_data_generator.h"
+#include "src/br_da.h"
+#include "src/br_ui.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -240,6 +241,10 @@ bool br_permastate_load_plots(FILE* file, br_plotter_t* br) {
   }
   if (1 != fread(&read_crc, sizeof(read_crc), 1, file))                          goto error;
   if (calculated_crc != read_crc)                                                goto error;
+
+  for (size_t i = 0; i < plots_len; ++i) {
+    plots[i].extent_handle = brui_resizable_new(plots[i].cur_extent, 0);
+  }
 
   return true;
 

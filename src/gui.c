@@ -22,25 +22,7 @@ void br_gui_init_specifics_gui(br_plotter_t* br) {
   }
 }
 
-bool br_icon_button(br_extent_t pos, br_extent_t atlas, bool hide_when_not_near, float z) {
-  if (br_col_vec2_extent(pos, brtl_mouse_pos())) {
-    br_color_t fg = br_theme.colors.btn_txt_hovered;
-    br_color_t bg = br_theme.colors.btn_hovered;
-    br_icons_draw(brtl_shaders()->icon, pos, atlas, bg, fg, z);
-    return brtl_mousel_pressed();
-  } else {
-    br_color_t fg = br_theme.colors.btn_txt_inactive;
-    br_color_t bg = br_theme.colors.btn_inactive;
-    if (hide_when_not_near) {
-      float dist2 = br_vec2_dist2(pos.pos, brtl_mouse_pos());
-      if (dist2 < 10000) {
-        fg.a = (unsigned char)((float)fg.a * (10000.f - dist2) / 10000.f);
-        bg.a = (unsigned char)((float)bg.a * (10000.f - dist2) / 10000.f);
-        br_icons_draw(brtl_shaders()->icon, pos, atlas, bg, fg, z);
-      }
-    } else br_icons_draw(brtl_shaders()->icon, pos, atlas, bg, fg, z);
-    return false;
-  }
+bool br_icon_button(br_extent_t pos, br_extent_t atlas, bool hide_when_not_near, int z) {
 }
 
 BR_API void br_plotter_draw(br_plotter_t* br) {
@@ -48,8 +30,9 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   brui_resizable_update();
   for (int i = 0; i < br->plots.len; ++i) {
 #define PLOT (&br->plots.arr[i])
-    if (false == PLOT->is_visible) continue;
-    PLOT->cur_extent = brui_resizable_get(PLOT->extent_handle)->cur_extent;
+    brui_resizable_t* r = brui_resizable_get(PLOT->extent_handle);
+    if (true == r->hidden) continue;
+    PLOT->cur_extent = r->cur_extent;
     br_plot_update_variables(br, PLOT, br->groups, brtl_mouse_pos());
     br_plot_update_context(PLOT, brtl_mouse_pos());
     br_plot_update_shader_values(PLOT, &br->shaders);
@@ -75,47 +58,78 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   help_draw_fps(br->text, 0, 0);
 
   for (int i = 0; i < br->plots.len; ++i) {
-    if (false == PLOT->is_visible) continue;
-    smol_mesh_img_draw(PLOT, &br->shaders);
-    br_shaders_draw_all(br->shaders);
-
-    if (PLOT->draw_settings == false) {
-      br_extent_t icon_ex = BR_EXTENT((float)PLOT->cur_extent.x + (float)PLOT->cur_extent.width - 32.f - 5.f, (float)PLOT->cur_extent.y + 5.f, 32.f, 32.f);
-      if (br_icon_button(icon_ex, br_icons.menu.size_32, true, 1)) {
-          PLOT->draw_settings = true;
-      }
-    } else {
-      br_extent_t p = BR_EXTENTI_TOF(PLOT->cur_extent);
-      br_extent_t panel = BR_EXTENTPS(br_extent_tr2(p, 200, 0), BR_SIZE(200, p.height));
-      br_icons_draw(br->shaders.icon, panel, BR_EXTENT(0,0,0,0), br_theme.colors.plot_menu_color, br_theme.colors.plot_menu_color, 3);
-      if (br_icon_button(BR_EXTENTPS(br_extent_tl2(panel, 4, 4), BR_SIZE(32, 32)), br_icons_y_mirror(br_icons.back.size_32), false, 4)) {
-          PLOT->draw_settings = false;
-      }
-      brui_begin();
-        brui_z_set(12.f);
-        brui_push(BR_EXTENTPS(br_extent_tr2(p, 190, 40), BR_SIZE(180, p.height - 50)));
-          brui_checkbox(br_strv_from_literal("Follow"), &PLOT->follow);
-          char* c = br_scrach_get(4096);
-          for (size_t k = 0; k < br->groups.len; ++k) {
-            bool is_shown = false;
-            br_data_t* data = &br->groups.arr[k];
-            for (int j = 0; j < PLOT->groups_to_show.len; ++j) {
-              if (PLOT->groups_to_show.arr[j] == data->group_id) {
-                is_shown = true;
-                break;
+    brui_resizable_t* r = brui_resizable_get(PLOT->extent_handle);
+    if (true == r->hidden) continue;
+    brui_begin();
+      brui_resizable_push(PLOT->extent_handle);
+        brui_img(PLOT->texture_id);
+        if (PLOT->draw_settings == false) {
+          brui_ancor_set(brui_ancor_top_right);
+          if (brui_button_icon(BR_SIZEI(32, 32), br_icons.menu.size_32)) PLOT->draw_settings = true;
+        } else {
+          brui_resizable_push(PLOT->menu_extent_handle);
+            char* c = br_scrach_get(4096);
+            if (brui_button_icon(BR_SIZEI(32, 32), br_icons.back.size_32)) PLOT->draw_settings = false;
+            brui_checkbox(br_strv_from_literal("Follow", &PLOT->follow));
+            for (size_t k = 0; k < br->groups.len; ++k) {
+              bool is_shown = false;
+              br_data_t* data = &br->groups.arr[k];
+              for (int j = 0; j < PLOT->groups_to_show.len; ++j) {
+                if (PLOT->groups_to_show.arr[j] == data->group_id) {
+                  is_shown = true;
+                  break;
+                }
+              }
+              sprintf(c, "Data #%d", data->group_id);
+              if (brui_checkbox(br_strv_from_c_str(c), &is_shown)) {
+                if (false == is_shown) br_da_remove(PLOT->groups_to_show, data->group_id);
+                else br_da_push_t(int, PLOT->groups_to_show, data->group_id);
               }
             }
+          brui_resizable_pop();
+        }
+      brui_resizable_pop();
+    brui_end();
 
-            sprintf(c, "Data #%d", data->group_id);
-            if (brui_checkbox(br_strv_from_c_str(c), &is_shown)) {
-              if (false == is_shown) br_da_remove(PLOT->groups_to_show, data->group_id);
-              else br_da_push_t(int, PLOT->groups_to_show, data->group_id);
-            }
-          }
-          br_scrach_free();
-        brui_pop();
-      brui_end();
-    }
+//    if (PLOT->draw_settings == false) {
+//      br_extent_t icon_ex = BR_EXTENT((float)PLOT->cur_extent.x + (float)PLOT->cur_extent.width - 32.f - 5.f, (float)PLOT->cur_extent.y + 5.f, 32.f, 32.f);
+//      if (br_icon_button(icon_ex, br_icons.menu.size_32, true, 1)) {
+//          PLOT->draw_settings = true;
+//      }
+//    } else {
+//      br_extent_t p = BR_EXTENTI_TOF(PLOT->cur_extent);
+//      br_extent_t panel = BR_EXTENTPS(br_extent_tr2(p, 200, 0), BR_SIZE(200, p.height));
+//      br_icons_draw(br->shaders.icon, panel, BR_EXTENT(0,0,0,0), br_theme.colors.plot_menu_color, br_theme.colors.plot_menu_color, 3);
+//      brui_resizable_push(PLOT->menu_extent_handle);
+//      if (br_icon_button(BR_EXTENTPS(br_extent_tl2(panel, 4, 4), BR_SIZE(32, 32)), br_icons_y_mirror(br_icons.back.size_32), false, 4)) {
+//          PLOT->draw_settings = false;
+//      }
+//      brui_begin();
+//        brui_z_set(12);
+//        brui_push(BR_EXTENTPS(br_extent_tr2(p, 190, 40), BR_SIZE(180, p.height - 50)));
+//          brui_checkbox(br_strv_from_literal("Follow"), &PLOT->follow);
+//          char* c = br_scrach_get(4096);
+//          for (size_t k = 0; k < br->groups.len; ++k) {
+//            bool is_shown = false;
+//            br_data_t* data = &br->groups.arr[k];
+//            for (int j = 0; j < PLOT->groups_to_show.len; ++j) {
+//              if (PLOT->groups_to_show.arr[j] == data->group_id) {
+//                is_shown = true;
+//                break;
+//              }
+//            }
+//
+//            sprintf(c, "Data #%d", data->group_id);
+//            if (brui_checkbox(br_strv_from_c_str(c), &is_shown)) {
+//              if (false == is_shown) br_da_remove(PLOT->groups_to_show, data->group_id);
+//              else br_da_push_t(int, PLOT->groups_to_show, data->group_id);
+//            }
+//          }
+//          br_scrach_free();
+//        brui_pop();
+//      brui_end();
+//    }
+    brui_resizable_pop();
 #undef PLOT
   }
   draw_left_panel(br);
@@ -125,11 +139,14 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
 static float sp = 0.f;
 static void draw_left_panel(br_plotter_t* br) {
   brui_begin();
-    brui_push(BR_EXTENT2(BR_VEC2(10,40), BR_SIZE(160, (float)brtl_viewport().height/2)));
+    brui_push(BR_EXTENTI_TOF(brui_resizable_get(br->menu_extent_handle)->cur_extent));
       char* scrach = br_scrach_get(4096);
       for (int i = 0; i < br->plots.len; ++i) {
         sprintf(scrach, "%s Plot %d", br->plots.arr[i].kind == br_plot_kind_2d ? "2D" : "3D", i);
-        brui_checkbox(br_strv_from_c_str(scrach), &br->plots.arr[i].is_visible);
+        brui_resizable_t* r = brui_resizable_get(br->plots.arr[i].extent_handle);
+        bool is_visible = !r->hidden;
+        brui_checkbox(br_strv_from_c_str(scrach), &is_visible);
+        r->hidden = !is_visible;
       }
       br_scrach_free();
       brui_checkbox(br_strv_from_literal("Debug"), &context.debug_bounds);

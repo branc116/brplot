@@ -15,6 +15,7 @@ void main() {
   float sum = v0.x;
   float dx = dFdx(sum);
   vec3 c = sub_pix_aa_map * dx * sub_pix_aa_scale + sum;
+  c = vec3(1.0);
 
   out_color = vs_color * vec4(c, v0.r);
 }

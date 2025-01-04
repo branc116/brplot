@@ -20,7 +20,6 @@
 #include "src/br_pp.h"
 
 
-#define SCREEN_TO_GL(point, screen) BR_VEC2((float)(point).x / (float)(screen).width * 2.f - 1.f, (float)(point).y / (float)(screen).height * 2.f - 1.f)
 static BR_THREAD_LOCAL GLuint icons_id = 0;
 
 void br_icons_init(br_shader_icon_t* shader) {
@@ -29,15 +28,16 @@ void br_icons_init(br_shader_icon_t* shader) {
 }
 
 // TODO: extent to bb
-void br_icons_draw(br_shader_icon_t* shader, br_extent_t screen, br_extent_t atlas, br_color_t bg, br_color_t fg, float z) {
+void br_icons_draw(br_shader_icon_t* shader, br_extent_t screen, br_extent_t atlas, br_color_t bg, br_color_t fg, int z) {
   br_sizei_t res = brtl_window_size();
   br_vec4_t bgv = BR_COLOR_TO4(bg);
   br_vec4_t fgv = BR_COLOR_TO4(fg);
+  float gl_z = BR_Z_TO_GL(z);
   br_shader_icon_push_quad(shader, (br_shader_icon_el_t[4]) {
-    { .pos = BR_VEC42(br_vec2_stog(screen.pos, res), atlas.pos), .bg  = bgv, .fg = fgv, .z = z },
-    { .pos = BR_VEC42(br_vec2_stog(br_extent_tr(screen), res), br_extent_tr(atlas)), .bg  = bgv, .fg = fgv, .z = z },
-    { .pos = BR_VEC42(br_vec2_stog(br_extent_br(screen), res), br_extent_br(atlas)), .bg  = bgv, .fg = fgv, .z = z },
-    { .pos = BR_VEC42(br_vec2_stog(br_extent_bl(screen), res), br_extent_bl(atlas)), .bg  = bgv, .fg = fgv, .z = z },
+    { .pos = BR_VEC42(br_vec2_stog(screen.pos, res), atlas.pos), .bg  = bgv, .fg = fgv, .z = gl_z },
+    { .pos = BR_VEC42(br_vec2_stog(br_extent_tr(screen), res), br_extent_tr(atlas)), .bg  = bgv, .fg = fgv, .z = gl_z },
+    { .pos = BR_VEC42(br_vec2_stog(br_extent_br(screen), res), br_extent_br(atlas)), .bg  = bgv, .fg = fgv, .z = gl_z },
+    { .pos = BR_VEC42(br_vec2_stog(br_extent_bl(screen), res), br_extent_bl(atlas)), .bg  = bgv, .fg = fgv, .z = gl_z },
   });
 }
 
