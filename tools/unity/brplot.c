@@ -21,6 +21,8 @@
 #include "src/gl.c"
 #include "src/text_renderer.c"
 #include "src/resampling2.c"
+#include "src/theme.c"
+#include "src/ui.c"
 
 // cc -I. -o brploto tools/unity/brplot.c -lm
 
