@@ -62,7 +62,7 @@ static batches_t batches;
 inline static size_t min_s(size_t a, size_t b) { return a < b ? a : b; }
 
 // INTERPRETER
-static void br_dagens_handle_once(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots);
+static bool br_dagens_handle_once(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots);
 static void br_dagen_handle(br_dagen_t* dagen, br_data_t* data, br_datas_t datas);
 static size_t expr_len(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index);
 static size_t expr_read_n(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index, size_t offset, size_t n, float* data);
@@ -171,7 +171,10 @@ error:
 }
 
 void br_dagens_handle(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots, double until) {
-  while (brtl_time() < until) br_dagens_handle_once(datas, dagens, plots);
+  for (size_t i = 0; i < dagens->len; ++i) {
+    dagens->arr[i].state = br_dagen_state_inprogress;
+  }
+  while (brtl_time() < until && br_dagens_handle_once(datas, dagens, plots));
 }
 
 void br_dagens_free(br_dagens_t* dagens) {
@@ -186,11 +189,12 @@ void br_dagens_free(br_dagens_t* dagens) {
   batches.max_len = 0;
 }
 
-static void br_dagens_handle_once(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots) {
+static bool br_dagens_handle_once(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots) {
+  bool any = false;
   for (size_t i = 0; i < dagens->len;) {
     br_dagen_t* cur = &dagens->arr[i];
     br_data_t* d = br_data_get1(*datas, cur->group_id);
-    if (NULL == cur || NULL == d) cur->state = br_dagen_state_failed;
+    if (NULL == d) cur->state = br_dagen_state_failed;
     else br_dagen_handle(cur, d, *datas);
     switch (cur->state) {
       case br_dagen_state_failed: {
@@ -198,10 +202,12 @@ static void br_dagens_handle_once(br_datas_t* datas, br_dagens_t* dagens, br_plo
         br_da_remove_at(*dagens, i);
       } break;
       case br_dagen_state_finished: br_da_remove_at(*dagens, i); break;
-      case br_dagen_state_inprogress: ++i; break;
+      case br_dagen_state_inprogress: any = true; ++i; break;
+      case br_dagen_state_paused: ++i; break;
       default: BR_ASSERT(0);
     }
   }
+  return any;
 }
 
 static void br_dagen_handle(br_dagen_t* dagen, br_data_t* data, br_datas_t datas) {
@@ -260,7 +266,10 @@ error:
             dagen->state = br_dagen_state_failed;
           }
           min_len -= read_index;
-          if (min_len == 0) return;
+          if (min_len == 0) {
+            dagen->state = br_dagen_state_paused;
+            return;
+          }
           read_per_batch = min_s(read_per_batch, min_len);
           float* out_xs = &data->dd.xs[read_index];
           float* out_ys = &data->dd.ys[read_index];
