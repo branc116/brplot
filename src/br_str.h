@@ -29,6 +29,8 @@ extern "C" {
 #define br_strv_sub1(s, start) ((br_strv_t) { .str = s.str + (start), .len = s.len - (start) })
 #endif
 
+#define BR_STRV(STR, LEN) ((br_strv_t) { .str = (STR), .len = (LEN) })
+
 
 typedef struct br_str_t {
   char* str;
@@ -65,6 +67,7 @@ char*      br_strv_to_c_str(br_strv_t s);
 void       br_strv_to_c_str1(br_strv_t s, char* out_s);
 br_strv_t  br_strv_from_c_str(const char* s);
 int        br_strv_to_int(br_strv_t str);
+br_strv_t  br_strv_trim_zeros(br_strv_t buff);
 
 #if defined(BR_RELEASE)
 char*      br_scrach_get(size_t len);
