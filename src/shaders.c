@@ -46,7 +46,9 @@ BR_ALL_SHADERS(X, NOP2, X_BUF)
 
 #define X_BUF(NAME, LEN) \
   shader->NAME ## _vbo_id = brgl_load_vbo(shader->NAME ## _vbo, LEN * shader->cap * 3 * (int)sizeof(float), true); \
-  brgl_set_vattr((uint32_t)shader->NAME ## _loc, LEN, GL_FLOAT, 0, 0, 0);
+  brgl_enable_vbo(shader->NAME ## _vbo_id); \
+  brgl_set_vattr((uint32_t)shader->NAME ## _loc, LEN, GL_FLOAT, 0, 0, 0); \
+  brgl_enable_vattr((uint32_t)shader->NAME ## _loc);
 #define X(NAME, CAP, U_VEC, BUFF) \
   inline static void br_shader_ ## NAME ## _upload(br_shader_ ## NAME ## _t* shader) { \
     shader->vao_id = brgl_load_vao(); \
@@ -132,21 +134,15 @@ BR_ALL_SHADERS(X, X_VEC, NOP2)
 #undef X
 #undef X_VEC
 
-#define X_BUF(NAME, LEN) \
-  brgl_enable_vbo(shader->NAME ## _vbo_id); \
-  brgl_set_vattr((uint32_t)shader->NAME ## _loc, LEN, GL_FLOAT, 0, 0, 0); \
-  brgl_enable_vattr((uint32_t)shader->NAME ## _loc);
 #define X(NAME, CAP, U_VEC, BUFF) \
   void br_shader_ ## NAME ## _draw(br_shader_ ## NAME ## _t* shader) { \
     brgl_enable_shader((uint32_t)shader->id); \
     br_shader_ ## NAME ## _update_us(shader); \
     br_shader_ ## NAME ## _update_vbs(shader); \
     brgl_enable_vao(shader->vao_id); \
-    BUFF \
     brgl_draw_vao(0, shader->len*3); \
-    brgl_disable_vao(); \
   }
-BR_ALL_SHADERS(X, NOP2, X_BUF)
+BR_ALL_SHADERS(X, NOP2, NOP2)
 #undef X
 #undef X_BUF
 
@@ -183,7 +179,9 @@ void br_shaders_free(br_shaders_t shaders) {
 #define X_B(NAME, T) \
   el_size = (int)sizeof(el[0].NAME) / (int)sizeof(float); \
   for (int i = 0; i < el_size; ++i) { \
-    shader->NAME ## _vbo[el_size * (shader->len * 3 + k) + i] = ((float*)&(el[k].NAME))[i]; \
+    for (int k = 0; k < 3; ++k) { \
+      shader->NAME ## _vbo[el_size * (shader->len * 3 + k) + i] = ((float*)&(el[k].NAME))[i]; \
+    } \
   }
 #define X(NAME, CAP, V, B) \
 void br_shader_ ## NAME ## _push_tri(br_shader_ ## NAME ## _t *shader, br_shader_ ## NAME ## _el_t el[3]) { \
@@ -192,9 +190,7 @@ void br_shader_ ## NAME ## _push_tri(br_shader_ ## NAME ## _t *shader, br_shader
     shader->len = 0; \
   } \
   int el_size = 0; \
-  for (int k = 0; k < 3; ++k) { \
     B \
-  } \
   ++shader->len; \
 }
 BR_ALL_SHADERS(X, NOP2, X_B)
