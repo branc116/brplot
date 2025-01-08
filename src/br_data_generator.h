@@ -4,6 +4,7 @@
 
 typedef enum {
   br_dagen_state_inprogress,
+  br_dagen_state_paused,
   br_dagen_state_finished,
   br_dagen_state_failed,
 } br_dagen_state_t;

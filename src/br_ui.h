@@ -1,6 +1,7 @@
 #pragma once
 #include "src/br_math.h"
 #include "src/br_str.h"
+#include "src/br_text_renderer.h"
 
 typedef enum {
   brui_drag_mode_none = 0,
@@ -40,14 +41,17 @@ void brui_begin(void);
 void brui_end(void);
 
 br_size_t brui_text(br_strv_t strv);
+void brui_new_lines(int n);
 bool brui_button(br_strv_t text);
 bool brui_checkbox(br_strv_t text, bool* checked);
-void brui_img(int texture_id);
+void brui_img(unsigned int texture_id);
 bool brui_button_icon(br_sizei_t size, br_extent_t icon);
 
 void brui_push(br_extent_t max);
 void brui_pop(void);
 
+void brui_text_size_set(int size);
+void brui_text_align_set(br_text_renderer_ancor_t ancor);
 void brui_ancor_set(brui_ancor_t ancor);
 void brui_z_set(int z);
 

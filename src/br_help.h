@@ -10,6 +10,10 @@ static inline int maxi32(int a, int b) {
   return a > b ? a : b;
 }
 
+static inline int mini32(int a, int b) {
+  return a < b ? a : b;
+}
+
 static inline size_t minui64(size_t a, size_t b) {
   return a < b ? a : b;
 }

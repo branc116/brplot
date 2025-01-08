@@ -11,6 +11,7 @@
 #define BR_VEC2I_SCALE(V, B) ((br_vec2i_t) { .x = (V).x * (B), .y = (V).y * (B) })
 #define BR_VEC3_TOC(V, A) ((br_color_t) { .r = (unsigned char)((V).x * 255.f), .g = (unsigned char)((V).y * 255.f), .b = (unsigned char)((V).z * 255.f), .a = (A) })
 #define BR_SIZE(WIDTH, HEIGHT) ((br_size_t) { .width = (WIDTH), .height = (HEIGHT) })
+#define BR_SIZE_TOI(SZ) ((br_sizei_t) { .width = (int)((SZ).width), .height = (int)((SZ).height) })
 #define BR_SIZEI(WIDTH, HEIGHT) ((br_sizei_t) { .width = (WIDTH), .height = (HEIGHT) })
 #define BR_SIZEI_TOF(SZ) ((br_size_t) { .width = (float)((SZ).width), .height = (float)((SZ).height) })
 
@@ -48,8 +49,8 @@
 #define BR_DARKPURPLE BR_COLOR(80, 10, 80, 255)
 
 #define BR_PI 3.14159265358979323846f
-#define BR_Z_MAX 2000000
-#define BR_Z_TO_GL(Z) (1 - 2.f*((float)Z/(float)BR_Z_MAX))
+#define BR_Z_MAX 100000
+#define BR_Z_TO_GL(__Z) (1 - 2.f*((float)(__Z)/(float)BR_Z_MAX))
 #define BR_SCREEN_TO_GL(point, screen) BR_VEC2((float)(point).x / (float)(screen).width * 2.f - 1.f, (float)(point).y / (float)(screen).height * 2.f - 1.f)
 
 typedef struct {
@@ -203,6 +204,10 @@ static inline br_vec2i_t br_vec2_toi(br_vec2_t v) {
 
 static inline br_vec2_t br_vec2_scale(br_vec2_t v, float s) {
   return ((br_vec2_t) { .x = v.x * s, .y = v.y * s });
+}
+
+static inline br_vec2_t br_vec2_add(br_vec2_t a, br_vec2_t b) {
+  return BR_VEC2(a.x + b.x, a.y + b.y);
 }
 
 static inline br_vec2_t br_vec2_adds(br_vec2_t a, br_size_t b) {
