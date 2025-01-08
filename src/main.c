@@ -14,7 +14,6 @@ static void* main_gui(void* plotter) {
   br_plotter_t* br = (br_plotter_t*)plotter;
   br_plotter_init_specifics_platform(br, 1280, 720);
   brui_resizable_init();
-  br->menu_extent_handle = brui_resizable_new(BR_EXTENTI(10, 40, 160, brtl_viewport().height/2), 0); 
   if (use_permastate) br->loaded = br_permastate_load(br);
   if (false == br->loaded) {
     br_datas_deinit(&br->groups);
@@ -26,6 +25,7 @@ static void* main_gui(void* plotter) {
       br->plots.arr[i].texture_id = brgl_create_framebuffer(p->cur_extent.width, p->cur_extent.height);
     }
   }
+  br->menu_extent_handle = brui_resizable_new(BR_EXTENTI(10, 40, 160, brtl_viewport().height/2), 0); 
   br_icons_init(br->shaders.icon);
   br_theme_dark();
   while(br->should_close == false) {
