@@ -9,31 +9,11 @@
 #include <string.h>
 #include <stdio.h>
 
-void help_trim_zeros(char * buff) {
-  size_t sl = strlen(buff);
-  for (int i = (int)sl; i >= 0; --i) {
-    if (buff[i] == '0' || buff[i] == (char)0) buff[i] = (char)0;
-    else if (buff[i] == '.') {
-      buff[i] = 0;
-      break;
-    }
-    else break;
-  }
-  if (buff[0] == '-' && buff[1] == '0' && buff[2] == (char)0) {
-    buff[0] = '0'; buff[1] = (char)0;
-  }
-}
-
 void help_draw_text(br_text_renderer_t* r, char const* text, br_vec2_t pos, int font_size, br_color_t color) {
   int default_font_size = 10;
   if (font_size < default_font_size) font_size = default_font_size;
   br_text_renderer_push(r, pos.x, pos.y, 0.9f, font_size, color, text);
   //br_text_background(, br_theme.colors.btn_inactive, 0, 3);
-}
-
-br_vec2_t help_measure_text(const char* txt, int font_size) {
-  //Todo
-  return BR_VEC2((float)strlen(txt), (float)font_size);
 }
 
 // Draw current FPS

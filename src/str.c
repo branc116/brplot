@@ -224,10 +224,42 @@ br_strv_t br_strv_from_c_str(const char* s) {
 }
 
 int br_strv_to_int(br_strv_t str) {
-  static char buff[32];
+  static BR_THREAD_LOCAL char buff[32];
   int len = sprintf(buff, "%.*s", str.len, str.str);
   buff[len] = '\0';
   return atoi(buff);
+}
+
+br_strv_t br_strv_trim_zeros(const br_strv_t buff) {
+  br_strv_t ret = buff;
+  bool was_dot = false;
+  int i = (int)ret.len - 1;
+
+  if (ret.len >= 2) {
+    for (; i >= 0; --i) {
+      if (ret.str[i] == '0') --ret.len;
+      else if (ret.str[i] == '.') {
+        --ret.len;
+        was_dot = true;
+        break;
+      }
+      else break;
+    }
+    if (ret.len == buff.len) return ret;
+    if (ret.len == 0) {
+      ret.len = 1;
+      return ret;
+    }
+    for (; was_dot == false && i >= 0; --i) {
+      was_dot = ret.str[i] == '.';
+    }
+    if (was_dot == false) ret = buff;
+  }
+  if (ret.len == 2 && ret.str[0] == '-' && ret.str[1] == '0') {
+    ++ret.str;
+    --ret.len;
+  }
+  return ret;
 }
 
 static BR_THREAD_LOCAL char*  scrach = NULL;
@@ -299,5 +331,32 @@ TEST_CASE(str_tests) {
   TEST_EQUAL('a', br.str[0]);
   TEST_STREQUAL("a69-690nice12345678", c);
   br_str_free(br);
+}
+
+TEST_CASE(str_trim) {
+  br_strv_t z = br_strv_from_literal("00");
+  z = br_strv_trim_zeros(z);
+  TEST_EQUAL(z.len, 1);
+  TEST_EQUAL(z.str[0], '0');
+
+  z = br_strv_from_literal("10000000");
+  z = br_strv_trim_zeros(z);
+  TEST_EQUAL(z.len, 8);
+  TEST_EQUAL(z.str[0], '1');
+
+  z = br_strv_from_literal("100.0000");
+  z = br_strv_trim_zeros(z);
+  TEST_EQUAL(z.len, 3);
+  TEST_EQUAL(z.str[0], '1');
+
+  z = br_strv_from_literal("100.0001");
+  z = br_strv_trim_zeros(z);
+  TEST_EQUAL(z.len, 8);
+  TEST_EQUAL(z.str[0], '1');
+
+  z = br_strv_from_literal("100.00010");
+  z = br_strv_trim_zeros(z);
+  TEST_EQUAL(z.len, 8);
+  TEST_EQUAL(z.str[0], '1');
 }
 #endif

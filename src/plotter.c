@@ -113,6 +113,7 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
   };
   br_plot_create_texture(&plot);
   plot.extent_handle = brui_resizable_new(BR_EXTENTI(x, 50, br->win.size.width - x - 60, br->win.size.height - 110), 0);
+  plot.menu_extent_handle = brui_resizable_new(BR_EXTENTI(0, 0, 300, plot.cur_extent.height), plot.extent_handle);
   br_da_push_t(int, (br->plots), plot);
   br->any_2d = true;
   return br->plots.len - 1;
@@ -137,6 +138,7 @@ int br_plotter_add_plot_3d(br_plotter_t* br) {
   };
   br_plot_create_texture(&plot);
   plot.extent_handle = brui_resizable_new(BR_EXTENTI(500, 50, br->win.size.width - 500 - 60, br->win.size.height - 110), 0);
+  plot.menu_extent_handle = brui_resizable_new(BR_EXTENTI(0, 0, 300, plot.cur_extent.height), plot.extent_handle);
   br_da_push_t(int, (br->plots), plot);
   br->any_3d = true;
   return br->plots.len - 1;
@@ -222,11 +224,12 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
       while (i < 50.f) {
         float cur = start - base * i;
         i += 1.f;
-        sprintf(scrach, "%.*f", exp < 0 ? -(int)exp : 1, cur);
-        help_trim_zeros(scrach);
+        int n = sprintf(scrach, "%.*f", exp < 0 ? -(int)exp : 1, cur);
+        br_strv_t s = BR_STRV(scrach, (uint32_t)n);
+        s = br_strv_trim_zeros(s);
         float y = sz.height / r.height * (r.y - cur);
         if (y > sz.height) break;
-        br_text_renderer_push2(tr, x, y, 0.9f, font_size, br_theme.colors.grid_nums, br_strv_from_c_str(scrach), ancor);
+        br_text_renderer_push2(tr, x, y, 0.9f, font_size, br_theme.colors.grid_nums, s, ancor);
       }
     }
   }
@@ -246,11 +249,12 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
       while (i < 50.f) {
         float cur = start + base * i;
         i += 1.f;
-        sprintf(scrach, "%.*f", exp < 0 ? -(int)exp : 1, cur);
-        help_trim_zeros(scrach);
+        int n = sprintf(scrach, "%.*f", exp < 0 ? -(int)exp : 1, cur);
+        br_strv_t s = BR_STRV(scrach, (uint32_t)n);
+        s = br_strv_trim_zeros(s);
         float x = (sz.width / r.width) * (cur - r.x);
         if (x > sz.width) break;
-        br_text_renderer_push2(tr, x, y, 0.9f, font_size, br_theme.colors.grid_nums, br_strv_from_c_str(scrach), ancor);
+        br_text_renderer_push2(tr, x, y, 0.9f, font_size, br_theme.colors.grid_nums, s, ancor);
       }
     }
   }
