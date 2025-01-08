@@ -203,7 +203,13 @@ br_strv_t br_text_renderer_fit(br_text_renderer_t* r, br_size_t size, int font_s
     }
   } else {
     size_to_font f = r->sizes[size_index];
-    for (; br_col_vec2_extent(exf, loc) && i < text.len; ++i) brtr_move_loc(r, f, text.str[i], &loc);
+    for (; i < text.len; ++i) {
+      if (false == br_col_vec2_extent(exf, loc)) {
+        --i;
+        break;
+      }
+      brtr_move_loc(r, f, text.str[i], &loc);
+    }
   }
   return br_strv_sub(text, 0, (uint32_t)i);
 }
