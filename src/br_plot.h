@@ -46,6 +46,7 @@ typedef struct br_plot_t {
   } groups_to_show;
   br_extenti_t cur_extent;
   int extent_handle;
+  int menu_extent_handle;
 
   unsigned int texture_id;
 
@@ -53,7 +54,6 @@ typedef struct br_plot_t {
   bool jump_around;
   bool mouse_inside_graph;
   bool is_deleted;
-  bool draw_settings;
 
   br_plot_kind_t kind;
   union {
@@ -90,17 +90,7 @@ void read_input_main_worker(br_plotter_t* br);
 int  read_input_read_next(void);
 void read_input_stop(void);
 
-int     ui_draw_button(br_text_renderer_t* tr, bool* is_pressed, float x, float y, int font_size, const char* str, ...);
-void    ui_stack_buttons_init(br_vec2_t pos, float* scroll_position, int font_size);
-void    ui_stack_set_size(br_vec2_t v);
-int     ui_stack_buttons_add(br_text_renderer_t* tr, bool* is_pressed, const char* str, ...);
-br_vec2_t ui_stack_buttons_end(void);
-
-void    help_trim_zeros(char* buff);
-void    help_draw_text(br_text_renderer_t* renderer, char const* text, br_vec2_t pos, int font_size, br_color_t color);
-br_vec2_t help_measure_text(char const* txt, int font_size);
 void    help_draw_fps(br_text_renderer_t* renderer, int posX, int posY);
-void    help_load_default_font(void);
 
 min_distances_t min_distances_get(br_vec2_t const* points, size_t points_len, br_vec2_t to);
 void            min_distances_get1(min_distances_t* m, br_vec2_t const* points, size_t points_len, br_vec2_t to);
