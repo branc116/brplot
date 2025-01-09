@@ -46,6 +46,7 @@
                                         \
       X_BUF(vertexPosition, 3)          \
       X_BUF(vertexColor, 3)             \
+      X_BUF(z, 1)                       \
     )                                   \
   X(line_3d_simple, 1024,               \
       X_VEC(m_mvp, 16),                 \

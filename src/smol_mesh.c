@@ -168,16 +168,16 @@ void smol_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
       TracyCFrameMarkStart("grid_draw_3d");
       float sz = 10000.f;
       br_shader_grid_3d_push_quad(shaders->grid_3d, (br_shader_grid_3d_el_t[4]) {
-        { .vertexPosition = BR_VEC3(-sz, 0, -sz), .vertexColor = BR_VEC3(0, 1, 0) },
-        { .vertexPosition = BR_VEC3(sz, 0, -sz),  .vertexColor = BR_VEC3(0, 1, 0) },
-        { .vertexPosition = BR_VEC3(sz, 0, sz),   .vertexColor = BR_VEC3(0, 1, 0) },
-        { .vertexPosition = BR_VEC3(-sz, 0, sz),  .vertexColor = BR_VEC3(0, 1, 0) },
+        { .vertexPosition = BR_VEC3(-sz, 0, -sz), .vertexColor = BR_VEC3(0, 1, 0), .z = BR_Z_TO_GL(10) },
+        { .vertexPosition = BR_VEC3(sz, 0, -sz),  .vertexColor = BR_VEC3(0, 1, 0), .z = BR_Z_TO_GL(10) },
+        { .vertexPosition = BR_VEC3(sz, 0, sz),   .vertexColor = BR_VEC3(0, 1, 0), .z = BR_Z_TO_GL(10) },
+        { .vertexPosition = BR_VEC3(-sz, 0, sz),  .vertexColor = BR_VEC3(0, 1, 0), .z = BR_Z_TO_GL(10) },
       });
       br_shader_grid_3d_push_quad(shaders->grid_3d, (br_shader_grid_3d_el_t[4]) {
-        { .vertexPosition = BR_VEC3(-sz, -sz, 0), .vertexColor = BR_VEC3(0, 0, 1) },
-        { .vertexPosition = BR_VEC3(sz, -sz, 0),  .vertexColor = BR_VEC3(0, 0, 1) },
-        { .vertexPosition = BR_VEC3(sz, sz, 0),   .vertexColor = BR_VEC3(0, 0, 1) },
-        { .vertexPosition = BR_VEC3(-sz, sz, 0),  .vertexColor = BR_VEC3(0, 0, 1) },
+        { .vertexPosition = BR_VEC3(-sz, -sz, 0), .vertexColor = BR_VEC3(0, 0, 1), .z = BR_Z_TO_GL(110) },
+        { .vertexPosition = BR_VEC3(sz, -sz, 0),  .vertexColor = BR_VEC3(0, 0, 1), .z = BR_Z_TO_GL(110) },
+        { .vertexPosition = BR_VEC3(sz, sz, 0),   .vertexColor = BR_VEC3(0, 0, 1), .z = BR_Z_TO_GL(110) },
+        { .vertexPosition = BR_VEC3(-sz, sz, 0),  .vertexColor = BR_VEC3(0, 0, 1), .z = BR_Z_TO_GL(110) },
       });
       TracyCFrameMarkEnd("grid_draw_3d");
     } break;
