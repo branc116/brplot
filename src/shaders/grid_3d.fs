@@ -41,16 +41,12 @@ float map(vec2 cPos, vec2 zoom_level) {
 float map_outer(vec2 fragCoord) {
   float scale = length(eye - fragTexCoord);
   float scale2 = (1.0 - abs(dot(normal, normalize(look_dir))));
-  //scale *= scale2;
-  return map(fragCoord, vec2(2.5 * scale));
+  return map(fragCoord, vec2(2.2 * scale));
 }
 
 void main(void) {
   out_color = vec4(1.0);
-  if (gl_FragCoord.x < resolution.x || gl_FragCoord.y > resolution.y) {
-    out_color = vec4(0.0);
-  }
   float res = normal.z > normal.y ? map_outer(fragTexCoord.xy) : map_outer(fragTexCoord.xz);
-  out_color = (normal.z > normal.y ? vec4(0.2, 0.3, 0.5, 1.0) : vec4(0.5, 0.3, 0.2, 0.5))*res;
+  out_color = (normal.z > normal.y ? vec4(0.2, 0.3, 0.5, 1.0) : vec4(0.5, 0.3, 0.2, 0.4))*res;
 }
 

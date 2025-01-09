@@ -17,5 +17,6 @@ void main()
     fragTexCoord = vertexPosition.xyz;
     fragColor = vec4(vertexColor, 1.0);
     normal = vertexColor.xyz;
-    gl_Position = m_mvp * vec4(vertexPosition.xy, z, 1.0);
+    vec4 res = (m_mvp * vec4(vertexPosition.xyz, 1.0));
+    gl_Position = vec4(res.xy, z*res.w, res.w);
 }
