@@ -30,6 +30,7 @@ extern "C" {
 #endif
 
 #define BR_STRV(STR, LEN) ((br_strv_t) { .str = (STR), .len = (LEN) })
+#define BR_STRL(STR) ((br_strv_t) { .str = (STR), .len = (uint32_t)(sizeof((STR)) - 1) })
 
 
 typedef struct br_str_t {

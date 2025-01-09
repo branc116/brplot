@@ -329,7 +329,7 @@ static void resampling2_draw32(resampling2_nodes_2d_allocator_t const* const nod
   }
   br_vec2_t ratios = resampling2_nodes_2d_get_ratios_3d(&node, xs, ys, mvp);
   float rmin = fminf(ratios.x, ratios.y);
-  if (rmin < (node.base.depth == 1 ? 0.01f : 0.02f)) {
+  if (rmin < (node.base.depth == 1 ? pg->resampling->something : pg->resampling->something2 )) {
     size_t indexies[] = {
       node.base.index_start,
       node.base.min_index_x,
@@ -436,7 +436,7 @@ void resampling2_change_something(br_datas_t pg) {
 
     pg.arr[i].resampling->something *= (float)mul;
     pg.arr[i].resampling->something2 *= (float)mul;
-    float mins = 0.0001f;
+    float mins = context.min_sampling;
     if (pg.arr[i].resampling->something < mins) pg.arr[i].resampling->something = mins;
     if (pg.arr[i].resampling->something2 < mins) pg.arr[i].resampling->something2 = mins;
     pg.arr[i].resampling->draw_count = 0;
@@ -463,8 +463,8 @@ float br_resampling2_get_something2(resampling2_t* res) {
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #include "external/tests.h"
 TEST_CASE(resampling) {
-  float xs[] = { 0, 1, 2, 3};
-  float ys[] = {  1, 2,  4, 2 };
+  float xs[] = { 0, 1, 2, 3 };
+  float ys[] = { 1, 2, 4, 2 };
   br_data_t pg;
   memset(&pg, 0, sizeof(pg));
   pg.cap = 4;

@@ -317,6 +317,10 @@ float brtl_time(void) {
   return  (float)glfwGetTime();
 }
 
+float brtl_frame_time(void) {
+  return (float)stl_br->time.frame;
+}
+
 int brtl_fps(void) {
   return (int)(1.f/(float)stl_br->time.frame);
 }

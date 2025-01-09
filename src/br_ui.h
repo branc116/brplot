@@ -46,10 +46,12 @@ bool brui_button(br_strv_t text);
 bool brui_checkbox(br_strv_t text, bool* checked);
 void brui_img(unsigned int texture_id);
 bool brui_button_icon(br_sizei_t size, br_extent_t icon);
+bool brui_sliderf(br_strv_t text, float* val);
 
 void brui_push(br_extent_t max);
 void brui_pop(void);
 
+float brui_top_width(void);
 void brui_text_size_set(int size);
 void brui_text_align_set(br_text_renderer_ancor_t ancor);
 void brui_ancor_set(brui_ancor_t ancor);

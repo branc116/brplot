@@ -12,6 +12,7 @@
 #include "src/br_theme.h"
 #include "src/br_tl.h"
 #include "src/br_ui.h"
+#include "src/br_resampling2.h"
 
 static void draw_left_panel(br_plotter_t* gv);
 void br_gui_init_specifics_gui(br_plotter_t* br) {
@@ -131,6 +132,16 @@ static void draw_left_panel(br_plotter_t* br) {
       bool is_visible = !r->hidden;
       brui_checkbox(br_strv_from_c_str(scrach), &is_visible);
       r->hidden = !is_visible;
+    }
+    brui_text_size_set(16);
+    brui_sliderf(BR_STRL("min something"), &context.min_sampling);
+    for (size_t i = 0; i < br->groups.len; ++i) {
+      brui_push(BR_EXTENT(0, 0, brui_top_width(), 40));
+        int n = sprintf(scrach, "Data %d (%zu points)", br->groups.arr[i].group_id, br->groups.arr[i].len);
+        brui_text(BR_STRV(scrach, (uint32_t)n));
+        n = sprintf(scrach, "%.1fms (%.3f %.3f)", br_resampling2_get_draw_time(br->groups.arr[i].resampling)*1000.0f, br_resampling2_get_something(br->groups.arr[i].resampling), br_resampling2_get_something2(br->groups.arr[i].resampling));
+        brui_text(BR_STRV(scrach, (uint32_t)n));
+      brui_pop();
     }
     br_scrach_free();
   brui_resizable_pop();
