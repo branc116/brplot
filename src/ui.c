@@ -35,6 +35,7 @@ typedef struct {
   brui_stack_el_t* arr;
   size_t len, cap;
 
+  float* sliderf;
 } brui_stack_t;
 
 static BR_THREAD_LOCAL brui_stack_t _stack;
@@ -247,26 +248,29 @@ bool brui_sliderf(br_strv_t text, float* val) {
     bool is_down = brtl_mousel_down();
 
     const float lt = 8.f;
-    br_extent_t line_extent = BR_EXTENT(TOP.max.x + TOP.cur.x, TOP.max.y + TOP.cur.y - lt*.5f, TOP.max.width - TOP.padding.z, lt);
-    br_color_t lc = br_theme.colors.btn_inactive;
     const float ss = lt + 3.f;
-    br_extent_t slider_extent = BR_EXTENT(TOP.max.x + TOP.cur.x + (TOP.max.width - ss)*.5f, TOP.max.y + TOP.cur.y - ss*.5f, ss, ss);
+    br_extent_t line_extent = BR_EXTENT(TOP.max.x + TOP.cur.x + ss*0.5f, TOP.max.y + TOP.cur.y + 1.5f, TOP.max.width - TOP.padding.z - ss, lt);
+    br_color_t lc = br_theme.colors.btn_inactive;
+    br_extent_t slider_extent = BR_EXTENT(TOP.max.x + TOP.cur.x + (TOP.max.width - ss)*.5f, TOP.max.y + TOP.cur.y, ss, ss);
     br_color_t sc = br_theme.colors.btn_txt_inactive;
 
-    if (mouse.x > line_extent.x &&
+    if (_stack.sliderf == val ||
+        (_stack.sliderf == NULL && mouse.x > line_extent.x &&
         mouse.x < line_extent.x + line_extent.width &&
         mouse.y > line_extent.y - 3 &&
-        mouse.y < line_extent.y + line_extent.height + 3) {
+        mouse.y < line_extent.y + line_extent.height + 3)) {
       if (is_down) {
         lc = br_theme.colors.btn_active;
         sc = br_theme.colors.btn_txt_active;
         float speed = brtl_frame_time();
-        float factor = (mouse.x - line_extent.x) / line_extent.width * speed + (1 - speed * 0.5f);
+        float factor = br_float_clamp((mouse.x - line_extent.x) / line_extent.width, 0.f, 1.f) * speed + (1 - speed * 0.5f);
         *val *= factor;
-        slider_extent.x = mouse.x - ss * 0.5f;
+        slider_extent.x = br_float_clamp(mouse.x, line_extent.x, line_extent.x + line_extent.width) - ss * 0.5f;
+        _stack.sliderf = val;
       } else {
         lc = br_theme.colors.btn_hovered;
         sc = br_theme.colors.btn_txt_hovered;
+        _stack.sliderf = NULL;
       }
     }
 
@@ -321,9 +325,10 @@ int brui_resizable_new(br_extenti_t init_extent, int parent) {
   BR_ASSERT(bruirs.len > parent);
   static int id = 0;
 
+  
   brui_resizable_t new = {
     .cur_extent = init_extent,
-    .z = ++id + bruirs.arr[parent].z + 1,
+    .z = ++id + bruir_childrens.arr[parent].len + 1,
     .parent = parent
   };
   int new_id = bruirs.len;

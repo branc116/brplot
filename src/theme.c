@@ -6,9 +6,9 @@ void br_theme_dark(void) {
   br_color_t bg = BR_COLOR(0x0f, 0x0f, 0x0f, 0xff);
   br_color_t txt = BR_COLOR(0xe0, 0xe0, 0xe0, 0xff);
   
-  br_theme.colors.btn_inactive = br_color_lighter(bg, 0.4f);
+  br_theme.colors.btn_inactive = br_color_lighter(bg, 0.9f);
   br_theme.colors.btn_hovered = br_color_greener(br_color_lighter(br_theme.colors.btn_inactive, 2.0f), 0.3f);
-  br_theme.colors.btn_active = br_color_lighter(br_theme.colors.btn_hovered, 2.0f);
+  br_theme.colors.btn_active = br_color_lighter(br_theme.colors.btn_hovered, 1.0f);
   br_theme.colors.btn_txt_inactive = txt;
   br_theme.colors.btn_txt_hovered = br_color_darker(txt, 0.2f);
   br_theme.colors.btn_txt_active = txt;
