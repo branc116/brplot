@@ -28,6 +28,7 @@ typedef struct {
   int start_z, z;
   br_text_renderer_ancor_t text_ancor;
   brui_ancor_t ancor;
+  bool is_out;
 } brui_stack_el_t;
 
 typedef struct {
@@ -39,6 +40,7 @@ static BR_THREAD_LOCAL brui_stack_t _stack;
 #define TOP (_stack.arr[_stack.len - 1])
 #define Z (TOP.z++)
 #define ZGL BR_Z_TO_GL(TOP.z++)
+#define RETURN_IF_OUT(HEIGHT, ...) if (TOP.is_out || (TOP.cur.y + (HEIGHT)) > TOP.max.height) { TOP.is_out = true; return __VA_ARGS__; }
 
 brui_stack_el_t brui_stack_el(br_extent_t max) {
   if (_stack.len > 0) {
@@ -149,9 +151,12 @@ void brui_z_set(int z) {
 
 bool brui_button(br_strv_t text) {
   br_vec2_t tl = TOP.cur;
-
   br_vec2_t mouse = brtl_mouse_pos();
   br_extent_t extent = BR_EXTENT(tl.x + TOP.max.x, tl.y + TOP.max.y, TOP.max.width - TOP.padding.x - TOP.padding.z, (float)TOP.font_size + TOP.padding.y + TOP.padding.w);
+
+  RETURN_IF_OUT(extent.height, false);
+
+  if (tl.y + extent.height > TOP.max.height) return false;
   bool hovers = br_col_vec2_extent(extent, mouse);
 
   br_icons_draw(brtl_shaders()->icon, extent, BR_EXTENT(0, 0, 0, 0), br_theme.colors.btn_inactive, br_theme.colors.btn_inactive, Z);
@@ -167,7 +172,8 @@ bool brui_button(br_strv_t text) {
 bool brui_checkbox(br_strv_t text, bool* checked) {
   float sz = (float)TOP.font_size * 0.6f;
   br_extent_t cb_extent = BR_EXTENT(TOP.cur.x + TOP.max.x, TOP.cur.y + TOP.max.y, sz, sz);
-  if (cb_extent.height + TOP.cur.y > TOP.max.height) return false;
+
+  RETURN_IF_OUT(cb_extent.height, false);
 
   br_extent_t icon = *checked ?  br_icons.cb_1.size_32 : br_icons.cb_0.size_32;
   bool hover = br_col_vec2_extent(cb_extent, brtl_mouse_pos());
@@ -201,7 +207,7 @@ void brui_img(unsigned int texture_id) {
 }
 
 bool brui_button_icon(br_sizei_t size, br_extent_t icon) {
-  if (TOP.cur.y + (float)size.height > TOP.max.height) return false;
+  RETURN_IF_OUT((float)size.height, false);
 
   br_extent_t ex = BR_EXTENT(TOP.cur.x + TOP.max.x, TOP.cur.y + TOP.max.y, (float)size.width, (float)size.height);
   //br_extent_t ex = BR_EXTENT2(br_vec2_add(TOP.cur, TOP.max.pos), BR_SIZEI_TOF(size));

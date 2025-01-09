@@ -325,7 +325,7 @@ int main(void) {
   fprintf(file, "\n");
   fprintf(file, "#include <stdbool.h>\n");
   fprintf(file, "\n");
-  fprintf(file, "void* glfwGetProcAddress(const char* procname);\n");
+  fprintf(file, "#include \"external/glfw/include/GLFW/glfw3.h\"");
   fprintf(file, "\n");
 
   fprintf(file, "#if !defined(TRACY_ENABLE)\n");
