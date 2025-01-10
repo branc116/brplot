@@ -33,8 +33,14 @@ typedef struct {
   br_extenti_t cur_extent;
   brui_ancor_t ancor;
   int z;
-  bool hidden;
   int parent;
+  float scroll_offset;
+  float scroll_offset_percent;
+  float content_height;
+
+  bool is_hoverd;
+  bool scroll_bar;
+  bool hidden;
 } brui_resizable_t;
 
 void brui_begin(void);
@@ -52,10 +58,10 @@ void brui_push(br_extent_t max);
 void brui_pop(void);
 
 float brui_top_width(void);
-void brui_text_size_set(int size);
-void brui_text_align_set(br_text_renderer_ancor_t ancor);
-void brui_ancor_set(brui_ancor_t ancor);
-void brui_z_set(int z);
+void  brui_text_size_set(int size);
+void  brui_text_align_set(br_text_renderer_ancor_t ancor);
+void  brui_ancor_set(brui_ancor_t ancor);
+void  brui_z_set(int z);
 
 void brui_resizable_init(void);
 int brui_resizable_new(br_extenti_t init_extent, int parent);

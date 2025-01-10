@@ -3,7 +3,6 @@
 precision mediump float;
 
 //x, y, width, height
-uniform vec2 resolution;
 uniform vec3 eye;
 uniform vec3 look_dir;
 

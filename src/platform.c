@@ -174,13 +174,13 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
     glfwDefaultWindowHints();
     glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
     glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
     glfwWindowHint(GLFW_FLOATING, GLFW_FALSE);
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_FALSE);
     glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_FALSE);
     glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_FALSE);
-    //glfwWindowHint(GLFW_SAMPLES, 1);
+    glfwWindowHint(GLFW_SAMPLES, 4);
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -194,7 +194,7 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
     glfwWindowHint(GLFW_AUTO_ICONIFY, 0);
     br->win.glfw = glfwCreateWindow(width, height, "brplot", NULL, NULL);
     glfwMakeContextCurrent(br->win.glfw);
-    glfwSwapInterval(1);
+    //glfwSwapInterval(1);
   }
   stl_br = br;
   brgl_load();
@@ -205,12 +205,12 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
   brgl_blend_equation(GL_FUNC_ADD);
   br_sizei_t size = brtl_window_size();
   brgl_viewport(0, 0, size.width, size.height);
+  br->win.size = size;
 
   br->shaders = br_shaders_malloc();
   br->shaders.font->uvs.sub_pix_aa_map_uv =  BR_VEC3(-1, 0, 1);
   br->shaders.font->uvs.sub_pix_aa_scale_uv = 0.2f;
   br->text = br_text_renderer_malloc(1024, 1024, br_font_data, &br->shaders.font);
-  glfwGetWindowSize(br->win.glfw, &br->win.size.width, &br->win.size.height);
   br->time.now = glfwGetTime();
 
   glfwSetScrollCallback(br->win.glfw, br_glfw_on_scroll);
@@ -218,7 +218,6 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
   glfwSetCursorPosCallback(br->win.glfw, br_glfw_on_mouse_move);
   glfwSetMouseButtonCallback(br->win.glfw, br_glfw_on_mouse_button);
   glfwSetKeyCallback(br->win.glfw, br_glfw_on_key);
-  glfwSetWindowAttrib(br->win.glfw, GLFW_RESIZABLE, GLFW_TRUE);
 }
 
 static void br_glfw_on_scroll(GLFWwindow* window, double x, double y) {
@@ -248,9 +247,29 @@ static void br_glfw_on_mouse_button(struct GLFWwindow* window, int button, int a
 }
 
 static void br_glfw_on_key(struct GLFWwindow* window, int key, int scancode, int action, int mods) {
-  (void)window;
-  stl_br->key.mod = mods;
+  (void)window; (void) mods;
   if (key == GLFW_KEY_LEFT_ALT) return;
+  if (key == GLFW_KEY_LEFT_ALT) {
+    if (action == GLFW_PRESS) {
+      stl_br->key.mod |= GLFW_MOD_ALT;
+    } else if (action == GLFW_RELEASE) {
+      stl_br->key.mod &= ~(GLFW_MOD_ALT);
+    }
+  }
+  if (key == GLFW_KEY_LEFT_CONTROL) {
+    if (action == GLFW_PRESS) {
+      stl_br->key.mod |= GLFW_MOD_CONTROL;
+    } else if (action == GLFW_RELEASE) {
+      stl_br->key.mod &= ~(GLFW_MOD_CONTROL);
+    }
+  }
+  if (key == GLFW_KEY_LEFT_SHIFT) {
+    if (action == GLFW_PRESS) {
+      stl_br->key.mod |= GLFW_MOD_SHIFT;
+    } else if (action == GLFW_RELEASE) {
+      stl_br->key.mod &= ~(GLFW_MOD_SHIFT);
+    }
+  }
   if (scancode < 0 || scancode >= 64) {
     LOGW("Bad scancode %d, key %d", scancode, key);
     return;
@@ -281,7 +300,7 @@ void br_plotter_begin_drawing(br_plotter_t* br) {
 void br_plotter_end_drawing(br_plotter_t* br) {
   br_shaders_draw_all(br->shaders);
   br_text_renderer_dump(br->text);
-  glfwSwapBuffers(br->win.glfw);
+  glfwSetWindowSize(br->win.glfw, br->win.size.width, br->win.size.height);
   handle_all_commands(br, br->commands);
 #if BR_HAS_SHADER_RELOAD
   if (br->shaders_dirty) {
@@ -289,14 +308,11 @@ void br_plotter_end_drawing(br_plotter_t* br) {
     br->shaders_dirty = false;
   }
 #endif
-
   br->mouse.scroll = BR_VEC2(0, 0);
   br->mouse.pressed.right = br->mouse.pressed.left = false;
   memset(&br->key.pressed[0], 0, sizeof(br->key.pressed));
+  glfwSwapBuffers(br->win.glfw);
 
-  double target_frame_time = 1/60.0;
-  double frame_time = glfwGetTime() - br->time.now;
-  br_help_sleep(target_frame_time - frame_time);
   br->should_close = br->should_close || glfwWindowShouldClose(br->win.glfw);
   glfwSetWindowShouldClose(br->win.glfw, GLFW_FALSE);
 }

@@ -153,7 +153,7 @@ void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
     } break;
     case br_plot_kind_3d: {
       TracyCFrameMarkStart("update_shader_values_3d");
-      br_vec2_t re = shaders->grid_3d->uvs.resolution_uv = (br_vec2_t) { .x = ex.width, .y = ex.height };
+      br_vec2_t re = (br_vec2_t) { .x = ex.width, .y = ex.height };
       br_vec3_t eye_zero = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
       float eye_scale = 10.f * powf(10.f, -floorf(log10f(fmaxf(fmaxf(fabsf(eye_zero.x), fabsf(eye_zero.y)), fabsf(eye_zero.z)))));
       br_vec3_t eye_final = br_vec3_add(br_vec3_scale(eye_zero, eye_scale), plot->ddd.target);

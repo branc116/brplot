@@ -41,8 +41,7 @@
   X(grid_3d, 8,                         \
       X_VEC(eye, 3)                     \
       X_VEC(look_dir, 3)                \
-      X_VEC(m_mvp, 16)                  \
-      X_VEC(resolution, 2),             \
+      X_VEC(m_mvp, 16),                 \
                                         \
       X_BUF(vertexPosition, 3)          \
       X_BUF(vertexColor, 3)             \

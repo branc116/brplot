@@ -22,9 +22,6 @@ void br_gui_init_specifics_gui(br_plotter_t* br) {
   }
 }
 
-bool br_icon_button(br_extent_t pos, br_extent_t atlas, bool hide_when_not_near, int z) {
-}
-
 BR_API void br_plotter_draw(br_plotter_t* br) {
   br_plotter_begin_drawing(br);
   brui_resizable_update();
@@ -40,7 +37,7 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
     brgl_clear(BR_COLOR_COMPF(br_theme.colors.plot_bg));
     if (PLOT->kind == br_plot_kind_2d) {
       smol_mesh_grid_draw(PLOT, &br->shaders);
-      br_shaders_draw_all(br->shaders);
+      br_shaders_draw_all(br->shaders); // TODO: This should be called whenever a other shader are being drawn.
       br_datas_draw(br->groups, PLOT, &br->shaders);
       br_shaders_draw_all(br->shaders);
       draw_grid_numbers(br->text, PLOT);
@@ -71,18 +68,23 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
               char* c = br_scrach_get(4096);
               brui_ancor_set(brui_ancor_right_top);
               if (brui_button_icon(BR_SIZEI(32, 32), br_icons.back.size_32)) menu_res->hidden = true;
+
               brui_text_size_set(8);
               brui_new_lines(1);
-              sprintf(c, "%s Plot #%d", PLOT->kind == br_plot_kind_2d ? "2D" : "3D", i);
+
               brui_text_size_set(16);
               brui_text_align_set(br_text_renderer_ancor_mid_up);
-              brui_text(br_strv_from_c_str(c));
+              int n = sprintf(c, "%s Plot #%d", PLOT->kind == br_plot_kind_2d ? "2D" : "3D", i);
+              brui_text(BR_STRV(c, (uint32_t)n));
+
               brui_new_lines(1);
+
               brui_text_size_set(32);
-              brui_text(br_strv_from_literal("_______________________________________________________"));
+              brui_text(BR_STRL("_______________________________________________________"));
+
               brui_text_size_set(26);
               brui_text_align_set(br_text_renderer_ancor_left_up);
-              brui_checkbox(br_strv_from_literal("Follow"), &PLOT->follow);
+              brui_checkbox(BR_STRL("Follow"), &PLOT->follow);
               for (size_t k = 0; k < br->groups.len; ++k) {
                 bool is_shown = false;
                 br_data_t* data = &br->groups.arr[k];
@@ -111,26 +113,26 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
 
 static void draw_left_panel(br_plotter_t* br) {
   brui_resizable_push(br->menu_extent_handle);
-    brui_checkbox(br_strv_from_literal("Debug"), &context.debug_bounds);
-    if (brui_checkbox(br_strv_from_literal("Dark Theme"), &br->dark_theme)) {
+    brui_checkbox(BR_STRL("Debug"), &context.debug_bounds);
+    if (brui_checkbox(BR_STRL("Dark Theme"), &br->dark_theme)) {
       if (br->dark_theme) br_theme_dark();
       else br_theme_light();
     }
-    if (brui_button(br_strv_from_literal("Export"))) {
+    if (brui_button(BR_STRL("Export"))) {
       br_plotter_export(br, "test.brp");
     }
-    if (brui_button(br_strv_from_literal("Export CSV"))) {
+    if (brui_button(BR_STRL("Export CSV"))) {
       br_plotter_export_csv(br, "test.csv");
     }
-    if (brui_button(br_strv_from_literal("Exit"))) {
+    if (brui_button(BR_STRL("Exit"))) {
       br->should_close = true;
     }
     char* scrach = br_scrach_get(4096);
     for (int i = 0; i < br->plots.len; ++i) {
-      sprintf(scrach, "%s Plot %d", br->plots.arr[i].kind == br_plot_kind_2d ? "2D" : "3D", i);
+      int n = sprintf(scrach, "%s Plot %d", br->plots.arr[i].kind == br_plot_kind_2d ? "2D" : "3D", i);
       brui_resizable_t* r = brui_resizable_get(br->plots.arr[i].extent_handle);
       bool is_visible = !r->hidden;
-      brui_checkbox(br_strv_from_c_str(scrach), &is_visible);
+      brui_checkbox(BR_STRV(scrach, (uint32_t)n), &is_visible);
       r->hidden = !is_visible;
     }
     brui_text_size_set(16);

@@ -21,13 +21,17 @@
 typedef struct {
   br_vec2_t cur;
   br_extent_t max;
+  int start_z, z;
 
   br_vec4_t padding;
+  brui_ancor_t ancor;
+
   int font_size;
   br_color_t font_color;
-  int start_z, z;
   br_text_renderer_ancor_t text_ancor;
-  brui_ancor_t ancor;
+
+  int cur_resizable;
+
   bool is_out;
 } brui_stack_el_t;
 
@@ -38,11 +42,45 @@ typedef struct {
   float* sliderf;
 } brui_stack_t;
 
+typedef struct {
+  int* arr;
+  int len, cap;
+} bruir_children_t;
+
+typedef struct {
+  bruir_children_t* arr;
+  int len, cap;
+} bruir_childrens_t;
+
+typedef struct {
+  brui_resizable_t* arr;
+  int len, cap;
+
+  brui_drag_mode_t drag_mode;
+  int drag_index;
+  br_vec2_t drag_point;
+  br_extenti_t drag_old_ex;
+} bruirs_t;
+
+static BR_THREAD_LOCAL bruirs_t bruirs;
+static BR_THREAD_LOCAL bruir_childrens_t bruir_childrens;
+
 static BR_THREAD_LOCAL brui_stack_t _stack;
+static BR_THREAD_LOCAL char _scrach[2048];
 #define TOP (_stack.arr[_stack.len - 1])
 #define Z (TOP.z++)
 #define ZGL BR_Z_TO_GL(TOP.z++)
-#define RETURN_IF_OUT(HEIGHT, ...) if (TOP.is_out || (TOP.cur.y + (HEIGHT)) > TOP.max.height) { TOP.is_out = true; return __VA_ARGS__; }
+#define RETURN_IF_OUT(HEIGHT, ...) do { \
+  brui_resizable_t* res = &bruirs.arr[TOP.cur_resizable]; \
+  res->content_height += (HEIGHT) + TOP.padding.y; \
+  if (TOP.cur.y < 0) { TOP.cur.y += (HEIGHT) + TOP.padding.y; return __VA_ARGS__; } \
+  if (TOP.is_out || (TOP.cur.y + (HEIGHT)) > TOP.max.height) { TOP.is_out = true; return __VA_ARGS__; } \
+} while(0)
+#define brui_textf(...) do { \
+  int n = sprintf(_scrach, __VA_ARGS__); \
+  brui_text(BR_STRV(_scrach, (uint32_t)n)); \
+} while (0)
+
 
 brui_stack_el_t brui_stack_el(br_extent_t max) {
   if (_stack.len > 0) {
@@ -52,6 +90,7 @@ brui_stack_el_t brui_stack_el(br_extent_t max) {
     new_el.max = max;
     new_el.cur = (br_vec2_t) { .x = TOP.padding.x, .y = TOP.padding.y };
     new_el.start_z = new_el.z;
+    new_el.cur_resizable = 0;
     return new_el;
   } else {
     return (brui_stack_el_t) {
@@ -127,7 +166,7 @@ br_size_t brui_text(br_strv_t strv) {
   if (TOP.text_ancor & br_text_renderer_ancor_x_mid) x += (TOP.max.width - TOP.padding.z - TOP.padding.x) * 0.5f;
   br_extent_t ex = br_text_renderer_push2(tr, x, y, ZGL, TOP.font_size, TOP.font_color, fit, TOP.text_ancor);
   TOP.cur.x = TOP.padding.x;
-  TOP.cur.y += ex.height + TOP.padding.y;
+  TOP.cur.y += TOP.font_size + TOP.padding.y;
   return ex.size;
 }
 
@@ -183,7 +222,7 @@ bool brui_checkbox(br_strv_t text, bool* checked) {
   float sz = (float)TOP.font_size * 0.6f;
   br_extent_t cb_extent = BR_EXTENT(TOP.cur.x + TOP.max.x, TOP.cur.y + TOP.max.y, sz, sz);
 
-  RETURN_IF_OUT(cb_extent.height, false);
+  RETURN_IF_OUT(TOP.font_size, false);
 
   br_extent_t icon = *checked ?  br_icons.cb_1.size_32 : br_icons.cb_0.size_32;
   bool hover = br_col_vec2_extent(cb_extent, brtl_mouse_pos());
@@ -236,13 +275,11 @@ bool brui_button_icon(br_sizei_t size, br_extent_t icon) {
 }
 
 bool brui_sliderf(br_strv_t text, float* val) {
-  br_extent_t ex = BR_EXTENT(0, 0, TOP.max.width, (TOP.padding.y + (float)TOP.font_size * 3));
+  br_extent_t ex = BR_EXTENT(0, 0, TOP.max.width, (TOP.padding.y + TOP.padding.w + (float)TOP.font_size * 3));
   RETURN_IF_OUT(ex.height, false);
   brui_push(ex);
     brui_text(text);
-    char buff[32];
-    int n = sprintf(buff, "%f", *val);
-    brui_text(BR_STRV(buff, (uint32_t)n));
+    brui_textf("%f", *val);
 
     br_vec2_t mouse = brtl_mouse_pos();
     bool is_down = brtl_mousel_down();
@@ -280,32 +317,36 @@ bool brui_sliderf(br_strv_t text, float* val) {
   return false;
 }
 
+void brui_scroll_bar(float bar_fract, float* bar_offset_fract) {
+  float thick = 5.f;
+  int z = Z;
+  br_vec2_t mouse = brtl_mouse_pos();
+  bool is_down = brtl_mousel_down();
+
+  br_extent_t line_ex = BR_EXTENT(TOP.max.x + TOP.max.width - thick, TOP.max.y, thick, TOP.max.height);
+  br_color_t lc = br_theme.colors.btn_inactive;
+  float bar_height = TOP.max.height * bar_fract;
+  float bar_offset = (TOP.max.height - bar_height) * *bar_offset_fract;
+  br_extent_t bar_ex = BR_EXTENT(TOP.max.x + TOP.max.width - thick - 2.f, TOP.max.y + bar_offset, thick + 2.f, bar_height);
+  br_color_t bc = br_theme.colors.btn_txt_inactive;
+  if (_stack.sliderf == bar_offset_fract || (_stack.sliderf == NULL && br_col_vec2_extent(line_ex, mouse))) {
+    if (is_down) {
+      *bar_offset_fract = br_float_clamp((mouse.y - TOP.max.y) / TOP.max.height, 0, 1);
+      lc = br_theme.colors.btn_active;
+      bc = br_theme.colors.btn_txt_active;
+      _stack.sliderf = bar_offset_fract;
+    } else {
+      lc = br_theme.colors.btn_hovered;
+      bc = br_theme.colors.btn_txt_hovered;
+      _stack.sliderf = NULL;
+    }
+  }
+  br_icons_draw(brtl_shaders()->icon, line_ex, BR_EXTENT(0,0,0,0), lc, lc, z + 10);
+  br_icons_draw(brtl_shaders()->icon, bar_ex, BR_EXTENT(0,0,0,0), bc, bc, z + 11);
+}
+
 
 // ---------------------------Resizables--------------------------
-
-typedef struct {
-  int* arr;
-  int len, cap;
-} bruir_children_t;
-
-typedef struct {
-  bruir_children_t* arr;
-  int len, cap;
-} bruir_childrens_t;
-
-typedef struct {
-  brui_resizable_t* arr;
-  int len, cap;
-
-  brui_drag_mode_t drag_mode;
-  int drag_index;
-  br_vec2_t drag_point;
-  br_extenti_t drag_old_ex;
-} bruirs_t;
-
-static BR_THREAD_LOCAL bruirs_t bruirs;
-static BR_THREAD_LOCAL bruir_childrens_t bruir_childrens;
-
 static void bruir_update_ancors(int index, float dx, float dy, float dw, float dh);
 static int bruir_find_at(int index, br_vec2_t loc, br_vec2_t* out_local_pos);
 static void bruir_update_extent(int index, br_extenti_t new_ex);
@@ -346,10 +387,11 @@ void brui_resizable_update(void) {
 
   br_vec2_t mouse_pos = brtl_mouse_pos();
   if (bruirs.drag_mode == brui_drag_mode_none) {
+    float scroll = brtl_mouse_scroll().y;
     if (brtl_key_ctrl() && brtl_mousel_down() == true) {
       br_vec2_t local_pos = { 0 };
       int index = bruir_find_at(0, mouse_pos, &local_pos);
-      float slack = 25;
+      float slack = 20;
       brui_drag_mode_t new_mode = brui_drag_mode_none;
       if (index != 0) {
         br_extenti_t ex = bruirs.arr[index].cur_extent;
@@ -362,6 +404,14 @@ void brui_resizable_update(void) {
         if      (new_mode == brui_drag_mode_none)        new_mode  = brui_drag_mode_move;
         bruirs.drag_mode = new_mode;
         bruirs.drag_old_ex = ex;
+      }
+    } else if (scroll != 0) {
+      br_vec2_t local_pos = { 0 };
+      int index = bruir_find_at(0, mouse_pos, &local_pos);
+      if (bruirs.arr[index].content_height > (float)bruirs.arr[index].cur_extent.height) {
+        bruirs.arr[index].scroll_offset = br_float_clamp(bruirs.arr[index].scroll_offset - scroll * 10.f, 0, bruirs.arr[index].content_height - (float)bruirs.arr[index].cur_extent.height);
+      } else {
+        bruirs.arr[index].scroll_offset = 0;
       }
     }
   } else {
@@ -397,19 +447,33 @@ void brui_resizable_update(void) {
 }
 
 void brui_resizable_push(int id) {
-  brui_resizable_t res = bruirs.arr[id];
-  BR_ASSERT(false == res.hidden);
+  brui_resizable_t* res = &bruirs.arr[id];
+  BR_ASSERT(false == res->hidden);
 
   TOP.cur.x = 0;
   TOP.cur.y = 0;
+  float old_height = res->content_height;
 
-  brui_push(BR_EXTENTI_TOF(res.cur_extent));
-  brui_z_set(TOP.z + res.z * ((4*1024) >> (4 * _stack.len)));
-
+  brui_push(BR_EXTENTI_TOF(res->cur_extent));
+  res->content_height = 0;
+  brui_z_set(TOP.z + res->z * ((4*1024) >> (4 * _stack.len)));
+  TOP.cur_resizable = id;
   TOP.start_z = TOP.z;
+  TOP.cur.y += -res->scroll_offset;
+  
+  // DEBUg
+//  brui_textf("content_height: %f", old_height);
+//  brui_textf("scroll_offset: %f", res->scroll_offset);
 }
 
 void brui_resizable_pop(void) {
+  brui_resizable_t* res = &bruirs.arr[TOP.cur_resizable];
+  float hidden_height = res->content_height - (float)res->cur_extent.height;
+  if (hidden_height > 0.f && false == brtl_key_ctrl()) {
+    res->scroll_offset_percent = res->scroll_offset / hidden_height;
+    brui_scroll_bar(br_float_clamp((float)res->cur_extent.height / res->content_height, 0, 1), &res->scroll_offset_percent);
+    res->scroll_offset = res->scroll_offset_percent * hidden_height;
+  }
   brui_pop();
   TOP.cur.x += TOP.padding.x;
   TOP.cur.y += TOP.padding.y;
@@ -468,6 +532,12 @@ static void bruir_update_extent(int index, br_extenti_t new_ex) {
       bool new_is_good = brui_extent_is_good(new_ex, bruirs.arr[res.parent].cur_extent);
       bool old_is_good = brui_extent_is_good(res.cur_extent, bruirs.arr[res.parent].cur_extent);
       if (new_is_good == false && old_is_good == true) return;
+      float old_hidden_height = res.content_height - (float)old_ex.height;
+      float hidden_height = res.content_height - (float)new_ex.height;
+      if (hidden_height > 0.f) {
+        float scroll = old_hidden_height < 2 ? 0 : res.scroll_offset / old_hidden_height;
+        bruirs.arr[index].scroll_offset = scroll * hidden_height;
+      }
     }
 
     bruirs.arr[index].cur_extent = new_ex;
@@ -476,6 +546,40 @@ static void bruir_update_extent(int index, br_extenti_t new_ex) {
     float dw = (float)old_ex.width  - (float)new_ex.width;
     float dh = (float)old_ex.height - (float)new_ex.height;
     bruir_update_ancors(0, dx, dy, dw, dh);
+    bruir_children_t children = bruir_childrens.arr[index];
+    for (int i = 0; i < children.len; ++i) {
+      int child = children.arr[i];
+      bool changed = false;
+      br_extenti_t child_extent = bruirs.arr[child].cur_extent;
+      if (child_extent.x > new_ex.width) {
+        child_extent.x = 0;
+        changed = true;
+      }
+      if (child_extent.x + child_extent.width > new_ex.width) {
+        child_extent.width = new_ex.width - child_extent.x - 4;
+        changed = true;
+      }
+      if (child_extent.width < 100) {
+        child_extent.x = 0;
+        child_extent.width = new_ex.width;
+        changed = true;
+      }
+
+      if (child_extent.y >= new_ex.height) {
+        child_extent.y = 0;
+        changed = true;
+      }
+      if (child_extent.y + child_extent.height > new_ex.height) {
+        child_extent.height = new_ex.height - child_extent.y - 4;
+        changed = true;
+      }
+      if (child_extent.height < 100) {
+        child_extent.y = 0;
+        child_extent.height = new_ex.height;
+        changed = true;
+      }
+      if (changed == true) bruir_update_extent(child, child_extent);
+    }
   }
 }
 

@@ -183,9 +183,6 @@ void br_plotter_export(br_plotter_t const* gv, char const * path) {
   fprintf(file, "--offsetx %f\n", gv->uvOffset.x);
   fprintf(file, "--offsety %f\n", gv->uvOffset.y);
 #endif
-  for (size_t i = 0; i < gv->groups.len; ++i) {
-    assert(0);
-  }
   br_datas_export(&gv->groups, file);
   fclose(file);
 }
