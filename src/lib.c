@@ -20,49 +20,11 @@ typedef union {
   br_data_ctor_t data;
 } br_common_ctor;
 
-static void even_split(br_plots_t plots) {
-  int visible_c = 0;
-  for (int i = 0; i < plots.len; ++i) visible_c += plots.arr[i].is_visible ? 1 : 0;
-  if (visible_c == 0) return;
-  int col_c =  (int)(0.5f + sqrtf((float)visible_c));
-  int row_c = visible_c / col_c;
-  if (col_c * row_c < visible_c) row_c++;
-  br_sizei_t win_size = brtl_window_size();
-  
-  int padding_left = 50,
-        padding_right = 10,
-        padding_top = 10,
-        padding_bot = 50;
-  for (int i = 0; i < plots.len; ++i) {
-    plots.arr[i].graph_screen_rect =  BR_EXTENTI(
-      padding_left + (i % col_c) * win_size.width/col_c,
-      padding_top + (i / row_c) * win_size.height/row_c,
-      win_size.width / col_c - padding_left - padding_right,
-      win_size.height / row_c - padding_top - padding_bot
-    );
-  }
-}
-
 static void* main_loop(void* plotterv) {
   br_plotter_t* plotter = plotterv;
   br_plotter_init_specifics_platform(plotter, 1280, 720);
   while (plotter->should_close == false) {
-    br_plotter_begin_drawing(plotter);
-    even_split(plotter->plots);
-    //br_plotter_update_variables(plotter);
-    help_draw_fps(plotter->text, 0, 0);
-    for (int i = 0; i < plotter->plots.len; ++i) {
-      br_plot_t* plot = &plotter->plots.arr[i];
-      if (plot->is_visible) {
-        br_plot_update_context(plot, brtl_mouse_get_pos());
-        br_plot_update_variables(plotter, plot, plotter->groups, brtl_mouse_get_pos());
-        br_plot_update_shader_values(plot, &plotter->shaders);
-        draw_grid_numbers(plotter->text, plot);
-        smol_mesh_grid_draw(plot, &plotter->shaders);
-        br_plot_draw(plot, plotter->groups, &plotter->shaders);
-      }
-    }
-    br_plotter_end_drawing(plotter);
+    br_plotter_draw(plotter);
   }
   brtl_window_close();
   return NULL;
