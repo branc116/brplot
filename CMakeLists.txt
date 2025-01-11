@@ -29,7 +29,7 @@ add_executable(brplot
   src/read_input.c     src/plotter.c     src/keybindings.c    src/str.c       src/theme.c
   src/resampling2.c    src/graph_utils.c src/shaders.c        src/plot.c      src/permastate.c
   src/gui.c            src/filesystem.c  src/data_generator.c src/platform.c  src/text_renderer.c
-  src/gl.c             src/icons.c
+  src/gl.c             src/icons.c       src/ui.c
 )
 
 if (MSVC)

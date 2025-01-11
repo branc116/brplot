@@ -62,18 +62,18 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
 
     exe.addCSourceFiles(.{ .files = &.{
         "./src/data.c",
-        "./src/gl.c",
-        "./src/icons.c",
-        "./src/platform.c",
         "./src/data_generator.c",
         "./src/filesystem.c",
+        "./src/gl.c",
         "./src/graph_utils.c",
         "./src/gui.c",
         "./src/help.c",
+        "./src/icons.c",
         "./src/keybindings.c",
         "./src/main.c",
         "./src/memory.c",
         "./src/permastate.c",
+        "./src/platform.c",
         "./src/plot.c",
         "./src/plotter.c",
         "./src/q.c",
@@ -84,15 +84,16 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
         "./src/str.c",
         "./src/text_renderer.c",
         "./src/theme.c",
+        "./src/ui.c",
     } });
     exe.addIncludePath(b.path("."));
     exe.addIncludePath(b.path("./src"));
     exe.linkLibC();
 
     if (target.result.os.tag == .windows) {
-        exe.link("gdi32");
-        exe.link("opengl32");
-        exe.link("winmm");
+        exe.linkSystemLibrary("gdi32");
+        exe.linkSystemLibrary("opengl32");
+        exe.linkSystemLibrary("winmm");
     }
 
     exe.defineCMacro("_GNU_SOURCE", null);
