@@ -18,6 +18,11 @@ typedef struct {
     br_color_t plot_bg;
     br_color_t plot_menu_color;
 
+    br_color_t ui_edge_inactive;
+    br_color_t ui_edge_bg_inactive;
+    br_color_t ui_edge_active;
+    br_color_t ui_edge_bg_active;
+
     br_color_t bg;
   } colors;
 } br_theme_t;

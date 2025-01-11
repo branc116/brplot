@@ -30,8 +30,10 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
     brui_resizable_t* r = brui_resizable_get(PLOT->extent_handle);
     if (true == r->hidden) continue;
     PLOT->cur_extent = r->cur_extent;
-    br_plot_update_variables(br, PLOT, br->groups, brtl_mouse_pos());
-    br_plot_update_context(PLOT, brtl_mouse_pos());
+    if (PLOT->extent_handle == brui_resizable_active()) {
+      br_plot_update_variables(br, PLOT, br->groups, brtl_mouse_pos());
+      br_plot_update_context(PLOT, brtl_mouse_pos());
+    }
     br_plot_update_shader_values(PLOT, &br->shaders);
     brgl_enable_framebuffer(PLOT->texture_id, PLOT->cur_extent.width, PLOT->cur_extent.height);
     brgl_clear(BR_COLOR_COMPF(br_theme.colors.plot_bg));
@@ -100,6 +102,7 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
                   else br_da_push_t(int, PLOT->groups_to_show, data->group_id);
                 }
               }
+              brui_textf("menuZ: %d plotZ: %d", menu_res->z, r->z);
               br_scrach_free();
             brui_resizable_pop();
           }
@@ -113,6 +116,29 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
 
 static void draw_left_panel(br_plotter_t* br) {
   brui_resizable_push(br->menu_extent_handle);
+    char* scrach = br_scrach_get(4096);
+    brui_text(BR_STRL("Plots"));
+    if (true == brui_vsplit(2, (float)brui_text_size() + 15)) {
+        if (brui_button(BR_STRL("Add 2D"))) {
+          // TODO
+        }
+      brui_vsplit_pop();
+        if (brui_button(BR_STRL("Add 3D"))) {
+          // TODO
+        }
+      brui_pop();
+    }
+
+    for (int i = 0; i < br->plots.len; ++i) {
+      int n = sprintf(scrach, "%s Plot %d", br->plots.arr[i].kind == br_plot_kind_2d ? "2D" : "3D", i);
+      brui_resizable_t* r = brui_resizable_get(br->plots.arr[i].extent_handle);
+      bool is_visible = !r->hidden;
+      brui_checkbox(BR_STRV(scrach, (uint32_t)n), &is_visible);
+      r->hidden = !is_visible;
+    }
+    brui_new_lines(1);
+
+    brui_sliderf(BR_STRL("min something"), &context.min_sampling);
     brui_checkbox(BR_STRL("Debug"), &context.debug_bounds);
     if (brui_checkbox(BR_STRL("Dark Theme"), &br->dark_theme)) {
       if (br->dark_theme) br_theme_dark();
@@ -127,16 +153,8 @@ static void draw_left_panel(br_plotter_t* br) {
     if (brui_button(BR_STRL("Exit"))) {
       br->should_close = true;
     }
-    char* scrach = br_scrach_get(4096);
-    for (int i = 0; i < br->plots.len; ++i) {
-      int n = sprintf(scrach, "%s Plot %d", br->plots.arr[i].kind == br_plot_kind_2d ? "2D" : "3D", i);
-      brui_resizable_t* r = brui_resizable_get(br->plots.arr[i].extent_handle);
-      bool is_visible = !r->hidden;
-      brui_checkbox(BR_STRV(scrach, (uint32_t)n), &is_visible);
-      r->hidden = !is_visible;
-    }
+    brui_text(BR_STRL("Data:"));
     brui_text_size_set(16);
-    brui_sliderf(BR_STRL("min something"), &context.min_sampling);
     for (size_t i = 0; i < br->groups.len; ++i) {
       brui_push(BR_EXTENT(0, 0, brui_top_width(), 40));
         int n = sprintf(scrach, "Data %d (%zu points)", br->groups.arr[i].group_id, br->groups.arr[i].len);

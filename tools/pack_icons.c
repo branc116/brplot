@@ -83,6 +83,10 @@ image_t imgs[] = {
     .img = "cb_1",
     STATIC_ARRAY_INT(32)
   },
+  {
+    .img = "edge",
+    STATIC_ARRAY_INT(8)
+  },
 };
 
 int* image_sizes(int n, image_t* imgs, int* out_len) {

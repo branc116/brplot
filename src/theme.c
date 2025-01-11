@@ -20,6 +20,14 @@ void br_theme_dark(void) {
   br_theme.colors.grid_nums_bg = br_theme.colors.plot_bg;
   br_theme.colors.grid_lines = br_color_greener(br_color_darker(txt, 0.7f), 0.02f);
 
+  br_theme.colors.ui_edge_inactive = br_color_lighter(br_theme.colors.btn_inactive, 0.8f);
+  br_theme.colors.ui_edge_active = br_theme.colors.btn_active;
+
+  br_theme.colors.ui_edge_bg_inactive = br_theme.colors.plot_menu_color;
+  br_theme.colors.ui_edge_bg_inactive.a = 0x00;
+  br_theme.colors.ui_edge_bg_active = br_theme.colors.plot_menu_color;
+  br_theme.colors.ui_edge_bg_active.a = 0x00;
+
   br_theme.colors.bg = bg;
   br_theme.colors.bg.a = 0x00;
 }

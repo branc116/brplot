@@ -1,16 +1,4 @@
-#if defined(__clang__)
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wpedantic"
-#elif defined(__GNUC__)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wpedantic"
-#endif
 #include ".generated/icons.c"
-#if defined(__clang__)
-#  pragma clang diagnostic pop
-#elif defined(__GNUC__)
-#  pragma GCC diagnostic pop
-#endif
 
 #include "src/br_gl.h"
 #include "src/br_icons.h"
@@ -19,8 +7,20 @@
 #include "src/br_math.h"
 #include "src/br_pp.h"
 
-
 static BR_THREAD_LOCAL GLuint icons_id = 0;
+
+#define I br_icons.edge.size_8
+struct br_extra_icons_t br_extra_icons = {
+  .edge_tl.size_8 = BR_EXTENT(I.x, I.y + I.height, I.width, -I.height),
+  .edge_tr.size_8 = BR_EXTENT(I.x + I.width, I.y + I.height, -I.width, -I.height),
+  .edge_br.size_8 = BR_EXTENT(I.x + I.width, I.y, -I.width, I.height),
+
+  .edge_b.size_8 =  BR_EXTENT(I.x + 7.5f/8.0f * I.width, I.y + 6.5f/8.0f*I.height, 0.01f/8.0f*I.width, 1.4f/8.f*I.height),
+  .edge_t.size_8 =  BR_EXTENT(I.x + 7.5f/8.0f * I.width, I.y + 7.9f/8.0f*I.height, 0.01f/8.0f*I.width, -1.4f/8.f*I.height),
+  .edge_l.size_8 =  BR_EXTENT(I.x, I.y, I.width * 1.4f/8.0f, I.height * 0.01f/8.0f),
+  .edge_r.size_8 =  BR_EXTENT(I.x + 1.4f/8.0f * I.width, I.y, -I.width * 1.4f/8.0f, I.height * 0.01f/8.0f),
+};
+#undef I
 
 void br_icons_init(br_shader_icon_t* shader) {
   icons_id = brgl_load_texture(br_icons_atlas, br_icons_atlas_width, br_icons_atlas_height, BRGL_TEX_GRAY);
@@ -28,12 +28,12 @@ void br_icons_init(br_shader_icon_t* shader) {
 }
 
 // TODO: extent to bb
-void br_icons_draw(br_shader_icon_t* shader, br_extent_t screen, br_extent_t atlas, br_color_t bg, br_color_t fg, int z) {
+void br_icons_draw(br_extent_t screen, br_extent_t atlas, br_color_t bg, br_color_t fg, int z) {
   br_sizei_t res = brtl_viewport().size;
   br_vec4_t bgv = BR_COLOR_TO4(bg);
   br_vec4_t fgv = BR_COLOR_TO4(fg);
   float gl_z = BR_Z_TO_GL(z);
-  br_shader_icon_push_quad(shader, (br_shader_icon_el_t[4]) {
+  br_shader_icon_push_quad(brtl_shaders()->icon, (br_shader_icon_el_t[4]) {
     { .pos = BR_VEC42(br_vec2_stog(screen.pos, res), atlas.pos), .bg  = bgv, .fg = fgv, .z = gl_z },
     { .pos = BR_VEC42(br_vec2_stog(br_extent_tr(screen), res), br_extent_tr(atlas)), .bg  = bgv, .fg = fgv, .z = gl_z },
     { .pos = BR_VEC42(br_vec2_stog(br_extent_br(screen), res), br_extent_br(atlas)), .bg  = bgv, .fg = fgv, .z = gl_z },
