@@ -90,8 +90,6 @@ BR_THREAD_LOCAL char _scrach[2048];
 #define BRUI_LOG(...)
 #endif
 
-
-
 brui_stack_el_t brui_stack_el(br_extent_t max) {
   if (_stack.len > 0) {
     brui_stack_el_t new_el;

@@ -223,11 +223,7 @@ $(PREFIX_BUILD)/%.o: %.c
 
 $(OBJS): $(NOBS)
 
-src/main.c: .generated/icons.h .generated/icons.c
-src/gui.c: .generated/icons.h .generated/icons.c
-src/icons.c: .generated/icons.h .generated/icons.c
-src/gl.c: .generated/gl.c
-src/help.c: .generated/default_font.h
+src/*.c: .generated/icons.h .generated/icons.c .generated/gl.c .generated/icons.h .generated/icons.c .generated/default_font.h
 src/shaders.c: $(SHADERS_HEADER)
 
 .PHONY: clean
