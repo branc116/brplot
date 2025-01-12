@@ -148,15 +148,16 @@ void brui_pop(void) {
     br_color_t bc = br_theme.colors.ui_edge_bg_inactive;
 
     float edge = 4;
+    float thick = edge / 4;
 
     if (TOP.hide_border == false && TOP.is_active && br_col_vec2_extent(TOP.max, brtl_mouse_pos())) {
       ec = br_theme.colors.ui_edge_active;
       bc = br_theme.colors.ui_edge_bg_active;
     }
-    br_icons_draw(BR_EXTENT(TOP.max.x + edge, TOP.max.y, TOP.max.width - edge*2, 2), br_extra_icons.edge_t.size_8, ec, bc, Z);
-    br_icons_draw(BR_EXTENT(TOP.max.x + edge, TOP.max.y + TOP.max.height - 2, TOP.max.width - edge*2, 2), br_extra_icons.edge_b.size_8, ec, bc, Z);
-    br_icons_draw(BR_EXTENT(TOP.max.x, TOP.max.y + edge, 2, TOP.max.height - 2*edge), br_extra_icons.edge_l.size_8, ec, bc, Z);
-    br_icons_draw(BR_EXTENT(TOP.max.x + TOP.max.width - 2, TOP.max.y + edge, 2, TOP.max.height - 2*edge), br_extra_icons.edge_r.size_8, ec, bc, Z);
+    br_icons_draw(BR_EXTENT(TOP.max.x + edge, TOP.max.y, TOP.max.width - edge*2, thick), br_extra_icons.edge_t.size_8, ec, bc, Z);
+    br_icons_draw(BR_EXTENT(TOP.max.x + edge, TOP.max.y + TOP.max.height - thick, TOP.max.width - edge*2, thick), br_extra_icons.edge_b.size_8, ec, bc, Z);
+    br_icons_draw(BR_EXTENT(TOP.max.x, TOP.max.y + edge, thick, TOP.max.height - 2*edge), br_extra_icons.edge_l.size_8, ec, bc, Z);
+    br_icons_draw(BR_EXTENT(TOP.max.x + TOP.max.width - thick, TOP.max.y + edge, thick, TOP.max.height - 2*edge), br_extra_icons.edge_r.size_8, ec, bc, Z);
 
     br_icons_draw(BR_EXTENT(TOP.max.x, TOP.max.y + TOP.max.height - edge, edge, edge), br_icons.edge.size_8, bc, ec, Z);
     br_icons_draw(BR_EXTENT(TOP.max.x + TOP.max.width - edge, TOP.max.y + TOP.max.height - edge, edge, edge), br_extra_icons.edge_br.size_8, bc, ec, Z);
