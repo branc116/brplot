@@ -47,8 +47,6 @@
 #endif
 #if defined(__APPLE__)
 #  define _GLFW_COCOA
-#  define _GLFW_USE_MENUBAR       // To create and populate the menu bar when the first window is created
-#  define _GLFW_USE_RETINA        // To have windows use the full resolution of Retina displays
 #endif
 #if defined(__TINYC__)
 #  define _WIN32_WINNT_WINXP      0x0501
@@ -131,6 +129,8 @@
 #endif
 
 #if defined(__APPLE__)
+#  include <sys/syslimits.h>
+#  include <mach-o/dyld.h>
 #  include "external/glfw/src/posix_module.c"
 #  include "external/glfw/src/posix_thread.c"
 #  include "external/glfw/src/cocoa_init.m"
