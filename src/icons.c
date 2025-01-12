@@ -9,22 +9,24 @@
 
 static BR_THREAD_LOCAL GLuint icons_id = 0;
 
-#define I br_icons.edge.size_8
-struct br_extra_icons_t br_extra_icons = {
-  .edge_tl.size_8 = BR_EXTENT(I.x, I.y + I.height, I.width, -I.height),
-  .edge_tr.size_8 = BR_EXTENT(I.x + I.width, I.y + I.height, -I.width, -I.height),
-  .edge_br.size_8 = BR_EXTENT(I.x + I.width, I.y, -I.width, I.height),
-
-  .edge_b.size_8 =  BR_EXTENT(I.x + 7.5f/8.0f * I.width, I.y + 6.5f/8.0f*I.height, 0.01f/8.0f*I.width, 1.4f/8.f*I.height),
-  .edge_t.size_8 =  BR_EXTENT(I.x + 7.5f/8.0f * I.width, I.y + 7.9f/8.0f*I.height, 0.01f/8.0f*I.width, -1.4f/8.f*I.height),
-  .edge_l.size_8 =  BR_EXTENT(I.x, I.y, I.width * 1.4f/8.0f, I.height * 0.01f/8.0f),
-  .edge_r.size_8 =  BR_EXTENT(I.x + 1.4f/8.0f * I.width, I.y, -I.width * 1.4f/8.0f, I.height * 0.01f/8.0f),
-};
-#undef I
+struct br_extra_icons_t br_extra_icons;
 
 void br_icons_init(br_shader_icon_t* shader) {
   icons_id = brgl_load_texture(br_icons_atlas, br_icons_atlas_width, br_icons_atlas_height, BRGL_TEX_GRAY);
   shader->uvs.atlas_uv = icons_id;
+
+#define I br_icons.edge.size_8
+  br_extra_icons = (struct br_extra_icons_t) {
+    .edge_tl.size_8 = BR_EXTENT(I.x, I.y + I.height, I.width, -I.height),
+    .edge_tr.size_8 = BR_EXTENT(I.x + I.width, I.y + I.height, -I.width, -I.height),
+    .edge_br.size_8 = BR_EXTENT(I.x + I.width, I.y, -I.width, I.height),
+
+    .edge_b.size_8 =  BR_EXTENT(I.x + 7.5f/8.0f * I.width, I.y + 6.5f/8.0f*I.height, 0.01f/8.0f*I.width, 1.4f/8.f*I.height),
+    .edge_t.size_8 =  BR_EXTENT(I.x + 7.5f/8.0f * I.width, I.y + 7.9f/8.0f*I.height, 0.01f/8.0f*I.width, -1.4f/8.f*I.height),
+    .edge_l.size_8 =  BR_EXTENT(I.x, I.y, I.width * 1.4f/8.0f, I.height * 0.01f/8.0f),
+    .edge_r.size_8 =  BR_EXTENT(I.x + 1.4f/8.0f * I.width, I.y, -I.width * 1.4f/8.0f, I.height * 0.01f/8.0f),
+  };
+#undef I
 }
 
 // TODO: extent to bb
