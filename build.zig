@@ -3,6 +3,22 @@ const os = std.os;
 
 var is_release = true;
 
+pub fn generate_gl(b: *std.Build) !*std.Build.Step.Run {
+    const full = std.builtin.OptimizeMode.ReleaseSafe;
+    const native_target = b.resolveTargetQuery(.{});
+    var generateFont = b.addExecutable(.{
+        .name = "gen_gl",
+        .target = native_target,
+        .optimize = full,
+    });
+    generateFont.addCSourceFile(.{ .file = b.path("./tools/gl_gen.c") });
+    generateFont.addCSourceFile(.{ .file = b.path("./src/str.c") });
+    generateFont.addIncludePath(b.path("."));
+    generateFont.linkLibC();
+    const ret = b.addRunArtifact(generateFont);
+    return ret;
+}
+
 pub fn generate_fonts(b: *std.Build) !*std.Build.Step.Run {
     const full = std.builtin.OptimizeMode.ReleaseSafe;
     const native_target = b.resolveTargetQuery(.{});
@@ -113,6 +129,7 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
 
     exe.step.dependOn(&(try pack_icons(b)).step);
     exe.step.dependOn(&(try generate_fonts(b)).step);
+    exe.step.dependOn(&(try generate_gl(b)).step);
     return exe;
 }
 

@@ -344,6 +344,8 @@ int main(void) {
 
   fclose(file);
 
+
+  FILE* f = fopen(".generated/gl_cmake_is_retarded.h", "w+"); fclose(f);
   for (int i = 0; i < funcs.len; ++i) {
     br_da_free(funcs.arr[i].params);
   }

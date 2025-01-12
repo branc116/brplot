@@ -49,6 +49,9 @@ if (USE_HOTRELOAD)
   target_compile_options(brplot PUBLIC -fpie)
 endif ()
 
+
+file(MAKE_DIRECTORY .generated)
+
 add_executable(font_bake tools/font_bake.c)
 add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/.generated/default_font.h
   COMMAND font_bake content/font.ttf ${CMAKE_CURRENT_SOURCE_DIR}/.generated/default_font.h
@@ -56,17 +59,24 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/.generated/default_font.h
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(pack_icons tools/pack_icons.c)
+add_executable(gl_gen tools/gl_gen.c src/str.c)
 target_include_directories(pack_icons PUBLIC .)
+target_include_directories(gl_gen PUBLIC .)
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
 else ()
   target_link_libraries(pack_icons PUBLIC m)
+  target_link_libraries(gl_gen PUBLIC m)
 endif ()
 file(GLOB icons content/*.png)
 add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/.generated/icons.c ${CMAKE_CURRENT_SOURCE_DIR}/.generated/icons.h
   COMMAND pack_icons
-  DEPENDS font_bake ${icons}
+  DEPENDS pack_icons ${icons}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-target_sources(brplot PUBLIC .generated/icons.h)
+add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/.generated/gl.c ${CMAKE_CURRENT_SOURCE_DIR}/.generated/gl_cmake_is_retarded.h
+  COMMAND gl_gen
+  DEPENDS gl_gen
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+target_sources(brplot PUBLIC .generated/icons.h .generated/gl_cmake_is_retarded.h .generated/default_font.h)
 
 if (CMAKE_BUILD_TYPE STREQUAL Debug)
   target_compile_definitions(brplot PUBLIC BR_DEBUG)

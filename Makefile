@@ -237,6 +237,7 @@ clean:
 	test -d bin &&  rm bin -rdf || echo "done"
 	test -d www &&  rm www -rdf || echo "done"
 	test -d zig-cache && rm zig-cache -rdf || echo "done"
+	test -d .zig-cache && rm .zig-cache -rdf || echo "done"
 	test -d zig-out && rm zig-out -rdf || echo "done"
 	test -f src/misc/shaders.h && rm src/misc/shaders.h || echo "done"
 	test -f src/misc/shaders_web.h && rm src/misc/shaders_web.h || echo "done"
