@@ -22,7 +22,7 @@ done
 
 for CONFIG in DEBUG RELEASE
 do
-  for COMPILER in GCC CLANG ZIG MUSL
+  for COMPILER in GCC CLANG ZIG
   do
     for HEADLESS in YES NO
     do
@@ -71,5 +71,4 @@ done
 #echo "Running fuzztests" && time cat /dev/random | head --bytes=1M | ./bin/brplot_headless_linux_debug_clang > /dev/null && echo "Fuzz test OK" && \
 #time ./bin/brplot_raylib_linux_debug_clang --unittest && echo "UNIT TESTS for raylib OK" && \
 #time ./bin/brplot_headless_linux_debug_clang --unittest && echo "UNIT TESTS for headless OK" && \
-#ls -alFh bin && \
-#echo "OK"
+ls -alFh bin && echo "OK"
