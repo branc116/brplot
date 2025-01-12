@@ -89,7 +89,6 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
         "./src/main.c",
         "./src/memory.c",
         "./src/permastate.c",
-        "./src/platform.c",
         "./src/plot.c",
         "./src/plotter.c",
         "./src/q.c",
@@ -110,6 +109,17 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
         exe.linkSystemLibrary("gdi32");
         exe.linkSystemLibrary("opengl32");
         exe.linkSystemLibrary("winmm");
+    }
+
+    if (target.result.os.tag == .macos) {
+        exe.root_module.addCSourceFile(.{ .file = b.path("src/platform.c"), .flags = &.{"-ObjC"} });
+        exe.linkFramework("Foundation");
+        exe.linkFramework("CoreServices");
+        exe.linkFramework("CoreGraphics");
+        exe.linkFramework("AppKit");
+        exe.linkFramework("IOKit");
+    } else {
+        exe.root_module.addCSourceFile(.{ .file = b.path("src/platform.c") });
     }
 
     exe.defineCMacro("_GNU_SOURCE", null);
