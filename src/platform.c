@@ -437,6 +437,6 @@ static void br_help_sleep(double seconds) {
   while (nanosleep(&req, &req) == -1) continue;
 #endif
 #if defined(__APPLE__)
-  usleep(sleepSeconds*1000000.0);
+  usleep(seconds*1000000.0);
 #endif
 }
