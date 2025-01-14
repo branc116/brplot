@@ -1,4 +1,10 @@
 ==================================RAYLIB========================================
+== Branimir ==
+Even tho I have removed raylib from this project. Some of the code is inspired by/copyed from
+raylib. So if you find a line of code that Ramon created, it's thanks to him that this works.
+And if you find a line of code that Ramon created and it's because of that line that brplot doesn't work,
+you should blame me.
+== End of Branimir ==
  Copyright (c) 2013-2023 Ramon Santamaria (@raysan5)
 
  This software is provided "as-is", without any express or implied warranty. In no event
@@ -17,6 +23,12 @@
    3. This notice may not be removed or altered from any source distribution.
 =================================RAYLIB=========================================
 =================================IMGUI==========================================
+== Branimir ==
+Even tho I have removed imgui from this project. Some of the code is inspired by/copyed from
+imgui. So if you find a line of code that Omar created, it's thanks to him that this works.
+And if you find a line of code that Omar created and it's because of that line that brplot doesn't work,
+you should blame me.
+== End of Branimir ==
  The MIT License (MIT)
 
  Copyright (c) 2014-2024 Omar Cornut
