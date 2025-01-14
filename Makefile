@@ -286,7 +286,7 @@ bin/pack_icons: tools/pack_icons.c $(NOBS)
 	bin/gl_gen
 
 bin/gl_gen: tools/gl_gen.c $(NOBS)
-	$(NATIVE_CC) -I. -O0 -ggdb -o bin/gl_gen tools/gl_gen.c src/str.c
+	$(NATIVE_CC) -I. -O0 -ggdb -g3 -o bin/gl_gen tools/gl_gen.c src/str.c
 
 .PHONY: bench
 bench: bin/bench

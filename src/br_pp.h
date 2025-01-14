@@ -37,16 +37,26 @@
 
 #if 1 || !defined(BR_DISABLE_LOG)
 #  define LOG(...)
-#  define LOGI(format, ...) fprintf(stderr, "[INFO][" __FILE__ ":%d]" format "\n", __LINE__, ##__VA_ARGS__)
-#  define LOGW(format, ...) fprintf(stderr, "[WARNING][" __FILE__ ":%d]" format "\n", __LINE__, ##__VA_ARGS__)
-#  define LOGE(format, ...) fprintf(stderr, "ERROR: [%s:%d]" format "\n", __FILE__, __LINE__,  ##__VA_ARGS__)
-#  define LOGF(format, ...) (fprintf(stderr, "FATAL: [%s:%d]" format "\n", __FILE__, __LINE__,  ##__VA_ARGS__), exit(1))
+#  define LOGI(format, ...) fprintf(stderr, "[INFO][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__)
+#  define LOGW(format, ...) fprintf(stderr, "[WARNING][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__)
+#  define LOGE(format, ...) fprintf(stderr, "[ERROR][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__)
 #else
 #  define LOG(...)
 #  define LOGI(...)
 #  define LOGE(text)
 #  define LOGEF(format, ...)
 #endif
+
+#define BR_LOG_GL_ERROR(ERROR) do { \
+  if (0 != (ERROR)) { \
+    LOGF("GL Error: %d", (ERROR)); \
+  } \
+} while(0)
+
+#define LOGF(format, ...) do { \
+  fprintf(stderr, "[FATAL][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__); \
+  exit(1); \
+} while(0)
 
 
 #ifdef __cplusplus
@@ -58,11 +68,15 @@ void* br_malloc(size_t size);
 void* br_calloc(size_t n, size_t size);
 void* br_realloc(void *old, size_t newS);
 void  br_free(void* p);
-void* br_imgui_malloc(size_t size, void* user_data);
-void  br_imgui_free(void* p, void* user_data);
 
 #ifdef __cplusplus
 }
+#endif
+
+#if defined(_MSC_VER)
+#  define BR_BREAKPOINT()       __debugbreak()
+#else
+#  define BR_BREAKPOINT()       __builtin_trap()
 #endif
 
 #if defined(BR_DEBUG) && defined(__linux__)
@@ -70,20 +84,24 @@ void  br_imgui_free(void* p, void* user_data);
 #  define BR_CALLOC calloc
 #  define BR_REALLOC realloc
 #  define BR_FREE free
-#  define BR_IMGUI_MALLOC br_imgui_malloc
-#  define BR_IMGUI_FREE br_imgui_free
-#  include <assert.h>
-//#  define BR_ASSERT(x) assert(x)
-#  define BR_ASSERT(x) if (!(x)) *(volatile int*)0; assert(x)
+#  define BR_ASSERT(x) do { \
+     if (!(x)) { \
+       LOGE("ASSERT FAILED: `" #x "`"); \
+       BR_BREAKPOINT(); \
+       LOGF("Exiting"); \
+     } \
+   } while (0)
 #else
-#  include <assert.h>
-#  define BR_ASSERT(x) if (!(x)) { *(volatile int*)0; exit(0); } assert(x)
 #  define BR_MALLOC malloc
 #  define BR_CALLOC calloc
 #  define BR_REALLOC realloc
 #  define BR_FREE free
-#  define BR_IMGUI_MALLOC br_imgui_malloc
-#  define BR_IMGUI_FREE br_imgui_free
+#  define BR_ASSERT(x) do { \
+     if (!(x)) { \
+       LOGE("ASSERT FAILED: `" #x "`"); \
+       LOGF("Exiting"); \
+     } \
+   } while (0)
 #endif
 
 #if !defined(BR_HAS_HOTRELOAD)

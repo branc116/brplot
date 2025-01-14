@@ -45,6 +45,7 @@
 "void glGenTextures(GLsizei n, GLuint* textures)" \
 "void glGenVertexArrays(GLsizei n, GLuint* arrays)" \
 "GLint glGetAttribLocation(GLuint program, GLchar const* name)" \
+"GLenum glGetError(void)" \
 "void glGetProgramInfoLog(GLuint program, GLsizei bufSize, GLsizei* length, GLchar* infoLog)" \
 "void glGetProgramiv(GLuint program, GLenum pname, GLint* params)" \
 "void glGetShaderInfoLog(GLuint shader, GLsizei bufSize, GLsizei* length, GLchar* infoLog)" \
@@ -156,10 +157,11 @@ static void print_tracy_impl(FILE* file, func_t* funcs, size_t len) {
     }
     fprintf(file, ");\n");
     fprintf(file, "  TracyCZoneEnd(%.*s);\n", f.name.len, f.name.str);
+    fprintf(file, "  BR_LOG_GL_ERROR(glGetError_internal());\n");
     if (is_void == false) {
-      fprintf(file, "  return ret;\n", f.name.len, f.name.str);
+      fprintf(file, "  return ret;\n");
     }
-    fprintf(file, "}\n\n", f.name.len, f.name.str);
+    fprintf(file, "}\n\n");
   }
 }
 
@@ -219,7 +221,11 @@ void brgl_load(void) {
       }
     }
     fprintf(file, "))glfwGetProcAddress(\"%.*s\");\n", f.name.len, f.name.str);
-    fprintf(file, "  BR_ASSERT(%.*s);\n", f.name.len, f.name.str);
+    if (postfix) {
+      fprintf(file, "  BR_ASSERT(%.*s_%s);\n", f.name.len, f.name.str, postfix);
+    } else {
+      fprintf(file, "  BR_ASSERT(%.*s);\n", f.name.len, f.name.str);
+    }
   }
   fprintf(file, "}\n\n");
 }
@@ -264,11 +270,11 @@ int main(void) {
           if (param_segs.len < 2) {
             if (param_segs.len == 0) {
               LOGF("Unexpected paramter construct. Expected 2 or more tokens ( or keyword void ). Got 0 tokens. On line: %d\n"
-                   "  `%.*s`", line, func_len - 1, cur_f.ret_type.str, &all_funcs.str[i + 1]);
+                   "  `%.*s`", line, func_len - 1, cur_f.ret_type.str);
             }
             else if (br_strv_eq(param_segs.arr[0], br_strv_from_literal("void")) == false)
-              LOGF("Unexpected paramter construct. Expected 2 or more tokens ( or keyword void ). Got a single token `%.*s`: on line: %d\n" "  `%.*s`",
-                   param_segs.arr[0].len, param_segs.arr[0].str, line, func_len - 1, cur_f.ret_type.str, &all_funcs.str[i + 1]);
+              LOGF("Unexpected paramter construct. Expected 2 or more tokens ( or keyword void ). Got a single token `%.*s`: on line: %d\n`%.*s`",
+                   param_segs.arr[0].len, param_segs.arr[0].str, line, func_len - 1, cur_f.ret_type.str);
           } else {
             fparam_t param = { 0 };
             extract_param(param_segs.arr, param_segs.len, &param);
@@ -296,7 +302,7 @@ int main(void) {
             br_da_push(param_segs, cur);
           }
           if (param_segs.len < 2) {
-            LOGF("Unexpected paramter construct. Expected 2 or more tokens. Got %d: in line: %d\n"
+            LOGF("Unexpected paramter construct. Expected 2 or more tokens. Got %zu: in line: %d\n"
                   "  `%.*s??%.5s...`", param_segs.len, line, func_len - 1, cur_f.ret_type.str, &all_funcs.str[i + 1]);
           }
           fparam_t param = { 0 };

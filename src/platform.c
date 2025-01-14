@@ -196,6 +196,7 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
     glfwMakeContextCurrent(br->win.glfw);
     //glfwSwapInterval(1);
   }
+
   stl_br = br;
   brgl_load();
   brgl_disable_back_face_cull();

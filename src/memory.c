@@ -21,22 +21,4 @@ void* br_realloc(void *old, size_t newS) {
 void br_free(void* p) {
   free(p);
 }
-
-void* br_imgui_malloc(size_t size, void*) {
-  return br_malloc(size);
-}
-
-void br_imgui_free(void* p, void*) {
-  br_free(p);
-}
-#else
-void* br_imgui_malloc(size_t size, void* p) {
-  (void)p;
-  return malloc(size);
-}
-
-void br_imgui_free(void* p, void* up) {
-  (void)up;
-  free(p);
-}
 #endif

@@ -514,7 +514,7 @@ void brui_resizable_push(int id) {
 
   TOP.cur.x = 0;
   TOP.cur.y = 0;
-  float old_height = res->content_height;
+  //float old_height = res->content_height;
 
   brui_push(BR_EXTENTI_TOF(res->cur_extent));
   res->content_height = 0;
