@@ -75,6 +75,7 @@ void  brui_z_set(int z);
 
 void brui_resizable_init(void);
 int brui_resizable_new(br_extenti_t init_extent, int parent);
+int brui_resizable_new2(br_extenti_t init_extent, int parent, brui_resizable_t template);
 void brui_resizable_update(void);
 void bruir_resizable_refresh(int index);
 brui_resizable_t* brui_resizable_get(int id);

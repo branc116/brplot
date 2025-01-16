@@ -437,6 +437,23 @@ int brui_resizable_new(br_extenti_t init_extent, int parent) {
   return new_id;
 }
 
+int brui_resizable_new2(br_extenti_t init_extent, int parent, brui_resizable_t template) {
+  BR_ASSERT(bruirs.len > parent);
+
+  brui_resizable_t new = template;
+  new.cur_extent = init_extent;
+  new.z = bruir_childrens.arr[parent].len + 1;
+  new.parent = parent;
+  int new_id = bruirs.len;
+  br_da_push_t(int, bruirs, new);
+
+  br_da_push_t(int, bruir_childrens.arr[parent], new_id);
+  bruir_children_t children = { 0 };
+
+  br_da_push_t(int, bruir_childrens, children);
+  return new_id;
+}
+
 void brui_resizable_update(void) {
   bruir_update_extent(0, brtl_viewport(), false);
 

@@ -244,7 +244,7 @@ bool br_permastate_load_plots(FILE* file, br_plotter_t* br) {
 
   for (size_t i = 0; i < plots_len; ++i) {
     plots[i].extent_handle = brui_resizable_new(plots[i].cur_extent, 0);
-    plots[i].menu_extent_handle = brui_resizable_new(BR_EXTENTI(0, 0, 300, plots[i].cur_extent.height), plots[i].extent_handle);
+    plots[i].menu_extent_handle = brui_resizable_new2(BR_EXTENTI(0, 0, 300, plots[i].cur_extent.height), plots[i].extent_handle, (brui_resizable_t) { .hidden = true });
   }
 
   return true;
