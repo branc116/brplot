@@ -56,6 +56,7 @@ BR_API void br_plotter_init(br_plotter_t* br) {
   }
   context.font_scale = 1.8f;
   context.min_sampling = 0.001f;
+  context.cull_min = 2.f;
 }
 
 BR_API void br_plotter_resize(br_plotter_t* br, float width, float height) {

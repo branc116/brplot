@@ -26,6 +26,11 @@ float br_resampling2_get_something2(resampling2_t* res);
 
 
 // Internal
+typedef struct {
+  bool has_old;
+  br_vec2_t old;
+  br_vec2_t mid;
+} br_line_culler_t;
 
 typedef struct resampling2_nodes_t {
   uint32_t index_start, len;
@@ -72,6 +77,7 @@ typedef struct resampling2_t {
   float something;
   float something2;
   uint32_t draw_count;
+  br_line_culler_t culler;
 } resampling2_t;
 
 bool resampling2_nodes_2d_is_inside(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, br_extent_t rect);

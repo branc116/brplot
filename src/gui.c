@@ -139,6 +139,7 @@ static void draw_left_panel(br_plotter_t* br) {
     brui_new_lines(1);
 
     brui_sliderf(BR_STRL("min something"), &context.min_sampling);
+    brui_sliderf(BR_STRL("cull min"), &context.cull_min);
     brui_checkbox(BR_STRL("Debug"), &context.debug_bounds);
     if (brui_checkbox(BR_STRL("Dark Theme"), &br->dark_theme)) {
       if (br->dark_theme) br_theme_dark();

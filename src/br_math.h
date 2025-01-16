@@ -7,6 +7,7 @@
 #define BR_VEC2(X, Y) ((br_vec2_t) { .x = (X), .y = (Y) })
 #define BR_VEC2I(X, Y) ((br_vec2i_t) { .x = (X), .y = (Y) })
 #define BR_VEC2_TOI(V) ((br_vec2i_t) { .x = (int)(V).x, .y = (int)(V).y })
+#define BR_VEC2I_TOF(V) ((br_vec2_t) { .x = (float)(V).x, .y = (float)(V).y })
 #define BR_VEC2I_SUB(A, B) ((br_vec2i_t) { .x = (A).x - (B).x, .y = (A).y - (B).y })
 #define BR_VEC2I_SCALE(V, B) ((br_vec2i_t) { .x = (V).x * (B), .y = (V).y * (B) })
 #define BR_VEC3_TOC(V, A) ((br_color_t) { .r = (unsigned char)((V).x * 255.f), .g = (unsigned char)((V).y * 255.f), .b = (unsigned char)((V).z * 255.f), .a = (A) })
@@ -218,6 +219,10 @@ static inline br_vec2_t br_vec2_sub(br_vec2_t a, br_vec2_t b) {
   return BR_VEC2(a.x - b.x, a.y - b.y);
 }
 
+static inline bool br_vec2_eq(br_vec2_t a, br_vec2_t b) {
+  return a.x == b.x && a.y == b.y;
+}
+
 static inline br_vec2i_t br_vec2i_add(br_vec2i_t a, br_vec2i_t b) {
   return BR_VEC2I(a.x + b.x, a.y + b.y);
 }
@@ -238,6 +243,10 @@ static inline float br_vec2_len(br_vec2_t a) {
 
 static inline br_vec2_t br_vec2_mul(br_vec2_t a, br_vec2_t b) {
   return BR_VEC2(a.x * b.x, a.y * b.y);
+}
+
+static inline br_vec2_t br_vec2_div(br_vec2_t a, br_vec2_t b) {
+  return BR_VEC2(a.x / b.x, a.y / b.y);
 }
 
 static inline float br_vec2_dist2(br_vec2_t a, br_vec2_t b) {

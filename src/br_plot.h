@@ -69,6 +69,7 @@ typedef struct br_plots_t {
 
 typedef struct context_t {
   float font_scale, min_sampling;
+  float cull_min;
   bool debug_bounds;
   size_t alloc_size, alloc_count, alloc_total_size, alloc_total_count, alloc_max_size, alloc_max_count, free_of_unknown_memory;
 } context_t;

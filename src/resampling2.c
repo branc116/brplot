@@ -14,6 +14,48 @@
 
 #define RESAMPLING_NODE_MAX_LEN 64
 
+void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_data_t const* data, br_plot_t const* plot) {
+  if (lc->has_old == false) {
+    lc->old = p;
+    lc->has_old = true;
+  }
+
+  br_vec2_t d = 
+  br_vec2_mul(
+    br_vec2_div(
+      br_vec2_sub(p, lc->old),
+      plot->dd.graph_rect.size.vec),
+    BR_VEC2I_TOF(plot->cur_extent.size.vec)
+  );
+
+  const float min_dist = context.cull_min;
+  //LOGI("(%f, %f) -> (%f, %f) d = %f %f", lc->old.x, lc->old.y, p.x, p.y, d.x, d.y);
+  if (fabsf(d.x) + fabsf(d.y) < min_dist) {
+    lc->mid = p;
+    return;
+  }
+
+  smol_mesh_gen_line(brtl_shaders()->line, lc->old, p, data->color);
+  lc->old = p;
+}
+
+void br_line_culler_push_line_strip(br_vec2_t const* points, size_t n, br_data_t const* data, br_plot_t const* plot) {
+  for (size_t i = 0; i < n; ++i) {
+    br_line_culler_push_point(&data->resampling->culler, points[i], data, plot);
+  }
+}
+
+void br_line_culler_end(br_line_culler_t lc, br_color_t color) {
+  if (br_vec2_eq(lc.old, lc.mid)) return;
+  smol_mesh_gen_line(brtl_shaders()->line, lc.old, lc.mid, color);
+}
+
+void br_line_culler_push_line_strip2(float const* xs, float const* ys, size_t n, br_data_t const* data, br_plot_t const* plot) {
+  for (size_t i = 0; i < n; ++i) {
+    br_line_culler_push_point(&data->resampling->culler, BR_VEC2(xs[i], ys[i]), data, plot);
+  }
+}
+
 static inline float min4(float a, float b, float c, float d) {
   return fminf(fminf(a, b), fminf(c, d));
 }
@@ -283,7 +325,7 @@ static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nod
   if (false == resampling2_nodes_2d_is_inside(&node, xs, ys, rect)) return;
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
-    smol_mesh_gen_line_strip2(shaders->line, &xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1), pg->color);
+    br_line_culler_push_line_strip2(&xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1), pg, plot);
     return;
   }
   br_vec2_t ratios = resampling2_nodes_2d_get_ratios(&node, xs, ys, rect.width, rect.height);
@@ -304,7 +346,7 @@ static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nod
       BR_VEC2(xs[indexies[4]], ys[indexies[4]]), BR_VEC2(xs[indexies[5]], ys[indexies[5]]),
     };
     //if (context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.base.min_index_x].x, ps[node.base.min_index_y].y, ps[node.base.max_index_x].x, ps[node.base.max_index_y].y }, RAYWHITE);
-    smol_mesh_gen_line_strip(shaders->line, pss, 6, pg->color);
+    br_line_culler_push_line_strip(pss, 6, pg, plot);
   } else {
 
     //if (context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.base.min_index_x].x, ps[node.base.min_index_y].y, ps[node.base.max_index_x].x, ps[node.base.max_index_y].y }, RAYWHITE);
@@ -406,7 +448,7 @@ void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, 
   switch (pg->kind) {
     case br_data_kind_2d: {
       switch (plot->kind) {
-        case br_plot_kind_2d: resampling2_draw22(&res->dd, 0, pg, plot, shaders); break;
+        case br_plot_kind_2d: res->culler = (br_line_culler_t) { 0 }; resampling2_draw22(&res->dd, 0, pg, plot, shaders); br_line_culler_end(res->culler, pg->color); break;
         case br_plot_kind_3d: resampling2_draw32(&res->dd, 0, pg, plot, shaders); break;
       }
       break;
