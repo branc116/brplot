@@ -29,14 +29,13 @@ void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_data_t cons
   );
 
   const float min_dist = context.cull_min;
-  //LOGI("(%f, %f) -> (%f, %f) d = %f %f", lc->old.x, lc->old.y, p.x, p.y, d.x, d.y);
   if (fabsf(d.x) + fabsf(d.y) < min_dist) {
     lc->mid = p;
     return;
   }
 
   smol_mesh_gen_line(brtl_shaders()->line, lc->old, p, data->color);
-  lc->old = p;
+  lc->mid = lc->old = p;
 }
 
 void br_line_culler_push_line_strip(br_vec2_t const* points, size_t n, br_data_t const* data, br_plot_t const* plot) {
@@ -45,9 +44,11 @@ void br_line_culler_push_line_strip(br_vec2_t const* points, size_t n, br_data_t
   }
 }
 
-void br_line_culler_end(br_line_culler_t lc, br_color_t color) {
-  if (br_vec2_eq(lc.old, lc.mid)) return;
-  smol_mesh_gen_line(brtl_shaders()->line, lc.old, lc.mid, color);
+void br_line_culler_end(br_line_culler_t* lc, br_color_t color) {
+  if (false == br_vec2_eq(lc->old, lc->mid)) {
+    smol_mesh_gen_line(brtl_shaders()->line, lc->old, lc->mid, color);
+  }
+  *lc = (br_line_culler_t) { 0 };
 }
 
 void br_line_culler_push_line_strip2(float const* xs, float const* ys, size_t n, br_data_t const* data, br_plot_t const* plot) {
@@ -315,14 +316,16 @@ static int size_t_cmp(void const* a, void const* b) {
 }
 
 static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot, br_shaders_t* const shaders) {
-  assert(plot->kind == br_plot_kind_2d);
-  assert(pg->kind == br_data_kind_2d);
-  //ZoneScopedN("resampling2_2d");
+  BR_ASSERT(plot->kind == br_plot_kind_2d);
+  BR_ASSERT(pg->kind == br_data_kind_2d);
   float const* xs = pg->dd.xs;
   float const* ys = pg->dd.ys;
   br_extent_t rect = plot->dd.graph_rect;
   resampling2_nodes_2d_t node = nodes->arr[index];
-  if (false == resampling2_nodes_2d_is_inside(&node, xs, ys, rect)) return;
+  if (false == resampling2_nodes_2d_is_inside(&node, xs, ys, rect)) {
+    br_line_culler_end(&pg->resampling->culler, pg->color);
+    return;
+  }
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
     br_line_culler_push_line_strip2(&xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1), pg, plot);
@@ -448,7 +451,7 @@ void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, 
   switch (pg->kind) {
     case br_data_kind_2d: {
       switch (plot->kind) {
-        case br_plot_kind_2d: res->culler = (br_line_culler_t) { 0 }; resampling2_draw22(&res->dd, 0, pg, plot, shaders); br_line_culler_end(res->culler, pg->color); break;
+        case br_plot_kind_2d: resampling2_draw22(&res->dd, 0, pg, plot, shaders); br_line_culler_end(&res->culler, pg->color); break;
         case br_plot_kind_3d: resampling2_draw32(&res->dd, 0, pg, plot, shaders); break;
       }
       break;
