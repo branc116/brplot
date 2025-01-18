@@ -63,10 +63,13 @@ bool brui_sliderf(br_strv_t text, float* val);
 bool brui_vsplit(int n, float height);
 void brui_vsplit_pop(void);
 
-void brui_push(br_extent_t max);
+void brui_push(void);
+void brui_push_y(float y);
 void brui_pop(void);
 
 float brui_top_width(void);
+void  brui_size_set(br_size_t size);
+void  brui_cur_set(br_vec2_t pos);
 int   brui_text_size(void);
 void  brui_text_size_set(int size);
 void  brui_text_align_set(br_text_renderer_ancor_t ancor);
