@@ -156,8 +156,10 @@ static void draw_left_panel(br_plotter_t* br) {
     }
     brui_text(BR_STRL("Data:"));
     brui_text_size_set(16);
+    float width = brui_limit().width;
     for (size_t i = 0; i < br->groups.len; ++i) {
       brui_push();
+        brui_width_set(width);
         int n = sprintf(scrach, "Data %d (%zu points)", br->groups.arr[i].group_id, br->groups.arr[i].len);
         brui_text(BR_STRV(scrach, (uint32_t)n));
         n = sprintf(scrach, "%.1fms (%.3f %.3f)", br_resampling2_get_draw_time(br->groups.arr[i].resampling)*1000.0f, br_resampling2_get_something(br->groups.arr[i].resampling), br_resampling2_get_something2(br->groups.arr[i].resampling));

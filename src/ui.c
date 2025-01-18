@@ -75,15 +75,21 @@ BR_THREAD_LOCAL char _scrach[2048];
 #define Z (TOP.z++)
 #define ZGL BR_Z_TO_GL(TOP.z++)
 #define RETURN_IF_OUT(HEIGHT, ...) do { \
-  if (TOP.cur.y < 0) { BRUI_LOG("skip"); TOP.cur.y += (HEIGHT) + TOP.padding.y; return __VA_ARGS__; } \
-  if (TOP.is_out || (TOP.cur.y + (HEIGHT)) > TOP.limit.height) { BRUI_LOG("skip"); TOP.is_out = true; return __VA_ARGS__; } \
+  float h = (HEIGHT) + TOP.padding.y; \
+  TOP.content.height += h; \
+  if (TOP.cur.y < 0) { BRUI_LOG("skip"); TOP.cur.y += h; return __VA_ARGS__; } \
+  if (TOP.is_out || (TOP.cur.y + h) > TOP.limit.height) { BRUI_LOG("skip"); TOP.is_out = true; return __VA_ARGS__; } \
 } while(0)
-#if 0
+#if 1
 #define BRUI_LOG(fmt, ...) do { \
   for (int i = 0; i < _stack.len; ++i) { \
     printf("  "); \
   } \
-  printf(fmt "\n", ##__VA_ARGS__); \
+  if (_stack.len > 0) { \
+    printf("[%.3f,%.3f][%.2f,%.2f,%.2f,%.2f] " fmt "\n", TOP.cur.x, TOP.cur.y, BR_EXTENT_(TOP.limit), ##__VA_ARGS__); \
+  } else { \
+    printf(fmt "\n", ##__VA_ARGS__); \
+  } \
 } while(0)
 #else
 #define BRUI_LOG(...)
@@ -140,11 +146,11 @@ void brui_push_y(float y) {
 
 void brui_pop(void) {
   if (TOP.limit.height <= 0.f) { --_stack.len; return; }
-  if (TOP.content.height <= 0.f) { --_stack.len; return; }
+  //if (TOP.content.height <= 0.f) { --_stack.len; return; }
   float width = minf(maxf(TOP.content.width, TOP.cur.x), TOP.limit.width);
   float height = minf(maxf(TOP.content.height, TOP.cur.y), TOP.limit.height);
   int z = TOP.start_z - 1;
-  br_extent_t ex = BR_EXTENT(TOP.limit.x, TOP.limit.y, minf(TOP.limit.width, TOP.content.width), minf(TOP.limit.height, TOP.content.height));
+  br_extent_t ex = BR_EXTENT(TOP.limit.x, TOP.limit.y, width, height);
 
   br_icons_draw(ex, BR_EXTENT(0,0,0,0), br_theme.colors.plot_menu_color, br_theme.colors.plot_menu_color, z - 1);
   if (TOP.hide_border == false) {
@@ -192,7 +198,8 @@ br_size_t brui_text(br_strv_t strv) {
   br_vec2_t loc = TOP.cur;
   RETURN_IF_OUT((float)TOP.font_size, BR_SIZE(0,0));
   
-  br_size_t space_left = br_size_subv(TOP.limit.size, TOP.cur);
+  br_size_t space_left = br_size_subv(br_size_subv(TOP.limit.size, TOP.cur), TOP.padding.zw);
+  space_left = br_size_subv(space_left, TOP.padding.xy);
   br_strv_t fit = br_text_renderer_fit(tr, space_left, TOP.font_size, strv);
   float x = loc.x + TOP.limit.x;
   float y = loc.y + TOP.limit.y;
@@ -202,6 +209,7 @@ br_size_t brui_text(br_strv_t strv) {
   TOP.content.width = maxf(TOP.content.width, TOP.padding.x + TOP.padding.z + ex.width);
   TOP.cur.x = TOP.padding.x;
   TOP.cur.y += (float)TOP.font_size + TOP.padding.y;
+  TOP.content.height += (float)TOP.font_size + TOP.padding.y;
   return ex.size;
 }
 
@@ -218,13 +226,20 @@ void brui_text_color_set(br_color_t color) {
   TOP.font_color = color;
 }
 
+br_extent_t brui_limit(void) {
+  return TOP.limit;
+}
+
 float brui_top_width(void) {
   return TOP.limit.width - TOP.cur.x;
 }
 
 void brui_size_set(br_size_t size) {
-  TOP.limit.size = BR_SIZE(minf(size.width, TOP.limit.width), minf(size.height, TOP.limit.height));
-  TOP.content = TOP.limit.size;
+  //TOP.limit.size = BR_SIZE(minf(size.width, TOP.limit.width), minf(size.height, TOP.limit.height));
+  TOP.content = size;
+}
+void brui_width_set(float width) {
+  TOP.content.width = minf(width, TOP.limit.width - TOP.padding.z);
 }
 
 void  brui_cur_set(br_vec2_t pos) {
@@ -554,6 +569,7 @@ void brui_resizable_push(int id) {
   brui_cur_set(BR_VEC2I_TOF(res->cur_extent.pos));
   brui_push();
   brui_size_set(BR_SIZEI_TOF(res->cur_extent.size));
+  TOP.limit.size = BR_SIZEI_TOF(res->cur_extent.size);
   res->content_height = 0;
   TOP.content = BR_SIZEI_TOF(res->cur_extent.size);
   brui_z_set(TOP.z + res->z * ((4*1024) >> (_stack.len)));
