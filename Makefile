@@ -163,7 +163,7 @@ ifeq ($(CONFIG), DEBUG)
 		endif
 	endif
 else ifeq ($(CONFIG), RELEASE)
-	COMMONFLAGS+= -fdata-sections -ffunction-sections -Os
+	COMMONFLAGS+= -fdata-sections -ffunction-sections -Os -ggdb
 	LD_FLAGS+= -fdata-sections -ffunction-sections -Wl,--gc-sections
 	ifeq ($(PATFORM)_$(LTO), LINUX_YES)
 		LD_FLAGS+= -flto=auto

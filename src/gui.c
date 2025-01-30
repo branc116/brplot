@@ -118,7 +118,7 @@ static void draw_left_panel(br_plotter_t* br) {
   brui_resizable_push(br->menu_extent_handle);
     char* scrach = br_scrach_get(4096);
     brui_text(BR_STRL("Plots"));
-    if (true == brui_vsplit(2, (float)brui_text_size() + 15)) {
+    if (true == brui_vsplit(2)) {
         if (brui_button(BR_STRL("Add 2D"))) {
           // TODO
         }
@@ -126,7 +126,7 @@ static void draw_left_panel(br_plotter_t* br) {
         if (brui_button(BR_STRL("Add 3D"))) {
           // TODO
         }
-      brui_pop();
+      brui_vsplit_end();
     }
 
     for (int i = 0; i < br->plots.len; ++i) {
