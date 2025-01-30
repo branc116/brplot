@@ -3,6 +3,8 @@
 #include "src/br_da.h"
 #include "external/tests.h"
 
+#include <string.h>
+
 typedef struct {
   int id;
 } text_t;
