@@ -1,13 +1,15 @@
 #pragma once
-#include "assert.h"
-#include "stdlib.h"
+#include <assert.h>
+#include <stdlib.h>
+#include <stdio.h>
+
 #include "br_pp.h"
 
-#ifdef __cplusplus
-#define DECLTYPE(VALUE) std::remove_reference<decltype((VALUE))>::type
+#if defined(__cplusplus)
+#  define DECLTYPE(VALUE) std::remove_reference<decltype((VALUE))>::type
 extern "C" {
 #else
-#define DECLTYPE(VALUE) void
+#  define DECLTYPE(VALUE) void
 #endif
 
 
@@ -79,6 +81,25 @@ extern "C" {
 } while(0)
 
 #define br_da_contains(ARR, V, CONTAINS) br_da_contains_t(size_t, ARR, V, CONTAINS)
+
+#if defined(BR_RELEASE)
+#define br_da_get(ARR, INDEX) (ARR).arr[(INDEX)]
+#define br_da_set(ARR, INDEX, VALUE) (ARR).arr[(INDEX)] = (VALUE)
+#else
+static inline void ___br_function_call_asset_id_ok(ssize_t arr_len, ssize_t acc_index, const char* file_location, int line_number) {
+  if (arr_len <= acc_index || acc_index < 0) {
+    LOGE("Out of bounds index to an array at %s:%d", file_location, line_number);
+    LOGE("Index: %zd, Arr len: %zd", acc_index, arr_len);
+  }
+  BR_ASSERT(arr_len > acc_index && acc_index >= 0);
+}
+#define br_da_get(ARR, INDEX) (___br_function_call_asset_id_ok((ssize_t)((ARR).len), (ssize_t)(INDEX), __FILE__, __LINE__), \
+  (ARR).arr[(INDEX)])
+#define br_da_set(ARR, INDEX, VALUE) do { \
+  ___br_function_call_asset_id_ok((ssize_t)((ARR).len), (ssize_t)(INDEX), __FILE__, __LINE__), \
+  (ARR).arr[(INDEX)] = (VALUE); \
+} while(0)
+#endif
 
 #ifdef __cplusplus
 }

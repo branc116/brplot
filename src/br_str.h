@@ -54,6 +54,7 @@ bool       br_str_push_float(br_str_t* s, float c);
 bool       br_str_push_br_str(br_str_t* s, br_str_t const c);
 bool       br_str_push_br_strv(br_str_t* s, br_strv_t const c);
 bool       br_str_push_c_str(br_str_t* s, char const* c);
+bool       br_str_push_uninitialized(br_str_t* s, unsigned int n);
 char*      br_str_to_c_str(br_str_t s);
 char*      br_str_move_to_c_str(br_str_t* s);
 br_str_t   br_str_copy(br_str_t s);

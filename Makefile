@@ -38,7 +38,7 @@ SOURCE             = src/main.c           src/help.c       src/data.c        src
 										 src/keybindings.c    src/str.c        src/resampling2.c src/graph_utils.c src/shaders.c src/plotter.c    \
 										 src/plot.c           src/permastate.c src/filesystem.c  src/gui.c         src/text_renderer.c \
 										 src/data_generator.c src/platform.c   src/threads.c     src/gl.c          src/icons.c   src/theme.c \
-										 src/ui.c
+										 src/ui.c             src/string_pool.c
 COMMONFLAGS        = -I. -MMD -MP -fvisibility=hidden -std=gnu11
 WARNING_FLAGS      = -Wconversion -Wall -Wextra -Wshadow -D_GNU_SOURCE -Wno-gnu-folding-constant
 LD_FLAGS           =
@@ -247,7 +247,7 @@ fuzz:
 .PHONY: test
 test:
 	make HEADLESS=YES CONFIG=DEBUG && \
-	./bin/brplot_headless_linux_debug_gcc --unittest
+	./brplot --unittest
 
 .PHONY: test-gdb
 test-gdb:

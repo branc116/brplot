@@ -1,5 +1,6 @@
 #pragma once
 #include <stddef.h>
+
 #include "external/Tracy/tracy/TracyC.h"
 
 #if defined(DEBUG) || defined(RELEASE) || defined(BR_RELEASE)

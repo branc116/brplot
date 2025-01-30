@@ -139,6 +139,18 @@ bool br_str_push_c_str(br_str_t* s, char const* c) {
   return true;
 }
 
+bool br_str_push_uninitialized(br_str_t* s, unsigned int n) {
+  if (n <= 0) return true;
+  if (s->len + n > s->cap) {
+    size_t pot_size_1 = s->cap * 2, pot_size_2 = s->len + n;
+    size_t new_size =  pot_size_2 > pot_size_1 ? pot_size_2 : pot_size_1;
+    if (false == br_str_realloc(s, new_size)) return false;
+  }
+
+  s->len += s->cap;
+  return true;
+}
+
 bool br_strv_eq(br_strv_t s1, br_strv_t s2) {
   if (s1.len != s2.len) return false;
   for (unsigned int i = 0; i < s1.len; ++i)
