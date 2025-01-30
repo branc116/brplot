@@ -82,7 +82,7 @@ BR_THREAD_LOCAL char _scrach[2048];
   if (TOP.cur.y < 0) { BRUI_LOG("skip"); TOP.cur.y += h; return __VA_ARGS__; } \
   if (TOP.is_out || (TOP.cur.y + h) > TOP.limit.height) { TOP.cur.y += h; BRUI_LOG("skip: cur.y=%f", TOP.cur.y); TOP.is_out = true; return __VA_ARGS__; } \
 } while(0)
-#if 1
+#if 0
 #define BRUI_LOG(fmt, ...) do { \
   for (size_t i = 0; i < _stack.len; ++i) { \
     printf("  "); \
@@ -378,7 +378,7 @@ bool brui_sliderf(br_strv_t text, float* val) {
       }
     }
 
-    if (TOPTOP.cur.y + lt + TOP.padding.w < TOP.limit.height) {
+    if (TOP.cur.y + lt + TOP.padding.w < TOP.limit.height) {
       br_icons_draw(line_extent, BR_EXTENT(0,0,0,0), lc, lc, Z);
       br_icons_draw(slider_extent, BR_EXTENT(0,0,0,0), sc, sc, Z);
     }
