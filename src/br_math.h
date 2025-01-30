@@ -203,6 +203,10 @@ static inline br_vec2i_t br_vec2_toi(br_vec2_t v) {
   return (br_vec2i_t) { .x = (int)v.x, .y = (int)v.y };
 }
 
+static inline br_vec2_t br_vec2_max(br_vec2_t a, br_vec2_t b) {
+  return BR_VEC2(fmaxf(a.x, b.x), fmaxf(a.y, b.y));
+}
+
 static inline br_vec2_t br_vec2_scale(br_vec2_t v, float s) {
   return ((br_vec2_t) { .x = v.x * s, .y = v.y * s });
 }
@@ -276,6 +280,10 @@ static inline br_vec2_t br_vec2_stog(br_vec2_t v, br_sizei_t screen) {
 
 static inline br_sizei_t br_sizei_sub(br_sizei_t a, br_sizei_t b) {
   return BR_SIZEI(a.width - b.width, a.height - b.height);
+}
+
+static inline br_size_t br_size_sub(br_size_t a, br_size_t b) {
+  return BR_SIZE(a.width - b.width, a.height - b.height);
 }
 
 static inline br_size_t br_size_subv(br_size_t a, br_vec2_t b) {
