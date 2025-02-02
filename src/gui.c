@@ -116,6 +116,12 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
 
 static void draw_left_panel(br_plotter_t* br) {
   brui_resizable_push(br->menu_extent_handle);
+//    for (int i = 0; i < 3; ++i) {
+//      float f = (float)i;
+//      brui_sliderf(BR_STRL("Heloo"), &f);
+//    }
+//  brui_resizable_pop();
+//    return;
     char* scrach = br_scrach_get(4096);
     brui_text(BR_STRL("Plots"));
     if (true == brui_vsplit(2)) {

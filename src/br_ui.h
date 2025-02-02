@@ -39,7 +39,6 @@ typedef struct {
   brui_ancor_t ancor;
   int z;
   int parent;
-  float scroll_offset;
   float scroll_offset_percent;
   float content_height;
 

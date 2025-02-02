@@ -84,6 +84,7 @@
 #define BR_KEY_R 82
 #define BR_KEY_S 83
 #define BR_KEY_T 84
+#define BR_KEY_U 85
 #define BR_KEY_X 88
 #define BR_KEY_Y 89
 
