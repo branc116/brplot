@@ -198,7 +198,7 @@ static bool br_dagens_handle_once(br_datas_t* datas, br_dagens_t* dagens, br_plo
     else br_dagen_handle(cur, d, *datas);
     switch (cur->state) {
       case br_dagen_state_failed: {
-        br_data_clear(datas, plots, d->group_id);
+        if (d != NULL) br_data_clear(datas, plots, d->group_id);
         br_da_remove_at(*dagens, i);
       } break;
       case br_dagen_state_finished: br_da_remove_at(*dagens, i); break;
