@@ -20,12 +20,14 @@
 
 typedef struct {
   br_vec2_t cur;
-  br_extent_t limit;
+  br_vec2_t start;
+  br_bb_t limit;
   int start_z, z;
-  float start_y;
+  br_vec2_t psum;
+  float scroll_y;
+  float content_height;
 
-  br_vec4_t padding;
-  brui_ancor_t ancor;
+  br_vec2_t padding;
 
   int font_size;
   br_color_t font_color;
@@ -35,10 +37,9 @@ typedef struct {
 
   int split_count;
 
-  bool is_out;
   bool is_active;
   bool hide_border;
-  bool draw_to_limit;
+  bool hide_bg;
 } brui_stack_el_t;
 
 typedef struct {
@@ -76,9 +77,10 @@ static BR_THREAD_LOCAL bruir_childrens_t bruir_childrens;
 static BR_THREAD_LOCAL brui_stack_t _stack;
 BR_THREAD_LOCAL char _scrach[2048];
 #define TOP (_stack.arr[_stack.len ? _stack.len - 1 : 0])
+#define TOP2 (_stack.arr[_stack.len > 1 ? _stack.len - 2 : 0])
 #define Z (TOP.z++)
 #define ZGL BR_Z_TO_GL(TOP.z++)
-#define RETURN_IF_OUT(HEIGHT, ...) do { \
+#define RETURN_IF_OUT1(HEIGHT, ...) do { \
   float h = (HEIGHT); \
   if (TOP.cur.y < TOP.limit.y) { BRUI_LOG("skip"); TOP.cur.y += h; return __VA_ARGS__; } \
   if (TOP.is_out || (TOP.cur.y + h) > TOP.limit.height) { TOP.cur.y += h; BRUI_LOG("skip: cur.y=%f", TOP.cur.y); TOP.is_out = true; return __VA_ARGS__; } \
@@ -90,7 +92,7 @@ BR_THREAD_LOCAL char _scrach[2048];
     printf("  "); \
   } \
   if (_stack.len > 0) { \
-    printf("[%.3f,%.3f][%.2f,%.2f,%.2f,%.2f][%.2f][%d] " fmt "\n", TOP.cur.x, TOP.cur.y, BR_EXTENT_(TOP.limit), TOP.start_y, !TOP.is_out, ##__VA_ARGS__); \
+    printf("[CUR:%.3f,%.3f][LIMIT:%.2f,%.2f,%.2f,%.2f][SCROLL:%.2f][START:%.2f %.2f][PSUM:%.2f %.2f] " fmt "\n", TOP.cur.x, TOP.cur.y, BR_BB_(TOP.limit), TOP.scroll_y, TOP.start.x, TOP.start.y, TOP.psum.x, TOP.psum.y, ##__VA_ARGS__); \
   } else { \
     printf(fmt "\n", ##__VA_ARGS__); \
   } \
@@ -102,33 +104,29 @@ BR_THREAD_LOCAL char _scrach[2048];
 brui_stack_el_t brui_stack_el(void) {
   if (_stack.len > 0) {
     brui_stack_el_t new_el = TOP;
+    new_el.psum.x += TOP.padding.x;
     new_el.z += 5;
-    br_size_t ns = br_size_subv(TOP.limit.size, br_vec2_sub(TOP.cur, TOP.limit.pos));
-    ns = br_size_subv(ns, TOP.padding.xy);
-    ns = br_size_subv(ns, TOP.padding.zw);
-    br_vec2_t np = br_vec2_add(TOP.padding.xy, TOP.cur);
-    new_el.limit = BR_EXTENT2(np, ns);
+    new_el.start = new_el.cur;
+    //new_el.cur = br_vec2_add(TOP.cur, TOP.padding);
+    new_el.cur.x = new_el.limit.min_x + new_el.psum.x;
+    if (new_el.start.y < new_el.limit.min_y) new_el.start.y = new_el.limit.min_y;
+    new_el.start.y += new_el.scroll_y;
     new_el.start_z = new_el.z;
     new_el.cur_resizable = 0;
     new_el.hide_border = false;
-    new_el.draw_to_limit = false;
-    new_el.is_out = TOP.is_out || TOP.cur.y < TOP.limit.y - TOP.padding.w;
-    //new_el.start_y += TOP.cur.y;
+    new_el.hide_bg = false;
+    new_el.content_height = 0;
     return new_el;
   } else {
     brui_stack_el_t root = {
-      .limit = BR_EXTENTI_TOF(brtl_viewport()),
-      .padding = BR_VEC4(14, 14, 14, 14),
+      .limit = BR_EXTENTI_TOBB(brtl_viewport()),
+      .padding = BR_VEC2(14, 14),
       .font_size = 26,
       .font_color = br_theme.colors.btn_txt_inactive,
       .text_ancor = br_text_renderer_ancor_left_up,
       .is_active = true
     };
-
-    root.limit.pos.x += root.padding.x;
-    root.limit.pos.y += root.padding.y;
-    root.limit.width -= root.padding.x + root.padding.z;
-    root.limit.height -= root.padding.y + root.padding.w;
+    root.cur = root.padding;
     return root;
   }
 }
@@ -138,6 +136,7 @@ void brui_begin(void) {
   BRUI_LOG("begin");
   brui_stack_el_t new_el = brui_stack_el();
   br_da_push(_stack, new_el);
+  BRUI_LOG("beginafter");
 //  brui_textf("TExti");
 //  brui_textf("TExti");
 //  brui_textf("TExti");
@@ -150,7 +149,7 @@ void brui_begin(void) {
     for (int i = 0; i < bruirs.len; ++i) {
       brui_textf("R#%d: cs: %f", i, bruirs.arr[i].content_height); 
     }
-    brui_width_set(200);
+    TOP.limit.max_x = TOP.limit.min_x + 200;
     brui_button(BR_STRL("Bottun"));
     brui_button(BR_STRL("Bottun"));
     brui_button(BR_STRL("Bottun"));
@@ -189,21 +188,25 @@ void brui_push_y(float y) {
 }
 
 void brui_pop(void) {
-  float width = TOP.limit.width + TOP.padding.x + TOP.padding.z;
-  float height = (TOP.draw_to_limit ? TOP.limit.height : minf(TOP.cur.y - TOP.limit.y, TOP.limit.height)) + TOP.padding.w;
+  float width = BR_BBW(TOP.limit) - 2 * TOP2.psum.x;
+  float height = TOP.cur.y - TOP.start.y; //BR_BBH(TOP.limit) - 2 * TOP.psum.y + fminf(TOP.cur.y - TOP.limit.min_y, 0.f);
+  if (TOP.cur.y > TOP.limit.max_y) {
+    height -= TOP.cur.y - TOP.limit.max_y;
+  }
+  br_size_t size = BR_SIZE(width, height);
   int z = TOP.start_z - 1;
-  br_extent_t ex = BR_EXTENT(TOP.limit.x - TOP.padding.x, TOP.limit.y - TOP.padding.y, width, height);
+  br_extent_t ex = BR_EXTENT2(TOP.start, size);
+  float content_height = TOP.content_height;
 
-  if (TOP.limit.height <= 0.f || ex.height <= 0.f) {
-    BRUI_LOG("OUT: height: %f, start_y: %f, cur_y: %f", TOP.limit.height, TOP.start_y, TOP.cur.y);
-    float t = TOP.cur.y - TOP.limit.y;
+  if (height <= 0.f) {
+    float t = TOP.cur.y - TOP.start.y;
     --_stack.len;
     TOP.cur.y += t + TOP.padding.y;
-    BRUI_LOG("POP OUT: height: %f, start_y: %f, cur_y: %f", TOP.limit.height, TOP.start_y, TOP.cur.y);
+    TOP.content_height += content_height;
     return;
   }
 
-  br_icons_draw(ex, BR_EXTENT(0,0,0,0), br_theme.colors.plot_menu_color, br_theme.colors.plot_menu_color, z - 1);
+  if (TOP.hide_bg == false) br_icons_draw(ex, BR_EXTENT(0,0,0,0), br_theme.colors.plot_menu_color, br_theme.colors.plot_menu_color, z - 1);
   if (TOP.hide_border == false) {
     br_color_t ec = br_theme.colors.ui_edge_inactive;
     br_color_t bc = br_theme.colors.ui_edge_bg_inactive;
@@ -227,10 +230,11 @@ void brui_pop(void) {
   }
 
   BRUI_LOG("Pre pop ex: [%.2f,%.2f,%.2f,%.2f]", BR_EXTENT_(ex));
-  float tt = TOP.cur.y - TOP.limit.y;
+  float tt = TOP.cur.y;
   --_stack.len;
-  TOP.cur.y += tt + TOP.padding.y;
-  TOP.cur.x = TOP.limit.x;
+  TOP.cur.y = tt + TOP.padding.y;
+  TOP.cur.x = TOP.limit.min_x + TOP.psum.x;
+  TOP.content_height += content_height;
   BRUI_LOG("pop");
 }
 
@@ -247,54 +251,79 @@ br_size_t brui_text(br_strv_t strv) {
   BRUI_LOG("Text: %.*s", strv.len, strv.str);
   br_text_renderer_t* tr = brtl_text_renderer();
   br_vec2_t loc = TOP.cur;
-  RETURN_IF_OUT((float)TOP.font_size, BR_SIZE(0,0));
+  float out_top /* neg or 0 */ = fminf(TOP.cur.y - TOP.limit.min_y, 0.f); 
+  float opt_height = (float)TOP.font_size + TOP.padding.y;
   
-  br_size_t space_left = br_size_subv(TOP.limit.size, br_vec2_sub(TOP.limit.pos, TOP.cur));
+  br_size_t space_left = BR_SIZE(BR_BBW(TOP.limit) - 2 * TOP.psum.x - (TOP.cur.x - TOP.start.x), TOP.limit.max_y - TOP.cur.y + out_top);
+  BRUI_LOG("TEXT: Space left %f %f", space_left.width, space_left.height);
   br_strv_t fit = br_text_renderer_fit(tr, space_left, TOP.font_size, strv);
-  if (TOP.text_ancor & br_text_renderer_ancor_y_mid) loc.y += TOP.limit.height * 0.5f;
-  if (TOP.text_ancor & br_text_renderer_ancor_x_mid) loc.x += TOP.limit.width * 0.5f;
-  br_extent_t ex = br_text_renderer_push2(tr, loc.x, loc.y, ZGL, TOP.font_size, TOP.font_color, fit, TOP.text_ancor);
-  TOP.cur.x = TOP.limit.x;
-  TOP.cur.y += (float)TOP.font_size;
+  br_extent_t ex = { 0 };
+  if (fit.len != 0) {
+    if (TOP.text_ancor & br_text_renderer_ancor_y_mid) loc.y += BR_BBH(TOP.limit) * 0.5f;
+    if (TOP.text_ancor & br_text_renderer_ancor_x_mid) loc.x += BR_BBW(TOP.limit) * 0.5f;
+    ex = br_text_renderer_push2(tr, loc.x, loc.y, ZGL, TOP.font_size, TOP.font_color, fit, TOP.text_ancor);
+  }
+  TOP.cur.x = TOP.limit.min_x + TOP.psum.x;
+  TOP.cur.y += opt_height;
+  TOP.content_height += opt_height;
   return ex.size;
 }
 
 void brui_new_lines(int n) {
   float off = (float)TOP.font_size * (float)n;
   TOP.cur.y += off;
+  TOP.content_height += off;
 }
 
 bool brui_button(br_strv_t text) {
-  br_vec2_t mouse = brtl_mouse_pos();
-  float button_height = (float)TOP.font_size + TOP.padding.y + TOP.padding.w;
-  float button_width = (float)TOP.limit.width;
-  br_extent_t button_limit = BR_EXTENT(TOP.cur.x, TOP.cur.y, button_width, button_height);
-  bool hovers = br_col_vec2_extent(button_limit, mouse);
-  BRUI_LOG("Button: size: %f, %f, ex: [%f, %f, %f, %f]", button_width, button_height, BR_EXTENT_(button_limit));
+  float opt_height /* text + 2*1/2*padding + padding */ = (float)TOP.font_size + 2*TOP.padding.y;
+  float opt_y = TOP.cur.y + opt_height;
 
-  brui_push();
-    BRUI_LOG("limit.height %f -> %f", TOP.limit.height, button_height);
-    TOP.limit.height = fminf(button_height, TOP.limit.height);
-    brui_text_align_set(br_text_renderer_ancor_mid_up);
-    brui_text_color_set(hovers ? br_theme.colors.btn_txt_hovered : br_theme.colors.btn_txt_inactive);
-    brui_text(text);
-  brui_pop();
+  float button_max_x = TOP.limit.max_x - TOP.psum.x;
+  float button_max_y = fminf(TOP.cur.y + opt_height, TOP.limit.max_y);
+  br_bb_t button_limit = BR_BB(TOP.cur.y, TOP.cur.y, button_max_x, button_max_y);
+  bool hovers = br_col_vec2_bb(button_limit, brtl_mouse_pos());
+
+  br_bb_t old_limit = TOP.limit;
+  TOP.limit.max_y = button_max_y;
+  TOP.limit.max_x = button_max_x;
+  brui_text_align_set(br_text_renderer_ancor_mid_up);
+  brui_text_color_set(hovers ? br_theme.colors.btn_txt_hovered : br_theme.colors.btn_txt_inactive);
+  brui_text(text);
+
+  TOP.limit = old_limit;
+  TOP.content_height += opt_height;
+  TOP.cur.y = opt_y;
   return hovers && brtl_mousel_pressed();
 }
 
 bool brui_checkbox(br_strv_t text, bool* checked) {
   float sz = (float)TOP.font_size * 0.6f;
   br_extent_t cb_extent = BR_EXTENT(TOP.cur.x, TOP.cur.y, sz, sz);
-
-  RETURN_IF_OUT((float)TOP.font_size, false);
+  float top_out /* neg or 0 */ = fminf(0.f, TOP.cur.y - TOP.limit.min_y); 
+  float opt_height = (float)TOP.font_size + TOP.padding.y;
+  float opt_cur_y = TOP.cur.y + opt_height;
+  bool hover = false;
 
   br_extent_t icon = *checked ?  br_icons.cb_1.size_32 : br_icons.cb_0.size_32;
-  bool hover = br_col_vec2_extent(cb_extent, brtl_mouse_pos());
-  br_color_t bg = hover ? br_theme.colors.btn_hovered : br_theme.colors.btn_inactive;
-  br_color_t fg = hover ? br_theme.colors.btn_txt_hovered : br_theme.colors.btn_txt_inactive;
-  br_icons_draw(cb_extent, icon, bg, fg, Z);
-  TOP.cur.x += sz + TOP.padding.x;
+  if (cb_extent.y + cb_extent.height > TOP.limit.max_y) {
+    cb_extent.height = TOP.limit.max_y - cb_extent.y;
+  }
+  if (cb_extent.height > 0) {
+    hover = br_col_vec2_extent(cb_extent, brtl_mouse_pos());
+    br_color_t bg = hover ? br_theme.colors.btn_hovered : br_theme.colors.btn_inactive;
+    br_color_t fg = hover ? br_theme.colors.btn_txt_hovered : br_theme.colors.btn_txt_inactive;
+    br_icons_draw(cb_extent, icon, bg, fg, Z);
+    TOP.cur.x += TOP.padding.x + sz;
+  }
+
+  float old_max_y = TOP.limit.max_y;
+  TOP.limit.max_y = fminf(TOP.limit.max_y, TOP.cur.y + opt_height + top_out);
   brui_text(text);
+  TOP.limit.max_y = old_max_y;
+
+  TOP.cur.y = opt_cur_y;
+  TOP.content_height += opt_height;
 
   if (hover && brtl_mousel_pressed()) {
     *checked = !*checked;
@@ -306,58 +335,62 @@ bool brui_checkbox(br_strv_t text, bool* checked) {
 void brui_img(unsigned int texture_id) {
   br_shader_img_t* img = brtl_shaders()->img;
   img->uvs.image_uv = brgl_framebuffer_to_texture(texture_id);
-  br_extent_t ex = TOP.limit;
-  ex.pos = br_vec2_sub(ex.pos, TOP.padding.xy);
-  ex.size = br_size_addv(ex.size, TOP.padding.xy);
-  ex.size.width += TOP.padding.z;
   float gl_z = ZGL;
   br_sizei_t screen = brtl_viewport().size;
   br_shader_img_push_quad(img, (br_shader_img_el_t[4]) {
-      { .pos = BR_VEC42(br_vec2_stog(ex.pos,           screen), BR_VEC2(0, 1)), .z = gl_z },
-      { .pos = BR_VEC42(br_vec2_stog(br_extent_tr(ex), screen), BR_VEC2(1, 1)), .z = gl_z },
-      { .pos = BR_VEC42(br_vec2_stog(br_extent_br(ex), screen), BR_VEC2(1, 0)), .z = gl_z },
-      { .pos = BR_VEC42(br_vec2_stog(br_extent_bl(ex), screen), BR_VEC2(0, 0)), .z = gl_z },
+      { .pos = BR_VEC42(br_vec2_stog(TOP.limit.min,       screen), BR_VEC2(0, 1)), .z = gl_z },
+      { .pos = BR_VEC42(br_vec2_stog(br_bb_tr(TOP.limit), screen), BR_VEC2(1, 1)), .z = gl_z },
+      { .pos = BR_VEC42(br_vec2_stog(TOP.limit.max,       screen), BR_VEC2(1, 0)), .z = gl_z },
+      { .pos = BR_VEC42(br_vec2_stog(br_bb_bl(TOP.limit), screen), BR_VEC2(0, 0)), .z = gl_z },
   });
   br_shader_img_draw(img);
   img->len = 0;
 }
 
 bool brui_button_icon(br_sizei_t size, br_extent_t icon) {
-  RETURN_IF_OUT((float)size.height, false);
-
   bool is_pressed = false;
-  br_extent_t ex = BR_EXTENT(TOP.cur.x, TOP.cur.y, (float)size.width, (float)size.height);
-  if (TOP.ancor & brui_ancor_right) ex.x += TOP.limit.width - TOP.padding.x - TOP.padding.z - (float)size.width;
-  if (br_col_vec2_extent(ex, brtl_mouse_pos())) {
-    br_color_t fg = br_theme.colors.btn_txt_hovered;
-    br_color_t bg = br_theme.colors.btn_hovered;
-    br_icons_draw(ex, icon, bg, fg, Z);
-    is_pressed = brtl_mousel_pressed();
-  } else {
-    br_color_t fg = br_theme.colors.btn_txt_inactive;
-    br_color_t bg = br_theme.colors.btn_inactive;
-    br_icons_draw(ex, icon, bg, fg, Z);
+  float out_top /* neg or 0 */ = fminf(0.f, TOP.cur.y - TOP.limit.min_y);
+  float opt_height = (float)size.height + TOP.padding.y;
+  float height = (float)size.height + out_top;
+  br_extent_t ex = BR_EXTENT(TOP.cur.x, TOP.cur.y - out_top, (float)size.width + out_top, height);
+
+  if (ex.height > 0 && ex.width > 0) {
+    if (br_col_vec2_extent(ex, brtl_mouse_pos())) {
+      br_color_t fg = br_theme.colors.btn_txt_hovered;
+      br_color_t bg = br_theme.colors.btn_hovered;
+      br_icons_draw(ex, icon, bg, fg, Z);
+      is_pressed = brtl_mousel_pressed();
+    } else {
+      br_color_t fg = br_theme.colors.btn_txt_inactive;
+      br_color_t bg = br_theme.colors.btn_inactive;
+      br_icons_draw(ex, icon, bg, fg, Z);
+    }
   }
-  TOP.cur.y += (float)size.height + TOP.padding.y;
+  TOP.cur.y += opt_height;
+  TOP.content_height += opt_height;
   return is_pressed;
 }
 
 bool brui_sliderf(br_strv_t text, float* val) {
   BRUI_LOG("Slider");
+  const float lt = 8.f;
+  float opt_height /* 2*text + 4*1/2*padding + padding + lt */ = 2 * (float)TOP.font_size + 3 * TOP.padding.y + lt;
+  float opt_max_y = TOP.cur.y + opt_height;
+  float opt_content_height = TOP.content_height + opt_height;
   brui_push();
-    TOP.padding.y *= 0.5f;
-    TOP.padding.w *= 0.5f;
+    TOP.padding.y *= 0.1f;
+    TOP.limit.max_y = fminf(TOP.limit.max_y, opt_max_y);
     brui_text(text);
     brui_textf("%f", *val);
 
     br_vec2_t mouse = brtl_mouse_pos();
     bool is_down = brtl_mousel_down();
 
-    const float lt = 8.f;
     const float ss = lt + 3.f;
-    br_extent_t line_extent = BR_EXTENT(TOP.cur.x, TOP.cur.y + 1.5f, TOP.limit.width, lt);
+    const float lw = BR_BBW(TOP.limit) - 2 * TOP.psum.x;
+    br_extent_t line_extent = BR_EXTENT(TOP.cur.x, TOP.cur.y + 1.5f, lw, lt);
     br_color_t lc = br_theme.colors.btn_inactive;
-    br_extent_t slider_extent = BR_EXTENT(TOP.cur.x + (TOP.limit.width - ss)*.5f, TOP.cur.y, ss, ss);
+    br_extent_t slider_extent = BR_EXTENT(TOP.cur.x + (lw - ss)*.5f, TOP.cur.y, ss, ss);
     br_color_t sc = br_theme.colors.btn_txt_inactive;
 
     if (_stack.sliderf == val ||
@@ -380,43 +413,44 @@ bool brui_sliderf(br_strv_t text, float* val) {
       }
     }
 
-    if (TOP.cur.y + lt + TOP.padding.w < TOP.limit.height + TOP.limit.y) {
-      if (TOP.cur.y > TOP.limit.y) {
+    BRUI_LOG("Slider inner %f %f %f %f", BR_EXTENT_(line_extent));
+    if (slider_extent.y + slider_extent.height < TOP.limit.max_y) {
+      if (slider_extent.y > TOP.limit.min_y) {
         br_icons_draw(line_extent, BR_EXTENT(0,0,0,0), lc, lc, Z);
         br_icons_draw(slider_extent, BR_EXTENT(0,0,0,0), sc, sc, Z);
       }
     }
-    brui_push_y(ss + TOP.padding.w);
+    brui_push_y(lt + 10.f * TOP.padding.y);
   brui_pop();
+  TOP.cur.y = opt_max_y;
+  TOP.content_height = opt_content_height;
   return false;
 }
 
 bool brui_vsplit(int n) {
   BRUI_LOG("vsplit %d", n);
   brui_stack_el_t top = TOP;
-  float width = TOP.limit.width / (float)n;
+  float width = (BR_BBW(TOP.limit) - 2*TOP.psum.x) / (float)n;
   for (int i = 0; i < n; ++i) {
-    br_extent_t ex = BR_EXTENT((float)(n - i - 1) * width + top.cur.x,
-                               top.cur.y,
-                               width,
-                               top.limit.height - (top.cur.y - top.limit.y));
     brui_stack_el_t new_el = top;
     new_el.z += 5;
-    new_el.limit = ex;
-    new_el.cur = ex.pos;
-    new_el.start_z = new_el.z;
+    new_el.psum.x = 0;
+    new_el.limit.min_x = (float)i * width + top.cur.x;
+    new_el.limit.max_x = new_el.limit.min_x + width;
+    new_el.cur.x = new_el.limit.min.x;
+    new_el.start.x = new_el.limit.min_x;
     new_el.cur_resizable = 0;
     new_el.hide_border = true;
     new_el.split_count = n;
-    new_el.is_out = top.is_out || top.cur.y < -TOP.limit.y;
     br_da_push(_stack, new_el);
   }
   return true;
 }
 
 void brui_vsplit_pop(void) {
+  BRUI_LOG("vsplit pre pop");
   --_stack.len;
-  BRUI_LOG("vsplit pop");
+  BRUI_LOG("vsplit post pop");
 }
 
 void brui_vsplit_end(void) {
@@ -427,6 +461,7 @@ void brui_vsplit_end(void) {
     max_cur = fmaxf(_stack.arr[_stack.len + i].cur.y, max_cur);
   }
   TOP.cur.y = max_cur;
+  TOP.cur.x = TOP.start.x + TOP.padding.x;
   BRUI_LOG("vsplit end");
 }
 
@@ -435,7 +470,7 @@ void brui_scroll_bar(float bar_fract, float* bar_offset_fract) {
   int z = Z;
   br_vec2_t mouse = brtl_mouse_pos();
   bool is_down = brtl_mousel_down();
-
+  /*
   br_extent_t line_ex = BR_EXTENT(TOP.limit.x + TOP.limit.width + TOP.padding.x - thick, TOP.limit.y - TOP.padding.y, thick, TOP.limit.height);
   br_color_t lc = br_theme.colors.btn_inactive;
   float bar_height = TOP.limit.height * bar_fract;
@@ -456,7 +491,9 @@ void brui_scroll_bar(float bar_fract, float* bar_offset_fract) {
   }
   br_icons_draw(line_ex, BR_EXTENT(0,0,0,0), lc, lc, z + 10);
   br_icons_draw(bar_ex, BR_EXTENT(0,0,0,0), bc, bc, z + 11);
+  */
 }
+
 
 void brui_text_align_set(br_text_renderer_ancor_t ancor) {
   TOP.text_ancor = ancor;
@@ -466,32 +503,12 @@ void brui_text_color_set(br_color_t color) {
   TOP.font_color = color;
 }
 
-br_extent_t brui_limit(void) {
-  return TOP.limit;
-}
-
-float brui_top_width(void) {
-  return TOP.limit.width - (TOP.cur.x - TOP.limit.x);
-}
-
-void brui_width_set(float width) {
-  TOP.limit.width = minf(width, TOP.limit.width);
-}
-
-void  brui_cur_set(br_vec2_t pos) {
-  TOP.cur = pos;
-}
-
 int brui_text_size(void) {
   return TOP.font_size;
 }
 
 void brui_text_size_set(int size) {
   TOP.font_size = size;
-}
-
-void brui_ancor_set(brui_ancor_t ancor) {
-  TOP.ancor = ancor;
 }
 
 void brui_z_set(int z) {
@@ -581,10 +598,9 @@ void brui_resizable_update(void) {
       }
     } else if (scroll != 0) {
       if (hovered->content_height > (float)hovered->cur_extent.height) {
-        float diff = (TOP.padding.y + TOP.padding.w + hovered->content_height - (float)hovered->cur_extent.height);
+        float diff = hovered->content_height / (float)hovered->cur_extent.height;
         float dir = scroll * 10.f;
         float move = dir / diff;
-
         hovered->scroll_offset_percent = br_float_clamp(hovered->scroll_offset_percent - move, 0.f, 1.f);
       } else {
         hovered->scroll_offset_percent = 0.f;
@@ -626,31 +642,33 @@ void bruir_resizable_refresh(int index) {
   bruir_update_extent(index, bruirs.arr[index].cur_extent, true);
 }
 
+static br_vec2_t bruir_pos_global(brui_resizable_t r) {
+  if (r.parent == 0) {
+    return BR_VEC2I_TOF(r.cur_extent.pos);
+  }
+  return br_vec2_add(bruir_pos_global(bruirs.arr[r.parent]), BR_VEC2I_TOF(r.cur_extent.pos));
+}
+
 void brui_resizable_push(int id) {
   brui_resizable_t* res = &bruirs.arr[id];
   BR_ASSERT(false == res->hidden);
 
-  // TODO: Check this out
-  //TOP.cur.x = 0;
-  //TOP.cur.y = 0;
-  //float old_height = res->content_height;
-
   br_extent_t rex = BR_EXTENTI_TOF(res->cur_extent);
-  brui_cur_set(rex.pos);
-  BRUI_LOG("resizable [%f %f %f %f] %f", BR_EXTENT_(rex), res->scroll_offset_percent);
   brui_push();
-  TOP.draw_to_limit = true;
-  TOP.limit.y -= TOP.padding.y;
-  TOP.limit.x -= TOP.padding.x;
-  TOP.limit.size = br_size_subv(rex.size, TOP.padding.zw);
-  TOP.limit.width -= TOP.padding.x;
+  BRUI_LOG("resizablepre [%f %f %f %f] %f", BR_EXTENT_(rex), res->scroll_offset_percent);
+  TOP.psum = BR_VEC2(0, 0);
+  TOP.cur = bruir_pos_global(*res);
+  TOP.start = TOP.cur;
+  TOP.limit = BR_EXTENT_TOBB(rex);
+  TOP.cur.y -= res->content_height / (float)res->cur_extent.height * res->scroll_offset_percent;
   brui_z_set(TOP.z + res->z * ((4*1024) >> (_stack.len)));
   TOP.cur_resizable = id;
   TOP.start_z = TOP.z;
-  TOP.cur.y = TOP.limit.y - res->scroll_offset_percent * (TOP.padding.y + TOP.padding.w + res->content_height - (float)res->cur_extent.height);
-  TOP.start_y = TOP.cur.y;
   TOP.is_active = id == _stack.active_resizable;
-  
+  BRUI_LOG("resizablepost [%f %f %f %f] %f", BR_EXTENT_(rex), res->scroll_offset_percent);
+  brui_push();
+  TOP.hide_border = true;
+  TOP.hide_bg = true;
   // DEBUg
 //  brui_textf("content_height: %f", old_height);
 //  brui_textf("scroll_offset: %f", res->scroll_offset);
@@ -658,17 +676,14 @@ void brui_resizable_push(int id) {
 
 void brui_resizable_pop(void) {
   brui_resizable_t* res = &bruirs.arr[TOP.cur_resizable];
-  res->content_height = TOP.cur.y - TOP.start_y;
-  float full_height = res->content_height + TOP.padding.y + TOP.padding.w;
+  float full_height = res->content_height;
   float hidden_height = full_height - (float)res->cur_extent.height;
   if (hidden_height > 0.f && false == brtl_key_ctrl()) {
     brui_scroll_bar(br_float_clamp((float)res->cur_extent.height / full_height, 0, 2), &res->scroll_offset_percent);
   }
-  BRUI_LOG("Pop Resizable scroll: %.2f/%.2f = %.2f", res->content_height, (float)res->cur_extent.height, res->scroll_offset_percent);
+  TOP.cur.y = (float)res->cur_extent.y + (float)res->cur_extent.height;
   brui_pop();
-  //exit(1);
-  TOP.cur.x = 0;
-  TOP.cur.y += TOP.padding.y;
+  brui_pop();
 }
 
 int brui_resizable_active(void) {

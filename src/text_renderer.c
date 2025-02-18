@@ -166,13 +166,13 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
   simp->len = 0;
 }
 
-static bool brtr_move_loc(br_text_renderer_t* tr, size_to_font s, char c, br_vec2_t* pos) {
+static bool brtr_move_loc(br_text_renderer_t* tr, size_to_font s, char c, br_vec2_t* pos, float height) {
   if (c == '\n') {
     pos->y += (float)s.key * 1.1f;
     pos->x = 0;
     return true;
   }
-  if (c == '\r') return false;
+  if (c == '\r') return true;
   long char_index = stbds_hmgeti(s.value, c);
   if (char_index == -1) {
     pos->x += (float)s.key;
@@ -180,38 +180,36 @@ static bool brtr_move_loc(br_text_renderer_t* tr, size_to_font s, char c, br_vec
     stbtt_packedchar ch = s.value[char_index].value;
     stbtt_aligned_quad q;
     stbtt_GetPackedQuad(&ch, tr->bitmap_pixels_width, tr->bitmap_pixels_height, 0, &pos->x, &pos->y, &q, false);
+    if (q.y1 - q.y0 > height) return false;
   }
-  return false;
+  return true;
 }
 
 br_strv_t br_text_renderer_fit(br_text_renderer_t* r, br_size_t size, int font_size, br_strv_t text) {
-  br_vec2_t loc = {0};
+  br_vec2_t loc = { 0 };
   long size_index = stbds_hmgeti(r->sizes, font_size);
   r->tmp_quads.len = 0;
   br_extent_t exf = BR_EXTENT(0, 0, (float)size.width, (float)size.height);
-  size_t i = 0;
+  ssize_t i = 0;
   if (size_index == -1) {
     // We don't have the font baked so be conservative
     for (; i < text.len; ++i) {
-      if (false == br_col_vec2_extent(exf, loc)) break;
       char c = text.str[i];
       if (c == '\n') {
         loc.y += (float)font_size * 1.1f;
         loc.x = 0;
       } else if (c == '\r') continue;
       else loc.x += (float)font_size * 1.1f;
+      if (false == br_col_vec2_extent(exf, loc)) break;
     }
   } else {
     size_to_font f = r->sizes[size_index];
     for (; i < text.len; ++i) {
-      if (false == br_col_vec2_extent(exf, loc)) {
-        --i;
-        break;
-      }
-      brtr_move_loc(r, f, text.str[i], &loc);
+      if (false == brtr_move_loc(r, f, text.str[i], &loc, size.height)) break;
+      if (false == br_col_vec2_extent(exf, loc)) break;
     }
   }
-  return br_strv_sub(text, 0, (uint32_t)i);
+  return br_strv_sub(text, 0, (uint32_t)(i < 0 ? 0 : i));
 }
 
 br_extent_t br_text_renderer_push(br_text_renderer_t* r, float x, float y, float z, int font_size, br_color_t color, const char* text) {

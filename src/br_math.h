@@ -16,18 +16,23 @@
 #define BR_SIZEI(WIDTH, HEIGHT) ((br_sizei_t) { .width = (WIDTH), .height = (HEIGHT) })
 #define BR_SIZEI_TOF(SZ) ((br_size_t) { .width = (float)((SZ).width), .height = (float)((SZ).height) })
 
-#define BR_EXTENTI_TOF(E) ((br_extent_t) { .arr = { (float)(E).arr[0], (float)(E).arr[1], (float)(E).arr[2], (float)(E).arr[3] } })
 #define BR_EXTENT_ASPECT(E) ((E).height / (E).width)
-#define BR_EXTENTI_ASPECT(E) ((float)(E).height / (float)(E).width)
 #define BR_EXTENT(X, Y, WIDTH, HEIGHT) (br_extent_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
 #define BR_EXTENT2(POS, SIZE) (br_extent_t) { .pos = (POS), .size = (SIZE) }
-#define BR_EXTENTPS(POS, SIZE) (br_extent_t) { .size = (SIZE), .pos = (POS) }
+#define BR_EXTENT_TOBB(E) ((br_bb_t) { .min_x = (E).x, .min_y = (E).y, .max_x = (E).x + (E).width, .max_y = (E).y + (E).height })
+#define BR_EXTENTI_TOF(E) ((br_extent_t) { .arr = { (float)(E).arr[0], (float)(E).arr[1], (float)(E).arr[2], (float)(E).arr[3] } })
+#define BR_EXTENTI_TOBB(E) ((br_bb_t) { .min_x = (float)(E).x, .min_y = (float)(E).y, .max_x = (float)(E).x + (float)(E).width, .max_y = (float)(E).y + (float)(E).height })
+#define BR_EXTENTI_ASPECT(E) ((float)(E).height / (float)(E).width)
 #define BR_EXTENTI(X, Y, WIDTH, HEIGHT) (br_extenti_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
 #define BR_EXTENTI2(POS, SIZE) (br_extenti_t) { { .pos = POS, .size = SIZE } }
 #define BR_EXTENT_(EX) (EX).x, (EX).y, (EX).width, (EX).height
 
 #define BR_BB(Xm, Ym, XM, YM) (br_bb_t) { .arr = { (Xm), (Ym), (XM), (YM) } }
 #define BR_BB_TOEX(BB) (br_extent_t) { .arr = { (BB).min_x, (BB).min_y, (BB).max_x - (BB).min_x, (BB).max_y - (BB).min_y } }
+#define BR_BBW(BB) ((BB).max_x - (BB).min_x)
+#define BR_BBH(BB) ((BB).max_y - (BB).min_y)
+#define BR_BB_(BB) (BB).min_x, (BB).min_y, (BB).max_x, (BB).max_y
+
 #define BR_VEC4(X, Y, Z, W) ((br_vec4_t) { .x = (X), .y = (Y), .z = (Z), .w = (W) }) 
 #define BR_VEC42(XY, ZW) ((br_vec4_t) { .xy = (XY), .zw = (ZW)  }) 
 #define BR_VEC3(X, Y, Z) ((br_vec3_t) { .x = (X), .y = (Y), .z = (Z) }) 
@@ -535,6 +540,9 @@ static inline br_mat_t br_mat_mul(br_mat_t left, br_mat_t right) {
 // ------------------collisions--------------------
 static inline bool br_col_vec2_extent(br_extent_t ex, br_vec2_t point) {
   return (point.x >= ex.x) && (point.x < (ex.x + ex.width)) && (point.y >= ex.y) && (point.y < (ex.y + ex.height));
+}
+static inline bool br_col_vec2_bb(br_bb_t ex, br_vec2_t point) {
+  return (point.x >= ex.min_x) && (point.x < (ex.max_x)) && (point.y >= ex.min_y) && (point.y < ex.max_y);
 }
 
 static inline bool br_col_extents(br_extent_t a, br_extent_t b) {

@@ -67,16 +67,12 @@ void brui_push(void);
 void brui_push_y(float y);
 void brui_pop(void);
 
-br_extent_t brui_limit(void);
-float       brui_top_width(void);
-void        brui_width_set(float width);
-void        brui_cur_set(br_vec2_t pos);
-int         brui_text_size(void);
-void        brui_text_size_set(int size);
-void        brui_text_align_set(br_text_renderer_ancor_t ancor);
-void        brui_text_color_set(br_color_t color);
-void        brui_ancor_set(brui_ancor_t ancor);
-void        brui_z_set(int z);
+int  brui_text_size(void);
+void brui_text_size_set(int size);
+void brui_text_align_set(br_text_renderer_ancor_t ancor);
+void brui_text_color_set(br_color_t color);
+void brui_ancor_set(brui_ancor_t ancor);
+void brui_z_set(int z);
 
 void              brui_resizable_init(void);
 int               brui_resizable_new(br_extenti_t init_extent, int parent);
