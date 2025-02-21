@@ -3,10 +3,8 @@
 #include "src/br_str.h"
 #include "src/br_text_renderer.h"
 
-#define brui_textf(...) do { \
-  int __n__ = sprintf(_scrach, __VA_ARGS__); \
-  brui_text(BR_STRV(_scrach, (uint32_t)__n__)); \
-} while (0)
+extern int __n__;
+#define brui_textf(...) (__n__ = sprintf(_scrach, __VA_ARGS__), brui_text(BR_STRV(_scrach, (uint32_t)__n__)))
 
 typedef enum {
   brui_drag_mode_none = 0,
@@ -64,8 +62,8 @@ void brui_vsplit_pop(void);
 void brui_vsplit_end(void);
 
 void brui_push(void);
-void brui_push_y(float y);
 void brui_pop(void);
+void brui_push_y(float y);
 
 int  brui_text_size(void);
 void brui_text_size_set(int size);

@@ -75,6 +75,8 @@ static BR_THREAD_LOCAL bruirs_t bruirs;
 static BR_THREAD_LOCAL bruir_childrens_t bruir_childrens;
 
 static BR_THREAD_LOCAL brui_stack_t _stack;
+int __n__;
+
 BR_THREAD_LOCAL char _scrach[2048];
 #define TOP (_stack.arr[_stack.len ? _stack.len - 1 : 0])
 #define TOP2 (_stack.arr[_stack.len > 1 ? _stack.len - 2 : 0])
@@ -109,6 +111,7 @@ brui_stack_el_t brui_stack_el(void) {
     new_el.start = new_el.cur;
     //new_el.cur = br_vec2_add(TOP.cur, TOP.padding);
     new_el.cur.x = new_el.limit.min_x + new_el.psum.x;
+    new_el.cur.y += TOP.padding.y;
     if (new_el.start.y < new_el.limit.min_y) new_el.start.y = new_el.limit.min_y;
     new_el.start.y += new_el.scroll_y;
     new_el.start_z = new_el.z;
@@ -183,10 +186,6 @@ void brui_push(void) {
   br_da_push(_stack, new_el);
 }
 
-void brui_push_y(float y) {
-  TOP.cur.y += y;
-}
-
 void brui_pop(void) {
   float width = BR_BBW(TOP.limit) - 2 * TOP2.psum.x;
   float height = TOP.cur.y - TOP.start.y; //BR_BBH(TOP.limit) - 2 * TOP.psum.y + fminf(TOP.cur.y - TOP.limit.min_y, 0.f);
@@ -238,6 +237,21 @@ void brui_pop(void) {
   BRUI_LOG("pop");
 }
 
+static void brui_push_simple(void) {
+  BRUI_LOG("push simp");
+  brui_stack_el_t new_el = TOP; 
+  br_da_push(_stack, new_el);
+  BRUI_LOG("push simp post");
+}
+
+static void brui_pop_simple(void) {
+  --_stack.len;
+}
+
+void brui_push_y(float y) {
+  TOP.cur.y += y;
+}
+
 static inline bool brui_extent_is_good(br_extenti_t e, br_extenti_t parent) {
   return e.x >= 0 &&
     e.y >= 0 &&
@@ -254,7 +268,7 @@ br_size_t brui_text(br_strv_t strv) {
   float out_top /* neg or 0 */ = fminf(TOP.cur.y - TOP.limit.min_y, 0.f); 
   float opt_height = (float)TOP.font_size + TOP.padding.y;
   
-  br_size_t space_left = BR_SIZE(BR_BBW(TOP.limit) - 2 * TOP.psum.x - (TOP.cur.x - TOP.start.x), TOP.limit.max_y - TOP.cur.y + out_top);
+  br_size_t space_left = BR_SIZE(BR_BBW(TOP.limit) - 2 * TOP.psum.x - (TOP.cur.x - (TOP.limit.min_x + TOP.psum.x)), TOP.limit.max_y - TOP.cur.y + out_top);
   BRUI_LOG("TEXT: Space left %f %f", space_left.width, space_left.height);
   br_strv_t fit = br_text_renderer_fit(tr, space_left, TOP.font_size, strv);
   br_extent_t ex = { 0 };
@@ -283,15 +297,13 @@ bool brui_button(br_strv_t text) {
   float button_max_y = fminf(TOP.cur.y + opt_height, TOP.limit.max_y);
   br_bb_t button_limit = BR_BB(TOP.cur.y, TOP.cur.y, button_max_x, button_max_y);
   bool hovers = br_col_vec2_bb(button_limit, brtl_mouse_pos());
-
-  br_bb_t old_limit = TOP.limit;
-  TOP.limit.max_y = button_max_y;
-  TOP.limit.max_x = button_max_x;
-  brui_text_align_set(br_text_renderer_ancor_mid_up);
-  brui_text_color_set(hovers ? br_theme.colors.btn_txt_hovered : br_theme.colors.btn_txt_inactive);
-  brui_text(text);
-
-  TOP.limit = old_limit;
+  brui_push_simple();
+    TOP.limit.max_y = button_max_y;
+    TOP.limit.max_x = button_max_x;
+    brui_text_align_set(br_text_renderer_ancor_mid_up);
+    brui_text_color_set(hovers ? br_theme.colors.btn_txt_hovered : br_theme.colors.btn_txt_inactive);
+    brui_text(text);
+  brui_pop_simple();
   TOP.content_height += opt_height;
   TOP.cur.y = opt_y;
   return hovers && brtl_mousel_pressed();
@@ -305,22 +317,20 @@ bool brui_checkbox(br_strv_t text, bool* checked) {
   float opt_cur_y = TOP.cur.y + opt_height;
   bool hover = false;
 
-  br_extent_t icon = *checked ?  br_icons.cb_1.size_32 : br_icons.cb_0.size_32;
-  if (cb_extent.y + cb_extent.height > TOP.limit.max_y) {
-    cb_extent.height = TOP.limit.max_y - cb_extent.y;
-  }
-  if (cb_extent.height > 0) {
-    hover = br_col_vec2_extent(cb_extent, brtl_mouse_pos());
-    br_color_t bg = hover ? br_theme.colors.btn_hovered : br_theme.colors.btn_inactive;
-    br_color_t fg = hover ? br_theme.colors.btn_txt_hovered : br_theme.colors.btn_txt_inactive;
-    br_icons_draw(cb_extent, icon, bg, fg, Z);
-    TOP.cur.x += TOP.padding.x + sz;
-  }
+  brui_push_simple();
+    br_extent_t icon = *checked ?  br_icons.cb_1.size_32 : br_icons.cb_0.size_32;
+    if (cb_extent.y + cb_extent.height > TOP.limit.max_y) cb_extent.height = TOP.limit.max_y - cb_extent.y;
+    if (cb_extent.height > 0) {
+      hover = br_col_vec2_extent(cb_extent, brtl_mouse_pos());
+      br_color_t bg = hover ? br_theme.colors.btn_hovered : br_theme.colors.btn_inactive;
+      br_color_t fg = hover ? br_theme.colors.btn_txt_hovered : br_theme.colors.btn_txt_inactive;
+      br_icons_draw(cb_extent, icon, bg, fg, Z);
+      TOP.cur.x += TOP.padding.x + sz;
+    }
 
-  float old_max_y = TOP.limit.max_y;
-  TOP.limit.max_y = fminf(TOP.limit.max_y, TOP.cur.y + opt_height + top_out);
-  brui_text(text);
-  TOP.limit.max_y = old_max_y;
+    TOP.limit.max_y = fminf(TOP.limit.max_y, TOP.cur.y + opt_height + top_out);
+    brui_text(text);
+  brui_pop_simple();
 
   TOP.cur.y = opt_cur_y;
   TOP.content_height += opt_height;
@@ -372,58 +382,67 @@ bool brui_button_icon(br_sizei_t size, br_extent_t icon) {
 }
 
 bool brui_sliderf(br_strv_t text, float* val) {
+  // SLIDERF
   BRUI_LOG("Slider");
-  const float lt = 8.f;
-  float opt_height /* 2*text + 4*1/2*padding + padding + lt */ = 2 * (float)TOP.font_size + 3 * TOP.padding.y + lt;
-  float opt_max_y = TOP.cur.y + opt_height;
-  float opt_content_height = TOP.content_height + opt_height;
-  brui_push();
+  brui_push_simple();
     TOP.padding.y *= 0.1f;
-    TOP.limit.max_y = fminf(TOP.limit.max_y, opt_max_y);
-    brui_text(text);
-    brui_textf("%f", *val);
-
-    br_vec2_t mouse = brtl_mouse_pos();
-    bool is_down = brtl_mousel_down();
-
+    TOP.font_size = (int)((float)TOP.font_size * 0.8f);
+    const float lt = (float)TOP.font_size * 0.2f;
     const float ss = lt + 3.f;
-    const float lw = BR_BBW(TOP.limit) - 2 * TOP.psum.x;
-    br_extent_t line_extent = BR_EXTENT(TOP.cur.x, TOP.cur.y + 1.5f, lw, lt);
-    br_color_t lc = br_theme.colors.btn_inactive;
-    br_extent_t slider_extent = BR_EXTENT(TOP.cur.x + (lw - ss)*.5f, TOP.cur.y, ss, ss);
-    br_color_t sc = br_theme.colors.btn_txt_inactive;
+    const float opt_height /* 2*text + 4*padding + ss */ = 2 * (float)TOP.font_size + 4 * TOP.padding.y + ss;
+    const float opt_max_y = TOP.cur.y + opt_height;
+    float to_sub = 0;
 
-    if (_stack.sliderf == val ||
-        (_stack.sliderf == NULL && mouse.x > line_extent.x &&
-        mouse.x < line_extent.x + line_extent.width &&
-        mouse.y > line_extent.y - 3 &&
-        mouse.y < line_extent.y + line_extent.height + 3)) {
-      if (is_down) {
-        lc = br_theme.colors.btn_active;
-        sc = br_theme.colors.btn_txt_active;
-        float speed = brtl_frame_time();
-        float factor = br_float_clamp((mouse.x - line_extent.x) / line_extent.width, 0.f, 1.f) * speed + (1 - speed * 0.5f);
-        *val *= factor;
-        slider_extent.x = br_float_clamp(mouse.x, line_extent.x, line_extent.x + line_extent.width) - ss * 0.5f;
-        _stack.sliderf = val;
-      } else {
-        lc = br_theme.colors.btn_hovered;
-        sc = br_theme.colors.btn_txt_hovered;
-        _stack.sliderf = NULL;
-      }
-    }
+    brui_push();
+      BRUI_LOG("Slider font: %d, pady: %.2f, lt: %.2f", TOP.font_size, TOP.padding.y, lt);
+      TOP.limit.max_y = fminf(TOP.limit.max_y, opt_max_y);
+      to_sub += (float)TOP.font_size - brui_text(text).height;
+      TOP.cur.y -= to_sub;
+      float h = (float)TOP.font_size - brui_textf("%f", *val).height;
+      to_sub += h;
+      TOP.cur.y -= h; 
 
-    BRUI_LOG("Slider inner %f %f %f %f", BR_EXTENT_(line_extent));
-    if (slider_extent.y + slider_extent.height < TOP.limit.max_y) {
-      if (slider_extent.y > TOP.limit.min_y) {
-        br_icons_draw(line_extent, BR_EXTENT(0,0,0,0), lc, lc, Z);
-        br_icons_draw(slider_extent, BR_EXTENT(0,0,0,0), sc, sc, Z);
+      br_vec2_t mouse = brtl_mouse_pos();
+      bool is_down = brtl_mousel_down();
+
+      const float lw = BR_BBW(TOP.limit) - 2 * TOP.psum.x;
+      br_extent_t line_extent = BR_EXTENT(TOP.cur.x, TOP.cur.y + (ss - lt)*0.5f, lw, lt);
+      br_color_t lc = br_theme.colors.btn_inactive;
+      br_extent_t slider_extent = BR_EXTENT(TOP.cur.x + (lw - ss)*.5f, TOP.cur.y, ss, ss);
+      br_color_t sc = br_theme.colors.btn_txt_inactive;
+
+      if (_stack.sliderf == val ||
+          (_stack.sliderf == NULL && mouse.x > line_extent.x &&
+          mouse.x < line_extent.x + line_extent.width &&
+          mouse.y > line_extent.y - 3 &&
+          mouse.y < line_extent.y + line_extent.height + 3)) {
+        if (is_down) {
+          lc = br_theme.colors.btn_active;
+          sc = br_theme.colors.btn_txt_active;
+          float speed = brtl_frame_time();
+          float factor = br_float_clamp((mouse.x - line_extent.x) / line_extent.width, 0.f, 1.f) * speed + (1 - speed * 0.5f);
+          *val *= factor;
+          slider_extent.x = br_float_clamp(mouse.x, line_extent.x, line_extent.x + line_extent.width) - ss * 0.5f;
+          _stack.sliderf = val;
+        } else {
+          lc = br_theme.colors.btn_hovered;
+          sc = br_theme.colors.btn_txt_hovered;
+          _stack.sliderf = NULL;
+        }
       }
-    }
-    brui_push_y(lt + 10.f * TOP.padding.y);
-  brui_pop();
-  TOP.cur.y = opt_max_y;
-  TOP.content_height = opt_content_height;
+
+      BRUI_LOG("Slider inner %f %f %f %f", BR_EXTENT_(line_extent));
+      if (slider_extent.y + slider_extent.height < TOP.limit.max_y) {
+        if (slider_extent.y > TOP.limit.min_y) {
+          br_icons_draw(line_extent, BR_EXTENT(0,0,0,0), lc, lc, Z);
+          br_icons_draw(slider_extent, BR_EXTENT(0,0,0,0), sc, sc, Z);
+        }
+      }
+      TOP.cur.y += ss + TOP.padding.y;
+    brui_pop();
+  brui_pop_simple();
+  TOP.cur.y = opt_max_y + TOP.padding.y - to_sub;
+  TOP.content_height += opt_height + TOP.padding.y;
   return false;
 }
 
@@ -659,7 +678,7 @@ void brui_resizable_push(int id) {
   TOP.psum = BR_VEC2(0, 0);
   TOP.cur = bruir_pos_global(*res);
   TOP.start = TOP.cur;
-  TOP.limit = BR_EXTENT_TOBB(rex);
+  TOP.limit = BR_BB(TOP.cur.x, TOP.cur.y, TOP.cur.x + rex.width, TOP.cur.y + rex.height);
   TOP.cur.y -= res->content_height / (float)res->cur_extent.height * res->scroll_offset_percent;
   brui_z_set(TOP.z + res->z * ((4*1024) >> (_stack.len)));
   TOP.cur_resizable = id;
