@@ -38,7 +38,7 @@ typedef struct {
   int z;
   int parent;
   float scroll_offset_percent;
-  float content_height;
+  float full_height;
 
   bool is_hoverd;
   bool scroll_bar;
