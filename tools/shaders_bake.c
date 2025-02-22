@@ -25,6 +25,8 @@
   X(token_kind_close_paren) \
   X(token_kind_open_curly) \
   X(token_kind_close_curly) \
+  X(token_kind_open_square) \
+  X(token_kind_close_square) \
   X(token_kind_comma) \
   X(token_kind_dot) \
   X(token_kind_equals) \
@@ -330,6 +332,14 @@ void get_tokens(shader_t* shader) {
       token_t paren = init_token(token_kind_close_curly, line, offset, &shader->content.str[i]);
       ++offset;
       br_da_push(shader->tokens, paren);
+    } else if (cur == '[') {
+      token_t paren = init_token(token_kind_open_square, line, offset, &shader->content.str[i]);
+      ++offset;
+      br_da_push(shader->tokens, paren);
+    } else if (cur == ']') {
+      token_t paren = init_token(token_kind_close_square, line, offset, &shader->content.str[i]);
+      ++offset;
+      br_da_push(shader->tokens, paren);
     } else if (cur == '=') {
       if (i + 1 >= shader->content.len ||  shader->content.str[i + 1] != '=') {
         token_t equals = init_token(token_kind_equals, line, offset, &shader->content.str[i]);
@@ -448,7 +458,11 @@ void get_tokens(shader_t* shader) {
 
 void check_numbers(shader_t const* shader) {
   for (size_t i = 3; i < shader->tokens.len; ++i) {
-    if (shader->tokens.arr[i].kind == token_kind_number) {
+    if (shader->tokens.arr[i].kind == token_kind_open_square) {
+      if (shader->tokens.arr[i+1].kind != token_kind_number) EXPECT_TOKEN_K(shader, i + 1, token_kind_number);
+      if (shader->tokens.arr[i+2].kind != token_kind_close_square) EXPECT_TOKEN_K(shader, i + 1, token_kind_number);
+      i += 2;
+    } else if (shader->tokens.arr[i].kind == token_kind_number) {
       token_t t1 = shader->tokens.arr[i + 1];
       if (t1.kind == token_kind_identifier && t1.view.str[0] == 'e') continue;
       if (t1.kind == token_kind_dot) {

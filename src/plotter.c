@@ -207,6 +207,8 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
   br_size_t sz = gr.size;
   int font_size = (int)(18.f * context.font_scale);
   char* scrach = br_scrach_get(128);
+  br_extent_t vp = BR_EXTENTI_TOF(brtl_viewport());
+  br_bb_t limit = BR_EXTENT_TOBB(vp);
 
   if (r.height > 0.f) {
     float exp = floorf(log10f(r.height / 2.f));
@@ -228,7 +230,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         s = br_strv_trim_zeros(s);
         float y = sz.height / r.height * (r.y - cur);
         if (y > sz.height) break;
-        br_text_renderer_push2(tr, x, y, 0.9f, font_size, br_theme.colors.grid_nums, s, ancor);
+        br_text_renderer_push2(tr, BR_VEC3(x, y, 0.9f), font_size, br_theme.colors.grid_nums, s, limit, ancor);
       }
     }
   }
@@ -253,7 +255,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         s = br_strv_trim_zeros(s);
         float x = (sz.width / r.width) * (cur - r.x);
         if (x > sz.width) break;
-        br_text_renderer_push2(tr, x, y, 0.9f, font_size, br_theme.colors.grid_nums, s, ancor);
+        br_text_renderer_push2(tr, BR_VEC3(x, y, 0.9f), font_size, br_theme.colors.grid_nums, s, limit, ancor);
       }
     }
   }

@@ -56,6 +56,7 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   brgl_clear(BR_COLOR_COMPF(br_theme.colors.bg));
   help_draw_fps(br->text, 0, 0);
 
+  brgl_enable_clip_distance();
   brui_begin();
     for (int i = 0; i < br->plots.len; ++i) {
       brui_resizable_t* r = brui_resizable_get(PLOT->extent_handle);

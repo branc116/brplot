@@ -53,6 +53,7 @@
 #define GL_RED 0x1903
 #define GL_RGB 0x1907
 #define GL_RGBA	0x1908
+#define GL_CLIP_DISTANCE0 0x3000
 #define GL_FUNC_ADD	0x8006
 #define GL_MIN					0x8007
 #define GL_MAX 0x8008
@@ -123,6 +124,8 @@ void brgl_enable_back_face_cull(void);
 void brgl_disable_back_face_cull(void);
 void brgl_enable_depth_test(void);
 void brgl_disable_depth_test(void);
+void brgl_enable_clip_distance(void);
+void brgl_disable_clip_distance(void);
 void brgl_viewport(GLint x, GLint y, GLsizei width, GLsizei height);
 GLuint brgl_load_texture(const void* data, int width, int height, int format);
 void brgl_unload_texture(GLuint tex_id);

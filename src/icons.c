@@ -21,25 +21,34 @@ void br_icons_init(br_shader_icon_t* shader) {
     .edge_tr.size_8 = BR_EXTENT(I.x + I.width, I.y + I.height, -I.width, -I.height),
     .edge_br.size_8 = BR_EXTENT(I.x + I.width, I.y, -I.width, I.height),
 
-    .edge_b.size_8 =  BR_EXTENT(I.x + 7.5f/8.0f * I.width, I.y + 6.5f/8.0f*I.height, 0.01f/8.0f*I.width, 1.4f/8.f*I.height),
-    .edge_t.size_8 =  BR_EXTENT(I.x + 7.5f/8.0f * I.width, I.y + 7.9f/8.0f*I.height, 0.01f/8.0f*I.width, -1.4f/8.f*I.height),
-    .edge_l.size_8 =  BR_EXTENT(I.x, I.y, I.width * 1.4f/8.0f, I.height * 0.01f/8.0f),
-    .edge_r.size_8 =  BR_EXTENT(I.x + 1.4f/8.0f * I.width, I.y, -I.width * 1.4f/8.0f, I.height * 0.01f/8.0f),
+    .edge_b.size_8 = BR_EXTENT(I.x + 7.5f/8.0f * I.width, I.y + 6.5f/8.0f*I.height, 0.01f/8.0f*I.width, 1.4f/8.f*I.height),
+    .edge_t.size_8 = BR_EXTENT(I.x + 7.5f/8.0f * I.width, I.y + 7.9f/8.0f*I.height, 0.01f/8.0f*I.width, -1.4f/8.f*I.height),
+    .edge_l.size_8 = BR_EXTENT(I.x, I.y, I.width * 1.4f/8.0f, I.height * 0.01f/8.0f),
+    .edge_r.size_8 = BR_EXTENT(I.x + 1.4f/8.0f * I.width, I.y, -I.width * 1.4f/8.0f, I.height * 0.01f/8.0f),
   };
 #undef I
 }
 
-// TODO: extent to bb
-void br_icons_draw(br_extent_t screen, br_extent_t atlas, br_color_t bg, br_color_t fg, int z) {
+void br_icons_draw(br_bb_t screen, br_bb_t atlas, br_color_t bg, br_color_t fg, br_bb_t limit, int z) {
   br_sizei_t res = brtl_viewport().size;
   br_vec4_t bgv = BR_COLOR_TO4(bg);
   br_vec4_t fgv = BR_COLOR_TO4(fg);
   float gl_z = BR_Z_TO_GL(z);
+
+  br_vec2_t stl = screen.min;
+  br_vec2_t str = br_bb_tr(screen);
+  br_vec2_t sbr = screen.max;
+  br_vec2_t sbl = br_bb_bl(screen);
+
+  br_vec2_t atl = atlas.min;
+  br_vec2_t atr = br_bb_tr(atlas);
+  br_vec2_t abr = atlas.max;
+  br_vec2_t abl = br_bb_bl(atlas);
   br_shader_icon_push_quad(brtl_shaders()->icon, (br_shader_icon_el_t[4]) {
-    { .pos = BR_VEC42(br_vec2_stog(screen.pos, res), atlas.pos), .bg  = bgv, .fg = fgv, .z = gl_z },
-    { .pos = BR_VEC42(br_vec2_stog(br_extent_tr(screen), res), br_extent_tr(atlas)), .bg  = bgv, .fg = fgv, .z = gl_z },
-    { .pos = BR_VEC42(br_vec2_stog(br_extent_br(screen), res), br_extent_br(atlas)), .bg  = bgv, .fg = fgv, .z = gl_z },
-    { .pos = BR_VEC42(br_vec2_stog(br_extent_bl(screen), res), br_extent_bl(atlas)), .bg  = bgv, .fg = fgv, .z = gl_z },
+    { .pos = BR_VEC42(br_vec2_stog(stl, res), atl), .bg  = bgv, .fg = fgv, .clip_dists = br_bb_clip_dists(limit, stl), .z = gl_z },
+    { .pos = BR_VEC42(br_vec2_stog(str, res), atr), .bg  = bgv, .fg = fgv, .clip_dists = br_bb_clip_dists(limit, str), .z = gl_z },
+    { .pos = BR_VEC42(br_vec2_stog(sbr, res), abr), .bg  = bgv, .fg = fgv, .clip_dists = br_bb_clip_dists(limit, sbr), .z = gl_z },
+    { .pos = BR_VEC42(br_vec2_stog(sbl, res), abl), .bg  = bgv, .fg = fgv, .clip_dists = br_bb_clip_dists(limit, sbl), .z = gl_z },
   });
 }
 

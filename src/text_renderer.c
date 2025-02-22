@@ -166,7 +166,7 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
   simp->len = 0;
 }
 
-static bool brtr_move_loc(br_text_renderer_t* tr, size_to_font s, char c, br_vec2_t* pos, float height) {
+static bool brtr_move_loc(br_text_renderer_t* tr, size_to_font s, char c, br_vec2_t* pos) {
   if (c == '\n') {
     pos->y += (float)s.key * 1.1f;
     pos->x = 0;
@@ -180,7 +180,6 @@ static bool brtr_move_loc(br_text_renderer_t* tr, size_to_font s, char c, br_vec
     stbtt_packedchar ch = s.value[char_index].value;
     stbtt_aligned_quad q;
     stbtt_GetPackedQuad(&ch, tr->bitmap_pixels_width, tr->bitmap_pixels_height, 0, &pos->x, &pos->y, &q, false);
-    if (q.y1 - q.y0 > height) return false;
   }
   return true;
 }
@@ -205,25 +204,34 @@ br_strv_t br_text_renderer_fit(br_text_renderer_t* r, br_size_t size, int font_s
   } else {
     size_to_font f = r->sizes[size_index];
     for (; i < text.len; ++i) {
-      if (false == brtr_move_loc(r, f, text.str[i], &loc, size.height)) break;
-      if (false == br_col_vec2_extent(exf, loc)) break;
+      if (loc.x > size.width) break;
+      if (loc.y > size.height) break;
+      if (false == brtr_move_loc(r, f, text.str[i], &loc)) break;
     }
   }
   return br_strv_sub(text, 0, (uint32_t)(i < 0 ? 0 : i));
 }
 
-br_extent_t br_text_renderer_push(br_text_renderer_t* r, float x, float y, float z, int font_size, br_color_t color, const char* text) {
-  return br_text_renderer_push2(r, x, y, z, font_size, color, br_strv_from_c_str(text), br_text_renderer_ancor_left_up);
+br_extent_t br_text_renderer_push0(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, const char* text) {
+  return br_text_renderer_push(r, pos, font_size, color, text, BR_BB(0,0,10000,10000));
 }
 
-br_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, float x, float y, float z, int font_size, br_color_t color, br_strv_t text) {
-  return br_text_renderer_push2(r, x, y, z, font_size, color, text, br_text_renderer_ancor_left_up);
+br_extent_t br_text_renderer_push_strv0(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, br_strv_t text) {
+  return br_text_renderer_push_strv(r, pos, font_size, color, text, BR_BB(0,0,10000,10000));
 }
 
-br_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x, float y, float z, int font_size, br_color_t color, br_strv_t text, br_text_renderer_ancor_t ancor) {
-  br_vec2_t loc = BR_VEC2(x, y);
+br_extent_t br_text_renderer_push(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, const char* text, br_bb_t limit) {
+  return br_text_renderer_push2(r, pos, font_size, color, br_strv_from_c_str(text), limit, br_text_renderer_ancor_left_up);
+}
+
+br_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, br_strv_t text, br_bb_t limit) {
+  return br_text_renderer_push2(r, pos, font_size, color, text, limit, br_text_renderer_ancor_left_up);
+}
+
+br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, br_strv_t text, br_bb_t limit, br_text_renderer_ancor_t ancor) {
+  float x = pos.x, y = pos.y, z = pos.z;
   long size_index = stbds_hmgeti(r->sizes, font_size);
-  float og_x = loc.x;
+  float og_x = pos.x;
   r->tmp_quads.len = 0;
   if (size_index == -1) {
     for (size_t i = 0; i < text.len; ++i) {
@@ -234,8 +242,8 @@ br_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x, float y, floa
     for (size_t i = 0; i < text.len; ++i) {
       long char_index = stbds_hmgeti(s.value, text.str[i]);
       if (text.str[i] == '\n') {
-        loc.y += (float)font_size * 1.1f;
-        loc.x = og_x;
+        pos.y += (float)font_size * 1.1f;
+        pos.x = og_x;
         continue;
       }
       if (text.str[i] == '\r') continue;
@@ -244,7 +252,7 @@ br_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x, float y, floa
       } else {
         stbtt_aligned_quad q;
         stbtt_packedchar ch = s.value[char_index].value;
-        stbtt_GetPackedQuad(&ch, r->bitmap_pixels_width, r->bitmap_pixels_height, 0, &loc.x, &loc.y, &q, false);
+        stbtt_GetPackedQuad(&ch, r->bitmap_pixels_width, r->bitmap_pixels_height, 0, &pos.x, &pos.y, &q, false);
         br_da_push(r->tmp_quads, q);
       }
     }
@@ -274,16 +282,12 @@ br_extent_t br_text_renderer_push2(br_text_renderer_t* r, float x, float y, floa
     br_bb_t bb = br_bb_sub(BR_BB(r->tmp_quads.arr[i].x0, r->tmp_quads.arr[i].y0, r->tmp_quads.arr[i].x1, r->tmp_quads.arr[i].y1), BR_VEC2(x_off, y_off));
     br_bb_t tex = BR_BB(r->tmp_quads.arr[i].s0, r->tmp_quads.arr[i].t0, r->tmp_quads.arr[i].s1, r->tmp_quads.arr[i].t1);
     br_shader_font_push_quad(*r->shader_f, (br_shader_font_el_t[4]) {
-        { .pos = BR_VEC42(br_vec2_stog(bb.min, sz), tex.min), .color = cv, .z = z},
-        { .pos = BR_VEC42(br_vec2_stog(br_bb_tr(bb), sz), br_bb_tr(tex)), .color = cv, .z = z },
-        { .pos = BR_VEC42(br_vec2_stog(bb.max, sz), tex.max), .color = cv, .z = z },
-        { .pos = BR_VEC42(br_vec2_stog(br_bb_bl(bb), sz), br_bb_bl(tex)), .color = cv, .z = z },
+        { .pos = BR_VEC42(br_vec2_stog(bb.min, sz), tex.min),             .color = cv, .clip_dists = br_bb_clip_dists(limit, bb.min),       .z = z },
+        { .pos = BR_VEC42(br_vec2_stog(br_bb_tr(bb), sz), br_bb_tr(tex)), .color = cv, .clip_dists = br_bb_clip_dists(limit, br_bb_tr(bb)), .z = z },
+        { .pos = BR_VEC42(br_vec2_stog(bb.max, sz), tex.max),             .color = cv, .clip_dists = br_bb_clip_dists(limit, bb.max),       .z = z },
+        { .pos = BR_VEC42(br_vec2_stog(br_bb_bl(bb), sz), br_bb_bl(tex)), .color = cv, .clip_dists = br_bb_clip_dists(limit, br_bb_bl(bb)), .z = z },
     });
   }
   return BR_EXTENT(min_x - x_off, min_y - y_off, max_x - min_x, max_y - min_y);
 }
 
-// gcc -fsanitize=address -ggdb main.c -lm -lraylib && ./a.out
-// gcc -O3 main.c -lm -lraylib && ./a.out
-// C:\cygwin64\bin\gcc.exe -O3 main.c -lm
-// clang -L .\external\lib -lraylib main.c

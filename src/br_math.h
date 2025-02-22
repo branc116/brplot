@@ -150,6 +150,7 @@ typedef struct {
     struct {
       float x, y, z;
     };
+    br_vec2_t xy;
     float arr[3];
   };
 }  br_vec3_t;
@@ -563,3 +564,14 @@ static inline br_vec2_t br_bb_bl(br_bb_t bb) {
 static inline br_bb_t br_bb_sub(br_bb_t bb, br_vec2_t vec) {
   return (br_bb_t) { .min = br_vec2_sub(bb.min, vec), .max = br_vec2_sub(bb.max, vec) };
 }
+
+static inline br_vec4_t br_bb_clip_dists(br_bb_t limit, br_vec2_t pos) {
+  br_vec4_t p = BR_VEC4(
+      (pos.x - limit.min_x),
+      (pos.y - limit.min_y),
+      (limit.max_x - pos.x),
+      (limit.max_y - pos.y)
+  );
+  return p;
+}
+

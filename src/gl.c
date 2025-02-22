@@ -122,6 +122,20 @@ void brgl_disable_depth_test(void) {
   brgl_disable(GL_DEPTH_TEST);
 }
 
+void brgl_enable_clip_distance(void) {
+  brgl_enable(GL_CLIP_DISTANCE0);
+  brgl_enable(GL_CLIP_DISTANCE0 + 1);
+  brgl_enable(GL_CLIP_DISTANCE0 + 2);
+  brgl_enable(GL_CLIP_DISTANCE0 + 3);
+}
+
+void brgl_disable_clip_distance(void) {
+  brgl_disable(GL_CLIP_DISTANCE0);
+  brgl_disable(GL_CLIP_DISTANCE0 + 1);
+  brgl_disable(GL_CLIP_DISTANCE0 + 2);
+  brgl_disable(GL_CLIP_DISTANCE0 + 3);
+}
+
 #define BR_FRAMEBUFFERS 16
 #define BR_FRAMEBUFFER_STACK 16
 BR_THREAD_LOCAL static struct {
