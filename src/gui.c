@@ -151,6 +151,13 @@ static void draw_left_panel(br_plotter_t* br) {
       if (br->dark_theme) br_theme_dark();
       else br_theme_light();
     }
+    brui_vsplit(3);
+      brui_sliderf(BR_STRL("padding.y"), &br_theme.ui.padding.y);
+    brui_vsplit_pop();
+      brui_sliderf(BR_STRL("padding.x"), &br_theme.ui.padding.x);
+    brui_vsplit_pop();
+      brui_sliderf(BR_STRL("thick"), &br_theme.ui.border_thick);
+    brui_vsplit_end();
     if (brui_button(BR_STRL("Export"))) {
       br_plotter_export(br, "test.brp");
     }

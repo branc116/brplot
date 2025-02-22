@@ -24,11 +24,20 @@ typedef struct {
     br_color_t ui_edge_bg_active;
 
     br_color_t bg;
+    float highlite_factor;
   } colors;
+
+  struct {
+    br_vec2_t padding;
+    int font_size;
+    float border_thick;
+  } ui;
 } br_theme_t;
 
 extern BR_THREAD_LOCAL br_theme_t br_theme;
 
 void br_theme_dark(void);
 void br_theme_light(void);
+
+void br_theme_reset_ui(void);
 

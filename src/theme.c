@@ -24,12 +24,12 @@ void br_theme_dark(void) {
   br_theme.colors.ui_edge_active = br_theme.colors.btn_active;
 
   br_theme.colors.ui_edge_bg_inactive = br_theme.colors.plot_menu_color;
-  br_theme.colors.ui_edge_bg_inactive.a = 0x00;
   br_theme.colors.ui_edge_bg_active = br_theme.colors.plot_menu_color;
-  br_theme.colors.ui_edge_bg_active.a = 0x00;
 
   br_theme.colors.bg = bg;
   br_theme.colors.bg.a = 0x00;
+
+  br_theme.colors.highlite_factor = 1.05f;
 }
 
 void br_theme_light(void) {
@@ -52,4 +52,13 @@ void br_theme_light(void) {
 
   br_theme.colors.bg = bg;
   br_theme.colors.bg.a = 0x00;
+
+  br_theme.colors.highlite_factor = 0.95f;
 }
+
+void br_theme_reset_ui(void) {
+  br_theme.ui.padding = BR_VEC2(4, 4);
+  br_theme.ui.font_size = 26;
+  br_theme.ui.border_thick = 2;
+}
+

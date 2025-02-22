@@ -123,8 +123,8 @@ brui_stack_el_t brui_stack_el(void) {
   } else {
     brui_stack_el_t root = {
       .limit = BR_EXTENTI_TOBB(brtl_viewport()),
-      .padding = BR_VEC2(14, 14),
-      .font_size = 26,
+      .padding = br_theme.ui.padding,
+      .font_size = br_theme.ui.font_size,
       .font_color = br_theme.colors.btn_txt_inactive,
       .text_ancor = br_text_renderer_ancor_left_up,
       .is_active = true
@@ -193,7 +193,6 @@ void brui_pop(void) {
     height -= TOP.cur.y - TOP.limit.max_y;
   }
   br_size_t size = BR_SIZE(width, height);
-  int z = TOP.start_z - 1;
   br_bb_t bb = BR_BB(TOP.start.x, TOP.start.y, TOP.start.x + size.width, TOP.start.y + size.height);
   float content_height = TOP.content_height;
 
@@ -205,30 +204,8 @@ void brui_pop(void) {
     return;
   }
 
-  if (TOP.hide_bg == false) br_icons_draw(bb, BR_BB(0,0,0,0), br_theme.colors.plot_menu_color, br_theme.colors.plot_menu_color, TOP.limit, z - 1);
-  if (TOP.hide_border == false) {
-    BRUI_LOG("POP Draw border: %.2f %.2f %.2f %.2f", BR_BB_(bb));
-    br_color_t ec = br_theme.colors.ui_edge_inactive;
-    br_color_t bc = br_theme.colors.ui_edge_bg_inactive;
-
-    float edge = 4;
-    float thick = edge / 4;
-
-    if (TOP.hide_border == false && TOP.is_active && br_col_vec2_bb(bb, brtl_mouse_pos())) {
-      ec = br_theme.colors.ui_edge_active;
-      bc = br_theme.colors.ui_edge_bg_active;
-    }
-    // TODO
-//    br_icons_draw(BR_BB(ex.x + edge, ex.y, ex.width - edge*2, thick), br_extra_icons.edge_t.size_8, ec, bc, Z);
-//    br_icons_draw(BR_BB(ex.x + edge, ex.y + height - thick, ex.width - edge*2, thick), br_extra_icons.edge_b.size_8, ec, bc, Z);
-//    br_icons_draw(BR_BB(ex.x, ex.y + edge, thick, height - 2*edge), br_extra_icons.edge_l.size_8, ec, bc, Z);
-//    br_icons_draw(BR_BB(ex.x + ex.width - thick, ex.y + edge, thick, height - 2*edge), br_extra_icons.edge_r.size_8, ec, bc, Z);
-//
-//    br_icons_draw(BR_BB(ex.x, ex.y + height - edge, edge, edge), br_icons.edge.size_8, bc, ec, Z);
-//    br_icons_draw(BR_BB(ex.x + ex.width - edge, ex.y + height - edge, edge, edge), br_extra_icons.edge_br.size_8, bc, ec, Z);
-//    br_icons_draw(BR_BB(ex.x, ex.y, edge, edge), br_extra_icons.edge_tl.size_8, bc, ec, Z);
-//    br_icons_draw(BR_BB(ex.x + ex.width - edge, ex.y, edge, edge), br_extra_icons.edge_tr.size_8, bc, ec, Z);
-  }
+  if (TOP.hide_bg == false) brui_background(bb, br_theme.colors.plot_menu_color);
+  if (TOP.hide_border == false) brui_border(bb);
 
   BRUI_LOG("Pre pop ex: [%.2f,%.2f,%.2f,%.2f]", BR_BB_(bb));
   float tt = TOP.cur.y;
@@ -295,22 +272,58 @@ void brui_new_lines(int n) {
   TOP.content_height += off;
 }
 
+void brui_background(br_bb_t bb, br_color_t color) {
+  br_icons_draw(bb, BR_BB(0,0,0,0), color, color, TOP.limit, TOP.start_z);
+}
+
+void brui_border(br_bb_t bb) {
+  br_color_t ec = br_theme.colors.ui_edge_inactive;
+  br_color_t bc = br_theme.colors.ui_edge_bg_inactive;
+
+  float edge = 0;
+  float thick = br_theme.ui.border_thick;
+
+  if (TOP.is_active && br_col_vec2_bb(bb, brtl_mouse_pos())) {
+    ec = br_theme.colors.ui_edge_active;
+    bc = br_theme.colors.ui_edge_bg_active;
+  }
+
+  br_icons_draw(BR_BB(bb.min_x + edge, bb.min_y, bb.max_x - edge, bb.min_y + thick), BR_EXTENT_TOBB(br_extra_icons.edge_t.size_8), ec, bc, TOP.limit, Z);
+  br_icons_draw(BR_BB(bb.min_x + edge, bb.max_y - thick, bb.max_x - edge, bb.max_y), BR_EXTENT_TOBB(br_extra_icons.edge_b.size_8), ec, bc, TOP.limit, Z);
+  br_icons_draw(BR_BB(bb.min_x, bb.min_y + edge, bb.min_x + thick, bb.max_y - edge), BR_EXTENT_TOBB(br_extra_icons.edge_l.size_8), ec, bc, TOP.limit, Z);
+  br_icons_draw(BR_BB(bb.max_x - thick, bb.min_y + edge, bb.max_x, bb.max_y - edge), BR_EXTENT_TOBB(br_extra_icons.edge_r.size_8), ec, bc, TOP.limit, Z);
+
+  //br_icons_draw(BR_BB(bb.min_x, bb.max_y - edge, bb.min_x + edge, bb.max_y), BR_EXTENT_TOBB(br_icons.edge.size_8), bc, ec, TOP.limit, Z);
+  //br_icons_draw(BR_BB(bb.max_x - edge, bb.max_y - edge, bb.max_x, bb.max_y), BR_EXTENT_TOBB(br_extra_icons.edge_br.size_8), bc, ec, TOP.limit, Z);
+  //br_icons_draw(BR_BB(bb.min_x, bb.min_y, bb.min_x + edge, bb.min_y + edge), BR_EXTENT_TOBB(br_extra_icons.edge_tl.size_8), bc, ec, TOP.limit, Z);
+  //br_icons_draw(BR_BB(bb.max_x - edge, bb.min_y, bb.max_x, bb.min_y + edge), BR_EXTENT_TOBB(br_extra_icons.edge_tr.size_8), bc, ec, TOP.limit, Z);
+}
+
 bool brui_button(br_strv_t text) {
-  float opt_height /* text + 2*1/2*padding + padding */ = (float)TOP.font_size + 2*TOP.padding.y;
-  float opt_y = TOP.cur.y + opt_height;
+  float opt_height /* text + 2*1/2*padding */ = (float)TOP.font_size + TOP.padding.y;
+  float opt_y = TOP.cur.y + opt_height + TOP.padding.y;
 
   float button_max_x = TOP.limit.max_x - TOP.psum.x;
   float button_max_y = fminf(TOP.cur.y + opt_height, TOP.limit.max_y);
-  br_bb_t button_limit = BR_BB(TOP.cur.y, TOP.cur.y, button_max_x, button_max_y);
+  br_bb_t button_limit = BR_BB(TOP.cur.x, TOP.cur.y, button_max_x, button_max_y);
   bool hovers = br_col_vec2_bb(button_limit, brtl_mouse_pos());
+  BRUI_LOG("button_limit: %.2f %.2f %.2f %.2f", BR_BB_(button_limit));
   brui_push_simple();
+    TOP.limit.min_x = TOP.cur.x;
+    TOP.limit.min_y = TOP.cur.y;
     TOP.limit.max_y = button_max_y;
     TOP.limit.max_x = button_max_x;
-    brui_text_align_set(br_text_renderer_ancor_mid_up);
+    TOP.psum.x = 0;
+    TOP.padding.y *= 0.5f;
+    brui_text_align_set(br_text_renderer_ancor_mid_mid);
     brui_text_color_set(hovers ? br_theme.colors.btn_txt_hovered : br_theme.colors.btn_txt_inactive);
+    brui_background(BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_height),
+      hovers ? br_theme.colors.btn_hovered : br_theme.colors.btn_inactive
+    );
+    brui_border(BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_height));
     brui_text(text);
   brui_pop_simple();
-  TOP.content_height += opt_height;
+  TOP.content_height += opt_height + TOP.padding.y;
   TOP.cur.y = opt_y;
   return hovers && brtl_mousel_pressed();
 }

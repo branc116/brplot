@@ -28,6 +28,7 @@ static void* main_gui(void* plotter) {
   br->menu_extent_handle = brui_resizable_new(BR_EXTENTI(10, 40, 160, brtl_viewport().height/2), 0); 
   br_icons_init(br->shaders.icon);
   br_theme_dark();
+  br_theme_reset_ui();
   bruir_resizable_refresh(0);
   while(br->should_close == false) {
     TracyCFrameMark;

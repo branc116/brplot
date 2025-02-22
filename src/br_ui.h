@@ -60,6 +60,8 @@ bool brui_sliderf(br_strv_t text, float* val);
 bool brui_vsplit(int n);
 void brui_vsplit_pop(void);
 void brui_vsplit_end(void);
+void brui_background(br_bb_t bb, br_color_t color);
+void brui_border(br_bb_t bb);
 
 void brui_push(void);
 void brui_pop(void);
