@@ -20,11 +20,9 @@
 
 typedef struct {
   br_vec2_t cur;
-  br_vec2_t start;
   br_bb_t limit;
   int start_z, z;
   br_vec2_t psum;
-  float scroll_y;
   float content_height;
 
   br_vec2_t padding;
@@ -35,7 +33,7 @@ typedef struct {
 
   int cur_resizable;
 
-  int split_count;
+  float vsplit_max_height;
 
   bool is_active;
   bool hide_border;
@@ -94,7 +92,7 @@ BR_THREAD_LOCAL char _scrach[2048];
     printf("  "); \
   } \
   if (_stack.len > 0) { \
-    printf("[CUR:%.3f,%.3f][LIMIT:%.2f,%.2f,%.2f,%.2f][SCROLL:%.2f][START:%.2f %.2f][PSUM:%.2f %.2f] " fmt "\n", TOP.cur.x, TOP.cur.y, BR_BB_(TOP.limit), TOP.scroll_y, TOP.start.x, TOP.start.y, TOP.psum.x, TOP.psum.y, ##__VA_ARGS__); \
+    printf("[CUR:%.3f,%.3f][LIMIT:%.2f,%.2f,%.2f,%.2f][PSUM:%.2f %.2f] " fmt "\n", TOP.cur.x, TOP.cur.y, BR_BB_(TOP.limit), TOP.psum.x, TOP.psum.y, ##__VA_ARGS__); \
   } else { \
     printf(fmt "\n", ##__VA_ARGS__); \
   } \
@@ -108,17 +106,13 @@ brui_stack_el_t brui_stack_el(void) {
     brui_stack_el_t new_el = TOP;
     new_el.psum.x += TOP.padding.x;
     new_el.z += 5;
-    new_el.start = new_el.cur;
-    //new_el.cur = br_vec2_add(TOP.cur, TOP.padding);
     new_el.cur.x = new_el.limit.min_x + new_el.psum.x;
     new_el.cur.y += TOP.padding.y;
-    if (new_el.start.y < new_el.limit.min_y) new_el.start.y = new_el.limit.min_y;
-    new_el.start.y += new_el.scroll_y;
     new_el.start_z = new_el.z;
     new_el.cur_resizable = 0;
     new_el.hide_border = false;
     new_el.hide_bg = false;
-    new_el.content_height = 0;
+    new_el.content_height = new_el.padding.y;
     return new_el;
   } else {
     brui_stack_el_t root = {
@@ -130,6 +124,7 @@ brui_stack_el_t brui_stack_el(void) {
       .is_active = true
     };
     root.cur = root.padding;
+    root.content_height = root.padding.y;
     return root;
   }
 }
@@ -188,21 +183,10 @@ void brui_push(void) {
 
 void brui_pop(void) {
   float width = BR_BBW(TOP.limit) - 2 * fminf(TOP2.psum.x, TOP.psum.x);
-  float height = TOP.cur.y - TOP.start.y; //BR_BBH(TOP.limit) - 2 * TOP.psum.y + fminf(TOP.cur.y - TOP.limit.min_y, 0.f);
-  if (TOP.cur.y > TOP.limit.max_y) {
-    height -= TOP.cur.y - TOP.limit.max_y;
-  }
+  float height = TOP.content_height;
   br_size_t size = BR_SIZE(width, height);
-  br_bb_t bb = BR_BB(TOP.start.x, TOP.start.y, TOP.start.x + size.width, TOP.start.y + size.height);
+  br_bb_t bb = BR_BB(TOP2.cur.x, TOP2.cur.y, TOP2.cur.x + size.width, TOP2.cur.y + size.height);
   float content_height = TOP.content_height;
-
-  if (height <= 0.f) {
-    float t = TOP.cur.y - TOP.start.y;
-    --_stack.len;
-    TOP.cur.y += t + TOP.padding.y;
-    TOP.content_height += content_height;
-    return;
-  }
 
   if (TOP.hide_bg == false) brui_background(bb, br_theme.colors.plot_menu_color);
   if (TOP.hide_border == false) brui_border(bb);
@@ -212,7 +196,7 @@ void brui_pop(void) {
   --_stack.len;
   TOP.cur.y = tt + TOP.padding.y;
   TOP.cur.x = TOP.limit.min_x + TOP.psum.x;
-  TOP.content_height += content_height;
+  TOP.content_height += content_height + TOP.padding.y;
   BRUI_LOG("pop");
 }
 
@@ -300,6 +284,7 @@ void brui_border(br_bb_t bb) {
 }
 
 bool brui_button(br_strv_t text) {
+  // BUTTON
   float opt_height /* text + 2*1/2*padding */ = (float)TOP.font_size + TOP.padding.y;
   float opt_y = TOP.cur.y + opt_height + TOP.padding.y;
 
@@ -310,7 +295,7 @@ bool brui_button(br_strv_t text) {
   BRUI_LOG("button_limit: %.2f %.2f %.2f %.2f", BR_BB_(button_limit));
   brui_push_simple();
     TOP.limit.min_x = TOP.cur.x;
-    TOP.limit.min_y = TOP.cur.y;
+    TOP.limit.min_y = fmaxf(TOP.cur.y, TOP.limit.min_y);
     TOP.limit.max_y = button_max_y;
     TOP.limit.max_x = button_max_x;
     TOP.psum.x = 0;
@@ -410,16 +395,12 @@ bool brui_sliderf(br_strv_t text, float* val) {
     const float ss = lt + 3.f;
     const float opt_height /* 2*text + 4*padding + ss */ = 2 * (float)TOP.font_size + 4 * TOP.padding.y + ss;
     const float opt_max_y = TOP.cur.y + opt_height;
-    float to_sub = 0;
 
     brui_push();
       BRUI_LOG("Slider font: %d, pady: %.2f, lt: %.2f", TOP.font_size, TOP.padding.y, lt);
       TOP.limit.max_y = fminf(TOP.limit.max_y, opt_max_y);
-      to_sub += (float)TOP.font_size - brui_text(text).height;
-      TOP.cur.y -= to_sub;
-      float h = (float)TOP.font_size - brui_textf("%f", *val).height;
-      to_sub += h;
-      TOP.cur.y -= h; 
+      brui_text(text);
+      brui_textf("%f", *val);
 
       br_vec2_t mouse = brtl_mouse_pos();
       bool is_down = brtl_mousel_down();
@@ -459,9 +440,10 @@ bool brui_sliderf(br_strv_t text, float* val) {
         }
       }
       TOP.cur.y += ss + TOP.padding.y;
+      TOP.content_height = opt_height + TOP.padding.y;
     brui_pop();
   brui_pop_simple();
-  TOP.cur.y = opt_max_y + TOP.padding.y - to_sub;
+  TOP.cur.y = opt_max_y + TOP.padding.y;
   TOP.content_height += opt_height + TOP.padding.y;
   return false;
 }
@@ -477,10 +459,10 @@ bool brui_vsplit(int n) {
     new_el.limit.min_x = (float)i * width + top.cur.x;
     new_el.limit.max_x = new_el.limit.min_x + width;
     new_el.cur.x = new_el.limit.min.x;
-    new_el.start.x = new_el.limit.min_x;
     new_el.cur_resizable = 0;
     new_el.hide_border = true;
-    new_el.split_count = n;
+    new_el.vsplit_max_height = 0;
+    new_el.content_height = 0;
     br_da_push(_stack, new_el);
   }
   return true;
@@ -488,19 +470,20 @@ bool brui_vsplit(int n) {
 
 void brui_vsplit_pop(void) {
   BRUI_LOG("vsplit pre pop");
+  float cur_max = TOP.vsplit_max_height;
+  float cur_ch = TOP.content_height;
   --_stack.len;
+  TOP.vsplit_max_height = fmaxf(cur_max, cur_ch);
   BRUI_LOG("vsplit post pop");
 }
 
 void brui_vsplit_end(void) {
-  size_t n = (size_t)TOP.split_count;
+  float cur_max = TOP.vsplit_max_height;
+  float cur_ch = TOP.content_height;
   --_stack.len;
-  float max_cur = 0;
-  for (size_t i = 0; i < n; ++i) {
-    max_cur = fmaxf(_stack.arr[_stack.len + i].cur.y, max_cur);
-  }
-  TOP.cur.y = max_cur;
-  TOP.cur.x = TOP.start.x + TOP.padding.x;
+  float max_ch = fmaxf(cur_max, cur_ch);
+  TOP.cur.y += max_ch + TOP.padding.y;
+  TOP.content_height += max_ch + TOP.padding.y;
   BRUI_LOG("vsplit end");
 }
 
@@ -636,10 +619,8 @@ void brui_resizable_update(void) {
       }
     } else if (scroll != 0) {
       if (hovered->full_height > (float)hovered->cur_extent.height) {
-        float diff = hovered->full_height / (float)hovered->cur_extent.height;
-        float dir = scroll * 10.f;
-        float move = dir / diff;
-        hovered->scroll_offset_percent = br_float_clamp(hovered->scroll_offset_percent - move, 0.f, 1.f);
+        float speed = 10.f / (hovered->full_height - (float)hovered->cur_extent.height);
+        hovered->scroll_offset_percent = br_float_clamp(hovered->scroll_offset_percent - scroll * speed, 0.f, 1.f);
       } else {
         hovered->scroll_offset_percent = 0.f;
       }
@@ -696,17 +677,19 @@ void brui_resizable_push(int id) {
   BRUI_LOG("resizablepre [%f %f %f %f] %f", BR_EXTENT_(rex), res->scroll_offset_percent);
   TOP.psum = BR_VEC2(0, 0);
   TOP.cur = bruir_pos_global(*res);
-  TOP.start = TOP.cur;
   TOP.limit = BR_BB(TOP.cur.x, TOP.cur.y, TOP.cur.x + rex.width, TOP.cur.y + rex.height);
-  TOP.cur.y -= res->full_height / (float)res->cur_extent.height * res->scroll_offset_percent;
+  float scroll_y = (res->full_height - (float)res->cur_extent.height) * res->scroll_offset_percent;
   brui_z_set(TOP.z + res->z * ((4*1024) >> (_stack.len)));
   TOP.cur_resizable = id;
   TOP.start_z = TOP.z;
   TOP.is_active = id == _stack.active_resizable;
   BRUI_LOG("resizablepost [%f %f %f %f] %f", BR_EXTENT_(rex), res->scroll_offset_percent);
-  brui_push();
   TOP.hide_border = true;
   TOP.hide_bg = true;
+  brui_push();
+  TOP.cur.y -= scroll_y;
+  TOP.cur_resizable = id;
+  brui_textf("Height: %.2f", res->full_height);
   // DEBUg
 //  brui_textf("content_height: %f", old_height);
 //  brui_textf("scroll_offset: %f", res->scroll_offset);
@@ -714,12 +697,13 @@ void brui_resizable_push(int id) {
 
 void brui_resizable_pop(void) {
   brui_resizable_t* res = &bruirs.arr[TOP.cur_resizable];
-  float full_height = res->full_height;
+  float full_height = res->full_height = TOP.content_height;
   float hidden_height = full_height - (float)res->cur_extent.height;
   if (hidden_height > 0.f && false == brtl_key_ctrl()) {
     brui_scroll_bar(br_float_clamp((float)res->cur_extent.height / full_height, 0, 2), &res->scroll_offset_percent);
   }
   TOP.cur.y = (float)res->cur_extent.y + (float)res->cur_extent.height;
+  TOP.content_height = (float)res->cur_extent.height;
   brui_pop();
   brui_pop();
 }
