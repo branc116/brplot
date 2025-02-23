@@ -38,6 +38,7 @@ static void* main_gui(void* plotter) {
     br_plotter_frame_end(br);
     TracyCFrameMarkEnd("plotter_frame_end");
   }
+  brui_resizable_deinit();
   br_icons_deinit();
   return 0;
 }
