@@ -22,10 +22,7 @@ typedef struct {
       int len;
       int cap;
     };
-    struct {
-      int node_free_next;
-      int node_free_prev;
-    };
+    int node_free_next;
   };
 } text_node_t;
 
@@ -76,22 +73,17 @@ br_strv_t text_get(string_pool_t* sp, text_t* t) {
 }
 
 void text_free(string_pool_t* sp, text_t t) {
-  BR_ASSERT(sp->node_free_root == -1);
   if (sp->node_free_root == -1) {
     br_da_set(sp->string_nodes, t.id, ((text_node_t) {
       .state = text_node_free,
-      .node_free_prev = -1,
       .node_free_next = -1,
     }));
     sp->node_free_root = t.id;
     sp->node_free_last = t.id;
   } else {
-    text_node_t last = br_da_get(sp->string_nodes, sp->node_free_last);
-    BR_ASSERT(last.node_free_next == -1);
     br_da_set(sp->string_nodes, t.id, ((text_node_t) {
       .state = text_node_free,
-      .node_free_next = -1,
-      .node_free_prev = sp->node_free_last,
+      .node_free_next = sp->node_free_last,
     }));
     sp->node_free_last = t.id;
   }
@@ -129,4 +121,5 @@ TEST_CASE(string_pool_resize) {
   }
   text_free(&sp, t);
   string_pool_deinit(&sp);
+  br_str_free(s);
 }
