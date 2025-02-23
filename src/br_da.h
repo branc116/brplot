@@ -39,6 +39,7 @@ extern "C" {
         cap_diff >>= 1;                                                                                             \
       }                                                                                                             \
     }                                                                                                               \
+    BR_ASSERT(is_ok);                                                                                               \
   }                                                                                                                 \
 } while(0)                                                                                                          \
 
@@ -80,6 +81,16 @@ extern "C" {
   }                                                \
 } while(0)
 
+#define br_da_copy(DES, SRC) do { \
+  BR_ASSERT(sizeof((DES).arr[0]) == sizeof((SRC).arr[0])); \
+  if ((DES).cap < (SRC).len) { \
+    (DES).arr = realloc((DES).arr, sizeof((SRC).arr[0]) * (size_t)(SRC).len); \
+    BR_ASSERT((DES).arr); \
+  } \
+  memcpy(&(DES).arr[0], &(SRC).arr[0], sizeof((SRC).arr[0]) * (size_t)(SRC).len); \
+} while (0)
+
+
 #define br_da_contains(ARR, V, CONTAINS) br_da_contains_t(size_t, ARR, V, CONTAINS)
 
 #if defined(BR_RELEASE)
@@ -95,6 +106,8 @@ static inline void ___br_function_call_asset_id_ok(ssize_t arr_len, ssize_t acc_
 }
 #define br_da_get(ARR, INDEX) (___br_function_call_asset_id_ok((ssize_t)((ARR).len), (ssize_t)(INDEX), __FILE__, __LINE__), \
   (ARR).arr[(INDEX)])
+#define br_da_getp(ARR, INDEX) (___br_function_call_asset_id_ok((ssize_t)((ARR).len), (ssize_t)(INDEX), __FILE__, __LINE__), \
+  &(ARR).arr[(INDEX)])
 #define br_da_set(ARR, INDEX, VALUE) do { \
   ___br_function_call_asset_id_ok((ssize_t)((ARR).len), (ssize_t)(INDEX), __FILE__, __LINE__), \
   (ARR).arr[(INDEX)] = (VALUE); \

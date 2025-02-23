@@ -199,6 +199,10 @@ static inline float br_float_clamp(float x, float m, float M) {
   return x;
 }
 
+static inline float br_float_lerp(float from, float to, float factor) {
+  return from * (1 - factor) + to * (factor);
+}
+
 //------------------------br_vec2_t------------------------------
 
 static inline br_vec2_t br_vec2i_tof(br_vec2i_t v) {

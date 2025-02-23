@@ -32,17 +32,38 @@ typedef enum {
   brui_ancor_all = brui_ancor_left | brui_ancor_right | brui_ancor_top | brui_ancor_bottom,
 } brui_ancor_t;
 
-typedef struct {
-  br_extenti_t cur_extent;
-  brui_ancor_t ancor;
-  int z;
-  int parent;
-  float scroll_offset_percent;
-  float full_height;
+#define brui_resizable_anim_fields(X) \
+  X(float, scroll_offset_percent) \
 
-  bool is_hoverd;
-  bool scroll_bar;
-  bool hidden;
+#define brui_resizable_fields(X) \
+  X(br_extenti_t, cur_extent) \
+  X(brui_ancor_t, ancor) \
+  X(int, z) \
+  X(int, parent) \
+  brui_resizable_anim_fields(X) \
+  X(float, full_height) \
+  X(bool, is_hoverd) \
+  X(bool, scroll_bar) \
+  X(bool, hidden) \
+
+typedef union {
+  struct {
+#define X(type, name) type name;
+    brui_resizable_fields(X)
+#undef X
+  };
+  struct {
+    struct {
+#define X(type, name) type name;
+      brui_resizable_fields(X)
+#undef X
+    } current;
+    struct {
+#define X(type, name) type name;
+      brui_resizable_anim_fields(X)
+#undef X
+    } target;
+  };
 } brui_resizable_t;
 
 extern BR_THREAD_LOCAL char _scrach[2048];
