@@ -3,7 +3,7 @@
 #include "src/br_str.h"
 #include "src/br_text_renderer.h"
 
-extern int __n__;
+extern BR_THREAD_LOCAL int __n__;
 #define brui_textf(...) (__n__ = sprintf(_scrach, __VA_ARGS__), brui_text(BR_STRV(_scrach, (uint32_t)__n__)))
 
 typedef enum {

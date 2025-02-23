@@ -73,7 +73,7 @@ static BR_THREAD_LOCAL bruirs_t bruirs;
 static BR_THREAD_LOCAL bruir_childrens_t bruir_childrens;
 
 static BR_THREAD_LOCAL brui_stack_t _stack;
-int __n__;
+BR_THREAD_LOCAL int __n__;
 
 BR_THREAD_LOCAL char _scrach[2048];
 #define TOP (_stack.arr[_stack.len ? _stack.len - 1 : 0])
@@ -488,20 +488,25 @@ void brui_vsplit_end(void) {
 }
 
 void brui_scroll_bar(float bar_fract, float* bar_offset_fract) {
-  float thick = 5.f;
+  float thick = TOP.padding.x * 0.5f;
+  float slider_thick = TOP.padding.x * 0.8f;
   int z = Z;
   br_vec2_t mouse = brtl_mouse_pos();
   bool is_down = brtl_mousel_down();
-  /*
-  br_extent_t line_ex = BR_EXTENT(TOP.limit.x + TOP.limit.width + TOP.padding.x - thick, TOP.limit.y - TOP.padding.y, thick, TOP.limit.height);
+
+  float limit_height = BR_BBH(TOP.limit);
+  float hidden_height = TOP.content_height - limit_height;
+  float slider_height = limit_height * (limit_height / (limit_height + hidden_height));
+  float slider_upper = *bar_offset_fract * (limit_height - slider_height);
+  float slider_downer = (1.f - *bar_offset_fract) * (limit_height - slider_height);
+
+  br_bb_t line_bb = BR_BB(TOP.limit.max_x - thick, TOP.limit.min_y, TOP.limit.max_x, TOP.limit.max_y);
+  br_bb_t slider_bb = BR_BB(TOP.limit.max_x - slider_thick, TOP.limit.min_y + slider_upper, TOP.limit.max_x, TOP.limit.max_y - slider_downer);
   br_color_t lc = br_theme.colors.btn_inactive;
-  float bar_height = TOP.limit.height * bar_fract;
-  float bar_offset = (TOP.limit.height - bar_height) * *bar_offset_fract;
-  br_extent_t bar_ex = BR_EXTENT(TOP.limit.x + TOP.limit.width - thick - 2.f + TOP.padding.x, TOP.limit.y + bar_offset - TOP.padding.y, thick + 2.f, bar_height);
   br_color_t bc = br_theme.colors.btn_txt_inactive;
-  if (_stack.sliderf == bar_offset_fract || (_stack.sliderf == NULL && br_col_vec2_extent(line_ex, mouse))) {
+  if (_stack.sliderf == bar_offset_fract || (_stack.sliderf == NULL && br_col_vec2_bb(line_bb, mouse))) {
     if (is_down) {
-      *bar_offset_fract = br_float_clamp((mouse.y - TOP.limit.y) / TOP.limit.height, 0, 1);
+      *bar_offset_fract = br_float_clamp((mouse.y - TOP.limit.min_y) / limit_height, 0, 1);
       lc = br_theme.colors.btn_active;
       bc = br_theme.colors.btn_txt_active;
       _stack.sliderf = bar_offset_fract;
@@ -511,9 +516,8 @@ void brui_scroll_bar(float bar_fract, float* bar_offset_fract) {
       _stack.sliderf = NULL;
     }
   }
-  br_icons_draw(line_ex, BR_EXTENT(0,0,0,0), lc, lc, z + 10);
-  br_icons_draw(bar_ex, BR_EXTENT(0,0,0,0), bc, bc, z + 11);
-  */
+  br_icons_draw(line_bb, BR_BB(0,0,0,0), lc, lc, TOP.limit, z + 10);
+  br_icons_draw(slider_bb, BR_BB(0,0,0,0), bc, bc, TOP.limit, z + 11);
 }
 
 void brui_text_align_set(br_text_renderer_ancor_t ancor) {
@@ -690,18 +694,15 @@ void brui_resizable_push(int id) {
   TOP.cur.y -= scroll_y;
   TOP.cur_resizable = id;
   brui_textf("Height: %.2f", res->full_height);
-  // DEBUg
-//  brui_textf("content_height: %f", old_height);
-//  brui_textf("scroll_offset: %f", res->scroll_offset);
 }
 
 void brui_resizable_pop(void) {
   brui_resizable_t* res = &bruirs.arr[TOP.cur_resizable];
   float full_height = res->full_height = TOP.content_height;
   float hidden_height = full_height - (float)res->cur_extent.height;
-  if (hidden_height > 0.f && false == brtl_key_ctrl()) {
-    brui_scroll_bar(br_float_clamp((float)res->cur_extent.height / full_height, 0, 2), &res->scroll_offset_percent);
-  }
+  if (hidden_height > 0.f) {
+    if (false == brtl_key_ctrl()) brui_scroll_bar(br_float_clamp((float)res->cur_extent.height / full_height, 0, 2), &res->scroll_offset_percent);
+  } else res->scroll_offset_percent = 0.f;
   TOP.cur.y = (float)res->cur_extent.y + (float)res->cur_extent.height;
   TOP.content_height = (float)res->cur_extent.height;
   brui_pop();
