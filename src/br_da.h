@@ -95,6 +95,7 @@ extern "C" {
 
 #if defined(BR_RELEASE)
 #define br_da_get(ARR, INDEX) (ARR).arr[(INDEX)]
+#define br_da_getp(ARR, INDEX) (&(ARR).arr[(INDEX)])
 #define br_da_set(ARR, INDEX, VALUE) (ARR).arr[(INDEX)] = (VALUE)
 #else
 static inline void ___br_function_call_asset_id_ok(ssize_t arr_len, ssize_t acc_index, const char* file_location, int line_number) {
