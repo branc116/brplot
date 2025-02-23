@@ -66,6 +66,20 @@ typedef union {
   };
 } brui_resizable_t;
 
+typedef struct brui_split_t {
+  enum {
+    brui_split_absolute,
+    brui_split_relative,
+  } kind;
+  union {
+    float relative;
+    float absolute;
+  };
+} brui_split_t;
+
+#define BRUI_SPLITR(VALUE) ((brui_split_t) { .kind = brui_split_relative, .relative = (VALUE) })
+#define BRUI_SPLITA(VALUE) ((brui_split_t) { .kind = brui_split_absolute, .absolute = (VALUE) })
+
 extern BR_THREAD_LOCAL char _scrach[2048];
 
 void brui_begin(void);
@@ -78,7 +92,8 @@ bool brui_checkbox(br_strv_t text, bool* checked);
 void brui_img(unsigned int texture_id);
 bool brui_button_icon(br_sizei_t size, br_extent_t icon);
 bool brui_sliderf(br_strv_t text, float* val);
-bool brui_vsplit(int n);
+void brui_vsplit(int n);
+void brui_vsplitvp(int n, ...);
 void brui_vsplit_pop(void);
 void brui_vsplit_end(void);
 void brui_background(br_bb_t bb, br_color_t color);
@@ -94,6 +109,8 @@ void brui_text_align_set(br_text_renderer_ancor_t ancor);
 void brui_text_color_set(br_color_t color);
 void brui_ancor_set(brui_ancor_t ancor);
 void brui_z_set(int z);
+void brui_maxy_set(float value);
+float brui_min_y(void);
 
 void              brui_resizable_init(void);
 void              brui_resizable_deinit(void);

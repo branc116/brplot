@@ -26,7 +26,7 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   br_plotter_begin_drawing(br);
   brui_resizable_update();
   for (int i = 0; i < br->plots.len; ++i) {
-#define PLOT (&br->plots.arr[i])
+#define PLOT br_da_getp(br->plots, i)
     brui_resizable_t* r = brui_resizable_get(PLOT->extent_handle);
     if (true == r->hidden) continue;
     PLOT->cur_extent = r->cur_extent;
@@ -68,30 +68,25 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
             if (brui_button_icon(BR_SIZEI(32, 32), br_icons.menu.size_32)) menu_res->hidden = false;
           } else {
             brui_resizable_push(PLOT->menu_extent_handle);
-              char* c = br_scrach_get(4096);
-              if (brui_button_icon(BR_SIZEI(32, 32), br_icons.back.size_32)) menu_res->hidden = true;
-
-              brui_text_size_set(8);
-              brui_new_lines(1);
-
-              brui_text_size_set(16);
-              brui_text_align_set(br_text_renderer_ancor_mid_up);
-              int n = sprintf(c, "%s Plot #%d", PLOT->kind == br_plot_kind_2d ? "2D" : "3D", i);
-              brui_text(BR_STRV(c, (uint32_t)n));
-
-              brui_new_lines(1);
-
+              int icon_size = 32;
+              brui_vsplitvp(2, BRUI_SPLITA((float)icon_size), BRUI_SPLITR(1));
+                char* c = br_scrach_get(4096);
+                if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icons.back.size_32)) menu_res->hidden = true;
+              brui_vsplit_pop();
+                brui_text_size_set(16);
+                brui_text_align_set(br_text_renderer_ancor_mid_mid);
+                brui_maxy_set(brui_min_y() + (float)icon_size);
+                brui_textf("%s Plot #%d", PLOT->kind == br_plot_kind_2d ? "2D" : "3D", i);
+              brui_vsplit_end();
               brui_text_size_set(32);
               brui_text(BR_STRL("_______________________________________________________"));
-
               brui_text_size_set(26);
-              brui_text_align_set(br_text_renderer_ancor_left_up);
               brui_checkbox(BR_STRL("Follow"), &PLOT->follow);
               for (size_t k = 0; k < br->groups.len; ++k) {
                 bool is_shown = false;
-                br_data_t* data = &br->groups.arr[k];
+                br_data_t* data = br_da_getp(br->groups, k);
                 for (int j = 0; j < PLOT->groups_to_show.len; ++j) {
-                  if (PLOT->groups_to_show.arr[j] == data->group_id) {
+                  if (br_da_get(PLOT->groups_to_show, j) == data->group_id) {
                     is_shown = true;
                     break;
                   }
@@ -102,7 +97,6 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
                   else br_da_push_t(int, PLOT->groups_to_show, data->group_id);
                 }
               }
-              brui_textf("menuZ: %d plotZ: %d", menu_res->z, r->z);
               br_scrach_free();
             brui_resizable_pop();
           }
@@ -124,20 +118,19 @@ static void draw_left_panel(br_plotter_t* br) {
 //    return;
     char* scrach = br_scrach_get(4096);
     brui_text(BR_STRL("Plots"));
-    if (true == brui_vsplit(2)) {
-        if (brui_button(BR_STRL("Add 2D"))) {
-          // TODO
-        }
-      brui_vsplit_pop();
-        if (brui_button(BR_STRL("Add 3D"))) {
-          // TODO
-        }
-      brui_vsplit_end();
-    }
+    brui_vsplit(2);
+      if (brui_button(BR_STRL("Add 2D"))) {
+        br_plotter_add_plot_2d(br);
+      }
+    brui_vsplit_pop();
+      if (brui_button(BR_STRL("Add 3D"))) {
+        br_plotter_add_plot_3d(br);
+      }
+    brui_vsplit_end();
 
     for (int i = 0; i < br->plots.len; ++i) {
-      int n = sprintf(scrach, "%s Plot %d", br->plots.arr[i].kind == br_plot_kind_2d ? "2D" : "3D", i);
-      brui_resizable_t* r = brui_resizable_get(br->plots.arr[i].extent_handle);
+      int n = sprintf(scrach, "%s Plot %d", br_da_get(br->plots, i).kind == br_plot_kind_2d ? "2D" : "3D", i);
+      brui_resizable_t* r = brui_resizable_get(br_da_get(br->plots, i).extent_handle);
       bool is_visible = !r->hidden;
       brui_checkbox(BR_STRV(scrach, (uint32_t)n), &is_visible);
       r->hidden = !is_visible;
@@ -171,9 +164,10 @@ static void draw_left_panel(br_plotter_t* br) {
     brui_text_size_set(16);
     for (size_t i = 0; i < br->groups.len; ++i) {
       brui_push();
-        int n = sprintf(scrach, "Data %d (%zu points)", br->groups.arr[i].group_id, br->groups.arr[i].len);
+        br_data_t data = br_da_get(br->groups, i);
+        int n = sprintf(scrach, "Data %d (%zu points)", data.group_id, data.len);
         brui_text(BR_STRV(scrach, (uint32_t)n));
-        n = sprintf(scrach, "%.1fms (%.3f %.3f)", br_resampling2_get_draw_time(br->groups.arr[i].resampling)*1000.0f, br_resampling2_get_something(br->groups.arr[i].resampling), br_resampling2_get_something2(br->groups.arr[i].resampling));
+        n = sprintf(scrach, "%.1fms (%.3f %.3f)", br_resampling2_get_draw_time(data.resampling)*1000.0f, br_resampling2_get_something(data.resampling), br_resampling2_get_something2(data.resampling));
         brui_text(BR_STRV(scrach, (uint32_t)n));
       brui_pop();
     }
