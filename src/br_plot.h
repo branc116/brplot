@@ -73,18 +73,17 @@ typedef struct context_t {
   bool debug_bounds;
   size_t alloc_size, alloc_count, alloc_total_size, alloc_total_count, alloc_max_size, alloc_max_count, free_of_unknown_memory;
 } context_t;
+typedef struct br_plotter_t br_plotter_t;
 
 extern context_t context;
 
 br_vec2_t br_graph_to_screen(br_extent_t graph_rect, br_extenti_t screen_rect, br_vec2_t point);
 
-typedef struct br_plotter_t br_plotter_t;
-
+void br_plot_deinit(br_plot_t* plot);
 void br_plot_create_texture(br_plot_t* br);
 void br_plot_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders);
 void br_plot_screenshot(br_text_renderer_t* tr, br_plot_t* br, br_shaders_t* shaders, br_datas_t groups, char const* path);
 void br_keybinding_handle_keys(br_plotter_t* br, br_plot_t* plot);
-
 
 void read_input_start(br_plotter_t* br);
 void read_input_main_worker(br_plotter_t* br);

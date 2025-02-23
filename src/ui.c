@@ -67,6 +67,7 @@ typedef struct {
   int drag_index;
   br_vec2_t drag_point;
   br_extenti_t drag_old_ex;
+  int next_free;
 } bruirs_t;
 
 static BR_THREAD_LOCAL bruirs_t bruirs;
@@ -585,12 +586,14 @@ static int bruir_find_at(int index, br_vec2_t loc, br_vec2_t* out_local_pos);
 static void bruir_update_extent(int index, br_extenti_t new_ex, bool force);
 
 void brui_resizable_init(void) {
-  brui_resizable_t screen = {
-    .cur_extent = brtl_viewport(),
-    .ancor = brui_ancor_all,
-    .z = 0.f,
-  };
+  brui_resizable_t screen = { 0 };
+  screen.cur_extent = brtl_viewport();
+  screen.ancor = brui_ancor_all;
+  screen.z = 0.f;
+  screen.alloced = true;
+  screen.next_free = -1;
   bruir_children_t children = { 0 };
+  bruirs.next_free = -1;
   br_da_push_t(int, bruirs, screen);
   br_da_push_t(int, bruir_childrens, children);
 }
@@ -606,41 +609,77 @@ void brui_resizable_deinit(void) {
 
 int brui_resizable_new(br_extenti_t init_extent, int parent) {
   BR_ASSERT(bruirs.len > parent);
-  //static int id = 0;
-
   
-  brui_resizable_t new = {
-    .cur_extent = init_extent,
-    .z = br_da_get(bruir_childrens, parent).len + 1,
-    .parent = parent
-  };
-  int new_id = bruirs.len;
-  br_da_push_t(int, bruirs, new);
+  int new_id = 0;
+  if (bruirs.next_free == -1) {
+    brui_resizable_t new = { 0 };
+    new.cur_extent = init_extent;
+    new.z = br_da_get(bruir_childrens, parent).len + 1;
+    new.parent = parent;
+    new.alloced = true;
+    new.next_free = -1;
+    new_id = bruirs.len;
+    br_da_push_t(int, bruirs, new);
+
+    bruir_children_t children = { 0 };
+    br_da_push_t(int, bruir_childrens, children);
+  } else {
+    new_id = bruirs.next_free;
+    brui_resizable_t* r = br_da_getp(bruirs, new_id);
+    bruirs.next_free = r->next_free;
+    *r = (brui_resizable_t) { 0 };
+    r->cur_extent = init_extent;
+    r->z = br_da_get(bruir_childrens, parent).len + 1;
+    r->parent = parent;
+    r->alloced = true;
+    r->next_free = -1;
+  }
 
   bruir_children_t* to_push = br_da_getp(bruir_childrens, parent);
   br_da_push_t(int, *to_push, new_id);
-
-  bruir_children_t children = { 0 };
-  br_da_push_t(int, bruir_childrens, children);
   return new_id;
 }
 
 int brui_resizable_new2(br_extenti_t init_extent, int parent, brui_resizable_t template) {
   BR_ASSERT(bruirs.len > parent);
 
-  brui_resizable_t new = template;
-  new.cur_extent = init_extent;
-  new.z = br_da_get(bruir_childrens, parent).len + 1;
-  new.parent = parent;
-  int new_id = bruirs.len;
-  br_da_push_t(int, bruirs, new);
+  int new_id = 0;
+  if (bruirs.next_free == -1) {
+    brui_resizable_t new = template;
+    new.cur_extent = init_extent;
+    new.z = br_da_get(bruir_childrens, parent).len + 1;
+    new.parent = parent;
+    new.alloced = true;
+    new.next_free = -1;
+    new_id = bruirs.len;
+    br_da_push_t(int, bruirs, new);
+
+    bruir_children_t children = { 0 };
+    br_da_push_t(int, bruir_childrens, children);
+  } else {
+    new_id = bruirs.next_free;
+    brui_resizable_t* r = br_da_getp(bruirs, new_id);
+    bruirs.next_free = r->next_free;
+    *r = template;
+    r->cur_extent = init_extent;
+    r->z = br_da_get(bruir_childrens, parent).len + 1;
+    r->parent = parent;
+    r->alloced = true;
+    r->next_free = -1;
+  }
 
   bruir_children_t* to_push = br_da_getp(bruir_childrens, parent);
   br_da_push_t(int, *to_push, new_id);
-  bruir_children_t children = { 0 };
-
-  br_da_push_t(int, bruir_childrens, children);
   return new_id;
+}
+
+void brui_resizable_delete(int handle) {
+  brui_resizable_t* r = br_da_getp(bruirs, handle);
+  bruir_children_t* c = br_da_getp(bruir_childrens, handle);
+  br_da_free(*c);
+  *r = (brui_resizable_t) { 0 };
+  r->next_free = bruirs.next_free;
+  bruirs.next_free = handle;
 }
 
 void brui_resizable_update(void) {

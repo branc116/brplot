@@ -96,6 +96,7 @@ BR_API void        br_plots_focus_visible(br_plots_t plot, br_datas_t groups);
 BR_API void        br_plot_focus_visible(br_plot_t* plot, br_datas_t groups);
 int                br_plotter_add_plot_2d(br_plotter_t* br);
 int                br_plotter_add_plot_3d(br_plotter_t* br);
+void               br_plotter_remove_plot(br_plotter_t* br, int plot_index);
 void               br_plotter_export(br_plotter_t const* br, char const* path);
 void               br_plotter_export_csv(br_plotter_t const* br, char const* path);
 BR_API void        br_plotter_free(br_plotter_t* br);

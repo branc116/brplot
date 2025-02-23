@@ -10,6 +10,7 @@
 #include "src/br_pp.h"
 #include "src/br_theme.h"
 #include "src/br_ui.h"
+#include "src/br_icons.h"
 
 #include <math.h>
 #include <string.h>
@@ -146,16 +147,31 @@ int br_plotter_add_plot_3d(br_plotter_t* br) {
   return br->plots.len - 1;
 }
 
+void br_plotter_remove_plot(br_plotter_t* br, int plot_index) {
+  br_plot_deinit(br_da_getp(br->plots, plot_index));
+  // 0 1 2 3 | 4
+  //   |
+  // 0 2 3   | 3
+  int count_to_move = (br->plots.len - plot_index - 1);
+  if (count_to_move > 0) {
+    size_t bytes_to_move = sizeof(br->plots.arr[0]) * (size_t)count_to_move;
+    memmove(br_da_getp(br->plots, plot_index), br_da_getp(br->plots, plot_index + 1), bytes_to_move);
+  }
+  --br->plots.len;
+}
+
 BR_API void br_plotter_free(br_plotter_t* br) {
+  br_icons_deinit();
   br_text_renderer_free(br->text);
   br_shaders_free(br->shaders);
   br_datas_deinit(&br->groups);
   q_free(br->commands);
   for (int i = 0; i < br->plots.len; ++i) {
-    BR_FREE(br->plots.arr[i].groups_to_show.arr);
+    br_plot_deinit(br_da_getp(br->plots, i));
   }
   BR_FREE(br->plots.arr);
   br_dagens_free(&br->dagens);
+  brui_resizable_deinit();
 }
 
 BR_API void br_plotter_frame_end(br_plotter_t* br) {

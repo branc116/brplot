@@ -58,6 +58,7 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
 
   brgl_enable_clip_distance();
   brui_begin();
+    int to_remove = -1;
     for (int i = 0; i < br->plots.len; ++i) {
       brui_resizable_t* r = brui_resizable_get(PLOT->extent_handle);
       if (true == r->hidden) continue;
@@ -69,18 +70,22 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
           } else {
             brui_resizable_push(PLOT->menu_extent_handle);
               int icon_size = 32;
+              int og_text_size = brui_text_size();
               brui_vsplitvp(2, BRUI_SPLITA((float)icon_size), BRUI_SPLITR(1));
                 char* c = br_scrach_get(4096);
                 if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icons.back.size_32)) menu_res->hidden = true;
               brui_vsplit_pop();
-                brui_text_size_set(16);
+                brui_text_size_set(og_text_size / 2);
                 brui_text_align_set(br_text_renderer_ancor_mid_mid);
                 brui_maxy_set(brui_min_y() + (float)icon_size);
                 brui_textf("%s Plot #%d", PLOT->kind == br_plot_kind_2d ? "2D" : "3D", i);
               brui_vsplit_end();
-              brui_text_size_set(32);
+              brui_text_size_set(og_text_size);
               brui_text(BR_STRL("_______________________________________________________"));
-              brui_text_size_set(26);
+              if (brui_button(BR_STRL("Remove Plot"))) {
+                to_remove = i;
+              }
+              brui_text_size_set(og_text_size/3*2);
               brui_checkbox(BR_STRL("Follow"), &PLOT->follow);
               for (size_t k = 0; k < br->groups.len; ++k) {
                 bool is_shown = false;
@@ -103,6 +108,7 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
         brui_resizable_pop();
 #undef PLOT
     }
+    if (to_remove != -1) br_plotter_remove_plot(br, to_remove);
     draw_left_panel(br);
   brui_end();
   br_plotter_end_drawing(br);

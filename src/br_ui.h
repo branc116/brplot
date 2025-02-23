@@ -44,7 +44,7 @@ typedef enum {
   X(float, full_height) \
   X(bool, is_hoverd) \
   X(bool, scroll_bar) \
-  X(bool, hidden) \
+  X(bool, hidden)
 
 typedef union {
   struct {
@@ -63,6 +63,8 @@ typedef union {
       brui_resizable_anim_fields(X)
 #undef X
     } target;
+    int next_free;
+    bool alloced;
   };
 } brui_resizable_t;
 
@@ -116,6 +118,7 @@ void              brui_resizable_init(void);
 void              brui_resizable_deinit(void);
 int               brui_resizable_new(br_extenti_t init_extent, int parent);
 int               brui_resizable_new2(br_extenti_t init_extent, int parent, brui_resizable_t template);
+void              brui_resizable_delete(int handle);
 void              brui_resizable_update(void);
 void              bruir_resizable_refresh(int index);
 brui_resizable_t* brui_resizable_get(int id);

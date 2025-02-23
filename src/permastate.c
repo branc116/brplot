@@ -216,13 +216,15 @@ bool br_permastate_load_plots(FILE* file, br_plotter_t* br) {
   br_plot_t* plots                = NULL;
   size_t read_plots               = 0;
 
-  if (1 != fread(&plots_len, sizeof(plots_len), 1, file))                        goto error;
-  if (NULL == (plots = BR_MALLOC(sizeof(*plots) * plots_len)))                   goto error;
-  if (plots_len != (read_plots = fread(plots, sizeof(*plots), plots_len, file))) goto error;
+  if (1 != fread(&plots_len, sizeof(plots_len), 1, file))                          goto error;
+  if (plots_len != 0) {
+    if (NULL == (plots = BR_MALLOC(sizeof(*plots) * plots_len)))                   goto error;
+    if (plots_len != (read_plots = fread(plots, sizeof(*plots), plots_len, file))) goto error;
+  }
   BR_FREE(br->plots.arr);
   br->plots.arr = plots;
   br->plots.len = br->plots.cap = (int)plots_len;
-  calculated_crc = br_fs_crc(plots, sizeof(*plots) * (size_t)plots_len, 0);
+  if (plots_len != 0) calculated_crc = br_fs_crc(plots, sizeof(*plots) * (size_t)plots_len, 0);
   for (size_t i = 0; i < plots_len; ++i) {
     br_permastate_remove_pointers(br, &plots[i]);
   }
@@ -230,23 +232,24 @@ bool br_permastate_load_plots(FILE* file, br_plotter_t* br) {
     br_plot_t* p = &plots[i];
     int len = 0;
     int* arr = NULL;
-    if (1 != fread(&len, sizeof(len), 1, file))                                  goto error;
+    if (1 != fread(&len, sizeof(len), 1, file))                                    goto error;
     if (len == 0) continue;
     p->groups_to_show.len = len;
     p->groups_to_show.cap = len;
     arr = BR_MALLOC(sizeof(*arr) * (size_t)len);
     p->groups_to_show.arr = arr;
-    if ((uint32_t)len != fread(arr, sizeof(*arr), (size_t)len, file))            goto error;
+    if ((uint32_t)len != fread(arr, sizeof(*arr), (size_t)len, file))              goto error;
     calculated_crc = br_fs_crc(arr, sizeof(*arr) * (size_t)len, calculated_crc);
   }
-  if (1 != fread(&read_crc, sizeof(read_crc), 1, file))                          goto error;
-  if (calculated_crc != read_crc)                                                goto error;
+  if (plots_len != 0) {
+    if (1 != fread(&read_crc, sizeof(read_crc), 1, file))                          goto error;
+    if (calculated_crc != read_crc)                                                goto error;
+  }
 
   for (size_t i = 0; i < plots_len; ++i) {
     plots[i].extent_handle = brui_resizable_new(plots[i].cur_extent, 0);
     plots[i].menu_extent_handle = brui_resizable_new2(BR_EXTENTI(0, 0, 300, plots[i].cur_extent.height), plots[i].extent_handle, (brui_resizable_t) { .hidden = true });
   }
-
   return true;
 
 error:

@@ -38,8 +38,12 @@ static void* main_gui(void* plotter) {
     br_plotter_frame_end(br);
     TracyCFrameMarkEnd("plotter_frame_end");
   }
-  brui_resizable_deinit();
-  br_icons_deinit();
+  // CLEAN UP
+  read_input_stop();
+  br_permastate_save(br);
+  br_plotter_free(br);
+  brtl_window_close();
+  BR_FREE(br);
   return 0;
 }
 
@@ -61,12 +65,6 @@ int main(void) {
   //SetExitKey(KEY_NULL);
   main_gui(br);
 
-  // CLEAN UP
-  read_input_stop();
-  br_permastate_save(br);
-  br_plotter_free(br);
-  brtl_window_close();
-  BR_FREE(br);
   return 0;
 }
 #endif

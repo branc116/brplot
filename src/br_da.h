@@ -15,7 +15,7 @@ extern "C" {
 
 #define br_da_push_t(SIZE_T, ARR, VALUE) do {                                                                       \
   if ((ARR).cap == 0) {                                                                                             \
-    BR_ASSERT((ARR).arr == NULL);                                                                                   \
+    BR_ASSERT((ARR).arr == NULL && "Cap is set to null, but arr is not null");                                                                                   \
     (ARR).arr = (DECLTYPE((VALUE))*)BR_MALLOC(sizeof(*(ARR).arr));                                                  \
     if ((ARR).arr != NULL) {                                                                                        \
       (ARR).cap = 1;                                                                                                \

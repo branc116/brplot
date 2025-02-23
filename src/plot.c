@@ -6,11 +6,19 @@
 #include "src/br_da.h"
 #include "src/br_gl.h"
 #include "src/br_tl.h"
+#include "src/br_ui.h"
 
 #include "assert.h"
 
 static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders);
 static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders);
+
+void br_plot_deinit(br_plot_t* plot) {
+  br_da_free(plot->groups_to_show);
+  brui_resizable_delete(plot->extent_handle);
+  brui_resizable_delete(plot->menu_extent_handle);
+  brgl_destroy_framebuffer(plot->texture_id);
+}
 
 void br_plot_create_texture(br_plot_t* br) {
   br->texture_id = brgl_create_framebuffer(br->cur_extent.width, br->cur_extent.height);
