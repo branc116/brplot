@@ -320,7 +320,7 @@ bool brui_button(br_strv_t text) {
   brui_pop_simple();
   TOP.content_height += opt_height + TOP.padding.y;
   TOP.cur.y = opt_y;
-  return hovers && brtl_mousel_pressed();
+  return hovers && brtl_key_ctrl() == false && brtl_mousel_pressed();
 }
 
 bool brui_checkbox(br_strv_t text, bool* checked) {
