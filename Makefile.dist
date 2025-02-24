@@ -36,20 +36,16 @@ dist: bin/brplot-$(VERSION).tar.gz
 dist/%: dist/%.$(VERSION_MAJOR)
 	test -h $@ || ln -s $(notdir $<) $@
 
-bin/brplot-$(VERSION).tar.gz: dist/$(PLIB)/libbrplot.so dist/$(PBIN)/brplot dist/$(PBIN)/brplot-imgui dist/$(PINC)/brplot.h dist/usr/share/licenses/brplot/LICENSE
+bin/brplot-$(VERSION).tar.gz: dist/$(PLIB)/libbrplot.so dist/$(PBIN)/brplot dist/$(PBIN)/brplot dist/$(PINC)/brplot.h dist/$(PREFIX)/share/licenses/brplot/LICENSE
 	tar -cvzf bin/brplot-$(VERSION).tar.gz dist/*
 
 dist/$(PLIB)/libbrplot.so.$(VERSION):
-	make TYPE=LIB GUI=RAYLIB
-	cp bin/libbrplot_raylib_linux_release_gcc.so $@
+	make TYPE=LIB
+	cp bin/libbrplot_linux_release_wx_gcc.so $@
 
 dist/$(PBIN)/brplot.$(VERSION):
 	make TYPE=EXE GUI=RAYLIB
-	cp bin/brplot_raylib_linux_release_gcc $@
-
-dist/$(PBIN)/brplot-imgui.$(VERSION):
-	make TYPE=EXE GUI=IMGUI
-	cp bin/brplot_imgui_linux_release_gcc $@
+	cp bin/brplot_linux_release_wx_gcc $@
 
 dist/$(PINC)/brplot.h:
 	cp include/brplot.h $@
