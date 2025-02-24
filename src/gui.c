@@ -157,6 +157,7 @@ static void draw_left_panel(br_plotter_t* br) {
     brui_vsplit_pop();
       brui_sliderf(BR_STRL("thick"), &br_theme.ui.border_thick);
     brui_vsplit_end();
+    brui_slideri(BR_STRL("Font Size"), &br_theme.ui.font_size);
     if (brui_button(BR_STRL("Export"))) {
       br_plotter_export(br, "test.brp");
     }
@@ -167,7 +168,7 @@ static void draw_left_panel(br_plotter_t* br) {
       br->should_close = true;
     }
     brui_text(BR_STRL("Data:"));
-    brui_text_size_set(16);
+    brui_text_size_set((int)((float)brui_text_size() * 0.8f));
     for (size_t i = 0; i < br->groups.len; ++i) {
       brui_push();
         br_data_t data = br_da_get(br->groups, i);

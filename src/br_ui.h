@@ -94,6 +94,7 @@ bool brui_checkbox(br_strv_t text, bool* checked);
 void brui_img(unsigned int texture_id);
 bool brui_button_icon(br_sizei_t size, br_extent_t icon);
 bool brui_sliderf(br_strv_t text, float* val);
+bool brui_slideri(br_strv_t text, int* value);
 void brui_vsplit(int n);
 void brui_vsplitvp(int n, ...);
 void brui_vsplit_pop(void);

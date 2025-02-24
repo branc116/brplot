@@ -36,6 +36,7 @@ br_text_renderer_t* br_text_renderer_malloc(int bitmap_width, int bitmap_height,
 void br_text_renderer_free(br_text_renderer_t* r);
 void br_text_renderer_dump(br_text_renderer_t* r);
 br_strv_t br_text_renderer_fit(br_text_renderer_t* r, br_size_t size, int font_size, br_strv_t text);
+br_size_t br_text_renderer_measure(br_text_renderer_t* r, int font_size, br_strv_t str);
 
 br_extent_t br_text_renderer_push0(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, const char* text);
 br_extent_t br_text_renderer_push_strv0(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, br_strv_t text);

@@ -413,6 +413,38 @@ bool brui_sliderf(br_strv_t text, float* val) {
   return false;
 }
 
+bool brui_slideri(br_strv_t text, int* value) {
+  float opt_height /* text + 2*1/2*padding */ = (float)TOP.font_size + TOP.padding.y;
+  int n = sprintf(_scrach, "%d", *value);
+  br_strv_t value_str = BR_STRV(_scrach, (uint32_t)n);
+  br_size_t size = br_text_renderer_measure(brtl_text_renderer(), TOP.font_size, value_str);
+  size.width += TOP.padding.x * 2.f;
+  float avaliable_width = BR_BBW(TOP.limit) - TOP.psum.x * 2.f;
+  br_bb_t bb = BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_height);
+  brui_push_simple();
+    TOP.limit.min_y = fmaxf(TOP.cur.y, TOP.limit.min_y);
+    TOP.limit.max_y = fminf(TOP.limit.min_y + opt_height, TOP.limit.max_y); 
+    brui_text_align_set(br_text_renderer_ancor_mid_mid);
+    if (size.width < avaliable_width) {
+      brui_vsplitvp(4, BRUI_SPLITR(1), BRUI_SPLITA(size.width), BRUI_SPLITA((float)TOP.font_size), BRUI_SPLITA((float)TOP.font_size));
+        brui_text(text);
+      brui_vsplit_pop();
+        brui_text(value_str);
+      brui_vsplit_pop();
+        if (brui_button(BR_STRL("-"))) --(*value);
+      brui_vsplit_pop();
+        if (brui_button(BR_STRL("+"))) ++(*value);
+      brui_vsplit_end();
+    }
+  brui_pop_simple();
+  brui_border(bb);
+  TOP.content_height += opt_height + TOP.padding.y;
+  TOP.cur.y += opt_height + TOP.padding.y;
+  return false;
+}
+
+
+
 void brui_vsplit(int n) {
   BRUI_LOG("vsplit %d", n);
   brui_stack_el_t top = TOP;

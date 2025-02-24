@@ -212,6 +212,16 @@ br_strv_t br_text_renderer_fit(br_text_renderer_t* r, br_size_t size, int font_s
   return br_strv_sub(text, 0, (uint32_t)(i < 0 ? 0 : i));
 }
 
+br_size_t br_text_renderer_measure(br_text_renderer_t* r, int font_size, br_strv_t str) {
+  br_vec2_t loc = { 0 };
+  long size_index = stbds_hmgeti(r->sizes, font_size);
+  ssize_t i = 0;
+  if (size_index == -1) return BR_SIZE(0, 0);
+  size_to_font f = r->sizes[size_index];
+  for (; i < str.len; ++i) brtr_move_loc(r, f, str.str[i], &loc);
+  return BR_SIZE(loc.x, loc.y);
+}
+
 br_extent_t br_text_renderer_push0(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, const char* text) {
   return br_text_renderer_push(r, pos, font_size, color, text, BR_BB(0,0,10000,10000));
 }
