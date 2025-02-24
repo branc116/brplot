@@ -3,10 +3,12 @@
 #include "src/br_math.h"
 
 #include <stdbool.h>
+#define BR_THEME (*brtl_theme())
 
 typedef struct br_plotter_t br_plotter_t;
 typedef struct br_shaders_t br_shaders_t;
 typedef struct br_text_renderer_t br_text_renderer_t;
+typedef struct br_theme_t br_theme_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +29,7 @@ bool brtl_key_pressed(int key);
 bool brtl_key_ctrl(void);
 bool brtl_key_alt(void);
 bool brtl_key_shift(void);
+br_theme_t* brtl_theme(void);
 
 br_sizei_t brtl_window_size(void);
 void brtl_window_size_set(int width, int height);

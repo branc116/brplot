@@ -388,6 +388,10 @@ bool brtl_key_shift(void) {
   return (stl_br->key.mod & GLFW_MOD_SHIFT) == GLFW_MOD_SHIFT;
 }
 
+br_theme_t* brtl_theme(void) {
+  return &stl_br->ui.theme;
+}
+
 br_sizei_t brtl_window_size(void) {
   br_sizei_t s;
   glfwGetWindowSize(stl_br->win.glfw, &s.width, &s.height);

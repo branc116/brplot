@@ -4,6 +4,7 @@
 #include "br_pp.h"
 #include "br_data_generator.h"
 #include "br_math.h"
+#include "br_theme.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,11 +78,19 @@ typedef struct br_plotter_t {
 #if BR_HAS_SHADER_RELOAD
   bool shaders_dirty;
 #endif
-  bool dark_theme;
-  bool file_saver_inited;
   bool should_close;
   bool switch_to_active;
   bool any_2d, any_3d;
+  struct {
+    br_theme_t theme;
+    bool file_saver_inited;
+    bool dark_theme;
+    bool expand_plots;
+    bool expand_optimizations;
+    bool expand_ui_styles;
+    bool expand_export;
+    bool expand_data;
+  } ui;
 } br_plotter_t;
 
 BR_API br_plotter_t* br_plotter_malloc(void);

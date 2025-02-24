@@ -36,7 +36,7 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
     }
     br_plot_update_shader_values(PLOT, &br->shaders);
     brgl_enable_framebuffer(PLOT->texture_id, PLOT->cur_extent.width, PLOT->cur_extent.height);
-    brgl_clear(BR_COLOR_COMPF(br_theme.colors.plot_bg));
+    brgl_clear(BR_COLOR_COMPF(BR_THEME.colors.plot_bg));
     if (PLOT->kind == br_plot_kind_2d) {
       smol_mesh_grid_draw(PLOT, &br->shaders);
       br_shaders_draw_all(br->shaders); // TODO: This should be called whenever a other shader are being drawn.
@@ -53,7 +53,7 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
   }
 
   brgl_enable_framebuffer(0, br->win.size.width, br->win.size.height);
-  brgl_clear(BR_COLOR_COMPF(br_theme.colors.bg));
+  brgl_clear(BR_COLOR_COMPF(BR_THEME.colors.bg));
   help_draw_fps(br->text, 0, 0);
 
   brgl_enable_clip_distance();
@@ -116,67 +116,76 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
 
 static void draw_left_panel(br_plotter_t* br) {
   brui_resizable_push(br->menu_extent_handle);
-//    for (int i = 0; i < 3; ++i) {
-//      float f = (float)i;
-//      brui_sliderf(BR_STRL("Heloo"), &f);
-//    }
-//  brui_resizable_pop();
-//    return;
     char* scrach = br_scrach_get(4096);
-    brui_text(BR_STRL("Plots"));
-    brui_vsplit(2);
-      if (brui_button(BR_STRL("Add 2D"))) {
-        br_plotter_add_plot_2d(br);
-      }
-    brui_vsplit_pop();
-      if (brui_button(BR_STRL("Add 3D"))) {
-        br_plotter_add_plot_3d(br);
-      }
-    brui_vsplit_end();
+    if (brui_collapsable(BR_STRL("Plots"), &br->ui.expand_plots)) {
+      brui_vsplit(2);
+        if (brui_button(BR_STRL("Add 2D"))) {
+          br_plotter_add_plot_2d(br);
+        }
+      brui_vsplit_pop();
+        if (brui_button(BR_STRL("Add 3D"))) {
+          br_plotter_add_plot_3d(br);
+        }
+      brui_vsplit_end();
 
-    for (int i = 0; i < br->plots.len; ++i) {
-      int n = sprintf(scrach, "%s Plot %d", br_da_get(br->plots, i).kind == br_plot_kind_2d ? "2D" : "3D", i);
-      brui_resizable_t* r = brui_resizable_get(br_da_get(br->plots, i).extent_handle);
-      bool is_visible = !r->hidden;
-      brui_checkbox(BR_STRV(scrach, (uint32_t)n), &is_visible);
-      r->hidden = !is_visible;
+      for (int i = 0; i < br->plots.len; ++i) {
+        int n = sprintf(scrach, "%s Plot %d", br_da_get(br->plots, i).kind == br_plot_kind_2d ? "2D" : "3D", i);
+        brui_resizable_t* r = brui_resizable_get(br_da_get(br->plots, i).extent_handle);
+        bool is_visible = !r->hidden;
+        brui_checkbox(BR_STRV(scrach, (uint32_t)n), &is_visible);
+        r->hidden = !is_visible;
+      }
+      brui_collapsable_end();
     }
-    brui_new_lines(1);
 
-    brui_sliderf(BR_STRL("min something"), &context.min_sampling);
-    brui_sliderf(BR_STRL("cull min"), &context.cull_min);
-    brui_checkbox(BR_STRL("Debug"), &context.debug_bounds);
-    if (brui_checkbox(BR_STRL("Dark Theme"), &br->dark_theme)) {
-      if (br->dark_theme) br_theme_dark();
-      else br_theme_light();
+    if (brui_collapsable(BR_STRL("Optimizations"), &br->ui.expand_optimizations)) {
+      brui_sliderf3(BR_STRL("min something"), &context.min_sampling, 4);
+      brui_sliderf2(BR_STRL("cull min"), &context.cull_min);
+      brui_checkbox(BR_STRL("Debug"), &context.debug_bounds);
+      brui_collapsable_end();
     }
-    brui_vsplit(3);
-      brui_sliderf(BR_STRL("padding.y"), &br_theme.ui.padding.y);
-    brui_vsplit_pop();
-      brui_sliderf(BR_STRL("padding.x"), &br_theme.ui.padding.x);
-    brui_vsplit_pop();
-      brui_sliderf(BR_STRL("thick"), &br_theme.ui.border_thick);
-    brui_vsplit_end();
-    brui_slideri(BR_STRL("Font Size"), &br_theme.ui.font_size);
-    if (brui_button(BR_STRL("Export"))) {
-      br_plotter_export(br, "test.brp");
+
+    if (brui_collapsable(BR_STRL("UI Styles"), &br->ui.expand_ui_styles)) {
+      if (brui_checkbox(BR_STRL("Dark Theme"), &br->ui.dark_theme)) {
+        if (br->ui.dark_theme) br_theme_dark();
+        else br_theme_light();
+      }
+      brui_vsplit(2);
+        brui_sliderf(BR_STRL("padding.y"), &BR_THEME.ui.padding.y);
+      brui_vsplit_pop();
+        brui_sliderf(BR_STRL("padding.x"), &BR_THEME.ui.padding.x);
+      brui_vsplit_end();
+      brui_sliderf2(BR_STRL("thick"), &BR_THEME.ui.border_thick);
+      brui_slideri(BR_STRL("Font Size"), &BR_THEME.ui.font_size);
+      brui_collapsable_end();
     }
-    if (brui_button(BR_STRL("Export CSV"))) {
-      br_plotter_export_csv(br, "test.csv");
+
+    if (brui_collapsable(BR_STRL("Export"), &br->ui.expand_export)) {
+      if (brui_button(BR_STRL("Brp format"))) {
+        br_plotter_export(br, "test.brp");
+      }
+      if (brui_button(BR_STRL("CSV"))) {
+        br_plotter_export_csv(br, "test.csv");
+      }
+      brui_collapsable_end();
     }
+
+    if (brui_collapsable(BR_STRL("Data"), &br->ui.expand_data)) {
+      brui_text_size_set((int)((float)brui_text_size() * 0.8f));
+      for (size_t i = 0; i < br->groups.len; ++i) {
+        brui_push();
+          br_data_t data = br_da_get(br->groups, i);
+          int n = sprintf(scrach, "Data %d (%zu points)", data.group_id, data.len);
+          brui_text(BR_STRV(scrach, (uint32_t)n));
+          n = sprintf(scrach, "%.1fms (%.3f %.3f)", br_resampling2_get_draw_time(data.resampling)*1000.0f, br_resampling2_get_something(data.resampling), br_resampling2_get_something2(data.resampling));
+          brui_text(BR_STRV(scrach, (uint32_t)n));
+        brui_pop();
+      }
+      brui_collapsable_end();
+    }
+
     if (brui_button(BR_STRL("Exit"))) {
       br->should_close = true;
-    }
-    brui_text(BR_STRL("Data:"));
-    brui_text_size_set((int)((float)brui_text_size() * 0.8f));
-    for (size_t i = 0; i < br->groups.len; ++i) {
-      brui_push();
-        br_data_t data = br_da_get(br->groups, i);
-        int n = sprintf(scrach, "Data %d (%zu points)", data.group_id, data.len);
-        brui_text(BR_STRV(scrach, (uint32_t)n));
-        n = sprintf(scrach, "%.1fms (%.3f %.3f)", br_resampling2_get_draw_time(data.resampling)*1000.0f, br_resampling2_get_something(data.resampling), br_resampling2_get_something2(data.resampling));
-        brui_text(BR_STRV(scrach, (uint32_t)n));
-      brui_pop();
     }
     br_scrach_free();
   brui_resizable_pop();

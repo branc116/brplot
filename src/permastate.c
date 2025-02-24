@@ -135,6 +135,7 @@ bool br_permastate_save_plotter(br_str_t path_folder, br_plotter_t* br) {
     if (data->name.len != fwrite(data->name.str, sizeof(*data->name.str), data->name.len, file)) goto error;
   }
   if (1 != fwrite(&br->active_plot_index, sizeof(br->active_plot_index), 1, file))               goto error;
+  if (1 != fwrite(&br->ui, sizeof(br->ui), 1, file))                                             goto error;
   goto end;
 
 error:
@@ -186,26 +187,30 @@ void br_permastate_remove_pointers(br_plotter_t* br, br_plot_t* plot) {
 
 bool br_permastate_load_plotter(FILE* file, br_plotter_t* br, br_data_descs_t* desc) {
   size_t datas_len = 0;
-  if (1 != fread(&datas_len, sizeof(datas_len), 1, file))                        goto error;
-  if (datas_len == 0) return true;
+  size_t active_plot_read = 0;
+  size_t uis_read = 0;
+  if (1 != fread(&datas_len, sizeof(datas_len), 1, file))                                              goto error;
   for (size_t i = 0; i < datas_len; ++i) {
     int id = 0;
     uint32_t len = 0;
     char* str = NULL;
-    if (1 != fread(&id, sizeof(id), 1, file))                                    goto error;
-    if (1 != fread(&len, sizeof(len), 1, file))                                  goto error; 
+    if (1 != fread(&id, sizeof(id), 1, file))                                                          goto error;
+    if (1 != fread(&len, sizeof(len), 1, file))                                                        goto error; 
     if (len != 0) {
-      if (NULL == (str = BR_MALLOC(len * sizeof(*str))))                         goto error;
-      if (len != fread(str, sizeof(*str), len, file))                            goto error;
+      if (NULL == (str = BR_MALLOC(len * sizeof(*str))))                                               goto error;
+      if (len != fread(str, sizeof(*str), len, file))                                                  goto error;
     }
     br_data_desc_t d = { .group_id = id, .name = { .str = str, .len = len, .cap = len } };
     br_da_push(*desc, d);
   }
-  if (1 != fread(&br->active_plot_index, sizeof(br->active_plot_index), 1, file)) goto error;
+  if (1 != (active_plot_read = fread(&br->active_plot_index, sizeof(br->active_plot_index), 1, file))) goto error;
+  if (1 != (uis_read = fread(&br->ui, sizeof(br->ui), 1, file)))                                       goto error;
   return true;
   
 error:
-  LOGI("Failed to read plotter %d(%s)\n", errno, strerror(errno));
+  if (active_plot_read == 0) LOGE("Failed to read active plot: %d`%s`", errno, strerror(errno));
+  else if (uis_read == 0) LOGE("Failed to read ui: %d`%s`", errno, strerror(errno));
+  LOGI("Failed to read plotter %d`%s`", errno, strerror(errno));
   return false;
 }
 
@@ -253,10 +258,10 @@ bool br_permastate_load_plots(FILE* file, br_plotter_t* br) {
   return true;
 
 error:
-  if (0 == plots_len)                  LOGI("Failed to read a file: %d(%s)\n", errno, strerror(errno));
-  else if (NULL == plots)              LOGI("Failed to allocated memory for array of %zu plots\n", plots_len);
-  else if (read_plots != plots_len)    LOGI("Failed to read right amount of plots, wanted %zu, but got %zu\n", plots_len, read_plots);
-  else if (calculated_crc != read_crc) LOGE("Crc check failed expected %u, but got %u\n", calculated_crc, read_crc);
+  if (0 == plots_len)                  LOGI("Failed to read a file: %d(%s)", errno, strerror(errno));
+  else if (NULL == plots)              LOGI("Failed to allocated memory for array of %zu plots", plots_len);
+  else if (read_plots != plots_len)    LOGI("Failed to read right amount of plots, wanted %zu, but got %zu", plots_len, read_plots);
+  else if (calculated_crc != read_crc) LOGE("Crc check failed expected %u, but got %u", calculated_crc, read_crc);
   return false;
 }
 
@@ -314,10 +319,10 @@ bool br_permastate_load(br_plotter_t* br) {
   goto end;
 
 error:
-  if (path.str == NULL)          LOGI("Failed to allocatate memory from the plots permastate path\n");
-  else if (false == file_exists) LOGI("Tried to open a file that doesn't exisit `%s`\n", buff);
-  else if (f == NULL)            LOGI("Failed to open a file %s: %d(%s)\n", buff, errno, strerror(errno));
-  else                           LOGI("Failed loading permastate %d(%s)\n", errno, strerror(errno));
+  if (path.str == NULL)          LOGE("Failed to allocatate memory from the plots permastate path\n");
+  else if (false == file_exists) LOGE("Tried to open a file that doesn't exists `%s`\n", buff);
+  else if (f == NULL)            LOGE("Failed to open a file %s: %d`%s`\n", buff, errno, strerror(errno));
+  else                           LOGE("Failed loading permastate %d`%s`\n", errno, strerror(errno));
   success = false;
 
 end:

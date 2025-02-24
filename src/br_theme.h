@@ -1,8 +1,7 @@
 #pragma once
 #include "src/br_math.h"
-#include "src/br_pp.h"
 
-typedef struct {
+typedef struct br_theme_t {
   struct {
     br_color_t btn_inactive;
     br_color_t btn_hovered;
@@ -33,8 +32,6 @@ typedef struct {
     float border_thick;
   } ui;
 } br_theme_t;
-
-extern BR_THREAD_LOCAL br_theme_t br_theme;
 
 void br_theme_dark(void);
 void br_theme_light(void);

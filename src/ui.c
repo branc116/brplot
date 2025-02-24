@@ -45,7 +45,8 @@ typedef struct {
   size_t len, cap;
 
   int active_resizable;
-  float* sliderf;
+  void* sliderf;
+  br_vec2_t drag_ancor_point;
   bool log;
 } brui_stack_t;
 
@@ -118,9 +119,9 @@ brui_stack_el_t brui_stack_el(void) {
   } else {
     brui_stack_el_t root = {
       .limit = BR_EXTENTI_TOBB(brtl_viewport()),
-      .padding = br_theme.ui.padding,
-      .font_size = br_theme.ui.font_size,
-      .font_color = br_theme.colors.btn_txt_inactive,
+      .padding = BR_THEME.ui.padding,
+      .font_size = BR_THEME.ui.font_size,
+      .font_color = BR_THEME.colors.btn_txt_inactive,
       .text_ancor = br_text_renderer_ancor_left_up,
       .is_active = true
     };
@@ -157,7 +158,7 @@ void brui_pop(void) {
   br_bb_t bb = BR_BB(TOP2.cur.x, TOP2.cur.y, TOP2.cur.x + size.width, TOP2.cur.y + size.height);
   float content_height = TOP.content_height;
 
-  if (TOP.hide_bg == false) brui_background(bb, br_theme.colors.plot_menu_color);
+  if (TOP.hide_bg == false) brui_background(bb, BR_THEME.colors.plot_menu_color);
   if (TOP.hide_border == false) brui_border(bb);
 
   BRUI_LOG("Pre pop ex: [%.2f,%.2f,%.2f,%.2f]", BR_BB_(bb));
@@ -230,21 +231,66 @@ void brui_background(br_bb_t bb, br_color_t color) {
 }
 
 void brui_border(br_bb_t bb) {
-  br_color_t ec = br_theme.colors.ui_edge_inactive;
-  br_color_t bc = br_theme.colors.ui_edge_bg_inactive;
+  br_color_t ec = BR_THEME.colors.ui_edge_inactive;
+  br_color_t bc = BR_THEME.colors.ui_edge_bg_inactive;
 
   float edge = 0;
-  float thick = br_theme.ui.border_thick;
+  float thick = BR_THEME.ui.border_thick;
 
   if (TOP.is_active && br_col_vec2_bb(bb, brtl_mouse_pos())) {
-    ec = br_theme.colors.ui_edge_active;
-    bc = br_theme.colors.ui_edge_bg_active;
+    ec = BR_THEME.colors.ui_edge_active;
+    bc = BR_THEME.colors.ui_edge_bg_active;
   }
 
   br_icons_draw(BR_BB(bb.min_x + edge, bb.min_y, bb.max_x - edge, bb.min_y + thick), BR_EXTENT_TOBB(br_extra_icons.edge_t.size_8), ec, bc, TOP.limit, Z);
   br_icons_draw(BR_BB(bb.min_x + edge, bb.max_y - thick, bb.max_x - edge, bb.max_y), BR_EXTENT_TOBB(br_extra_icons.edge_b.size_8), ec, bc, TOP.limit, Z);
   br_icons_draw(BR_BB(bb.min_x, bb.min_y + edge, bb.min_x + thick, bb.max_y - edge), BR_EXTENT_TOBB(br_extra_icons.edge_l.size_8), ec, bc, TOP.limit, Z);
   br_icons_draw(BR_BB(bb.max_x - thick, bb.min_y + edge, bb.max_x, bb.max_y - edge), BR_EXTENT_TOBB(br_extra_icons.edge_r.size_8), ec, bc, TOP.limit, Z);
+}
+
+bool brui_collapsable(br_strv_t name, bool* expanded) {
+  float opt_header_height /* text + 2*1/2*padding */ = (float)TOP.font_size + TOP.padding.y;
+  brui_border(BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_header_height));
+  brui_push_simple();
+    brui_vsplitvp(2, BRUI_SPLITR(1), BRUI_SPLITA((float)TOP.font_size));
+      TOP.limit.max_y = fminf(TOP.limit.max_y, TOP.cur.y + opt_header_height);
+      TOP.limit.min_y = fmaxf(TOP.limit.min_y, TOP.cur.y);
+      brui_text_align_set(br_text_renderer_ancor_mid_mid);
+      brui_text(name);
+    brui_vsplit_pop();
+      if (*expanded) {
+        if (brui_button(BR_STRL("V"))) {
+          *expanded = false;
+        }
+      } else {
+        if (brui_button(BR_STRL("<"))) {
+          *expanded = true;
+        }
+      }
+    brui_vsplit_end();
+  brui_pop_simple();
+  TOP.cur.y += opt_header_height + TOP.padding.y;
+  TOP.content_height += opt_header_height + TOP.padding.y;
+  if (*expanded) {
+    brui_push_simple();
+      TOP.limit.min_x = TOP.cur.x;
+      TOP.limit.max_x = TOP.limit.max_x - TOP.psum.x;
+      TOP.limit.min_y = fmaxf(TOP.limit.min_y, TOP.cur.y);
+      TOP.content_height = TOP.padding.y;
+      TOP.cur.x = TOP.limit.min_x + TOP.padding.x;
+      TOP.cur.y = TOP.cur.y + TOP.padding.y;
+      TOP.psum.x = TOP.padding.x;
+  }
+  return *expanded;
+}
+
+void brui_collapsable_end(void) {
+  float ch = TOP.content_height;
+  float opt_header_height /* text + 2*1/2*padding */ = (float)TOP.font_size + TOP.padding.y;
+  brui_border(BR_BB(TOP.limit.min_x, TOP.limit.min_y - opt_header_height, TOP.limit.max_x, TOP.cur.y));
+  brui_pop_simple();
+  TOP.content_height += ch + TOP.padding.y;
+  TOP.cur.y += ch + TOP.padding.y;
 }
 
 bool brui_button(br_strv_t text) {
@@ -265,9 +311,9 @@ bool brui_button(br_strv_t text) {
     TOP.psum.x = 0;
     TOP.padding.y *= 0.5f;
     brui_text_align_set(br_text_renderer_ancor_mid_mid);
-    brui_text_color_set(hovers ? br_theme.colors.btn_txt_hovered : br_theme.colors.btn_txt_inactive);
+    brui_text_color_set(hovers ? BR_THEME.colors.btn_txt_hovered : BR_THEME.colors.btn_txt_inactive);
     brui_background(BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_height),
-      hovers ? br_theme.colors.btn_hovered : br_theme.colors.btn_inactive
+      hovers ? BR_THEME.colors.btn_hovered : BR_THEME.colors.btn_inactive
     );
     brui_border(BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_height));
     brui_text(text);
@@ -290,8 +336,8 @@ bool brui_checkbox(br_strv_t text, bool* checked) {
     //if (cb_extent.max_y > TOP.limit.max_y) cb_extent.max_y = TOP.limit.max_y;
     /*if (cb_extent.height > 0) */ {
       hover = br_col_vec2_bb(cb_extent, brtl_mouse_pos());
-      br_color_t bg = hover ? br_theme.colors.btn_hovered : br_theme.colors.btn_inactive;
-      br_color_t fg = hover ? br_theme.colors.btn_txt_hovered : br_theme.colors.btn_txt_inactive;
+      br_color_t bg = hover ? BR_THEME.colors.btn_hovered : BR_THEME.colors.btn_inactive;
+      br_color_t fg = hover ? BR_THEME.colors.btn_txt_hovered : BR_THEME.colors.btn_txt_inactive;
       br_icons_draw(cb_extent, BR_EXTENT_TOBB(icon), bg, fg, TOP.limit, Z);
       TOP.cur.x += TOP.padding.x + sz;
     }
@@ -335,13 +381,13 @@ bool brui_button_icon(br_sizei_t size, br_extent_t icon) {
 
   if (bb.max_y > bb.min_y && bb.max_x > bb.min_y) {
     if (br_col_vec2_bb(bb, brtl_mouse_pos())) {
-      br_color_t fg = br_theme.colors.btn_txt_hovered;
-      br_color_t bg = br_theme.colors.btn_hovered;
+      br_color_t fg = BR_THEME.colors.btn_txt_hovered;
+      br_color_t bg = BR_THEME.colors.btn_hovered;
       br_icons_draw(bb, BR_EXTENT_TOBB(icon), bg, fg, TOP.limit, Z);
       is_pressed = brtl_mousel_pressed();
     } else {
-      br_color_t fg = br_theme.colors.btn_txt_inactive;
-      br_color_t bg = br_theme.colors.btn_inactive;
+      br_color_t fg = BR_THEME.colors.btn_txt_inactive;
+      br_color_t bg = BR_THEME.colors.btn_inactive;
       br_icons_draw(bb, BR_EXTENT_TOBB(icon), bg, fg, TOP.limit, Z);
     }
   }
@@ -372,9 +418,9 @@ bool brui_sliderf(br_strv_t text, float* val) {
 
       const float lw = BR_BBW(TOP.limit) - 2 * TOP.psum.x;
       br_bb_t line_bb = BR_BB(TOP.cur.x, TOP.cur.y + (ss - lt)*0.5f, TOP.cur.x + lw, TOP.cur.y + (ss + lt)*0.5f);
-      br_color_t lc = br_theme.colors.btn_inactive;
+      br_color_t lc = BR_THEME.colors.btn_inactive;
       br_bb_t slider_bb = BR_BB(TOP.cur.x + (lw - ss)*.5f, TOP.cur.y, TOP.cur.x + (lw + ss)*.5f, TOP.cur.y + ss);
-      br_color_t sc = br_theme.colors.btn_txt_inactive;
+      br_color_t sc = BR_THEME.colors.btn_txt_inactive;
 
       if (_stack.sliderf == val ||
           (_stack.sliderf == NULL && mouse.x > line_bb.min_x &&
@@ -382,8 +428,8 @@ bool brui_sliderf(br_strv_t text, float* val) {
           mouse.y > line_bb.min_y - 3 &&
           mouse.y < line_bb.max_y + 3)) {
         if (is_down) {
-          lc = br_theme.colors.btn_active;
-          sc = br_theme.colors.btn_txt_active;
+          lc = BR_THEME.colors.btn_active;
+          sc = BR_THEME.colors.btn_txt_active;
           float speed = brtl_frame_time();
           float factor = br_float_clamp((mouse.x - line_bb.min_x) / lw, 0.f, 1.f) * speed + (1 - speed * 0.5f);
           *val *= factor;
@@ -391,8 +437,8 @@ bool brui_sliderf(br_strv_t text, float* val) {
           slider_bb.max_x = slider_bb.min_x + ss;
           _stack.sliderf = val;
         } else {
-          lc = br_theme.colors.btn_hovered;
-          sc = br_theme.colors.btn_txt_hovered;
+          lc = BR_THEME.colors.btn_hovered;
+          sc = BR_THEME.colors.btn_txt_hovered;
           _stack.sliderf = NULL;
         }
       }
@@ -410,6 +456,48 @@ bool brui_sliderf(br_strv_t text, float* val) {
   brui_pop_simple();
   TOP.cur.y = opt_max_y + TOP.padding.y;
   TOP.content_height += opt_height + TOP.padding.y;
+  return false;
+}
+
+bool brui_sliderf2(br_strv_t text, float* value) {
+  return brui_sliderf3(text, value, 2);
+}
+
+bool brui_sliderf3(br_strv_t text, float* value, int percision) {
+  float opt_height /* text + 2*1/2*padding */ = (float)TOP.font_size + TOP.padding.y;
+  int n = sprintf(_scrach, "%.*f", percision, *value);
+  br_strv_t value_str = BR_STRV(_scrach, (uint32_t)n);
+  br_size_t size = br_text_renderer_measure(brtl_text_renderer(), TOP.font_size, value_str);
+  size.width += TOP.padding.x * 2.f;
+  float avaliable_width = BR_BBW(TOP.limit) - TOP.psum.x * 2.f;
+  br_bb_t bb = BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_height);
+  br_vec2_t mouse_pos = brtl_mouse_pos();
+  if (_stack.sliderf == value) {
+    if (brtl_mousel_down() == false) {
+      _stack.sliderf = NULL;
+    } else {
+      *value *= 1.f - brtl_frame_time() * (_stack.drag_ancor_point.x - mouse_pos.x) / 1000.f;
+      brui_background(bb, BR_THEME.colors.btn_active);
+    }
+  } else if (_stack.sliderf == NULL && brtl_mousel_down() && br_col_vec2_bb(bb, mouse_pos)) {
+    _stack.sliderf = value;
+    _stack.drag_ancor_point = mouse_pos;
+  }
+  brui_push_simple();
+    TOP.limit.min_y = fmaxf(TOP.cur.y, TOP.limit.min_y);
+    TOP.limit.max_y = fminf(TOP.limit.min_y + opt_height, TOP.limit.max_y); 
+    brui_text_align_set(br_text_renderer_ancor_mid_mid);
+    if (size.width < avaliable_width) {
+      brui_vsplitvp(2, BRUI_SPLITR(1), BRUI_SPLITA(size.width));
+        brui_text(text);
+      brui_vsplit_pop();
+        brui_text(value_str);
+      brui_vsplit_end();
+    }
+  brui_pop_simple();
+  brui_border(bb);
+  TOP.content_height += opt_height + TOP.padding.y;
+  TOP.cur.y += opt_height + TOP.padding.y;
   return false;
 }
 
@@ -442,8 +530,6 @@ bool brui_slideri(br_strv_t text, int* value) {
   TOP.cur.y += opt_height + TOP.padding.y;
   return false;
 }
-
-
 
 void brui_vsplit(int n) {
   BRUI_LOG("vsplit %d", n);
@@ -550,7 +636,7 @@ void brui_vsplit_end(void) {
   BRUI_LOG("vsplit end");
 }
 
-void brui_scroll_bar(float bar_fract, float* bar_offset_fract) {
+void brui_scroll_bar(float* bar_offset_fract) {
   float thick = TOP.padding.x * 0.5f;
   float slider_thick = TOP.padding.x * 0.8f;
   int z = Z;
@@ -565,17 +651,17 @@ void brui_scroll_bar(float bar_fract, float* bar_offset_fract) {
 
   br_bb_t line_bb = BR_BB(TOP.limit.max_x - thick, TOP.limit.min_y, TOP.limit.max_x, TOP.limit.max_y);
   br_bb_t slider_bb = BR_BB(TOP.limit.max_x - slider_thick, TOP.limit.min_y + slider_upper, TOP.limit.max_x, TOP.limit.max_y - slider_downer);
-  br_color_t lc = br_theme.colors.btn_inactive;
-  br_color_t bc = br_theme.colors.btn_txt_inactive;
+  br_color_t lc = BR_THEME.colors.btn_inactive;
+  br_color_t bc = BR_THEME.colors.btn_txt_inactive;
   if (_stack.sliderf == bar_offset_fract || (_stack.sliderf == NULL && br_col_vec2_bb(line_bb, mouse))) {
     if (is_down) {
       *bar_offset_fract = br_float_clamp((mouse.y - TOP.limit.min_y) / limit_height, 0, 1);
-      lc = br_theme.colors.btn_active;
-      bc = br_theme.colors.btn_txt_active;
+      lc = BR_THEME.colors.btn_active;
+      bc = BR_THEME.colors.btn_txt_active;
       _stack.sliderf = bar_offset_fract;
     } else {
-      lc = br_theme.colors.btn_hovered;
-      bc = br_theme.colors.btn_txt_hovered;
+      lc = BR_THEME.colors.btn_hovered;
+      bc = BR_THEME.colors.btn_txt_hovered;
       _stack.sliderf = NULL;
     }
   }
@@ -721,7 +807,7 @@ void brui_resizable_update(void) {
   if (bruirs.drag_mode == brui_drag_mode_none) {
     br_vec2_t local_pos = { 0 };
     int index = bruir_find_at(0, mouse_pos, &local_pos);
-    if (index == -1) return;
+    if (index <= 0) return;
     brui_resizable_t* hovered = br_da_getp(bruirs, index);
     bool ml = brtl_mousel_down();
     bool mr = brtl_mouser_down();
@@ -741,6 +827,7 @@ void brui_resizable_update(void) {
         if      (new_mode == brui_drag_mode_none)        new_mode  = brui_drag_mode_move;
         bruirs.drag_mode = new_mode;
         bruirs.drag_old_ex = ex;
+        _stack.sliderf = hovered;
       }
     } else if (scroll != 0) {
       if (hovered->full_height > (float)hovered->cur_extent.height) {
@@ -779,6 +866,7 @@ void brui_resizable_update(void) {
       bruirs.drag_index = 0;
       bruirs.drag_mode = brui_drag_mode_none;
       bruirs.drag_point = BR_VEC2(0, 0);
+      _stack.sliderf = NULL;
     }
   }
 }
@@ -822,7 +910,7 @@ void brui_resizable_pop(void) {
   float full_height = res->full_height = TOP.content_height;
   float hidden_height = full_height - (float)res->cur_extent.height;
   if (hidden_height > 0.f) {
-    if (false == brtl_key_ctrl()) brui_scroll_bar(br_float_clamp((float)res->cur_extent.height / full_height, 0, 2), &res->scroll_offset_percent);
+    if (false == brtl_key_ctrl()) brui_scroll_bar(&res->scroll_offset_percent);
   } else res->scroll_offset_percent = 0.f;
   TOP.cur.y = (float)res->cur_extent.y + (float)res->cur_extent.height;
   TOP.content_height = (float)res->cur_extent.height;

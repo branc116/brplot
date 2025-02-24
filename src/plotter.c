@@ -38,11 +38,13 @@ BR_API void br_plotter_init(br_plotter_t* br) {
 #if BR_HAS_SHADER_RELOAD
     .shaders_dirty = false,
 #endif
-    .dark_theme = true,
-    .file_saver_inited = false,
     .should_close = false,
     .switch_to_active = false,
-    .active_plot_index = 0
+    .active_plot_index = 0,
+    .ui = {
+      .dark_theme = true,
+      .file_saver_inited = false,
+    },
   };
 #if BR_HAS_HOTRELOAD
   br->hot_state = (br_hotreload_state_t) { .handl = NULL, .func_loop = NULL, .func_init = NULL, .is_init_called = false };
@@ -55,7 +57,6 @@ BR_API void br_plotter_init(br_plotter_t* br) {
     LOGE("Failed to malloc command queue. Exiting...\n");
     exit(1);
   }
-  context.font_scale = 1.8f;
   context.min_sampling = 0.001f;
   context.cull_min = 2.f;
 }
@@ -221,7 +222,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
   br_extent_t r = plot->dd.graph_rect;
   br_extent_t gr = BR_EXTENTI_TOF(plot->cur_extent);
   br_size_t sz = gr.size;
-  int font_size = (int)(18.f * context.font_scale);
+  int font_size = BR_THEME.ui.font_size;
   char* scrach = br_scrach_get(128);
   br_extent_t vp = BR_EXTENTI_TOF(brtl_viewport());
   br_bb_t limit = BR_EXTENT_TOBB(vp);
@@ -246,7 +247,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         s = br_strv_trim_zeros(s);
         float y = sz.height / r.height * (r.y - cur);
         if (y > sz.height) break;
-        br_text_renderer_push2(tr, BR_VEC3(x, y, 0.9f), font_size, br_theme.colors.grid_nums, s, limit, ancor);
+        br_text_renderer_push2(tr, BR_VEC3(x, y, 0.9f), font_size, BR_THEME.colors.grid_nums, s, limit, ancor);
       }
     }
   }
@@ -271,7 +272,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         s = br_strv_trim_zeros(s);
         float x = (sz.width / r.width) * (cur - r.x);
         if (x > sz.width) break;
-        br_text_renderer_push2(tr, BR_VEC3(x, y, 0.9f), font_size, br_theme.colors.grid_nums, s, limit, ancor);
+        br_text_renderer_push2(tr, BR_VEC3(x, y, 0.9f), font_size, BR_THEME.colors.grid_nums, s, limit, ancor);
       }
     }
   }

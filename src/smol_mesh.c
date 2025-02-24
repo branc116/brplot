@@ -1,7 +1,6 @@
 #include "src/br_shaders.h"
 #include "src/br_smol_mesh.h"
 #include "src/br_plot.h"
-#include "src/br_gl.h"
 #include "src/br_math.h"
 #include "src/br_tl.h"
 #include "src/br_theme.h"
@@ -160,8 +159,8 @@ void smol_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
           { .vertexPosition = BR_VEC2(1, -1) },
           { .vertexPosition = BR_VEC2(-1, -1) },
       });
-      shaders->grid->uvs.bg_color_uv = BR_COLOR_TO4(br_theme.colors.plot_bg);
-      shaders->grid->uvs.lines_color_uv = BR_COLOR_TO4(br_theme.colors.grid_lines);
+      shaders->grid->uvs.bg_color_uv = BR_COLOR_TO4(BR_THEME.colors.plot_bg);
+      shaders->grid->uvs.lines_color_uv = BR_COLOR_TO4(BR_THEME.colors.grid_lines);
       TracyCFrameMarkEnd("grid_draw_2d");
     } break;
     case br_plot_kind_3d: {
