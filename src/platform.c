@@ -221,6 +221,13 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
   glfwSetKeyCallback(br->win.glfw, br_glfw_on_key);
 }
 
+void br_plotter_deinit_specifics_platform(br_plotter_t* br) {
+  br_text_renderer_free(br->text);
+  br_shaders_free(br->shaders);
+  glfwDestroyWindow(br->win.glfw);
+  glfwTerminate();
+}
+
 static void br_glfw_on_scroll(GLFWwindow* window, double x, double y) {
   (void)window;
   stl_br->mouse.scroll = BR_VEC2((float)x, (float)y);
@@ -400,11 +407,6 @@ br_sizei_t brtl_window_size(void) {
 
 void brtl_window_size_set(int width, int height) {
   glfwSetWindowSize(stl_br->win.glfw, width, height);
-}
-
-void brtl_window_close(void) {
-  glfwDestroyWindow(stl_br->win.glfw);
-  glfwTerminate();
 }
 
 br_extenti_t brtl_viewport(void) {

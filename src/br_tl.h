@@ -33,7 +33,6 @@ br_theme_t* brtl_theme(void);
 
 br_sizei_t brtl_window_size(void);
 void brtl_window_size_set(int width, int height);
-void brtl_window_close(void);
 
 br_extenti_t brtl_viewport(void);
 void brtl_viewport_set(br_extenti_t ex);

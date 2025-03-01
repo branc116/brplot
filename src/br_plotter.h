@@ -96,6 +96,8 @@ typedef struct br_plotter_t {
 
 BR_API br_plotter_t* br_plotter_malloc(void);
 BR_API void        br_plotter_init(br_plotter_t* br);
+BR_API void        br_plotter_free(br_plotter_t* br);
+
 BR_API void        br_plotter_resize(br_plotter_t* br, float width, float height);
 BR_API br_datas_t* br_plotter_get_br_datas(br_plotter_t* br);
 BR_API void        br_plotter_switch_2d(br_plotter_t* br);
@@ -109,7 +111,6 @@ int                br_plotter_add_plot_3d(br_plotter_t* br);
 void               br_plotter_remove_plot(br_plotter_t* br, int plot_index);
 void               br_plotter_export(br_plotter_t const* br, char const* path);
 void               br_plotter_export_csv(br_plotter_t const* br, char const* path);
-BR_API void        br_plotter_free(br_plotter_t* br);
 BR_API void        br_plotter_draw(br_plotter_t* br);
 BR_API void        br_plotter_minimal(br_plotter_t* br);
 BR_API void        br_plotter_frame_end(br_plotter_t* br);
@@ -118,6 +119,7 @@ BR_API void        br_plotter_datas_deinit(br_plotter_t* br);
 // Platform specific
 void br_plotter_wait(br_plotter_t const* br);
 void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height);
+void br_plotter_deinit_specifics_platform(br_plotter_t* br);
 void br_plotter_begin_drawing(br_plotter_t* br);
 void br_plotter_end_drawing(br_plotter_t* br);
 

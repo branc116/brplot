@@ -11,6 +11,7 @@
 #include "src/br_theme.h"
 #include "src/br_ui.h"
 #include "src/br_icons.h"
+#include "src/br_gl.h"
 
 #include <math.h>
 #include <string.h>
@@ -24,10 +25,7 @@ context_t context;
 BR_API br_plotter_t* br_plotter_malloc(void) {
   br_resampling2_construct();
   br_data_construct();
-  return BR_MALLOC(sizeof(br_plotter_t));
-}
-
-BR_API void br_plotter_init(br_plotter_t* br) {
+  br_plotter_t* br = BR_MALLOC(sizeof(br_plotter_t));
   *br = (br_plotter_t){
     .groups = {0},
     .plots = {0},
@@ -59,7 +57,48 @@ BR_API void br_plotter_init(br_plotter_t* br) {
   }
   context.min_sampling = 0.001f;
   context.cull_min = 2.f;
+  return br;
 }
+
+BR_API void br_plotter_init(br_plotter_t* br) {
+  br_plotter_init_specifics_platform(br, 1280, 720);
+  brui_resizable_init();
+  br->loaded_status = br_permastate_load(br);
+  if (br->loaded_status != br_permastate_status_ok) {
+    br_datas_deinit(&br->groups);
+    br->plots.len = 0;
+    br_plotter_add_plot_2d(br);
+  } else {
+    for (int i = 0; i < br->plots.len; ++i) {
+      br_plot_t* p = &br->plots.arr[i];
+      br->plots.arr[i].texture_id = brgl_create_framebuffer(p->cur_extent.width, p->cur_extent.height);
+    }
+  }
+  br->menu_extent_handle = brui_resizable_new(BR_EXTENTI(10, 40, 160, brtl_viewport().height/2), 0); 
+  br_icons_init(br->shaders.icon);
+  if (br->loaded_status < br_permastate_status_ui_loaded) {
+    br_theme_dark();
+    br_theme_reset_ui();
+  }
+  bruir_resizable_refresh(0);
+}
+
+BR_API void br_plotter_free(br_plotter_t* br) {
+  read_input_stop();
+  br_permastate_save(br);
+  br_icons_deinit();
+  for (int i = 0; i < br->plots.len; ++i) {
+    br_plot_deinit(br_da_getp(br->plots, i));
+  }
+  br_datas_deinit(&br->groups);
+  brui_resizable_deinit();
+  br_plotter_deinit_specifics_platform(br);
+  q_free(br->commands);
+  BR_FREE(br->plots.arr);
+  br_dagens_free(&br->dagens);
+  BR_FREE(br);
+}
+
 
 BR_API void br_plotter_resize(br_plotter_t* br, float width, float height) {
   (void)br;
@@ -159,20 +198,6 @@ void br_plotter_remove_plot(br_plotter_t* br, int plot_index) {
     memmove(br_da_getp(br->plots, plot_index), br_da_getp(br->plots, plot_index + 1), bytes_to_move);
   }
   --br->plots.len;
-}
-
-BR_API void br_plotter_free(br_plotter_t* br) {
-  br_icons_deinit();
-  br_text_renderer_free(br->text);
-  br_shaders_free(br->shaders);
-  br_datas_deinit(&br->groups);
-  q_free(br->commands);
-  for (int i = 0; i < br->plots.len; ++i) {
-    br_plot_deinit(br_da_getp(br->plots, i));
-  }
-  BR_FREE(br->plots.arr);
-  br_dagens_free(&br->dagens);
-  brui_resizable_deinit();
 }
 
 BR_API void br_plotter_frame_end(br_plotter_t* br) {

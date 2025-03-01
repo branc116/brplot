@@ -3,33 +3,10 @@
 #include "src/br_q.h"
 #include "src/br_permastate.h"
 #include "src/br_tl.h"
-#include "src/br_gl.h"
-#include "src/br_icons.h"
-#include "src/br_theme.h"
-#include "src/br_ui.h"
 
 static void* main_gui(void* plotter) {
   br_plotter_t* br = (br_plotter_t*)plotter;
-  br_plotter_init_specifics_platform(br, 1280, 720);
-  brui_resizable_init();
-  br->loaded_status = br_permastate_load(br);
-  if (br->loaded_status != br_permastate_status_ok) {
-    br_datas_deinit(&br->groups);
-    br->plots.len = 0;
-    br_plotter_add_plot_2d(br);
-  } else {
-    for (int i = 0; i < br->plots.len; ++i) {
-      br_plot_t* p = &br->plots.arr[i];
-      br->plots.arr[i].texture_id = brgl_create_framebuffer(p->cur_extent.width, p->cur_extent.height);
-    }
-  }
-  br->menu_extent_handle = brui_resizable_new(BR_EXTENTI(10, 40, 160, brtl_viewport().height/2), 0); 
-  br_icons_init(br->shaders.icon);
-  if (br->loaded_status < br_permastate_status_ui_loaded) {
-    br_theme_dark();
-    br_theme_reset_ui();
-  }
-  bruir_resizable_refresh(0);
+  br_plotter_init(br);
   while(br->should_close == false) {
     TracyCFrameMark;
     br_plotter_draw(br);
@@ -39,11 +16,7 @@ static void* main_gui(void* plotter) {
     TracyCFrameMarkEnd("plotter_frame_end");
   }
   // CLEAN UP
-  read_input_stop();
-  br_permastate_save(br);
   br_plotter_free(br);
-  brtl_window_close();
-  BR_FREE(br);
   return 0;
 }
 
@@ -57,12 +30,10 @@ int main(void) {
     LOGE("Failed to malloc br plotter, exiting...\n");
     exit(1);
   }
-  br_plotter_init(br);
 #if BR_HAS_SHADER_RELOAD
   start_refreshing_shaders(br);
 #endif
   read_input_start(br);
-  //SetExitKey(KEY_NULL);
   main_gui(br);
 
   return 0;
