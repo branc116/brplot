@@ -29,12 +29,12 @@ void example_simple(void) {
     }
     sleep(1);
   }
-  br_simp_wait();
 }
 
 int main(void) {
-  //example_v1();
-  example_simple();
+  example_v1();
+  br_simp_wait();
+  //example_simple();
   return 0;
 }
 

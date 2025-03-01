@@ -28,8 +28,6 @@ typedef int br_data_id;
 
 typedef enum {
   br_plotter_ui_kind_minimal = 0,
-  br_plotter_ui_kind_imgui = 1,
-  br_plotter_ui_kind_headless = 2
 } br_plotter_ui_kind_t;
 #define BR_PLOTTER_UI_KIND_T
 

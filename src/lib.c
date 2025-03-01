@@ -22,11 +22,11 @@ typedef union {
 
 static void* main_loop(void* plotterv) {
   br_plotter_t* plotter = plotterv;
-  br_plotter_init_specifics_platform(plotter, 1280, 720);
+  br_plotter_init(plotter);
   while (plotter->should_close == false) {
     br_plotter_draw(plotter);
   }
-  brtl_window_close();
+  br_plotter_free(plotter);
   return NULL;
 }
 
@@ -51,9 +51,6 @@ br_plotter_ctor_t* br_plotter_default_ctor(void) {
 
 br_plotter_t* br_plotter_new(br_plotter_ctor_t const* ctor) {
   br_plotter_t* plotter = br_plotter_malloc();
-  br_plotter_init(plotter);
-  //plotter->width = ctor->ctor.width;
-  //plotter->height = ctor->ctor.height;
   if (ctor->ctor.use_stdin) {
     read_input_start(plotter);
   }
