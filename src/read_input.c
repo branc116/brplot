@@ -791,7 +791,6 @@ int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
   br_plotter_init(br, true);
   br->shaders = br_shaders_malloc();
   br->text = br_text_renderer_malloc(1024, 1024, br_font_data, &br->shaders.font);
-  br_gui_init_specifics_gui(br);
   for (size_t i = 0; i < str_len;) {
     if (s.read_next) {
       s.c = str[i++];

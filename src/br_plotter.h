@@ -5,6 +5,7 @@
 #include "br_data_generator.h"
 #include "br_math.h"
 #include "br_theme.h"
+#include "src/br_permastate.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,7 +75,7 @@ typedef struct br_plotter_t {
   int active_plot_index;
   int menu_extent_handle;
 
-  bool loaded;
+  br_permastate_status_t loaded_status;
 #if BR_HAS_SHADER_RELOAD
   bool shaders_dirty;
 #endif

@@ -159,6 +159,7 @@ bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* 
       .x_left = data_left,
       .y_left = data_left,
       .z_left = kind == br_data_kind_2d ? 0 : data_left,
+      .num_points = data_left
     }
   };
   br_da_push(*dagens, new);
@@ -230,7 +231,7 @@ static void br_dagen_handle(br_dagen_t* dagen, br_data_t* data, br_datas_t datas
         left = &dagen->file.z_left;
         d = data->ddd.zs;
       }
-      size_t index = data->cap - *left;
+      size_t index = dagen->file.num_points - *left;
       size_t read_n = 1024 < *left ? 1024 : *left;
       if (read_n != fread(&d[index], sizeof(d[index]), read_n, dagen->file.file)) goto error;
       *left -= read_n;

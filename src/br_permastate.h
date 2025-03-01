@@ -36,9 +36,15 @@ typedef enum {
   
 } br_save_state_command_t;
 
+typedef enum br_permastate_status_t {
+  br_permastate_status_failed,
+  br_permastate_status_ui_loaded,
+  br_permastate_status_ok,
+} br_permastate_status_t;
 
-void br_permastate_save(br_plotter_t* br);
-bool br_permastate_load(br_plotter_t* br);
+
+void                   br_permastate_save(br_plotter_t* br);
+br_permastate_status_t br_permastate_load(br_plotter_t* br);
 
 #ifdef __cplusplus
 }

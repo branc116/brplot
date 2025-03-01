@@ -15,13 +15,6 @@
 #include "src/br_resampling2.h"
 
 static void draw_left_panel(br_plotter_t* gv);
-void br_gui_init_specifics_gui(br_plotter_t* br) {
-  if (false == br->loaded) {
-    br_plotter_add_plot_2d(br);
-    br_plotter_add_plot_3d(br);
-  }
-}
-
 BR_API void br_plotter_draw(br_plotter_t* br) {
   br_plotter_begin_drawing(br);
   brui_resizable_update();

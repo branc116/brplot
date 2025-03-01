@@ -8,14 +8,12 @@
 #include "src/br_theme.h"
 #include "src/br_ui.h"
 
-void br_gui_init_specifics_gui(br_plotter_t* plotter);
 static void* main_gui(void* plotter) {
-  bool use_permastate = true;
   br_plotter_t* br = (br_plotter_t*)plotter;
   br_plotter_init_specifics_platform(br, 1280, 720);
   brui_resizable_init();
-  if (use_permastate) br->loaded = br_permastate_load(br);
-  if (false == br->loaded) {
+  br->loaded_status = br_permastate_load(br);
+  if (br->loaded_status != br_permastate_status_ok) {
     br_datas_deinit(&br->groups);
     br->plots.len = 0;
     br_plotter_add_plot_2d(br);
@@ -27,7 +25,7 @@ static void* main_gui(void* plotter) {
   }
   br->menu_extent_handle = brui_resizable_new(BR_EXTENTI(10, 40, 160, brtl_viewport().height/2), 0); 
   br_icons_init(br->shaders.icon);
-  if (false == br->loaded) {
+  if (br->loaded_status < br_permastate_status_ui_loaded) {
     br_theme_dark();
     br_theme_reset_ui();
   }

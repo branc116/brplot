@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
 
 bool br_permastate_save_plots(br_str_t path_folder, br_plots_t plots) {
   char buff[512]; buff[0]         = '\0';
@@ -215,11 +216,11 @@ error:
 }
 
 bool br_permastate_load_plots(FILE* file, br_plotter_t* br) {
-  size_t plots_len                = 0;
-  uint32_t read_crc               = 0;
-  uint32_t calculated_crc         = 0;
-  br_plot_t* plots                = NULL;
-  size_t read_plots               = 0;
+  size_t plots_len        = 0;
+  uint32_t read_crc       = 0;
+  uint32_t calculated_crc = 0;
+  br_plot_t* plots        = NULL;
+  size_t read_plots       = 0;
 
   if (1 != fread(&plots_len, sizeof(plots_len), 1, file))                          goto error;
   if (plots_len != 0) {
@@ -265,13 +266,13 @@ error:
   return false;
 }
 
-bool br_permastate_load(br_plotter_t* br) {
+br_permastate_status_t br_permastate_load(br_plotter_t* br) {
   char buff[512]               /* = uninitialized */;
   br_str_t path                   = {0};
   FILE* f                         = NULL;
   br_save_state_command_t command = br_save_state_command_save_plots;
   bool file_exists                = false;
-  bool success                    = true;
+  br_permastate_status_t status   = br_permastate_status_ok;
   br_data_descs_t descs           = {0};
 
   if (false == br_fs_get_config_dir(&path))                           goto error;
@@ -286,6 +287,11 @@ bool br_permastate_load(br_plotter_t* br) {
     if (false == br_permastate_load_plotter(f, br, &descs))           goto error;
     fclose(f);
     f = NULL;
+  }
+
+  if (ttyname(STDIN_FILENO) == NULL) {
+    status = br_permastate_status_ui_loaded;
+    goto end;
   }
 
   if (false == br_fs_up_dir(&path))                                   goto error;
@@ -323,7 +329,7 @@ error:
   else if (false == file_exists) LOGE("Tried to open a file that doesn't exists `%s`\n", buff);
   else if (f == NULL)            LOGE("Failed to open a file %s: %d`%s`\n", buff, errno, strerror(errno));
   else                           LOGE("Failed loading permastate %d`%s`\n", errno, strerror(errno));
-  success = false;
+  status = br_permastate_status_failed;
 
 end:
   if (NULL != path.str) br_str_free(path);
@@ -333,6 +339,6 @@ end:
     if (NULL != name.str) br_str_free(name);
   }
   br_da_free(descs);
-  return success;
+  return status;
 }
 
