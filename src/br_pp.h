@@ -92,6 +92,13 @@ void  br_free(void* p);
        LOGF("Exiting"); \
      } \
    } while (0)
+#  define BR_ASSERTF(x, fmt, ...) do { \
+     if (!(x)) { \
+       LOGE("ASSERT FAILED: `" #x "`" fmt, ##__VA_ARGS__); \
+       BR_BREAKPOINT(); \
+       LOGF("Exiting"); \
+     } \
+   } while (0)
 #else
 #  define BR_MALLOC malloc
 #  define BR_CALLOC calloc
@@ -100,6 +107,12 @@ void  br_free(void* p);
 #  define BR_ASSERT(x) do { \
      if (!(x)) { \
        LOGE("ASSERT FAILED: `" #x "`"); \
+       LOGF("Exiting"); \
+     } \
+   } while (0)
+#  define BR_ASSERTF(x, fmt, ...) do { \
+     if (!(x)) { \
+       LOGE("ASSERT FAILED: `" #x "`" fmt, ##__VA_ARGS__); \
        LOGF("Exiting"); \
      } \
    } while (0)

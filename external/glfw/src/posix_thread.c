@@ -25,7 +25,7 @@
 //
 //========================================================================
 
-#include "internal.h"
+#include "external/glfw/src/internal.h"
 
 #if defined(GLFW_BUILD_POSIX_THREAD)
 

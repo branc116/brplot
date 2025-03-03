@@ -1,8 +1,8 @@
-#include "br_shaders.h"
+#include "src/br_shaders.h"
 // cpp -I. -DDEBUG_MACROS -E ./src/shaders.c | sed 's/^#/\/\//' | clang-format > tmp.c
 #if !defined(DEBUG_MACROS)
-#  include "br_pp.h"
-#  include "br_gl.h"
+#  include "src/br_pp.h"
+#  include "src/br_gl.h"
 #  if defined(BR_RELEASE)
 #    if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(_WIN32) || defined(__CYGWIN__)
 #      include ".generated/shaders.h"
@@ -92,7 +92,7 @@ BR_ALL_SHADERS(X, X_VEC, X_BUF)
 #  define FREE_FILE_CONTENT(file)
 #  define FILE_CONTNET_TYPE const char*
 #else
-#  include "br_filesystem.h"
+#  include "src/br_filesystem.h"
 #  define READ_FILE(file_name) br_fs_read(file_name)
 #  define FREE_FILE_CONTENT(file) BR_FREE(file)
 #  define FILE_CONTNET_TYPE char*
@@ -207,11 +207,11 @@ BR_ALL_SHADERS(X, NOP2, NOP2)
 
 #if BR_HAS_SHADER_RELOAD
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
-#  include "desktop/linux/refresh_shaders.c"
+#  include "src/desktop/linux/refresh_shaders.c"
 #elif defined(_WIN32) || defined(__CYGWIN__)
-#  include "desktop/nob/refresh_shaders.c"
+#  include "src/desktop/nob/refresh_shaders.c"
 #elif defined(__EMSCRIPTEN__)
-#  include "web/refresh_shaders.c"
+#  include "src/web/refresh_shaders.c"
 #else
 #  error "Unsupported Platform"
 #endif

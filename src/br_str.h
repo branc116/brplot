@@ -1,5 +1,5 @@
 #pragma once
-#include "br_pp.h"
+#include "src/br_pp.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -70,6 +70,12 @@ void       br_strv_to_c_str1(br_strv_t s, char* out_s);
 br_strv_t  br_strv_from_c_str(const char* s);
 int        br_strv_to_int(br_strv_t str);
 br_strv_t  br_strv_trim_zeros(br_strv_t buff);
+br_strv_t  br_strv_splitrs(br_strv_t buff, br_strv_t split_strv);
+br_strv_t  br_strv_splitr(br_strv_t buff, char splitc);
+br_strv_t  br_strv_splitl(br_strv_t buff, char splitc);
+br_strv_t  br_strv_skip(br_strv_t buff, char to_skip);
+bool       br_strv_starts_with(br_strv_t buff, br_strv_t starts_with);
+int        br_strv_count(br_strv_t buff, char ch);
 
 #if defined(BR_RELEASE)
 char*      br_scrach_get(size_t len);

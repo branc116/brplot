@@ -1,6 +1,6 @@
 #pragma once
-#include "br_pp.h"
-#include "br_str.h"
+#include "src/br_pp.h"
+#include "src/br_str.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -25,7 +25,7 @@
 //
 //========================================================================
 
-#include "internal.h"
+#include "external/glfw/src/internal.h"
 #include "src/br_pp.h"
 
 #include <string.h>

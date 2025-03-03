@@ -1,5 +1,5 @@
 #pragma once
-#include "br_plot.h"
+#include "src/br_plot.h"
 #include "src/br_shaders.h"
 
 #ifdef __cplusplus

@@ -8,7 +8,7 @@
 #include "src/br_tl.h"
 #include "src/br_ui.h"
 
-#include "assert.h"
+#include <assert.h>
 
 static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders);
 static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders);

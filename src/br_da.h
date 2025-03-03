@@ -1,9 +1,9 @@
 #pragma once
+#include "src/br_pp.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-#include "br_pp.h"
 
 #if defined(__cplusplus)
 #  define DECLTYPE(VALUE) std::remove_reference<decltype((VALUE))>::type

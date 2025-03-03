@@ -1,6 +1,7 @@
 #pragma once
-#include "stdbool.h"
-#include "stddef.h"
+
+#include <stdbool.h>
+#include <stddef.h>
 
 static inline float maxf(float a, float b) {
   return a > b ? a : b;

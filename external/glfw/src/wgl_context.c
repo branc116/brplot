@@ -25,7 +25,7 @@
 //
 //========================================================================
 
-#include "internal.h"
+#include "external/glfw/src/internal.h"
 
 #if defined(_GLFW_WIN32)
 

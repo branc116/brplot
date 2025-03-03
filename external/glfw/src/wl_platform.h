@@ -44,8 +44,8 @@ typedef struct VkWaylandSurfaceCreateInfoKHR
 typedef VkResult (APIENTRY *PFN_vkCreateWaylandSurfaceKHR)(VkInstance,const VkWaylandSurfaceCreateInfoKHR*,const VkAllocationCallbacks*,VkSurfaceKHR*);
 typedef VkBool32 (APIENTRY *PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR)(VkPhysicalDevice,uint32_t,struct wl_display*);
 
-#include "xkb_unicode.h"
-#include "posix_poll.h"
+#include "external/glfw/src/xkb_unicode.h"
+#include "external/glfw/src/posix_poll.h"
 
 typedef int (* PFN_wl_display_flush)(struct wl_display* display);
 typedef void (* PFN_wl_display_cancel_read)(struct wl_display* display);

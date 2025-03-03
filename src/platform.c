@@ -150,8 +150,8 @@
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)
 #  include <time.h>
 #elif defined(_WIN32)
-#  include "Windows.h"
-#  include "synchapi.h"
+#  include <Windows.h>
+#  include <synchapi.h>
 #endif
 
 static BR_THREAD_LOCAL br_plotter_t* stl_br = NULL;

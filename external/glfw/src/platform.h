@@ -36,12 +36,12 @@
  #error "You must not define these; define zero or more _GLFW_<platform> macros instead"
 #endif
 
-#include "null_platform.h"
+#include "external/glfw/src/null_platform.h"
 #define GLFW_EXPOSE_NATIVE_EGL
 #define GLFW_EXPOSE_NATIVE_OSMESA
 
 #if defined(_GLFW_WIN32)
- #include "win32_platform.h"
+ #include "external/glfw/src/win32_platform.h"
  #define GLFW_EXPOSE_NATIVE_WIN32
  #define GLFW_EXPOSE_NATIVE_WGL
 #else
@@ -54,7 +54,7 @@
 #endif
 
 #if defined(_GLFW_COCOA)
- #include "cocoa_platform.h"
+ #include "external/glfw/src/cocoa_platform.h"
  #define GLFW_EXPOSE_NATIVE_COCOA
  #define GLFW_EXPOSE_NATIVE_NSGL
 #else
@@ -67,7 +67,7 @@
 #endif
 
 #if defined(_GLFW_WAYLAND)
- #include "wl_platform.h"
+ #include "external/glfw/src/wl_platform.h"
  #define GLFW_EXPOSE_NATIVE_WAYLAND
 #else
  #define GLFW_WAYLAND_WINDOW_STATE
@@ -77,7 +77,7 @@
 #endif
 
 #if defined(_GLFW_X11)
- #include "x11_platform.h"
+ #include "external/glfw/src/x11_platform.h"
  #define GLFW_EXPOSE_NATIVE_X11
  #define GLFW_EXPOSE_NATIVE_GLX
 #else
@@ -134,11 +134,11 @@
 #endif
 
 #if defined(GLFW_BUILD_WIN32_THREAD)
- #include "win32_thread.h"
+ #include "external/glfw/src/win32_thread.h"
  #define GLFW_PLATFORM_TLS_STATE    GLFW_WIN32_TLS_STATE
  #define GLFW_PLATFORM_MUTEX_STATE  GLFW_WIN32_MUTEX_STATE
 #elif defined(GLFW_BUILD_POSIX_THREAD)
- #include "posix_thread.h"
+ #include "external/glfw/src/posix_thread.h"
  #define GLFW_PLATFORM_TLS_STATE    GLFW_POSIX_TLS_STATE
  #define GLFW_PLATFORM_MUTEX_STATE  GLFW_POSIX_MUTEX_STATE
 #endif
@@ -152,13 +152,13 @@
 #endif
 
 #if defined(GLFW_BUILD_WIN32_TIMER)
- #include "win32_time.h"
+ #include "external/glfw/src/win32_time.h"
  #define GLFW_PLATFORM_LIBRARY_TIMER_STATE  GLFW_WIN32_LIBRARY_TIMER_STATE
 #elif defined(GLFW_BUILD_COCOA_TIMER)
- #include "cocoa_time.h"
+ #include "external/glfw/src/cocoa_time.h"
  #define GLFW_PLATFORM_LIBRARY_TIMER_STATE  GLFW_COCOA_LIBRARY_TIMER_STATE
 #elif defined(GLFW_BUILD_POSIX_TIMER)
- #include "posix_time.h"
+ #include "external/glfw/src/posix_time.h"
  #define GLFW_PLATFORM_LIBRARY_TIMER_STATE  GLFW_POSIX_LIBRARY_TIMER_STATE
 #endif
 

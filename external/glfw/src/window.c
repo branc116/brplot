@@ -26,7 +26,7 @@
 //
 //========================================================================
 
-#include "internal.h"
+#include "external/glfw/src/internal.h"
 
 #include <assert.h>
 #include <string.h>

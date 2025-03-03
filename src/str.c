@@ -1,6 +1,7 @@
 #include "src/br_pp.h"
 #include "src/br_str.h"
 
+#include <stdint.h>
 #include <string.h>
 
 br_str_t br_str_malloc(size_t size) {
@@ -272,6 +273,61 @@ br_strv_t br_strv_trim_zeros(const br_strv_t buff) {
     --ret.len;
   }
   return ret;
+}
+
+br_strv_t br_strv_splitrs(br_strv_t buff, br_strv_t split_strv) {
+  for (int i = 0; i < (int)buff.len - (int)split_strv.len; ++i) {
+    for (int j = 0; j < (int)split_strv.len; ++j) {
+      if (buff.str[i + j] != split_strv.str[j]) goto next;
+    }
+    uint32_t offset = (uint32_t)i + split_strv.len;
+    return BR_STRV(buff.str + offset, buff.len - offset);
+next:;
+  }
+  return BR_STRV(buff.str + buff.len, 0);
+}
+
+br_strv_t br_strv_splitr(br_strv_t buff, char splitc) {
+  while (buff.len > 0 && buff.str[0] != splitc) {
+    ++buff.str;
+    --buff.len;
+  }
+
+  if (buff.len > 0) {
+    ++buff.str;
+    --buff.len;
+  }
+  return buff;
+}
+
+br_strv_t br_strv_splitl(br_strv_t buff, char splitc) {
+  br_strv_t og = buff;
+  while (buff.len > 0 && buff.str[0] != splitc) {
+    ++buff.str;
+    --buff.len;
+  }
+  og.len -= buff.len;
+  return og;
+}
+
+br_strv_t br_strv_skip(br_strv_t buff, char to_skip) {
+  while (buff.len > 0 && buff.str[0] == to_skip) {
+    ++buff.str;
+    --buff.len;
+  }
+  return buff;
+}
+
+bool  br_strv_starts_with(br_strv_t buff, br_strv_t starts_with) {
+  if (buff.len < starts_with.len) return false;
+  for (uint32_t i = 0; i < starts_with.len; ++i) if (buff.str[i] != starts_with.str[i]) return false;
+  return true;
+}
+
+int br_strv_count(br_strv_t buff, char ch) {
+  int sum = 0;
+  for (uint32_t i = 0; i < buff.len; ++i) if (buff.str[i] == ch) ++sum;
+  return sum;
 }
 
 static BR_THREAD_LOCAL char*  scrach = NULL;

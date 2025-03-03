@@ -1,15 +1,13 @@
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
 
+#include <errno.h>
 #include <pthread.h>
 #include <stdio.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "unistd.h"
-#include "pthread.h"
-#include "sys/inotify.h"
+#include <sys/inotify.h>
+#include <unistd.h>
 
 static void* watch_shader_change(void* gv) {
   int fd = inotify_init();

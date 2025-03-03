@@ -1,17 +1,17 @@
 #pragma once
-#include "br_data.h"
-#include "br_plot.h"
-#include "br_pp.h"
-#include "br_data_generator.h"
-#include "br_math.h"
-#include "br_theme.h"
+#include "src/br_data.h"
+#include "src/br_plot.h"
+#include "src/br_pp.h"
+#include "src/br_data_generator.h"
+#include "src/br_math.h"
+#include "src/br_theme.h"
 #include "src/br_permastate.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct br_plotter_t;
+typedef struct br_plotter_t br_plotter_t;
 typedef struct q_commands q_commands;
 typedef struct br_text_renderer_t br_text_renderer_t;
 typedef struct GLFWwindow GLFWwindow;

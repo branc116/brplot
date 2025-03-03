@@ -452,8 +452,8 @@ typedef VkBool32 (APIENTRY *PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR)(V
 typedef VkResult (APIENTRY *PFN_vkCreateXcbSurfaceKHR)(VkInstance,const VkXcbSurfaceCreateInfoKHR*,const VkAllocationCallbacks*,VkSurfaceKHR*);
 typedef VkBool32 (APIENTRY *PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR)(VkPhysicalDevice,uint32_t,xcb_connection_t*,xcb_visualid_t);
 
-#include "xkb_unicode.h"
-#include "posix_poll.h"
+#include "external/glfw/src/xkb_unicode.h"
+#include "external/glfw/src/posix_poll.h"
 
 #define GLFW_X11_WINDOW_STATE           _GLFWwindowX11 x11;
 #define GLFW_X11_LIBRARY_WINDOW_STATE   _GLFWlibraryX11 x11;

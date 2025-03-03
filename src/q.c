@@ -1,7 +1,7 @@
-#include "br_q.h"
-#include "br_data.h"
-#include "br_plotter.h"
-#include "br_pp.h"
+#include "src/br_q.h"
+#include "src/br_data.h"
+#include "src/br_plotter.h"
+#include "src/br_pp.h"
 
 #include <stdbool.h>
 #include <stdlib.h>

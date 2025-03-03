@@ -44,7 +44,7 @@
 #endif
 
 #define GLFW_INCLUDE_NONE
-#include "../include/GLFW/glfw3.h"
+#include "external/glfw/include/GLFW/glfw3.h"
 
 #define _GLFW_INSERT_FIRST      0
 #define _GLFW_INSERT_LAST       1
@@ -319,10 +319,10 @@ typedef PFN_vkVoidFunction (APIENTRY * PFN_vkGetInstanceProcAddr)(VkInstance,con
 typedef VkResult (APIENTRY * PFN_vkEnumerateInstanceExtensionProperties)(const char*,uint32_t*,VkExtensionProperties*);
 #define vkGetInstanceProcAddr _glfw.vk.GetInstanceProcAddr
 
-#include "platform.h"
+#include "external/glfw/src/platform.h"
 
 #define GLFW_NATIVE_INCLUDE_NONE
-#include "../include/GLFW/glfw3native.h"
+#include "external/glfw/include/GLFW/glfw3native.h"
 
 // Checks for whether the library has been initialized
 #define _GLFW_REQUIRE_INIT()                         \

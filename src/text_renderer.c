@@ -1,11 +1,11 @@
-#include "br_text_renderer.h"
-#include "br_shaders.h"
-#include "br_pp.h"
-#include "br_da.h"
-#include "br_gl.h"
-#include "br_tl.h"
+#include "src/br_da.h"
+#include "src/br_gl.h"
 #include "src/br_math.h"
+#include "src/br_pp.h"
+#include "src/br_shaders.h"
 #include "src/br_str.h"
+#include "src/br_text_renderer.h"
+#include "src/br_tl.h"
 
 #if defined(__GNUC__) || defined(__CLANG__)
 #  pragma GCC diagnostic push

@@ -1,5 +1,5 @@
-#include "br_filesystem.h"
-#include "br_pp.h"
+#include "src/br_filesystem.h"
+#include "src/br_pp.h"
 #include "src/br_str.h"
 
 #include <stdio.h>
@@ -9,11 +9,11 @@
 
 
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(__MINGW32__)
-#  include "desktop/linux/filesystem.c"
+#  include "src/desktop/linux/filesystem.c"
 #elif defined(_WIN32) || defined(__CYGWIN__)
-#  include "desktop/win/filesystem.c"
+#  include "src/desktop/win/filesystem.c"
 #elif defined(__EMSCRIPTEN__)
-#  include "web/filesystem.c"
+#  include "src/web/filesystem.c"
 #else
 #  error "Unsupported Platform"
 #endif
@@ -105,9 +105,11 @@ uint32_t br_fs_crc(const void* data_p, size_t data_size, uint32_t seed) // Stole
 }
 #endif
 
-char* br_fs_read(const char* path) {
+char* br_fs_read(const char* path, size_t* len) {
   char* content = NULL;
   FILE* file = fopen(path, "rb");
+  long size = 0;
+  *len = 0;
 
   if (file == NULL) {
     LOGE("Failed to open file %s: %s", path, strerror(errno));
@@ -117,7 +119,7 @@ char* br_fs_read(const char* path) {
     LOGE("Failed to seek file %s: %s", path, strerror(errno));
     goto error;
   }
-  long size = ftell(file);
+  size = ftell(file);
   if (-1 == size) {
     LOGE("Failed to get the file size %s: %s", path, strerror(errno));
     goto error;
@@ -143,5 +145,6 @@ error:
   content = NULL;
 done:
   if (file != NULL) fclose(file);
+  *len = (size_t)size;
   return content;
 }
