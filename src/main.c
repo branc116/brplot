@@ -21,8 +21,8 @@ static void* main_gui(void* plotter) {
 }
 
 #if !defined(LIB)
-#include "br_plot.h"
-#include "br_pp.h"
+#include "src/br_plot.h"
+#include "src/br_pp.h"
 
 int main(void) {
   br_plotter_t* br = br_plotter_malloc();
@@ -52,6 +52,5 @@ const char* __asan_default_options(void) {
 #endif
 
 #if defined(LIB)
-#  include "lib.c"
+#  include "src/lib.c"
 #endif
-

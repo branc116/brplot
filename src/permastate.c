@@ -288,11 +288,12 @@ br_permastate_status_t br_permastate_load(br_plotter_t* br) {
     fclose(f);
     f = NULL;
   }
-
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
   if (ttyname(STDIN_FILENO) == NULL) {
     status = br_permastate_status_ui_loaded;
     goto end;
   }
+#endif
 
   if (false == br_fs_up_dir(&path))                                   goto error;
   if (false == br_fs_cd(&path, br_strv_from_literal("plots.br")))     goto error;
