@@ -1,4 +1,5 @@
 #include "src/br_da.h"
+#include "src/br_data.h"
 #include "src/br_math.h"
 #include "src/br_plotter.h"
 #include "src/br_gui_internal.h"
@@ -25,6 +26,8 @@ static void* main_loop(void* plotterv) {
   br_plotter_init(plotter);
   while (plotter->should_close == false) {
     br_plotter_draw(plotter);
+    br_dagens_handle(&plotter->groups, &plotter->dagens, &plotter->plots, brtl_time() + 0.010);
+    br_plotter_frame_end(plotter);
   }
   br_plotter_free(plotter);
   return NULL;
@@ -58,9 +61,10 @@ br_plotter_t* br_plotter_new(br_plotter_ctor_t const* ctor) {
 
   return plotter;
 }
+
 // Platform specific
 void br_plotter_wait(br_plotter_t const* plotter) {
-  while(false == plotter->should_close) sleep(1);
+  while (false == plotter->should_close) sleep(1);
 }
 
 br_plot_ctor_t* br_plot_default_ctor(void) {
@@ -109,76 +113,96 @@ br_data_ctor_t* br_data_default_ctor(void) {
 
 br_data_id br_data_new(br_plotter_t* plotter, br_data_ctor_t const* ctor) {
   br_data_id id = br_datas_get_new_id(&plotter->groups);
-  br_datas_create(&plotter->groups, id, ctor->ctor.kind);
+  q_push(plotter->commands, (q_command){ .type = q_command_new_data, .new_data = { .data_id = id, .kind = ctor->ctor.kind } } );
   return id;
 }
 
-int br_data_add_v1(br_plotter_t* plotter, br_data_id data, float x) {
+int br_data_add_v1(br_plotter_t* plotter, float x, br_data_id data) {
   q_push(plotter->commands, (q_command){ .type = q_command_push_point_y, .push_point_y = { .y = x, .group = data } } );
   return 1;
 }
 
-int br_data_add_v1n(br_plotter_t* plotter, br_data_id data, float const* x, int n) {
+int br_data_add_v1n(br_plotter_t* plotter, float const* x, int n, br_data_id data) {
   int i = 0;
-  for (i = 0; i < n; ++i) br_data_add_v1(plotter, data, x[i]);
+  for (i = 0; i < n; ++i) br_data_add_v1(plotter, x[i], data);
   return i;
 }
 
-int br_data_add_v1ns(br_plotter_t* plotter, br_data_id data, float const* x, int n, int stride, int offset) {
+int br_data_add_v1ns(br_plotter_t* plotter, float const* x, int n, int stride, int offset, br_data_id data) {
   int i = 0, ret = 0;
   n -= n % stride;
-  for (i = offset; i < n; i += stride, ++ret) br_data_add_v1(plotter, data, x[i]);
+  for (i = offset; i < n; i += stride, ++ret) br_data_add_v1(plotter, x[i], data);
   return ret;
 }
 
-int br_data_add_v2(br_plotter_t* plotter, br_data_id data, float x, float y) {
+int br_data_add_v2(br_plotter_t* plotter, float x, float y, br_data_id data) {
   q_push(plotter->commands, (q_command){ .type = q_command_push_point_xy, .push_point_xy = { .x = x, .y = y, .group = data } } );
   return 1;
 }
 
-int br_data_add_v2n(br_plotter_t* plotter, br_data_id data, float const* v, int n) {
+int br_data_add_v2n(br_plotter_t* plotter, float const* v, int n, br_data_id data) {
   int ret = 0;
-  for (int i = 0; i < n; i += 2, ++ret) br_data_add_v2(plotter, data, v[i], v[i + 1]);
+  for (int i = 0; i < n; i += 2, ++ret) br_data_add_v2(plotter, v[i], v[i + 1], data);
   return ret;
 }
 
-int br_data_add_v2ns(br_plotter_t* plotter, br_data_id data, float const* v, int n, int stride, int offset_x, int offset_y) {
+int br_data_add_v2ns(br_plotter_t* plotter, float const* v, int n, int stride, int offset_x, int offset_y, br_data_id data) {
   int ret = 0;
   n -= n % stride;
-  for (int i = 0; i < n; i += stride, ++ret) br_data_add_v2(plotter, data, v[i + offset_x], v[i + offset_y]);
+  for (int i = 0; i < n; i += stride, ++ret) br_data_add_v2(plotter, v[i + offset_x], v[i + offset_y], data);
   return ret;
 }
 
-int br_data_add_v2nd(br_plotter_t* plotter, br_data_id data, float const* xs, float const* ys, int n) {
-  for (int i = 0; i < n; ++i) br_data_add_v2(plotter, data, xs[i], ys[i]);
+int br_data_add_v2nd(br_plotter_t* plotter, float const* xs, float const* ys, int n, br_data_id data) {
+  for (int i = 0; i < n; ++i) br_data_add_v2(plotter, xs[i], ys[i], data);
   return n;
 }
 
-int br_data_add_v2nds(br_plotter_t* plotter, br_data_id data, float const* xs, float const* ys, int n, int stride, int offset_x, int offset_y) {
+int br_data_add_v2nds(br_plotter_t* plotter, float const* xs, float const* ys, int n, int stride, int offset_x, int offset_y, br_data_id data) {
   int ret = 0;
   n -= n % stride;
-  for (int i = 0; i < n; i += stride, ++ret) br_data_add_v2(plotter, data, xs[i + offset_x], ys[i + offset_y]);
+  for (int i = 0; i < n; i += stride, ++ret) br_data_add_v2(plotter, xs[i + offset_x], ys[i + offset_y], data);
   return ret;
 }
 
 static br_plotter_t* g_brplot_br_plotter = NULL;
 
-br_data_id br_simp_plot_v1n(br_data_id data_id, const float *points, int n) {
+static void brp_simp_create_plotter_if_no_exist(void) {
   if (NULL == g_brplot_br_plotter) {
     g_brplot_br_plotter = br_plotter_new(br_plotter_default_ctor());
-    br_plot_new(g_brplot_br_plotter, br_plot_default_ctor());
   }
+}
+
+static br_data_id brp_simp_create_data_if_no_exist(br_data_id data_id) {
   if (data_id <= 0) {
     data_id = br_data_new(g_brplot_br_plotter, br_data_default_ctor());
     for (int i = 0; i < g_brplot_br_plotter->plots.len; ++i) {
       br_da_push_t(int, g_brplot_br_plotter->plots.arr->groups_to_show, data_id);
     }
+  } else if (NULL == br_data_get1(g_brplot_br_plotter->groups, data_id)) {
+    br_datas_create(&g_brplot_br_plotter->groups, data_id, br_data_kind_2d);
+    for (int i = 0; i < g_brplot_br_plotter->plots.len; ++i) {
+      br_da_push_t(int, g_brplot_br_plotter->plots.arr->groups_to_show, data_id);
+    }
   }
-  br_data_add_v1n(g_brplot_br_plotter, data_id, points, n);
   return data_id;
 }
 
-void br_simp_wait(void) {
+br_data_id brp_1(float x, br_data_id data_id) {
+  brp_simp_create_plotter_if_no_exist();
+  data_id = brp_simp_create_data_if_no_exist(data_id);
+  br_data_add_v1(g_brplot_br_plotter, x, data_id);
+  return data_id;
+}
+
+br_data_id brp_1n(const float *points, int n, br_data_id data_id) {
+  brp_simp_create_plotter_if_no_exist();
+  data_id = brp_simp_create_data_if_no_exist(data_id);
+  br_data_add_v1n(g_brplot_br_plotter, points, n, data_id);
+  return data_id;
+}
+
+void brp_wait(void) {
   br_plotter_wait(g_brplot_br_plotter);
 }
 

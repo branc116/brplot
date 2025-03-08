@@ -23,6 +23,7 @@
 #include "src/resampling2.c"
 #include "src/theme.c"
 #include "src/ui.c"
+#include "src/threads.c"
 
 // cc -I. -o brploto tools/unity/brplot.c -lm
 

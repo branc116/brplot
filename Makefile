@@ -77,7 +77,7 @@ endif
 ifeq ($(PLATFORM), LINUX)
 	SHADERS_HEADER= .generated/shaders.h
 	ifeq ($(TYPE), LIB)
-		COMMONFLAGS+= -fPIC -DLIB
+		COMMONFLAGS+= -fPIC -DBR_LIB
 		LD_FLAGS+= -fPIC -shared
 	endif
 	ifeq ($(COMPILER), MUSL)
@@ -127,7 +127,7 @@ else ifeq ($(PLATFORM), WEB)
 	COMPILER= EMCC
 	NOBS+= www/.nob.dir
 	ifeq ($(TYPE), LIB)
-		COMMONFLAGS+= -DLIB
+		COMMONFLAGS+= -DBR_LIB
 		LD_FLAGS+= -sMODULARIZE=1 -sEXPORT_ES6=1
 		OUTPUT= $(shell echo 'www/brplot_$(HEADLESS)_$(CONFIG)_lib.js' | tr '[A-Z]' '[a-z]')
 	else ifeq ($(TYPE), EXE)

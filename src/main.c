@@ -20,7 +20,7 @@ static void* main_gui(void* plotter) {
   return 0;
 }
 
-#if !defined(LIB)
+#if !defined(BR_LIB)
 #include "src/br_plot.h"
 #include "src/br_pp.h"
 
@@ -38,7 +38,6 @@ int main(void) {
 
   return 0;
 }
-#endif
 
 #if defined(__linux__) && defined(BR_DEBUG)
 const char* __asan_default_options(void) {
@@ -51,6 +50,8 @@ const char* __asan_default_options(void) {
 }
 #endif
 
-#if defined(LIB)
+#endif
+
+#if defined(BR_LIB)
 #  include "src/lib.c"
 #endif

@@ -34,6 +34,8 @@
 #if defined(__linux__)
 #  if !defined(BR_NO_X11)
 #    define _GLFW_X11
+#    include "external/X11/cursorfont.h"
+#    include "external/X11/Xmd.h"
 #  endif
 #  if !defined(BR_NO_WAYLAND)
 #    define _GLFW_WAYLAND
@@ -61,8 +63,11 @@
 #  include "external/glfw/src/monitor.c"
 #  include "external/glfw/src/window.c"
 #  include "external/glfw/src/input.c"
+#  include "external/glfw/src/egl_context.c"
+#  include "external/glfw/src/osmesa_context.c"
 #endif
 
+#include "external/glfw/src/x11_window.c"
 
 #if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
 #  include "external/glfw/src/win32_init.c"
@@ -73,8 +78,6 @@
 #  include "external/glfw/src/win32_thread.c"
 #  include "external/glfw/src/wgl_context.c"
 
-#  include "external/glfw/src/egl_context.c"
-#  include "external/glfw/src/osmesa_context.c"
 #  if defined(_GLFW_NULL)
 #    include "external/glfw/src/null_init.c"
 #    include "external/glfw/src/null_monitor.c"
@@ -83,15 +86,6 @@
 #endif
 
 #if defined(__linux__)
-#  include "external/glfw/src/posix_module.c"
-#  include "external/glfw/src/posix_thread.c"
-#  include "external/glfw/src/posix_time.c"
-#  include "external/glfw/src/posix_poll.c"
-#  include "external/glfw/src/xkb_unicode.c"
-
-#  include "external/glfw/src/egl_context.c"
-#  include "external/glfw/src/osmesa_context.c"
-
 #  if defined(_GLFW_WAYLAND)
 #    include "external/glfw/src/wl_init.c"
 #    include "external/glfw/src/wl_monitor.c"
@@ -101,7 +95,6 @@
 #  if defined(_GLFW_X11)
 #    include "external/glfw/src/x11_init.c"
 #    include "external/glfw/src/x11_monitor.c"
-#    include "external/glfw/src/x11_window.c"
 #    include "external/glfw/src/glx_context.c"
 #  endif
 
@@ -110,6 +103,11 @@
 #    include "external/glfw/src/null_monitor.c"
 #    include "external/glfw/src/null_window.c"
 #  endif
+#  include "external/glfw/src/posix_module.c"
+#  include "external/glfw/src/posix_thread.c"
+#  include "external/glfw/src/posix_time.c"
+#  include "external/glfw/src/posix_poll.c"
+#  include "external/glfw/src/xkb_unicode.c"
 #endif
 
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__)
@@ -123,12 +121,15 @@
 #  include "external/glfw/src/x11_monitor.c"
 #  include "external/glfw/src/x11_window.c"
 #  include "external/glfw/src/glx_context.c"
-
-#  include "external/glfw/src/egl_context.c"
-#  include "external/glfw/src/osmesa_context.c"
 #endif
 
 #if defined(__APPLE__)
+#  if defined(__OBJC__)
+#    import <Cocoa/Cocoa.h>
+#  else
+#    include <ApplicationServices/ApplicationServices.h>
+#    include <objc/objc.h>
+#  endif
 #  include <sys/syslimits.h>
 #  include <mach-o/dyld.h>
 #  include "external/glfw/src/posix_module.c"
@@ -138,9 +139,6 @@
 #  include "external/glfw/src/cocoa_window.m"
 #  include "external/glfw/src/cocoa_time.c"
 #  include "external/glfw/src/nsgl_context.m"
-
-#  include "external/glfw/src/egl_context.c"
-#  include "external/glfw/src/osmesa_context.c"
 #endif
 
 #if !defined(_MSC_VER)

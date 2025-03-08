@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #if defined(__cplusplus)
 #  define DECLTYPE(VALUE) std::remove_reference<decltype((VALUE))>::type

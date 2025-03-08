@@ -80,6 +80,7 @@ void handle_all_commands(br_plotter_t* br, q_commands* commands) {
       case q_command_show:          BR_ASSERT(0);
       case q_command_set_name:      br_data_set_name(&br->groups, comm.set_quoted_str.group, comm.set_quoted_str.str);  break;
       case q_command_focus:         br_plots_focus_visible(br->plots, br->groups); break;
+      case q_command_new_data:      br_datas_create(&br->groups, comm.new_data.data_id, comm.new_data.kind); break;
       default:                      LOGE("Unknown command(%zu,%zu): %d\n", commands->read_index, commands->write_index, comm.type); BR_ASSERT(false);
     }
   }

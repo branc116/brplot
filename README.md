@@ -72,8 +72,7 @@ Here are the parameters you can change ( for make, but some are also in cmake ):
 * EMSCRIPTEN - only useful if you are building for webassm ( path to emscripten )
 * PLATFORM   - LINUX | WINDOWS | WEB ( Default LINUX )
 * CONFIG     - RELEASE | DEBUG (Default RELEASE )
-* GUI        - IMGUI | RAYLIB | HEADLESS ( Default IMGUI )
-* TYPE       - EXE | LIB  - ( To create executable or library. Currently only web version can be a library. ) ( Default EXE )
+* TYPE       - EXE | LIB  - ( To create executable or library. ) ( Default EXE )
 
 ## Examples
 I think that more or less all the examples listed on [ttyplot examples](https://github.com/tenox7/ttyplot#examples) should work with brplot ( just replace ttyplot with brplot. )

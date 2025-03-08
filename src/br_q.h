@@ -1,4 +1,5 @@
 #pragma once
+#include "src/br_data.h"
 #include "src/br_pp.h"
 #include "src/br_str.h"
 
@@ -27,7 +28,8 @@ typedef enum {
   q_command_hide,
   q_command_show,
   q_command_set_name,
-  q_command_focus
+  q_command_focus,
+  q_command_new_data
 } q_command_type;
 
 typedef struct q_command {
@@ -68,6 +70,10 @@ typedef struct q_command {
       // Should be freed by UI thread
       br_str_t str;
     } set_quoted_str;
+    struct {
+      int data_id;
+      br_data_kind_t kind;
+    } new_data;
   };
 } q_command;
 

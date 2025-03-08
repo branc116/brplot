@@ -44,7 +44,7 @@ dist/$(PLIB)/libbrplot.so.$(VERSION):
 	cp bin/libbrplot_linux_release_wx_gcc.so $@
 
 dist/$(PBIN)/brplot.$(VERSION):
-	make TYPE=EXE GUI=RAYLIB
+	make TYPE=EXE
 	cp bin/brplot_linux_release_wx_gcc $@
 
 dist/$(PINC)/brplot.h:
