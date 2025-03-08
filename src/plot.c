@@ -1,10 +1,10 @@
-#include "src/br_math.h"
-#include "src/br_plot.h"
-#include "src/br_help.h"
-#include "src/br_gui_internal.h"
-#include "src/br_resampling2.h"
 #include "src/br_da.h"
 #include "src/br_gl.h"
+#include "src/br_gui_internal.h"
+#include "src/br_help.h"
+#include "src/br_math.h"
+#include "src/br_plot.h"
+#include "src/br_resampling2.h"
 #include "src/br_tl.h"
 #include "src/br_ui.h"
 
@@ -42,12 +42,12 @@ void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t grou
       if (br_plot_update_variables_3d(plot, groups, mouse_pos))
         br_keybinding_handle_keys(br, plot);
     } break;
-    default: assert(0);
+    default: BR_ASSERT(0);
   }
 }
 
 bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos) {
-  assert(plot->kind == br_plot_kind_2d);
+  BR_ASSERT(plot->kind == br_plot_kind_2d);
   if (plot->follow) {
     br_extent_t sr = plot->dd.graph_rect;
     br_vec2_t middle = BR_VEC2(sr.x + sr.width/2, sr.y - sr.height/2);
@@ -115,7 +115,7 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_ve
 
 bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos) {
   (void)groups; (void)mouse_pos;
-  assert(plot->kind == br_plot_kind_3d);
+  BR_ASSERT(plot->kind == br_plot_kind_3d);
   if (!plot->mouse_inside_graph) return false;
   if (brtl_mouser_down()) {
     br_vec2_t m = brtl_mouse_delta();
@@ -176,7 +176,7 @@ void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
       shaders->line_3d->uvs.eye_uv = plot->ddd.eye;
       TracyCFrameMarkEnd("update_shader_values_3d");
     } break;
-    default: assert(0);
+    default: BR_ASSERT(0);
   }
 }
 
@@ -195,7 +195,6 @@ br_vec2_t br_plot_2d_get_mouse_position(br_plot_t* plot, br_vec2_t screen_mouse_
 
 void br_plot_update_context(br_plot_t* plot, br_vec2_t mouse_pos) {
   br_extent_t ex = BR_EXTENTI_TOF(plot->cur_extent);
-  plot->mouse_inside_graph = br_col_vec2_extent(ex, BR_VEC2(mouse_pos.x, mouse_pos.y));
   if (plot->kind == br_plot_kind_2d) {
     float aspect = ex.width/ex.height;
     plot->dd.mouse_pos = br_plot_2d_get_mouse_position(plot, mouse_pos);

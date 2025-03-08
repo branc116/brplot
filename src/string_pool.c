@@ -101,6 +101,8 @@ void text_set(string_pool_t* sp, text_t* t, br_strv_t str) {
   memcpy(&sp->pool.str[tn.start_index], str.str, str.len);
 }
 
+#ifndef _MSC_VER
+#include "external/tests.h"
 TEST_CASE(string_pool_init) {
   string_pool_t sp = string_pool();
   text_t t = text_new(&sp);
@@ -123,3 +125,4 @@ TEST_CASE(string_pool_resize) {
   string_pool_deinit(&sp);
   br_str_free(s);
 }
+#endif

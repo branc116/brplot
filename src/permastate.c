@@ -14,7 +14,9 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-#include <unistd.h>
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
+#  include <unistd.h>
+#endif
 
 bool br_permastate_save_plots(br_str_t path_folder, br_plots_t plots) {
   char buff[512]; buff[0]         = '\0';

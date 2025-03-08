@@ -15,6 +15,8 @@
   X(tk_pclose) \
   X(tk_copen) \
   X(tk_cclose) \
+  X(tk_sopen) \
+  X(tk_sclose) \
   X(tk_string) \
   X(tk_ident) \
   X(tk_num) \
@@ -149,6 +151,24 @@ bool get_tokens(br_strv_t filename, tokens_t* tokens) {
         .str = BR_STRV(&source.str[i++], 1),
         .filename = filename,
         .kind = tk_cclose,
+        .line_start = line,
+        .offset = offset++
+      };
+      br_da_push(*tokens, t);
+    } else if (c == '[') {
+      token_t t = { 
+        .str = BR_STRV(&source.str[i++], 1),
+        .filename = filename,
+        .kind = tk_sopen,
+        .line_start = line,
+        .offset = offset++
+      };
+      br_da_push(*tokens, t);
+    } else if (c == ']') {
+      token_t t = { 
+        .str = BR_STRV(&source.str[i++], 1),
+        .filename = filename,
+        .kind = tk_sclose,
         .line_start = line,
         .offset = offset++
       };

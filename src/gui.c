@@ -23,11 +23,11 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
     brui_resizable_t* r = brui_resizable_get(PLOT->extent_handle);
     if (true == r->hidden) continue;
     PLOT->cur_extent = r->cur_extent;
-    if (PLOT->extent_handle == brui_resizable_active()) {
-      br_plot_update_variables(br, PLOT, br->groups, brtl_mouse_pos());
-      br_plot_update_context(PLOT, brtl_mouse_pos());
-    }
+    PLOT->mouse_inside_graph = PLOT->extent_handle == brui_resizable_active();
+    br_plot_update_variables(br, PLOT, br->groups, brtl_mouse_pos());
+    br_plot_update_context(PLOT, brtl_mouse_pos());
     br_plot_update_shader_values(PLOT, &br->shaders);
+
     brgl_enable_framebuffer(PLOT->texture_id, PLOT->cur_extent.width, PLOT->cur_extent.height);
     brgl_clear(BR_COLOR_COMPF(BR_THEME.colors.plot_bg));
     if (PLOT->kind == br_plot_kind_2d) {

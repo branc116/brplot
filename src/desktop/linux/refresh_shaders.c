@@ -1,4 +1,3 @@
-#include "src/br_plot.h"
 #include "src/br_plotter.h"
 
 #include <errno.h>

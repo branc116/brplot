@@ -33,36 +33,35 @@ typedef struct {
 } files_t;
 
 const char* source_files[] = {
-  "test.c"
-//  "src/main.c",
-//  "src/shaders.c",
-//  "src/text_renderer.c",
-//  "src/data_generator.c",
-//  "src/filesystem.c",
-//  "src/gl.c",
-//  "src/graph_utils.c",
-//  "src/gui.c",
-//  "src/help.c",
-//  "src/icons.c",
-//  "src/keybindings.c",
-//  "src/lib.c",
-//  "src/memory.c",
-//  "src/misc",
-//  "src/permastate.c",
-//  "src/plot.c",
-//  "src/read_input.c",
-//  "src/resampling2.c",
-//  "src/smol_mesh.c",
-//  "src/string_pool.c",
-//  "src/theme.c",
-//  "src/threads.c",
-//  "src/ui.c",
-//  "src/plotter.c",
-//  "src/data.c",
-//  "src/q.c",
-//  "src/str.c",
-//  "src/da.c",
-//  "src/platform.c",
+  // "test.c"
+  "src/main.c",
+  "src/shaders.c",
+  "src/text_renderer.c",
+  "src/data_generator.c",
+  "src/filesystem.c",
+  "src/gl.c",
+  "src/graph_utils.c",
+  "src/gui.c",
+  "src/help.c",
+  "src/icons.c",
+  "src/keybindings.c",
+  "src/memory.c",
+  "src/misc",
+  "src/permastate.c",
+  "src/plot.c",
+  "src/read_input.c",
+  "src/resampling2.c",
+  "src/smol_mesh.c",
+  "src/string_pool.c",
+  "src/theme.c",
+  "src/threads.c",
+  "src/ui.c",
+  "src/plotter.c",
+  "src/data.c",
+  "src/q.c",
+  "src/str.c",
+  "src/da.c",
+  "src/platform.c",
 };
 
 files_t to_visit = { 0 };
@@ -193,17 +192,17 @@ int main(void) {
   fill_to_visit();
 
   while (to_visit.len > 0) {
-    visited.len = 0;
     get_tokens(to_visit.arr[to_visit.len - 1], &tokens);
     --to_visit.len;
   }
   LOGI("Found %zu tokens, %zu files visited.", tokens.len, visited.len);
-  const char* out_file_name = ".generated/brplot.h";
+  const char* out_file_name = ".generated/brplot.c";
   FILE* amalgam_file = fopen(out_file_name, "wb");
   for (size_t i = 0; i < tokens.len; ++i) {
     token_t token = tokens.arr[i];
-    if (token.kind == token_kind_include && (USE_EXTERNAL || br_strv_starts_with(token.include_path, BR_STRL(".generated")) || br_strv_starts_with(token.include_path, BR_STRL("src")))) fprintf(amalgam_file, "/* %.*s */", tokens.arr[i].str.len, tokens.arr[i].str.str);
-    else fprintf(amalgam_file, "%.*s", tokens.arr[i].str.len, tokens.arr[i].str.str);
+    if (token.kind == token_kind_include && (USE_EXTERNAL || br_strv_starts_with(token.include_path, BR_STRL(".generated")) || br_strv_starts_with(token.include_path, BR_STRL("src")))) {
+		fprintf(amalgam_file, "/* %.*s */\n", tokens.arr[i].str.len, tokens.arr[i].str.str);
+	} else fprintf(amalgam_file, "%.*s", tokens.arr[i].str.len, tokens.arr[i].str.str);
   }
   fclose(amalgam_file);
   LOGI("Generated: %s", out_file_name);
@@ -211,3 +210,4 @@ int main(void) {
 }
 
 // cc -DBR_DEBUG -Wall -Wextra -Wpedantic -g -I. -o bin/cshl src/filesystem.c src/str.c tools/create_single_header_lib.c && ./bin/cshl 
+// clang -DBR_DEBUG -Wall -Wextra -Wpedantic -g -I. -o bin/cshl.exe src/filesystem.c src/str.c tools/create_single_header_lib.c; ./bin/cshl.exe
