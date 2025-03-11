@@ -1,7 +1,6 @@
 #include "src/br_da.h"
 #include "src/br_gl.h"
 #include "src/br_gui_internal.h"
-#include "src/br_help.h"
 #include "src/br_math.h"
 #include "src/br_plot.h"
 #include "src/br_resampling2.h"
@@ -72,7 +71,7 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_ve
       float mw = -brtl_mouse_scroll().y;
       br_vec2_t old = plot->dd.mouse_pos;
       bool any = false;
-      if (false == help_near_zero(mw)) {
+      if (false == br_float_near_zero(mw)) {
         float mw_scale = (1 + mw/10);
         if (brtl_key_down(BR_KEY_X)) {
           plot->dd.zoom.x *= mw_scale;
@@ -96,11 +95,11 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_ve
       }
     }
     if (false && plot->jump_around) {
-      float t = brtl_time();
-      plot->cur_extent.x += (int)(100.f * sinf(t));
-      plot->cur_extent.y += (int)(77.f * cosf(t));
-      plot->cur_extent.width += (int)(130.f * sinf(t));
-      plot->cur_extent.height += (int)(177.f * cosf(t));
+      double t = brtl_time();
+      plot->cur_extent.x += (int)(100.f * (float)sin(t));
+      plot->cur_extent.y += (int)(77.f * (float)cos(t));
+      plot->cur_extent.width += (int)(130.f * (float)sin(t));
+      plot->cur_extent.height += (int)(177.f * (float)cos(t));
     }
     if (brtl_mouser_down()) {
       br_vec2_t delt = brtl_mouse_delta();

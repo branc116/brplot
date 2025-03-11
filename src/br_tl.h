@@ -21,7 +21,7 @@ bool brtl_mousel_down(void);
 bool brtl_mouser_down(void);
 bool brtl_mousel_pressed(void);
 bool brtl_mouser_pressed(void);
-float brtl_time(void);
+double brtl_time(void);
 float brtl_frame_time(void);
 int brtl_fps(void);
 bool brtl_key_down(int key);

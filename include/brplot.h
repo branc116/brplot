@@ -1,3 +1,4 @@
+#pragma once
 /*
  *  brplot - Author: Branimir Ričko
  *    The MIT License (MIT)

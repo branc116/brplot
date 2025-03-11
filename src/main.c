@@ -4,6 +4,10 @@
 #include "src/br_permastate.h"
 #include "src/br_tl.h"
 
+#if !defined(BR_LIB)
+#include "src/br_plot.h"
+#include "src/br_pp.h"
+
 static void* main_gui(void* plotter) {
   br_plotter_t* br = (br_plotter_t*)plotter;
   br_plotter_init(br);
@@ -20,9 +24,6 @@ static void* main_gui(void* plotter) {
   return 0;
 }
 
-#if !defined(BR_LIB)
-#include "src/br_plot.h"
-#include "src/br_pp.h"
 
 int main(void) {
   br_plotter_t* br = br_plotter_malloc();

@@ -32,6 +32,9 @@ extern struct br_extra_icons_t {
   } edge_r;
 } br_extra_icons;
 
+extern unsigned char const br_font_data[];
+extern long long const br_font_data_size;
+
 void br_icons_init(br_shader_icon_t* shader);
 void br_icons_draw(br_bb_t screen, br_bb_t atlas, br_color_t bg, br_color_t fg, br_bb_t limit, int z);
 void br_icons_deinit(void);

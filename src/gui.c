@@ -47,7 +47,6 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
 
   brgl_enable_framebuffer(0, br->win.size.width, br->win.size.height);
   brgl_clear(BR_COLOR_COMPF(BR_THEME.colors.bg));
-  help_draw_fps(br->text, 0, 0);
 
   brgl_enable_clip_distance();
   brui_begin();
@@ -58,27 +57,26 @@ BR_API void br_plotter_draw(br_plotter_t* br) {
         brui_resizable_push(PLOT->extent_handle);
           brui_img(PLOT->texture_id);
           brui_resizable_t* menu_res = brui_resizable_get(PLOT->menu_extent_handle);
+          int og_text_size = brui_text_size();
+          int icon_size = og_text_size;
           if (menu_res->hidden == true) {
-            if (brui_button_icon(BR_SIZEI(32, 32), br_icons.menu.size_32)) menu_res->hidden = false;
+            if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icons.menu.size_32)) menu_res->hidden = false;
           } else {
             brui_resizable_push(PLOT->menu_extent_handle);
-              int icon_size = 32;
-              int og_text_size = brui_text_size();
               brui_vsplitvp(2, BRUI_SPLITA((float)icon_size), BRUI_SPLITR(1));
                 char* c = br_scrach_get(4096);
                 if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icons.back.size_32)) menu_res->hidden = true;
               brui_vsplit_pop();
-                brui_text_size_set(og_text_size / 2);
+                brui_text_size_set(og_text_size);
                 brui_text_align_set(br_text_renderer_ancor_mid_mid);
                 brui_maxy_set(brui_min_y() + (float)icon_size);
                 brui_textf("%s Plot #%d", PLOT->kind == br_plot_kind_2d ? "2D" : "3D", i);
               brui_vsplit_end();
-              brui_text_size_set(og_text_size);
               brui_text(BR_STRL("_______________________________________________________"));
               if (brui_button(BR_STRL("Remove Plot"))) {
                 to_remove = i;
               }
-              brui_text_size_set(og_text_size/3*2);
+              brui_text_size_set(og_text_size/5*4);
               brui_checkbox(BR_STRL("Follow"), &PLOT->follow);
               for (size_t k = 0; k < br->groups.len; ++k) {
                 bool is_shown = false;

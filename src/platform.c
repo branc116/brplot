@@ -1,10 +1,10 @@
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
 #include "src/br_pp.h"
-#include "src/br_help.h"
 #include "src/br_gl.h"
 #include "src/br_tl.h"
 #include "src/br_q.h"
+#include "src/br_icons.h"
 
 #include <string.h>
 
@@ -155,7 +155,6 @@
 static BR_THREAD_LOCAL br_plotter_t* stl_br = NULL;
 
 static void log_glfw_errors(int level, const char* error);
-static void br_help_sleep(double seconds);
 static void br_glfw_on_scroll(struct GLFWwindow* window, double x, double y);
 static void br_glfw_on_mouse_move(struct GLFWwindow* window, double x, double y);
 static void br_glfw_on_mouse_button(struct GLFWwindow* window, int button, int action, int mods);
@@ -335,8 +334,8 @@ br_vec2_t brtl_mouse_delta(void) {
   return stl_br->mouse.delta;
 }
 
-float brtl_time(void) {
-  return  (float)glfwGetTime();
+double brtl_time(void) {
+  return  glfwGetTime();
 }
 
 float brtl_frame_time(void) {
@@ -367,6 +366,7 @@ bool brtl_key_down(int key) {
   int code = glfwGetKeyScancode(key);
   if (code < 0 || code >= 64) {
     LOGW("Key %d, scancode %d is not valid", key, code);
+    return false;
   }
   return stl_br->key.down[code];
 }
@@ -375,6 +375,7 @@ bool brtl_key_pressed(int key) {
   int code = glfwGetKeyScancode(key);
   if (code < 0 || code >= 64) {
     LOGW("Key %d, scancode %d is not valid", key, code);
+    return false;
   }
   return stl_br->key.pressed[code];
 }
@@ -426,22 +427,3 @@ br_text_renderer_t* brtl_text_renderer(void) {
   return stl_br->text;
 }
 
-static void br_help_sleep(double seconds) {
-  if (seconds <= 0.0) return;
-#if defined(_WIN32) || defined(__MINGW32__) || defined(__CYGWIN__)
-  Sleep((unsigned long)(seconds * 1000.0));
-#endif
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-  struct timespec req = { 0 };
-  time_t sec = (long)seconds;
-  long nsec = ((long)(seconds - (double)sec))*1000000000L;
-  req.tv_sec = sec;
-  req.tv_nsec = nsec;
-
-  // NOTE: Use nanosleep() on Unix platforms... usleep() it's deprecated.
-  while (nanosleep(&req, &req) == -1) continue;
-#endif
-#if defined(__APPLE__)
-  usleep(seconds*1000000.0);
-#endif
-}

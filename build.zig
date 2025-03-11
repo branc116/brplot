@@ -83,7 +83,6 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
         "./src/gl.c",
         "./src/graph_utils.c",
         "./src/gui.c",
-        "./src/help.c",
         "./src/icons.c",
         "./src/keybindings.c",
         "./src/main.c",

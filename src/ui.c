@@ -1,7 +1,6 @@
 #include "src/br_ui.h"
 #include "src/br_icons.h"
 #include "src/br_math.h"
-#include "src/br_help.h"
 #include "src/br_pp.h"
 #include "src/br_str.h"
 #include "src/br_text_renderer.h"
@@ -963,7 +962,6 @@ static void bruir_update_ancors(int index, float dx, float dy, float dw, float d
   // TODO
 }
 
-
 static void bruir_update_extent(int index, br_extenti_t new_ex, bool force) {
   brui_resizable_t res = br_da_get(bruirs, index);
   br_extenti_t old_ex = res.cur_extent;
@@ -971,8 +969,8 @@ static void bruir_update_extent(int index, br_extenti_t new_ex, bool force) {
 
   if (force || br_extenti_eq(new_ex, old_ex) == false) {
     if (index != 0) {
-      new_ex.x = maxi32(mini32(new_ex.x, parent.cur_extent.width - new_ex.width), 0);
-      new_ex.y = maxi32(mini32(new_ex.y, parent.cur_extent.height - new_ex.height), 0);
+      new_ex.x = BR_MAX(BR_MIN(new_ex.x, parent.cur_extent.width - new_ex.width), 0);
+      new_ex.y = BR_MAX(BR_MIN(new_ex.y, parent.cur_extent.height - new_ex.height), 0);
       bool new_is_good = brui_extent_is_good(new_ex, br_da_get(bruirs, res.parent).cur_extent);
       bool old_is_good = brui_extent_is_good(res.cur_extent, br_da_get(bruirs, res.parent).cur_extent);
       if (new_is_good == false && old_is_good == true) return;

@@ -90,8 +90,6 @@ void read_input_main_worker(br_plotter_t* br);
 int  read_input_read_next(void);
 void read_input_stop(void);
 
-void    help_draw_fps(br_text_renderer_t* renderer, int posX, int posY);
-
 min_distances_t min_distances_get(br_vec2_t const* points, size_t points_len, br_vec2_t to);
 void            min_distances_get1(min_distances_t* m, br_vec2_t const* points, size_t points_len, br_vec2_t to);
 

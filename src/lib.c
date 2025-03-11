@@ -1,17 +1,14 @@
 #include "src/br_da.h"
 #include "src/br_data.h"
-#include "src/br_math.h"
 #include "src/br_plotter.h"
 #include "src/br_gui_internal.h"
 #include "src/br_resampling2.h"
 #include "src/br_threads.h"
 #include "src/br_q.h"
-#include "src/br_smol_mesh.h"
 #include "src/br_tl.h"
 #include "include/brplot.h"
 
 #include <unistd.h>
-#include <math.h>
 
 #define VERSION 1
 

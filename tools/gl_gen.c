@@ -113,11 +113,12 @@ static void print_headless_impl(FILE* file, func_t* funcs, size_t len) {
     }
     fprintf(file, ") {\n");
     bool is_void = br_strv_eq(f.ret_type, br_strv_from_literal("void"));
-    if (is_void == true) {
+    if (is_void == false) {
       fprintf(file, "return (%.*s) { 0 };\n", f.ret_type.len, f.ret_type.str);
     }
     fprintf(file, "}\n");
   }
+  fprintf(file, "void brgl_load(void) {}\n");
 }
 
 static void print_tracy_impl(FILE* file, func_t* funcs, size_t len) {
@@ -334,7 +335,7 @@ int main(void) {
   fprintf(file, "#include \"external/glfw/include/GLFW/glfw3.h\"");
   fprintf(file, "\n");
 
-  fprintf(file, "#if !defined(TRACY_ENABLE)\n");
+  fprintf(file, "#if !defined(TRACY_ENABLE) && !defined(HEADLESS)\n");
   print_declarations(file, funcs.arr, funcs.len, NULL);
   print_loader(file, funcs.arr, funcs.len, NULL);
   fprintf(file, "#elif defined(HEADLESS) \n");

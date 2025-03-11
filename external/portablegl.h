@@ -1681,7 +1681,6 @@ PGL_VECTORIZE_VEC(log2f)
 PGL_VECTORIZE_VEC(sqrtf)
 PGL_STATIC_VECTORIZE_VEC(inversesqrtf)
 
-#include "src/br_help.h"
 // 8.3 Common Functions
 //
 static inline float fractf(float x) { return x - floorf(x); }

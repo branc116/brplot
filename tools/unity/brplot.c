@@ -1,11 +1,11 @@
 #define _GNU_SOURCE
+#include "include/brplot.h"
 #include "src/da.c"
 #include "src/data.c"
 #include "src/data_generator.c"
 #include "src/filesystem.c"
 #include "src/graph_utils.c"
 #include "src/gui.c"
-#include "src/help.c"
 #include "src/keybindings.c"
 #include "src/permastate.c"
 #include "src/plot.c"

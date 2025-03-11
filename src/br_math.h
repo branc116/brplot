@@ -4,6 +4,9 @@
 #include <float.h>
 #include <stdbool.h>
 
+#define BR_MAX(X, Y) ((X) > (Y) ? (X) : (Y))
+#define BR_MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+
 #define BR_VEC2(X, Y) ((br_vec2_t) { .x = (X), .y = (Y) })
 #define BR_VEC2I(X, Y) ((br_vec2i_t) { .x = (X), .y = (Y) })
 #define BR_VEC2_TOI(V) ((br_vec2i_t) { .x = (int)(V).x, .y = (int)(V).y })
@@ -201,6 +204,10 @@ static inline float br_float_clamp(float x, float m, float M) {
 
 static inline float br_float_lerp(float from, float to, float factor) {
   return from * (1 - factor) + to * (factor);
+}
+
+static inline bool br_float_near_zero(float value) {
+  return fabsf(value) < 1e-6;
 }
 
 //------------------------br_vec2_t------------------------------

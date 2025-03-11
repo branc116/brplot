@@ -723,7 +723,7 @@ static void lex_step(br_plotter_t* br, lex_state_t* s) {
       } else br_str_push_char(&s->tokens[s->tokens_len].br_str, (char)s->c);
       break;
     default:
-      assert(false);
+      BR_ASSERTF(false, "Bad State: %d", s->state);
   }
 }
 
@@ -784,13 +784,13 @@ void read_input_main_worker(br_plotter_t* gv) {
 #include "src/br_data_generator.h"
 #include "src/br_plotter.h"
 #include "src/br_gui_internal.h"
-#include "src/br_help.h"
+#include "src/br_icons.h"
+#include "src/br_tl.h"
 int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
-  lex_state_t s;
+  lex_state_t s = { 0 };
+  lex_state_init(&s);
   br_plotter_t* br = br_plotter_malloc();
-  br_plotter_init(br, true);
-  br->shaders = br_shaders_malloc();
-  br->text = br_text_renderer_malloc(1024, 1024, br_font_data, &br->shaders.font);
+  br_plotter_init(br);
   for (size_t i = 0; i < str_len;) {
     if (s.read_next) {
       s.c = str[i++];
@@ -798,17 +798,16 @@ int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
     } else s.read_next = true;
     lex_step(br, &s);
     br_plotter_draw(br);
-    br_dagens_handle(&br->groups, &br->dagens, &br->plots, GetTime() + 0.010);
+    br_dagens_handle(&br->groups, &br->dagens, &br->plots, brtl_time() + 0.010);
   }
   s.c = 0;
   while (s.tokens_len > 0) {
     lex_step(br, &s);
     input_tokens_reduce(br, &s, true);
     br_plotter_draw(br);
-    br_dagens_handle(&br->groups, &br->dagens, &br->plots, GetTime() + 0.010);
+    br_dagens_handle(&br->groups, &br->dagens, &br->plots, brtl_time() + 0.010);
   }
   br_plotter_free(br);
-  BR_FREE(br);
   return 0;  // Values other than 0 and -1 are reserved for future use.
 }
 #endif

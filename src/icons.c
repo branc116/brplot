@@ -1,4 +1,5 @@
 #include ".generated/icons.c"
+#include ".generated/default_font.h"
 
 #include "src/br_gl.h"
 #include "src/br_icons.h"
