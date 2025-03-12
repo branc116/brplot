@@ -329,7 +329,7 @@ br_permastate_status_t br_permastate_load(br_plotter_t* br) {
 
 error:
   if (path.str == NULL)          LOGE("Failed to allocatate memory from the plots permastate path\n");
-  else if (false == file_exists) LOGE("Tried to open a file that doesn't exists `%s`\n", buff);
+  else if (false == file_exists) LOGE("Tried to open a file that doesn't exists `%s`: %s\n", buff, strerror(errno));
   else if (f == NULL)            LOGE("Failed to open a file %s: %d`%s`\n", buff, errno, strerror(errno));
   else                           LOGE("Failed loading permastate %d`%s`\n", errno, strerror(errno));
   status = br_permastate_status_failed;

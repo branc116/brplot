@@ -6,10 +6,9 @@ void br_thread_start(void *(*function)(void *), void* args) {
   pthread_create(&thread, &(pthread_attr_t){0}, function, args);
 }
 #elif defined(_WIN32) || defined(__CYGWIN__)
-#define _WIN32_LEAN_AND_MEAN 1
-#define NOGDI 1
-#define NOUSER 1
-#define LPMSG void*
+#if !defined(WIN32_LEAN_AND_MEAN)
+#  define WIN32_LEAN_AND_MEAN 1
+#endif
 #include <windows.h>
 #include <processthreadsapi.h>
 

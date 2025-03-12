@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include "include/brplot.h"
+#include "src/platform.c"
 #include "src/da.c"
 #include "src/data.c"
 #include "src/data_generator.c"
@@ -17,7 +18,6 @@
 #include "src/str.c"
 #include "src/icons.c"
 #include "src/main.c"
-#include "src/platform.c"
 #include "src/gl.c"
 #include "src/text_renderer.c"
 #include "src/resampling2.c"

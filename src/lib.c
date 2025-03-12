@@ -8,7 +8,10 @@
 #include "src/br_tl.h"
 #include "include/brplot.h"
 
-#include <unistd.h>
+
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
+#  include <unistd.h>
+#endif
 
 #define VERSION 1
 
@@ -18,7 +21,7 @@ typedef union {
   br_data_ctor_t data;
 } br_common_ctor;
 
-static void* main_loop(void* plotterv) {
+static BR_THREAD_RET_TYPE main_loop(void* plotterv) {
   br_plotter_t* plotter = plotterv;
   br_plotter_init(plotter);
   while (plotter->should_close == false) {
@@ -27,7 +30,7 @@ static void* main_loop(void* plotterv) {
     br_plotter_frame_end(plotter);
   }
   br_plotter_free(plotter);
-  return NULL;
+  return (BR_THREAD_RET_TYPE)0;
 }
 
 static br_common_ctor ctors[128/8];
@@ -61,7 +64,16 @@ br_plotter_t* br_plotter_new(br_plotter_ctor_t const* ctor) {
 
 // Platform specific
 void br_plotter_wait(br_plotter_t const* plotter) {
-  while (false == plotter->should_close) sleep(1);
+  while (false == plotter->should_close) {
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)
+      sleep(1);
+#elif defined(_WIN32)
+      Sleep(1000);
+#else
+#  error "Sleep not defined on this platform.."
+#endif
+  }
+
 }
 
 br_plot_ctor_t* br_plot_default_ctor(void) {

@@ -111,8 +111,8 @@ static void input_reduce_xy(br_plotter_t* gv, lex_state_t* s) {
 }
 
 static void input_reduce_xyz(br_plotter_t* gv, lex_state_t* s) {
-  if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_xyz, 
-      .push_point_xyz = { 
+  if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_xyz,
+      .push_point_xyz = {
         .group = 0,
         .x = s->tokens[0].value_f,
         .y = s->tokens[2].value_f,
@@ -167,9 +167,6 @@ typedef enum {
   extractor_res_state_xy = extractor_res_state_x | extractor_res_state_y
 } extractor_res_state_t;
 
-#define ERRORF(format, ...) fprintf(stderr, "[ERROR]" format "\n", __VA_ARGS__)
-#define ERROR(format) fprintf(stderr, "[ERROR]" format "\n")
-
 static bool extractor_is_valid(br_strv_t ex) {
   bool is_cap = false;
   bool x_cap = false, y_cap = false;
@@ -186,7 +183,7 @@ static bool extractor_is_valid(br_strv_t ex) {
     }
     else if (is_wild) {
       if (e == '*') {
-        ERRORF("[%zu] Capture is invalid, can't have wild char next to a wild char", i);
+        LOGE("[%zu] Capture is invalid, can't have wild char next to a wild char", i);
         return false;
       }
       is_wild = false;
@@ -195,25 +192,25 @@ static bool extractor_is_valid(br_strv_t ex) {
     else if (is_cap) {
       if (e == 'x') {
         if (x_cap == true) {
-          ERRORF("[%zu] Can't have multiple captures for X!", i);
+          LOGE("[%zu] Can't have multiple captures for X!", i);
           return false;
         }
         x_cap = true;
       } else if (e == 'y') {
         if (y_cap == true) {
-          ERRORF("[%zu] Can't have multiple captures for Y!", i);
+          LOGE("[%zu] Can't have multiple captures for Y!", i);
           return false;
         }
         y_cap = true;
       } else {
-        ERRORF("[%zu] You can only capture x or y! You tryed to capture `%c`", i, e);
+        LOGE("[%zu] You can only capture x or y! You tryed to capture `%c`", i, e);
         return false;
       }
       was_last_extract = true;
       is_cap = false;
     } else if (was_last_extract) {
       if (e == '%') {
-        ERRORF("[%zu] Can't have captures one next to the other. You must have delimiter between them!", i);
+        LOGE("[%zu] Can't have captures one next to the other. You must have delimiter between them!", i);
         return false;
       }
       was_last_extract = false;
@@ -227,19 +224,19 @@ static bool extractor_is_valid(br_strv_t ex) {
     }
   }
   if (is_cap) {
-    ERROR("Extractor ends unfinished. You Are ending it inside of the capture grupe. Capture can only be '%%x' or '%%y'!");
+    LOGE("Extractor ends unfinished. You Are ending it inside of the capture grupe. Capture can only be '%%x' or '%%y'!");
     return false;
   }
   if (is_escape) {
-    ERROR("Extractor ends unfinished. You Are ending it while escaping something!");
+    LOGE("Extractor ends unfinished. You Are ending it while escaping something!");
     return false;
   }
   if (is_wild) {
-    ERROR("Extractor ends unfinished. You Are ending it with wild character.");
+    LOGE("Extractor ends unfinished. You Are ending it with wild character.");
     return false;
   }
   if (x_cap == false && y_cap == false) {
-    ERROR("Your extractor doesn't extract anything. You must specify eather `%%x` or `%%y` as values you want to extract.");
+    LOGE("Your extractor doesn't extract anything. You must specify eather `%%x` or `%%y` as values you want to extract.");
     return false;
   }
   return true;
@@ -757,7 +754,7 @@ static void lex(br_plotter_t* br) {
       s.c = read_input_read_next();
       if (s.c == -1) {
         input_tokens_reduce(br, &s, true);
-        ERROR("Exiting read_input thread");
+        LOGE("Exiting read_input thread");
         break;
       }
       lex_step_extractor(br, &s);

@@ -43,11 +43,6 @@
 // but windows.h assumes no one will define APIENTRY before it does
 #undef APIENTRY
 
-// GLFW on Windows is Unicode only and does not work in MBCS mode
-#ifndef UNICODE
- #define UNICODE
-#endif
-
 // GLFW requires Windows XP or later
 #if WINVER < 0x0501
  #undef WINVER
@@ -344,20 +339,6 @@ typedef BOOL (WINAPI * PFN_wglShareLists)(HGLRC,HGLRC);
 #define wglMakeCurrent _glfw.wgl.MakeCurrent
 #define wglShareLists _glfw.wgl.ShareLists
 
-typedef VkFlags VkWin32SurfaceCreateFlagsKHR;
-
-typedef struct VkWin32SurfaceCreateInfoKHR
-{
-    VkStructureType                 sType;
-    const void*                     pNext;
-    VkWin32SurfaceCreateFlagsKHR    flags;
-    HINSTANCE                       hinstance;
-    HWND                            hwnd;
-} VkWin32SurfaceCreateInfoKHR;
-
-typedef VkResult (APIENTRY *PFN_vkCreateWin32SurfaceKHR)(VkInstance,const VkWin32SurfaceCreateInfoKHR*,const VkAllocationCallbacks*,VkSurfaceKHR*);
-typedef VkBool32 (APIENTRY *PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR)(VkPhysicalDevice,uint32_t);
-
 #define GLFW_WIN32_WINDOW_STATE         _GLFWwindowWin32  win32;
 #define GLFW_WIN32_LIBRARY_WINDOW_STATE _GLFWlibraryWin32 win32;
 #define GLFW_WIN32_MONITOR_STATE        _GLFWmonitorWin32 win32;
@@ -510,10 +491,8 @@ typedef struct _GLFWmonitorWin32
 {
     HMONITOR            handle;
     // This size matches the static size of DISPLAY_DEVICE.DeviceName
-    WCHAR               adapterName[32];
-    WCHAR               displayName[32];
-    char                publicAdapterName[32];
-    char                publicDisplayName[32];
+    char                adapterName[32];
+    char                displayName[32];
     GLFWbool            modesPruned;
     GLFWbool            modeChanged;
 } _GLFWmonitorWin32;
@@ -530,12 +509,9 @@ GLFWbool _glfwConnectWin32(int platformID, _GLFWplatform* platform);
 int _glfwInitWin32(void);
 void _glfwTerminateWin32(void);
 
-WCHAR* _glfwCreateWideStringFromUTF8Win32(const char* source);
-char* _glfwCreateUTF8FromWideStringWin32(const WCHAR* source);
 BOOL _glfwIsWindowsVersionOrGreaterWin32(WORD major, WORD minor, WORD sp);
 BOOL _glfwIsWindows10BuildOrGreaterWin32(WORD build);
 void _glfwInputErrorWin32(int error, const char* description);
-void _glfwUpdateKeyNamesWin32(void);
 
 void _glfwPollMonitorsWin32(void);
 void _glfwSetVideoModeWin32(_GLFWmonitor* monitor, const GLFWvidmode* desired);
@@ -601,7 +577,6 @@ EGLNativeDisplayType _glfwGetEGLNativeDisplayWin32(void);
 EGLNativeWindowType _glfwGetEGLNativeWindowWin32(_GLFWwindow* window);
 
 void _glfwGetRequiredInstanceExtensionsWin32(char** extensions);
-GLFWbool _glfwGetPhysicalDevicePresentationSupportWin32(VkInstance instance, VkPhysicalDevice device, uint32_t queuefamily);
 
 void _glfwFreeMonitorWin32(_GLFWmonitor* monitor);
 void _glfwGetMonitorPosWin32(_GLFWmonitor* monitor, int* xpos, int* ypos);

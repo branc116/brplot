@@ -1,6 +1,6 @@
 #include "src/br_pp.h"
-#include "src/br_filesystem.h"
-#include "src/br_str.h"
+#include "src/filesystem.c"
+#include "src/str.c"
 #include "src/br_da.h"
 
 #include <math.h>
@@ -123,6 +123,7 @@ bool get_tokens(br_strv_t file_name, tokens_t* tokens, int depth) {
             .include_path = name
           };
           br_da_push(*tokens, include_token);
+          LOGI("%*s-%.*s", depth*2, "", name.len, name.str);
 
           const char* next_preq_start = name.str + name.len + 1;
           preq = BR_STRV(next_preq_start, end - next_preq_start + 1);
@@ -216,4 +217,4 @@ int main(void) {
 }
 
 // cc -DBR_DEBUG -Wall -Wextra -Wpedantic -g -I. -o bin/cshl src/filesystem.c src/str.c tools/create_single_header_lib.c && ./bin/cshl 
-// clang -DBR_DEBUG -Wall -Wextra -Wpedantic -g -I. -o bin/cshl.exe src/filesystem.c src/str.c tools/create_single_header_lib.c; ./bin/cshl.exe
+// clang -DBR_DEBUG -Wall -Wextra -Wpedantic -g -I. -o bin/cshl.exe tools/create_single_header_lib.c; ./bin/cshl.exe

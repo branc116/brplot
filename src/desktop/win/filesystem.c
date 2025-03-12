@@ -2,7 +2,7 @@
 #include "src/br_str.h"
 #include "src/br_pp.h"
 
-#include <Windows.h>
+#include <windows.h>
 
 #define IS_SEP(X) (((X) == '/') || ((X) == '\\'))
 
