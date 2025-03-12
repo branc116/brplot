@@ -3,7 +3,6 @@
 #include "src/str.c"
 #include "src/br_da.h"
 
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -216,5 +215,5 @@ int main(void) {
   return 0;
 }
 
-// cc -DBR_DEBUG -Wall -Wextra -Wpedantic -g -I. -o bin/cshl src/filesystem.c src/str.c tools/create_single_header_lib.c && ./bin/cshl 
+// cc -DBR_DEBUG -Wall -Wextra -Wpedantic -g -I. -o bin/cshl tools/create_single_header_lib.c && ./bin/cshl
 // clang -DBR_DEBUG -Wall -Wextra -Wpedantic -g -I. -o bin/cshl.exe tools/create_single_header_lib.c; ./bin/cshl.exe

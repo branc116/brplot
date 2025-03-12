@@ -30,7 +30,7 @@
 #if defined(_WIN32) || defined(__CYGWIN__)
 #  define _GLFW_WIN32
 #  pragma comment(lib, "user32.lib")
-#  pragma comment(lib, "gdi32.lib")
+#  pragma comment(lib, "Gdi32.lib")
 #  pragma comment(lib, "Shell32.lib")
 #endif
 

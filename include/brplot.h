@@ -1,4 +1,3 @@
-#pragma once
 /*
  *  brplot - Author: Branimir Ričko
  *    The MIT License (MIT)
@@ -26,34 +25,36 @@
  *
  * Example of simple API:
  * ```main.c
- *     #define BRPLOT_IMPLEMENTATION
- *     #include "brplot.h"
- *    
- *     int main(void) {
- *        br_data_id id = -1;
- *        for (int i = -10; i < 10; ++i) id = brp_1(i*i, id);
- *        brp_wait();
- *     }
- * ``` Compile as: ```cc main.c```
+      #define BRPLOT_IMPLEMENTATION
+      #include "brplot.c"
+
+      int main(void) {
+         for (int i = -10; i < 10; ++i)           brp_1(y_valuei*i,               0); //          y-value, group_id
+         for (float i = -10.f; i < 10.f; i+=0.1f) brp_2(0.1f*sin(i), 0.1f*cos(i), 2); // x-value, y-value, group_id
+         brp_wait(); // Wait until plot window is closed
+      }
+ * ```
+ * Compile as: cc main.c
  * Functions that are part of simple api can be found by following a tag *SIMPLEAPI*
  *
  * Example of a bit more compilcate API
  * ``` main.c
- *     #define BRPLOT_IMPLEMENTATION
- *     #include "brplot.h"
- *     
- *     int main(void) {
- *       br_plotter_t* plotter = br_plotter_new(br_plotter_default_ctor());
- *       br_plot_id plot = br_plot_new(plotter, br_plot_default_ctor());
- *       br_data_id data = br_data_new(plotter, br_data_default_ctor());
- *       for (int i = -10; i < 10; ++i) br_data_add_v1(plotter, data, 10.f);
- *       br_plotter_wait(plotter);
- *     }
- * ``` Compile as: ```cc main.c```
+       #define BRPLOT_IMPLEMENTATION
+       #include "brplot.h"
+
+       int main(void) {
+         br_plotter_t* plotter = br_plotter_new(br_plotter_default_ctor());
+         br_plot_id plot = br_plot_new(plotter, br_plot_default_ctor());
+         br_data_id data = br_data_new(plotter, br_data_default_ctor());
+         for (int i = -10; i < 10; ++i) br_data_add_v1(plotter, data, 10.f);
+         br_plotter_wait(plotter);
+       }
+ * ```
+ * Compile as: cc main.c
  * Functions that are part of a bit more complicated API can be found by following a tag *ABITMORECOMPILCATED*
  *
  * */
-
+#pragma once
 #define BR_VERSION {0, 0, 1}
 
 #if defined(__GNUC__)
@@ -248,9 +249,8 @@ BR_EXPORT void br_plot_hide_data(br_plotter_t* plotter, br_plot_id plot, br_data
 }
 #endif
 
-#if defined(BRPLOT_IMPLEMENTATION)
-
-#include "src/br_pp.h"
-#include "tools/unity/brplot.c"
-
+// If you just wanna build brplot as an app you have to define this
+#if defined(BRPLOT_IMPLEMENTATION) || defined(BRPLOT_APP)
+#  include "src/br_pp.h"
+#  include "tools/unity/brplot.c"
 #endif

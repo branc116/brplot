@@ -44,10 +44,6 @@
    } \
 } while (0)
 
-#if defined (__linux__) && !defined(_GNU_SOURCE)
-#  define _GNU_SOURCE
-#endif
-
 #if defined(BRPLOT_IMPLEMENTATION)
 #  define BR_LIB
 #endif
@@ -132,6 +128,13 @@ extern "C" {
 #  define BR_THREAD_LOCAL       __thread
 #elif defined(__GNUC__)
 #  define BR_THREAD_LOCAL       __thread
+#endif
+
+#if !defined(_CRT_SECURE_NO_WARNINGS)
+#  define _CRT_SECURE_NO_WARNINGS // Windows bullshit
+#endif
+#if !defined(_GNU_SOURCE)
+#  define _GNU_SOURCE // Linux bullshit
 #endif
 
 #include "external/Tracy/tracy/TracyC.h"

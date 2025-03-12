@@ -65,7 +65,7 @@ br_plotter_t* br_plotter_new(br_plotter_ctor_t const* ctor) {
 // Platform specific
 void br_plotter_wait(br_plotter_t const* plotter) {
   while (false == plotter->should_close) {
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(__CYGWIN__)
       sleep(1);
 #elif defined(_WIN32)
       Sleep(1000);
@@ -182,32 +182,21 @@ static void brp_simp_create_plotter_if_no_exist(void) {
   }
 }
 
-static br_data_id brp_simp_create_data_if_no_exist(br_data_id data_id) {
-  if (data_id <= 0) {
-    data_id = br_data_new(g_brplot_br_plotter, br_data_default_ctor());
-    for (int i = 0; i < g_brplot_br_plotter->plots.len; ++i) {
-      br_da_push_t(int, g_brplot_br_plotter->plots.arr->groups_to_show, data_id);
-    }
-  } else if (NULL == br_data_get1(g_brplot_br_plotter->groups, data_id)) {
-    br_datas_create(&g_brplot_br_plotter->groups, data_id, br_data_kind_2d);
-    for (int i = 0; i < g_brplot_br_plotter->plots.len; ++i) {
-      br_da_push_t(int, g_brplot_br_plotter->plots.arr->groups_to_show, data_id);
-    }
-  }
-  return data_id;
-}
-
 br_data_id brp_1(float x, br_data_id data_id) {
   brp_simp_create_plotter_if_no_exist();
-  data_id = brp_simp_create_data_if_no_exist(data_id);
   br_data_add_v1(g_brplot_br_plotter, x, data_id);
   return data_id;
 }
 
 br_data_id brp_1n(const float *points, int n, br_data_id data_id) {
   brp_simp_create_plotter_if_no_exist();
-  data_id = brp_simp_create_data_if_no_exist(data_id);
   br_data_add_v1n(g_brplot_br_plotter, points, n, data_id);
+  return data_id;
+}
+
+br_data_id brp_2(float x, float y, br_data_id data_id) {
+  brp_simp_create_plotter_if_no_exist();
+  br_data_add_v2(g_brplot_br_plotter, x, y, data_id);
   return data_id;
 }
 
