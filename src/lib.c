@@ -204,3 +204,7 @@ void brp_wait(void) {
   br_plotter_wait(g_brplot_br_plotter);
 }
 
+void brp_focus_all(void) {
+  q_push(g_brplot_br_plotter->commands, (q_command){ .type = q_command_focus} );
+}
+

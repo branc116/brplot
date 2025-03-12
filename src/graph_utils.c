@@ -41,7 +41,7 @@ BR_API void br_plots_focus_visible(br_plots_t plots, br_datas_t const groups) {
 
 BR_API void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups) {
   // TODO 2D/3D
-  assert(plot->kind == br_plot_kind_2d);
+  BR_ASSERT(plot->kind == br_plot_kind_2d);
   if (groups.len == 0) return;
   size_t i = 0;
   while (i < groups.len && (groups.arr[i].kind != br_data_kind_2d || groups.arr[i].len == 0)) ++i;

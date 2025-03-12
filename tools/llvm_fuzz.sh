@@ -7,4 +7,4 @@ clang -I. -fsanitize=fuzzer,address,leak,undefined -DBR_DISABLE_LOG -DBR_LIB -DB
   -fsanitize=shift -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow \
   -Wconversion -Wall -Wpedantic -Wextra -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-newline-eof -Wno-gnu-zero-variadic-macro-arguments \
   -o bin/fuzz_read_input tools/unity/brplot.c
-./bin/fuzz_read_input .generated/corpus
+./bin/fuzz_read_input .generated/corpus -workers=16

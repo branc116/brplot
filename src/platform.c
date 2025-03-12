@@ -66,8 +66,10 @@
 #  include "external/glfw/src/monitor.c"
 #  include "external/glfw/src/window.c"
 #  include "external/glfw/src/input.c"
-#  include "external/glfw/src/egl_context.c"
-#  include "external/glfw/src/osmesa_context.c"
+#  if !defined(_GLFW_NULL)
+#    include "external/glfw/src/egl_context.c"
+#    include "external/glfw/src/osmesa_context.c"
+#  endif
 #endif
 
 #include "external/glfw/src/x11_window.c"
@@ -193,7 +195,9 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
 #endif
     glfwWindowHint(GLFW_AUTO_ICONIFY, 0);
     br->win.glfw = glfwCreateWindow(width, height, "brplot", NULL, NULL);
+#if !defined(HEADLESS)
     glfwMakeContextCurrent(br->win.glfw);
+#endif
     //glfwSwapInterval(1);
   }
 

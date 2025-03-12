@@ -463,7 +463,7 @@ static void input_reduce_command(br_plotter_t* gv, lex_state_t* s) {
     q_push(gv->commands, cmd);
     s->tokens[3].kind = input_token_any;
   } else
-    printf("Execute %c%c%c...\n", s->tokens[1].name[0], s->tokens[1].name[1], s->tokens[1].name[2]);
+    LOGI("Execute %c%c%c...\n", s->tokens[1].name[0], s->tokens[1].name[1], s->tokens[1].name[2]);
 }
 
 static void input_tokens_pop(lex_state_t* s, size_t n) {
