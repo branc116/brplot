@@ -69,6 +69,8 @@ void br_plotter_wait(br_plotter_t const* plotter) {
       sleep(1);
 #elif defined(_WIN32)
       Sleep(1000);
+#elif defined(__EMSCRIPTEN__)
+      // Web don't sleep
 #else
 #  error "Sleep not defined on this platform.."
 #endif
