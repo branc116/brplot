@@ -66,7 +66,7 @@
 #  include "external/glfw/src/monitor.c"
 #  include "external/glfw/src/window.c"
 #  include "external/glfw/src/input.c"
-#  if !defined(_GLFW_NULL)
+#  if !defined(_GLFW_NULL) || !defined(BR_NO_WAYLAND) || !defined(BR_NO_X11)
 #    include "external/glfw/src/egl_context.c"
 #    include "external/glfw/src/osmesa_context.c"
 #  endif
