@@ -20,6 +20,7 @@ typedef enum {
   q_command_push_point_xy,
   q_command_push_point_xyz,
   q_command_pop,
+  q_command_empty,
   q_command_clear,
   q_command_clear_all,
   q_command_screenshot,
@@ -29,6 +30,7 @@ typedef enum {
   q_command_show,
   q_command_set_name,
   q_command_focus,
+  q_command_flush,
   q_command_new_data
 } q_command_type;
 

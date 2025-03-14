@@ -90,9 +90,14 @@ BR_EXPORT br_data_id brp_3ns (float const* v,                                   
 BR_EXPORT br_data_id brp_3nd (float const* xs, float const* ys, float const* zs, int n,                                                       br_data_id data_id);
 BR_EXPORT br_data_id brp_3nds(float const* xs, float const* ys, float const* zs, int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
 
+// Remove all data with data.id == data_id
+BR_EXPORT void brp_clear(br_data_id data_id);
 
 // Resize the plots such that data is visible
 BR_EXPORT void brp_focus_all(void);
+
+// Wait until all previous datapoints are drawn
+BR_EXPORT void brp_flush(void);
 
 // Wait until the plot window is closed
 BR_EXPORT void brp_wait(void);

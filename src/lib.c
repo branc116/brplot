@@ -206,6 +206,14 @@ void brp_wait(void) {
   br_plotter_wait(g_brplot_br_plotter);
 }
 
+void brp_flush(void) {
+  q_push(g_brplot_br_plotter->commands, (q_command){ .type = q_command_flush} );
+}
+
+void brp_empty(br_data_id data_id) {
+  q_push(g_brplot_br_plotter->commands, (q_command){ .type = q_command_empty, .clear = { .group = data_id } } );
+}
+
 void brp_focus_all(void) {
   q_push(g_brplot_br_plotter->commands, (q_command){ .type = q_command_focus} );
 }

@@ -71,6 +71,7 @@ void handle_all_commands(br_plotter_t* br, q_commands* commands) {
       case q_command_push_point_xy: br_data_push_xy(&br->groups, comm.push_point_xy.x, comm.push_point_xy.y, comm.push_point_xy.group); break;
       case q_command_push_point_xyz:br_data_push_xyz(&br->groups, comm.push_point_xyz.x, comm.push_point_xyz.y, comm.push_point_xyz.z, comm.push_point_xyz.group); break;
       case q_command_pop:           break; //TODO
+      case q_command_empty:         br_data_empty(br_data_get(&br->groups, comm.clear.group)); break;
       case q_command_clear:         br_data_clear(&br->groups, &br->plots, comm.clear.group); break;
       case q_command_clear_all:     br_plotter_datas_deinit(br); break;
       case q_command_screenshot:    br_plot_screenshot(br->text, &br->plots.arr[0], &br->shaders, br->groups, comm.path_arg.path); free(comm.path_arg.path); break;
@@ -79,6 +80,7 @@ void handle_all_commands(br_plotter_t* br, q_commands* commands) {
       case q_command_hide:          BR_ASSERT(0);
       case q_command_show:          BR_ASSERT(0);
       case q_command_set_name:      br_data_set_name(&br->groups, comm.set_quoted_str.group, comm.set_quoted_str.str);  break;
+      case q_command_flush:         return;
       case q_command_focus:         br_plots_focus_visible(br->plots, br->groups); break;
       case q_command_new_data:      br_datas_create(&br->groups, comm.new_data.data_id, comm.new_data.kind); break;
       default:                      LOGE("Unknown command(%zu,%zu): %d\n", commands->read_index, commands->write_index, comm.type); BR_ASSERT(false);
@@ -97,7 +99,7 @@ bool q_push_safe(q_commands* q, q_command command) {
 #endif
 
 bool q_push(q_commands* q, q_command command) {
-  if ((q->write_index + 1) % q->capacity == q->read_index) return false;
+  while ((q->write_index + 1) % q->capacity == q->read_index);
   q->commands[q->write_index] = command;
   q->write_index = (q->write_index + 1) % q->capacity;
   return true;
