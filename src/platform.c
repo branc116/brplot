@@ -37,8 +37,6 @@
 #if defined(__linux__)
 #  if !defined(BR_NO_X11)
 #    define _GLFW_X11
-#    include "external/X11/cursorfont.h"
-#    include "external/X11/Xmd.h"
 #  endif
 #  if !defined(BR_NO_WAYLAND)
 #    define _GLFW_WAYLAND
@@ -48,7 +46,13 @@
 #  endif
 #endif
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
-#  define _GLFW_X11
+#  if !defined(BR_NO_X11)
+#    define _GLFW_X11
+#  endif
+#  if defined(HEADLESS)
+#    define _GLFW_NULL
+#  endif
+#  define BR_NO_WAYLAND
 #endif
 #if defined(__APPLE__)
 #  define _GLFW_COCOA
@@ -57,6 +61,17 @@
 #  define _WIN32_WINNT_WINXP      0x0501
 #endif
 
+
+#if defined(_GLFW_X11) || defined(_GLFW_WAYLAND)
+#  include "external/glfw/src/xkb_unicode.h"
+#  include "external/glfw/src/posix_poll.h"
+#endif
+
+#if defined(_GLFW_X11)
+#  include "external/X11/cursorfont.h"
+#  include "external/X11/Xmd.h"
+#  include "external/xkbcommon/xkbcommon.h"
+#endif
 
 #if !defined(__EMSCRIPTEN__)
 // Common modules to all platforms
@@ -82,50 +97,35 @@
 #  include "external/glfw/src/win32_time.c"
 #  include "external/glfw/src/win32_thread.c"
 #  include "external/glfw/src/wgl_context.c"
-
-#  if defined(_GLFW_NULL)
-#    include "external/glfw/src/null_init.c"
-#    include "external/glfw/src/null_monitor.c"
-#    include "external/glfw/src/null_window.c"
-#  endif
 #endif
 
-#if defined(__linux__)
-#  if defined(_GLFW_WAYLAND)
-#    include "external/glfw/src/wl_init.c"
-#    include "external/glfw/src/wl_monitor.c"
-#    include "external/glfw/src/wl_window.c"
-#  endif
-
-#  if defined(_GLFW_X11)
-#    include "external/glfw/src/x11_init.c"
-#    include "external/glfw/src/x11_monitor.c"
-#    include "external/glfw/src/glx_context.c"
-#  endif
-
-#  if defined(_GLFW_NULL)
-#    include "external/glfw/src/null_init.c"
-#    include "external/glfw/src/null_monitor.c"
-#    include "external/glfw/src/null_window.c"
-#  endif
-#  include "external/glfw/src/posix_module.c"
-#  include "external/glfw/src/posix_thread.c"
-#  include "external/glfw/src/posix_time.c"
-#  include "external/glfw/src/posix_poll.c"
-#  include "external/glfw/src/xkb_unicode.c"
-#endif
-
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__)
-#  include "external/glfw/src/posix_module.c"
-#  include "external/glfw/src/posix_thread.c"
-#  include "external/glfw/src/posix_time.c"
-#  include "external/glfw/src/posix_poll.c"
-#  include "external/glfw/src/xkb_unicode.c"
-
+#if defined(_GLFW_X11)
 #  include "external/glfw/src/x11_init.c"
 #  include "external/glfw/src/x11_monitor.c"
-#  include "external/glfw/src/x11_window.c"
 #  include "external/glfw/src/glx_context.c"
+#endif
+
+#if defined(_GLFW_WAYLAND)
+#  include "external/glfw/src/wl_init.c"
+#  include "external/glfw/src/wl_monitor.c"
+#  include "external/glfw/src/wl_window.c"
+#endif
+
+#if defined(_GLFW_NULL)
+#  include "external/glfw/src/null_init.c"
+#  include "external/glfw/src/null_monitor.c"
+#  include "external/glfw/src/null_window.c"
+#endif
+
+#if defined(__APPLE__) || defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__)
+#  include "external/glfw/src/posix_module.c"
+#  include "external/glfw/src/posix_thread.c"
+#endif
+
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__)
+#  include "external/glfw/src/posix_time.c"
+#  include "external/glfw/src/posix_poll.c"
+#  include "external/glfw/src/xkb_unicode.c"
 #endif
 
 #if defined(__APPLE__)
@@ -137,8 +137,6 @@
 #  endif
 #  include <sys/syslimits.h>
 #  include <mach-o/dyld.h>
-#  include "external/glfw/src/posix_module.c"
-#  include "external/glfw/src/posix_thread.c"
 #  include "external/glfw/src/cocoa_init.m"
 #  include "external/glfw/src/cocoa_monitor.m"
 #  include "external/glfw/src/cocoa_window.m"
