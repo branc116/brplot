@@ -57,8 +57,13 @@
 #pragma once
 #define BR_VERSION {0, 0, 1}
 
-#if defined(__GNUC__)
+#if defined(__EMSCRIPTEN__)
+#  include <emscripten.h>
+#  define BR_EXPORT EMSCRIPTEN_KEEPALIVE
+#elif defined(__GNUC__)
 #  define BR_EXPORT __attribute__((visibility ("default")))
+#elif defined(_WIN32)
+#  define BR_EXPORT __declspec(dllexport)
 #else
 #  define BR_EXPORT
 #endif
@@ -90,8 +95,8 @@ BR_EXPORT br_data_id brp_3ns (float const* v,                                   
 BR_EXPORT br_data_id brp_3nd (float const* xs, float const* ys, float const* zs, int n,                                                       br_data_id data_id);
 BR_EXPORT br_data_id brp_3nds(float const* xs, float const* ys, float const* zs, int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
 
-// Remove all data with data.id == data_id
-BR_EXPORT void brp_clear(br_data_id data_id);
+// Remove all data in data.id == data_id
+BR_EXPORT void brp_empty(br_data_id data_id);
 
 // Resize the plots such that data is visible
 BR_EXPORT void brp_focus_all(void);

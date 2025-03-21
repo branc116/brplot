@@ -81,28 +81,28 @@ typedef struct {
 
 void br_data_construct(void);
 int br_datas_get_new_id(br_datas_t* datas);
-BR_API br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind);
-BR_API br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind);
-BR_API br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, br_color_t color, size_t cap, br_str_t name);
-BR_API br_data_t* br_data_get(br_datas_t* pg_array, int group);
-BR_API br_data_t* br_data_get1(br_datas_t pg, int group);
-BR_API br_data_t* br_data_get2(br_datas_t* pg_array, int group, br_data_kind_t kind);
-BR_API void br_data_set_name(br_datas_t* pg_array, int group, br_str_t name);
-BR_API void br_data_push_y(br_datas_t* pg, float y, int group);
-BR_API void br_data_push_x(br_datas_t* pg, float x, int group);
-BR_API void br_data_push_xy(br_datas_t* pg, float x, float y, int group);
-BR_API void br_data_push_xyz(br_datas_t* pg, float x, float y, float z, int group);
+br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind);
+br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind);
+br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, br_color_t color, size_t cap, br_str_t name);
+br_data_t* br_data_get(br_datas_t* pg_array, int group);
+br_data_t* br_data_get1(br_datas_t pg, int group);
+br_data_t* br_data_get2(br_datas_t* pg_array, int group, br_data_kind_t kind);
+void br_data_set_name(br_datas_t* pg_array, int group, br_str_t name);
+void br_data_push_y(br_datas_t* pg, float y, int group);
+void br_data_push_x(br_datas_t* pg, float x, int group);
+void br_data_push_xy(br_datas_t* pg, float x, float y, int group);
+void br_data_push_xyz(br_datas_t* pg, float x, float y, float z, int group);
 // TODO: this should be br_plotter_clear_data()
-BR_API void br_data_clear(br_datas_t* pg, br_plots_t* plots, int group_id);
+void br_data_clear(br_datas_t* pg, br_plots_t* plots, int group_id);
 // Only remove all points from a group, don't remove the group itself.
-BR_API void br_data_empty(br_data_t* pg);
+void br_data_empty(br_data_t* pg);
 void br_data_export(br_data_t const* pg, FILE* file);
 void br_data_export_csv(br_data_t const* pg, FILE* file);
 void br_datas_draw(br_datas_t pg_array, br_plot_t* shader, br_shaders_t* shaders);
 void br_datas_add_test_points(br_datas_t* pg_array);
 void br_datas_deinit(br_datas_t* pg_array);
 // Only remove all points from all groups, don't remove groups themselfs.
-BR_API void br_datas_empty(br_datas_t* pg_array);
+void br_datas_empty(br_datas_t* pg_array);
 void br_datas_export(br_datas_t const* pg_array, FILE* file);
 void br_datas_export_csv(br_datas_t const* pg_array, FILE* file);
 br_color_t br_data_get_default_color(int group_id);

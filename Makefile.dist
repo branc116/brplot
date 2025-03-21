@@ -52,3 +52,21 @@ dist/$(PINC)/brplot.h:
 
 dist/$(PREFIX)/share/licenses/brplot/LICENSE: LICENSE external/LICENCES
 	cat $^ > $@
+
+.PHONY: pip
+pip: packages/pip/LICENSE packages/pip/README.md packages/pip/pyproject.toml packages/pip/src/brplot.c
+	python -m build packages/pip
+	echo "Build pip done"
+
+packages/pip/LICENSE: dist/$(PREFIX)/share/licenses/brplot/LICENSE
+	cp $^ $@
+
+packages/pip/README.md: README.md
+	cp $^ $@
+
+packages/pip/pyproject.toml: packages/pip/pyproject.toml.in include/brplot.h
+	cat packages/pip/pyproject.toml.in | sed 's/{VERSION}/$(VERSION)/' > packages/pip/pyproject.toml
+
+packages/pip/src/brplot.c: .generated/brplot.c
+	cp $^ $@
+

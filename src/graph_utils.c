@@ -5,7 +5,7 @@
 #include <assert.h>
 
 // TODO: rename to br_plot_
-BR_API void br_plotter_set_bottom_left(br_plot_t* plot, float left, float bottom) {
+void br_plotter_set_bottom_left(br_plot_t* plot, float left, float bottom) {
   // TODO 2D/3D
   assert(plot->kind == br_plot_kind_2d);
   br_vec2_t bl = BR_VEC2(left, bottom);
@@ -18,7 +18,7 @@ BR_API void br_plotter_set_bottom_left(br_plot_t* plot, float left, float bottom
   plot->dd.offset.y -= (newHeight - plot->dd.graph_rect.height) / 2.f;
 }
 
-BR_API void br_plotter_set_top_right(br_plot_t* plot, float right, float top) {
+void br_plotter_set_top_right(br_plot_t* plot, float right, float top) {
   // TODO 2D/3D
   assert(plot->kind == br_plot_kind_2d);
   br_vec2_t tr = BR_VEC2(right, top);
@@ -31,7 +31,7 @@ BR_API void br_plotter_set_top_right(br_plot_t* plot, float right, float top) {
   plot->dd.offset.y += (newHeight - plot->dd.graph_rect.height) / 2.f;
 }
 
-BR_API void br_plots_focus_visible(br_plots_t plots, br_datas_t const groups) {
+void br_plots_focus_visible(br_plots_t plots, br_datas_t const groups) {
   for (int i = 0; i < plots.len; ++i) {
     if (plots.arr[i].kind != br_plot_kind_2d) continue;
     br_plot_focus_visible(&plots.arr[i], groups);
@@ -39,7 +39,7 @@ BR_API void br_plots_focus_visible(br_plots_t plots, br_datas_t const groups) {
   }
 }
 
-BR_API void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups) {
+void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups) {
   // TODO 2D/3D
   BR_ASSERT(plot->kind == br_plot_kind_2d);
   if (groups.len == 0) return;

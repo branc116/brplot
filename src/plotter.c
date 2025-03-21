@@ -22,7 +22,7 @@
 
 context_t context;
 
-BR_API br_plotter_t* br_plotter_malloc(void) {
+br_plotter_t* br_plotter_malloc(void) {
   br_resampling2_construct();
   br_data_construct();
   br_plotter_t* br = BR_MALLOC(sizeof(br_plotter_t));
@@ -60,7 +60,7 @@ BR_API br_plotter_t* br_plotter_malloc(void) {
   return br;
 }
 
-BR_API void br_plotter_init(br_plotter_t* br) {
+void br_plotter_init(br_plotter_t* br) {
   br_plotter_init_specifics_platform(br, 1280, 720);
   brui_resizable_init();
   br->loaded_status = br_permastate_load(br);
@@ -83,7 +83,7 @@ BR_API void br_plotter_init(br_plotter_t* br) {
   bruir_resizable_refresh(0);
 }
 
-BR_API void br_plotter_free(br_plotter_t* br) {
+void br_plotter_free(br_plotter_t* br) {
   read_input_stop();
   br_permastate_save(br);
   br_icons_deinit();
@@ -100,16 +100,16 @@ BR_API void br_plotter_free(br_plotter_t* br) {
 }
 
 
-BR_API void br_plotter_resize(br_plotter_t* br, float width, float height) {
+void br_plotter_resize(br_plotter_t* br, float width, float height) {
   (void)br;
   brtl_window_size_set((int)width, (int)height);
 }
 
-BR_API br_datas_t* br_plotter_get_br_datas(br_plotter_t* br) {
+br_datas_t* br_plotter_get_br_datas(br_plotter_t* br) {
   return &br->groups;
 }
 
-BR_API void br_plotter_switch_2d(br_plotter_t* br) {
+void br_plotter_switch_2d(br_plotter_t* br) {
   if (false == br->any_2d) {
     br->active_plot_index = br_plotter_add_plot_2d(br);
     br->switch_to_active = true;
@@ -124,7 +124,7 @@ BR_API void br_plotter_switch_2d(br_plotter_t* br) {
   BR_ASSERT(0);
 }
 
-BR_API void br_plotter_switch_3d(br_plotter_t* br) {
+void br_plotter_switch_3d(br_plotter_t* br) {
   if (false == br->any_3d) {
     br->active_plot_index = br_plotter_add_plot_3d(br);
     br->switch_to_active = true;
@@ -200,7 +200,7 @@ void br_plotter_remove_plot(br_plotter_t* br, int plot_index) {
   --br->plots.len;
 }
 
-BR_API void br_plotter_frame_end(br_plotter_t* br) {
+void br_plotter_frame_end(br_plotter_t* br) {
   for (size_t i = 0; i < br->groups.len; ++i) {
     if (br->groups.arr[i].is_new == false) continue;
     for (int j = 0; j < br->plots.len; ++j) {

@@ -55,13 +55,6 @@
 #  define BR_RELEASE
 #endif
 
-#if defined(__EMSCRIPTEN__)
-#  include <emscripten.h>
-#  define BR_API EMSCRIPTEN_KEEPALIVE
-#else
-#  define BR_API
-#endif
-
 #if defined(BR_DEBUG) && !defined(__linux__) && defined(UNIT_TEST)
    // IT don't work on windows....
 #  undef UNIT_TEST

@@ -44,7 +44,7 @@ int br_datas_get_new_id(br_datas_t *datas) {
   return max;
 }
 
-BR_API br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind) {
+br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind) {
   br_data_t data;
   if (NULL == br_data_init(&data, group_id, kind)) return NULL;
   size_t index = datas->len;
@@ -56,7 +56,7 @@ BR_API br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_
   return &datas->arr[index];
 }
 
-BR_API br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, br_color_t color, size_t cap, br_str_t name) {
+br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, br_color_t color, size_t cap, br_str_t name) {
   BR_ASSERT(kind == br_data_kind_2d || kind == br_data_kind_3d);
   br_data_t* ret = NULL;
 
@@ -82,27 +82,27 @@ error:
   return NULL;
 }
 
-BR_API void br_data_push_y(br_datas_t* pg_array, float y, int group) {
+void br_data_push_y(br_datas_t* pg_array, float y, int group) {
   br_data_t* pg = br_data_get(pg_array, group);
   if (pg == NULL) return;
   float x = pg->len == 0 ? 0.f : (pg->dd.xs[pg->len - 1] + 1.f);
   br_data_push_point2(pg, (br_vec2_t){ .x = x, .y = y });
 }
 
-BR_API void br_data_push_x(br_datas_t* pg_array, float x, int group) {
+void br_data_push_x(br_datas_t* pg_array, float x, int group) {
   br_data_t* pg = br_data_get(pg_array, group);
   if (pg == NULL) return;
   float y = pg->len == 0 ? 0.f : (pg->dd.ys[pg->len - 1] + 1.f);
   br_data_push_point2(pg, (br_vec2_t){ .x = x, .y = y });
 }
 
-BR_API void br_data_push_xy(br_datas_t* pg_array, float x, float y, int group) {
+void br_data_push_xy(br_datas_t* pg_array, float x, float y, int group) {
   br_data_t* pg = br_data_get(pg_array, group);
   if (pg == NULL) return;
   br_data_push_point2(pg, (br_vec2_t){ .x = x, .y = y });
 }
 
-BR_API void br_data_push_xyz(br_datas_t* pg_array, float x, float y, float z, int group) {
+void br_data_push_xyz(br_datas_t* pg_array, float x, float y, float z, int group) {
   br_data_t* pg = br_data_get2(pg_array, group, br_data_kind_3d);
   if (pg == NULL) return;
   br_data_push_point3(pg, (br_vec3_t){ .x = x, .y = y, .z = z });
@@ -115,7 +115,7 @@ BR_API void br_data_push_xyz(br_datas_t* pg_array, float x, float y, float z, in
 //  br_data_empty(data);
 //}
 
-BR_API void br_data_empty(br_data_t* pg) {
+void br_data_empty(br_data_t* pg) {
   pg->len = 0;
   resampling2_empty(pg->resampling);
 }
@@ -124,7 +124,7 @@ static int br_data_compare(const void* data1, const void* data2) {
   return ((br_data_t*)data1)->group_id - ((br_data_t*)data2)->group_id;
 }
 
-BR_API void br_data_clear(br_datas_t* pg, br_plots_t* plots, int group_id) {
+void br_data_clear(br_datas_t* pg, br_plots_t* plots, int group_id) {
   for (size_t i = 0; i < pg->len; ++i) {
     if (pg->arr[i].group_id != group_id) continue;
     br_data_deinit(&pg->arr[i]);
@@ -206,7 +206,7 @@ void br_datas_deinit(br_datas_t* arr) {
   br_da_free(*arr);
 }
 
-BR_API void br_datas_empty(br_datas_t* pg) {
+void br_datas_empty(br_datas_t* pg) {
   for (size_t i = 0; i < pg->len; ++i) br_data_empty(&pg->arr[i]);
 }
 
@@ -360,17 +360,17 @@ bool br_data_realloc(br_data_t* data, size_t new_cap) {
   return true;
 }
 
-BR_API br_data_t* br_data_get1(br_datas_t pg, int group) {
+br_data_t* br_data_get1(br_datas_t pg, int group) {
   for (size_t i = 0; i < pg.len; ++i) if (pg.arr[i].group_id == group)
     return &pg.arr[i];
   return NULL;
 }
 
-BR_API br_data_t* br_data_get(br_datas_t* pg, int group) {
+br_data_t* br_data_get(br_datas_t* pg, int group) {
   return br_data_get2(pg, group, br_data_kind_2d);
 }
 
-BR_API br_data_t* br_data_get2(br_datas_t* pg, int group, br_data_kind_t kind) {
+br_data_t* br_data_get2(br_datas_t* pg, int group, br_data_kind_t kind) {
   BR_ASSERT(pg);
 
   // TODO: da
@@ -404,7 +404,7 @@ BR_API br_data_t* br_data_get2(br_datas_t* pg, int group, br_data_kind_t kind) {
   return br_data_get2(pg, group, kind);
 }
 
-BR_API void br_data_set_name(br_datas_t* pg, int group, br_str_t name) {
+void br_data_set_name(br_datas_t* pg, int group, br_str_t name) {
   br_data_t* g = br_data_get(pg, group);
   if (pg == NULL) return;
   br_str_free(g->name);

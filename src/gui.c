@@ -15,7 +15,7 @@
 #include "src/br_resampling2.h"
 
 static void draw_left_panel(br_plotter_t* gv);
-BR_API void br_plotter_draw(br_plotter_t* br) {
+void br_plotter_draw(br_plotter_t* br) {
   br_plotter_begin_drawing(br);
   brui_resizable_update();
   for (int i = 0; i < br->plots.len; ++i) {
