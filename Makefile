@@ -324,7 +324,6 @@ $(PREFIX_BUILD)/%.json:%.c
 	echo '},' >> $@
 
 -include $(MAKE_INCLUDES)
--include Makefile.dist
 
 %nob.dir:
 	@mkdir -p $(dir $@)
