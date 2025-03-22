@@ -8,7 +8,7 @@ PREFIX= brplot
 PLIB= $(PREFIX)/lib
 PBIN= $(PREFIX)/bin
 PINC= $(PREFIX)/include
-DIRS= dist dist/$(PREFIX) dist/$(PLIB) dist/$(PBIN) dist/$(PINC) dist/$(PREFIX)/share dist/$(PREFIX)/share/licenses dist/$(PREFIX)/share/licenses/brplot
+DIRS= packages/pip/src packages/pip/src/brplot dist dist/$(PREFIX) dist/$(PLIB) dist/$(PBIN) dist/$(PINC) dist/$(PREFIX)/share dist/$(PREFIX)/share/licenses dist/$(PREFIX)/share/licenses/brplot
 $(shell rm dist -rdf)
 A= $(foreach a,$(DIRS), test -d $(a) || mkdir $(a);)
 $(shell $(A))
@@ -54,8 +54,8 @@ dist/$(PREFIX)/share/licenses/brplot/LICENSE: LICENSE external/LICENCES
 	cat $^ > $@
 
 .PHONY: pip
-pip: packages/pip/LICENSE packages/pip/README.md packages/pip/pyproject.toml packages/pip/src/brplot.c
-	python -m build packages/pip
+pip: packages/pip/LICENSE packages/pip/README.md packages/pip/pyproject.toml packages/pip/src/brplot/brplot.c
+	python -m build -s packages/pip
 	echo "Build pip done"
 
 packages/pip/LICENSE: dist/$(PREFIX)/share/licenses/brplot/LICENSE
@@ -67,6 +67,6 @@ packages/pip/README.md: README.md
 packages/pip/pyproject.toml: packages/pip/pyproject.toml.in include/brplot.h
 	cat packages/pip/pyproject.toml.in | sed 's/{VERSION}/$(VERSION)/' > packages/pip/pyproject.toml
 
-packages/pip/src/brplot.c: .generated/brplot.c
+packages/pip/src/brplot/brplot.c: .generated/brplot.c
 	cp $^ $@
 

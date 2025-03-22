@@ -218,3 +218,6 @@ void brp_focus_all(void) {
   q_push(g_brplot_br_plotter->commands, (q_command){ .type = q_command_focus} );
 }
 
+#if defined(BR_PYTHON_BULLSHIT)
+BR_EXPORT void* PyInit_brplot(void) { return NULL; }
+#endif
