@@ -395,6 +395,7 @@ sudo rm /usr/bin/brplot
   * Current implementation runs each extractor one by one. Think of a way to run then in lock step.
 * Turn on or off datasets
     * Icons for checkboxes
+* csht should genereate makefile dependency list
 
 ## Screenshots
 Here is a history of how brplot looked over time:
