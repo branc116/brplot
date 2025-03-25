@@ -37,16 +37,15 @@
 #if !defined(_MSC_VER)
 
 TEST_CASE(free_list_test) {
-  typedef struct {
+  struct {
     int* arr;
     int* free_arr;
     int len, cap;
     int free_len;
     int free_next;
-  } ints;
-
-  ints is = { 0 };
-  int one_handle = brfl_push(&is, 1);
+  } is = { 0 };
+  int in_hangle = 0;
+  int one_handle = brfl_push(&is, 1, in_handle);
   TEST_EQUAL(one_handle, 0);
   int two_handle = brfl_push(&is, 2);
   TEST_EQUAL(one_handle, 1);

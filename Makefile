@@ -11,7 +11,7 @@ PLATFORM  ?= LINUX
 HEADLESS  ?= NO
 # EXE | LIB
 TYPE      ?= EXE
-NATIVE_CC ?= gcc
+NATIVE_CC ?= cc
 
 # Only flags for linux development
 ifeq ($(PLATFORM), LINUX)
@@ -38,7 +38,7 @@ SOURCE             = src/main.c           src/ui.c         src/data.c        src
 										 src/keybindings.c    src/str.c        src/resampling2.c src/graph_utils.c src/shaders.c src/plotter.c    \
 										 src/plot.c           src/permastate.c src/filesystem.c  src/gui.c         src/text_renderer.c \
 										 src/data_generator.c src/platform.c   src/threads.c     src/gl.c          src/icons.c   src/theme.c \
-										 src/string_pool.c
+										 src/string_pool.c    src/free_list.c
 COMMONFLAGS        = -I. -MMD -MP -fvisibility=hidden -std=gnu11
 WARNING_FLAGS      = -Wconversion -Wall -Wextra -Wshadow -D_GNU_SOURCE -Wno-gnu-folding-constant
 LD_FLAGS           =
@@ -283,10 +283,18 @@ bin/pack_icons: tools/pack_icons.c $(NOBS)
 	$(NATIVE_CC) -I. -O0 -o bin/pack_icons tools/pack_icons.c -lm
 
 .generated/gl.c: bin/gl_gen
-	bin/gl_gen
+	bin/gl_gen 
 
 bin/gl_gen: tools/gl_gen.c $(NOBS)
 	$(NATIVE_CC) -I. -O0 -ggdb -g3 -o bin/gl_gen tools/gl_gen.c src/str.c
+
+.generated/brplot.c: bin/cshl
+	./bin/cshl
+-include .generated/brplot.c.d
+
+bin/cshl: tools/create_single_header_lib.c
+	$(NATIVE_CC) -I. -O3 -o bin/cshl  tools/create_single_header_lib.c
+
 
 .PHONY: bench
 bench: bin/bench
@@ -324,6 +332,7 @@ $(PREFIX_BUILD)/%.json:%.c
 	echo '},' >> $@
 
 -include $(MAKE_INCLUDES)
+-include Makefile.dist
 
 %nob.dir:
 	@mkdir -p $(dir $@)

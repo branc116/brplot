@@ -1,5 +1,10 @@
 #pragma once
 
+#if defined(__clang__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#endif
+
 // --------------------------------------------- DEFINES ---------------------------------------------
 
 #if !defined(BR_DISABLE_LOG)

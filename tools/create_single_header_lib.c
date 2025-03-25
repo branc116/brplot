@@ -198,20 +198,36 @@ int main(void) {
     --to_visit.len;
   }
   LOGI("Found %zu tokens, %zu files visited.", tokens.len, visited.len);
-  const char* out_file_name = ".generated/brplot.c";
-  FILE* amalgam_file = fopen(out_file_name, "wb");
-  for (size_t i = 0; i < tokens.len; ++i) {
-    token_t token = tokens.arr[i];
-    if (token.kind == token_kind_include) {
-      fprintf(amalgam_file, "/* %.*s */\n", tokens.arr[i].str.len, tokens.arr[i].str.str);
-    } else if (token.kind == token_kind_include_system) {
-      fprintf(amalgam_file, "%.*s", tokens.arr[i].str.len, tokens.arr[i].str.str);
-    } else {
-      fprintf(amalgam_file, "%.*s", tokens.arr[i].str.len, tokens.arr[i].str.str);
-    }
+  const char* out_amalgam = ".generated/brplot.c";
+  {
+	  FILE* amalgam_file = fopen(out_amalgam, "wb");
+	  for (size_t i = 0; i < tokens.len; ++i) {
+		token_t token = tokens.arr[i];
+		if (token.kind == token_kind_include) {
+		  fprintf(amalgam_file, "/* %.*s */\n", tokens.arr[i].str.len, tokens.arr[i].str.str);
+		} else if (token.kind == token_kind_include_system) {
+		  fprintf(amalgam_file, "%.*s", tokens.arr[i].str.len, tokens.arr[i].str.str);
+		} else {
+		  fprintf(amalgam_file, "%.*s", tokens.arr[i].str.len, tokens.arr[i].str.str);
+		}
+	  }
+	  fclose(amalgam_file);
+	  LOGI("Generated: %s", out_amalgam);
   }
-  fclose(amalgam_file);
-  LOGI("Generated: %s", out_file_name);
+  {
+	  const char* out_dependencies = ".generated/brplot.c.d";
+	  FILE* dependencies = fopen(out_dependencies, "wb+");
+	  fprintf(dependencies, "%s: \\\n", out_amalgam);
+	  for (size_t i = 0; i < tokens.len; ++i) {
+		  token_t token = tokens.arr[i];
+		  if (token.kind == token_kind_include) {
+			  fprintf(dependencies, "\t%.*s \\\n", token.include_path.len, token.include_path.str);
+		  }
+	  }
+	  fprintf(dependencies, "\n");
+	  fclose(dependencies);
+	  LOGI("Generated: %s", out_dependencies);
+  }
   return 0;
 }
 
