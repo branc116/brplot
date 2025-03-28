@@ -15,6 +15,9 @@
 #include "src/br_resampling2.h"
 
 static void draw_left_panel(br_plotter_t* gv);
+static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas);
+static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas);
+
 void br_plotter_draw(br_plotter_t* br) {
   br_plotter_begin_drawing(br);
   brui_resizable_update();
@@ -56,46 +59,8 @@ void br_plotter_draw(br_plotter_t* br) {
       if (true == r->hidden) continue;
         brui_resizable_push(PLOT->extent_handle);
           brui_img(PLOT->texture_id);
-          brui_resizable_t* menu_res = brui_resizable_get(PLOT->menu_extent_handle);
-          int og_text_size = brui_text_size();
-          int icon_size = og_text_size;
-          if (menu_res->hidden == true) {
-            if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icons.menu.size_32)) menu_res->hidden = false;
-          } else {
-            brui_resizable_push(PLOT->menu_extent_handle);
-              brui_vsplitvp(2, BRUI_SPLITA((float)icon_size), BRUI_SPLITR(1));
-                char* c = br_scrach_get(4096);
-                if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icons.back.size_32)) menu_res->hidden = true;
-              brui_vsplit_pop();
-                brui_text_size_set(og_text_size);
-                brui_text_align_set(br_text_renderer_ancor_mid_mid);
-                brui_maxy_set(brui_min_y() + (float)icon_size);
-                brui_textf("%s Plot #%d", PLOT->kind == br_plot_kind_2d ? "2D" : "3D", i);
-              brui_vsplit_end();
-              brui_text(BR_STRL("_______________________________________________________"));
-              if (brui_button(BR_STRL("Remove Plot"))) {
-                to_remove = i;
-              }
-              brui_text_size_set(og_text_size/5*4);
-              brui_checkbox(BR_STRL("Follow"), &PLOT->follow);
-              for (size_t k = 0; k < br->groups.len; ++k) {
-                bool is_shown = false;
-                br_data_t* data = br_da_getp(br->groups, k);
-                for (int j = 0; j < PLOT->groups_to_show.len; ++j) {
-                  if (br_da_get(PLOT->groups_to_show, j) == data->group_id) {
-                    is_shown = true;
-                    break;
-                  }
-                }
-                sprintf(c, "Data #%d", data->group_id);
-                if (brui_checkbox(br_strv_from_c_str(c), &is_shown)) {
-                  if (false == is_shown) br_da_remove(PLOT->groups_to_show, data->group_id);
-                  else br_da_push_t(int, PLOT->groups_to_show, data->group_id);
-                }
-              }
-              br_scrach_free();
-            brui_resizable_pop();
-          }
+          if (brgui_draw_plot_menu(PLOT, br->groups)) to_remove = i;
+          brgui_draw_legend(PLOT, br->groups);
         brui_resizable_pop();
 #undef PLOT
     }
@@ -104,6 +69,72 @@ void br_plotter_draw(br_plotter_t* br) {
   brui_end();
   br_plotter_end_drawing(br);
 }
+
+static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas) {
+  if (true == brui_resizable_get(plot->legend_extent_handle)->hidden) return;
+  brui_resizable_push(plot->legend_extent_handle);
+    brui_padding_y_set(1.f);
+    brui_text_size_set(brui_text_size() / 5 * 3);
+    for (int i = 0; i < plot->groups_to_show.len; ++i) {
+      br_data_t* data = br_data_get1(datas, plot->groups_to_show.arr[i]);
+      brui_vsplitvp(3, BRUI_SPLITA((float)brui_text_size()), BRUI_SPLITA(brui_padding_x()), BRUI_SPLITR(1));
+        brui_icon((float)brui_text_size(), BR_BB(0,0,0,0), data->color, datas.arr[plot->groups_to_show.arr[i]].color);
+      brui_vsplit_pop();
+      brui_vsplit_pop();
+        brui_text_align_set(br_text_renderer_ancor_left_mid);
+        brui_height_set((float)brui_text_size());
+        brui_text(br_str_as_view(data->name));
+      brui_vsplit_end();
+    }
+  brui_resizable_pop();
+}
+
+static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas) {
+  brui_resizable_t* menu_res = brui_resizable_get(plot->menu_extent_handle);
+  int og_text_size = brui_text_size();
+  int icon_size = og_text_size;
+  bool ret = false;
+  if (menu_res->hidden == true) {
+    if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icons.menu.size_32)) menu_res->hidden = false;
+  } else {
+    brui_resizable_push(plot->menu_extent_handle);
+      brui_vsplitvp(2, BRUI_SPLITA((float)icon_size), BRUI_SPLITR(1));
+        char* c = br_scrach_get(4096);
+        if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icons.back.size_32)) menu_res->hidden = true;
+      brui_vsplit_pop();
+        brui_text_size_set(og_text_size);
+        brui_text_align_set(br_text_renderer_ancor_mid_mid);
+        brui_maxy_set(brui_min_y() + (float)icon_size);
+        brui_textf("%s Plot", plot->kind == br_plot_kind_2d ? "2D" : "3D");
+      brui_vsplit_end();
+      brui_text(BR_STRL("_______________________________________________________"));
+      if (brui_button(BR_STRL("Remove Plot"))) {
+        ret = true;
+      }
+      brui_text_size_set(og_text_size/5*4);
+      brui_checkbox(BR_STRL("Follow"), &plot->follow);
+      brui_checkbox(BR_STRL("Hide Legend"), &brui_resizable_get(plot->legend_extent_handle)->hidden);
+      for (size_t k = 0; k < datas.len; ++k) {
+        bool is_shown = false;
+        br_data_t* data = br_da_getp(datas, k);
+        for (int j = 0; j < plot->groups_to_show.len; ++j) {
+          if (br_da_get(plot->groups_to_show, j) == data->group_id) {
+            is_shown = true;
+            break;
+          }
+        }
+        sprintf(c, "Data #%d", data->group_id);
+        if (brui_checkbox(br_strv_from_c_str(c), &is_shown)) {
+          if (false == is_shown) br_da_remove(plot->groups_to_show, data->group_id);
+          else br_da_push_t(int, plot->groups_to_show, data->group_id);
+        }
+      }
+      br_scrach_free();
+    brui_resizable_pop();
+  }
+  return ret;
+}
+
 
 static void draw_left_panel(br_plotter_t* br) {
   brui_resizable_push(br->menu_extent_handle);

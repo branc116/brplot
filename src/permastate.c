@@ -177,15 +177,16 @@ end:
   return;
 }
 
-void br_permastate_remove_pointers(br_plotter_t* br, br_plot_t* plot) {
+bool br_permastate_remove_pointers(br_plotter_t* br, br_plot_t* plot) {
   plot->groups_to_show.cap = 0;
   plot->groups_to_show.len = 0;
   plot->groups_to_show.arr = NULL;
   switch (plot->kind) {
     case br_plot_kind_2d: br->any_2d = true; break;
     case br_plot_kind_3d: br->any_3d = true; break;
-    default: assert(0);
+    default: return false;
   }
+  return true;
 }
 
 bool br_permastate_load_plotter(FILE* file, br_plotter_t* br, br_data_descs_t* desc) {
@@ -234,7 +235,7 @@ bool br_permastate_load_plots(FILE* file, br_plotter_t* br) {
   br->plots.len = br->plots.cap = (int)plots_len;
   if (plots_len != 0) calculated_crc = br_fs_crc(plots, sizeof(*plots) * (size_t)plots_len, 0);
   for (size_t i = 0; i < plots_len; ++i) {
-    br_permastate_remove_pointers(br, &plots[i]);
+    if (false == br_permastate_remove_pointers(br, &plots[i]))                     goto error;
   }
   for (size_t i = 0; i < plots_len; ++i) {
     br_plot_t* p = &plots[i];
@@ -257,6 +258,7 @@ bool br_permastate_load_plots(FILE* file, br_plotter_t* br) {
   for (size_t i = 0; i < plots_len; ++i) {
     plots[i].extent_handle = brui_resizable_new(plots[i].cur_extent, 0);
     plots[i].menu_extent_handle = brui_resizable_new2(BR_EXTENTI(0, 0, 300, plots[i].cur_extent.height), plots[i].extent_handle, (brui_resizable_t) { .hidden = true });
+    plots[i].legend_extent_handle = brui_resizable_new(BR_EXTENTI(plots[i].cur_extent.width - 110, 10, 100, 60), plots[i].extent_handle);
   }
   return true;
 

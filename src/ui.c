@@ -371,6 +371,10 @@ void brui_img(unsigned int texture_id) {
   img->len = 0;
 }
 
+void brui_icon(float size, br_bb_t icon, br_color_t forground, br_color_t background) {
+  br_icons_draw(BR_BB(TOP.cur.x, TOP.cur.y, TOP.cur.x + size, TOP.cur.y + size), icon, forground, background, TOP.limit, Z);
+}
+
 bool brui_button_icon(br_sizei_t size, br_extent_t icon) {
   bool is_pressed = false;
   float out_top /* neg or 0 */ = fminf(0.f, TOP.cur.y - TOP.limit.min_y);
@@ -688,12 +692,25 @@ void brui_z_set(int z) {
   TOP.z = z;
 }
 
+void brui_maxy_set(float value) {
+  TOP.limit.max_y = value;
+}
+
 float brui_min_y(void) {
   return TOP.limit.min_y;
 }
 
-void brui_maxy_set(float value) {
-  TOP.limit.max_y = value;
+void brui_height_set(float value) {
+  TOP.limit.max_y = fminf(TOP.limit.max_y, TOP.cur.y + value);
+  TOP.limit.min_y = fmaxf(TOP.limit.min_y, TOP.cur.y);
+}
+
+float brui_padding_x(void) {
+  return TOP.padding.x;
+}
+
+void brui_padding_y_set(float value) {
+  TOP.padding.y = value;
 }
 
 

@@ -92,6 +92,7 @@ void brui_new_lines(int n);
 bool brui_button(br_strv_t text);
 bool brui_checkbox(br_strv_t text, bool* checked);
 void brui_img(unsigned int texture_id);
+void brui_icon(float size, br_bb_t icon, br_color_t forground, br_color_t background);
 bool brui_button_icon(br_sizei_t size, br_extent_t icon);
 bool brui_sliderf(br_strv_t text, float* val);
 bool brui_sliderf2(br_strv_t text, float* value);
@@ -118,6 +119,9 @@ void brui_ancor_set(brui_ancor_t ancor);
 void brui_z_set(int z);
 void brui_maxy_set(float value);
 float brui_min_y(void);
+void brui_height_set(float value);
+float brui_padding_x(void);
+void brui_padding_y_set(float value);
 
 void              brui_resizable_init(void);
 void              brui_resizable_deinit(void);

@@ -47,6 +47,7 @@ typedef struct br_plot_t {
   br_extenti_t cur_extent;
   int extent_handle;
   int menu_extent_handle;
+  int legend_extent_handle;
 
   unsigned int texture_id;
 

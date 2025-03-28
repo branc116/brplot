@@ -16,6 +16,7 @@ void br_plot_deinit(br_plot_t* plot) {
   br_da_free(plot->groups_to_show);
   brui_resizable_delete(plot->extent_handle);
   brui_resizable_delete(plot->menu_extent_handle);
+  brui_resizable_delete(plot->legend_extent_handle);
   brgl_destroy_framebuffer(plot->texture_id);
 }
 
