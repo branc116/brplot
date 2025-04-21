@@ -78,7 +78,7 @@ static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas) {
     for (int i = 0; i < plot->groups_to_show.len; ++i) {
       br_data_t* data = br_data_get1(datas, plot->groups_to_show.arr[i]);
       brui_vsplitvp(3, BRUI_SPLITA((float)brui_text_size()), BRUI_SPLITA(brui_padding_x()), BRUI_SPLITR(1));
-        brui_icon((float)brui_text_size(), BR_BB(0,0,0,0), data->color, datas.arr[plot->groups_to_show.arr[i]].color);
+        brui_icon((float)brui_text_size(), BR_BB(0,0,0,0), data->color, data->color);
       brui_vsplit_pop();
       brui_vsplit_pop();
         brui_text_align_set(br_text_renderer_ancor_left_mid);

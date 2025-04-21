@@ -45,10 +45,10 @@ BR_THREAD_LOCAL _GLFWlibrary _glfw = { GLFW_FALSE };
 // These are outside of _glfw so they can be used before initialization and
 // after termination without special handling when _glfw is cleared to zero
 //
-static _GLFWerror _glfwMainThreadError;
-static GLFWerrorfun _glfwErrorCallback;
-static GLFWallocator _glfwInitAllocator;
-static _GLFWinitconfig _glfwInitHints =
+BR_THREAD_LOCAL static _GLFWerror _glfwMainThreadError;
+BR_THREAD_LOCAL static GLFWerrorfun _glfwErrorCallback;
+BR_THREAD_LOCAL static GLFWallocator _glfwInitAllocator;
+BR_THREAD_LOCAL static _GLFWinitconfig _glfwInitHints =
 {
     .angleType = GLFW_ANGLE_PLATFORM_TYPE_NONE,
     .platformID = GLFW_ANY_PLATFORM,

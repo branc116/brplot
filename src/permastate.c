@@ -299,7 +299,7 @@ br_permastate_status_t br_permastate_load(br_plotter_t* br) {
 #endif
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
   if (ttyname(STDIN_FILENO) == NULL) {
-    //goto end;
+    goto end;
   }
 #endif
 

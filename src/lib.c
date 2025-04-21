@@ -30,18 +30,23 @@ static BR_THREAD_RET_TYPE main_loop(void* plotterv) {
     br_dagens_handle(&plotter->groups, &plotter->dagens, &plotter->plots, brtl_time() + 0.010);
     br_plotter_frame_end(plotter);
   }
-  br_plotter_free(plotter);
+  br_plotter_deinit(plotter);
+  plotter->exited = true;
+  plotter->should_close = true;
   return (BR_THREAD_RET_TYPE)0;
 }
 
-static br_common_ctor br_ctors[128/8];
+
+#define br_ctors_cap_mask 0xef
+static br_common_ctor br_ctors[128];
 static int br_ctors_len = 0;
 
 br_plotter_ctor_t* br_plotter_default_ctor(void) {
   // TODO: Only run this once...
   br_data_construct();
   br_resampling2_construct();
-  br_ctors[br_ctors_len].plotter = (br_plotter_ctor_t) {
+  int id = br_ctors_len;
+  br_ctors[id].plotter = (br_plotter_ctor_t) {
     .version = BR_VERSION,
     .ctor = {
       .width = 800, .height = 600,
@@ -50,7 +55,8 @@ br_plotter_ctor_t* br_plotter_default_ctor(void) {
       .use_stdin = false
     }
   };
-  return &br_ctors[br_ctors_len++].plotter;
+  br_ctors_len = ((br_ctors_len + 1) & br_ctors_cap_mask);
+  return &br_ctors[id].plotter;
 }
 
 br_plotter_t* br_plotter_new(br_plotter_ctor_t const* ctor) {
@@ -79,7 +85,8 @@ void br_plotter_wait(br_plotter_t const* plotter) {
 }
 
 br_plot_ctor_t* br_plot_default_ctor(void) {
-  br_ctors[br_ctors_len].plot = (br_plot_ctor_t) {
+  int id = br_ctors_len;
+  br_ctors[id].plot = (br_plot_ctor_t) {
     .version = BR_VERSION,
     .ctor = {
       .kind = br_plot_kind_2d,
@@ -88,7 +95,8 @@ br_plot_ctor_t* br_plot_default_ctor(void) {
       .rearange_others = true
     }
   };
-  return &br_ctors[br_ctors_len++].plot;
+  br_ctors_len = ((br_ctors_len + 1) & br_ctors_cap_mask);
+  return &br_ctors[id].plot;
 }
 
 br_plot_id br_plot_new(br_plotter_t* plotter, br_plot_ctor_t const* ctor) {
@@ -115,11 +123,13 @@ void br_plot_show_data(br_plotter_t* plotter, br_plot_id plot, br_data_id data) 
 }
 
 br_data_ctor_t* br_data_default_ctor(void) {
-  br_ctors[br_ctors_len].data = (br_data_ctor_t) {
+  int id = br_ctors_len;
+  br_ctors[id].data = (br_data_ctor_t) {
     .version = BR_VERSION,
     .ctor.kind = br_data_kind_2d
   };
-  return &br_ctors[br_ctors_len++].data;
+  br_ctors_len = ((br_ctors_len + 1) & br_ctors_cap_mask);
+  return &br_ctors[id].data;
 }
 
 br_data_id br_data_new(br_plotter_t* plotter, br_data_ctor_t const* ctor) {
@@ -176,47 +186,62 @@ int br_data_add_v2nds(br_plotter_t* plotter, float const* xs, float const* ys, i
   return ret;
 }
 
-static br_plotter_t* g_brplot_br_plotter = NULL;
+#define BR_PLOTTERS_CAP 4
+BR_THREAD_LOCAL static int g_brplot_br_plotter_id = 0;
+
+BR_THREAD_LOCAL static br_plotter_t* g_brplot_br_plotter[BR_PLOTTERS_CAP] = { 0 };
+#define TOP_PLOTTER g_brplot_br_plotter[g_brplot_br_plotter_id]
 
 static void brp_simp_create_plotter_if_no_exist(void) {
-  if (NULL == g_brplot_br_plotter) {
-    g_brplot_br_plotter = br_plotter_new(br_plotter_default_ctor());
+  if (NULL == TOP_PLOTTER || true == TOP_PLOTTER->should_close) {
+    g_brplot_br_plotter_id = (g_brplot_br_plotter_id + 1) % BR_PLOTTERS_CAP;
+    if (TOP_PLOTTER != NULL) {
+      //if (TOP_PLOTTER->exited) br_plotter_free(TOP_PLOTTER);
+    }
+    LOGI("Create %d", g_brplot_br_plotter_id);
+    TOP_PLOTTER = br_plotter_new(br_plotter_default_ctor());
   }
 }
 
 br_data_id brp_1(float x, br_data_id data_id) {
   brp_simp_create_plotter_if_no_exist();
-  br_data_add_v1(g_brplot_br_plotter, x, data_id);
+  br_data_add_v1(TOP_PLOTTER, x, data_id);
   return data_id;
 }
 
 br_data_id brp_1n(const float *points, int n, br_data_id data_id) {
   brp_simp_create_plotter_if_no_exist();
-  br_data_add_v1n(g_brplot_br_plotter, points, n, data_id);
+  br_data_add_v1n(TOP_PLOTTER, points, n, data_id);
   return data_id;
 }
 
 br_data_id brp_2(float x, float y, br_data_id data_id) {
   brp_simp_create_plotter_if_no_exist();
-  br_data_add_v2(g_brplot_br_plotter, x, y, data_id);
+  br_data_add_v2(TOP_PLOTTER, x, y, data_id);
   return data_id;
 }
 
 void brp_wait(void) {
-  br_plotter_wait(g_brplot_br_plotter);
+  brp_simp_create_plotter_if_no_exist();
+  br_plotter_wait(TOP_PLOTTER);
 }
 
 void brp_flush(void) {
-  q_push(g_brplot_br_plotter->commands, (q_command){ .type = q_command_flush} );
+  brp_simp_create_plotter_if_no_exist();
+  q_push(TOP_PLOTTER->commands, (q_command){ .type = q_command_flush} );
 }
 
 void brp_empty(br_data_id data_id) {
-  q_push(g_brplot_br_plotter->commands, (q_command){ .type = q_command_empty, .clear = { .group = data_id } } );
+  brp_simp_create_plotter_if_no_exist();
+  q_push(TOP_PLOTTER->commands, (q_command){ .type = q_command_empty, .clear = { .group = data_id } } );
 }
 
 void brp_focus_all(void) {
-  q_push(g_brplot_br_plotter->commands, (q_command){ .type = q_command_focus} );
+  brp_simp_create_plotter_if_no_exist();
+  q_push(TOP_PLOTTER->commands, (q_command){ .type = q_command_focus} );
 }
+
+#undef TOP_PLOTTER
 
 #if defined(BR_PYTHON_BULLSHIT)
 BR_EXPORT void* PyInit_brplot(void) { return NULL; }

@@ -80,9 +80,10 @@ typedef struct q_command {
 } q_command;
 
 typedef struct q_commands {
-  size_t read_index, write_index;
-  size_t capacity;
+  volatile size_t read_index, write_index;
+  volatile size_t capacity;
   q_command* commands;
+  size_t write_wait;
   LOCK(push_mutex)
 } q_commands;
 

@@ -525,8 +525,6 @@ GLFWbool _glfwInitWGL(void)
 //
 void _glfwTerminateWGL(void)
 {
-    if (_glfw.wgl.instance)
-        _glfwPlatformFreeModule(_glfw.wgl.instance);
 }
 
 #define SET_ATTRIB(a, v) \

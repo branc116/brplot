@@ -83,7 +83,7 @@ void br_plotter_init(br_plotter_t* br) {
   bruir_resizable_refresh(0);
 }
 
-void br_plotter_free(br_plotter_t* br) {
+void br_plotter_deinit(br_plotter_t* br) {
   read_input_stop();
   br_permastate_save(br);
   br_icons_deinit();
@@ -93,12 +93,16 @@ void br_plotter_free(br_plotter_t* br) {
   br_datas_deinit(&br->groups);
   brui_resizable_deinit();
   br_plotter_deinit_specifics_platform(br);
-  q_free(br->commands);
   BR_FREE(br->plots.arr);
   br_dagens_free(&br->dagens);
-  BR_FREE(br);
+  LOGI("Plotter deinited\n");
 }
 
+void br_plotter_free(br_plotter_t* br) {
+  q_free(br->commands);
+  //BR_FREE(br);
+  LOGI("Plotter freed\n");
+}
 
 void br_plotter_resize(br_plotter_t* br, float width, float height) {
   (void)br;

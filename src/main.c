@@ -20,6 +20,7 @@ static void* main_gui(void* plotter) {
     TracyCFrameMarkEnd("plotter_frame_end");
   }
   // CLEAN UP
+  br_plotter_deinit(br);
   br_plotter_free(br);
   return 0;
 }

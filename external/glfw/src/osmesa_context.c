@@ -180,11 +180,6 @@ GLFWbool _glfwInitOSMesa(void)
 
 void _glfwTerminateOSMesa(void)
 {
-    if (_glfw.osmesa.handle)
-    {
-        _glfwPlatformFreeModule(_glfw.osmesa.handle);
-        _glfw.osmesa.handle = NULL;
-    }
 }
 
 #define SET_ATTRIB(a, v) \

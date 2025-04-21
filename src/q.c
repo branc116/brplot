@@ -99,7 +99,7 @@ bool q_push_safe(q_commands* q, q_command command) {
 #endif
 
 bool q_push(q_commands* q, q_command command) {
-  while ((q->write_index + 1) % q->capacity == q->read_index);
+  while ((q->write_index + 1) % q->capacity == q->read_index) ++q->write_wait;
   q->commands[q->write_index] = command;
   q->write_index = (q->write_index + 1) % q->capacity;
   return true;

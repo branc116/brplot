@@ -175,23 +175,6 @@ static GLFWbool loadLibraries(void)
 //
 static void freeLibraries(void)
 {
-    if (_glfw.win32.xinput.instance)
-        _glfwPlatformFreeModule(_glfw.win32.xinput.instance);
-
-    if (_glfw.win32.dinput8.instance)
-        _glfwPlatformFreeModule(_glfw.win32.dinput8.instance);
-
-    if (_glfw.win32.user32.instance)
-        _glfwPlatformFreeModule(_glfw.win32.user32.instance);
-
-    if (_glfw.win32.dwmapi.instance)
-        _glfwPlatformFreeModule(_glfw.win32.dwmapi.instance);
-
-    if (_glfw.win32.shcore.instance)
-        _glfwPlatformFreeModule(_glfw.win32.shcore.instance);
-
-    if (_glfw.win32.ntdll.instance)
-        _glfwPlatformFreeModule(_glfw.win32.ntdll.instance);
 }
 
 // Create key code translation tables

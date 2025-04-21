@@ -144,6 +144,8 @@ static bool is_lib = false;
 static bool is_rebuild = false;
 static bool is_slib = false;
 static bool do_dist = true;
+static bool pip_skip_build = false;
+static bool disable_logs = false;
 #define X(name, desc) [n_ ## name] = { 0 },
 static command_flags_t command_flags[] = {
 COMMANDS(X)
@@ -252,6 +254,7 @@ static void fill_command_flag_data(void) {
   command_flag_t slib_flag = (command_flag_t) {.name = BR_STRL("slib"), .alias = 's', .description = BR_STRL("Build static library"), .is_set = &is_slib};
   command_flag_t help_flag = (command_flag_t) {.name = BR_STRL("help"), .alias = 'h', .description = BR_STRL("Print help"), .is_set = &print_help};
   command_flag_t dist_flag = (command_flag_t) {.name = BR_STRL("dist"), .alias = 'D', .description = BR_STRL("Also create dist ( Needed for pip package but maybe you wanna disable this because it's slow )"), .is_set = &do_dist};
+  command_flag_t pip_skip_build_flag = (command_flag_t) {.name = BR_STRL("skip-build"), .alias = '\0', .description = BR_STRL("Don't do anything except call pip to create a package"), .is_set = &pip_skip_build};
   br_da_push(command_flags[n_compile], debug_flag);
   br_da_push(command_flags[n_compile], headless_flag);
   br_da_push(command_flags[n_compile], asan_flag);
@@ -260,6 +263,7 @@ static void fill_command_flag_data(void) {
   br_da_push(command_flags[n_compile], force_rebuild);
   br_da_push(command_flags[n_help], help_flag);
   br_da_push(command_flags[n_pip], dist_flag);
+  br_da_push(command_flags[n_pip], pip_skip_build_flag);
 
   br_da_push(command_deps[n_run], n_build);
   br_da_push(command_deps[n_build], n_compile);
@@ -399,6 +403,9 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
     nob_cmd_append(cmd, "-ggdb", "-DBR_DEBUG");
   } else {
     nob_cmd_append(cmd, "-O3");
+  }
+  if (disable_logs) {
+    nob_cmd_append(cmd, "-DBR_DISABLE_LOG");
   }
 
   if (is_lib) {
@@ -679,25 +686,30 @@ static bool build_no_set(const char* file_name, int build_no) {
 }
 
 static bool n_pip_do(void) {
-  if (do_dist) n_dist_do();
-  nob_mkdir_if_not_exists("packages/pip/src");
-  nob_mkdir_if_not_exists("packages/pip/src/brplot");
-  Nob_String_Builder pytoml = { 0 };
-  if (false == nob_copy_file("dist/brplot/share/licenses/brplot/LICENSE", "packages/pip/LICENSE")) return false;
-  if (false == nob_copy_file("README.md", "packages/pip/README.md")) return false;
-  if (false == nob_copy_file(".generated/brplot.c", "packages/pip/src/brplot/brplot.c")) return false;
-  if (false == nob_read_entire_file("packages/pip/pyproject.toml.in", &pytoml)) return false;
-  br_str_t out_toml = { .str = pytoml.items, .len = (uint32_t)pytoml.count, .cap = (uint32_t)pytoml.capacity };
-  br_str_t build_no_str = { 0 };
-  int build_no = 0;
+  if (false == pip_skip_build) {
+    is_rebuild = true;
+    is_debug = false;
+    disable_logs = true;
+    if (false == n_dist_do()) return false;
+    if (false == nob_mkdir_if_not_exists("packages/pip/src")) return false;
+    if (false == nob_mkdir_if_not_exists("packages/pip/src/brplot")) return false;
+    Nob_String_Builder pytoml = { 0 };
+    if (false == nob_copy_file("dist/brplot/share/licenses/brplot/LICENSE", "packages/pip/LICENSE")) return false;
+    if (false == nob_copy_file("README.md", "packages/pip/README.md")) return false;
+    if (false == nob_copy_file(".generated/brplot.c", "packages/pip/src/brplot/brplot.c")) return false;
+    if (false == nob_read_entire_file("packages/pip/pyproject.toml.in", &pytoml)) return false;
+    br_str_t out_toml = { .str = pytoml.items, .len = (uint32_t)pytoml.count, .cap = (uint32_t)pytoml.capacity };
+    br_str_t build_no_str = { 0 };
+    int build_no = 0;
 
-  const char* build_no_file_name = "packages/pip/buildno";
-  build_no_get_next(build_no_file_name, &build_no);
-  br_str_push_int(&build_no_str, build_no);
-  if (false == br_str_replace_one1(&out_toml, BR_STRL("{VERSION}"), BR_STRL(BR_VERSION_STR))) return false;
-  if (false == br_str_replace_one1(&out_toml, BR_STRL("{BUILDNO}"), br_str_as_view(build_no_str))) return false;
-  if (false == write_entire_file("packages/pip/pyproject.toml", br_str_as_view(out_toml))) return false;
-  if (false == build_no_set(build_no_file_name, build_no)) return false;
+    const char* build_no_file_name = "packages/pip/buildno";
+    build_no_get_next(build_no_file_name, &build_no);
+    br_str_push_int(&build_no_str, build_no);
+    if (false == br_str_replace_one1(&out_toml, BR_STRL("{VERSION}"), BR_STRL(BR_VERSION_STR))) return false;
+    if (false == br_str_replace_one1(&out_toml, BR_STRL("{BUILDNO}"), br_str_as_view(build_no_str))) return false;
+    if (false == write_entire_file("packages/pip/pyproject.toml", br_str_as_view(out_toml))) return false;
+    if (false == build_no_set(build_no_file_name, build_no)) return false;
+  }
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "python", "-m", "build", "-s", "packages/pip");
   return nob_cmd_run_sync_and_reset(&cmd);

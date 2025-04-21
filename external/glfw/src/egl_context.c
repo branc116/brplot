@@ -324,18 +324,6 @@ static GLFWglproc getProcAddressEGL(const char* procname)
 
 static void destroyContextEGL(_GLFWwindow* window)
 {
-    // NOTE: Do not unload libGL.so.1 while the X11 display is still open,
-    //       as it will make XCloseDisplay segfault
-    if (_glfw.platform.platformID != GLFW_PLATFORM_X11 ||
-        window->context.client != GLFW_OPENGL_API)
-    {
-        if (window->context.egl.client)
-        {
-            _glfwPlatformFreeModule(window->context.egl.client);
-            window->context.egl.client = NULL;
-        }
-    }
-
     if (window->context.egl.surface)
     {
         eglDestroySurface(_glfw.egl.display, window->context.egl.surface);
@@ -544,12 +532,6 @@ void _glfwTerminateEGL(void)
     {
         eglTerminate(_glfw.egl.display);
         _glfw.egl.display = EGL_NO_DISPLAY;
-    }
-
-    if (_glfw.egl.handle)
-    {
-        _glfwPlatformFreeModule(_glfw.egl.handle);
-        _glfw.egl.handle = NULL;
     }
 }
 
