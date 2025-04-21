@@ -400,6 +400,8 @@ sudo rm /usr/bin/brplot
 ## Screenshots
 Here is a history of how brplot looked over time:
 
+##### 2024-05-21
+![screenshot7](media/brplot_20250421_163315.png)
 ##### 2024-04-21
 ![screenshot6](media/brplot_20240421_172537.png)
 ##### 2023-10-29
