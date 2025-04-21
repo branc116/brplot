@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{matrix.os.name}}
     strategy:
       matrix:
-        os: [ {name: ubuntu-20.04, lto: NO}, {name: ubuntu-22.04, lto: YES}, {name: ubuntu-24.04, lto: YES} ]
+        os: [ {name: ubuntu-22.04, lto: YES}, {name: ubuntu-24.04, lto: YES} ]
     steps:
     - uses: actions/checkout@v4.1.7
     - uses: goto-bus-stop/setup-zig@v2.2.0
