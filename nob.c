@@ -35,6 +35,7 @@
   X(build, "(default) Generate and build everything that is needed") \
   X(generate, "Generate additional files") \
   X(compile, "Only compile files, don't generate anything") \
+  X(run, "Build and run brplot") \
   X(amalgam, "Create amalgamation file that will be shipped to users") \
   X(dist, "Create distribution zip") \
   X(pip, "Create pip egg") \
@@ -260,6 +261,7 @@ static void fill_command_flag_data(void) {
   br_da_push(command_flags[n_help], help_flag);
   br_da_push(command_flags[n_pip], dist_flag);
 
+  br_da_push(command_deps[n_run], n_build);
   br_da_push(command_deps[n_build], n_compile);
   br_da_push(command_deps[n_build], n_generate);
   br_da_push(command_deps[n_dist], n_build);
@@ -553,6 +555,14 @@ static bool n_compile_do(void) {
 
 static bool n_build_do(void) {
   return n_generate_do() && n_compile_do();
+}
+
+static bool n_run_do(void) {
+  if (false == n_build_do()) return false;
+  Nob_Cmd cmd = { 0 };
+  nob_cmd_append(&cmd, "bin/brplot" EXE_EXT);
+  nob_cmd_run_sync(cmd);
+  return true;
 }
 
 static bool n_amalgam_do(void) {
