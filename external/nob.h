@@ -164,20 +164,11 @@
 #ifndef NOB_H_
 #define NOB_H_
 
-#ifndef NOB_ASSERT
-#include <assert.h>
+#include "src/br_pp.h"
+
 #define NOB_ASSERT assert
-#endif /* NOB_ASSERT */
-
-#ifndef NOB_REALLOC
-#include <stdlib.h>
-#define NOB_REALLOC realloc
-#endif /* NOB_REALLOC */
-
-#ifndef NOB_FREE
-#include <stdlib.h>
-#define NOB_FREE free
-#endif /* NOB_FREE */
+#define NOB_REALLOC BR_REALLOC
+#define NOB_FREE BR_FREE
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -226,18 +217,6 @@
 #define NOB_ARRAY_LEN(array) (sizeof(array)/sizeof(array[0]))
 #define NOB_ARRAY_GET(array, index) \
     (NOB_ASSERT((size_t)index < NOB_ARRAY_LEN(array)), array[(size_t)index])
-
-typedef enum {
-    NOB_INFO,
-    NOB_WARNING,
-    NOB_ERROR,
-    NOB_NO_LOGS,
-} Nob_Log_Level;
-
-// Any messages with the level below nob_minimal_log_level are going to be suppressed.
-extern Nob_Log_Level nob_minimal_log_level;
-
-void nob_log(Nob_Log_Level level, const char *fmt, ...) NOB_PRINTF_FORMAT(2, 3);
 
 // It is an equivalent of shift command from bash. It basically pops an element from
 // the beginning of a sized array.
@@ -485,21 +464,6 @@ int nob_file_exists(const char *file_path);
 const char *nob_get_current_dir_temp(void);
 bool nob_set_current_dir(const char *path);
 
-// TODO: add MinGW support for Go Rebuild Urself™ Technology
-#ifndef NOB_REBUILD_URSELF
-#  if _WIN32
-#    if defined(__GNUC__)
-#       define NOB_REBUILD_URSELF(binary_path, source_path) "gcc", "-I.", "-ggdb", "-o", binary_path, source_path
-#    elif defined(__clang__)
-#       define NOB_REBUILD_URSELF(binary_path, source_path) "clang", "-I.", "-ggdb", "-o", binary_path, source_path
-#    elif defined(_MSC_VER)
-#       define NOB_REBUILD_URSELF(binary_path, source_path) "cl.exe", "-I.", "-Zi", nob_temp_sprintf("/Fe:%s", (binary_path)), source_path
-#    endif
-#  else
-#    define NOB_REBUILD_URSELF(binary_path, source_path) "cc", "-I.", "-ggdb", "-o", binary_path, source_path
-#  endif
-#endif
-
 // Go Rebuild Urself™ Technology
 //
 //   How to use it:
@@ -640,9 +604,6 @@ char *nob_win32_error_message(DWORD err);
 
 #ifdef NOB_IMPLEMENTATION
 
-// Any messages with the level below nob_minimal_log_level are going to be suppressed.
-Nob_Log_Level nob_minimal_log_level = NOB_INFO;
-
 #ifdef _WIN32
 
 // Base on https://stackoverflow.com/a/75644008
@@ -753,23 +714,23 @@ bool nob_mkdir_if_not_exists(const char *path)
 #endif
     if (result < 0) {
         if (errno == EEXIST) {
-            nob_log(NOB_INFO, "directory `%s` already exists", path);
+            LOGI("directory `%s` already exists", path);
             return true;
         }
-        nob_log(NOB_ERROR, "could not create directory `%s`: %s", path, strerror(errno));
+        LOGE("could not create directory `%s`: %s", path, strerror(errno));
         return false;
     }
 
-    nob_log(NOB_INFO, "created directory `%s`", path);
+    LOGI("created directory `%s`", path);
     return true;
 }
 
 bool nob_copy_file(const char *src_path, const char *dst_path)
 {
-    nob_log(NOB_INFO, "copying %s -> %s", src_path, dst_path);
+    LOGI("copying %s -> %s", src_path, dst_path);
 #ifdef _WIN32
     if (!CopyFile(src_path, dst_path, FALSE)) {
-        nob_log(NOB_ERROR, "Could not copy file: %s", nob_win32_error_message(GetLastError()));
+        LOGE("Could not copy file: %s", nob_win32_error_message(GetLastError()));
         return false;
     }
     return true;
@@ -783,19 +744,19 @@ bool nob_copy_file(const char *src_path, const char *dst_path)
 
     src_fd = open(src_path, O_RDONLY);
     if (src_fd < 0) {
-        nob_log(NOB_ERROR, "Could not open file %s: %s", src_path, strerror(errno));
+        LOGE("Could not open file %s: %s", src_path, strerror(errno));
         nob_return_defer(false);
     }
 
     struct stat src_stat;
     if (fstat(src_fd, &src_stat) < 0) {
-        nob_log(NOB_ERROR, "Could not get mode of file %s: %s", src_path, strerror(errno));
+        LOGE("Could not get mode of file %s: %s", src_path, strerror(errno));
         nob_return_defer(false);
     }
 
     dst_fd = open(dst_path, O_CREAT | O_TRUNC | O_WRONLY, src_stat.st_mode);
     if (dst_fd < 0) {
-        nob_log(NOB_ERROR, "Could not create file %s: %s", dst_path, strerror(errno));
+        LOGE("Could not create file %s: %s", dst_path, strerror(errno));
         nob_return_defer(false);
     }
 
@@ -803,14 +764,14 @@ bool nob_copy_file(const char *src_path, const char *dst_path)
         ssize_t n = read(src_fd, buf, buf_size);
         if (n == 0) break;
         if (n < 0) {
-            nob_log(NOB_ERROR, "Could not read from file %s: %s", src_path, strerror(errno));
+            LOGE("Could not read from file %s: %s", src_path, strerror(errno));
             nob_return_defer(false);
         }
         char *buf2 = buf;
         while (n > 0) {
             ssize_t m = write(dst_fd, buf2, n);
             if (m < 0) {
-                nob_log(NOB_ERROR, "Could not write to file %s: %s", dst_path, strerror(errno));
+                LOGE("Could not write to file %s: %s", dst_path, strerror(errno));
                 nob_return_defer(false);
             }
             n    -= m;
@@ -845,14 +806,14 @@ void nob_cmd_render(Nob_Cmd cmd, Nob_String_Builder *render)
 Nob_Proc nob_cmd_run_async_redirect(Nob_Cmd cmd, Nob_Cmd_Redirect redirect)
 {
     if (cmd.count < 1) {
-        nob_log(NOB_ERROR, "Could not run empty command");
+        LOGE("Could not run empty command");
         return NOB_INVALID_PROC;
     }
 
     Nob_String_Builder sb = {0};
     nob_cmd_render(cmd, &sb);
     nob_sb_append_null(&sb);
-    nob_log(NOB_INFO, "CMD: %s", sb.items);
+    LOGI("CMD: %s", sb.items);
     nob_sb_free(sb);
     memset(&sb, 0, sizeof(sb));
 
@@ -881,7 +842,7 @@ Nob_Proc nob_cmd_run_async_redirect(Nob_Cmd cmd, Nob_Cmd_Redirect redirect)
     nob_sb_free(sb);
 
     if (!bSuccess) {
-        nob_log(NOB_ERROR, "Could not create child process: %s", nob_win32_error_message(GetLastError()));
+        LOGE("Could not create child process: %s", nob_win32_error_message(GetLastError()));
         return NOB_INVALID_PROC;
     }
 
@@ -891,28 +852,28 @@ Nob_Proc nob_cmd_run_async_redirect(Nob_Cmd cmd, Nob_Cmd_Redirect redirect)
 #else
     pid_t cpid = fork();
     if (cpid < 0) {
-        nob_log(NOB_ERROR, "Could not fork child process: %s", strerror(errno));
+        LOGE("Could not fork child process: %s", strerror(errno));
         return NOB_INVALID_PROC;
     }
 
     if (cpid == 0) {
         if (redirect.fdin) {
             if (dup2(*redirect.fdin, STDIN_FILENO) < 0) {
-                nob_log(NOB_ERROR, "Could not setup stdin for child process: %s", strerror(errno));
+                LOGE("Could not setup stdin for child process: %s", strerror(errno));
                 exit(1);
             }
         }
 
         if (redirect.fdout) {
             if (dup2(*redirect.fdout, STDOUT_FILENO) < 0) {
-                nob_log(NOB_ERROR, "Could not setup stdout for child process: %s", strerror(errno));
+                LOGE("Could not setup stdout for child process: %s", strerror(errno));
                 exit(1);
             }
         }
 
         if (redirect.fderr) {
             if (dup2(*redirect.fderr, STDERR_FILENO) < 0) {
-                nob_log(NOB_ERROR, "Could not setup stderr for child process: %s", strerror(errno));
+                LOGE("Could not setup stderr for child process: %s", strerror(errno));
                 exit(1);
             }
         }
@@ -924,7 +885,7 @@ Nob_Proc nob_cmd_run_async_redirect(Nob_Cmd cmd, Nob_Cmd_Redirect redirect)
         nob_cmd_append(&cmd_null, NULL);
 
         if (execvp(cmd.items[0], (char * const*) cmd_null.items) < 0) {
-            nob_log(NOB_ERROR, "Could not exec child process: %s", strerror(errno));
+            LOGE("Could not exec child process: %s", strerror(errno));
             exit(1);
         }
         NOB_UNREACHABLE("nob_cmd_run_async_redirect");
@@ -965,7 +926,7 @@ Nob_Fd nob_fd_open_for_read(const char *path)
 #ifndef _WIN32
     Nob_Fd result = open(path, O_RDONLY);
     if (result < 0) {
-        nob_log(NOB_ERROR, "Could not open file %s: %s", path, strerror(errno));
+        LOGE("Could not open file %s: %s", path, strerror(errno));
         return NOB_INVALID_FD;
     }
     return result;
@@ -985,7 +946,7 @@ Nob_Fd nob_fd_open_for_read(const char *path)
                     NULL);
 
     if (result == INVALID_HANDLE_VALUE) {
-        nob_log(NOB_ERROR, "Could not open file %s: %s", path, nob_win32_error_message(GetLastError()));
+        LOGE("Could not open file %s: %s", path, nob_win32_error_message(GetLastError()));
         return NOB_INVALID_FD;
     }
 
@@ -1000,7 +961,7 @@ Nob_Fd nob_fd_open_for_write(const char *path)
                      O_WRONLY | O_CREAT | O_TRUNC,
                      S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (result < 0) {
-        nob_log(NOB_ERROR, "could not open file %s: %s", path, strerror(errno));
+        LOGE("could not open file %s: %s", path, strerror(errno));
         return NOB_INVALID_FD;
     }
     return result;
@@ -1020,7 +981,7 @@ Nob_Fd nob_fd_open_for_write(const char *path)
                 );
 
     if (result == INVALID_HANDLE_VALUE) {
-        nob_log(NOB_ERROR, "Could not open file %s: %s", path, nob_win32_error_message(GetLastError()));
+        LOGE("Could not open file %s: %s", path, nob_win32_error_message(GetLastError()));
         return NOB_INVALID_FD;
     }
 
@@ -1064,18 +1025,18 @@ bool nob_proc_wait(Nob_Proc proc)
                    );
 
     if (result == WAIT_FAILED) {
-        nob_log(NOB_ERROR, "could not wait on child process: %s", nob_win32_error_message(GetLastError()));
+        LOGE("could not wait on child process: %s", nob_win32_error_message(GetLastError()));
         return false;
     }
 
     DWORD exit_status;
     if (!GetExitCodeProcess(proc, &exit_status)) {
-        nob_log(NOB_ERROR, "could not get process exit code: %s", nob_win32_error_message(GetLastError()));
+        LOGE("could not get process exit code: %s", nob_win32_error_message(GetLastError()));
         return false;
     }
 
     if (exit_status != 0) {
-        nob_log(NOB_ERROR, "command exited with exit code %lu", exit_status);
+        LOGE("command exited with exit code %lu", exit_status);
         return false;
     }
 
@@ -1086,14 +1047,14 @@ bool nob_proc_wait(Nob_Proc proc)
     for (;;) {
         int wstatus = 0;
         if (waitpid(proc, &wstatus, 0) < 0) {
-            nob_log(NOB_ERROR, "could not wait on command (pid %d): %s", proc, strerror(errno));
+            LOGE("could not wait on command (pid %d): %s", proc, strerror(errno));
             return false;
         }
 
         if (WIFEXITED(wstatus)) {
             int exit_status = WEXITSTATUS(wstatus);
             if (exit_status != 0) {
-                nob_log(NOB_ERROR, "command exited with exit code %d", exit_status);
+                LOGE("command exited with exit code %d", exit_status);
                 return false;
             }
 
@@ -1101,7 +1062,7 @@ bool nob_proc_wait(Nob_Proc proc)
         }
 
         if (WIFSIGNALED(wstatus)) {
-            nob_log(NOB_ERROR, "command process was terminated by signal %d", WTERMSIG(wstatus));
+            LOGE("command process was terminated by signal %d", WTERMSIG(wstatus));
             return false;
         }
     }
@@ -1161,32 +1122,6 @@ bool nob_cmd_run_sync_redirect_and_reset(Nob_Cmd *cmd, Nob_Cmd_Redirect redirect
     return p;
 }
 
-void nob_log(Nob_Log_Level level, const char *fmt, ...)
-{
-    if (level < nob_minimal_log_level) return;
-
-    switch (level) {
-    case NOB_INFO:
-        fprintf(stderr, "[INFO] ");
-        break;
-    case NOB_WARNING:
-        fprintf(stderr, "[WARNING] ");
-        break;
-    case NOB_ERROR:
-        fprintf(stderr, "[ERROR] ");
-        break;
-    case NOB_NO_LOGS: return;
-    default:
-        NOB_UNREACHABLE("nob_log");
-    }
-
-    va_list args;
-    va_start(args, fmt);
-    vfprintf(stderr, fmt, args);
-    va_end(args);
-    fprintf(stderr, "\n");
-}
-
 bool nob_read_entire_dir(const char *parent, Nob_File_Paths *children)
 {
     bool result = true;
@@ -1195,9 +1130,9 @@ bool nob_read_entire_dir(const char *parent, Nob_File_Paths *children)
     dir = opendir(parent);
     if (dir == NULL) {
         #ifdef _WIN32
-        nob_log(NOB_ERROR, "Could not open directory %s: %s", parent, nob_win32_error_message(GetLastError()));
+        LOGE("Could not open directory %s: %s", parent, nob_win32_error_message(GetLastError()));
         #else
-        nob_log(NOB_ERROR, "Could not open directory %s: %s", parent, strerror(errno));
+        LOGE("Could not open directory %s: %s", parent, strerror(errno));
         #endif // _WIN32
         nob_return_defer(false);
     }
@@ -1211,9 +1146,9 @@ bool nob_read_entire_dir(const char *parent, Nob_File_Paths *children)
 
     if (errno != 0) {
         #ifdef _WIN32
-        nob_log(NOB_ERROR, "Could not read directory %s: %s", parent, nob_win32_error_message(GetLastError()));
+        LOGE("Could not read directory %s: %s", parent, nob_win32_error_message(GetLastError()));
         #else
-        nob_log(NOB_ERROR, "Could not read directory %s: %s", parent, strerror(errno));
+        LOGE("Could not read directory %s: %s", parent, strerror(errno));
         #endif // _WIN32
         nob_return_defer(false);
     }
@@ -1229,7 +1164,7 @@ bool nob_write_entire_file(const char *path, const void *data, size_t size)
 
     FILE *f = fopen(path, "wb");
     if (f == NULL) {
-        nob_log(NOB_ERROR, "Could not open file %s for writing: %s\n", path, strerror(errno));
+        LOGE("Could not open file %s for writing: %s\n", path, strerror(errno));
         nob_return_defer(false);
     }
 
@@ -1243,7 +1178,7 @@ bool nob_write_entire_file(const char *path, const void *data, size_t size)
     while (size > 0) {
         size_t n = fwrite(buf, 1, size, f);
         if (ferror(f)) {
-            nob_log(NOB_ERROR, "Could not write into file %s: %s\n", path, strerror(errno));
+            LOGE("Could not write into file %s: %s\n", path, strerror(errno));
             nob_return_defer(false);
         }
         size -= n;
@@ -1260,7 +1195,7 @@ Nob_File_Type nob_get_file_type(const char *path)
 #ifdef _WIN32
     DWORD attr = GetFileAttributesA(path);
     if (attr == INVALID_FILE_ATTRIBUTES) {
-        nob_log(NOB_ERROR, "Could not get file attributes of %s: %s", path, nob_win32_error_message(GetLastError()));
+        LOGE("Could not get file attributes of %s: %s", path, nob_win32_error_message(GetLastError()));
         return -1;
     }
 
@@ -1270,7 +1205,7 @@ Nob_File_Type nob_get_file_type(const char *path)
 #else // _WIN32
     struct stat statbuf;
     if (stat(path, &statbuf) < 0) {
-        nob_log(NOB_ERROR, "Could not get stat of %s: %s", path, strerror(errno));
+        LOGE("Could not get stat of %s: %s", path, strerror(errno));
         return -1;
     }
 
@@ -1283,16 +1218,16 @@ Nob_File_Type nob_get_file_type(const char *path)
 
 bool nob_delete_file(const char *path)
 {
-    nob_log(NOB_INFO, "deleting %s", path);
+    LOGI("deleting %s", path);
 #ifdef _WIN32
     if (!DeleteFileA(path)) {
-        nob_log(NOB_ERROR, "Could not delete file %s: %s", path, nob_win32_error_message(GetLastError()));
+        LOGE("Could not delete file %s: %s", path, nob_win32_error_message(GetLastError()));
         return false;
     }
     return true;
 #else
     if (remove(path) < 0) {
-        nob_log(NOB_ERROR, "Could not delete file %s: %s", path, strerror(errno));
+        LOGE("Could not delete file %s: %s", path, strerror(errno));
         return false;
     }
     return true;
@@ -1344,11 +1279,11 @@ bool nob_copy_directory_recursively(const char *src_path, const char *dst_path)
         } break;
 
         case NOB_FILE_SYMLINK: {
-            nob_log(NOB_WARNING, "TODO: Copying symlinks is not supported yet");
+            LOGW("TODO: Copying symlinks is not supported yet");
         } break;
 
         case NOB_FILE_OTHER: {
-            nob_log(NOB_ERROR, "Unsupported type of file %s", src_path);
+            LOGE("Unsupported type of file %s", src_path);
             nob_return_defer(false);
         } break;
 
@@ -1432,14 +1367,14 @@ int nob_needs_rebuild(const char *output_path, const char **input_paths, size_t 
     if (output_path_fd == INVALID_HANDLE_VALUE) {
         // NOTE: if output does not exist it 100% must be rebuilt
         if (GetLastError() == ERROR_FILE_NOT_FOUND) return 1;
-        nob_log(NOB_ERROR, "Could not open file %s: %s", output_path, nob_win32_error_message(GetLastError()));
+        LOGE("Could not open file %s: %s", output_path, nob_win32_error_message(GetLastError()));
         return -1;
     }
     FILETIME output_path_time;
     bSuccess = GetFileTime(output_path_fd, NULL, NULL, &output_path_time);
     CloseHandle(output_path_fd);
     if (!bSuccess) {
-        nob_log(NOB_ERROR, "Could not get time of %s: %s", output_path, nob_win32_error_message(GetLastError()));
+        LOGE("Could not get time of %s: %s", output_path, nob_win32_error_message(GetLastError()));
         return -1;
     }
 
@@ -1448,14 +1383,14 @@ int nob_needs_rebuild(const char *output_path, const char **input_paths, size_t 
         HANDLE input_path_fd = CreateFile(input_path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
         if (input_path_fd == INVALID_HANDLE_VALUE) {
             // NOTE: non-existing input is an error cause it is needed for building in the first place
-            nob_log(NOB_ERROR, "Could not open file %s: %s", input_path, nob_win32_error_message(GetLastError()));
+            LOGE("Could not open file %s: %s", input_path, nob_win32_error_message(GetLastError()));
             return -1;
         }
         FILETIME input_path_time;
         bSuccess = GetFileTime(input_path_fd, NULL, NULL, &input_path_time);
         CloseHandle(input_path_fd);
         if (!bSuccess) {
-            nob_log(NOB_ERROR, "Could not get time of %s: %s", input_path, nob_win32_error_message(GetLastError()));
+            LOGE("Could not get time of %s: %s", input_path, nob_win32_error_message(GetLastError()));
             return -1;
         }
 
@@ -1470,7 +1405,7 @@ int nob_needs_rebuild(const char *output_path, const char **input_paths, size_t 
     if (stat(output_path, &statbuf) < 0) {
         // NOTE: if output does not exist it 100% must be rebuilt
         if (errno == ENOENT) return 1;
-        nob_log(NOB_ERROR, "could not stat %s: %s", output_path, strerror(errno));
+        LOGE("could not stat %s: %s", output_path, strerror(errno));
         return -1;
     }
     int output_path_time = statbuf.st_mtime;
@@ -1479,7 +1414,7 @@ int nob_needs_rebuild(const char *output_path, const char **input_paths, size_t 
         const char *input_path = input_paths[i];
         if (stat(input_path, &statbuf) < 0) {
             // NOTE: non-existing input is an error cause it is needed for building in the first place
-            nob_log(NOB_ERROR, "could not stat %s: %s", input_path, strerror(errno));
+            LOGE("could not stat %s: %s", input_path, strerror(errno));
             return -1;
         }
         int input_path_time = statbuf.st_mtime;
@@ -1511,15 +1446,15 @@ const char *nob_path_name(const char *path)
 
 bool nob_rename(const char *old_path, const char *new_path)
 {
-    nob_log(NOB_INFO, "renaming %s -> %s", old_path, new_path);
+    LOGI("renaming %s -> %s", old_path, new_path);
 #ifdef _WIN32
     if (!MoveFileEx(old_path, new_path, MOVEFILE_REPLACE_EXISTING)) {
-        nob_log(NOB_ERROR, "could not rename %s to %s: %s", old_path, new_path, nob_win32_error_message(GetLastError()));
+        LOGE("could not rename %s to %s: %s", old_path, new_path, nob_win32_error_message(GetLastError()));
         return false;
     }
 #else
     if (rename(old_path, new_path) < 0) {
-        nob_log(NOB_ERROR, "could not rename %s to %s: %s", old_path, new_path, strerror(errno));
+        LOGE("could not rename %s to %s: %s", old_path, new_path, strerror(errno));
         return false;
     }
 #endif // _WIN32
@@ -1556,7 +1491,7 @@ bool nob_read_entire_file(const char *path, Nob_String_Builder *sb)
     sb->count = new_count;
 
 defer:
-    if (!result) nob_log(NOB_ERROR, "Could not read file %s: %s", path, strerror(errno));
+    if (!result) LOGE("Could not read file %s: %s", path, strerror(errno));
     if (f) fclose(f);
     return result;
 }
@@ -1700,7 +1635,7 @@ int nob_file_exists(const char *file_path)
     struct stat statbuf;
     if (stat(file_path, &statbuf) < 0) {
         if (errno == ENOENT) return 0;
-        nob_log(NOB_ERROR, "Could not check if file %s exists: %s", file_path, strerror(errno));
+        LOGE("Could not check if file %s exists: %s", file_path, strerror(errno));
         return -1;
     }
     return 1;
@@ -1712,13 +1647,13 @@ const char *nob_get_current_dir_temp(void)
 #ifdef _WIN32
     DWORD nBufferLength = GetCurrentDirectory(0, NULL);
     if (nBufferLength == 0) {
-        nob_log(NOB_ERROR, "could not get current directory: %s", nob_win32_error_message(GetLastError()));
+        LOGE("could not get current directory: %s", nob_win32_error_message(GetLastError()));
         return NULL;
     }
 
     char *buffer = (char*) nob_temp_alloc(nBufferLength);
     if (GetCurrentDirectory(nBufferLength, buffer) == 0) {
-        nob_log(NOB_ERROR, "could not get current directory: %s", nob_win32_error_message(GetLastError()));
+        LOGE("could not get current directory: %s", nob_win32_error_message(GetLastError()));
         return NULL;
     }
 
@@ -1726,7 +1661,7 @@ const char *nob_get_current_dir_temp(void)
 #else
     char *buffer = (char*) nob_temp_alloc(PATH_MAX);
     if (getcwd(buffer, PATH_MAX) == NULL) {
-        nob_log(NOB_ERROR, "could not get current directory: %s", strerror(errno));
+        LOGE("could not get current directory: %s", strerror(errno));
         return NULL;
     }
 
@@ -1738,13 +1673,13 @@ bool nob_set_current_dir(const char *path)
 {
 #ifdef _WIN32
     if (!SetCurrentDirectory(path)) {
-        nob_log(NOB_ERROR, "could not set current directory to %s: %s", path, nob_win32_error_message(GetLastError()));
+        LOGE("could not set current directory to %s: %s", path, nob_win32_error_message(GetLastError()));
         return false;
     }
     return true;
 #else
     if (chdir(path) < 0) {
-        nob_log(NOB_ERROR, "could not set current directory to %s: %s", path, strerror(errno));
+        LOGE("could not set current directory to %s: %s", path, strerror(errno));
         return false;
     }
     return true;

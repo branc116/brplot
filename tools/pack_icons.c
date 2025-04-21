@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <stdbool.h>
 
 // Created icons using Pixelorama
 int max_size(int n, int* arr) {

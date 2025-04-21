@@ -4,28 +4,25 @@
 
 #include "src/br_pp.h"
 #if defined(BR_UNIT_TEST)
-#if defined(_WIN32)
-#  if !defined(WIN32_LEAN_AND_MEAN)
-#    define WIN32_LEAN_AND_MEAN 1
+#  if defined(_WIN32)
+#    if !defined(WIN32_LEAN_AND_MEAN)
+#      define WIN32_LEAN_AND_MEAN 1
+#    endif
+#    include <Windows.h>
 #  endif
-#  include <Windows.h>
-#endif
+#  include <stdbool.h>
+#  include <stdio.h>
+#  include <stdlib.h>
+#  include <string.h>
 
-
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#if defined(__DragonFly__) || defined(__FreeBSD__) || defined(__FreeBSD_kernel__) ||     \
-    defined(__NetBSD__) || defined(__OpenBSD__)
-#define USE_SYSCTL_FOR_ARGS 1
-// clang-format off
-#include <sys/types.h>
-#include <sys/sysctl.h>
-// clang-format on
-#include <unistd.h>        // getpid
-#endif
+#  if defined(__DragonFly__) || defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#    define USE_SYSCTL_FOR_ARGS 1
+     // clang-format off
+#    include <sys/types.h>
+#    include <sys/sysctl.h>
+     // clang-format on
+#    include <unistd.h>        // getpid
+#  endif
 
 struct test_file_metadata;
 
@@ -51,7 +48,12 @@ struct test_file_metadata {
   struct test_case_metadata *tests;
 };
 
+#if defined(_WIN32)
 extern struct test_file_metadata * test_file_head;
+#else
+struct test_file_metadata __attribute__((weak)) * test_file_head;
+#endif
+
 static struct test_file_metadata __test_h_file;
 
 #define SET_FAILURE(_message, _owned)                        \
@@ -135,7 +137,6 @@ static struct test_file_metadata __test_h_file;
       struct test_case_metadata *metadata __attribute__((unused)),                  \
       struct test_file_metadata *file_metadata __attribute__((unused)))
 
-extern void (*test_h_unittest_setup)(void);
 /// Run defined tests, return true if all tests succeeds
 /// @param[out] tests_run if not NULL, set to whether tests were run
 static inline void __attribute__((constructor(1002))) run_tests(void) {
