@@ -1,3 +1,6 @@
+/* for size_t */
+#include <stdlib.h>
+
 #if !defined(BR_ASSERT)
 #  define BR_ASSERT(EXPR)
 #endif
@@ -26,7 +29,6 @@
 #  define BR_THREAD_LOCAL       _Thread_local
 #endif
 
-BR_THREAD_LOCAL extern int brfl__ret_handle;
 #define brfl_push(FL, VALUE) \
   (brfl__ret_handle = brfl_push_internal_get_handle((void**)&((FL).arr), &((FL).free_arr), &((FL).len), &((FL).cap), &((FL).free_len), &((FL).free_next), sizeof((FL).arr[0]), __FILE__, __LINE__), \
    (FL).arr[brfl__ret_handle] = (VALUE), \
@@ -47,6 +49,10 @@ BR_THREAD_LOCAL extern int brfl__ret_handle;
   (FL).free_next = -1; \
 } while (0)
 
+BR_THREAD_LOCAL extern int brfl__ret_handle;
+int brfl_push_internal_get_handle(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, const char* file, int line);
+
+#if defined(BRFL_IMPLEMENTATION)
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -121,3 +127,4 @@ int brfl_push_internal_get_handle(void** const arrp, int** const free_arrp, int*
     }
   }
 }
+#endif

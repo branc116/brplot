@@ -775,7 +775,7 @@ void read_input_main_worker(br_plotter_t* gv) {
   lex(gv);
 }
 
-#if !defined(BR_WIN_MSVC)
+#if defined(BR_UNIT_TEST)
 #include "external/tests.h"
 
 #if defined(FUZZ)

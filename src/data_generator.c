@@ -550,7 +550,7 @@ TEST_ONLY static void expr_to_str(br_str_t* out, br_dagen_exprs_t* arena, uint32
 }
 
 
-#if !defined(BR_WIN_MSVC)
+#if defined(BR_UNIT_TEST)
 #include "external/tests.h"
 
 #define INIT \

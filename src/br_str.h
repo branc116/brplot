@@ -531,7 +531,7 @@ void SCRACH_FREE_NAME(void) {
   br_scrach_is_taken = false;
 }
 
-#if !defined(BR_WIN_MSVC)
+#if defined(BR_UNIT_TEST)
 #include "external/tests.h"
 TEST_CASE(str_tests) {
   char c[128];

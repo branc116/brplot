@@ -100,7 +100,7 @@ void text_set(string_pool_t* sp, text_t* t, br_strv_t str) {
   memcpy(&sp->pool.str[tn.start_index], str.str, str.len);
 }
 
-#if !defined(BR_WIN_MSVC)
+#if defined(BR_UNIT_TEST)
 #include "external/tests.h"
 TEST_CASE(string_pool_init) {
   string_pool_t sp = string_pool();

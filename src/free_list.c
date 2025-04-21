@@ -4,24 +4,7 @@
 #include "src/br_free_list.h"
 #include "src/br_da.h"
 
-typedef struct {
-  int* arr;
-  int* free_arr;
-  int len, cap;
-  int free_len;
-  int free_next;
-} ints;
-
-typedef struct {
-  void* arr;
-  int* free_arr;
-  int len, cap;
-  int free_len;
-  int free_next;
-} brfl_proto_fl_t;
-
-
-#if !defined(_MSC_VER)
+#if defined(BR_UNIT_TEST)
 #include "external/tests.h"
 
 TEST_CASE(free_list_test) {

@@ -500,7 +500,7 @@ float br_resampling2_get_something2(resampling2_t* res) {
   return res->something2;
 }
 
-#if !defined(BR_WIN_MSVC)
+#if defined(BR_UNIT_TEST)
 #define PRINT_ALLOCS(prefix) \
   printf("\n%s ALLOCATIONS: %zu ( %zuKB ) | %lu (%zuKB)\n", prefix, \
       br_context.alloc_count, br_context.alloc_size >> 10, br_context.alloc_total_count, br_context.alloc_total_size >> 10);

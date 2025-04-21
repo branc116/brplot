@@ -65,6 +65,7 @@ bool br_fs_cd(br_str_t* cwd, br_strv_t path) {
   return true;
 }
 
+#if defined(BR_UNIT_TEST)
 TEST_CASE(paths) {
   char c[128];
   br_str_t br = br_str_malloc(2);
@@ -100,4 +101,4 @@ TEST_CASE(paths) {
   TEST_STREQUAL(c, "../../..");
   br_str_free(br);
 }
-
+#endif
