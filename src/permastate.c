@@ -76,7 +76,7 @@ bool br_permastate_save_datas(br_str_t path_folder, br_dagens_t const* dagens, b
     }
     if (false == br_fs_cd(&path_folder, br_strv_from_literal("data")))                     goto error;
     if (false == br_str_push_int(&path_folder, data->group_id))                            goto error;
-    if (false == br_str_push_br_strv(&path_folder, br_strv_from_literal(".br")))           goto error;
+    if (false == br_str_push_strv(&path_folder, br_strv_from_literal(".br")))           goto error;
     br_str_to_c_str1(path_folder, buff);
     if (NULL == (file = fopen(buff, "wb")))                                                goto error;
     if (1 != fwrite(&command, sizeof(command), 1, file))                                   goto error;

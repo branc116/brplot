@@ -417,7 +417,7 @@ static bool tokens_get(tokens_t* tokens, br_strv_t str) {
     switch (str.str[i]) {
 #define X(KIND, CHAR) \
       case CHAR: \
-        t = (token_t){ .kind = KIND, .str = br_strv_sub(str, i, 1), .position = i }; \
+        t = (token_t){ .kind = KIND, .str = br_str_sub(str, i, 1), .position = i }; \
         goto push_token;
       SINGLE(X)
 #undef X
@@ -433,7 +433,7 @@ static bool tokens_get(tokens_t* tokens, br_strv_t str) {
       case '9':
         j = i + 1;
         while (j < str.len && str.str[j] >= '0' && str.str[j] <= '9') ++j;
-        t = (token_t) { .kind = token_kind_number, .str = br_strv_sub(str, i, j - i), .position = i };
+        t = (token_t) { .kind = token_kind_number, .str = br_str_sub(str, i, j - i), .position = i };
         i += j - i - 1;
         goto push_token;
       case ' ': case '\t': case '\n': case '\r': continue;
@@ -550,7 +550,7 @@ TEST_ONLY static void expr_to_str(br_str_t* out, br_dagen_exprs_t* arena, uint32
 }
 
 
-#ifndef _MSC_VER
+#if !defined(BR_WIN_MSVC)
 #include "external/tests.h"
 
 #define INIT \

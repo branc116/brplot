@@ -1,7 +1,8 @@
 #include "src/br_da.h"
+#include "src/br_pp.h"
 
 
-#ifndef _MSC_VER
+#if !defined(BR_WIN_MSVC)
 
 
 #include "external/tests.h"

@@ -88,7 +88,7 @@ static inline void br_keybinding_follow(br_plotter_t* br, br_plot_t* plot, br_ke
 
 static inline void br_keybinding_debug(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
   (void)br; (void)cs; (void)plot;
-  context.debug_bounds = !context.debug_bounds;
+  br_context.debug_bounds = !br_context.debug_bounds;
 }
 
 static inline void br_keybinding_recoil_smol(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {

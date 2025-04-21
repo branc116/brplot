@@ -209,7 +209,7 @@ br_strv_t br_text_renderer_fit(br_text_renderer_t* r, br_size_t size, int font_s
       if (false == brtr_move_loc(r, f, text.str[i], &loc)) break;
     }
   }
-  return br_strv_sub(text, 0, (uint32_t)(i < 0 ? 0 : i));
+  return br_str_sub(text, 0, (uint32_t)(i < 0 ? 0 : i));
 }
 
 br_size_t br_text_renderer_measure(br_text_renderer_t* r, int font_size, br_strv_t str) {

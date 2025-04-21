@@ -1,7 +1,6 @@
 #include "src/br_pp.h"
 #include "src/br_str.h"
 #include "src/br_da.h"
-#include "external/tests.h"
 
 #include <string.h>
 
@@ -101,7 +100,7 @@ void text_set(string_pool_t* sp, text_t* t, br_strv_t str) {
   memcpy(&sp->pool.str[tn.start_index], str.str, str.len);
 }
 
-#ifndef _MSC_VER
+#if !defined(BR_WIN_MSVC)
 #include "external/tests.h"
 TEST_CASE(string_pool_init) {
   string_pool_t sp = string_pool();

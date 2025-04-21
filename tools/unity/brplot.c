@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include "include/brplot.h"
+#include "src/str.c"
 #include "src/platform.c"
 #include "src/da.c"
 #include "src/data.c"
@@ -15,7 +16,6 @@
 #include "src/read_input.c"
 #include "src/shaders.c"
 #include "src/smol_mesh.c"
-#include "src/str.c"
 #include "src/icons.c"
 #include "src/main.c"
 #include "src/gl.c"

@@ -144,7 +144,6 @@ ifeq ($(CONFIG), DEBUG)
 	COMMONFLAGS+= -ggdb -DBR_DEBUG
 	SHADERS_HEADER=
 	ifeq ($(PLATFORM), LINUX)
-		COMMONFLAGS+= -DUNIT_TEST
 		SOURCE+= tests/src/math.c
 		ifeq ($(SANITIZE), YES)
 			ifeq ($(COMPILER), GCC)

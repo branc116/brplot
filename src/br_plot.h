@@ -68,15 +68,15 @@ typedef struct br_plots_t {
   int len, cap;
 } br_plots_t;
 
-typedef struct context_t {
+typedef struct br_context_t {
   float min_sampling;
   float cull_min;
   bool debug_bounds;
   size_t alloc_size, alloc_count, alloc_total_size, alloc_total_count, alloc_max_size, alloc_max_count, free_of_unknown_memory;
-} context_t;
+} br_context_t;
 typedef struct br_plotter_t br_plotter_t;
 
-extern context_t context;
+extern br_context_t br_context;
 
 br_vec2_t br_graph_to_screen(br_extent_t graph_rect, br_extenti_t screen_rect, br_vec2_t point);
 

@@ -12,7 +12,9 @@ default_font.h
 .cache
 compile_commands.json
 imgui.ini
-brplot
 BPS
 .generated
 dist/usr
+packages/aur/brplot
+packages/aur/src/brplot
+dist

@@ -1,3 +1,4 @@
+#include "src/br_pp.h"
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
 #include "src/br_gui_internal.h"
@@ -7,7 +8,6 @@
 #include "src/br_permastate.h"
 #include "src/br_text_renderer.h"
 #include "src/br_tl.h"
-#include "src/br_pp.h"
 #include "src/br_theme.h"
 #include "src/br_ui.h"
 #include "src/br_icons.h"
@@ -20,7 +20,7 @@
 #  include <pthread.h>
 #endif
 
-context_t context;
+br_context_t br_context;
 
 br_plotter_t* br_plotter_malloc(void) {
   br_resampling2_construct();
@@ -55,8 +55,8 @@ br_plotter_t* br_plotter_malloc(void) {
     LOGE("Failed to malloc command queue. Exiting...\n");
     exit(1);
   }
-  context.min_sampling = 0.001f;
-  context.cull_min = 2.f;
+  br_context.min_sampling = 0.001f;
+  br_context.cull_min = 2.f;
   return br;
 }
 

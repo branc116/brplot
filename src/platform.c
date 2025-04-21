@@ -1,6 +1,6 @@
+#include "src/br_pp.h"
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
-#include "src/br_pp.h"
 #include "src/br_gl.h"
 #include "src/br_tl.h"
 #include "src/br_q.h"
@@ -32,6 +32,10 @@
 #  pragma comment(lib, "user32.lib")
 #  pragma comment(lib, "Gdi32.lib")
 #  pragma comment(lib, "Shell32.lib")
+#endif
+
+#if defined(BR_UNIT_TEST)
+struct test_file_metadata * test_file_head;
 #endif
 
 #if defined(__linux__)

@@ -161,9 +161,9 @@ static void draw_left_panel(br_plotter_t* br) {
     }
 
     if (brui_collapsable(BR_STRL("Optimizations"), &br->ui.expand_optimizations)) {
-      brui_sliderf3(BR_STRL("min something"), &context.min_sampling, 4);
-      brui_sliderf2(BR_STRL("cull min"), &context.cull_min);
-      brui_checkbox(BR_STRL("Debug"), &context.debug_bounds);
+      brui_sliderf3(BR_STRL("min something"), &br_context.min_sampling, 4);
+      brui_sliderf2(BR_STRL("cull min"), &br_context.cull_min);
+      brui_checkbox(BR_STRL("Debug"), &br_context.debug_bounds);
       brui_collapsable_end();
     }
 

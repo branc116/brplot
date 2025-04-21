@@ -41,7 +41,7 @@ start:
 bool br_fs_cd(br_str_t* cwd, br_strv_t path) {
   if (path.str[0] == '/') {
     cwd->len = 0;
-    br_str_push_br_strv(cwd, path);
+    br_str_push_strv(cwd, path);
     return true;
   }
 
@@ -51,11 +51,11 @@ bool br_fs_cd(br_str_t* cwd, br_strv_t path) {
     if (next_name.len == 0) /* DO NOTHING */;
     else if (br_strv_eq(next_name, br_strv_from_c_str(".."))) br_fs_up_dir(cwd);
     else if (br_strv_eq(next_name, br_strv_from_c_str("."))) /* DO NOTHING */;
-    else if (cwd->len == 0) br_str_push_br_strv(cwd, next_name);
-    else if (cwd->str[cwd->len - 1] == '/') br_str_push_br_strv(cwd, next_name);
+    else if (cwd->len == 0) br_str_push_strv(cwd, next_name);
+    else if (cwd->str[cwd->len - 1] == '/') br_str_push_strv(cwd, next_name);
     else {
       br_str_push_char(cwd, '/');
-      br_str_push_br_strv(cwd, next_name);
+      br_str_push_strv(cwd, next_name);
     }
     if (next_name.len + 1 <= path.len) {
       path.str += next_name.len + 1;

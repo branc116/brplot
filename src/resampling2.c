@@ -28,7 +28,7 @@ void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_data_t cons
     BR_VEC2I_TOF(plot->cur_extent.size.vec)
   );
 
-  const float min_dist = context.cull_min;
+  const float min_dist = br_context.cull_min;
   if (fabsf(d.x) + fabsf(d.y) < min_dist) {
     lc->mid = p;
     return;
@@ -348,11 +348,11 @@ static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nod
       BR_VEC2(xs[indexies[2]], ys[indexies[2]]), BR_VEC2(xs[indexies[3]], ys[indexies[3]]),
       BR_VEC2(xs[indexies[4]], ys[indexies[4]]), BR_VEC2(xs[indexies[5]], ys[indexies[5]]),
     };
-    //if (context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.base.min_index_x].x, ps[node.base.min_index_y].y, ps[node.base.max_index_x].x, ps[node.base.max_index_y].y }, RAYWHITE);
+    //if (br_context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.base.min_index_x].x, ps[node.base.min_index_y].y, ps[node.base.max_index_x].x, ps[node.base.max_index_y].y }, RAYWHITE);
     br_line_culler_push_line_strip(pss, 6, pg, plot);
   } else {
 
-    //if (context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.base.min_index_x].x, ps[node.base.min_index_y].y, ps[node.base.max_index_x].x, ps[node.base.max_index_y].y }, RAYWHITE);
+    //if (br_context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.base.min_index_x].x, ps[node.base.min_index_y].y, ps[node.base.max_index_x].x, ps[node.base.max_index_y].y }, RAYWHITE);
     resampling2_draw22(nodes, node.base.child1, pg, plot, shaders);
     resampling2_draw22(nodes, node.base.child2, pg, plot, shaders);
   }
@@ -481,7 +481,7 @@ void resampling2_change_something(br_datas_t pg) {
 
     pg.arr[i].resampling->something *= (float)mul;
     pg.arr[i].resampling->something2 *= (float)mul;
-    float mins = context.min_sampling;
+    float mins = br_context.min_sampling;
     if (pg.arr[i].resampling->something < mins) pg.arr[i].resampling->something = mins;
     if (pg.arr[i].resampling->something2 < mins) pg.arr[i].resampling->something2 = mins;
     pg.arr[i].resampling->draw_count = 0;
@@ -500,10 +500,10 @@ float br_resampling2_get_something2(resampling2_t* res) {
   return res->something2;
 }
 
-#ifndef _MSC_VER
+#if !defined(BR_WIN_MSVC)
 #define PRINT_ALLOCS(prefix) \
   printf("\n%s ALLOCATIONS: %zu ( %zuKB ) | %lu (%zuKB)\n", prefix, \
-      context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
+      br_context.alloc_count, br_context.alloc_size >> 10, br_context.alloc_total_count, br_context.alloc_total_size >> 10);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #include "external/tests.h"
@@ -519,11 +519,8 @@ TEST_CASE(resampling) {
   pg.resampling = NULL;
   resampling2_t* r = resampling2_malloc(br_data_kind_2d);
   for (int i = 0; i < 2*1024; ++i) resampling2_add_point(r, &pg, 3);
-  printf("\nALLOCATIONS: %zu ( %zuKB ) | %zu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   resampling2_add_point(r, &pg, 3);
-  printf("\nALLOCATIONS: %zu ( %zuKB ) | %zu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   for (int i = 0; i < 64*1024; ++i) resampling2_add_point(r, &pg, 3);
-  printf("\nALLOCATIONS: %zu ( %zuKB ) | %zu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   resampling2_free(r);
 }
 
@@ -544,9 +541,7 @@ TEST_CASE(resampling2) {
   pg.resampling = NULL;
   resampling2_t* r = resampling2_malloc(br_data_kind_2d);
   for (int i = 0; i < N; ++i) resampling2_add_point(r, &pg, (uint32_t)i);
-  printf("\nALLOCATIONS: %zu ( %zuKB ) | %zu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   resampling2_add_point(r, &pg, 3);
-  printf("\nALLOCATIONS: %zu ( %zuKB ) | %zu (%zuKB)\n", context.alloc_count, context.alloc_size >> 10, context.alloc_total_count, context.alloc_total_size >> 10);
   resampling2_free(r);
 }
 #pragma GCC diagnostic pop

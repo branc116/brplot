@@ -55,11 +55,11 @@ void smol_mesh_gen_line(br_shader_line_t* shader, br_vec2_t startPos, br_vec2_t 
       { .vertexX = strip[0].x, .vertexY = strip[0].y, .delta = delta, .vertexColor = cv },
   });
 
-  if (context.debug_bounds) {
-    context.debug_bounds = false;
+  if (br_context.debug_bounds) {
+    br_context.debug_bounds = false;
     smol_mesh_gen_point(shader, startPos, BR_WHITE);
     smol_mesh_gen_point(shader, endPos, BR_WHITE);
-    context.debug_bounds = true;
+    br_context.debug_bounds = true;
   }
 }
 

@@ -1,4 +1,6 @@
-#if !defined(_MSC_VER)
+#include "src/br_pp.h"
+
+#if !defined(BR_WIN_MSVC)
 #  include "src/br_math.h"
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"

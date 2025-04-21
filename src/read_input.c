@@ -1,3 +1,4 @@
+#include "src/br_pp.h"
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
 #include "src/br_q.h"
@@ -365,7 +366,7 @@ static extractor_res_state_t extractor_extract(br_strv_t ex, br_strv_t view, flo
             ex_i++;
             for (unsigned int j = view_i; j < view.len; ++j) {
               float tmp_x, tmp_y;
-              extractor_res_state_t r = extractor_extract(br_strv_sub1(ex, ex_i), br_strv_sub1(view, j), &tmp_x, &tmp_y);
+              extractor_res_state_t r = extractor_extract(br_str_sub1(ex, ex_i), br_str_sub1(view, j), &tmp_x, &tmp_y);
               if (extractor_res_state_none != r && extractor_res_state_unfinished != r) {
                 if (r & extractor_res_state_x) *x = tmp_x;
                 if (r & extractor_res_state_y) *y = tmp_y;
@@ -391,7 +392,7 @@ static extractor_res_state_t extractor_extract(br_strv_t ex, br_strv_t view, flo
         break;
       case extractor_state_capture: {
         float temp_float = 0.f;
-        int r = extractor_extract_number(br_strv_sub1(view, view_i), &temp_float);
+        int r = extractor_extract_number(br_str_sub1(view, view_i), &temp_float);
         if (r > 0) {
           if (ex_c == 'x') {
             *x = temp_float;
@@ -774,7 +775,7 @@ void read_input_main_worker(br_plotter_t* gv) {
   lex(gv);
 }
 
-#if !defined(_MSC_VER) && defined(BR_DEBUG)
+#if !defined(BR_WIN_MSVC)
 #include "external/tests.h"
 
 #if defined(FUZZ)

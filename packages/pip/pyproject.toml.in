@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "brplot"
-version = "{VERSION}"
+version = "{VERSION}.{BUILDNO}"
 authors = [
   { name="Branimir Ri\\v{c}ko", email="rickobranimir@gmail.com" },
 ]

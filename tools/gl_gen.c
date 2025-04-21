@@ -231,7 +231,7 @@ void brgl_load(void) {
   fprintf(file, "}\n\n");
 }
 
-int main(void) {
+int do_gl_gen(void) {
   struct { func_t* arr; size_t len, cap; } funcs = { 0 };
   br_strv_t all_funcs = br_strv_from_c_str(FUNCTIONS);
   br_strv_t cur = { .str = all_funcs.str, 0 };
@@ -361,5 +361,11 @@ int main(void) {
 
   return 0;
 }
+
+#if !defined(BR_GL_GEN_NO_MAIN)
+int main(void) {
+  do_gl_gen();
+}
+#endif
 
 // gcc -fsanitize=address -Wall -Wextra -Wpedantic -ggdb -I. -o bin/gl_gen tools/gl_gen.c src/str.c && ./bin/gl_gen

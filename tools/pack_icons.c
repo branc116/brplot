@@ -1,13 +1,13 @@
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
-
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "external/stb_image_write.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "external/stb_image.h"
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "external/stb_rect_pack.h"
+
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
 
 // Created icons using Pixelorama
 int max_size(int n, int* arr) {
@@ -126,7 +126,7 @@ void write_to_atlas(unsigned char* atlas, int as, stbrp_rect rect, unsigned char
 
 void generate_code(unsigned char* atlas, int sz, stbrp_rect* rects) {
   const char* gen_path = ".generated/icons.h";
-  FILE* f = fopen(gen_path, "wb+");
+  FILE* f = fopen(gen_path, "wb");
   if (f == NULL) {
     fprintf(stderr, "Failed to open a file `%s`: %s\n", gen_path, strerror(errno));
     exit(1);
@@ -188,7 +188,7 @@ void generate_code(unsigned char* atlas, int sz, stbrp_rect* rects) {
   fclose(f);
 }
 
-int main(void) {
+int do_pack(bool gen_png) {
   stbrp_rect* rects = NULL;
   int len = 0;
   int* sizes = image_sizes(STATIC_ARRAY_SIZE(imgs), imgs, &len);
@@ -210,17 +210,23 @@ int main(void) {
         fprintf(stderr, "ERROR: Expeceted png to have only one channle but %s has %d. Consider using tools/extract_alpha.c tool.\n", path, c);
         return 1;
       }
-      print_img(d, x, y, c);
+      if (gen_png) print_img(d, x, y, c);
       write_to_atlas(atlas, sz, rects[rect_index], d);
       ++rect_index;
       free(d);
     }
   }
   generate_code(atlas, sz, rects);
-  stbi_write_png("atlas.png", sz, sz, 1, atlas, sz);
+  if (gen_png) stbi_write_png("atlas.png", sz, sz, 1, atlas, sz);
   free(sizes);
   free(atlas);
   free(rects);
   return 0;
 }
+
+#if !defined(BR_PACK_ICONS_NO_MAIN)
+int main(void) {
+  return do_pack(true);
+}
+#endif
 // gcc -I. -o bin/pack_icons tools/pack_icons.c -lm

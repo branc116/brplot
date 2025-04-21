@@ -2,9 +2,15 @@
 // BR: Stolen from: https://github.com/yshui/test.h
 #pragma once
 
-#ifdef UNIT_TEST
-
 #include "src/br_pp.h"
+#if defined(BR_UNIT_TEST)
+#if defined(_WIN32)
+#  if !defined(WIN32_LEAN_AND_MEAN)
+#    define WIN32_LEAN_AND_MEAN 1
+#  endif
+#  include <Windows.h>
+#endif
+
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -45,7 +51,7 @@ struct test_file_metadata {
   struct test_case_metadata *tests;
 };
 
-struct test_file_metadata __attribute__((weak)) * test_file_head;
+extern struct test_file_metadata * test_file_head;
 static struct test_file_metadata __test_h_file;
 
 #define SET_FAILURE(_message, _owned)                        \
@@ -129,11 +135,17 @@ static struct test_file_metadata __test_h_file;
       struct test_case_metadata *metadata __attribute__((unused)),                  \
       struct test_file_metadata *file_metadata __attribute__((unused)))
 
-extern void __attribute__((weak)) (*test_h_unittest_setup)(void);
+extern void (*test_h_unittest_setup)(void);
 /// Run defined tests, return true if all tests succeeds
 /// @param[out] tests_run if not NULL, set to whether tests were run
 static inline void __attribute__((constructor(1002))) run_tests(void) {
   bool should_run = false;
+#if defined(_MSC_VER)
+  FILE *cmdlinef = stdin;
+  char* cmdLine = GetCommandLine();
+  printf("\nCommand line: %s\n", cmdLine);
+  should_run = NULL != strstr(cmdLine, "--unittest");
+#else
 #ifdef USE_SYSCTL_FOR_ARGS
   int mib[] = {
     CTL_KERN,
@@ -169,13 +181,10 @@ static inline void __attribute__((constructor(1002))) run_tests(void) {
     }
   }
   BR_FREE(arg);
+#endif
 
   if (!should_run) {
     return;
-  }
-
-  if (&test_h_unittest_setup) {
-    test_h_unittest_setup();
   }
 
   struct test_file_metadata *i = test_file_head;

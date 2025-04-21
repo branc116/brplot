@@ -2,6 +2,8 @@
 #include "src/br_shaders.h"
 #include "src/br_da.h"
 #include "src/br_str.h"
+#define BR_STR_IMPLMENTATION
+#include "src/br_str.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -595,6 +597,7 @@ void exit_usage(const char* name) {
   exit(1);
 }
 
+#if !defined(BR_SHADER_BAKE_NO_MAIN)
 int main(int argc, char const * const* argv) {
   if (argc < 2 || argc > 3) {
     exit_usage(argv[0]);
@@ -624,4 +627,4 @@ int main(int argc, char const * const* argv) {
   }
   return 0;
 }
-
+#endif

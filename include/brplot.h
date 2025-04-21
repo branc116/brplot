@@ -55,7 +55,9 @@
  *
  * */
 #pragma once
-#define BR_VERSION {0, 0, 1}
+#define BR_MAJOR_VERSION 0
+#define BR_MINOR_VERSION 0
+#define BR_PATCH_VERSION 1
 
 #if defined(__EMSCRIPTEN__)
 #  include <emscripten.h>
@@ -267,5 +269,6 @@ BR_EXPORT void br_plot_hide_data(br_plotter_t* plotter, br_plot_id plot, br_data
 // If you just wanna build brplot as an app you have to define this
 #if defined(BRPLOT_IMPLEMENTATION) || defined(BRPLOT_APP)
 #  include "src/br_pp.h"
+#  include "external/tests.h"
 #  include "tools/unity/brplot.c"
 #endif
