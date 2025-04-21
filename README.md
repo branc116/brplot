@@ -30,7 +30,7 @@ make
 
 ### Arch
 ```sh
-sudo pacman -Sy base-devel glfw3
+sudo pacman -Sy base-devel glfw
 git clone https://github.com/branc116/brplot
 cd brplot
 make

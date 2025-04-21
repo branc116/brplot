@@ -1,29 +1,45 @@
 # Maintainer: Branimir Ricko <rickobranimir at gmail dot com>
 
-pkgname=brplot
-pkgver=0.1
+pkgname=brplot-git
+pkgver=v420.69.1.r615.ga98131b
 pkgrel=1
-pkgdesc="A tool for plotting data"
-arch=('any')
+epoch=1
+pkgdesc='better plot - plotting lines that are sent to stdin'
 url="https://github.com/branc116/brplot"
+arch=('x86_64')
 license=('MIT')
-provides=("brplot=$pkgver")
 depends=('glfw')
-makedepends=('base-devel' 'git')
-#source=("git+https://github.com/branc116/brplot.git#tag=v$pkgver")
-source=("git+https://github.com/branc116/brplot.git")
-sha256sums=('SKIP')
- 
-build() {
-  cd "${srcdir}/brplot"
-  make
-  make GUI=RAYLIB
+optdepends=()
+makedependens=('git' 'cmake')
+provides=('brplot')
+options=()
+
+source=('brplot-git::git+https://github.com/branc116/brplot.git#branch=master')
+
+pkgver() { # Correct handling of VCS packages versions
+  cd "$pkgname"
+  git describe --tags --long --abbrev=7 | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
 }
- 
+
+sha256sums=('SKIP') # from VCS you don't need checksums
+
+
+build() {
+   cmake \
+	   -B "${pkgname}/build" \
+	   -S "${pkgname}" \
+	   -DCMAKE_BUILD_TYPE:STRING='Release' \
+	   -DCMAKE_INSTALL_PREFIX:PATH='/usr' \
+	   -Wno-dev
+   cmake --build "${pkgname}/build"
+}
+
+check() {
+ true #noop, but how to run tests? 
+}
+
 package() {
-  cd "${srcdir}/brplot"
-  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
-  install -Dm755 ./bin/brplot_imgui_linux_release_gcc "$pkgdir/usr/bin/brplot_imgui"
-  install -Dm755 ./bin/brplot_raylib_linux_release_gcc "$pkgdir/usr/bin/brplot_raylib"
-  ln -s /usr/bin/brplot_imgui "$pkgdir/usr/bin/brplot"
-} 
+    #DESTDIR="${pkgdir}" cmake --install "${pkgname}/build" #cmake installation is broken
+    install -D -m755 "${pkgname}/build/brplot" "${pkgdir}/usr/bin/brplot"
+    install -D -m644 "${pkgname}/LICENSE" -t "${pkgdir}/usr/share/licenses/${pkgname}"
+}
