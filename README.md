@@ -321,13 +321,14 @@ sudo rm /usr/bin/brplot
   * ~~Maybe create something that does not depend on glfw and can be tested on headless servers. This would enable me to run those tests on github ci.~~
     * Implemented this. On its own, this feature is useful, already found 1 double free.
     * This is more or less now fuzz testing. I like it.
-* Nicer UI for setting color of a line, if it's show, maybe to export data to file or stdout.
-  * Started to work with imgui
-  * First iteration of this is done
+* ~~Nicer UI for setting color of a line, if it's show, maybe to export data to file or stdout.~~
+  * ~~Started to work with imgui~~
+  * ~~First iteration of this is done~~
 * ~~Stack panel improvements~~
-  * make it more general. So that it accepts any kind of element, not just button
-  * add like a scroll bar on the left size of a stack
-  * Fuck this shit. I moved to use imgui for this sort of stuff...
+  * ~~make it more general. So that it accepts any kind of element, not just button~~
+  * ~~add like a scroll bar on the left size of a stack~~
+  * ~~Fuck this shit. I moved to use imgui for this sort of stuff...~~
+  * Fuck ImGui I moved back to my own gui implementaion
 * ~~Zig build doesn't build tools/font_export.c... Make zig build that also, else default_font.h can't be created.~~
   * This is not needed anymore, because I no longer use zig. Zig is not ready yet.
 * ~~Export image with numbers.~~
@@ -356,9 +357,9 @@ sudo rm /usr/bin/brplot
 * ~~Support for exporting csv|brplot file by issuing command from stdin.~~
   * ~~New bug, bad numbers on x,y axis when exporting~~
 * ~~For Imgui make a default layout~~
-  * This is only applyed to web version. ( Desktop versions have ability to save stuff on disk. )
-* For Imgui try to make the same shit with fonts as for raylib. Export only the subset of ttf font.
-* For Imgui disable default font and use the font that is used in the rest of the graph.
+  * ~~This is only applyed to web version. ( Desktop versions have ability to save stuff on disk. )~~
+* ~~For Imgui try to make the same shit with fonts as for raylib. Export only the subset of ttf font.~~
+* ~~For Imgui disable default font and use the font that is used in the rest of the graph.~~
 * ~~Number of draw call for RAYLIB,WEB is not corret - Fix this.~~
   * Fixed
 * Add ability to lineary modify a line on the graph
@@ -393,8 +394,8 @@ sudo rm /usr/bin/brplot
   * Maybe add multipe points per line "Foo%1x %2y %2x %1y": "Foo10 11 12 13" -> [(10, 13), (12, 11)]
   * Current implementation is recursive, maybe think of a way to make it non recursive.
   * Current implementation runs each extractor one by one. Think of a way to run then in lock step.
-* Turn on or off datasets
-    * Icons for checkboxes
+* ~~Turn on or off datasets~~
+    * ~~Icons for checkboxes~~
 * ~~csht should genereate makefile dependency list~~
 
 ## Screenshots
