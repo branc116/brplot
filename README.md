@@ -13,7 +13,7 @@ But it can cross compile for windows and for webassm.
 ### Ubuntu
 Tested on 22.04
 ```sh
-sudo apt install git make gcc g++ libglfw3-dev pkg-config
+sudo apt install git make gcc
 git clone https://github.com/branc116/brplot
 cd brplot
 make
@@ -22,7 +22,7 @@ make
 ### Debian
 Tested on Debian-12
 ```sh
-sudo apt install git make gcc g++ libglfw3-dev pkg-config
+sudo apt install git make gcc
 git clone https://github.com/branc116/brplot
 cd brplot
 make
@@ -30,7 +30,7 @@ make
 
 ### Arch
 ```sh
-sudo pacman -Sy base-devel glfw
+sudo pacman -Sy base-devel
 git clone https://github.com/branc116/brplot
 cd brplot
 make
@@ -39,7 +39,7 @@ make
 ### FreeBSD
 Tested on FreeBSD 14.0
 ```sh
-pkg install glfw cmake
+pkg install cmake
 git clone https://github.com/branc116/brplot
 cd brplot
 mkdir build
@@ -86,24 +86,24 @@ brplot
 
 #### Nice Plot
 ```bash
-# Plot numbers from 1 to 69
-seq 69 | brplot;
+# Plot numbers from 1 to 100
+seq 100 | brplot;
 ```
 
 #### Square(Nice) Plot
 ```bash
-# Plot squeres of numbers from 1 to 69
-python -c "[print(x*x) for x in range(69)]" | brplot;
+# Plot squeres of numbers from 1 to 100
+python -c "[print(x*x) for x in range(100)]" | brplot;
 ```
 
 #### Plot from data that is streamed to an UDP socket
 ```bash
-nc -ulkp 42069 | brplot;
+nc -ulkp 8888 | brplot;
 ```
 
 #### Plot from data that is streamed to a TCP socket
 ```bash
-nc -lkp 42069 | brplot;
+nc -lkp 8888 | brplot;
 ```
 
 #### Plot random data
@@ -168,9 +168,9 @@ port_number = 42069 # This is a port number and it MUST be 42069
 client_socket.sendto(f"{y_value};{group_id}".encode(), ("localhost", port_number))
 ```
 
-Start brplot that listens to UDP port 42069:
+Start brplot that listens to UDP port 8888:
 ```bash
-nc -ulkp 42069 | brplot;
+nc -ulkp 8888 | brplot;
 ```
 
 ### Input format

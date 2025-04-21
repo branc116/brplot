@@ -1,3 +1,4 @@
+#include "src/br_pp.h"
 #include "src/br_da.h"
 #include "src/br_data.h"
 #include "src/br_plotter.h"
@@ -13,7 +14,7 @@
 #  include <unistd.h>
 #endif
 
-#define VERSION 1
+#define BR_VERSION ((BR_MAJOR_VERSION << 16) | (BR_MINOR_VERSION << 8) | (BR_PATCH_VERSION))
 
 typedef union {
   br_plotter_ctor_t plotter;
@@ -33,15 +34,15 @@ static BR_THREAD_RET_TYPE main_loop(void* plotterv) {
   return (BR_THREAD_RET_TYPE)0;
 }
 
-static br_common_ctor ctors[128/8];
-static int ctors_len = 0;
+static br_common_ctor br_ctors[128/8];
+static int br_ctors_len = 0;
 
 br_plotter_ctor_t* br_plotter_default_ctor(void) {
   // TODO: Only run this once...
   br_data_construct();
   br_resampling2_construct();
-  ctors[ctors_len].plotter = (br_plotter_ctor_t) {
-    .version = VERSION,
+  br_ctors[br_ctors_len].plotter = (br_plotter_ctor_t) {
+    .version = BR_VERSION,
     .ctor = {
       .width = 800, .height = 600,
       .kind = br_plotter_ui_kind_minimal,
@@ -49,7 +50,7 @@ br_plotter_ctor_t* br_plotter_default_ctor(void) {
       .use_stdin = false
     }
   };
-  return &ctors[ctors_len++].plotter;
+  return &br_ctors[br_ctors_len++].plotter;
 }
 
 br_plotter_t* br_plotter_new(br_plotter_ctor_t const* ctor) {
@@ -75,12 +76,11 @@ void br_plotter_wait(br_plotter_t const* plotter) {
 #  error "Sleep not defined on this platform.."
 #endif
   }
-
 }
 
 br_plot_ctor_t* br_plot_default_ctor(void) {
-  ctors[ctors_len].plot = (br_plot_ctor_t) {
-    .version = VERSION,
+  br_ctors[br_ctors_len].plot = (br_plot_ctor_t) {
+    .version = BR_VERSION,
     .ctor = {
       .kind = br_plot_kind_2d,
       .width = 1.f,
@@ -88,7 +88,7 @@ br_plot_ctor_t* br_plot_default_ctor(void) {
       .rearange_others = true
     }
   };
-  return &ctors[ctors_len++].plot;
+  return &br_ctors[br_ctors_len++].plot;
 }
 
 br_plot_id br_plot_new(br_plotter_t* plotter, br_plot_ctor_t const* ctor) {
@@ -115,11 +115,11 @@ void br_plot_show_data(br_plotter_t* plotter, br_plot_id plot, br_data_id data) 
 }
 
 br_data_ctor_t* br_data_default_ctor(void) {
-  ctors[ctors_len].data = (br_data_ctor_t) {
-    .version = VERSION,
+  br_ctors[br_ctors_len].data = (br_data_ctor_t) {
+    .version = BR_VERSION,
     .ctor.kind = br_data_kind_2d
   };
-  return &ctors[ctors_len++].data;
+  return &br_ctors[br_ctors_len++].data;
 }
 
 br_data_id br_data_new(br_plotter_t* plotter, br_data_ctor_t const* ctor) {
