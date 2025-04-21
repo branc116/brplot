@@ -430,7 +430,7 @@ static bool compile_and_link(Nob_Cmd* cmd) {
     nob_cmd_append(&link_command, "-o", "bin/brplot" EXE_EXT);
   }
   if (tp_linux == g_platform) {
-    nob_cmd_append(&link_command, "-lm");
+    nob_cmd_append(&link_command, "-lm", "-pthread");
   }
 
   if (enable_asan) nob_cmd_append(&link_command, SANITIZER_FLAGS);
