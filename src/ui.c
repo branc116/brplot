@@ -1012,9 +1012,9 @@ static void bruir_update_extent(int index, br_extenti_t new_ex, bool force) {
         child_extent.width = new_ex.width - child_extent.x - 4;
         changed = true;
       }
-      if (child_extent.width < 100) {
+      if (child_extent.width < 1) {
         child_extent.x = 0;
-        child_extent.width = new_ex.width;
+        child_extent.width = 10;
         changed = true;
       }
 
@@ -1026,9 +1026,9 @@ static void bruir_update_extent(int index, br_extenti_t new_ex, bool force) {
         child_extent.height = new_ex.height - child_extent.y - 4;
         changed = true;
       }
-      if (child_extent.height < 100) {
+      if (child_extent.height < 1) {
         child_extent.y = 0;
-        child_extent.height = new_ex.height;
+        child_extent.height = 10;
         changed = true;
       }
       if (changed == true) bruir_update_extent(child, child_extent, false);
