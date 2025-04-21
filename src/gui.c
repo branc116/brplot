@@ -24,8 +24,8 @@ void br_plotter_draw(br_plotter_t* br) {
   for (int i = 0; i < br->plots.len; ++i) {
 #define PLOT br_da_getp(br->plots, i)
     brui_resizable_t* r = brui_resizable_get(PLOT->extent_handle);
-    if (true == r->hidden) continue;
-    PLOT->cur_extent = r->cur_extent;
+    if (r->hidden_factor > 0.9f) continue;
+    PLOT->cur_extent = BR_EXTENT_TOI(r->cur_extent);
     PLOT->mouse_inside_graph = PLOT->extent_handle == brui_resizable_active();
     br_plot_update_variables(br, PLOT, br->groups, brtl_mouse_pos());
     br_plot_update_context(PLOT, brtl_mouse_pos());
@@ -56,7 +56,7 @@ void br_plotter_draw(br_plotter_t* br) {
     int to_remove = -1;
     for (int i = 0; i < br->plots.len; ++i) {
       brui_resizable_t* r = brui_resizable_get(PLOT->extent_handle);
-      if (true == r->hidden) continue;
+      if (r->hidden_factor > 0.9f) continue;
         brui_resizable_push(PLOT->extent_handle);
           brui_img(PLOT->texture_id);
           if (brgui_draw_plot_menu(PLOT, br->groups)) to_remove = i;
@@ -71,7 +71,7 @@ void br_plotter_draw(br_plotter_t* br) {
 }
 
 static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas) {
-  if (true == brui_resizable_get(plot->legend_extent_handle)->hidden) return;
+  if (brui_resizable_get(plot->legend_extent_handle)->hidden_factor > 0.9f) return;
   brui_resizable_push(plot->legend_extent_handle);
     brui_padding_y_set(1.f);
     brui_text_size_set(brui_text_size() / 5 * 3);
@@ -94,13 +94,13 @@ static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas) {
   int og_text_size = brui_text_size();
   int icon_size = og_text_size;
   bool ret = false;
-  if (menu_res->hidden == true) {
-    if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icons.menu.size_32)) menu_res->hidden = false;
+  if (menu_res->hidden_factor > 0.9f) {
+    if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icons.menu.size_32)) menu_res->target.hidden_factor = 0.0f;
   } else {
     brui_resizable_push(plot->menu_extent_handle);
       brui_vsplitvp(2, BRUI_SPLITA((float)icon_size), BRUI_SPLITR(1));
         char* c = br_scrach_get(4096);
-        if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icons.back.size_32)) menu_res->hidden = true;
+        if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icons.back.size_32)) menu_res->target.hidden_factor = 1.0f;
       brui_vsplit_pop();
         brui_text_size_set(og_text_size);
         brui_text_align_set(br_text_renderer_ancor_mid_mid);
@@ -113,7 +113,10 @@ static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas) {
       }
       brui_text_size_set(og_text_size/5*4);
       brui_checkbox(BR_STRL("Follow"), &plot->follow);
-      brui_checkbox(BR_STRL("Hide Legend"), &brui_resizable_get(plot->legend_extent_handle)->hidden);
+      bool hide_legend = brui_resizable_get(plot->legend_extent_handle)->target.hidden_factor > 0.9f;
+      if (brui_checkbox(BR_STRL("Hide Legend"), &hide_legend)) {
+        brui_resizable_get(plot->legend_extent_handle)->target.hidden_factor = hide_legend ? 1.f : 0.f;
+      };
       for (size_t k = 0; k < datas.len; ++k) {
         bool is_shown = false;
         br_data_t* data = br_da_getp(datas, k);
@@ -153,9 +156,9 @@ static void draw_left_panel(br_plotter_t* br) {
       for (int i = 0; i < br->plots.len; ++i) {
         int n = sprintf(scrach, "%s Plot %d", br_da_get(br->plots, i).kind == br_plot_kind_2d ? "2D" : "3D", i);
         brui_resizable_t* r = brui_resizable_get(br_da_get(br->plots, i).extent_handle);
-        bool is_visible = !r->hidden;
+        bool is_visible = r->target.hidden_factor < 0.9f;
         brui_checkbox(BR_STRV(scrach, (uint32_t)n), &is_visible);
-        r->hidden = !is_visible;
+        r->target.hidden_factor = is_visible ? 0.f : 1.f;
       }
       brui_collapsable_end();
     }

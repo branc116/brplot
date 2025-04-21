@@ -74,7 +74,7 @@ void br_plotter_init(br_plotter_t* br) {
       br->plots.arr[i].texture_id = brgl_create_framebuffer(p->cur_extent.width, p->cur_extent.height);
     }
   }
-  br->menu_extent_handle = brui_resizable_new(BR_EXTENTI(10, 40, 160, brtl_viewport().height/2), 0); 
+  br->menu_extent_handle = brui_resizable_new(BR_EXTENT(10, 40, 160, (float)brtl_viewport().height/2.f), 0); 
   br_icons_init(br->shaders.icon);
   if (br->loaded_status < br_permastate_status_ui_loaded) {
     br_theme_dark();
@@ -155,9 +155,9 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
     }
   };
   br_plot_create_texture(&plot);
-  plot.extent_handle = brui_resizable_new(BR_EXTENTI(x, 50, br->win.size.width - x - 60, br->win.size.height - 110), 0);
-  plot.menu_extent_handle = brui_resizable_new2(BR_EXTENTI(0, 0, 300, plot.cur_extent.height), plot.extent_handle, (brui_resizable_t) { .hidden = true });
-  plot.legend_extent_handle = brui_resizable_new(BR_EXTENTI(plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle);
+  plot.extent_handle = brui_resizable_new(BR_EXTENT((float)x, 50, (float)br->win.size.width - (float)x - 60.f, (float)br->win.size.height - 110), 0);
+  plot.menu_extent_handle = brui_resizable_new2(BR_EXTENT(0, 0, 300, (float)plot.cur_extent.height), plot.extent_handle, (brui_resizable_t) { .target.hidden_factor = 1.f });
+  plot.legend_extent_handle = brui_resizable_new(BR_EXTENT((float)plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle);
   br_da_push_t(int, (br->plots), plot);
   br->any_2d = true;
   return br->plots.len - 1;
@@ -181,9 +181,9 @@ int br_plotter_add_plot_3d(br_plotter_t* br) {
     }
   };
   br_plot_create_texture(&plot);
-  plot.extent_handle = brui_resizable_new(BR_EXTENTI(500, 50, br->win.size.width - 500 - 60, br->win.size.height - 110), 0);
-  plot.menu_extent_handle = brui_resizable_new2(BR_EXTENTI(0, 0, 300, plot.cur_extent.height), plot.extent_handle, (brui_resizable_t) { .hidden = true });
-  plot.legend_extent_handle = brui_resizable_new(BR_EXTENTI(plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle);
+  plot.extent_handle = brui_resizable_new(BR_EXTENT(500, 50, (float)br->win.size.width - 500 - 60, (float)br->win.size.height - 110), 0);
+  plot.menu_extent_handle = brui_resizable_new2(BR_EXTENT(0, 0, 300, (float)plot.cur_extent.height), plot.extent_handle, (brui_resizable_t) { .target.hidden_factor = 1.f });
+  plot.legend_extent_handle = brui_resizable_new(BR_EXTENT((float)plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle);
   br_da_push_t(int, (br->plots), plot);
   br->any_3d = true;
   return br->plots.len - 1;

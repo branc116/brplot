@@ -23,6 +23,7 @@
 #define BR_EXTENT(X, Y, WIDTH, HEIGHT) (br_extent_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
 #define BR_EXTENT2(POS, SIZE) (br_extent_t) { .pos = (POS), .size = (SIZE) }
 #define BR_EXTENT_TOBB(E) ((br_bb_t) { .min_x = (E).x, .min_y = (E).y, .max_x = (E).x + (E).width, .max_y = (E).y + (E).height })
+#define BR_EXTENT_TOI(E) ((br_extenti_t) { .arr = { (int)(E).arr[0], (int)(E).arr[1], (int)(E).arr[2], (int)(E).arr[3] } })
 #define BR_EXTENTI_TOF(E) ((br_extent_t) { .arr = { (float)(E).arr[0], (float)(E).arr[1], (float)(E).arr[2], (float)(E).arr[3] } })
 #define BR_EXTENTI_TOBB(E) ((br_bb_t) { .min_x = (float)(E).x, .min_y = (float)(E).y, .max_x = (float)(E).x + (float)(E).width, .max_y = (float)(E).y + (float)(E).height })
 #define BR_EXTENTI_ASPECT(E) ((float)(E).height / (float)(E).width)
@@ -315,6 +316,10 @@ static inline br_size_t br_size_addv(br_size_t a, br_vec2_t b) {
   return BR_SIZE(a.width + b.x, a.height + b.y);
 }
 
+static inline br_size_t br_size_scale(br_size_t a, float b) {
+  return BR_SIZE(a.width * b, a.height * b);
+}
+
 //------------------------vec3------------------------------
 
 static inline br_vec3_t br_vec3_add(br_vec3_t a, br_vec3_t b) {
@@ -479,12 +484,29 @@ static inline br_vec2_t br_extent_tr2(br_extent_t extent, float x, float y) {
   return BR_VEC2(extent.x + extent.width - x, extent.y + y);
 }
 
+static inline bool br_extent_eq(br_extent_t a, br_extent_t b) {
+  if (a.x != b.x) return false;
+  if (a.y != b.y) return false;
+  if (a.width != b.width) return false;
+  if (a.height != b.height) return false;
+  return true;
+}
+
 static inline bool br_extenti_eq(br_extenti_t a, br_extenti_t b) {
   if (a.x != b.x) return false;
   if (a.y != b.y) return false;
   if (a.width != b.width) return false;
   if (a.height != b.height) return false;
   return true;
+}
+
+static inline br_extent_t br_extent_lerp(br_extent_t a, br_extent_t b, float x) {
+  return BR_EXTENT(
+    (int)a.x == (int)b.x ? b.x : br_float_lerp(a.x, b.x, x),
+    (int)a.y == (int)b.y ? b.y : br_float_lerp(a.y, b.y, x),
+    (int)a.width == (int)b.width ? b.width : br_float_lerp(a.width, b.width, x),
+    (int)a.height == (int)b.height ? b.height : br_float_lerp(a.height, b.height, x)
+  );
 }
 
 // ------------------br_mat_t--------------------

@@ -3,8 +3,8 @@
 #include "src/br_str.h"
 #include "src/br_text_renderer.h"
 
-extern BR_THREAD_LOCAL int __n__;
-#define brui_textf(...) (__n__ = sprintf(_scrach, __VA_ARGS__), brui_text(BR_STRV(_scrach, (uint32_t)__n__)))
+extern BR_THREAD_LOCAL int brui__n__;
+#define brui_textf(...) (brui__n__ = sprintf(brui__scrach, __VA_ARGS__), brui_text(BR_STRV(brui__scrach, (uint32_t)brui__n__)))
 
 typedef enum {
   brui_drag_mode_none = 0,
@@ -34,17 +34,17 @@ typedef enum {
 
 #define brui_resizable_anim_fields(X) \
   X(float, scroll_offset_percent) \
+  X(br_extent_t, cur_extent) \
+  X(float, hidden_factor)
 
 #define brui_resizable_fields(X) \
-  X(br_extenti_t, cur_extent) \
   X(brui_ancor_t, ancor) \
   X(int, z) \
   X(int, parent) \
   brui_resizable_anim_fields(X) \
   X(float, full_height) \
   X(bool, is_hoverd) \
-  X(bool, scroll_bar) \
-  X(bool, hidden)
+  X(bool, scroll_bar)
 
 typedef union {
   struct {
@@ -82,7 +82,7 @@ typedef struct brui_split_t {
 #define BRUI_SPLITR(VALUE) ((brui_split_t) { .kind = brui_split_relative, .relative = (VALUE) })
 #define BRUI_SPLITA(VALUE) ((brui_split_t) { .kind = brui_split_absolute, .absolute = (VALUE) })
 
-extern BR_THREAD_LOCAL char _scrach[2048];
+extern BR_THREAD_LOCAL char brui__scrach[2048];
 
 void brui_begin(void);
 void brui_end(void);
@@ -111,22 +111,22 @@ void brui_push(void);
 void brui_pop(void);
 void brui_push_y(float y);
 
-int  brui_text_size(void);
-void brui_text_size_set(int size);
-void brui_text_align_set(br_text_renderer_ancor_t ancor);
-void brui_text_color_set(br_color_t color);
-void brui_ancor_set(brui_ancor_t ancor);
-void brui_z_set(int z);
-void brui_maxy_set(float value);
+int   brui_text_size(void);
+void  brui_text_size_set(int size);
+void  brui_text_align_set(br_text_renderer_ancor_t ancor);
+void  brui_text_color_set(br_color_t color);
+void  brui_ancor_set(brui_ancor_t ancor);
+void  brui_z_set(int z);
+void  brui_maxy_set(float value);
 float brui_min_y(void);
-void brui_height_set(float value);
+void  brui_height_set(float value);
 float brui_padding_x(void);
-void brui_padding_y_set(float value);
+void  brui_padding_y_set(float value);
 
 void              brui_resizable_init(void);
 void              brui_resizable_deinit(void);
-int               brui_resizable_new(br_extenti_t init_extent, int parent);
-int               brui_resizable_new2(br_extenti_t init_extent, int parent, brui_resizable_t template);
+int               brui_resizable_new(br_extent_t init_extent, int parent);
+int               brui_resizable_new2(br_extent_t init_extent, int parent, brui_resizable_t template);
 void              brui_resizable_delete(int handle);
 void              brui_resizable_update(void);
 void              bruir_resizable_refresh(int index);

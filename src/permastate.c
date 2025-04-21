@@ -256,9 +256,9 @@ bool br_permastate_load_plots(FILE* file, br_plotter_t* br) {
   }
 
   for (size_t i = 0; i < plots_len; ++i) {
-    plots[i].extent_handle = brui_resizable_new(plots[i].cur_extent, 0);
-    plots[i].menu_extent_handle = brui_resizable_new2(BR_EXTENTI(0, 0, 300, plots[i].cur_extent.height), plots[i].extent_handle, (brui_resizable_t) { .hidden = true });
-    plots[i].legend_extent_handle = brui_resizable_new(BR_EXTENTI(plots[i].cur_extent.width - 110, 10, 100, 60), plots[i].extent_handle);
+    plots[i].extent_handle = brui_resizable_new(BR_EXTENTI_TOF(plots[i].cur_extent), 0);
+    plots[i].menu_extent_handle = brui_resizable_new2(BR_EXTENT(0, 0, 300, (float)plots[i].cur_extent.height), plots[i].extent_handle, (brui_resizable_t) { .target.hidden_factor = 1.f });
+    plots[i].legend_extent_handle = brui_resizable_new(BR_EXTENT((float)plots[i].cur_extent.width - 110, 10, 100, 60), plots[i].extent_handle);
   }
   return true;
 
@@ -299,7 +299,7 @@ br_permastate_status_t br_permastate_load(br_plotter_t* br) {
 #endif
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
   if (ttyname(STDIN_FILENO) == NULL) {
-    goto end;
+    //goto end;
   }
 #endif
 
