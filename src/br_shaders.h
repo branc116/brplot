@@ -48,29 +48,24 @@
       X_BUF(z, 1)                       \
     )                                   \
   X(line_3d_simple, 1024,               \
-      X_VEC(m_mvp, 16),                 \
+      X_VEC(m_mvp, 16)                  \
+      X_VEC(color, 3),                  \
                                         \
       X_BUF(vertexPosition, 3)          \
       X_BUF(vertexNormal, 3)            \
-      X_BUF(vertexColor, 3)             \
     )                                   \
   X(line_3d, 16*1024,                   \
       X_VEC(eye, 3)                     \
-      X_VEC(m_mvp, 16),                 \
+      X_VEC(m_mvp, 16)                  \
+      X_VEC(color, 3),                  \
                                         \
       X_BUF(vertexPosition, 3)          \
       X_BUF(vertexNormal, 3)            \
-      X_BUF(vertexColor, 3)             \
     )                                   \
   X(line, 2048,                         \
-      X_VEC(offset, 2)                  \
-      X_VEC(zoom, 2)                    \
-      X_VEC(screen, 2),                 \
+      X_VEC(color, 3),                  \
                                         \
-      X_BUF(vertexX, 1)                 \
-      X_BUF(vertexY, 1)                 \
-      X_BUF(delta, 2)                   \
-      X_BUF(vertexColor, 3)             \
+      X_BUF(pos_delta, 4)               \
     )                                   \
   X(icon, 1024,                         \
       X_VEC(atlas, _TEX),               \

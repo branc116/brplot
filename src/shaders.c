@@ -141,6 +141,7 @@ BR_ALL_SHADERS(X, X_VEC, NOP2)
     br_shader_ ## NAME ## _update_vbs(shader); \
     brgl_enable_vao(shader->vao_id); \
     brgl_draw_vao(0, shader->len*3); \
+    shader->len = 0; \
   }
 BR_ALL_SHADERS(X, NOP2, NOP2)
 #undef X

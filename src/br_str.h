@@ -316,13 +316,13 @@ char* br_str_move_to_scrach(br_str_t s) {
 bool br_str_replace_one(br_str_t* out, br_strv_t in, br_strv_t to_replace, br_strv_t replace_with) {
   out->len = 0;
 
-  int new_size = in.len + (replace_with.len > to_replace.len ? replace_with.len - to_replace.len : 0); 
+  uint32_t new_size = in.len + (replace_with.len > to_replace.len ? replace_with.len - to_replace.len : 0); 
 
-  br_str_realloc(out, new_size);
-  for (int i = 0; i < in.len; ++i) {
+  br_str_realloc(out, (size_t)new_size);
+  for (uint32_t i = 0; i < in.len; ++i) {
     bool is_match = true;
     if (to_replace.len + i <= in.len) {
-      for (int j = 0; j < to_replace.len; ++j) {
+      for (uint32_t j = 0; j < to_replace.len; ++j) {
         if (in.str[i + j] != to_replace.str[j]) {
           is_match = false;
           break;

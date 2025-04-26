@@ -1,4 +1,5 @@
 #include "src/br_da.h"
+#include "src/br_data.h"
 #include "src/br_gl.h"
 #include "src/br_gui_internal.h"
 #include "src/br_math.h"
@@ -49,21 +50,31 @@ void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t grou
 bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos) {
   BR_ASSERT(plot->kind == br_plot_kind_2d);
   if (plot->follow) {
-    br_extent_t sr = plot->dd.graph_rect;
-    br_vec2_t middle = BR_VEC2(sr.x + sr.width/2, sr.y - sr.height/2);
-    for (size_t i = 0; i < groups.len; ++i) {
-      br_data_t* pg = &groups.arr[i];
-      size_t gl = pg->len;
-      if (pg->kind != br_data_kind_2d || gl == 0) continue;
-      plot->dd.delta.x += ((middle.x - pg->dd.xs[gl - 1]))/1000.f;
-      plot->dd.delta.y += ((middle.y - pg->dd.ys[gl - 1]))/1000.f;
+    br_vec2d_t maxy = BR_VEC2D(-DBL_MAX, -DBL_MAX);
+    br_vec2d_t mini = BR_VEC2D(DBL_MAX, DBL_MAX);
+    int n = 0;
+    for (int i = 0; i < plot->groups_to_show.len; ++i) {
+      br_data_t* pg = br_data_get1(groups, plot->groups_to_show.arr[i]);
+      if (pg->len == 0) continue;
+      for (size_t j = 0; j < 50 && j < pg->len; ++j) {
+        double cx = ((double)pg->dd.xs[pg->len - 1 - j] + pg->dd.rebase_x);
+        double cy = ((double)pg->dd.ys[pg->len - 1 - j] + pg->dd.rebase_y);
+        if (cx > maxy.x) maxy.x = cx;
+        if (cx < mini.x) mini.x = cx;
+        if (cy > maxy.y) maxy.y = cy;
+        if (cy < mini.y) mini.y = cy;
+        ++n;
+      }
     }
-    plot->dd.offset.x -= plot->dd.delta.x;
-    plot->dd.offset.y -= plot->dd.delta.y;
-    plot->dd.delta.x *= plot->dd.recoil;
-    plot->dd.delta.y *= plot->dd.recoil;
-  } else {
-    plot->dd.delta = BR_VEC2(0.f, 0.f);
+    if (n > 3) {
+      br_vec2d_t wanted_zoom = br_vec2d_scale(br_vec2d_sub(maxy, mini), 2.8);
+      if (maxy.y == mini.y) wanted_zoom.y = (double)plot->dd.zoom.y;
+      if (maxy.x == mini.x) wanted_zoom.x = (double)plot->dd.zoom.x;
+      br_vec2d_t wanted_offset = br_vec2d_add(br_vec2d_scale(maxy, 0.5), br_vec2d_scale(mini, 0.5));
+      LOGI("%f %f - %f %f - wo: %f %f", mini.x, mini.y, maxy.x, maxy.y, wanted_offset.x, wanted_offset.y);
+      plot->dd.zoom = br_vec2_lerp(plot->dd.zoom, BR_VEC2D_TOF(wanted_zoom), 0.001f*brtl_frame_time());
+      plot->dd.offset = br_vec2_lerp(plot->dd.offset, BR_VEC2D_TOF(wanted_offset), 0.05f);
+    }
   }
   if (plot->mouse_inside_graph) {
     // TODO: Move this to br_keybindings.c
@@ -154,9 +165,6 @@ void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
       br_vec2_t off = br_vec2_mul(off_zoom, BR_VEC2(0.1f, 0.1f));
       shaders->grid->uvs.offset_uv = br_vec2_sub(off_zoom, BR_VEC2(floorf(off.x) * 10.f, floorf(off.y) * 10.f));
       shaders->grid->uvs.screen_uv = ex.size.vec;
-      shaders->line->uvs.zoom_uv = plot->dd.zoom;
-      shaders->line->uvs.offset_uv = plot->dd.offset;
-      shaders->line->uvs.screen_uv = ex.size.vec;
       TracyCFrameMarkEnd("update_shader_values_2d");
     } break;
     case br_plot_kind_3d: {
@@ -187,7 +195,7 @@ br_vec2_t br_plot_2d_get_mouse_position(br_plot_t* plot, br_vec2_t screen_mouse_
   br_vec2i_t a = BR_VEC2I_SCALE(mp_in_graph, 2);
   br_vec2_t b = br_vec2i_tof(BR_VEC2I_SUB(plot->cur_extent.size.vec, a));
   br_vec2_t c = br_vec2_scale(b, 1.f/(float)ex.height);
-  return  BR_VEC2(
+  return BR_VEC2(
     -c.x*plot->dd.zoom.x/2.f + plot->dd.offset.x,
      c.y*plot->dd.zoom.y/2.f + plot->dd.offset.y
   );
@@ -221,6 +229,7 @@ static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* sha
     int group = plot->groups_to_show.arr[j];
     br_data_t const* g = br_data_get1(datas, group);
     if (g->len == 0) continue;
+    g->resampling->culler.args.screen_size = BR_VEC2I_TOF(plot->cur_extent.size.vec);
     resampling2_draw(g->resampling, g, plot, shaders);
   }
 }

@@ -1,3 +1,4 @@
+#include "src/br_math.h"
 #include "src/br_resampling2.h"
 #include "src/br_pp.h"
 #include "src/br_data.h"
@@ -14,7 +15,7 @@
 
 #define RESAMPLING_NODE_MAX_LEN 64
 
-void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_data_t const* data, br_plot_t const* plot) {
+static void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_vec2_t plot_size) {
   if (lc->has_old == false) {
     lc->old = p;
     lc->has_old = true;
@@ -24,8 +25,9 @@ void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_data_t cons
   br_vec2_mul(
     br_vec2_div(
       br_vec2_sub(p, lc->old),
-      plot->dd.graph_rect.size.vec),
-    BR_VEC2I_TOF(plot->cur_extent.size.vec)
+      //plot->dd.graph_rect.size.vec),
+      plot_size),
+    lc->args.screen_size
   );
 
   const float min_dist = br_context.cull_min;
@@ -34,26 +36,26 @@ void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_data_t cons
     return;
   }
 
-  smol_mesh_gen_line(brtl_shaders()->line, lc->old, p, data->color);
+  smol_mesh_gen_line(lc->args, lc->old, p);
   lc->mid = lc->old = p;
 }
 
-void br_line_culler_push_line_strip(br_vec2_t const* points, size_t n, br_data_t const* data, br_plot_t const* plot) {
+void br_line_culler_push_line_strip(br_vec2_t const* points, size_t n, br_line_culler_t* lc, br_vec2_t plot_size) {
   for (size_t i = 0; i < n; ++i) {
-    br_line_culler_push_point(&data->resampling->culler, points[i], data, plot);
+    br_line_culler_push_point(lc, points[i], plot_size);
   }
 }
 
-void br_line_culler_end(br_line_culler_t* lc, br_color_t color) {
+void br_line_culler_end(br_line_culler_t* lc) {
   if (false == br_vec2_eq(lc->old, lc->mid)) {
-    smol_mesh_gen_line(brtl_shaders()->line, lc->old, lc->mid, color);
+    smol_mesh_gen_line(lc->args, lc->old, lc->mid);
   }
-  *lc = (br_line_culler_t) { 0 };
+  lc->has_old = false;
 }
 
-void br_line_culler_push_line_strip2(float const* xs, float const* ys, size_t n, br_data_t const* data, br_plot_t const* plot) {
+void br_line_culler_push_line_strip2(float const* xs, float const* ys, size_t n, br_line_culler_t* lc, br_vec2_t plot_size) {
   for (size_t i = 0; i < n; ++i) {
-    br_line_culler_push_point(&data->resampling->culler, BR_VEC2(xs[i], ys[i]), data, plot);
+    br_line_culler_push_point(lc, BR_VEC2(xs[i], ys[i]), plot_size);
   }
 }
 
@@ -315,23 +317,23 @@ static int size_t_cmp(void const* a, void const* b) {
   return (int)(*ap - *bp);
 }
 
-static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot, br_shaders_t* const shaders) {
-  BR_ASSERT(plot->kind == br_plot_kind_2d);
+static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_extent_t plot_extent) {
   BR_ASSERT(pg->kind == br_data_kind_2d);
   float const* xs = pg->dd.xs;
   float const* ys = pg->dd.ys;
-  br_extent_t rect = plot->dd.graph_rect;
+  br_vec2_t plot_size = plot_extent.size.vec;
   resampling2_nodes_2d_t node = nodes->arr[index];
-  if (false == resampling2_nodes_2d_is_inside(&node, xs, ys, rect)) {
-    br_line_culler_end(&pg->resampling->culler, pg->color);
+  if (false == resampling2_nodes_2d_is_inside(&node, xs, ys, plot_extent)) {
+    br_line_culler_end(&pg->resampling->culler);
     return;
   }
   bool is_end = pg->len == node.base.index_start + node.base.len;
-  if (node.base.depth == 0) { // This is the leaf node
-    br_line_culler_push_line_strip2(&xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1), pg, plot);
+  if (node.base.depth == 0) {
+    // This is the leaf node
+    br_line_culler_push_line_strip2(&xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1), &pg->resampling->culler, plot_size);
     return;
   }
-  br_vec2_t ratios = resampling2_nodes_2d_get_ratios(&node, xs, ys, rect.width, rect.height);
+  br_vec2_t ratios = resampling2_nodes_2d_get_ratios(&node, xs, ys, plot_extent.width, plot_extent.height);
   float rmin = fminf(ratios.x, ratios.y);
   if (rmin < (node.base.depth == 1 ? pg->resampling->something : pg->resampling->something2)) {
     size_t indexies[] = {
@@ -349,12 +351,12 @@ static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nod
       BR_VEC2(xs[indexies[4]], ys[indexies[4]]), BR_VEC2(xs[indexies[5]], ys[indexies[5]]),
     };
     //if (br_context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.base.min_index_x].x, ps[node.base.min_index_y].y, ps[node.base.max_index_x].x, ps[node.base.max_index_y].y }, RAYWHITE);
-    br_line_culler_push_line_strip(pss, 6, pg, plot);
+    br_line_culler_push_line_strip(pss, 6, &pg->resampling->culler, plot_size);
   } else {
 
     //if (br_context.debug_bounds) smol_mesh_gen_bb(plot->dd.line_shader, bb_t{ ps[node.base.min_index_x].x, ps[node.base.min_index_y].y, ps[node.base.max_index_x].x, ps[node.base.max_index_y].y }, RAYWHITE);
-    resampling2_draw22(nodes, node.base.child1, pg, plot, shaders);
-    resampling2_draw22(nodes, node.base.child2, pg, plot, shaders);
+    resampling2_draw22(nodes, node.base.child1, pg, plot_extent);
+    resampling2_draw22(nodes, node.base.child2, pg, plot_extent);
   }
 }
 
@@ -451,15 +453,70 @@ void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, 
   switch (pg->kind) {
     case br_data_kind_2d: {
       switch (plot->kind) {
-        case br_plot_kind_2d: resampling2_draw22(&res->dd, 0, pg, plot, shaders); br_line_culler_end(&res->culler, pg->color); break;
-        case br_plot_kind_3d: resampling2_draw32(&res->dd, 0, pg, plot, shaders); break;
+        case br_plot_kind_2d: {
+          res->culler.args.screen_size = BR_VEC2I_TOF(plot->cur_extent.size.vec);
+          res->culler.args.zoom = plot->dd.zoom;
+          res->culler.args.offset = plot->dd.offset;
+          res->culler.args.offset.x -= (float)pg->dd.rebase_x;
+          res->culler.args.offset.y -= (float)pg->dd.rebase_y;
+
+          shaders->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
+          br_extent_t ex = BR_EXTENTI_TOF(plot->cur_extent);
+          float aspect = ex.width/ex.height;
+          br_extent_t plot_rect = BR_EXTENT(
+            -aspect*plot->dd.zoom.x/2.f + plot->dd.offset.x - (float)pg->dd.rebase_x,
+                    plot->dd.zoom.y/2.f + plot->dd.offset.y - (float)pg->dd.rebase_y,
+            aspect*plot->dd.zoom.x,
+            plot->dd.zoom.y);
+
+          resampling2_draw22(&res->dd, 0, pg, plot_rect);
+          br_line_culler_end(&res->culler);
+          br_shader_line_draw(brtl_shaders()->line);
+        } break;
+        case br_plot_kind_3d: {
+          br_vec3_t target = plot->ddd.target;
+          target.x -= (float)pg->dd.rebase_x;
+          target.y -= (float)pg->dd.rebase_y;
+          br_vec3_t eye = plot->ddd.eye;
+          eye.x -= (float)pg->dd.rebase_x;
+          eye.y -= (float)pg->dd.rebase_y;
+          br_extent_t const ex = BR_EXTENTI_TOF(plot->cur_extent);
+          br_vec2_t re = (br_vec2_t) { .x = ex.width, .y = ex.height };
+          br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
+          br_mat_t look = br_mat_look_at(eye, target, plot->ddd.up);
+          shaders->line_3d_simple->uvs.m_mvp_uv = shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
+          shaders->line_3d->uvs.eye_uv = eye;
+          shaders->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
+
+          resampling2_draw32(&res->dd, 0, pg, plot, shaders);
+          br_shader_line_3d_draw(brtl_shaders()->line_3d);
+        } break;
       }
       break;
     }
     case br_data_kind_3d: {
       switch (plot->kind) {
         case br_plot_kind_2d: assert("Can't draw 3d data on 2d plot.." && 0);
-        case br_plot_kind_3d: resampling2_draw33(&res->ddd, 0, pg, plot, shaders); break;
+        case br_plot_kind_3d: {
+          br_vec3_t target = plot->ddd.target;
+          target.x -= (float)pg->ddd.rebase_x;
+          target.y -= (float)pg->ddd.rebase_y;
+          target.z -= (float)pg->ddd.rebase_z;
+          br_vec3_t eye = plot->ddd.eye;
+          eye.x -= (float)pg->ddd.rebase_x;
+          eye.y -= (float)pg->ddd.rebase_y;
+          eye.z -= (float)pg->ddd.rebase_z;
+          br_extent_t const ex = BR_EXTENTI_TOF(plot->cur_extent);
+          br_vec2_t re = (br_vec2_t) { .x = ex.width, .y = ex.height };
+          br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
+          br_mat_t look = br_mat_look_at(eye, target, plot->ddd.up);
+          shaders->line_3d_simple->uvs.m_mvp_uv = shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
+          shaders->line_3d->uvs.eye_uv = eye;
+          shaders->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
+
+          resampling2_draw33(&res->ddd, 0, pg, plot, shaders); break;
+          br_shader_line_3d_draw(brtl_shaders()->line_3d);
+        }
       }
       break;
     }

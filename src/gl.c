@@ -68,7 +68,7 @@ unsigned int brgl_compile_shader(const char* code, GLenum type) {
           int length = 0;
           char *log = br_scrach_get((size_t)max_len);
           glGetShaderInfoLog(shader, max_len, &length, log);
-          LOGE("SHADER: [ID %i] Compile error: %s", shader, log);
+          LOGE("SHADER: [ID %i] type=%d Compile error: %s", shader, type, log);
           br_scrach_free();
       }
   }

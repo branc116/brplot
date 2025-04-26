@@ -74,10 +74,10 @@ static struct test_file_metadata __test_h_file;
 
 #define TEST_EQUALF(a, b)                                    \
   do {                                                       \
-    if (fabsf((a) - (b)) > 1e-5) { /* TODO: this is bullshit.. */ \
+    float aa = (float)(a), bb = (float)(b);               \
+    if (fabsf(aa - bb) > 1e-5) { /* TODO: this is bullshit.. */ \
       SET_FAILURE(#a " != " #b, false);                      \
-      float aa = (a), bb = (b);                              \
-      fprintf(stderr, "%f != %f\n", aa, bb);                 \
+      LOGF("%f != %f ( " #a " != " #b " )", aa, bb);         \
       return;                                                \
     }                                                        \
   } while (0)

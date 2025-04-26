@@ -16,12 +16,9 @@ typedef struct {
 #define KEY_BINDINGS(x) \
   x(BR_KEY_R, BR_KEY_PRESS, br_keybinding_gui_reset) \
   x(BR_KEY_C, BR_KEY_PRESS, br_keybinding_clear) \
-  x(BR_KEY_H, BR_KEY_PRESS, br_keybinding_hide) \
   x(BR_KEY_T, BR_KEY_PRESS, br_keybinding_test_points) \
   x(BR_KEY_F, BR_KEY_PRESS, br_keybinding_follow) \
   x(BR_KEY_D, BR_KEY_PRESS, br_keybinding_debug) \
-  x(BR_KEY_J, BR_KEY_DOWN,  br_keybinding_recoil_smol) \
-  x(BR_KEY_K, BR_KEY_DOWN,  br_keybinding_recoil_big) \
   x(BR_KEY_S, BR_KEY_PRESS, br_keybinding_screenshot) \
   x(BR_KEY_THREE, BR_KEY_PRESS, br_keybinding_switch_3d) \
   x(BR_KEY_TWO, BR_KEY_PRESS, br_keybinding_switch_2d)
@@ -56,11 +53,6 @@ static inline void br_keybinding_clear(br_plotter_t* br, br_plot_t* plot, br_key
   else          br_datas_empty(&br->groups);
 }
 
-static inline void br_keybinding_hide(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
-  (void)br, (void)plot, (void)cs;
-  assert(0);
-}
-
 static inline void br_keybinding_test_points(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
   (void)plot;
   br_datas_add_test_points(&br->groups);
@@ -82,22 +74,17 @@ static inline void br_keybinding_test_points(br_plotter_t* br, br_plot_t* plot, 
 
 static inline void br_keybinding_follow(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
   (void)br; (void)cs;
-  plot->follow = !plot->follow;
-  if (plot->follow) br_plot_focus_visible(plot, br->groups);
+  if (cs.ctrl == false) {
+    plot->follow = !plot->follow;
+    if (plot->follow) br_plot_focus_visible(plot, br->groups);
+  } else {
+    br_plot_focus_visible(plot, br->groups);
+  }
 }
 
 static inline void br_keybinding_debug(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
   (void)br; (void)cs; (void)plot;
   br_context.debug_bounds = !br_context.debug_bounds;
-}
-
-static inline void br_keybinding_recoil_smol(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
-  (void)cs; (void)br;
-  if (plot->kind == br_plot_kind_2d) plot->dd.recoil -= 0.001f;
-}
-static inline void br_keybinding_recoil_big(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
-  (void)cs; (void)br;
-  if (plot->kind == br_plot_kind_2d) plot->dd.recoil += 0.001f;
 }
 
 static inline void br_keybinding_screenshot(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {

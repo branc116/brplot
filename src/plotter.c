@@ -155,7 +155,6 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
     .dd =  {
       .zoom = BR_VEC2(1.f, 1.f),
       .offset = BR_VEC2(0.f, 0.f),
-      .delta = BR_VEC2(0, 0),
     }
   };
   br_plot_create_texture(&plot);

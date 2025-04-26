@@ -37,22 +37,22 @@ typedef enum {
 typedef struct q_command {
   q_command_type type;
   union {
-    float value;
+    double value;
     struct {
       int group;
-      float x;
+      double x;
     } push_point_x;
     struct {
       int group;
-      float y;
+      double y;
     } push_point_y;
     struct {
       int group;
-      float x, y;
+      double x, y;
     } push_point_xy;
     struct {
       int group;
-      float x, y, z;
+      double x, y, z;
     } push_point_xyz;
     struct {
       int group;

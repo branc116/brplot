@@ -56,8 +56,8 @@ typedef enum {
 typedef struct input_token_t {
   union {
     struct {
-      float value_f;
-      int value_i;
+      double value_d;
+      long value_l;
     };
     char name[MAX_NAME];
     br_str_t br_str;
@@ -84,9 +84,9 @@ typedef struct {
 } extractors_t;
 
 typedef struct lex_state_s {
-  float value_f;
-  int decimal;
-  long value_i;
+  double value_d;
+  long long decimall;
+  long long value_l;
   char name[MAX_NAME];
   size_t name_len;
   bool is_neg_whole;
@@ -104,29 +104,29 @@ typedef struct lex_state_s {
 } lex_state_t;
 
 static void input_reduce_y(br_plotter_t* gv, lex_state_t* s) {
-  if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = 0, .y = s->tokens[0].value_f} });
+  if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = 0, .y = s->tokens[0].value_d} });
 }
 
 static void input_reduce_xy(br_plotter_t* gv, lex_state_t* s) {
-  if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = 0, .x = s->tokens[0].value_f, .y = s->tokens[2].value_f} });
+  if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = 0, .x = s->tokens[0].value_d, .y = s->tokens[2].value_d} });
 }
 
 static void input_reduce_xyz(br_plotter_t* gv, lex_state_t* s) {
   if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_xyz,
       .push_point_xyz = {
         .group = 0,
-        .x = s->tokens[0].value_f,
-        .y = s->tokens[2].value_f,
-        .z = s->tokens[4].value_f
+        .x = s->tokens[0].value_d,
+        .y = s->tokens[2].value_d,
+        .z = s->tokens[4].value_d
   }});
 }
 
 static void input_reduce_xygroup(br_plotter_t* gv, lex_state_t* s) {
-  if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = s->tokens[4].value_i, .x = s->tokens[0].value_f, .y = s->tokens[2].value_f } });
+  if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = (int)s->tokens[4].value_l, .x = s->tokens[0].value_d, .y = s->tokens[2].value_d } });
 }
 
 static void input_reduce_ygroup(br_plotter_t* gv, lex_state_t* s) {
-  if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = s->tokens[2].value_i, .y = s->tokens[0].value_f } });
+  if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = (int)s->tokens[2].value_l, .y = s->tokens[0].value_d } });
 }
 
 static void input_push_command_with_path(q_commands* commands, const char* path, q_command_type command) {
@@ -421,22 +421,22 @@ static extractor_res_state_t extractor_extract(br_strv_t ex, br_strv_t view, flo
 static void input_reduce_command(br_plotter_t* gv, lex_state_t* s) {
   (void)gv;
   if (0 == strcmp("zoomx", s->tokens[1].name)) {
-    q_push(gv->commands, (q_command) { .type = q_command_set_zoom_x, .value = s->tokens[2].value_f});
+    q_push(gv->commands, (q_command) { .type = q_command_set_zoom_x, .value = s->tokens[2].value_d});
   } else if (0 == strcmp("focus", s->tokens[1].name)) {
     q_push(gv->commands, (q_command) { .type = q_command_focus });
   } else if (0 == strcmp("zoomy", s->tokens[1].name)) {
-    q_push(gv->commands, (q_command) { .type = q_command_set_zoom_y, .value = s->tokens[2].value_f});
+    q_push(gv->commands, (q_command) { .type = q_command_set_zoom_y, .value = s->tokens[2].value_d});
   } else if (0 == strcmp("zoom", s->tokens[1].name)) {
-    q_push(gv->commands, (q_command) { .type = q_command_set_zoom_x, .value = s->tokens[2].value_f});
-    q_push(gv->commands, (q_command) { .type = q_command_set_zoom_y, .value = s->tokens[2].value_f});
+    q_push(gv->commands, (q_command) { .type = q_command_set_zoom_x, .value = s->tokens[2].value_d});
+    q_push(gv->commands, (q_command) { .type = q_command_set_zoom_y, .value = s->tokens[2].value_d});
   } else if (0 == strcmp("offsetx", s->tokens[1].name)) {
-    q_push(gv->commands, (q_command) { .type = q_command_set_offset_x, .value = s->tokens[2].value_f});
+    q_push(gv->commands, (q_command) { .type = q_command_set_offset_x, .value = s->tokens[2].value_d});
   } else if (0 == strcmp("offsety", s->tokens[1].name)) {
-    q_push(gv->commands, (q_command) { .type = q_command_set_offset_y, .value = s->tokens[2].value_f});
+    q_push(gv->commands, (q_command) { .type = q_command_set_offset_y, .value = s->tokens[2].value_d});
   } else if (0 == strcmp("hide", s->tokens[1].name)) {
-    q_push(gv->commands, (q_command) { .type = q_command_hide, .hide_show = { .group = s->tokens[2].value_i } });
+    q_push(gv->commands, (q_command) { .type = q_command_hide, .hide_show = { .group = (int)s->tokens[2].value_l } });
   } else if (0 == strcmp("show", s->tokens[1].name)) {
-    q_push(gv->commands, (q_command) { .type = q_command_show, .hide_show = { .group = s->tokens[2].value_i } });
+    q_push(gv->commands, (q_command) { .type = q_command_show, .hide_show = { .group = (int)s->tokens[2].value_l } });
   } else if (0 == strcmp("exportcsv", s->tokens[1].name)) {
     input_push_command_with_path(gv->commands, s->tokens[2].name, q_command_exportcsv);
   } else if (0 == strcmp("export", s->tokens[1].name)) {
@@ -450,14 +450,14 @@ static void input_reduce_command(br_plotter_t* gv, lex_state_t* s) {
     if (extractor_is_valid(br_str_as_view(s->tokens[3].br_str))) {
       br_str_t str = br_str_copy(s->tokens[3].br_str);
       --str.len;
-      extractors_push(&s->extractors, (extractor_t) { .ex =  str, .group = s->tokens[2].value_i });
+      extractors_push(&s->extractors, (extractor_t) { .ex =  str, .group = (int)s->tokens[2].value_l });
       s->should_push_eagre = false;
     }
   } else if (s->tokens[3].kind == input_token_quoted_string && 0 == strcmp("setname", s->tokens[1].name)) {
     q_command cmd = {
       .type = q_command_set_name,
       .set_quoted_str = {
-        .group = s->tokens[2].value_i,
+        .group = (int)s->tokens[2].value_l,
         .str = s->tokens[3].br_str
       }
     };
@@ -628,51 +628,51 @@ static void lex_step(br_plotter_t* br, lex_state_t* s) {
       break;
     case input_lex_state_number:
       if (s->c >= '0' && s->c <= '9') {
-        s->value_i *= 10;
-        s->value_i += s->c - '0';
+        s->value_l *= 10;
+        s->value_l += (long long)(s->c - '0');
       } else if (s->c == '.') {
         s->state = input_lex_state_number_decimal;
-        s->value_f = (float)s->value_i;
-        s->value_i = 0;
+        s->value_d = (double)s->value_l;
+        s->value_l = 0;
         s->is_neg = false;
       } else if (s->c == 'E' || s->c == 'e') {
-        s->value_f = (float)s->value_i;
-        s->value_i = 0;
+        s->value_d = (double)s->value_l;
+        s->value_l = 0;
         s->is_neg = false;
-        s->decimal = 0;
+        s->decimall = 0;
         s->state = input_lex_state_number_exp;
       } else {
-        s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = (float)s->value_i, .value_i = (int)s->value_i };
+        s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_number, .value_d = (double)s->value_l, .value_l = s->value_l };
         s->state = input_lex_state_number_reset;
         s->read_next = false;
       }
       break;
     case input_lex_state_number_decimal:
       if (s->c >= '0' && s->c <= '9') {
-        s->value_i *= 10;
-        s->value_i += s->c - '0';
-        --s->decimal;
+        s->value_l *= 10;
+        s->value_l += (long)(s->c - '0');
+        --s->decimall;
       } else if (s->c == 'E' || s->c == 'e') {
-        s->value_f += (float)s->value_i * powf(10.f, (float)s->decimal);
-        s->value_i = 0;
-        s->decimal = 0;
+        s->value_d += (double)s->value_l * pow(10, (double)s->decimall);
+        s->value_l = 0;
+        s->decimall = 0;
         s->state = input_lex_state_number_exp;
       } else {
-        s->value_f += (float)s->value_i * powf(10.f, (float)s->decimal);
-        s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = s->is_neg_whole ? -s->value_f : s->value_f, .value_i = (int)s->value_i };
+        s->value_d += (double)s->value_l * pow(10, (double)s->decimall);
+        s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_number, .value_d = s->is_neg_whole ? -s->value_d : s->value_d, .value_l = (int)s->value_l };
         s->state = input_lex_state_number_reset;
         s->read_next = false;
       }
       break;
     case input_lex_state_number_exp:
       if (s->c >= '0' && s->c <= '9') {
-        s->value_i *= 10;
-        s->value_i += s->c - '0';
+        s->value_l *= 10;
+        s->value_l += s->c - '0';
       } else if (s->c == '-') {
         s->is_neg = true;
       } else {
-        s->value_f *= powf(10.f, s->is_neg ? (float)-s->value_i : (float)s->value_i);
-        s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_number, .value_f = s->is_neg_whole ? -s->value_f : s->value_f, .value_i = (int)s->value_i };
+        s->value_d *= pow(10.f, s->is_neg ? (double)-s->value_l : (double)s->value_l);
+        s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_number, .value_d = s->is_neg_whole ? -s->value_d : s->value_d, .value_l = s->value_l };
         s->state = input_lex_state_number_reset;
         s->read_next = false;
       }
@@ -680,9 +680,9 @@ static void lex_step(br_plotter_t* br, lex_state_t* s) {
     case input_lex_state_number_reset:
       s->state = input_lex_state_init;
       s->read_next = false;
-      s->value_f = 0.f;
-      s->value_i = 0;
-      s->decimal = 0;
+      s->value_d = 0;
+      s->value_l = 0;
+      s->decimall = 0;
       s->is_neg = false;
       s->is_neg_whole = false;
       break;
@@ -813,21 +813,21 @@ int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
 #define TEST_COMMAND_SET_ZOOM(q, AXIS, VALUE) do { \
   q_command c = q_pop(q); \
   TEST_EQUAL(c.type, q_command_set_zoom_ ## AXIS); \
-  TEST_EQUAL(c.value, VALUE); \
+  TEST_EQUALF(c.value, VALUE); \
 } while(false)
 
 #define TEST_COMMAND_PUSH_POINT_Y(q, Y, GROUP) do { \
   q_command c = q_pop(q); \
   TEST_EQUAL(c.type, q_command_push_point_y); \
-  TEST_EQUAL(c.push_point_y.y, Y); \
+  TEST_EQUALF(c.push_point_y.y, Y); \
   TEST_EQUAL(c.push_point_y.group, GROUP); \
 } while(false)
 
 #define TEST_COMMAND_PUSH_POINT_XY(q, X, Y, GROUP) do { \
   q_command c = q_pop(q); \
   TEST_EQUAL(c.type, q_command_push_point_xy); \
-  TEST_EQUAL(c.push_point_xy.x, X); \
-  TEST_EQUAL(c.push_point_xy.y, Y); \
+  TEST_EQUALF(c.push_point_xy.x, X); \
+  TEST_EQUALF(c.push_point_xy.y, Y); \
   TEST_EQUAL(c.push_point_xy.group, GROUP); \
 } while(false)
 
@@ -867,6 +867,11 @@ void test_input(br_plotter_t* br, const char* str) {
   lex_state_deinit(&s);
 }
 
+TEST_CASE(InputTestsExp) {
+  br_plotter_t br;
+  test_input(&br, "10e10");
+  TEST_COMMAND_PUSH_POINT_Y(br.commands, 10e10f, 0);
+}
 TEST_CASE(InputTests) {
   br_plotter_t br;
   test_input(&br, "8.0,-16.0;1 -0.0078,16.0;1 \" \n \n 4.0;1\n\n\n\n\n\n 2.0 1;10;1;;;; 10e10 3e38 --test 1.2 --zoomx 10.0 1;12");

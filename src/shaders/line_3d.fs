@@ -2,11 +2,12 @@
 
 precision mediump float;
 
-in vec3 color;
 in vec3 normal;
 
 out vec4 finalColor;
+
 uniform vec3 eye;
+uniform vec3 color;
 
 vec4 phong() {
   vec3 light = normalize(vec3(1., 1., 1.));

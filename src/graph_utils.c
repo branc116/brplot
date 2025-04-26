@@ -47,10 +47,20 @@ void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups) {
   while (i < groups.len && (groups.arr[i].kind != br_data_kind_2d || groups.arr[i].len == 0)) ++i;
   if (i >= groups.len) return;
 
-  bb_t bb = groups.arr[i++].dd.bounding_box;
+  bb_t bb = groups.arr[i].dd.bounding_box;
+  bb.xmin += (float)groups.arr[i].dd.rebase_x;
+  bb.xmin += (float)groups.arr[i].dd.rebase_x;
+  bb.ymin += (float)groups.arr[i].dd.rebase_y;
+  bb.ymax += (float)groups.arr[i].dd.rebase_y;
+  ++i;
   for (; i < groups.len; ++i) {
     if (groups.arr[i].kind != br_data_kind_2d || groups.arr[i].len == 0) continue;
     bb_t cur_bb = groups.arr[i].dd.bounding_box;
+    cur_bb.xmin += (float)groups.arr[i].dd.rebase_x;
+    cur_bb.xmin += (float)groups.arr[i].dd.rebase_x;
+    cur_bb.ymin += (float)groups.arr[i].dd.rebase_y;
+    cur_bb.ymax += (float)groups.arr[i].dd.rebase_y;
+    ++i;
     bb = (bb_t) {
       .xmin = fminf(bb.xmin, cur_bb.xmin),
       .ymin = fminf(bb.ymin, cur_bb.ymin),

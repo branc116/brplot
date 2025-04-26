@@ -9,10 +9,13 @@
 
 #define BR_VEC2(X, Y) ((br_vec2_t) { .x = (X), .y = (Y) })
 #define BR_VEC2I(X, Y) ((br_vec2i_t) { .x = (X), .y = (Y) })
+#define BR_VEC2D(X, Y) ((br_vec2d_t) { .x = (X), .y = (Y) })
 #define BR_VEC2_TOI(V) ((br_vec2i_t) { .x = (int)(V).x, .y = (int)(V).y })
 #define BR_VEC2I_TOF(V) ((br_vec2_t) { .x = (float)(V).x, .y = (float)(V).y })
 #define BR_VEC2I_SUB(A, B) ((br_vec2i_t) { .x = (A).x - (B).x, .y = (A).y - (B).y })
 #define BR_VEC2I_SCALE(V, B) ((br_vec2i_t) { .x = (V).x * (B), .y = (V).y * (B) })
+#define BR_VEC2D_TOF(V) ((br_vec2_t) { .x = (float)(V).x, .y = (float)(V).y })
+#define BR_VEC3D(X, Y, Z) ((br_vec3d_t) { .x = (X), .y = (Y), .z = (Z) })
 #define BR_VEC3_TOC(V, A) ((br_color_t) { .r = (unsigned char)((V).x * 255.f), .g = (unsigned char)((V).y * 255.f), .b = (unsigned char)((V).z * 255.f), .a = (A) })
 #define BR_SIZE(WIDTH, HEIGHT) ((br_size_t) { .width = (WIDTH), .height = (HEIGHT) })
 #define BR_SIZE_TOI(SZ) ((br_sizei_t) { .width = (int)((SZ).width), .height = (int)((SZ).height) })
@@ -162,6 +165,16 @@ typedef struct {
 typedef struct {
   union {
     struct {
+      double x, y, z;
+    };
+    br_vec2d_t xy;
+    double arr[3];
+  };
+}  br_vec3d_t;
+
+typedef struct {
+  union {
+    struct {
       float x, y, z, w;
     };
     struct {
@@ -271,6 +284,11 @@ static inline br_vec2_t br_vec2_div(br_vec2_t a, br_vec2_t b) {
   return BR_VEC2(a.x / b.x, a.y / b.y);
 }
 
+static inline br_vec2_t br_vec2_lerp(br_vec2_t a, br_vec2_t b, float t) {
+  return BR_VEC2(a.x*(1-t) + b.x*t,
+                 a.y*(1-t) + b.y*t);
+}
+
 static inline float br_vec2_dist2(br_vec2_t a, br_vec2_t b) {
   float len2 = br_vec2_len2(br_vec2_sub(a, b));
   return len2;
@@ -292,6 +310,20 @@ static inline br_vec3_t br_vec2_transform_scale(br_vec2_t v, br_mat_t mat) {
 
 static inline br_vec2_t br_vec2_stog(br_vec2_t v, br_sizei_t screen) {
   return BR_VEC2(v.x / (float)screen.width * 2.f - 1.f, (1.f - v.y / (float)screen.height) * 2.f - 1.f);
+}
+
+//------------------------br_vec2d_t------------------------------
+
+static inline br_vec2d_t br_vec2d_scale(br_vec2d_t v, double s) {
+  return BR_VEC2D(v.x*s, v.y*s);
+}
+
+static inline br_vec2d_t br_vec2d_add(br_vec2d_t v, br_vec2d_t w) {
+  return BR_VEC2D(v.x+w.x, v.y+w.y);
+}
+
+static inline br_vec2d_t br_vec2d_sub(br_vec2d_t v, br_vec2d_t w) {
+  return BR_VEC2D(v.x-w.x, v.y-w.y);
 }
 
 //------------------------size------------------------------
@@ -318,6 +350,16 @@ static inline br_size_t br_size_addv(br_size_t a, br_vec2_t b) {
 
 static inline br_size_t br_size_scale(br_size_t a, float b) {
   return BR_SIZE(a.width * b, a.height * b);
+}
+
+static inline br_vec2_t br_vec2_normalize(br_vec2_t a) {
+  float len2 = br_vec2_len2(a);
+  if (fabsf(len2) > FLT_EPSILON) {
+    float len = sqrtf(len2);
+    for (size_t i = 0; i < BR_VEC_ELS(a); ++i) a.arr[i] /= len;
+    return a;
+  }
+  return BR_VEC2(0,0);
 }
 
 //------------------------vec3------------------------------
@@ -498,6 +540,14 @@ static inline bool br_extenti_eq(br_extenti_t a, br_extenti_t b) {
   if (a.width != b.width) return false;
   if (a.height != b.height) return false;
   return true;
+}
+
+static inline br_extent_t br_extent_add(br_extent_t a, br_vec2_t b) {
+  return BR_EXTENT(a.x + b.x, a.y + b.y, a.width, a.height);
+}
+
+static inline br_extent_t br_extent_sub(br_extent_t a, br_vec2_t b) {
+  return BR_EXTENT(a.x - b.x, a.y - b.y, a.width, a.height);
 }
 
 static inline br_extent_t br_extent_lerp(br_extent_t a, br_extent_t b, float x) {

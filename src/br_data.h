@@ -41,6 +41,7 @@ typedef struct br_data_2d_t {
   float* xs;
   float* ys;
   bb_t bounding_box;
+  double rebase_x, rebase_y;
 } br_data_2d_t;
 
 typedef struct br_data_3d_t {
@@ -48,6 +49,7 @@ typedef struct br_data_3d_t {
   float* ys;
   float* zs;
   bb_3d_t bounding_box;
+  double rebase_x, rebase_y, rebase_z;
 } br_data_3d_t;
 
 typedef struct br_data_t {
@@ -88,10 +90,14 @@ br_data_t* br_data_get(br_datas_t* pg_array, int group);
 br_data_t* br_data_get1(br_datas_t pg, int group);
 br_data_t* br_data_get2(br_datas_t* pg_array, int group, br_data_kind_t kind);
 void br_data_set_name(br_datas_t* pg_array, int group, br_str_t name);
-void br_data_push_y(br_datas_t* pg, float y, int group);
-void br_data_push_x(br_datas_t* pg, float x, int group);
-void br_data_push_xy(br_datas_t* pg, float x, float y, int group);
-void br_data_push_xyz(br_datas_t* pg, float x, float y, float z, int group);
+void br_data_push_y(br_datas_t* pg, double y, int group);
+void br_data_push_x(br_datas_t* pg, double x, int group);
+void br_data_push_xy(br_datas_t* pg, double x, double y, int group);
+void br_data_push_xyz(br_datas_t* pg, double x, double y, double z, int group);
+
+br_vec2d_t br_data_el_xy(br_datas_t datas, int group, int index);
+br_vec3d_t br_data_el_xyz(br_datas_t datas, int group, int index);
+
 // TODO: this should be br_plotter_clear_data()
 void br_data_clear(br_datas_t* pg, br_plots_t* plots, int group_id);
 // Only remove all points from a group, don't remove the group itself.

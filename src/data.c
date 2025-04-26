@@ -82,30 +82,63 @@ error:
   return NULL;
 }
 
-void br_data_push_y(br_datas_t* pg_array, float y, int group) {
+void br_data_push_y(br_datas_t* pg_array, double y, int group) {
   br_data_t* pg = br_data_get(pg_array, group);
   if (pg == NULL) return;
-  float x = pg->len == 0 ? 0.f : (pg->dd.xs[pg->len - 1] + 1.f);
-  br_data_push_point2(pg, (br_vec2_t){ .x = x, .y = y });
+  float x = 0.f;
+  if (pg->len == 0) {
+    pg->dd.rebase_x = 0;
+    pg->dd.rebase_y = y;
+  } else {
+    x = (pg->dd.xs[pg->len - 1] + 1.f);
+  }
+  br_data_push_point2(pg, (br_vec2_t){ .x = x, .y = (float)(y - pg->dd.rebase_y) });
 }
 
-void br_data_push_x(br_datas_t* pg_array, float x, int group) {
+void br_data_push_x(br_datas_t* pg_array, double x, int group) {
   br_data_t* pg = br_data_get(pg_array, group);
   if (pg == NULL) return;
-  float y = pg->len == 0 ? 0.f : (pg->dd.ys[pg->len - 1] + 1.f);
-  br_data_push_point2(pg, (br_vec2_t){ .x = x, .y = y });
+  float y = 0;
+  if (pg->len == 0) {
+    pg->dd.rebase_x = x;
+    pg->dd.rebase_y = 0;
+  } else {
+    y = (pg->dd.ys[pg->len - 1] + 1.f);
+  }
+  br_data_push_point2(pg, (br_vec2_t){ .x = (float)(x - pg->dd.rebase_x), .y = y });
 }
 
-void br_data_push_xy(br_datas_t* pg_array, float x, float y, int group) {
+void br_data_push_xy(br_datas_t* pg_array, double x, double y, int group) {
   br_data_t* pg = br_data_get(pg_array, group);
   if (pg == NULL) return;
-  br_data_push_point2(pg, (br_vec2_t){ .x = x, .y = y });
+  if (pg->len == 0) {
+    pg->dd.rebase_x = x;
+    pg->dd.rebase_y = y;
+  }
+  br_data_push_point2(pg, (br_vec2_t){ .x = (float)(x - pg->dd.rebase_x), .y = (float)(y - pg->dd.rebase_y) });
 }
 
-void br_data_push_xyz(br_datas_t* pg_array, float x, float y, float z, int group) {
+void br_data_push_xyz(br_datas_t* pg_array, double x, double y, double z, int group) {
   br_data_t* pg = br_data_get2(pg_array, group, br_data_kind_3d);
   if (pg == NULL) return;
-  br_data_push_point3(pg, (br_vec3_t){ .x = x, .y = y, .z = z });
+  if (pg->len == 0) {
+    pg->ddd.rebase_x = x;
+    pg->ddd.rebase_y = y;
+    pg->ddd.rebase_z = z;
+  }
+  br_data_push_point3(pg, (br_vec3_t){ .x = (float)(x - pg->ddd.rebase_x), .y = (float)(y - pg->ddd.rebase_y), .z = (float)(z - pg->ddd.rebase_z) });
+}
+
+br_vec2d_t br_data_el_xy(br_datas_t datas, int group, int index) {
+  br_data_t const* data = br_data_get1(datas, group);
+  BR_ASSERT(data->kind == br_data_kind_2d);
+  return BR_VEC2D(data->dd.xs[index] + data->dd.rebase_x, data->dd.ys[index] + data->dd.rebase_y);
+}
+
+br_vec3d_t br_data_el_xyz(br_datas_t datas, int group, int index) {
+  br_data_t const* data = br_data_get1(datas, group);
+  BR_ASSERT(data->kind == br_data_kind_3d);
+  return BR_VEC3D(data->ddd.xs[index] + data->ddd.rebase_x, data->ddd.ys[index] + data->ddd.rebase_y, data->ddd.zs[index] + data->ddd.rebase_z);
 }
 
 //void br_data_push_expr_xy(br_datas_t* datas, br_data_expr_t x, br_data_expr_t y, int group) {
@@ -212,29 +245,35 @@ void br_datas_empty(br_datas_t* pg) {
 
 void br_datas_add_test_points(br_datas_t* pg) {
   {
+    int group = 100;
+    br_data_t* g = br_data_get(pg, group);
+    if (NULL == g) return;
+    for (int i = 0; i < 1024; ++i)
+      br_data_push_xy(pg, (double)g->len/128.0, (double)g->len/128.0, group);
+  }
+  {
     int group = 0;
     br_data_t* g = br_data_get(pg, group);
     if (NULL == g) return;
     for (int i = 0; i < 1024; ++i)
-      br_data_push_point2(g, BR_VEC2((float)g->len/128.f, sinf((float)g->len/128.f)));
+      br_data_push_xy(pg, (double)g->len/128.0, sin((double)g->len/128.0), group);
   }
   {
     int group = 1;
     br_data_t* g = br_data_get(pg, group);
     if (NULL == g) return;
     for (int i = 0; i < 10*1024; ++i)
-      br_data_push_point2(g, BR_VEC2(-(float)g->len/128.f, sinf((float)g->len/128.f)));
+      br_data_push_xy(pg, -(double)g->len/128.0, sin((double)g->len/128.0), group);
   }
   {
     int group = 5;
     br_data_t* g = br_data_get(pg, group);
     if (NULL == g) return;
     for(int i = 0; i < 1024*1024; ++i) {
-      float t = (float)(1 + g->len)*.1f;
-      float x = sqrtf(t)*cosf(log2f(t));
-      float y = sqrtf(t)*sinf(log2f(t));
-      br_vec2_t p = BR_VEC2(x, y);
-      br_data_push_point2(g, p);
+      double t = (double)(1 + g->len)*.1;
+      double x = sqrt(t)*cos(log2(t));
+      double y = sqrt(t)*sin(log2(t));
+      br_data_push_xy(pg, x, y, group);
     }
   }
   {
@@ -251,15 +290,15 @@ void br_datas_add_test_points(br_datas_t* pg) {
     }
   }
   {
-    br_data_t* g = br_data_get2(pg, 11, br_data_kind_3d);
+    int group = 11;
+    br_data_t* g = br_data_get2(pg, group, br_data_kind_3d);
     if (NULL == g) return;
     for(int i = 0; i < 1024*50; ++i) {
-      float t = (float)(1 + g->len)*.1f;
-      float x = sqrtf(t)*cosf(log2f(t));
-      float y = sqrtf(t)*sinf(log2f(t));
-      float z = 2.f * sinf(t*0.05f);
-      br_vec3_t p = BR_VEC3(x, y, z);
-      br_data_push_point3(g, p);
+      double t = (double)(1 + g->len)*.1;
+      double x = sqrt(t)*cos(log2(t));
+      double y = sqrt(t)*sin(log2(t));
+      double z = 2.f * sin(t*0.05f);
+      br_data_push_xyz(pg, x, y, z, group);
     }
   }
   {

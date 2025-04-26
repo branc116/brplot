@@ -113,6 +113,10 @@ static void print_headless_impl(FILE* file, func_t* funcs, size_t len) {
     }
     fprintf(file, ") {\n");
     bool is_void = br_strv_eq(f.ret_type, br_strv_from_literal("void"));
+    for (uint32_t j = 0; j < f.params.len; ++j) {
+      fparam_t param = f.params.arr[j];
+      fprintf(file, "(void)%.*s;\n", param.name.len, param.name.str);
+    }
     if (is_void == false) {
       fprintf(file, "return (%.*s) { 0 };\n", f.ret_type.len, f.ret_type.str);
     }

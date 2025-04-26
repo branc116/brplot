@@ -1,5 +1,6 @@
 #pragma once
 #include "src/br_data.h"
+#include "src/br_smol_mesh.h"
 
 #include <stdint.h>
 
@@ -30,6 +31,7 @@ typedef struct {
   bool has_old;
   br_vec2_t old;
   br_vec2_t mid;
+  br_smol_mesh_line_t args;
 } br_line_culler_t;
 
 typedef struct resampling2_nodes_t {

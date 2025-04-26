@@ -204,6 +204,14 @@ static void draw_left_panel(br_plotter_t* br) {
           brui_text(BR_STRV(scrach, (uint32_t)n));
           n = sprintf(scrach, "%.1fms (%.3f %.3f)", br_resampling2_get_draw_time(data.resampling)*1000.0f, br_resampling2_get_something(data.resampling), br_resampling2_get_something2(data.resampling));
           brui_text(BR_STRV(scrach, (uint32_t)n));
+          switch (data.kind) {
+            case br_data_kind_2d: {
+              brui_textf("2D rebase: %.3f, %.3f", data.dd.rebase_x, data.dd.rebase_y);
+            } break;
+            case br_data_kind_3d: {
+              brui_textf("3D rebase: %.3f, %.3f, %.3f", data.ddd.rebase_x, data.ddd.rebase_y, data.ddd.rebase_z);
+            } break;
+          }
         brui_pop();
       }
       brui_collapsable_end();

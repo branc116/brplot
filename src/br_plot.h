@@ -26,11 +26,9 @@ typedef struct br_plot_2d_t {
   //            That is if you zoom in and out, graph_rect will change.
   br_extent_t graph_rect;
 
-  float recoil;
   br_vec2_t mouse_pos;
   br_vec2_t zoom;
   br_vec2_t offset;
-  br_vec2_t delta;
   bool show_closest, show_x_closest, show_y_closest;
 } br_plot_2d_t;
 

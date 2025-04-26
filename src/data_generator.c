@@ -143,9 +143,14 @@ bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* 
     switch (kind) {
       case br_data_kind_2d: {
         if (1 != fread(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file)) goto error;
+        if (1 != fread(&data->dd.rebase_x, sizeof(data->dd.rebase_x), 1, file)) goto error;
+        if (1 != fread(&data->dd.rebase_y, sizeof(data->dd.rebase_y), 1, file)) goto error;
       } break;
       case br_data_kind_3d: {
         if (1 != fread(&data->ddd.bounding_box, sizeof(data->ddd.bounding_box), 1, file)) goto error;
+        if (1 != fread(&data->ddd.rebase_x, sizeof(data->ddd.rebase_x), 1, file)) goto error;
+        if (1 != fread(&data->ddd.rebase_y, sizeof(data->ddd.rebase_y), 1, file)) goto error;
+        if (1 != fread(&data->ddd.rebase_z, sizeof(data->ddd.rebase_z), 1, file)) goto error;
       } break;
       default: BR_ASSERT(0);
     }
@@ -308,6 +313,26 @@ static size_t expr_len(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_i
   BR_ASSERT(0);
 }
 
+static double br_dagen_rebase(br_data_t const* data, br_dagen_expr_kind_t kind) {
+  switch (data->kind) {
+    case br_data_kind_2d: {
+      switch (kind) {
+        case br_dagen_expr_kind_reference_x: return data->dd.rebase_x; break;
+        case br_dagen_expr_kind_reference_y: return data->dd.rebase_y; break;
+        default: BR_ASSERT(0);
+      }
+    } break;
+    case br_data_kind_3d: {
+      switch (kind) {
+        case br_dagen_expr_kind_reference_x: return data->ddd.rebase_x; break;
+        case br_dagen_expr_kind_reference_y: return data->ddd.rebase_y; break;
+        case br_dagen_expr_kind_reference_z: return data->ddd.rebase_z; break;
+        default: BR_ASSERT(0);
+      }
+    } break;
+  }
+}
+
 static size_t expr_read_n(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index, size_t offset, size_t n, float* data) {
   br_dagen_expr_t expr = arena.arr[expr_index];
   if (expr.kind == br_dagen_expr_kind_add) {
@@ -331,6 +356,8 @@ static size_t expr_read_n(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
     case br_dagen_expr_kind_reference_z: memcpy(data, &data_in->ddd.zs[offset], real_n * sizeof(data[0])); break;
     default: BR_ASSERT(0);
   }
+  float rebase = (float)br_dagen_rebase(data_in, expr.kind);
+  for (size_t i = 0; i < real_n; ++i) data[i] = (float)rebase;
   return real_n;
 }
 
@@ -353,6 +380,7 @@ static size_t expr_add_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
   br_data_t* data_in = br_data_get1(datas, expr.group_id);
   if (data_in == NULL) return 0;
   float* fs = NULL;
+  double rebase = br_dagen_rebase(data_in, expr.kind);
   size_t real_n = (offset + n > data_in->len) ? data_in->len - offset : n;
   switch (expr.kind) {
     case br_dagen_expr_kind_reference_x: fs = &data_in->dd.xs[offset]; break;
@@ -361,7 +389,8 @@ static size_t expr_add_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
     default: BR_ASSERT(0);
   }
   for (size_t i = 0; i < real_n; ++i) {
-    data[i] += fs[i];
+    // TODO: Make this also be rebasable
+    data[i] += (float)((double)fs[i] + rebase);
   }
   return real_n;
 }
@@ -385,6 +414,7 @@ static size_t expr_mul_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
 
   br_data_t* data_in = br_data_get1(datas, expr.group_id);
   if (data_in == NULL) return 0;
+  double rebase = br_dagen_rebase(data_in, expr.kind);
   float* fs = NULL;
   size_t real_n = (offset + n > data_in->len) ? data_in->len - offset : n;
   switch (expr.kind) {
@@ -393,7 +423,7 @@ static size_t expr_mul_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
     case br_dagen_expr_kind_reference_z: fs = &data_in->ddd.zs[offset]; break;
     default: BR_ASSERT(0);
   }
-  for (size_t i = 0; i < real_n; ++i) data[i] *= fs[i];
+  for (size_t i = 0; i < real_n; ++i) data[i] *= (float)((double)fs[i] + rebase);
   return real_n;
 }
 
@@ -835,7 +865,8 @@ TEST_CASE(dagen_parser_add_sqr_zyx) {
 
   TEST_EQUAL(res->len, 1);
   TEST_EQUAL(res->kind, br_data_kind_2d);
-  TEST_EQUALF(res->dd.xs[0], 10.f * 10.f + 20.f * 20.f + 30.f * 30.f);
+  br_vec2d_t val = br_data_el_xy(datas, 2, 0);
+  TEST_EQUALF((float)val.x, 10.f * 10.f + 20.f * 20.f + 30.f * 30.f);
   FREE
 }
 

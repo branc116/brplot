@@ -41,6 +41,7 @@
   X(token_kind_plus) \
   X(token_kind_minus) \
   X(token_kind_times) \
+  X(token_kind_mod) \
   X(token_kind_div) \
 
 typedef enum {
@@ -394,6 +395,10 @@ void get_tokens(shader_t* shader) {
       token_t times = init_token(token_kind_times, line, offset, &shader->content.str[i]);
       ++offset;
       br_da_push(shader->tokens, times);
+    } else if (cur == '%') {
+      token_t modulo = init_token(token_kind_mod, line, offset, &shader->content.str[i]);
+      ++offset;
+      br_da_push(shader->tokens, modulo);
     } else if (cur == '/') {
       if (i + 1 >= shader->content.len) {
         token_t div = init_token(token_kind_div, line, offset, &shader->content.str[i]);
