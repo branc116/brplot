@@ -7,6 +7,8 @@ uniform vec2 offset;
 uniform vec2 screen;
 uniform vec4 bg_color;
 uniform vec4 lines_color;
+uniform float line_thickness;
+uniform float major_line_thickness;
 
 in vec2 fragTexCoord;
 out vec4 out_color;
@@ -15,8 +17,13 @@ vec2 log10(vec2 f) {
     return log(f) / log(10.0);
 }
 
+float log10f(float f) {
+    return log(f) / log(10.0);
+}
+
 float map(vec2 cPos, vec2 zoom_level, vec2 offset) {
-  vec2 fact = log10(zoom_level * 5.5);
+  float s = 3.6;
+  vec2 fact = log10(zoom_level * s);
   vec2 fr = fract(fact);
   vec2 baseMinor = floor(fact) - 1.0;
   vec2 baseMajor = baseMinor + 1.;
@@ -26,11 +33,12 @@ float map(vec2 cPos, vec2 zoom_level, vec2 offset) {
   cPos += offset;
   vec2 mcPosd = mod(cPos + divs/2., divs) - divs/2.;
   vec2 mcPosdM = mod(cPos + divsMajor/2., divsMajor) - divsMajor/2.;
-  float thick = 0.003 / (1.0 + pow(screen.y, 0.63));
-  vec2 to = divs / (1.1-fr);
+  vec2 thick = line_thickness * 0.01 / s / (1.0 + pow(screen, vec2(0.5, 0.5)));
+  vec2 to = divs / (1.0 + (1.0 - log10f(s))-fr);
   vec2 d = 1. - smoothstep(abs(mcPosd), vec2(-0.000), thick*to);
-  vec2 dM = 1. - smoothstep(abs(mcPosdM), vec2(-0.000), thick*to*3.5);
-  return (d.x) + (d.y) + (dM.x) + (dM.y);
+  vec2 dM = 1. - smoothstep(abs(mcPosdM), vec2(-0.000), thick*to*major_line_thickness);
+  //return (d.x) + (d.y) + (dM.x) + (dM.y);
+  return max(max(d.x, d.y), max(dM.x, dM.y));
 }
 
 float map_outer(vec2 fragCoord) {

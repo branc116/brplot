@@ -20,7 +20,6 @@ static br_data_t* br_data_init(br_data_t* g, int group_id, br_data_kind_t kind);
 static void br_data_push_point2(br_data_t* g, br_vec2_t v);
 static void br_data_push_point3(br_data_t* g, br_vec3_t v);
 static void br_data_deinit(br_data_t* g);
-static void br_bb_expand_with_point(bb_t* bb, br_vec2_t v);
 static void br_bb_3d_expand_with_point(bb_3d_t* bb, br_vec3_t v);
 
 static br_color_t base_colors[8];
@@ -460,8 +459,8 @@ size_t br_data_element_size(br_data_kind_t kind) {
 
 static void br_data_push_point2(br_data_t* g, br_vec2_t v) {
   if (g->len >= g->cap && false == br_data_realloc(g, g->cap * 2)) return;
-  if (g->len == 0) g->dd.bounding_box = (bb_t) { v.x, v.y, v.x, v.y };
-  else             br_bb_expand_with_point(&g->dd.bounding_box, v);
+  if (g->len == 0) g->dd.bounding_box = BR_BB(v.x, v.y, v.x, v.y);
+  else             g->dd.bounding_box = br_bb_expand_with_point(g->dd.bounding_box, v);
   g->dd.xs[g->len] = v.x;
   g->dd.ys[g->len] = v.y;
   resampling2_add_point(g->resampling, g, (uint32_t)g->len);
@@ -488,13 +487,6 @@ static void br_data_deinit(br_data_t* g) {
   resampling2_free(g->resampling);
   br_str_free(g->name);
   g->len = g->cap = 0;
-}
-
-static void br_bb_expand_with_point(bb_t* bb, br_vec2_t v) {
-  bb->xmax = fmaxf(bb->xmax, v.x);
-  bb->xmin = fminf(bb->xmin, v.x);
-  bb->ymax = fmaxf(bb->ymax, v.y);
-  bb->ymin = fminf(bb->ymin, v.y);
 }
 
 static void br_bb_3d_expand_with_point(bb_3d_t* bb, br_vec3_t v) {

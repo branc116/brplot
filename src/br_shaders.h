@@ -34,7 +34,9 @@
       X_VEC(offset, 2)                  \
       X_VEC(bg_color, 4)                \
       X_VEC(lines_color, 4)             \
-      X_VEC(screen, 2),                 \
+      X_VEC(screen, 2)                  \
+      X_VEC(line_thickness, 1)          \
+      X_VEC(major_line_thickness, 1),   \
                                         \
       X_BUF(vertexPosition, 2)          \
     )                                   \

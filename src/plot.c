@@ -49,6 +49,7 @@ void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t grou
 
 bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos) {
   BR_ASSERT(plot->kind == br_plot_kind_2d);
+  plot->selected_data_influence = br_float_lerp(plot->selected_data_influence, plot->selected_data_influence_target, 0.1f);
   if (plot->follow) {
     br_vec2d_t maxy = BR_VEC2D(-DBL_MAX, -DBL_MAX);
     br_vec2d_t mini = BR_VEC2D(DBL_MAX, DBL_MAX);
@@ -71,7 +72,6 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_ve
       if (maxy.y == mini.y) wanted_zoom.y = (double)plot->dd.zoom.y;
       if (maxy.x == mini.x) wanted_zoom.x = (double)plot->dd.zoom.x;
       br_vec2d_t wanted_offset = br_vec2d_add(br_vec2d_scale(maxy, 0.5), br_vec2d_scale(mini, 0.5));
-      LOGI("%f %f - %f %f - wo: %f %f", mini.x, mini.y, maxy.x, maxy.y, wanted_offset.x, wanted_offset.y);
       plot->dd.zoom = br_vec2_lerp(plot->dd.zoom, BR_VEC2D_TOF(wanted_zoom), 0.001f*brtl_frame_time());
       plot->dd.offset = br_vec2_lerp(plot->dd.offset, BR_VEC2D_TOF(wanted_offset), 0.05f);
     }

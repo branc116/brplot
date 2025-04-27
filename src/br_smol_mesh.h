@@ -9,12 +9,13 @@ extern "C" {
 
 typedef struct br_smol_mesh_line_t {
   br_vec2_t zoom, offset, screen_size;
+  float line_thickness;
 } br_smol_mesh_line_t;
 
 //void smol_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, br_vec2_t mid_point, br_vec2_t tangent, br_color_t color);
 //void smol_mesh_gen_quad_simple(smol_mesh_t* mesh, Rectangle rect, br_color_t color);
 
-void smol_mesh_gen_bb(br_smol_mesh_line_t args, bb_t bb);
+void smol_mesh_gen_bb(br_smol_mesh_line_t args, br_bb_t bb);
 void smol_mesh_gen_point(br_smol_mesh_line_t args, br_vec2_t point);
 void smol_mesh_gen_point1(br_smol_mesh_line_t args, br_vec2_t point, br_vec2_t size);
 void smol_mesh_gen_line(br_smol_mesh_line_t args, br_vec2_t p1, br_vec2_t p2);

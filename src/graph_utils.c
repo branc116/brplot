@@ -42,46 +42,35 @@ void br_plots_focus_visible(br_plots_t plots, br_datas_t const groups) {
 void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups) {
   // TODO 2D/3D
   BR_ASSERT(plot->kind == br_plot_kind_2d);
-  if (groups.len == 0) return;
-  size_t i = 0;
-  while (i < groups.len && (groups.arr[i].kind != br_data_kind_2d || groups.arr[i].len == 0)) ++i;
-  if (i >= groups.len) return;
+  if (plot->groups_to_show.len == 0) return;
 
-  bb_t bb = groups.arr[i].dd.bounding_box;
-  bb.xmin += (float)groups.arr[i].dd.rebase_x;
-  bb.xmin += (float)groups.arr[i].dd.rebase_x;
-  bb.ymin += (float)groups.arr[i].dd.rebase_y;
-  bb.ymax += (float)groups.arr[i].dd.rebase_y;
-  ++i;
-  for (; i < groups.len; ++i) {
-    if (groups.arr[i].kind != br_data_kind_2d || groups.arr[i].len == 0) continue;
-    bb_t cur_bb = groups.arr[i].dd.bounding_box;
-    cur_bb.xmin += (float)groups.arr[i].dd.rebase_x;
-    cur_bb.xmin += (float)groups.arr[i].dd.rebase_x;
-    cur_bb.ymin += (float)groups.arr[i].dd.rebase_y;
-    cur_bb.ymax += (float)groups.arr[i].dd.rebase_y;
-    ++i;
-    bb = (bb_t) {
-      .xmin = fminf(bb.xmin, cur_bb.xmin),
-      .ymin = fminf(bb.ymin, cur_bb.ymin),
-      .xmax = fmaxf(bb.xmax, cur_bb.xmax),
-      .ymax = fmaxf(bb.ymax, cur_bb.ymax),
-    };
+  br_data_t* d = br_data_get1(groups, plot->groups_to_show.arr[0]);
+  br_bb_t bb = br_bb_add(d->dd.bounding_box, BR_VEC2((float)d->dd.rebase_x, (float)d->dd.rebase_y));
+  for (int i = 1; i < plot->groups_to_show.len; ++i) {
+    d = br_data_get1(groups, plot->groups_to_show.arr[i]);
+    if (d->len > 0) bb = br_bb_union(bb, br_bb_add(d->dd.bounding_box, BR_VEC2((float)d->dd.rebase_x, (float)d->dd.rebase_y)));
   }
 
-  float newWidth = (bb.xmax - bb.xmin);
-  float newHeight = (bb.ymax - bb.ymin);
-  bb.xmax += newWidth * 0.1f;
-  bb.ymax += newHeight * 0.1f;
-  bb.xmin -= newWidth * 0.1f;
-  bb.ymin -= newHeight * 0.1f;
-  newWidth = (bb.xmax - bb.xmin);
-  newHeight = (bb.ymax - bb.ymin);
-  br_vec2_t bl = BR_VEC2(bb.xmin, bb.ymin);
-  float maxSize = fmaxf(newWidth, newHeight);
-  plot->dd.zoom.x = BR_EXTENTI_ASPECT(plot->cur_extent) * maxSize; 
-  plot->dd.offset.x = bl.x + maxSize / 2.f;
-  plot->dd.zoom.y = newHeight;
-  plot->dd.offset.y = bl.y + maxSize / 2.f;
+  float new_width = BR_BBW(bb);
+  float new_height = BR_BBH(bb);
+  bb.max_x += new_width  * .1f;
+  bb.max_y += new_height * .1f;
+  bb.min_x -= new_width  * .1f;
+  bb.min_y -= new_height * .1f;
+  new_width = BR_BBW(bb);
+  new_height = BR_BBH(bb);
+  br_vec2_t bl = bb.min;
+  if (0) {
+    float maxSize = fmaxf(new_width, new_height);
+    plot->dd.zoom.x = BR_EXTENTI_ASPECT(plot->cur_extent) * maxSize; 
+    plot->dd.zoom.y = new_height;
+    plot->dd.offset.x = bl.x + maxSize / 2.f;
+    plot->dd.offset.y = bl.y + maxSize / 2.f;
+  } else {
+    plot->dd.offset.x = bl.x + new_width / 2.f;
+    plot->dd.offset.y = bl.y + new_height / 2.f;
+    plot->dd.zoom.x = new_width;
+    plot->dd.zoom.y = new_height;
+  }
 }
 

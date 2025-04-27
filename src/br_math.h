@@ -15,6 +15,7 @@
 #define BR_VEC2I_SUB(A, B) ((br_vec2i_t) { .x = (A).x - (B).x, .y = (A).y - (B).y })
 #define BR_VEC2I_SCALE(V, B) ((br_vec2i_t) { .x = (V).x * (B), .y = (V).y * (B) })
 #define BR_VEC2D_TOF(V) ((br_vec2_t) { .x = (float)(V).x, .y = (float)(V).y })
+#define BR_VEC2_(V) (V).x, (V).y
 #define BR_VEC3D(X, Y, Z) ((br_vec3d_t) { .x = (X), .y = (Y), .z = (Z) })
 #define BR_VEC3_TOC(V, A) ((br_color_t) { .r = (unsigned char)((V).x * 255.f), .g = (unsigned char)((V).y * 255.f), .b = (unsigned char)((V).z * 255.f), .a = (A) })
 #define BR_SIZE(WIDTH, HEIGHT) ((br_size_t) { .width = (WIDTH), .height = (HEIGHT) })
@@ -35,6 +36,7 @@
 #define BR_EXTENT_(EX) (EX).x, (EX).y, (EX).width, (EX).height
 
 #define BR_BB(Xm, Ym, XM, YM) (br_bb_t) { .arr = { (Xm), (Ym), (XM), (YM) } }
+#define BR_BB2(MIN, MAX) (br_bb_t) { .min = (MIN), .max = (MAX) }
 #define BR_BB_TOEX(BB) (br_extent_t) { .arr = { (BB).min_x, (BB).min_y, (BB).max_x - (BB).min_x, (BB).max_y - (BB).min_y } }
 #define BR_BBW(BB) ((BB).max_x - (BB).min_x)
 #define BR_BBH(BB) ((BB).max_y - (BB).min_y)
@@ -232,6 +234,10 @@ static inline br_vec2_t br_vec2i_tof(br_vec2i_t v) {
 
 static inline br_vec2i_t br_vec2_toi(br_vec2_t v) {
   return (br_vec2i_t) { .x = (int)v.x, .y = (int)v.y };
+}
+
+static inline br_vec2_t br_vec2_min(br_vec2_t a, br_vec2_t b) {
+  return BR_VEC2(fminf(a.x, b.x), fminf(a.y, b.y));
 }
 
 static inline br_vec2_t br_vec2_max(br_vec2_t a, br_vec2_t b) {
@@ -648,6 +654,14 @@ static inline br_bb_t br_bb_sub(br_bb_t bb, br_vec2_t vec) {
   return (br_bb_t) { .min = br_vec2_sub(bb.min, vec), .max = br_vec2_sub(bb.max, vec) };
 }
 
+static inline br_bb_t br_bb_add(br_bb_t bb, br_vec2_t v) {
+  return (br_bb_t) { .min = br_vec2_add(bb.min, v), .max = br_vec2_add(bb.max, v) };
+}
+
+static inline br_bb_t br_bb_union(br_bb_t b1, br_bb_t b2) {
+  return BR_BB2(br_vec2_min(b1.min, b2.min), br_vec2_max(b1.max, b2.max));
+}
+
 static inline br_vec4_t br_bb_clip_dists(br_bb_t limit, br_vec2_t pos) {
   br_vec4_t p = BR_VEC4(
       (pos.x - limit.min_x),
@@ -658,3 +672,6 @@ static inline br_vec4_t br_bb_clip_dists(br_bb_t limit, br_vec2_t pos) {
   return p;
 }
 
+static inline br_bb_t br_bb_expand_with_point(br_bb_t bb, br_vec2_t v) {
+  return BR_BB2(br_vec2_min(bb.min, v), br_vec2_max(bb.max, v));
+}

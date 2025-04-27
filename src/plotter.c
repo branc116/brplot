@@ -155,6 +155,9 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
     .dd =  {
       .zoom = BR_VEC2(1.f, 1.f),
       .offset = BR_VEC2(0.f, 0.f),
+      .grid_line_thickness = 1.f,
+      .grid_major_line_thickness = 2.f,
+      .line_thickness = 0.05f
     }
   };
   br_plot_create_texture(&plot);

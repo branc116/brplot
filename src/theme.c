@@ -56,8 +56,8 @@ void br_theme_light(void) {
 }
 
 void br_theme_reset_ui(void) {
-  BR_THEME.ui.padding = BR_VEC2(4, 4);
-  BR_THEME.ui.font_size = 26;
-  BR_THEME.ui.border_thick = 2;
+  BR_THEME.ui.padding = BR_VEC2(4, 2);
+  BR_THEME.ui.font_size = 20;
+  BR_THEME.ui.border_thick = 1;
 }
 

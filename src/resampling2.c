@@ -459,6 +459,8 @@ void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, 
           res->culler.args.offset = plot->dd.offset;
           res->culler.args.offset.x -= (float)pg->dd.rebase_x;
           res->culler.args.offset.y -= (float)pg->dd.rebase_y;
+          res->culler.args.line_thickness = plot->dd.line_thickness;
+          if (plot->selected_data == pg->group_id) res->culler.args.line_thickness *= br_float_lerp(1, 2.5f, plot->selected_data_influence);
 
           shaders->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
           br_extent_t ex = BR_EXTENTI_TOF(plot->cur_extent);
@@ -485,8 +487,8 @@ void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, 
           br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
           br_mat_t look = br_mat_look_at(eye, target, plot->ddd.up);
           shaders->line_3d_simple->uvs.m_mvp_uv = shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
-          shaders->line_3d->uvs.eye_uv = eye;
-          shaders->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
+          shaders->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
+          shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
 
           resampling2_draw32(&res->dd, 0, pg, plot, shaders);
           br_shader_line_3d_draw(brtl_shaders()->line_3d);
@@ -511,8 +513,8 @@ void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, 
           br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
           br_mat_t look = br_mat_look_at(eye, target, plot->ddd.up);
           shaders->line_3d_simple->uvs.m_mvp_uv = shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
-          shaders->line_3d->uvs.eye_uv = eye;
-          shaders->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
+          shaders->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
+          shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
 
           resampling2_draw33(&res->ddd, 0, pg, plot, shaders); break;
           br_shader_line_3d_draw(brtl_shaders()->line_3d);
@@ -520,7 +522,7 @@ void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, 
       }
       break;
     }
-    default: assert(0);
+    default: BR_ASSERT(0);
   }
   res->render_time = brtl_time() - start;
   ++res->draw_count;

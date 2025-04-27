@@ -73,18 +73,39 @@ void br_plotter_draw(br_plotter_t* br) {
 static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas) {
   if (brui_resizable_get(plot->legend_extent_handle)->hidden_factor > 0.9f) return;
   brui_resizable_push(plot->legend_extent_handle);
+    bool is_active = brui_active();
+    int active_group = -1;
+    br_vec2_t mp = brtl_mouse_pos();
     brui_padding_y_set(1.f);
     brui_text_size_set(brui_text_size() / 5 * 3);
     for (int i = 0; i < plot->groups_to_show.len; ++i) {
+      bool active = is_active;
       br_data_t* data = br_data_get1(datas, plot->groups_to_show.arr[i]);
+      active &= brui_y() < mp.y;
       brui_vsplitvp(3, BRUI_SPLITA((float)brui_text_size()), BRUI_SPLITA(brui_padding_x()), BRUI_SPLITR(1));
-        brui_icon((float)brui_text_size(), BR_BB(0,0,0,0), data->color, data->color);
+        if (plot->selected_data == data->group_id) {
+          brui_icon((float)brui_text_size(), BR_EXTENT_TOBB(br_icons.cb_0.size_32), brtl_theme()->colors.btn_hovered, data->color);
+        } else {
+          brui_icon((float)brui_text_size(), BR_BB(0,0,0,0), data->color, data->color);
+        }
       brui_vsplit_pop();
       brui_vsplit_pop();
         brui_text_align_set(br_text_renderer_ancor_left_mid);
         brui_height_set((float)brui_text_size());
         brui_text(br_str_as_view(data->name));
       brui_vsplit_end();
+      active &= brui_y() >= mp.y;
+      if (active) {
+        active = false;
+        active_group = data->group_id;
+        plot->selected_data_influence_target = 1.f;
+      }
+    }
+    if (active_group != plot->selected_data_old) {
+      plot->selected_data_old = active_group;
+      plot->selected_data = active_group;
+      plot->selected_data_influence_target = 1.f;
+      plot->selected_data_influence = 0.f;
     }
   brui_resizable_pop();
 }
@@ -111,6 +132,14 @@ static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas) {
       if (brui_button(BR_STRL("Remove Plot"))) {
         ret = true;
       }
+      if (plot->kind == br_plot_kind_2d) {
+        brui_sliderf2(BR_STRL("Line Thickness"), &plot->dd.line_thickness);
+        brui_vsplit(2);
+          brui_sliderf2(BR_STRL("Grid Thick"), &plot->dd.grid_line_thickness);
+        brui_vsplit_pop();
+          brui_sliderf2(BR_STRL("Major Grid Thick"), &plot->dd.grid_major_line_thickness);
+        brui_vsplit_end();
+      }
       brui_text_size_set(og_text_size/5*4);
       brui_checkbox(BR_STRL("Follow"), &plot->follow);
       bool hide_legend = brui_resizable_get(plot->legend_extent_handle)->target.hidden_factor > 0.9f;
@@ -133,6 +162,10 @@ static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas) {
         }
       }
       br_scrach_free();
+      if (plot->kind == br_plot_kind_2d) {
+        brui_textf("Offset: %f %f", BR_VEC2_(plot->dd.offset));
+        brui_textf("Zoom: %f %f", BR_VEC2_(plot->dd.zoom));
+      }
     brui_resizable_pop();
   }
   return ret;
@@ -207,6 +240,8 @@ static void draw_left_panel(br_plotter_t* br) {
           switch (data.kind) {
             case br_data_kind_2d: {
               brui_textf("2D rebase: %.3f, %.3f", data.dd.rebase_x, data.dd.rebase_y);
+              br_bb_t bb = br_bb_add(data.dd.bounding_box, BR_VEC2((float)data.dd.rebase_x, (float)data.dd.rebase_y));
+              brui_textf("   box: (%.3f, %.3f) (%.3f, %3.f)", BR_BB_(bb));
             } break;
             case br_data_kind_3d: {
               brui_textf("3D rebase: %.3f, %.3f, %.3f", data.ddd.rebase_x, data.ddd.rebase_y, data.ddd.rebase_z);

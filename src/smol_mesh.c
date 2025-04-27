@@ -7,8 +7,8 @@
 
 #include <assert.h>
 
-void smol_mesh_gen_bb(br_smol_mesh_line_t args, bb_t bb) {
-  float xmi = bb.xmin, ymi = bb.ymin , xma = bb.xmax, yma = bb.ymax;
+void smol_mesh_gen_bb(br_smol_mesh_line_t args, br_bb_t bb) {
+  float xmi = bb.min_x, ymi = bb.min_y , xma = bb.max_x, yma = bb.max_y;
   br_vec2_t v[5] = {
     BR_VEC2(xmi, ymi),
     BR_VEC2(xma, ymi),
@@ -22,20 +22,20 @@ void smol_mesh_gen_bb(br_smol_mesh_line_t args, bb_t bb) {
 
 void smol_mesh_gen_point(br_smol_mesh_line_t args, br_vec2_t point) {
   br_vec2_t size = BR_VEC2(args.zoom.x * .01f, args.zoom.y * .01f);
-  smol_mesh_gen_bb(args, (bb_t) {
-      .xmin = point.x - size.x / 2,
-      .ymin = point.y - size.y / 2,
-      .xmax = point.x + size.x / 2,
-      .ymax = point.y + size.y / 2,
+  smol_mesh_gen_bb(args, (br_bb_t) {
+      .min_x = point.x - size.x / 2,
+      .min_y = point.y - size.y / 2,
+      .max_x = point.x + size.x / 2,
+      .max_y = point.y + size.y / 2,
   });
 }
 
 void smol_mesh_gen_point1(br_smol_mesh_line_t args, br_vec2_t point, br_vec2_t size) {
-  smol_mesh_gen_bb(args, (bb_t) {
-      .xmin = point.x - size.x / 2,
-      .ymin = point.y - size.y / 2,
-      .xmax = point.x + size.x / 2,
-      .ymax = point.y + size.y / 2,
+  smol_mesh_gen_bb(args, (br_bb_t) {
+      .min_x = point.x - size.x / 2,
+      .min_y = point.y - size.y / 2,
+      .max_x = point.x + size.x / 2,
+      .max_y = point.y + size.y / 2,
   });
 }
 
@@ -47,7 +47,7 @@ void smol_mesh_gen_line(br_smol_mesh_line_t args, br_vec2_t startPos, br_vec2_t 
     BR_VEC2(endPos.x, endPos.y),
   };
 
-  float thick = 0.05f;
+  float thick = args.line_thickness;
   br_vec2_t zoom = args.zoom;
   br_vec2_t screen = args.screen_size;
   br_vec2_t offset = args.offset;
@@ -177,14 +177,16 @@ void smol_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
   switch (plot->kind) {
     case br_plot_kind_2d: {
       TracyCFrameMarkStart("grid_draw_2d");
+      shaders->grid->uvs.bg_color_uv = BR_COLOR_TO4(BR_THEME.colors.plot_bg);
+      shaders->grid->uvs.lines_color_uv = BR_COLOR_TO4(BR_THEME.colors.grid_lines);
+      shaders->grid->uvs.line_thickness_uv = plot->dd.grid_line_thickness;
+      shaders->grid->uvs.major_line_thickness_uv = plot->dd.grid_major_line_thickness;
       br_shader_grid_push_quad(shaders->grid, (br_shader_grid_el_t[4]) {
           { .vertexPosition = BR_VEC2(-1, 1) },
           { .vertexPosition = BR_VEC2(1, 1) },
           { .vertexPosition = BR_VEC2(1, -1) },
           { .vertexPosition = BR_VEC2(-1, -1) },
       });
-      shaders->grid->uvs.bg_color_uv = BR_COLOR_TO4(BR_THEME.colors.plot_bg);
-      shaders->grid->uvs.lines_color_uv = BR_COLOR_TO4(BR_THEME.colors.grid_lines);
       TracyCFrameMarkEnd("grid_draw_2d");
     } break;
     case br_plot_kind_3d: {

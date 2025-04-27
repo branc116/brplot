@@ -169,14 +169,14 @@ void brui_pop(void) {
   BRUI_LOG("pop");
 }
 
-static void brui_push_simple(void) {
+void brui_push_simple(void) {
   BRUI_LOG("push simp");
   brui_stack_el_t new_el = TOP; 
   br_da_push(brui__stack, new_el);
   BRUI_LOG("push simp post");
 }
 
-static void brui_pop_simple(void) {
+void brui_pop_simple(void) {
   --brui__stack.len;
 }
 
@@ -711,6 +711,14 @@ float brui_padding_x(void) {
 
 void brui_padding_y_set(float value) {
   TOP.padding.y = value;
+}
+
+float brui_y(void) {
+  return TOP.cur.y;
+}
+
+bool brui_active(void) {
+  return TOP.is_active;
 }
 
 

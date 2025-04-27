@@ -109,6 +109,8 @@ void brui_collapsable_end(void);
 
 void brui_push(void);
 void brui_pop(void);
+void brui_push_simple(void);
+void brui_pop_simple(void);
 void brui_push_y(float y);
 
 int   brui_text_size(void);
@@ -122,6 +124,8 @@ float brui_min_y(void);
 void  brui_height_set(float value);
 float brui_padding_x(void);
 void  brui_padding_y_set(float value);
+float brui_y(void);
+bool  brui_active(void);
 
 void              brui_resizable_init(void);
 void              brui_resizable_deinit(void);

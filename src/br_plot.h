@@ -26,6 +26,10 @@ typedef struct br_plot_2d_t {
   //            That is if you zoom in and out, graph_rect will change.
   br_extent_t graph_rect;
 
+  float line_thickness;
+  float grid_line_thickness;
+  float grid_major_line_thickness;
+
   br_vec2_t mouse_pos;
   br_vec2_t zoom;
   br_vec2_t offset;
@@ -33,6 +37,10 @@ typedef struct br_plot_2d_t {
 } br_plot_2d_t;
 
 typedef struct br_plot_3d_t {
+  float line_thickness;
+  float grid_line_thickness;
+  float grid_major_line_thickness;
+
   br_vec3_t eye, target, up;
   float fov_y, near_plane, far_plane;
 } br_plot_3d_t;
@@ -48,6 +56,11 @@ typedef struct br_plot_t {
   int legend_extent_handle;
 
   unsigned int texture_id;
+
+  int selected_data_old;
+  int selected_data;
+  float selected_data_influence;
+  float selected_data_influence_target;
 
   bool follow;
   bool jump_around;

@@ -36,6 +36,7 @@
   X(generate, "Generate additional files") \
   X(compile, "Only compile files, don't generate anything") \
   X(run, "Build and run brplot") \
+  X(debug, "Build and run brplot with gdb") \
   X(amalgam, "Create amalgamation file that will be shipped to users") \
   X(dist, "Create distribution zip") \
   X(pip, "Create pip egg") \
@@ -146,6 +147,7 @@ static bool is_slib = false;
 static bool do_dist = true;
 static bool pip_skip_build = false;
 static bool disable_logs = false;
+static bool is_pedantic = false;
 #define X(name, desc) [n_ ## name] = { 0 },
 static command_flags_t command_flags[] = {
 COMMANDS(X)
@@ -247,6 +249,7 @@ static bool needs_rebuilding(br_strv_t input, br_strv_t output) {
 
 static void fill_command_flag_data(void) {
   command_flag_t debug_flag = (command_flag_t) {.name = BR_STRL("debug"), .alias = 'd', .description = BR_STRL("Build debug version"), .is_set = &is_debug};
+  command_flag_t pedantic_flag = (command_flag_t) {.name = BR_STRL("pedantic"), .alias = 'p', .description = BR_STRL("Turn on all warnings and treat warnings as errors"), .is_set = &is_pedantic};
   command_flag_t headless_flag = (command_flag_t) {.name = BR_STRL("headless"), .alias = '\0', .description = BR_STRL("Create a build that will not spawn any windows"), .is_set = &is_headless};
   command_flag_t asan_flag = (command_flag_t) {.name = BR_STRL("asan"), .alias = 'a', .description = BR_STRL("Enable address sanitizer"), .is_set = &enable_asan};
   command_flag_t lib_flag = (command_flag_t) {.name = BR_STRL("lib"), .alias = 'l', .description = BR_STRL("Build dynamic library"), .is_set = &is_lib};
@@ -256,6 +259,7 @@ static void fill_command_flag_data(void) {
   command_flag_t dist_flag = (command_flag_t) {.name = BR_STRL("dist"), .alias = 'D', .description = BR_STRL("Also create dist ( Needed for pip package but maybe you wanna disable this because it's slow )"), .is_set = &do_dist};
   command_flag_t pip_skip_build_flag = (command_flag_t) {.name = BR_STRL("skip-build"), .alias = '\0', .description = BR_STRL("Don't do anything except call pip to create a package"), .is_set = &pip_skip_build};
   br_da_push(command_flags[n_compile], debug_flag);
+  br_da_push(command_flags[n_compile], pedantic_flag);
   br_da_push(command_flags[n_compile], headless_flag);
   br_da_push(command_flags[n_compile], asan_flag);
   br_da_push(command_flags[n_compile], lib_flag);
@@ -265,6 +269,7 @@ static void fill_command_flag_data(void) {
   br_da_push(command_flags[n_pip], dist_flag);
   br_da_push(command_flags[n_pip], pip_skip_build_flag);
 
+  br_da_push(command_deps[n_debug], n_build);
   br_da_push(command_deps[n_run], n_build);
   br_da_push(command_deps[n_build], n_compile);
   br_da_push(command_deps[n_build], n_generate);
@@ -378,6 +383,7 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
   else if (is_lib) br_fs_cd(&build_dir, BR_STRL("lib"));
   else br_fs_cd(&build_dir, BR_STRL("exe"));
   br_fs_cd(&build_dir, BR_STRV(file_name.data, (uint32_t)file_name.count));
+  if (enable_asan) br_str_push_literal(&build_dir, ".asan");
   br_str_push_literal(&build_dir, ".o");
   br_str_push_char(&build_dir, '\0');
   nob_cmd_append(link_cmd, build_dir.str);
@@ -404,8 +410,13 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
   } else {
     nob_cmd_append(cmd, "-O3");
   }
-  if (disable_logs) {
-    nob_cmd_append(cmd, "-DBR_DISABLE_LOG");
+  if (disable_logs) nob_cmd_append(cmd, "-DBR_DISABLE_LOG");
+  if (is_pedantic) {
+#if defined(_MSC_VER)
+    LOGF("Pedantic flags for msvc are not known");
+#else
+    nob_cmd_append(cmd, "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-Wconversion", "-Wshadow");
+#endif
   }
 
   if (is_lib) {
@@ -568,6 +579,15 @@ static bool n_run_do(void) {
   if (false == n_build_do()) return false;
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "bin/brplot" EXE_EXT);
+  nob_cmd_run_sync(cmd);
+  return true;
+}
+
+static bool n_debug_do(void) {
+  is_debug = true;
+  if (false == n_build_do()) return false;
+  Nob_Cmd cmd = { 0 };
+  nob_cmd_append(&cmd, "gdb", "bin/brplot" EXE_EXT);
   nob_cmd_run_sync(cmd);
   return true;
 }

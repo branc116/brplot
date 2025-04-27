@@ -25,10 +25,6 @@ typedef struct bb_3d_t {
   float xmin, ymin, zmin, xmax, ymax, zmax;
 } bb_3d_t;
 
-typedef struct bb_t {
-  float xmin, ymin, xmax, ymax;
-} bb_t;
-
 #if !defined(BR_DATA_KIND_T)
 typedef enum {
   br_data_kind_2d,
@@ -40,7 +36,7 @@ typedef enum {
 typedef struct br_data_2d_t {
   float* xs;
   float* ys;
-  bb_t bounding_box;
+  br_bb_t bounding_box;
   double rebase_x, rebase_y;
 } br_data_2d_t;
 
