@@ -96,6 +96,15 @@ extern "C" {
   }                                                \
 } while(0)
 
+#define br_da_contains_feeld_t(T, ARR, FEELD, V, CONTAINS) do { \
+  for (T _i = 0; _i < (ARR).len; ++_i) {           \
+    if ((ARR).arr[_i].FEELD == V) {                      \
+      CONTAINS = true;                             \
+      break;                                       \
+    }                                              \
+  }                                                \
+} while(0)
+
 #define br_da_copy(DES, SRC) do { \
   BR_ASSERT(sizeof((DES).arr[0]) == sizeof((SRC).arr[0])); \
   if ((DES).cap < (SRC).len) { \
