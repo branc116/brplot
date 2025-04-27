@@ -30,7 +30,7 @@
 
       int main(void) {
          for (int i = -10; i < 10; ++i)           brp_1(y_valuei*i,               0); //          y-value, group_id
-         for (float i = -10.f; i < 10.f; i+=0.1f) brp_2(0.1f*sin(i), 0.1f*cos(i), 2); // x-value, y-value, group_id
+         for (double i = -10.f; i < 10.0; i+=0.1) brp_2(0.1f*sin(i), 0.1f*cos(i), 2); // x-value, y-value, group_id
          brp_wait(); // Wait until plot window is closed
       }
  * ```
@@ -81,21 +81,37 @@ extern "C" {
  * For more  details what each parameter means jump to *PARAMETER_DEFINITIONS*
  * */
 typedef int br_data_id;
-BR_EXPORT br_data_id brp_1   (float x,                                            br_data_id data_id);
-BR_EXPORT br_data_id brp_1n  (float const* points, int n,                         br_data_id data_id);
-BR_EXPORT br_data_id brp_1ns (float const* points, int n, int stride, int offset, br_data_id data_id);
+BR_EXPORT br_data_id brp_1   (double x,                                            br_data_id data_id);
+BR_EXPORT br_data_id brp_1n  (double const* points, int n,                         br_data_id data_id);
+BR_EXPORT br_data_id brp_1ns (double const* points, int n, int stride, int offset, br_data_id data_id);
 
-BR_EXPORT br_data_id brp_2   (float x, float y,                                                                br_data_id data_id);
-BR_EXPORT br_data_id brp_2n  (float const* v,                   int n,                                         br_data_id data_id);
-BR_EXPORT br_data_id brp_2ns (float const* v,                   int n, int stride, int offset_x, int offset_y, br_data_id data_id);
-BR_EXPORT br_data_id brp_2nd (float const* xs, float const* ys, int n,                                         br_data_id data_id);
-BR_EXPORT br_data_id brp_2nds(float const* xs, float const* ys, int n, int stride, int offset_x, int offset_y, br_data_id data_id);
+BR_EXPORT br_data_id brp_2   (double x, double y,                                                                br_data_id data_id);
+BR_EXPORT br_data_id brp_2n  (double const* v,                    int n,                                         br_data_id data_id);
+BR_EXPORT br_data_id brp_2ns (double const* v,                    int n, int stride, int offset_x, int offset_y, br_data_id data_id);
+BR_EXPORT br_data_id brp_2nd (double const* xs, double const* ys, int n,                                         br_data_id data_id);
+BR_EXPORT br_data_id brp_2nds(double const* xs, double const* ys, int n, int stride, int offset_x, int offset_y, br_data_id data_id);
 
-BR_EXPORT br_data_id brp_3   (float x, float y, float z,                                                                                      br_data_id data_id);
-BR_EXPORT br_data_id brp_3n  (float const* v,                                    int n,                                                       br_data_id data_id);
-BR_EXPORT br_data_id brp_3ns (float const* v,                                    int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
-BR_EXPORT br_data_id brp_3nd (float const* xs, float const* ys, float const* zs, int n,                                                       br_data_id data_id);
-BR_EXPORT br_data_id brp_3nds(float const* xs, float const* ys, float const* zs, int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
+BR_EXPORT br_data_id brp_3   (double x, double y, double z,                                                                                      br_data_id data_id);
+BR_EXPORT br_data_id brp_3n  (double const* v,                                      int n,                                                       br_data_id data_id);
+BR_EXPORT br_data_id brp_3ns (double const* v,                                      int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
+BR_EXPORT br_data_id brp_3nd (double const* xs, double const* ys, double const* zs, int n,                                                       br_data_id data_id);
+BR_EXPORT br_data_id brp_3nds(double const* xs, double const* ys, double const* zs, int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
+
+BR_EXPORT br_data_id brp_f1   (float x,                                            br_data_id data_id);
+BR_EXPORT br_data_id brp_f1n  (float const* points, int n,                         br_data_id data_id);
+BR_EXPORT br_data_id brp_f1ns (float const* points, int n, int stride, int offset, br_data_id data_id);
+
+BR_EXPORT br_data_id brp_f2   (float x, float y,                                                                br_data_id data_id);
+BR_EXPORT br_data_id brp_f2n  (float const* v,                   int n,                                         br_data_id data_id);
+BR_EXPORT br_data_id brp_f2ns (float const* v,                   int n, int stride, int offset_x, int offset_y, br_data_id data_id);
+BR_EXPORT br_data_id brp_f2nd (float const* xs, float const* ys, int n,                                         br_data_id data_id);
+BR_EXPORT br_data_id brp_f2nds(float const* xs, float const* ys, int n, int stride, int offset_x, int offset_y, br_data_id data_id);
+
+BR_EXPORT br_data_id brp_f3   (float x, float y, float z,                                                                                      br_data_id data_id);
+BR_EXPORT br_data_id brp_f3n  (float const* v,                                    int n,                                                       br_data_id data_id);
+BR_EXPORT br_data_id brp_f3ns (float const* v,                                    int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
+BR_EXPORT br_data_id brp_f3nd (float const* xs, float const* ys, float const* zs, int n,                                                       br_data_id data_id);
+BR_EXPORT br_data_id brp_f3nds(float const* xs, float const* ys, float const* zs, int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
 
 // Remove all data in data.id == data_id
 BR_EXPORT void brp_empty(br_data_id data_id);
@@ -243,19 +259,33 @@ BR_EXPORT br_data_id br_data_new(br_plotter_t* plotter, br_data_ctor_t const* ct
  *     br_data_add_v2nds(data, xs=x, ys=y, n=8, stride=1, offset_x=0, offset_y=0) => same as br_data_add_v2nd(data, xs=x, ys=y, n=8)
  *
  * */
-BR_EXPORT int br_data_add_v1   (br_plotter_t* plotter, float x, br_data_id data);
-BR_EXPORT int br_data_add_v1n  (br_plotter_t* plotter, float const* x, int n, br_data_id data);
-BR_EXPORT int br_data_add_v1ns (br_plotter_t* plotter, float const* x, int n, int stride, int offset, br_data_id data);
-BR_EXPORT int br_data_add_v2   (br_plotter_t* plotter, float x, float y, br_data_id data);
-BR_EXPORT int br_data_add_v2n  (br_plotter_t* plotter, float const* v, int n, br_data_id data);
-BR_EXPORT int br_data_add_v2ns (br_plotter_t* plotter, float const* v, int n, int stride, int offset_x, int offset_y, br_data_id data);
-BR_EXPORT int br_data_add_v2nd (br_plotter_t* plotter, float const* xs, float const* ys, int n, br_data_id data);
-BR_EXPORT int br_data_add_v2nds(br_plotter_t* plotter, float const* xs, float const* ys, int n, int stride, int offset_x, int offset_y, br_data_id data);
-BR_EXPORT int br_data_add_v3   (br_plotter_t* plotter, float x, float y, float z, br_data_id data);
-BR_EXPORT int br_data_add_v3n  (br_plotter_t* plotter, float const* v, int n, br_data_id data);
-BR_EXPORT int br_data_add_v3ns (br_plotter_t* plotter, float const* v, int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data);
-BR_EXPORT int br_data_add_v3nd (br_plotter_t* plotter, float const* xs, float const* ys, float const* zs, int n, br_data_id data);
-BR_EXPORT int br_data_add_v3nds(br_plotter_t* plotter, float const* xs, float const* ys, float const* zs, int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data);
+BR_EXPORT int br_data_add_v1   (br_plotter_t* plotter, double x, br_data_id data);
+BR_EXPORT int br_data_add_v1n  (br_plotter_t* plotter, double const* x, int n, br_data_id data);
+BR_EXPORT int br_data_add_v1ns (br_plotter_t* plotter, double const* x, int n, int stride, int offset, br_data_id data);
+BR_EXPORT int br_data_add_v2   (br_plotter_t* plotter, double x, double y, br_data_id data);
+BR_EXPORT int br_data_add_v2n  (br_plotter_t* plotter, double const* v, int n, br_data_id data);
+BR_EXPORT int br_data_add_v2ns (br_plotter_t* plotter, double const* v, int n, int stride, int offset_x, int offset_y, br_data_id data);
+BR_EXPORT int br_data_add_v2nd (br_plotter_t* plotter, double const* xs, double const* ys, int n, br_data_id data);
+BR_EXPORT int br_data_add_v2nds(br_plotter_t* plotter, double const* xs, double const* ys, int n, int stride, int offset_x, int offset_y, br_data_id data);
+BR_EXPORT int br_data_add_v3   (br_plotter_t* plotter, double x, double y, double z, br_data_id data);
+BR_EXPORT int br_data_add_v3n  (br_plotter_t* plotter, double const* v, int n, br_data_id data);
+BR_EXPORT int br_data_add_v3ns (br_plotter_t* plotter, double const* v, int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data);
+BR_EXPORT int br_data_add_v3nd (br_plotter_t* plotter, double const* xs, double const* ys, double const* zs, int n, br_data_id data);
+BR_EXPORT int br_data_add_v3nds(br_plotter_t* plotter, double const* xs, double const* ys, double const* zs, int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data);
+
+BR_EXPORT int br_data_add_fv1   (br_plotter_t* plotter, float x, br_data_id data);
+BR_EXPORT int br_data_add_fv1n  (br_plotter_t* plotter, float const* x, int n, br_data_id data);
+BR_EXPORT int br_data_add_fv1ns (br_plotter_t* plotter, float const* x, int n, int stride, int offset, br_data_id data);
+BR_EXPORT int br_data_add_fv2   (br_plotter_t* plotter, float x, float y, br_data_id data);
+BR_EXPORT int br_data_add_fv2n  (br_plotter_t* plotter, float const* v, int n, br_data_id data);
+BR_EXPORT int br_data_add_fv2ns (br_plotter_t* plotter, float const* v, int n, int stride, int offset_x, int offset_y, br_data_id data);
+BR_EXPORT int br_data_add_fv2nd (br_plotter_t* plotter, float const* xs, float const* ys, int n, br_data_id data);
+BR_EXPORT int br_data_add_fv2nds(br_plotter_t* plotter, float const* xs, float const* ys, int n, int stride, int offset_x, int offset_y, br_data_id data);
+BR_EXPORT int br_data_add_fv3   (br_plotter_t* plotter, float x, float y, float z, br_data_id data);
+BR_EXPORT int br_data_add_fv3n  (br_plotter_t* plotter, float const* v, int n, br_data_id data);
+BR_EXPORT int br_data_add_fv3ns (br_plotter_t* plotter, float const* v, int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data);
+BR_EXPORT int br_data_add_fv3nd (br_plotter_t* plotter, float const* xs, float const* ys, float const* zs, int n, br_data_id data);
+BR_EXPORT int br_data_add_fv3nds(br_plotter_t* plotter, float const* xs, float const* ys, float const* zs, int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data);
 
 BR_EXPORT void br_data_free(br_data_id data);
 

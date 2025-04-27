@@ -138,48 +138,48 @@ br_data_id br_data_new(br_plotter_t* plotter, br_data_ctor_t const* ctor) {
   return id;
 }
 
-int br_data_add_v1(br_plotter_t* plotter, float x, br_data_id data) {
+int br_data_add_v1(br_plotter_t* plotter, double x, br_data_id data) {
   q_push(plotter->commands, (q_command){ .type = q_command_push_point_y, .push_point_y = { .y = x, .group = data } } );
   return 1;
 }
 
-int br_data_add_v1n(br_plotter_t* plotter, float const* x, int n, br_data_id data) {
+int br_data_add_v1n(br_plotter_t* plotter, double const* x, int n, br_data_id data) {
   int i = 0;
   for (i = 0; i < n; ++i) br_data_add_v1(plotter, x[i], data);
   return i;
 }
 
-int br_data_add_v1ns(br_plotter_t* plotter, float const* x, int n, int stride, int offset, br_data_id data) {
+int br_data_add_v1ns(br_plotter_t* plotter, double const* x, int n, int stride, int offset, br_data_id data) {
   int i = 0, ret = 0;
   n -= n % stride;
   for (i = offset; i < n; i += stride, ++ret) br_data_add_v1(plotter, x[i], data);
   return ret;
 }
 
-int br_data_add_v2(br_plotter_t* plotter, float x, float y, br_data_id data) {
+int br_data_add_v2(br_plotter_t* plotter, double x, double y, br_data_id data) {
   q_push(plotter->commands, (q_command){ .type = q_command_push_point_xy, .push_point_xy = { .x = x, .y = y, .group = data } } );
   return 1;
 }
 
-int br_data_add_v2n(br_plotter_t* plotter, float const* v, int n, br_data_id data) {
+int br_data_add_v2n(br_plotter_t* plotter, double const* v, int n, br_data_id data) {
   int ret = 0;
   for (int i = 0; i < n; i += 2, ++ret) br_data_add_v2(plotter, v[i], v[i + 1], data);
   return ret;
 }
 
-int br_data_add_v2ns(br_plotter_t* plotter, float const* v, int n, int stride, int offset_x, int offset_y, br_data_id data) {
+int br_data_add_v2ns(br_plotter_t* plotter, double const* v, int n, int stride, int offset_x, int offset_y, br_data_id data) {
   int ret = 0;
   n -= n % stride;
   for (int i = 0; i < n; i += stride, ++ret) br_data_add_v2(plotter, v[i + offset_x], v[i + offset_y], data);
   return ret;
 }
 
-int br_data_add_v2nd(br_plotter_t* plotter, float const* xs, float const* ys, int n, br_data_id data) {
+int br_data_add_v2nd(br_plotter_t* plotter, double const* xs, double const* ys, int n, br_data_id data) {
   for (int i = 0; i < n; ++i) br_data_add_v2(plotter, xs[i], ys[i], data);
   return n;
 }
 
-int br_data_add_v2nds(br_plotter_t* plotter, float const* xs, float const* ys, int n, int stride, int offset_x, int offset_y, br_data_id data) {
+int br_data_add_v2nds(br_plotter_t* plotter, double const* xs, double const* ys, int n, int stride, int offset_x, int offset_y, br_data_id data) {
   int ret = 0;
   n -= n % stride;
   for (int i = 0; i < n; i += stride, ++ret) br_data_add_v2(plotter, xs[i + offset_x], ys[i + offset_y], data);
@@ -203,19 +203,19 @@ static void brp_simp_create_plotter_if_no_exist(void) {
   }
 }
 
-br_data_id brp_1(float x, br_data_id data_id) {
+br_data_id brp_1(double x, br_data_id data_id) {
   brp_simp_create_plotter_if_no_exist();
   br_data_add_v1(TOP_PLOTTER, x, data_id);
   return data_id;
 }
 
-br_data_id brp_1n(const float *points, int n, br_data_id data_id) {
+br_data_id brp_1n(const double *points, int n, br_data_id data_id) {
   brp_simp_create_plotter_if_no_exist();
   br_data_add_v1n(TOP_PLOTTER, points, n, data_id);
   return data_id;
 }
 
-br_data_id brp_2(float x, float y, br_data_id data_id) {
+br_data_id brp_2(double x, double y, br_data_id data_id) {
   brp_simp_create_plotter_if_no_exist();
   br_data_add_v2(TOP_PLOTTER, x, y, data_id);
   return data_id;

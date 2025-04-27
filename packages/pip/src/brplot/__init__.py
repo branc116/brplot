@@ -36,26 +36,26 @@ class Private:
 def plot(a, b = None, c = None):
     if Private.is_number(a): 
         if b is None and c is None:
-            brplot.brp_1(ctypes.c_float(a), ctypes.c_int32(0))
+            brplot.brp_1(ctypes.c_double(a), ctypes.c_int32(0))
         elif isinstance(b, int) and c is None:
-            brplot.brp_1(ctypes.c_float(a), ctypes.c_int32(b))
+            brplot.brp_1(ctypes.c_double(a), ctypes.c_int32(b))
         elif Private.is_number(a) and Private.is_number(b) and isinstance(c, int):
-            brplot.brp_2(ctypes.c_float(a), ctypes.c_float(b), ctypes.c_int32(c))
+            brplot.brp_2(ctypes.c_double(a), ctypes.c_double(b), ctypes.c_int32(c))
         else:
             Private.bad_arguments(a, b, c)
     elif Private.is_iterable(a):
         if b is None and c is None:
             for x in a:
-                brplot.brp_1(ctypes.c_float(x), ctypes.c_int32(0))
+                brplot.brp_1(ctypes.c_double(x), ctypes.c_int32(0))
         elif Private.is_number(b) and c is None:
             for x in a:
-                brplot.brp_1(ctypes.c_float(x), ctypes.c_int32(b))
+                brplot.brp_1(ctypes.c_double(x), ctypes.c_int32(b))
         elif Private.is_iterable(b) and c is None:
             for (x, y) in zip(a, b):
-                brplot.brp_2(ctypes.c_float(x), ctypes.c_float(y), ctypes.c_int32(0))
+                brplot.brp_2(ctypes.c_double(x), ctypes.c_double(y), ctypes.c_int32(0))
         elif Private.is_iterable(b) and isinstance(c, int):
             for (x, y) in zip(a, b):
-                brplot.brp_2(ctypes.c_float(x), ctypes.c_float(y), ctypes.c_int32(c))
+                brplot.brp_2(ctypes.c_double(x), ctypes.c_double(y), ctypes.c_int32(c))
         else:
             Private.bad_arguments(a, b, c)
     else:

@@ -420,6 +420,7 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
   }
 
   if (is_lib) {
+    nob_cmd_append(cmd, "-DBR_LIB");
 #if !defined(_WIN32)
     nob_cmd_append(cmd, "-fPIC");
 #endif
