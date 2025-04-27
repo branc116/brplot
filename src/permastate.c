@@ -37,8 +37,8 @@ bool br_permastate_save_plots(br_str_t path_folder, br_plots_t plots) {
 
   for (int i = 0; i < plots.len; ++i) {
     br_plot_t* plot = &plots.arr[i];
-    int* arr = plot->groups_to_show.arr;
-    int len = plot->groups_to_show.len;
+    br_plot_data_t* arr = plot->data_info.arr;
+    int len = plot->data_info.len;
     if (1 != fwrite(&len, sizeof(len), 1, f))                            goto error;
     if (len == 0) continue;
     if (len != (int32_t)fwrite(arr, sizeof(*arr), (uint32_t)len, f))    goto error;
@@ -183,9 +183,9 @@ end:
 }
 
 bool br_permastate_remove_pointers(br_plotter_t* br, br_plot_t* plot) {
-  plot->groups_to_show.cap = 0;
-  plot->groups_to_show.len = 0;
-  plot->groups_to_show.arr = NULL;
+  plot->data_info.cap = 0;
+  plot->data_info.len = 0;
+  plot->data_info.arr = NULL;
   switch (plot->kind) {
     case br_plot_kind_2d: br->any_2d = true; break;
     case br_plot_kind_3d: br->any_3d = true; break;
@@ -245,13 +245,13 @@ bool br_permastate_load_plots(FILE* file, br_plotter_t* br) {
   for (size_t i = 0; i < plots_len; ++i) {
     br_plot_t* p = &plots[i];
     int len = 0;
-    int* arr = NULL;
+    br_plot_data_t* arr = NULL;
     if (1 != fread(&len, sizeof(len), 1, file))                                    goto error;
     if (len == 0) continue;
-    p->groups_to_show.len = len;
-    p->groups_to_show.cap = len;
+    p->data_info.len = len;
+    p->data_info.cap = len;
     arr = BR_MALLOC(sizeof(*arr) * (size_t)len);
-    p->groups_to_show.arr = arr;
+    p->data_info.arr = arr;
     if ((uint32_t)len != fread(arr, sizeof(*arr), (size_t)len, file))              goto error;
     calculated_crc = br_fs_crc(arr, sizeof(*arr) * (size_t)len, calculated_crc);
   }
@@ -332,7 +332,7 @@ br_permastate_status_t br_permastate_load(br_plotter_t* br) {
     file_exists = br_fs_exists(br_str_as_view(path));
     if (false == file_exists || false == br_dagen_push_file(&br->dagens, &br->groups, &descs.arr[i], fopen(buff, "rb"))) {
       for (int j = 0; j < br->plots.len; ++j) {
-        br_da_remove(br->plots.arr[j].groups_to_show, descs.arr[i].group_id);
+        br_da_remove_feeld(br->plots.arr[j].data_info, group_id, descs.arr[i].group_id);
       }
     }
     if (false == br_fs_up_dir(&path))                                 goto error;

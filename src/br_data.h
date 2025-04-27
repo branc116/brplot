@@ -100,7 +100,7 @@ void br_data_clear(br_datas_t* pg, br_plots_t* plots, int group_id);
 void br_data_empty(br_data_t* pg);
 void br_data_export(br_data_t const* pg, FILE* file);
 void br_data_export_csv(br_data_t const* pg, FILE* file);
-void br_datas_draw(br_datas_t pg_array, br_plot_t* shader, br_shaders_t* shaders);
+void br_datas_draw(br_datas_t pg_array, br_plot_t* plot);
 void br_datas_add_test_points(br_datas_t* pg_array);
 void br_datas_deinit(br_datas_t* pg_array);
 // Only remove all points from all groups, don't remove groups themselfs.

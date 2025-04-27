@@ -445,7 +445,7 @@ static void resampling2_draw33(resampling2_nodes_3d_allocator_t const* const nod
   }
 }
 
-void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, br_shaders_t* shaders) {
+void br_resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, br_plot_data_t const* pd) {
   //ZoneScopedN("resampline2_draw0");
 
   double start = brtl_time();
@@ -459,10 +459,9 @@ void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, 
           res->culler.args.offset = plot->dd.offset;
           res->culler.args.offset.x -= (float)pg->dd.rebase_x;
           res->culler.args.offset.y -= (float)pg->dd.rebase_y;
-          res->culler.args.line_thickness = plot->dd.line_thickness;
-          if (plot->selected_data == pg->group_id) res->culler.args.line_thickness *= br_float_lerp(1, 2.5f, plot->selected_data_influence);
+          res->culler.args.line_thickness = plot->dd.line_thickness * pd->thickness_multiplyer;
 
-          shaders->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
+          brtl_shaders()->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
           br_extent_t ex = BR_EXTENTI_TOF(plot->cur_extent);
           float aspect = ex.width/ex.height;
           br_extent_t plot_rect = BR_EXTENT(
@@ -486,11 +485,11 @@ void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, 
           br_vec2_t re = (br_vec2_t) { .x = ex.width, .y = ex.height };
           br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
           br_mat_t look = br_mat_look_at(eye, target, plot->ddd.up);
-          shaders->line_3d_simple->uvs.m_mvp_uv = shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
-          shaders->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
-          shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
+          brtl_shaders()->line_3d_simple->uvs.m_mvp_uv = brtl_shaders()->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
+          brtl_shaders()->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
+          brtl_shaders()->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
 
-          resampling2_draw32(&res->dd, 0, pg, plot, shaders);
+          resampling2_draw32(&res->dd, 0, pg, plot, brtl_shaders());
           br_shader_line_3d_draw(brtl_shaders()->line_3d);
         } break;
       }
@@ -512,11 +511,11 @@ void resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, 
           br_vec2_t re = (br_vec2_t) { .x = ex.width, .y = ex.height };
           br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
           br_mat_t look = br_mat_look_at(eye, target, plot->ddd.up);
-          shaders->line_3d_simple->uvs.m_mvp_uv = shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
-          shaders->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
-          shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
+          brtl_shaders()->line_3d_simple->uvs.m_mvp_uv = brtl_shaders()->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
+          brtl_shaders()->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
+          brtl_shaders()->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
 
-          resampling2_draw33(&res->ddd, 0, pg, plot, shaders); break;
+          resampling2_draw33(&res->ddd, 0, pg, plot, brtl_shaders()); break;
           br_shader_line_3d_draw(brtl_shaders()->line_3d);
         }
       }

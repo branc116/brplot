@@ -36,11 +36,11 @@ void br_plotter_draw(br_plotter_t* br) {
     if (PLOT->kind == br_plot_kind_2d) {
       smol_mesh_grid_draw(PLOT, &br->shaders);
       br_shaders_draw_all(br->shaders); // TODO: This should be called whenever a other shader are being drawn.
-      br_datas_draw(br->groups, PLOT, &br->shaders);
+      br_datas_draw(br->groups, PLOT);
       br_shaders_draw_all(br->shaders);
       draw_grid_numbers(br->text, PLOT);
     } else if (PLOT->kind == br_plot_kind_3d) {
-      br_datas_draw(br->groups, PLOT, &br->shaders);
+      br_datas_draw(br->groups, PLOT);
       br_shaders_draw_all(br->shaders);
       smol_mesh_grid_draw(PLOT, &br->shaders);
       br_shaders_draw_all(br->shaders);
@@ -75,12 +75,15 @@ static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas) {
   brui_resizable_push(plot->legend_extent_handle);
     bool is_active = brui_active();
     int active_group = -1;
+    bool pressed = brtl_mousel_pressed();
+    br_plot_data_t* di = NULL;
     br_vec2_t mp = brtl_mouse_pos();
     brui_padding_y_set(1.f);
     brui_text_size_set(brui_text_size() / 5 * 3);
-    for (int i = 0; i < plot->groups_to_show.len; ++i) {
+    for (int i = 0; i < plot->data_info.len; ++i) {
       bool active = is_active;
-      br_data_t* data = br_data_get1(datas, plot->groups_to_show.arr[i]);
+      br_plot_data_t* cdi = &plot->data_info.arr[i];
+      br_data_t* data = br_data_get1(datas, cdi->group_id);
       active &= brui_y() < mp.y;
       brui_vsplitvp(3, BRUI_SPLITA((float)brui_text_size()), BRUI_SPLITA(brui_padding_x()), BRUI_SPLITR(1));
         if (plot->selected_data == data->group_id) {
@@ -97,15 +100,35 @@ static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas) {
       active &= brui_y() >= mp.y;
       if (active) {
         active = false;
-        active_group = data->group_id;
-        plot->selected_data_influence_target = 1.f;
+        if (cdi->thickness_multiplyer_target != 0) {
+          if (pressed) {
+            cdi->thickness_multiplyer_target = 0.f;
+            plot->selected_data_old = cdi->group_id;
+            plot->selected_data = -1;
+          } else {
+            active_group = data->group_id;
+            di = cdi;
+          }
+        } else {
+          if (brtl_mousel_pressed()) {
+            cdi->thickness_multiplyer_target = 1.f;
+          }
+        }
       }
     }
     if (active_group != plot->selected_data_old) {
+      if (di != NULL) di->thickness_multiplyer_target = 2.f;
+      if (false == pressed) {
+        if (plot->selected_data_old >= 0) {
+          int index = 0;
+          br_da_find(plot->data_info, group_id, plot->selected_data_old, index);
+          if (index < plot->data_info.len) {
+            plot->data_info.arr[index].thickness_multiplyer_target = 1.f;
+          }
+        }
+      }
       plot->selected_data_old = active_group;
       plot->selected_data = active_group;
-      plot->selected_data_influence_target = 1.f;
-      plot->selected_data_influence = 0.f;
     }
   brui_resizable_pop();
 }
@@ -149,17 +172,23 @@ static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas) {
       for (size_t k = 0; k < datas.len; ++k) {
         bool is_shown = false;
         br_data_t* data = br_da_getp(datas, k);
-        for (int j = 0; j < plot->groups_to_show.len; ++j) {
-          if (br_da_get(plot->groups_to_show, j) == data->group_id) {
+        for (int j = 0; j < plot->data_info.len; ++j) {
+          if (br_da_get(plot->data_info, j).group_id == data->group_id) {
             is_shown = true;
             break;
           }
         }
         sprintf(c, "Data #%d", data->group_id);
         if (brui_checkbox(br_strv_from_c_str(c), &is_shown)) {
-          if (false == is_shown) br_da_remove(plot->groups_to_show, data->group_id);
-          else br_da_push_t(int, plot->groups_to_show, data->group_id);
+          if (false == is_shown) br_da_remove_feeld(plot->data_info, group_id, data->group_id);
+          else {
+            br_da_push_t(int, plot->data_info, BR_PLOT_DATA(data->group_id));
+          }
         }
+      }
+      for (int j = 0; j < plot->data_info.len; ++j) {
+        br_plot_data_t di = plot->data_info.arr[j];
+        brui_textf("  thick: %.2f -> %.2f", di.thickness_multiplyer, di.thickness_multiplyer_target);
       }
       br_scrach_free();
       if (plot->kind == br_plot_kind_2d) {
@@ -170,7 +199,6 @@ static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas) {
   }
   return ret;
 }
-
 
 static void draw_left_panel(br_plotter_t* br) {
   brui_resizable_push(br->menu_extent_handle);

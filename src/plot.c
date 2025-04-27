@@ -10,11 +10,11 @@
 
 #include <assert.h>
 
-static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders);
-static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders);
+static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas);
+static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas);
 
 void br_plot_deinit(br_plot_t* plot) {
-  br_da_free(plot->groups_to_show);
+  br_da_free(plot->data_info);
   brui_resizable_delete(plot->extent_handle);
   brui_resizable_delete(plot->menu_extent_handle);
   brui_resizable_delete(plot->legend_extent_handle);
@@ -25,10 +25,10 @@ void br_plot_create_texture(br_plot_t* br) {
   br->texture_id = brgl_create_framebuffer(br->cur_extent.width, br->cur_extent.height);
 }
 
-void br_plot_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
+void br_plot_draw(br_plot_t* plot, br_datas_t datas) {
   switch (plot->kind) {
-    case br_plot_kind_2d: br_plot_2d_draw(plot, datas, shaders); break;
-    case br_plot_kind_3d: br_plot_3d_draw(plot, datas, shaders); break;
+    case br_plot_kind_2d: br_plot_2d_draw(plot, datas); break;
+    case br_plot_kind_3d: br_plot_3d_draw(plot, datas); break;
     default: BR_ASSERT(0);
   }
 }
@@ -49,14 +49,19 @@ void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t grou
 
 bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos) {
   BR_ASSERT(plot->kind == br_plot_kind_2d);
-  plot->selected_data_influence = br_float_lerp(plot->selected_data_influence, plot->selected_data_influence_target, 0.1f);
+  for (int i = 0; i < plot->data_info.len; ++i) {
+    plot->data_info.arr[i].thickness_multiplyer = br_float_lerp(plot->data_info.arr[i].thickness_multiplyer, plot->data_info.arr[i].thickness_multiplyer_target, brtl_frame_time()*5);
+  }
   if (plot->follow) {
     br_vec2d_t maxy = BR_VEC2D(-DBL_MAX, -DBL_MAX);
     br_vec2d_t mini = BR_VEC2D(DBL_MAX, DBL_MAX);
     int n = 0;
-    for (int i = 0; i < plot->groups_to_show.len; ++i) {
-      br_data_t* pg = br_data_get1(groups, plot->groups_to_show.arr[i]);
+    for (int i = 0; i < plot->data_info.len; ++i) {
+      br_plot_data_t di = plot->data_info.arr[i];
+      if (false == BR_PLOT_DATA_IS_VISIBLE(di)) continue;
+      br_data_t* pg = br_data_get1(groups, di.group_id);
       if (pg->len == 0) continue;
+
       for (size_t j = 0; j < 50 && j < pg->len; ++j) {
         double cx = ((double)pg->dd.xs[pg->len - 1 - j] + pg->dd.rebase_x);
         double cy = ((double)pg->dd.ys[pg->len - 1 - j] + pg->dd.rebase_y);
@@ -72,7 +77,7 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_ve
       if (maxy.y == mini.y) wanted_zoom.y = (double)plot->dd.zoom.y;
       if (maxy.x == mini.x) wanted_zoom.x = (double)plot->dd.zoom.x;
       br_vec2d_t wanted_offset = br_vec2d_add(br_vec2d_scale(maxy, 0.5), br_vec2d_scale(mini, 0.5));
-      plot->dd.zoom = br_vec2_lerp(plot->dd.zoom, BR_VEC2D_TOF(wanted_zoom), 0.001f*brtl_frame_time());
+      plot->dd.zoom = br_vec2_lerp(plot->dd.zoom, BR_VEC2D_TOF(wanted_zoom), 1.f*brtl_frame_time());
       plot->dd.offset = br_vec2_lerp(plot->dd.offset, BR_VEC2D_TOF(wanted_offset), 0.05f);
     }
   }
@@ -219,28 +224,30 @@ void br_plot_update_context(br_plot_t* plot, br_vec2_t mouse_pos) {
 
 void br_plot_remove_group(br_plots_t plots, int group) {
   for (int i = 0; i < plots.len; ++i) {
-    br_da_remove(plots.arr[i].groups_to_show, group);
+    br_da_remove_feeld(plots.arr[i].data_info, group_id, group);
   }
 }
 
-static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
+static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas) {
   TracyCFrameMarkStart("br_datas_draw_2d");
-  for (int j = 0; j < plot->groups_to_show.len; ++j) {
-    int group = plot->groups_to_show.arr[j];
-    br_data_t const* g = br_data_get1(datas, group);
+  for (int j = 0; j < plot->data_info.len; ++j) {
+    br_plot_data_t di = plot->data_info.arr[j];
+    if (false == BR_PLOT_DATA_IS_VISIBLE(di)) continue;
+    br_data_t const* g = br_data_get1(datas, di.group_id);
     if (g->len == 0) continue;
     g->resampling->culler.args.screen_size = BR_VEC2I_TOF(plot->cur_extent.size.vec);
-    resampling2_draw(g->resampling, g, plot, shaders);
+    br_resampling2_draw(g->resampling, g, plot, &di);
   }
 }
 
-static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders) {
+static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas) {
   TracyCFrameMarkStart("br_datas_draw_3d");
-  for (int j = 0; j < plot->groups_to_show.len; ++j) {
-    int group = plot->groups_to_show.arr[j];
-    br_data_t const* g = br_data_get1(datas, group);
+  for (int j = 0; j < plot->data_info.len; ++j) {
+    br_plot_data_t di = plot->data_info.arr[j];
+    if (false == BR_PLOT_DATA_IS_VISIBLE(di)) continue;
+    br_data_t const* g = br_data_get1(datas, di.group_id);
     if (g->len == 0) continue;
-    resampling2_draw(g->resampling, g, plot, shaders);
+    br_resampling2_draw(g->resampling, g, plot, &di);
   }
   TracyCFrameMarkEnd("br_datas_draw_3d");
 }

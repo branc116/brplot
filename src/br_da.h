@@ -73,6 +73,20 @@ extern "C" {
   }                                                                   \
 } while(0)
 
+#define br_da_remove_feeld(ARR, FEELD, V) do {                        \
+  size_t _i = 0;                                                      \
+  for (; _i < (size_t)(ARR).len; ) {                                  \
+    if ((ARR).arr[_i].FEELD == (V)) (ARR).arr[_i] = (ARR).arr[--(ARR).len]; \
+    else ++_i;                                                        \
+  }                                                                   \
+} while(0)
+
+#define br_da_find(ARR, FEELD, V, INDEX) do {                         \
+  for (; (INDEX) < (ARR).len; ++(INDEX)) {                            \
+    if ((ARR).arr[(INDEX)].FEELD == (V)) break;                       \
+  }                                                                   \
+} while(0)
+
 #define br_da_contains_t(T, ARR, V, CONTAINS) do { \
   for (T _i = 0; _i < (ARR).len; ++_i) {           \
     if ((ARR).arr[_i] == V) {                      \

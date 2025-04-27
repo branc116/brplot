@@ -45,11 +45,20 @@ typedef struct br_plot_3d_t {
   float fov_y, near_plane, far_plane;
 } br_plot_3d_t;
 
+typedef struct br_plot_data_t {
+  int group_id;
+  float thickness_multiplyer;
+  float thickness_multiplyer_target;
+} br_plot_data_t;
+#define BR_PLOT_DATA(GROUP_ID) ((br_plot_data_t) { .group_id = (GROUP_ID), .thickness_multiplyer = 0.f, .thickness_multiplyer_target = 1.f })
+#define BR_PLOT_DATA_IS_VISIBLE(PD) ((PD).thickness_multiplyer > 0.1f)
+
+
 typedef struct br_plot_t {
   struct {
-    int* arr;
+    br_plot_data_t* arr;
     int len, cap; 
-  } groups_to_show;
+  } data_info;
   br_extenti_t cur_extent;
   int extent_handle;
   int menu_extent_handle;
@@ -59,8 +68,6 @@ typedef struct br_plot_t {
 
   int selected_data_old;
   int selected_data;
-  float selected_data_influence;
-  float selected_data_influence_target;
 
   bool follow;
   bool jump_around;
@@ -93,7 +100,7 @@ br_vec2_t br_graph_to_screen(br_extent_t graph_rect, br_extenti_t screen_rect, b
 
 void br_plot_deinit(br_plot_t* plot);
 void br_plot_create_texture(br_plot_t* br);
-void br_plot_draw(br_plot_t* plot, br_datas_t datas, br_shaders_t* shaders);
+void br_plot_draw(br_plot_t* plot, br_datas_t datas);
 void br_plot_screenshot(br_text_renderer_t* tr, br_plot_t* br, br_shaders_t* shaders, br_datas_t groups, char const* path);
 void br_keybinding_handle_keys(br_plotter_t* br, br_plot_t* plot);
 

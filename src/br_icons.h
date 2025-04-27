@@ -35,9 +35,9 @@ extern struct br_extra_icons_t {
 extern unsigned char const br_font_data[];
 extern long long const br_font_data_size;
 
-void br_icons_init(br_shader_icon_t* shader);
-void br_icons_draw(br_bb_t screen, br_bb_t atlas, br_color_t bg, br_color_t fg, br_bb_t limit, int z);
-void br_icons_deinit(void);
+void        br_icons_init(br_shader_icon_t* shader);
+void        br_icons_draw(br_bb_t screen, br_bb_t atlas, br_color_t bg, br_color_t fg, br_bb_t limit, int z);
+void        br_icons_deinit(void);
 br_extent_t br_icons_y_mirror(br_extent_t icon);
 br_extent_t br_icons_top(br_extent_t icon, float percent);
 

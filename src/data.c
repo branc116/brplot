@@ -307,23 +307,23 @@ void br_datas_add_test_points(br_datas_t* pg) {
 
 // Custom Blend Modes
 
-void br_datas_draw(br_datas_t pg, br_plot_t* plot, br_shaders_t* shaders) {
+void br_datas_draw(br_datas_t pg, br_plot_t* plot) {
   if (plot->kind == br_plot_kind_2d) {
     TracyCFrameMarkStart("br_datas_draw_2d");
-    for (int j = 0; j < plot->groups_to_show.len; ++j) {
-      int group = plot->groups_to_show.arr[j];
-      br_data_t const* g = br_data_get1(pg, group);
+    for (int j = 0; j < plot->data_info.len; ++j) {
+      br_plot_data_t di = plot->data_info.arr[j];
+      br_data_t const* g = br_data_get1(pg, di.group_id);
       if (g->len == 0) continue;
-      resampling2_draw(g->resampling, g, plot, shaders);
+      br_resampling2_draw(g->resampling, g, plot, &di);
     }
     TracyCFrameMarkEnd("br_datas_draw_2d");
   } else {
     TracyCFrameMarkStart("br_datas_draw_3d");
-    for (int j = 0; j < plot->groups_to_show.len; ++j) {
-      int group = plot->groups_to_show.arr[j];
-      br_data_t const* g = br_data_get1(pg, group);
+    for (int j = 0; j < plot->data_info.len; ++j) {
+      br_plot_data_t di = plot->data_info.arr[j];
+      br_data_t const* g = br_data_get1(pg, di.group_id);
       if (g->len == 0) continue;
-      resampling2_draw(g->resampling, g, plot, shaders);
+      br_resampling2_draw(g->resampling, g, plot, &di);
     }
     TracyCFrameMarkEnd("br_datas_draw_3d");
   }

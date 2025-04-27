@@ -42,14 +42,28 @@ void br_plots_focus_visible(br_plots_t plots, br_datas_t const groups) {
 void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups) {
   // TODO 2D/3D
   BR_ASSERT(plot->kind == br_plot_kind_2d);
-  if (plot->groups_to_show.len == 0) return;
+  if (plot->data_info.len == 0) return;
 
-  br_data_t* d = br_data_get1(groups, plot->groups_to_show.arr[0]);
-  br_bb_t bb = br_bb_add(d->dd.bounding_box, BR_VEC2((float)d->dd.rebase_x, (float)d->dd.rebase_y));
-  for (int i = 1; i < plot->groups_to_show.len; ++i) {
-    d = br_data_get1(groups, plot->groups_to_show.arr[i]);
-    if (d->len > 0) bb = br_bb_union(bb, br_bb_add(d->dd.bounding_box, BR_VEC2((float)d->dd.rebase_x, (float)d->dd.rebase_y)));
+  br_bb_t bb = { 0 };
+  int n = 0;
+  for (int i = 1; i < plot->data_info.len; ++i) {
+    br_plot_data_t di = plot->data_info.arr[i];
+    if (false == BR_PLOT_DATA_IS_VISIBLE(di)) continue;
+    br_data_t* d = br_data_get1(groups, di.group_id);
+    if (n > 0) {
+      if (d->len > 0) {
+        br_bb_t this_bb = br_bb_add(d->dd.bounding_box, BR_VEC2((float)d->dd.rebase_x, (float)d->dd.rebase_y));
+        bb = br_bb_union(bb, this_bb);
+        ++n;
+      }
+    } else {
+      if (d->len > 0) {
+        bb = br_bb_add(d->dd.bounding_box, BR_VEC2((float)d->dd.rebase_x, (float)d->dd.rebase_y));
+        ++n;
+      }
+    }
   }
+  if (n == 0) return;
 
   float new_width = BR_BBW(bb);
   float new_height = BR_BBH(bb);

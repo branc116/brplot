@@ -146,7 +146,7 @@ void br_plotter_switch_3d(br_plotter_t* br) {
 int br_plotter_add_plot_2d(br_plotter_t* br) {
   int x = 400;
   br_plot_t plot = {
-    .groups_to_show = { 0 },
+    .data_info = { 0 },
     .cur_extent = BR_EXTENTI( x, 50, br->win.size.width - x - 60, br->win.size.height - 110 ),
     .follow = false,
     .jump_around = false,
@@ -171,7 +171,7 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
 
 int br_plotter_add_plot_3d(br_plotter_t* br) {
   br_plot_t plot = {
-    .groups_to_show = { 0 },
+    .data_info = { 0 },
     .cur_extent = BR_EXTENTI(500, 50, br->win.size.width - 500 - 60, br->win.size.height - 110),
     .follow = false,
     .jump_around = false,
@@ -213,7 +213,7 @@ void br_plotter_frame_end(br_plotter_t* br) {
     if (br->groups.arr[i].is_new == false) continue;
     for (int j = 0; j < br->plots.len; ++j) {
       if (br->plots.arr[j].kind == br_plot_kind_2d && br->groups.arr[i].kind == br_data_kind_3d) continue;
-      br_da_push_t(int, br->plots.arr[j].groups_to_show, br->groups.arr[i].group_id);
+      br_da_push_t(int, br->plots.arr[j].data_info, BR_PLOT_DATA(br->groups.arr[i].group_id));
     }
     br->groups.arr[i].is_new = false;
   }
@@ -316,7 +316,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
 void br_plotter_datas_deinit(br_plotter_t* br) {
   br_datas_deinit(&br->groups);
   for (int i = 0; i < br->plots.len; ++i) {
-    br->plots.arr[i].groups_to_show.len = 0;
+    br->plots.arr[i].data_info.len = 0;
   }
   br_dagens_free(&br->dagens);
 }
