@@ -36,6 +36,7 @@
   X(generate, "Generate additional files") \
   X(compile, "Only compile files, don't generate anything") \
   X(run, "Build and run brplot") \
+  X(crun, "compile and run brplot") \
   X(debug, "Build and run brplot with gdb") \
   X(amalgam, "Create amalgamation file that will be shipped to users") \
   X(dist, "Create distribution zip") \
@@ -271,6 +272,7 @@ static void fill_command_flag_data(void) {
 
   br_da_push(command_deps[n_debug], n_build);
   br_da_push(command_deps[n_run], n_build);
+  br_da_push(command_deps[n_crun], n_compile);
   br_da_push(command_deps[n_build], n_compile);
   br_da_push(command_deps[n_build], n_generate);
   br_da_push(command_deps[n_dist], n_build);
@@ -578,6 +580,14 @@ static bool n_build_do(void) {
 
 static bool n_run_do(void) {
   if (false == n_build_do()) return false;
+  Nob_Cmd cmd = { 0 };
+  nob_cmd_append(&cmd, "bin/brplot" EXE_EXT);
+  nob_cmd_run_sync(cmd);
+  return true;
+}
+
+static bool n_crun_do(void) {
+  if (false == n_compile_do()) return false;
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "bin/brplot" EXE_EXT);
   nob_cmd_run_sync(cmd);
