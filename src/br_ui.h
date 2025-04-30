@@ -138,6 +138,8 @@ brui_resizable_t* brui_resizable_get(int id);
 void              brui_resizable_push(int id);
 void              brui_resizable_pop(void);
 int               brui_resizable_active(void);
+void              brui_resizable_show(int resizable_handle, bool show);
+bool              brui_resizable_is_hidden(int resizable_handle);
 
 void brui_resizable_save(FILE* file);
 void brui_resizable_load(FILE* file);

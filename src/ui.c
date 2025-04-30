@@ -964,6 +964,14 @@ int brui_resizable_active(void) {
   return brui__stack.active_resizable;
 }
 
+void brui_resizable_show(int resizable_handle, bool show) {
+  bruirs.arr[resizable_handle].target.hidden_factor = show ? 0.f : 1.f;
+}
+
+bool brui_resizable_is_hidden(int resizable_handle) {
+  return bruirs.arr[resizable_handle].hidden_factor > 0.99f;
+}
+
 brui_resizable_t* brui_resizable_get(int id) {
   return br_da_getp(bruirs, id);
 }
