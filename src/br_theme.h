@@ -30,6 +30,7 @@ typedef struct br_theme_t {
     br_vec2_t padding;
     int font_size;
     float border_thick;
+    float animation_speed;
   } ui;
 } br_theme_t;
 

@@ -59,5 +59,6 @@ void br_theme_reset_ui(void) {
   BR_THEME.ui.padding = BR_VEC2(4, 2);
   BR_THEME.ui.font_size = 20;
   BR_THEME.ui.border_thick = 1;
+  BR_THEME.ui.animation_speed = 10.f;
 }
 

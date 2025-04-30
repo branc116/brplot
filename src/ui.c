@@ -835,7 +835,7 @@ void brui_resizable_update(void) {
   bruir_update_extent(0, BR_EXTENTI_TOF(brtl_viewport()), false);
   br_vec2_t mouse_pos = brtl_mouse_pos();
 
-  float lerp_speed = brtl_frame_time() * 10.f;
+  float lerp_speed = brtl_frame_time() * brtl_theme()->ui.animation_speed;
   for (int i = 0; i < bruirs.len; ++i) {
     bruirs.arr[i].hidden_factor = br_float_lerp(bruirs.arr[i].hidden_factor, bruirs.arr[i].target.hidden_factor, lerp_speed);
     bruirs.arr[i].scroll_offset_percent = br_float_lerp(bruirs.arr[i].scroll_offset_percent, bruirs.arr[i].target.scroll_offset_percent, lerp_speed);

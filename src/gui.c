@@ -163,9 +163,9 @@ static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas) {
       }
       brui_text_size_set(og_text_size/5*4);
       brui_checkbox(BR_STRL("Follow"), &plot->follow);
-      bool hide_legend = brui_resizable_is_hidden(plot->legend_extent_handle);
-      if (brui_checkbox(BR_STRL("Hide Legend"), &hide_legend)) {
-        brui_resizable_show(plot->legend_extent_handle, hide_legend);
+      bool show_legend = false == brui_resizable_is_hidden(plot->legend_extent_handle);
+      if (brui_checkbox(BR_STRL("Show Legend"), &show_legend)) {
+        brui_resizable_show(plot->legend_extent_handle, show_legend);
       };
       for (size_t k = 0; k < datas.len; ++k) {
         bool is_shown = false;
@@ -240,6 +240,7 @@ static void draw_left_panel(br_plotter_t* br) {
       brui_vsplit_end();
       brui_sliderf2(BR_STRL("thick"), &BR_THEME.ui.border_thick);
       brui_slideri(BR_STRL("Font Size"), &BR_THEME.ui.font_size);
+      brui_sliderf2(BR_STRL("Animation Speed"), &BR_THEME.ui.animation_speed);
       brui_collapsable_end();
     }
 
