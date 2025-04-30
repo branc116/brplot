@@ -113,6 +113,9 @@ BR_EXPORT br_data_id brp_f3ns (float const* v,                                  
 BR_EXPORT br_data_id brp_f3nd (float const* xs, float const* ys, float const* zs, int n,                                                       br_data_id data_id);
 BR_EXPORT br_data_id brp_f3nds(float const* xs, float const* ys, float const* zs, int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
 
+// Change data label
+BR_EXPORT void brp_label(const char* label, br_data_id data_id);
+
 // Remove all data in data.id == data_id
 BR_EXPORT void brp_empty(br_data_id data_id);
 

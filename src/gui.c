@@ -176,7 +176,7 @@ static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas) {
             break;
           }
         }
-        sprintf(c, "Data #%d", data->group_id);
+        sprintf(c, "%.*s ( #%d )", data->name.len, data->name.str, data->group_id);
         if (brui_checkbox(br_strv_from_c_str(c), &is_shown)) {
           if (false == is_shown) br_da_remove_feeld(plot->data_info, group_id, data->group_id);
           else {
@@ -259,9 +259,9 @@ static void draw_left_panel(br_plotter_t* br) {
       for (size_t i = 0; i < br->groups.len; ++i) {
         brui_push();
           br_data_t data = br_da_get(br->groups, i);
-          int n = sprintf(scrach, "Data %d (%zu points)", data.group_id, data.len);
+          int n = sprintf(scrach, "%.*s (%d) (%zu points)", data.name.len, data.name.str, data.group_id, data.len);
           brui_text(BR_STRV(scrach, (uint32_t)n));
-          n = sprintf(scrach, "%.1fms (%.3f %.3f)", br_resampling2_get_draw_time(data.resampling)*1000.0f, br_resampling2_get_something(data.resampling), br_resampling2_get_something2(data.resampling));
+          n = sprintf(scrach, "%.2fms (%.3f %.3f)", br_resampling2_get_draw_time(data.resampling)*1000.0f, br_resampling2_get_something(data.resampling), br_resampling2_get_something2(data.resampling));
           brui_text(BR_STRV(scrach, (uint32_t)n));
           switch (data.kind) {
             case br_data_kind_2d: {

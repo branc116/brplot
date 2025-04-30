@@ -231,6 +231,13 @@ void brp_flush(void) {
   q_push(TOP_PLOTTER->commands, (q_command){ .type = q_command_flush} );
 }
 
+void brp_label(const char* label, br_data_id data_id) {
+  brp_simp_create_plotter_if_no_exist();
+  br_str_t str = { 0 };
+  br_str_push_c_str(&str, label);
+  q_push(TOP_PLOTTER->commands, (q_command){ .type = q_command_set_name, .set_quoted_str = { .group = data_id, .str = str } } );
+}
+
 void brp_empty(br_data_id data_id) {
   brp_simp_create_plotter_if_no_exist();
   q_push(TOP_PLOTTER->commands, (q_command){ .type = q_command_empty, .clear = { .group = data_id } } );
