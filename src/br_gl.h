@@ -76,18 +76,32 @@
 
 #define BR_KEY_TWO 50
 #define BR_KEY_THREE 51
+#define BR_KEY_A 65
+#define BR_KEY_B 66
 #define BR_KEY_C 67
 #define BR_KEY_D 68
+#define BR_KEY_E 69
 #define BR_KEY_F 70
+#define BR_KEY_G 71
 #define BR_KEY_H 72
+#define BR_KEY_I 73
 #define BR_KEY_J 74
 #define BR_KEY_K 75
+#define BR_KEY_L 76
+#define BR_KEY_M 77
+#define BR_KEY_N 78
+#define BR_KEY_O 79
+#define BR_KEY_P 80
+#define BR_KEY_Q 81
 #define BR_KEY_R 82
 #define BR_KEY_S 83
 #define BR_KEY_T 84
 #define BR_KEY_U 85
+#define BR_KEY_V 86
+#define BR_KEY_W 87
 #define BR_KEY_X 88
 #define BR_KEY_Y 89
+#define BR_KEY_Z 90
 
 typedef int GLint;
 typedef unsigned int GLenum;
