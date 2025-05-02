@@ -123,51 +123,51 @@ void smol_mesh_3d_gen_line_simple(br_shader_line_3d_simple_t* shader, br_vec3_t 
   br_vec3_t tl = br_vec3_scale(right2, -dist1);
   br_vec3_t tr = br_vec3_scale(right2, dist1);
   br_shader_line_3d_simple_push_quad(shader, (br_shader_line_3d_simple_el_t[4]) {
-    {.vertexPosition = br_vec3_add(p1, bl), .vertexNormal = bl },
-    {.vertexPosition = br_vec3_add(p1, br), .vertexNormal = br },
-    {.vertexPosition = br_vec3_add(p2, tr), .vertexNormal = br },
-    {.vertexPosition = br_vec3_add(p2, tl), .vertexNormal = tl },
+    { .vertexPosition = br_vec3_add(p1, bl), .vertexNormal = bl },
+    { .vertexPosition = br_vec3_add(p1, br), .vertexNormal = br },
+    { .vertexPosition = br_vec3_add(p2, tr), .vertexNormal = br },
+    { .vertexPosition = br_vec3_add(p2, tl), .vertexNormal = tl },
   });
 }
 
-void smol_mesh_3d_gen_line(br_shader_line_3d_t* shader, br_vec3_t p1, br_vec3_t p2, br_color_t color) {
-  (void)color;
-  float const line_3d_size = 0.02f;
+void smol_mesh_3d_gen_line(br_smol_mesh_line_3d_t args, br_vec3_t p1, br_vec3_t p2) {
+  br_shader_line_3d_t* ls = brtl_shaders()->line_3d;
+  float const line_3d_size = args.line_thickness;
   br_vec3_t diff  = br_vec3_normalize(br_vec3_sub(p2, p1));
   br_vec3_t norm = br_vec3_perpendicular(diff);
-  float dist1 = 0.1f * br_vec3_dist(shader->uvs.eye_uv, p1);
-  float dist2 = 0.1f * br_vec3_dist(shader->uvs.eye_uv, p2);
+  float dist1 = 0.1f * br_vec3_dist(ls->uvs.eye_uv, p1);
+  float dist2 = 0.1f * br_vec3_dist(ls->uvs.eye_uv, p2);
   int n = (int)(6.f/fminf(dist1, dist2)) + 6;
   for (int k = 0; k <= n; ++k) {
     br_vec3_t next = br_vec3_normalize(br_vec3_rot(norm, diff, BR_PI * 2 / (float)n));
-    br_shader_line_3d_push_quad(shader, (br_shader_line_3d_el_t[4]) {
+    br_shader_line_3d_push_quad(ls, (br_shader_line_3d_el_t[4]) {
         { .vertexPosition = br_vec3_add(p1, br_vec3_scale(norm, line_3d_size*dist1)), .vertexNormal = norm },
         { .vertexPosition = br_vec3_add(p1, br_vec3_scale(next, line_3d_size*dist1)), .vertexNormal = next },
-        { .vertexPosition = br_vec3_add(p2, br_vec3_scale(norm, line_3d_size*dist2)), .vertexNormal = norm },
-        { .vertexPosition = br_vec3_add(p2, br_vec3_scale(next, line_3d_size*dist2)), .vertexNormal = next }
+        { .vertexPosition = br_vec3_add(p2, br_vec3_scale(next, line_3d_size*dist2)), .vertexNormal = next },
+        { .vertexPosition = br_vec3_add(p2, br_vec3_scale(norm, line_3d_size*dist2)), .vertexNormal = norm }
     });
     norm = next;
   }
 }
 
-void smol_mesh_3d_gen_line_strip(br_shader_line_3d_t* shader, br_vec3_t const* ps, size_t len, br_color_t color) {
-  for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(shader, ps[i], ps[i + 1], color);
+void smol_mesh_3d_gen_line_strip(br_smol_mesh_line_3d_t args, br_vec3_t const* ps, size_t len) {
+  for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(args, ps[i], ps[i + 1]);
 }
 
-void smol_mesh_3d_gen_line_strip1(br_shader_line_3d_t* shader, float const* xs, float const* ys, float const* zs, size_t len, br_color_t color) {
-  for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(shader, BR_VEC3(xs[i], ys[i], zs[i]), BR_VEC3(xs[i + 1], ys[i + 1], zs[i + 1]), color);
+void smol_mesh_3d_gen_line_strip1(br_smol_mesh_line_3d_t args, float const* xs, float const* ys, float const* zs, size_t len) {
+  for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(args, BR_VEC3(xs[i], ys[i], zs[i]), BR_VEC3(xs[i + 1], ys[i + 1], zs[i + 1]));
 }
 
-void smol_mesh_3d_gen_line_strip2(br_shader_line_3d_t* shader, br_vec2_t const* ps, size_t len, br_color_t color) {
-  for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(shader,
+void smol_mesh_3d_gen_line_strip2(br_smol_mesh_line_3d_t args, br_vec2_t const* ps, size_t len) {
+  for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(args,
       BR_VEC3(ps[i].x, ps[i].y, 0),
-      BR_VEC3(ps[i+1].x, ps[i+1].y, 0), color);
+      BR_VEC3(ps[i+1].x, ps[i+1].y, 0));
 }
 
-void smol_mesh_3d_gen_line_strip3(br_shader_line_3d_t* shader, float const* xs, float const* ys, size_t len, br_color_t color) {
-  for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(shader,
+void smol_mesh_3d_gen_line_strip3(br_smol_mesh_line_3d_t args, float const* xs, float const* ys, size_t len) {
+  for (size_t i = 0; i < len - 1; ++i) smol_mesh_3d_gen_line(args,
       BR_VEC3(xs[i], ys[i], 0),
-      BR_VEC3(xs[i+1], ys[i+1], 0), color);
+      BR_VEC3(xs[i+1], ys[i+1], 0));
 }
 
 
@@ -206,7 +206,7 @@ void smol_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
       });
       TracyCFrameMarkEnd("grid_draw_3d");
     } break;
-    default: assert(0);
+    default: BR_ASSERT(0);
   }
 }
 

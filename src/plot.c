@@ -134,14 +134,29 @@ bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, br_ve
   BR_ASSERT(plot->kind == br_plot_kind_3d);
   if (!plot->mouse_inside_graph) return false;
   if (brtl_mouser_down()) {
+    float speed = 10.f;
+    if (brtl_key_ctrl()) speed *= 0.1f;
+    if (brtl_key_shift()) speed *= 10.f;
+    br_vec3_t zeroed = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
+    br_vec3_t zero_dir = br_vec3_normalize(zeroed);
+    br_vec3_t right = br_vec3_normalize(br_vec3_cross(plot->ddd.up, zero_dir));
+    br_vec3_t delta = {0};
+    if (brtl_key_down(BR_KEY_W)) delta = br_vec3_scale(zero_dir, -brtl_frame_time()*speed);
+    if (brtl_key_down(BR_KEY_S)) delta = br_vec3_add(delta, br_vec3_scale(zero_dir, brtl_frame_time()*speed));
+    if (brtl_key_down(BR_KEY_A)) delta = br_vec3_add(delta, br_vec3_scale(right, -brtl_frame_time()*speed));
+    if (brtl_key_down(BR_KEY_D)) delta = br_vec3_add(delta, br_vec3_scale(right, brtl_frame_time()*speed));
+    if (brtl_key_down(BR_KEY_Q)) delta = br_vec3_add(delta, br_vec3_scale(plot->ddd.up, -brtl_frame_time()*speed));
+    if (brtl_key_down(BR_KEY_E)) delta = br_vec3_add(delta, br_vec3_scale(plot->ddd.up, brtl_frame_time()*speed));
+
+    plot->ddd.target = br_vec3_add(plot->ddd.target, delta);
+    plot->ddd.eye = br_vec3_add(plot->ddd.eye, delta);
+
     br_vec2_t m = brtl_mouse_delta();
     br_vec2_t md = br_vec2_scale(BR_VEC2(m.x, m.y), -0.003f);
-    br_vec3_t zeroed = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
     br_vec3_t rotated_up = br_vec3_rot(zeroed, plot->ddd.up, md.x);
-    br_vec3_t right = br_vec3_cross(plot->ddd.up, br_vec3_normalize(zeroed));
     br_vec3_t rotated_right = br_vec3_rot(rotated_up, right, md.y);
     if (fabsf(br_vec3_dot(rotated_right, plot->ddd.up)) > 0.94f) plot->ddd.eye = br_vec3_add(rotated_up,    plot->ddd.target);
-    else                                                               plot->ddd.eye = br_vec3_add(rotated_right, plot->ddd.target);
+    else                                                         plot->ddd.eye = br_vec3_add(rotated_right, plot->ddd.target);
     plot->ddd.eye = br_vec3_add(rotated_right, plot->ddd.target);
     return false;
   }
