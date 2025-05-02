@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 typedef struct br_smol_mesh_line_t {
-  br_vec2_t zoom, offset, screen_size;
+  br_vec2d_t zoom, offset, screen_size;
   float line_thickness;
 } br_smol_mesh_line_t;
 

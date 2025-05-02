@@ -153,8 +153,8 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
     .mouse_inside_graph = false,
     .kind = br_plot_kind_2d,
     .dd =  {
-      .zoom = BR_VEC2(1.f, 1.f),
-      .offset = BR_VEC2(0.f, 0.f),
+      .zoom = BR_VEC2D(1.f, 1.f),
+      .offset = BR_VEC2D(0.f, 0.f),
       .grid_line_thickness = 1.f,
       .grid_major_line_thickness = 2.f,
       .line_thickness = 0.05f
@@ -252,60 +252,61 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
   if(plot->kind != br_plot_kind_2d) return;
 
   TracyCFrameMarkStart("draw_grid_numbers");
-  br_extent_t r = plot->dd.graph_rect;
-  br_extent_t gr = BR_EXTENTI_TOF(plot->cur_extent);
-  br_size_t sz = gr.size;
+  br_extentd_t r = plot->dd.graph_rect;
+  br_extentd_t gr = BR_EXTENTI_TOD(plot->cur_extent);
+  br_vec2d_t sz = BR_VEC2D(gr.width, gr.height);
   int font_size = BR_THEME.ui.font_size;
   char* scrach = br_scrach_get(128);
-  br_extent_t vp = BR_EXTENTI_TOF(brtl_viewport());
-  br_bb_t limit = BR_EXTENT_TOBB(vp);
+  br_extentd_t vp = BR_EXTENTI_TOD(brtl_viewport());
+  br_bbd_t limit = BR_EXTENTD_TOBB(vp);
+  br_bb_t limitf = BR_BBD_TOF(limit);
 
   if (r.height > 0.f) {
-    float exp = floorf(log10f(r.height / 2.f));
+    double exp = floor(log10(r.height / 2.f));
     if (false == isnan(exp)) {
-      float base = powf(10.f, exp);
-      float start = floorf(r.y / base) * base;
+      double base = pow(10.0, exp);
+      double start = floor(r.y / base) * base;
 
-      float i = 0.f;
-      float x = -r.x * sz.width / r.width;
+      double i = 0.f;
+      double x = -r.x * sz.x / r.width;
       br_text_renderer_ancor_t ancor = br_text_renderer_ancor_mid_mid;
       const float padding = 10.f;
       if (x < padding) x = padding, ancor = br_text_renderer_ancor_left_mid;
-      else if (x > sz.width - padding) x = sz.width - padding, ancor = br_text_renderer_ancor_right_mid;
+      else if (x > sz.x - padding) x = sz.x - padding, ancor = br_text_renderer_ancor_right_mid;
       while (i < 50.f) {
-        float cur = start - base * i;
+        double cur = start - base * i;
         i += 1.f;
         int n = sprintf(scrach, "%.*f", exp < 0 ? -(int)exp : 1, cur);
         br_strv_t s = BR_STRV(scrach, (uint32_t)n);
         s = br_strv_trim_zeros(s);
-        float y = sz.height / r.height * (r.y - cur);
-        if (y > sz.height) break;
-        br_text_renderer_push2(tr, BR_VEC3(x, y, 0.9f), font_size, BR_THEME.colors.grid_nums, s, limit, ancor);
+        double y = sz.y / r.height * (r.y - cur);
+        if (y > sz.y) break;
+        br_text_renderer_push2(tr, BR_VEC3((float)x, (float)y, 0.9f), font_size, BR_THEME.colors.grid_nums, s, limitf, ancor);
       }
     }
   }
 
-  if (r.width > 0.f) {
-    float exp = floorf(log10f(r.width / 2.f));
+  if (r.width > 0.0) {
+    double exp = floor(log10(r.width / 2.0));
     if (false == isnan(exp)) {
-      float base = powf(10.f, exp);
+      double base = pow(10.0, exp);
       if (isnan(base) || isinf(base)) goto end;
-      float start = ceilf(r.x / base) * base;
-      float i = 0;
-      float y = r.y * sz.height / r.height;
+      double start = ceil(r.x / base) * base;
+      double i = 0;
+      double y = r.y * sz.y / r.height;
       const float padding = 10.f;
       br_text_renderer_ancor_t ancor = br_text_renderer_ancor_mid_mid;
       if (y < padding) y = padding, ancor = br_text_renderer_ancor_mid_up;
-      else if (y > sz.height - padding) y = sz.height - padding, ancor = br_text_renderer_ancor_mid_down;
-      while (i < 50.f) {
-        float cur = start + base * i;
-        i += 1.f;
+      else if (y > sz.y - padding) y = sz.y - padding, ancor = br_text_renderer_ancor_mid_down;
+      while (i < 50.0) {
+        double cur = start + base * i;
+        i += 1.0;
         int n = sprintf(scrach, "%.*f", exp < 0 ? -(int)exp : 1, cur);
         br_strv_t s = BR_STRV(scrach, (uint32_t)n);
         s = br_strv_trim_zeros(s);
-        float x = (sz.width / r.width) * (cur - r.x);
-        if (x > sz.width) break;
-        br_text_renderer_push2(tr, BR_VEC3(x, y, 0.9f), font_size, BR_THEME.colors.grid_nums, s, limit, ancor);
+        double x = (sz.x / r.width) * (cur - r.x);
+        if (x > sz.x) break;
+        br_text_renderer_push2(tr, BR_VEC3((float)x, (float)y, 0.9f), font_size, BR_THEME.colors.grid_nums, s, limitf, ancor);
       }
     }
   }

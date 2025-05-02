@@ -21,12 +21,12 @@ void smol_mesh_gen_bb(br_smol_mesh_line_t args, br_bb_t bb) {
 }
 
 void smol_mesh_gen_point(br_smol_mesh_line_t args, br_vec2_t point) {
-  br_vec2_t size = BR_VEC2(args.zoom.x * .01f, args.zoom.y * .01f);
+  br_vec2d_t size = BR_VEC2D(args.zoom.x * .01f, args.zoom.y * .01f);
   smol_mesh_gen_bb(args, (br_bb_t) {
-      .min_x = point.x - size.x / 2,
-      .min_y = point.y - size.y / 2,
-      .max_x = point.x + size.x / 2,
-      .max_y = point.y + size.y / 2,
+      .min_x = (float)(point.x - size.x / 2),
+      .min_y = (float)(point.y - size.y / 2),
+      .max_x = (float)(point.x + size.x / 2),
+      .max_y = (float)(point.y + size.y / 2),
   });
 }
 
@@ -42,39 +42,40 @@ void smol_mesh_gen_point1(br_smol_mesh_line_t args, br_vec2_t point, br_vec2_t s
 void smol_mesh_gen_line(br_smol_mesh_line_t args, br_vec2_t startPos, br_vec2_t endPos) {
   br_vec2_t const delta = br_vec2_sub(endPos, startPos);
 
-  br_vec2_t strip[2] = {
-    BR_VEC2(startPos.x, startPos.y),
-    BR_VEC2(endPos.x, endPos.y),
+  br_vec2d_t strip[2] = {
+    BR_VEC2D(startPos.x, startPos.y),
+    BR_VEC2D(endPos.x, endPos.y),
   };
 
   float thick = args.line_thickness;
-  br_vec2_t zoom = args.zoom;
-  br_vec2_t screen = args.screen_size;
-  br_vec2_t offset = args.offset;
+  br_vec2d_t zoom = args.zoom;
+  br_vec2d_t screen = args.screen_size;
+  br_vec2d_t offset = args.offset;
 
-  br_vec2_t normal = br_vec2_normalize(br_vec2_mul(BR_VEC2(delta.y, -delta.x), zoom));
-  br_vec2_t dif = br_vec2_scale(normal, thick);
-  br_vec2_t dif0 = br_vec2_max(br_vec2_scale(zoom, 0.1f), br_vec2_scale(strip[0], 7e-5f));
-  br_vec2_t dif1 = br_vec2_max(br_vec2_scale(zoom, 0.1f), br_vec2_scale(strip[1], 7e-5f));
-  br_vec2_t poss[4] = {
-    br_vec2_add(strip[0], br_vec2_mul(dif, dif0)),
-    br_vec2_add(strip[0], br_vec2_mul(br_vec2_scale(dif, -1.f), dif0)),
-    br_vec2_add(strip[1], br_vec2_mul(br_vec2_scale(dif, -1.f), dif1)),
-    br_vec2_add(strip[1], br_vec2_mul(dif, dif1)),
+  br_vec2d_t normal = br_vec2d_normalize(br_vec2d_mul(BR_VEC2D(delta.y, -delta.x), zoom));
+  br_vec2d_t dif = br_vec2d_scale(normal, thick);
+  double eps = DBL_EPSILON*10e8;
+  br_vec2d_t dif0 = br_vec2d_max(br_vec2d_scale(zoom, 0.1), br_vec2d_scale(strip[0], eps));
+  br_vec2d_t dif1 = br_vec2d_max(br_vec2d_scale(zoom, 0.1), br_vec2d_scale(strip[1], eps));
+  br_vec2d_t poss[4] = {
+    br_vec2d_add(strip[0], br_vec2d_mul(dif, dif0)),
+    br_vec2d_add(strip[0], br_vec2d_mul(br_vec2d_scale(dif, -1.0), dif0)),
+    br_vec2d_add(strip[1], br_vec2d_mul(br_vec2d_scale(dif, -1.0), dif1)),
+    br_vec2d_add(strip[1], br_vec2d_mul(dif, dif1)),
   };
-  br_vec2_t fact = br_vec2_div(screen, BR_VEC2(screen.y, screen.y));
-  fact = br_vec2_mul(fact, zoom);
+  br_vec2d_t fact = br_vec2d_div(screen, BR_VEC2D(screen.y, screen.y));
+  fact = br_vec2d_mul(fact, zoom);
   for (int i = 0; i < 4; ++i) {
-    poss[i] = br_vec2_sub(poss[i], offset);
-    poss[i] = br_vec2_div(poss[i], fact);
-    poss[i] = br_vec2_scale(poss[i], 2.f);
+    poss[i] = br_vec2d_sub(poss[i], offset);
+    poss[i] = br_vec2d_div(poss[i], fact);
+    poss[i] = br_vec2d_scale(poss[i], 2.f);
   }
 
   br_shader_line_push_quad(brtl_shaders()->line, (br_shader_line_el_t[4]) {
-      { .pos_delta = BR_VEC4(poss[0].x, poss[0].y, 0.98f,  1.f) },
-      { .pos_delta = BR_VEC4(poss[1].x, poss[1].y, 0.98f, -1.f) },
-      { .pos_delta = BR_VEC4(poss[2].x, poss[2].y, 0.98f, -1.f) },
-      { .pos_delta = BR_VEC4(poss[3].x, poss[3].y, 0.98f,  1.f) },
+      { .pos_delta = BR_VEC4((float)poss[0].x, (float)poss[0].y, 0.98f,  1.f) },
+      { .pos_delta = BR_VEC4((float)poss[1].x, (float)poss[1].y, 0.98f, -1.f) },
+      { .pos_delta = BR_VEC4((float)poss[2].x, (float)poss[2].y, 0.98f, -1.f) },
+      { .pos_delta = BR_VEC4((float)poss[3].x, (float)poss[3].y, 0.98f,  1.f) },
   });
 
   if (br_context.debug_bounds) {

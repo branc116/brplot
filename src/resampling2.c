@@ -27,7 +27,7 @@ static void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_vec2
       br_vec2_sub(p, lc->old),
       //plot->dd.graph_rect.size.vec),
       plot_size),
-    lc->args.screen_size
+    BR_VEC2D_TOF(lc->args.screen_size)
   );
 
   const float min_dist = br_context.cull_min;
@@ -454,23 +454,23 @@ void br_resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plo
     case br_data_kind_2d: {
       switch (plot->kind) {
         case br_plot_kind_2d: {
-          res->culler.args.screen_size = BR_VEC2I_TOF(plot->cur_extent.size.vec);
+          res->culler.args.screen_size = BR_VEC2I_TOD(plot->cur_extent.size.vec);
           res->culler.args.zoom = plot->dd.zoom;
           res->culler.args.offset = plot->dd.offset;
-          res->culler.args.offset.x -= (float)pg->dd.rebase_x;
-          res->culler.args.offset.y -= (float)pg->dd.rebase_y;
+          res->culler.args.offset.x -= pg->dd.rebase_x;
+          res->culler.args.offset.y -= pg->dd.rebase_y;
           res->culler.args.line_thickness = plot->dd.line_thickness * pd->thickness_multiplyer;
 
           brtl_shaders()->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
           br_extent_t ex = BR_EXTENTI_TOF(plot->cur_extent);
           float aspect = ex.width/ex.height;
-          br_extent_t plot_rect = BR_EXTENT(
-            -aspect*plot->dd.zoom.x/2.f + plot->dd.offset.x - (float)pg->dd.rebase_x,
-                    plot->dd.zoom.y/2.f + plot->dd.offset.y - (float)pg->dd.rebase_y,
+          br_extentd_t plot_rect = BR_EXTENTD(
+            -aspect*plot->dd.zoom.x/2.0 + plot->dd.offset.x - pg->dd.rebase_x,
+                    plot->dd.zoom.y/2.f + plot->dd.offset.y - pg->dd.rebase_y,
             aspect*plot->dd.zoom.x,
             plot->dd.zoom.y);
 
-          resampling2_draw22(&res->dd, 0, pg, plot_rect);
+          resampling2_draw22(&res->dd, 0, pg, BR_EXTENTD_TOF(plot_rect));
           br_line_culler_end(&res->culler);
           br_shader_line_draw(brtl_shaders()->line);
         } break;
