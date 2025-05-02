@@ -34,6 +34,9 @@ void br_plot_draw(br_plot_t* plot, br_datas_t datas) {
 }
 
 void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t groups, br_vec2_t mouse_pos) {
+  for (int i = 0; i < plot->data_info.len; ++i) {
+    plot->data_info.arr[i].thickness_multiplyer = br_float_lerp(plot->data_info.arr[i].thickness_multiplyer, plot->data_info.arr[i].thickness_multiplyer_target, brtl_frame_time()*5);
+  }
   switch (plot->kind) {
     case br_plot_kind_2d: {
       if (br_plot_update_variables_2d(plot, groups, mouse_pos))
@@ -49,9 +52,6 @@ void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t grou
 
 bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos) {
   BR_ASSERT(plot->kind == br_plot_kind_2d);
-  for (int i = 0; i < plot->data_info.len; ++i) {
-    plot->data_info.arr[i].thickness_multiplyer = br_float_lerp(plot->data_info.arr[i].thickness_multiplyer, plot->data_info.arr[i].thickness_multiplyer_target, brtl_frame_time()*5);
-  }
   if (plot->follow) {
     br_vec2d_t maxy = BR_VEC2D(-DBL_MAX, -DBL_MAX);
     br_vec2d_t mini = BR_VEC2D(DBL_MAX, DBL_MAX);
