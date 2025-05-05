@@ -24,6 +24,13 @@
   abort(); \
 } while(0)
 
+#define BR_UNREACHABLE() do { \
+  LOGF("Reached unreachable state"); \
+  BR_ASSERT(0); \
+  assert(0); \
+  exit(1); \
+} while(0)
+
 #define BR_LOG_GL_ERROR(ERROR) do { \
   if (0 != (ERROR)) { \
     LOGF("GL Error: %d", (ERROR)); \

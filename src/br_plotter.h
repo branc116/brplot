@@ -74,7 +74,6 @@ typedef struct br_plotter_t {
 #if BR_HAS_HOTRELOAD
   br_hotreload_state_t hot_state;
 #endif
-  int active_plot_index;
   int menu_extent_handle;
 
   br_permastate_status_t loaded_status;
@@ -83,8 +82,6 @@ typedef struct br_plotter_t {
 #endif
   bool should_close;
   bool exited;
-  bool switch_to_active;
-  bool any_2d, any_3d;
   struct {
     br_theme_t theme;
     bool file_saver_inited;

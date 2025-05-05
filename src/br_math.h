@@ -255,6 +255,11 @@ static inline float br_float_lerp(float from, float to, float factor) {
   return from * (1 - factor) + to * (factor);
 }
 
+static inline float br_float_lerp2(float from, float to, float factor) {
+  float fact2 = sqrtf(factor);
+  return from * (1 - fact2) + to * (fact2);
+}
+
 static inline bool br_float_near_zero(float value) {
   return fabsf(value) < 1e-6;
 }

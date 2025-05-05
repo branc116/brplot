@@ -153,7 +153,6 @@ bool br_permastate_save_plotter(br_str_t path_folder, br_plotter_t* br) {
     if (1 != fwrite(&data->name.len, sizeof(data->name.len), 1, file))                           goto error;
     if (data->name.len != fwrite(data->name.str, sizeof(*data->name.str), data->name.len, file)) goto error;
   }
-  if (1 != fwrite(&br->active_plot_index, sizeof(br->active_plot_index), 1, file))               goto error;
   if (1 != fwrite(&br->ui, sizeof(br->ui), 1, file))                                             goto error;
   goto end;
 
@@ -193,13 +192,12 @@ end:
   return;
 }
 
-bool br_permastate_remove_pointers(br_plotter_t* br, br_plot_t* plot) {
+bool br_permastate_remove_pointers(br_plot_t* plot) {
   plot->data_info.cap = 0;
   plot->data_info.len = 0;
   plot->data_info.arr = NULL;
   switch (plot->kind) {
-    case br_plot_kind_2d: br->any_2d = true; break;
-    case br_plot_kind_3d: br->any_3d = true; break;
+    case br_plot_kind_2d: case br_plot_kind_3d: break;
     default: return false;
   }
   return true;
@@ -223,7 +221,6 @@ bool br_permastate_load_plotter(FILE* file, br_plotter_t* br, br_data_descs_t* d
     br_data_desc_t d = { .group_id = id, .name = { .str = str, .len = len, .cap = len } };
     br_da_push(*desc, d);
   }
-  if (1 != (active_plot_read = fread(&br->active_plot_index, sizeof(br->active_plot_index), 1, file))) goto error;
   if (1 != (uis_read = fread(&br->ui, sizeof(br->ui), 1, file)))                                       goto error;
   return true;
   
@@ -251,7 +248,7 @@ bool br_permastate_load_plots(FILE* file, br_plotter_t* br) {
   br->plots.len = br->plots.cap = (int)plots_len;
   if (plots_len != 0) calculated_crc = br_fs_crc(plots, sizeof(*plots) * (size_t)plots_len, 0);
   for (size_t i = 0; i < plots_len; ++i) {
-    if (false == br_permastate_remove_pointers(br, &plots[i]))                     goto error;
+    if (false == br_permastate_remove_pointers(&plots[i]))                         goto error;
   }
   for (size_t i = 0; i < plots_len; ++i) {
     br_plot_t* p = &plots[i];
