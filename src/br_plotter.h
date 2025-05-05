@@ -18,11 +18,13 @@ typedef struct GLFWwindow GLFWwindow;
 
 #if BR_HAS_HOTRELOAD
 typedef struct br_hotreload_state_t {
-  LOCK(lock)
   void (*func_loop)(struct br_plotter_t* gv);
+  void (*func_loop_ui)(struct br_plotter_t* gv);
   void (*func_init)(struct br_plotter_t* gv);
   bool is_init_called;
+  bool has_changed;
   void* handl;
+  br_plotter_t* plotter;
 } br_hotreload_state_t;
 #endif
 

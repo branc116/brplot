@@ -120,6 +120,7 @@ void start_refreshing_shaders(br_plotter_t* br);
 #endif
 #if BR_HAS_HOTRELOAD
 void br_hotreload_start(br_hotreload_state_t* s);
+void br_hotreload_tick_ui(br_hotreload_state_t* s);
 #endif
 
 #ifdef __cplusplus

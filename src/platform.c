@@ -159,6 +159,10 @@ struct test_file_metadata * test_file_head;
 #  include <synchapi.h>
 #endif
 
+#if BR_HAS_HOTRELOAD
+#  include "src/desktop/hotreload.c"
+#endif
+
 static BR_THREAD_LOCAL br_plotter_t* stl_br = NULL;
 
 static void log_glfw_errors(int level, const char* error);
@@ -225,6 +229,9 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
   glfwSetCursorPosCallback(br->win.glfw, br_glfw_on_mouse_move);
   glfwSetMouseButtonCallback(br->win.glfw, br_glfw_on_mouse_button);
   glfwSetKeyCallback(br->win.glfw, br_glfw_on_key);
+#if BR_HAS_HOTRELOAD
+  br_hotreload_start(&br->hot_state);
+#endif
 }
 
 void br_plotter_deinit_specifics_platform(br_plotter_t* br) {
@@ -309,6 +316,9 @@ void br_plotter_begin_drawing(br_plotter_t* br) {
   br->mouse.delta = br_vec2_sub(br->mouse.pos, br->mouse.old_pos);
   br->mouse.old_pos = br->mouse.pos;
   glfwGetWindowSize(br->win.glfw, &br->win.size.width, &br->win.size.height);
+#if BR_HAS_HOTRELOAD
+  br_hotreload_tick(&br->hot_state);
+#endif
 }
 
 void br_plotter_end_drawing(br_plotter_t* br) {

@@ -109,7 +109,7 @@ extern "C" {
 #endif
 
 #if !defined(BR_HAS_HOTRELOAD)
-#  if defined(BR_DEBUG) && defined(IMGUI) && defined(__linux__) && !defined(LIB)
+#  if defined(BR_DEBUG) && defined(__linux__) && !defined(LIB)
 #    define BR_HAS_HOTRELOAD 1
 #  else
 #    define BR_HAS_HOTRELOAD 0

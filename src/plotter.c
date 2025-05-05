@@ -45,10 +45,7 @@ br_plotter_t* br_plotter_malloc(void) {
     },
   };
 #if BR_HAS_HOTRELOAD
-  br->hot_state = (br_hotreload_state_t) { .handl = NULL, .func_loop = NULL, .func_init = NULL, .is_init_called = false };
-  pthread_mutexattr_t attrs;
-  pthread_mutexattr_init(&attrs);
-  pthread_mutex_init(&br->hot_state.lock, &attrs);
+  br->hot_state = (br_hotreload_state_t) { .handl = NULL, .plotter = br, .func_loop_ui = NULL, .func_loop = NULL, .func_init = NULL, .is_init_called = false };
 #endif
   br->commands = q_malloc();
   if (NULL == br->commands) {
@@ -95,13 +92,13 @@ void br_plotter_deinit(br_plotter_t* br) {
   br_plotter_deinit_specifics_platform(br);
   BR_FREE(br->plots.arr);
   br_dagens_free(&br->dagens);
-  LOGI("Plotter deinited\n");
+  LOGI("Plotter deinited");
 }
 
 void br_plotter_free(br_plotter_t* br) {
   q_free(br->commands);
   //BR_FREE(br);
-  LOGI("Plotter freed\n");
+  LOGI("Plotter freed");
 }
 
 void br_plotter_resize(br_plotter_t* br, float width, float height) {
@@ -163,7 +160,7 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
   br_plot_create_texture(&plot);
   plot.extent_handle = brui_resizable_new(BR_EXTENT((float)x, 50, (float)br->win.size.width - (float)x - 60.f, (float)br->win.size.height - 110), 0);
   plot.menu_extent_handle = brui_resizable_new2(BR_EXTENT(0, 0, 300, (float)plot.cur_extent.height), plot.extent_handle, (brui_resizable_t) { .target.hidden_factor = 1.f });
-  plot.legend_extent_handle = brui_resizable_new(BR_EXTENT((float)plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle);
+  plot.legend_extent_handle = brui_resizable_new2(BR_EXTENT((float)plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle, (brui_resizable_t) { 0 });
   br_da_push_t(int, (br->plots), plot);
   br->any_2d = true;
   return br->plots.len - 1;
@@ -189,7 +186,7 @@ int br_plotter_add_plot_3d(br_plotter_t* br) {
   br_plot_create_texture(&plot);
   plot.extent_handle = brui_resizable_new(BR_EXTENT(500, 50, (float)br->win.size.width - 500 - 60, (float)br->win.size.height - 110), 0);
   plot.menu_extent_handle = brui_resizable_new2(BR_EXTENT(0, 0, 300, (float)plot.cur_extent.height), plot.extent_handle, (brui_resizable_t) { .target.hidden_factor = 1.f });
-  plot.legend_extent_handle = brui_resizable_new(BR_EXTENT((float)plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle);
+  plot.legend_extent_handle = brui_resizable_new2(BR_EXTENT((float)plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle, (brui_resizable_t) { 0 });
   br_da_push_t(int, (br->plots), plot);
   br->any_3d = true;
   return br->plots.len - 1;
@@ -280,7 +277,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         s = br_strv_trim_zeros(s);
         float y = sz.height / r.height * (r.y - cur);
         if (y > sz.height) break;
-        br_text_renderer_push2(tr, BR_VEC3(x, y, 0.9f), font_size, BR_THEME.colors.grid_nums, s, limit, ancor);
+        br_text_renderer_push2(tr, BR_VEC3(x, y, 0.9f), font_size, BR_THEME.colors.grid_nums, BR_COLOR(0,0,0,0), s, limit, ancor);
       }
     }
   }
@@ -305,7 +302,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
         s = br_strv_trim_zeros(s);
         float x = (sz.width / r.width) * (cur - r.x);
         if (x > sz.width) break;
-        br_text_renderer_push2(tr, BR_VEC3(x, y, 0.9f), font_size, BR_THEME.colors.grid_nums, s, limit, ancor);
+        br_text_renderer_push2(tr, BR_VEC3(x, y, 0.9f), font_size, BR_THEME.colors.grid_nums, BR_COLOR(0,0,0,0), s, limit, ancor);
       }
     }
   }

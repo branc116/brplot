@@ -3,16 +3,19 @@
 precision mediump float;
 
 in vec4 pos;
-in vec4 color;
+in vec4 fg;
+in vec4 bg;
 in vec4 clip_dists;
 in float z;
 
 out vec2 out_tpos;
-out vec4 vs_color;
+out vec4 vs_fg;
+out vec4 vs_bg;
 
 void main() {
   out_tpos = pos.zw;
-  vs_color = color;
+  vs_fg = fg;
+  vs_bg = bg;
 
   gl_Position = vec4(pos.xy, z, 1.0);
   gl_ClipDistance[0] = clip_dists.x;

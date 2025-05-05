@@ -84,7 +84,8 @@
       X_VEC(atlas, _TEX),               \
                                         \
       X_BUF(pos, 4)                     \
-      X_BUF(color, 4)                   \
+      X_BUF(fg, 4)                      \
+      X_BUF(bg, 4)                      \
       X_BUF(clip_dists, 4)              \
       X_BUF(z, 1)                       \
     )                                   \

@@ -32,11 +32,22 @@ bool br_permastate_save_plots(br_str_t path_folder, br_plots_t plots) {
   if (NULL == f)                                                         goto error;
   if (1 != fwrite(&command, sizeof(command), 1, f))                      goto error;
   if (1 != fwrite(&plots_len, sizeof(plots_len), 1, f))                  goto error;
+
+  // TODO: This is a hack.. This will need to be removed when resizables will be serizalized
+  for (int i = 0; i < plots.len; ++i) {
+    br_plot_t* plot = br_da_getp(plots, i);
+    br_extent_t cur_extent = brui_resizable_get(plot->extent_handle)->target.cur_extent;
+    plot->cur_extent = BR_EXTENT_TOI(cur_extent);
+  }
+
   if (plots_len != fwrite(plots.arr, sizeof(*plots.arr), plots_len, f))  goto error;
   crc = br_fs_crc(plots.arr, sizeof(*plots.arr) * plots_len, 0);
 
   for (int i = 0; i < plots.len; ++i) {
     br_plot_t* plot = &plots.arr[i];
+    // TODO: This is a hack.. This will need to be removed when resizables will be serizalized
+    br_extent_t cur_extent = brui_resizable_get(plot->extent_handle)->target.cur_extent;
+    plot->cur_extent = BR_EXTENT_TOI(cur_extent);
     br_plot_data_t* arr = plot->data_info.arr;
     int len = plot->data_info.len;
     if (1 != fwrite(&len, sizeof(len), 1, f))                            goto error;
@@ -263,7 +274,7 @@ bool br_permastate_load_plots(FILE* file, br_plotter_t* br) {
   for (size_t i = 0; i < plots_len; ++i) {
     plots[i].extent_handle = brui_resizable_new(BR_EXTENTI_TOF(plots[i].cur_extent), 0);
     plots[i].menu_extent_handle = brui_resizable_new2(BR_EXTENT(0, 0, 300, (float)plots[i].cur_extent.height), plots[i].extent_handle, (brui_resizable_t) { .target.hidden_factor = 1.f });
-    plots[i].legend_extent_handle = brui_resizable_new(BR_EXTENT((float)plots[i].cur_extent.width - 110, 10, 100, 60), plots[i].extent_handle);
+    plots[i].legend_extent_handle = brui_resizable_new2(BR_EXTENT((float)plots[i].cur_extent.width - 110, 10, 100, 60), plots[i].extent_handle, (brui_resizable_t) { .target.hidden_factor = 1.f, .title_enabled = false });
   }
   return true;
 

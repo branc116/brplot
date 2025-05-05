@@ -295,6 +295,11 @@ static inline br_vec2_t br_vec2_lerp(br_vec2_t a, br_vec2_t b, float t) {
                  a.y*(1-t) + b.y*t);
 }
 
+static inline br_size_t br_size_lerp(br_size_t a, br_size_t b, float t) {
+  return BR_SIZE(a.width*(1-t) + b.width*t,
+                 a.height*(1-t) + b.height*t);
+}
+
 static inline float br_vec2_dist2(br_vec2_t a, br_vec2_t b) {
   float len2 = br_vec2_len2(br_vec2_sub(a, b));
   return len2;
