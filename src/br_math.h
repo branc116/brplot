@@ -329,6 +329,14 @@ static inline br_vec2_t br_vec2_div(br_vec2_t a, br_vec2_t b) {
   return BR_VEC2(a.x / b.x, a.y / b.y);
 }
 
+static inline br_vec3_t br_vec3_cross(br_vec3_t a, br_vec3_t b);
+
+static inline bool br_vec2_ccv(br_vec2_t a, br_vec2_t b, br_vec2_t c) {
+  br_vec2_t ab = br_vec2_sub(b, a);
+  br_vec2_t cb = br_vec2_sub(b, c);
+  return br_vec3_cross(BR_VEC3(ab.x, ab.y, 0), BR_VEC3(cb.x, cb.y, 0)).z > 0;
+}
+
 static inline br_vec2_t br_vec2_lerp(br_vec2_t a, br_vec2_t b, float t) {
   return BR_VEC2(a.x*(1-t) + b.x*t,
                  a.y*(1-t) + b.y*t);

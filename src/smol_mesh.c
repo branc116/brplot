@@ -39,7 +39,7 @@ void smol_mesh_gen_point1(br_smol_mesh_line_t args, br_vec2_t point, br_vec2_t s
   });
 }
 
-void smol_mesh_gen_line(br_smol_mesh_line_t args, br_vec2_t startPos, br_vec2_t endPos) {
+void smol_mesh_gen_line(br_smol_mesh_line_t* args, br_vec2_t startPos, br_vec2_t endPos) {
   br_vec2_t const delta = br_vec2_sub(endPos, startPos);
 
   br_vec2d_t strip[2] = {
@@ -47,10 +47,10 @@ void smol_mesh_gen_line(br_smol_mesh_line_t args, br_vec2_t startPos, br_vec2_t 
     BR_VEC2D(endPos.x, endPos.y),
   };
 
-  float thick = args.line_thickness;
-  br_vec2d_t zoom = args.zoom;
-  br_vec2d_t screen = args.screen_size;
-  br_vec2d_t offset = args.offset;
+  float thick = args->line_thickness;
+  br_vec2d_t zoom = args->zoom;
+  br_vec2d_t screen = args->screen_size;
+  br_vec2d_t offset = args->offset;
 
   br_vec2d_t normal = br_vec2d_normalize(br_vec2d_mul(BR_VEC2D(delta.y, -delta.x), zoom));
   br_vec2d_t dif = br_vec2d_scale(normal, thick);
@@ -71,6 +71,9 @@ void smol_mesh_gen_line(br_smol_mesh_line_t args, br_vec2_t startPos, br_vec2_t 
     poss[i] = br_vec2d_scale(poss[i], 2.f);
   }
 
+  br_vec2_t cur[2] = {BR_VEC2((float)poss[0].x, (float)poss[0].y), BR_VEC2((float)poss[1].x, (float)poss[1].y) };
+  br_vec2_t mid = br_vec2_add(br_vec2_scale(cur[0], 0.5f), br_vec2_scale(cur[1], 0.5f));
+
   br_shader_line_push_quad(brtl_shaders()->line, (br_shader_line_el_t[4]) {
       { .pos_delta = BR_VEC4((float)poss[0].x, (float)poss[0].y, 0.98f,  1.f) },
       { .pos_delta = BR_VEC4((float)poss[1].x, (float)poss[1].y, 0.98f, -1.f) },
@@ -78,10 +81,30 @@ void smol_mesh_gen_line(br_smol_mesh_line_t args, br_vec2_t startPos, br_vec2_t 
       { .pos_delta = BR_VEC4((float)poss[3].x, (float)poss[3].y, 0.98f,  1.f) },
   });
 
+  if (args->prev[0].x != 0.f || args->prev[1].x != 0.f || args->prev[0].y != 0.f || args->prev[1].y != 0.f) {
+    if (false == br_vec2_ccv(mid, args->prev[1], cur[0])) {
+      br_shader_line_push_tri(brtl_shaders()->line, (br_shader_line_el_t[3]) {
+          { .pos_delta = BR_VEC4(mid.x, mid.y, 0.98f,  0.f) },
+          { .pos_delta = BR_VEC4(args->prev[1].x, args->prev[1].y, 0.98f, 1.f) },
+          { .pos_delta = BR_VEC4(cur[0].x, cur[0].y, 0.98f, 1.f) },
+      });
+    }
+    if (true == br_vec2_ccv(mid, args->prev[0], cur[1])) {
+      br_shader_line_push_tri(brtl_shaders()->line, (br_shader_line_el_t[3]) {
+          { .pos_delta = BR_VEC4(mid.x, mid.y, 0.98f,  0.f) },
+          { .pos_delta = BR_VEC4(cur[1].x, cur[1].y, 0.98f, 1.f) },
+          { .pos_delta = BR_VEC4(args->prev[0].x, args->prev[0].y, 0.98f, 1.f) },
+      });
+    }
+  }
+
+  args->prev[0] = BR_VEC2((float)poss[2].x, (float)poss[2].y);
+  args->prev[1] = BR_VEC2((float)poss[3].x, (float)poss[3].y);
+
   if (br_context.debug_bounds) {
     br_context.debug_bounds = false;
-    smol_mesh_gen_point(args, startPos);
-    smol_mesh_gen_point(args, endPos);
+    smol_mesh_gen_point(*args, startPos);
+    smol_mesh_gen_point(*args, endPos);
     br_context.debug_bounds = true;
   }
 }
@@ -89,7 +112,7 @@ void smol_mesh_gen_line(br_smol_mesh_line_t args, br_vec2_t startPos, br_vec2_t 
 void smol_mesh_gen_line_strip(br_smol_mesh_line_t args, br_vec2_t const * points, size_t len) {
   TracyCZoneN(gen_line_strip_ctx, "GenLineStrip", true);
   TracyCZoneValue(gen_line_strip_ctx, len);
-  for (size_t v = 0; v < (len - 1); ++v) smol_mesh_gen_line(args, points[v], points[v + 1]);
+  for (size_t v = 0; v < (len - 1); ++v) smol_mesh_gen_line(&args, points[v], points[v + 1]);
   TracyCZoneEnd(gen_line_strip_ctx);
 }
 
@@ -97,7 +120,7 @@ void smol_mesh_gen_line_strip2(br_smol_mesh_line_t args, float const* xs, float 
   TracyCZoneN(gen_line_strip_ctx, "GenLineStrip2", true);
   TracyCZoneValue(gen_line_strip_ctx, len);
   for (size_t v = 0; v < (len - 1); ++v)
-    smol_mesh_gen_line(args, BR_VEC2(xs[v], ys[v]), BR_VEC2(xs[v+1], ys[v+1]));
+    smol_mesh_gen_line(&args, BR_VEC2(xs[v], ys[v]), BR_VEC2(xs[v+1], ys[v+1]));
   TracyCZoneEnd(gen_line_strip_ctx);
 }
 
@@ -105,9 +128,9 @@ void smol_mesh_gen_line_strip2(br_smol_mesh_line_t args, float const* xs, float 
 void smol_mesh_gen_line_strip_stride(br_smol_mesh_line_t args, br_vec2_t const * points, ssize_t len, int stride) {
   ssize_t v = 0;
   for (; v < (len - stride); v += stride) {
-    smol_mesh_gen_line(args, points[v], points[v + stride]);
+    smol_mesh_gen_line(&args, points[v], points[v + stride]);
   }
-  if (v != len - 1) smol_mesh_gen_line(args, points[v], points[len - 1]);
+  if (v != len - 1) smol_mesh_gen_line(&args, points[v], points[len - 1]);
 }
 
 void smol_mesh_3d_gen_line_simple(br_shader_line_3d_simple_t* shader, br_vec3_t p1, br_vec3_t p2, br_color_t color, br_vec3_t eye) {

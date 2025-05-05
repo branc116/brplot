@@ -36,7 +36,7 @@ static void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_vec2
     return;
   }
 
-  smol_mesh_gen_line(lc->args, lc->old, p);
+  smol_mesh_gen_line(&lc->args, lc->old, p);
   lc->mid = lc->old = p;
 }
 
@@ -48,9 +48,11 @@ void br_line_culler_push_line_strip(br_vec2_t const* points, size_t n, br_line_c
 
 void br_line_culler_end(br_line_culler_t* lc) {
   if (false == br_vec2_eq(lc->old, lc->mid)) {
-    smol_mesh_gen_line(lc->args, lc->old, lc->mid);
+    smol_mesh_gen_line(&lc->args, lc->old, lc->mid);
   }
   lc->has_old = false;
+  lc->args.prev[0] = (br_vec2_t){ 0 };
+  lc->args.prev[1] = (br_vec2_t){ 0 };
 }
 
 void br_line_culler_push_line_strip2(float const* xs, float const* ys, size_t n, br_line_culler_t* lc, br_vec2_t plot_size) {
@@ -460,6 +462,8 @@ void br_resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plo
           res->culler.args.offset.x -= pg->dd.rebase_x;
           res->culler.args.offset.y -= pg->dd.rebase_y;
           res->culler.args.line_thickness = plot->dd.line_thickness * pd->thickness_multiplyer;
+          res->culler.args.prev[0] = BR_VEC2(0, 0);
+          res->culler.args.prev[1] = BR_VEC2(0, 0);
 
           brtl_shaders()->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
           br_extent_t ex = BR_EXTENTI_TOF(plot->cur_extent);
