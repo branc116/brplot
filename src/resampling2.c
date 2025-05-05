@@ -27,7 +27,7 @@ static void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_vec2
       br_vec2_sub(p, lc->old),
       //plot->dd.graph_rect.size.vec),
       plot_size),
-    lc->args.screen_size
+    BR_VEC2D_TOF(lc->args.screen_size)
   );
 
   const float min_dist = br_context.cull_min;
@@ -360,23 +360,23 @@ static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nod
   }
 }
 
-static void resampling2_draw32(resampling2_nodes_2d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot, br_shaders_t const* shaders) {
+static void resampling2_draw32(resampling2_t const* const res, size_t index, br_data_t const* const pg, br_plot_t* const plot) {
   assert(plot->kind == br_plot_kind_3d);
   assert(pg->kind == br_data_kind_2d);
   //ZoneScopedN("resampling2_3d");
   float const* xs = pg->dd.xs;
   float const* ys = pg->dd.ys;
-  resampling2_nodes_2d_t node = nodes->arr[index];
-  br_mat_t mvp = shaders->line_3d->uvs.m_mvp_uv;
+  resampling2_nodes_2d_t node = res->dd.arr[index];
+  br_mat_t mvp = res->args_3d.mvp;
   if (false == resampling2_nodes_2d_is_inside_3d(&node, xs, ys, mvp)) return;
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
-    smol_mesh_3d_gen_line_strip3(shaders->line_3d, &xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1), pg->color);
+    smol_mesh_3d_gen_line_strip3(res->args_3d, &xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1));
     return;
   }
   br_vec2_t ratios = resampling2_nodes_2d_get_ratios_3d(&node, xs, ys, mvp);
   float rmin = fminf(ratios.x, ratios.y);
-  if (rmin < (node.base.depth == 1 ? pg->resampling->something : pg->resampling->something2 )) {
+  if (rmin < (node.base.depth == 1 ? res->something : res->something2 )) {
     size_t indexies[] = {
       node.base.index_start,
       node.base.min_index_x,
@@ -391,34 +391,34 @@ static void resampling2_draw32(resampling2_nodes_2d_allocator_t const* const nod
       BR_VEC2(xs[indexies[2]], ys[indexies[2]]), BR_VEC2(xs[indexies[3]], ys[indexies[3]]),
       BR_VEC2(xs[indexies[4]], ys[indexies[4]]), BR_VEC2(xs[indexies[5]], ys[indexies[5]]),
     };
-    smol_mesh_3d_gen_line_strip2(shaders->line_3d, pss, 6, pg->color);
+    smol_mesh_3d_gen_line_strip2(res->args_3d, pss, 6);
   } else {
-    resampling2_draw32(nodes, node.base.child1, pg, plot, shaders);
-    resampling2_draw32(nodes, node.base.child2, pg, plot, shaders);
+    resampling2_draw32(res, node.base.child1, pg, plot);
+    resampling2_draw32(res, node.base.child2, pg, plot);
   }
 }
 
-static void resampling2_draw33(resampling2_nodes_3d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_plot_t* const plot, br_shaders_t* shaders) {
+static void resampling2_draw33(resampling2_t const* const res, size_t index, br_data_t const* const pg, br_plot_t* const plot) {
   assert(plot->kind == br_plot_kind_3d);
   assert(pg->kind == br_data_kind_3d);
   //ZoneScopedN("resampling2_3d");
   float const* xs = pg->ddd.xs;
   float const* ys = pg->ddd.ys;
   float const* zs = pg->ddd.zs;
-  resampling2_nodes_3d_t node = nodes->arr[index];
-  br_mat_t mvp = shaders->line_3d->uvs.m_mvp_uv;
+  resampling2_nodes_3d_t node = res->ddd.arr[index];
+  br_mat_t mvp = res->args_3d.mvp;
   br_vec3_t eye = plot->ddd.eye;
   br_vec3_t target = plot->ddd.target;
   if (false == resampling2_nodes_3d_is_inside(&node, &pg->ddd, mvp)) return;
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
     size_t st = node.base.index_start;
-    smol_mesh_3d_gen_line_strip1(shaders->line_3d, &xs[st], &ys[st], &zs[st], node.base.len + (is_end ? 0 : 1), pg->color);
+    smol_mesh_3d_gen_line_strip1(res->args_3d, &xs[st], &ys[st], &zs[st], node.base.len + (is_end ? 0 : 1));
     return;
   }
   br_vec2_t ratios = resampling2_nodes_3d_get_ratios(&node, &pg->ddd, eye, br_vec3_sub(target, eye));
-  assert(ratios.x > 0);
-  assert(ratios.y > 0);
+  BR_ASSERT(ratios.x > 0);
+  BR_ASSERT(ratios.y > 0);
   float rmin = fmaxf(ratios.x, ratios.y);
   if (rmin < (node.base.depth == 1 ? pg->resampling->something2 : pg->resampling->something)) {
     size_t indexies[] = {
@@ -436,12 +436,12 @@ static void resampling2_draw33(resampling2_nodes_3d_allocator_t const* const nod
     size_t cur = indexies[0];
     for (size_t i = 1; i < 8; ++i) {
       if (cur == indexies[i]) continue;
-      smol_mesh_3d_gen_line(shaders->line_3d,  BR_VEC3(xs[cur], ys[cur], zs[cur]),  BR_VEC3(xs[indexies[i]], ys[indexies[i]], zs[indexies[i]]), pg->color);
+      smol_mesh_3d_gen_line(res->args_3d, BR_VEC3(xs[cur], ys[cur], zs[cur]),  BR_VEC3(xs[indexies[i]], ys[indexies[i]], zs[indexies[i]]));
       cur = indexies[i];
     }
   } else {
-    resampling2_draw33(nodes, node.base.child1, pg, plot, shaders);
-    resampling2_draw33(nodes, node.base.child2, pg, plot, shaders);
+    resampling2_draw33(res, node.base.child1, pg, plot);
+    resampling2_draw33(res, node.base.child2, pg, plot);
   }
 }
 
@@ -454,23 +454,23 @@ void br_resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plo
     case br_data_kind_2d: {
       switch (plot->kind) {
         case br_plot_kind_2d: {
-          res->culler.args.screen_size = BR_VEC2I_TOF(plot->cur_extent.size.vec);
+          res->culler.args.screen_size = BR_VEC2I_TOD(plot->cur_extent.size.vec);
           res->culler.args.zoom = plot->dd.zoom;
           res->culler.args.offset = plot->dd.offset;
-          res->culler.args.offset.x -= (float)pg->dd.rebase_x;
-          res->culler.args.offset.y -= (float)pg->dd.rebase_y;
+          res->culler.args.offset.x -= pg->dd.rebase_x;
+          res->culler.args.offset.y -= pg->dd.rebase_y;
           res->culler.args.line_thickness = plot->dd.line_thickness * pd->thickness_multiplyer;
 
           brtl_shaders()->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
           br_extent_t ex = BR_EXTENTI_TOF(plot->cur_extent);
           float aspect = ex.width/ex.height;
-          br_extent_t plot_rect = BR_EXTENT(
-            -aspect*plot->dd.zoom.x/2.f + plot->dd.offset.x - (float)pg->dd.rebase_x,
-                    plot->dd.zoom.y/2.f + plot->dd.offset.y - (float)pg->dd.rebase_y,
+          br_extentd_t plot_rect = BR_EXTENTD(
+            -aspect*plot->dd.zoom.x/2.0 + plot->dd.offset.x - pg->dd.rebase_x,
+                    plot->dd.zoom.y/2.f + plot->dd.offset.y - pg->dd.rebase_y,
             aspect*plot->dd.zoom.x,
             plot->dd.zoom.y);
 
-          resampling2_draw22(&res->dd, 0, pg, plot_rect);
+          resampling2_draw22(&res->dd, 0, pg, BR_EXTENTD_TOF(plot_rect));
           br_line_culler_end(&res->culler);
           br_shader_line_draw(brtl_shaders()->line);
         } break;
@@ -488,8 +488,10 @@ void br_resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plo
           brtl_shaders()->line_3d_simple->uvs.m_mvp_uv = brtl_shaders()->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
           brtl_shaders()->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
           brtl_shaders()->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
+          res->args_3d.line_thickness = 0.03f * pd->thickness_multiplyer;
+          res->args_3d.mvp = brtl_shaders()->line_3d_simple->uvs.m_mvp_uv;
 
-          resampling2_draw32(&res->dd, 0, pg, plot, brtl_shaders());
+          resampling2_draw32(res, 0, pg, plot);
           br_shader_line_3d_draw(brtl_shaders()->line_3d);
         } break;
       }
@@ -497,7 +499,7 @@ void br_resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plo
     }
     case br_data_kind_3d: {
       switch (plot->kind) {
-        case br_plot_kind_2d: assert("Can't draw 3d data on 2d plot.." && 0);
+        case br_plot_kind_2d: BR_ASSERTF(0, "Can't draw 3d data on 2d plot..");
         case br_plot_kind_3d: {
           br_vec3_t target = plot->ddd.target;
           target.x -= (float)pg->ddd.rebase_x;
@@ -514,8 +516,10 @@ void br_resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plo
           brtl_shaders()->line_3d_simple->uvs.m_mvp_uv = brtl_shaders()->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
           brtl_shaders()->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
           brtl_shaders()->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
+          res->args_3d.line_thickness = 0.03f * pd->thickness_multiplyer;
+          res->args_3d.mvp = brtl_shaders()->line_3d_simple->uvs.m_mvp_uv;
 
-          resampling2_draw33(&res->ddd, 0, pg, plot, brtl_shaders()); break;
+          resampling2_draw33(res, 0, pg, plot); break;
           br_shader_line_3d_draw(brtl_shaders()->line_3d);
         }
       }

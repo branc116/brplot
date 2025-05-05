@@ -871,7 +871,9 @@ TEST_CASE(InputTestsExp) {
   br_plotter_t br;
   test_input(&br, "10e10");
   TEST_COMMAND_PUSH_POINT_Y(br.commands, 10e10f, 0);
+  TEST_COMMAND_END(br.commands);
 }
+
 TEST_CASE(InputTests) {
   br_plotter_t br;
   test_input(&br, "8.0,-16.0;1 -0.0078,16.0;1 \" \n \n 4.0;1\n\n\n\n\n\n 2.0 1;10;1;;;; 10e10 3e38 --test 1.2 --zoomx 10.0 1;12");

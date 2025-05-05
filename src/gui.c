@@ -196,6 +196,8 @@ static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas) {
       if (plot->kind == br_plot_kind_2d) {
         brui_textf("Offset: %f %f", BR_VEC2_(plot->dd.offset));
         brui_textf("Zoom: %f %f", BR_VEC2_(plot->dd.zoom));
+      } else if (plot->kind == br_plot_kind_3d) {
+        brui_sliderf2(BR_STRL("Fov"), &plot->ddd.fov_y);
       }
     brui_resizable_pop();
   }
