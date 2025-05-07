@@ -104,6 +104,16 @@ typedef union {
   };
 } brui_resizable_t;
 
+typedef struct brui_resizable_temp_t {
+  size_t key;
+  int value;
+} brui_resizable_temp_t;
+
+typedef struct brui_resizable_temp_push_t {
+  int resizable_handle;
+  bool just_created;
+} brui_resizable_temp_push_t;
+
 typedef struct brui_split_t {
   enum {
     brui_split_absolute,
@@ -177,6 +187,10 @@ void              brui_resizable_pop(void);
 int               brui_resizable_active(void);
 void              brui_resizable_show(int resizable_handle, bool show);
 bool              brui_resizable_is_hidden(int resizable_handle);
+br_vec2_t         brui_resizable_to_global(int resizable_handle, br_vec2_t pos);
+
+brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id);
+void              brui_resizable_temp_delete(br_strv_t id);
 
 void brui_resizable_save(FILE* file);
 void brui_resizable_load(FILE* file);

@@ -11,6 +11,8 @@
 #include "src/br_gl.h"
 #include "src/br_shaders.h"
 
+#include "external/stb_ds.h"
+
 #include <stdarg.h>
 #include <assert.h>
 #include <stdbool.h>
@@ -42,6 +44,7 @@ static BR_THREAD_LOCAL bruirs_t bruirs;
 static BR_THREAD_LOCAL bruir_childrens_t bruir_childrens;
 
 static BR_THREAD_LOCAL brui_stack_t brui__stack;
+static BR_THREAD_LOCAL brui_resizable_temp_t* bruir__temp_res = NULL;
 BR_THREAD_LOCAL int brui__n__;
 
 BR_THREAD_LOCAL char brui__scrach[2048];
@@ -1025,6 +1028,45 @@ void brui_resizable_show(int resizable_handle, bool show) {
 
 bool brui_resizable_is_hidden(int resizable_handle) {
   return bruirs.arr[resizable_handle].hidden_factor > 0.99f;
+}
+
+br_vec2_t brui_resizable_to_global(int resizable_handle, br_vec2_t pos) {
+  if (resizable_handle == 0) return pos;
+  brui_resizable_t* r = brui_resizable_get(resizable_handle);
+  pos = br_vec2_sub(pos, r->cur_extent.pos);
+  float hidden_heigth = r->full_height - r->cur_extent.height;
+  if (hidden_heigth > 0) pos.y += r->scroll_offset_percent * hidden_heigth;
+  return brui_resizable_to_global(r->parent, pos);
+}
+
+brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id) {
+  // TODO: Handle hash collisions
+  size_t hash = stbds_hash_bytes((void*)id.str, id.len, 0xdeadbeefdeadbeef);
+  int res_handle = -1;
+
+  ptrdiff_t index = stbds_hmgeti(bruir__temp_res, hash);
+  bool just_created = false;
+  if (index < 0) {
+    res_handle = brui_resizable_new(BR_EXTENT(0, 0, 100, 100), TOP.cur_resizable);
+    index = stbds_hmput(bruir__temp_res, hash, res_handle);
+    just_created = true;
+  } else {
+    res_handle = bruir__temp_res[index].value;
+  }
+
+  brui_resizable_push(res_handle);
+  return (brui_resizable_temp_push_t) { .resizable_handle = res_handle, .just_created = just_created };
+}
+
+void brui_resizable_temp_delete(br_strv_t id) {
+  size_t hash = stbds_hash_bytes((void*)id.str, id.len, 0xdeadbeefdeadbeef);
+  int handle = -1;
+  ptrdiff_t index = stbds_hmgeti(bruir__temp_res, hash);
+  if (index >= 0) {
+    handle = bruir__temp_res[index].value;
+    brui_resizable_delete(handle);
+    stbds_hmdel(bruir__temp_res, hash);
+  }
 }
 
 brui_resizable_t* brui_resizable_get(int id) {
