@@ -17,6 +17,7 @@
 static void draw_left_panel(br_plotter_t* gv);
 static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas);
 static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas);
+static void brgui_draw_file_browser(br_plot_t* plot, br_datas_t datas);
 
 void br_plotter_draw(br_plotter_t* br) {
   br_plotter_begin_drawing(br);
@@ -53,6 +54,9 @@ void br_plotter_draw(br_plotter_t* br) {
 
   brgl_enable_clip_distance();
   brui_begin();
+#if BR_HAS_HOTRELOAD
+  br_hotreload_tick_ui(&br->hot_state);
+#endif
     int to_remove = -1;
     for (int i = 0; i < br->plots.len; ++i) {
       if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
@@ -78,7 +82,6 @@ static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas) {
     br_plot_data_t* di = NULL;
     br_vec2_t mp = brtl_mouse_pos();
     brui_padding_y_set(1.f);
-    brui_text_size_set(brui_text_size() / 5 * 3);
     for (int i = 0; i < plot->data_info.len; ++i) {
       bool active = is_active;
       br_plot_data_t* cdi = &plot->data_info.arr[i];

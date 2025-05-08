@@ -32,10 +32,45 @@ typedef enum {
   brui_ancor_all = brui_ancor_left | brui_ancor_right | brui_ancor_top | brui_ancor_bottom,
 } brui_ancor_t;
 
+typedef struct {
+  br_vec2_t cur;
+  br_bb_t limit;
+  int start_z, z;
+  br_vec2_t psum;
+  float content_height;
+
+  br_vec2_t padding;
+  br_color_t background_color;
+
+  int font_size;
+  br_color_t font_color;
+  br_text_renderer_ancor_t text_ancor;
+
+  int cur_resizable;
+
+  float vsplit_max_height;
+
+  bool is_active;
+  bool hide_border;
+  bool hide_bg;
+} brui_stack_el_t;
+
+typedef struct {
+  brui_stack_el_t* arr;
+  size_t len, cap;
+
+  int active_resizable;
+  void* sliderf;
+  br_vec2_t drag_ancor_point;
+  bool log;
+} brui_stack_t;
+
 #define brui_resizable_anim_fields(X) \
   X(float, scroll_offset_percent) \
   X(br_extent_t, cur_extent) \
-  X(float, hidden_factor)
+  X(float, hidden_factor) \
+  X(float, title_height) \
+  X(float, maximized) \
 
 #define brui_resizable_fields(X) \
   X(brui_ancor_t, ancor) \
@@ -44,7 +79,8 @@ typedef enum {
   brui_resizable_anim_fields(X) \
   X(float, full_height) \
   X(bool, is_hoverd) \
-  X(bool, scroll_bar)
+  X(bool, scroll_bar) \
+  X(bool, title_enabled) \
 
 typedef union {
   struct {
@@ -126,6 +162,7 @@ float brui_padding_x(void);
 void  brui_padding_y_set(float value);
 float brui_y(void);
 bool  brui_active(void);
+brui_stack_t* brui_stack(void);
 
 void              brui_resizable_init(void);
 void              brui_resizable_deinit(void);

@@ -319,7 +319,7 @@ static double br_dagen_rebase(br_data_t const* data, br_dagen_expr_kind_t kind) 
       switch (kind) {
         case br_dagen_expr_kind_reference_x: return data->dd.rebase_x; break;
         case br_dagen_expr_kind_reference_y: return data->dd.rebase_y; break;
-        default: BR_ASSERT(0);
+        default: BR_UNREACHABLE();
       }
     } break;
     case br_data_kind_3d: {
@@ -327,9 +327,10 @@ static double br_dagen_rebase(br_data_t const* data, br_dagen_expr_kind_t kind) 
         case br_dagen_expr_kind_reference_x: return data->ddd.rebase_x; break;
         case br_dagen_expr_kind_reference_y: return data->ddd.rebase_y; break;
         case br_dagen_expr_kind_reference_z: return data->ddd.rebase_z; break;
-        default: BR_ASSERT(0);
+        default: BR_UNREACHABLE();
       }
     } break;
+    default: BR_UNREACHABLE();
   }
 }
 

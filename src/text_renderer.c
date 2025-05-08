@@ -7,24 +7,9 @@
 #include "src/br_text_renderer.h"
 #include "src/br_tl.h"
 
-#if defined(__GNUC__) || defined(__CLANG__)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-#  pragma GCC diagnostic ignored "-Wconversion"
-#endif
-
-#define STB_RECT_PACK_IMPLEMENTATION
 #include "external/stb_rect_pack.h"
-
-#define STB_TRUETYPE_IMPLEMENTATION
 #include "external/stb_truetype.h"
-
-#define STB_DS_IMPLEMENTATION
 #include "external/stb_ds.h"
-
-#if defined(__GNUC__) || defined(__CLANG__)
-#  pragma GCC diagnostic pop
-#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -222,23 +207,23 @@ br_size_t br_text_renderer_measure(br_text_renderer_t* r, int font_size, br_strv
   return BR_SIZE(loc.x, loc.y);
 }
 
-br_extent_t br_text_renderer_push0(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, const char* text) {
-  return br_text_renderer_push(r, pos, font_size, color, text, BR_BB(0,0,10000,10000));
+br_extent_t br_text_renderer_push0(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color_fg, br_color_t color_bg, const char* text) {
+  return br_text_renderer_push(r, pos, font_size, color_fg, color_bg, text, BR_BB(0,0,10000,10000));
 }
 
-br_extent_t br_text_renderer_push_strv0(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, br_strv_t text) {
-  return br_text_renderer_push_strv(r, pos, font_size, color, text, BR_BB(0,0,10000,10000));
+br_extent_t br_text_renderer_push_strv0(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color_fg, br_color_t color_bg, br_strv_t text) {
+  return br_text_renderer_push_strv(r, pos, font_size, color_fg, color_bg, text, BR_BB(0,0,10000,10000));
 }
 
-br_extent_t br_text_renderer_push(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, const char* text, br_bb_t limit) {
-  return br_text_renderer_push2(r, pos, font_size, color, br_strv_from_c_str(text), limit, br_text_renderer_ancor_left_up);
+br_extent_t br_text_renderer_push(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color_fg, br_color_t color_bg, const char* text, br_bb_t limit) {
+  return br_text_renderer_push2(r, pos, font_size, color_fg, color_bg, br_strv_from_c_str(text), limit, br_text_renderer_ancor_left_up);
 }
 
-br_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, br_strv_t text, br_bb_t limit) {
-  return br_text_renderer_push2(r, pos, font_size, color, text, limit, br_text_renderer_ancor_left_up);
+br_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color_fg, br_color_t color_bg, br_strv_t text, br_bb_t limit) {
+  return br_text_renderer_push2(r, pos, font_size, color_fg, color_bg, text, limit, br_text_renderer_ancor_left_up);
 }
 
-br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, br_strv_t text, br_bb_t limit, br_text_renderer_ancor_t ancor) {
+br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color_fg, br_color_t color_bg, br_strv_t text, br_bb_t limit, br_text_renderer_ancor_t ancor) {
   float x = pos.x, y = pos.y, z = pos.z;
   long size_index = stbds_hmgeti(r->sizes, font_size);
   float og_x = pos.x;
@@ -287,15 +272,16 @@ br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int fon
   else if (ancor & br_text_renderer_ancor_x_mid)   x_off = (max_x + min_x) * 0.5f - x;
   else if (ancor & br_text_renderer_ancor_x_right) x_off = max_x - x;
   br_sizei_t sz = brtl_viewport().size;
-  br_vec4_t cv = BR_COLOR_TO4(color);
+  br_vec4_t fg = BR_COLOR_TO4(color_fg);
+  br_vec4_t bg = BR_COLOR_TO4(color_bg);
   for (size_t i = 0; i < r->tmp_quads.len; ++i) {
     br_bb_t bb = br_bb_sub(BR_BB(r->tmp_quads.arr[i].x0, r->tmp_quads.arr[i].y0, r->tmp_quads.arr[i].x1, r->tmp_quads.arr[i].y1), BR_VEC2(x_off, y_off));
     br_bb_t tex = BR_BB(r->tmp_quads.arr[i].s0, r->tmp_quads.arr[i].t0, r->tmp_quads.arr[i].s1, r->tmp_quads.arr[i].t1);
     br_shader_font_push_quad(*r->shader_f, (br_shader_font_el_t[4]) {
-        { .pos = BR_VEC42(br_vec2_stog(bb.min, sz), tex.min),             .color = cv, .clip_dists = br_bb_clip_dists(limit, bb.min),       .z = z },
-        { .pos = BR_VEC42(br_vec2_stog(br_bb_tr(bb), sz), br_bb_tr(tex)), .color = cv, .clip_dists = br_bb_clip_dists(limit, br_bb_tr(bb)), .z = z },
-        { .pos = BR_VEC42(br_vec2_stog(bb.max, sz), tex.max),             .color = cv, .clip_dists = br_bb_clip_dists(limit, bb.max),       .z = z },
-        { .pos = BR_VEC42(br_vec2_stog(br_bb_bl(bb), sz), br_bb_bl(tex)), .color = cv, .clip_dists = br_bb_clip_dists(limit, br_bb_bl(bb)), .z = z },
+        { .pos = BR_VEC42(br_vec2_stog(bb.min, sz), tex.min),             .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, bb.min),       .z = z },
+        { .pos = BR_VEC42(br_vec2_stog(br_bb_tr(bb), sz), br_bb_tr(tex)), .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, br_bb_tr(bb)), .z = z },
+        { .pos = BR_VEC42(br_vec2_stog(bb.max, sz), tex.max),             .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, bb.max),       .z = z },
+        { .pos = BR_VEC42(br_vec2_stog(br_bb_bl(bb), sz), br_bb_bl(tex)), .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, br_bb_bl(bb)), .z = z },
     });
   }
   return BR_EXTENT(min_x - x_off, min_y - y_off, max_x - min_x, max_y - min_y);

@@ -37,18 +37,13 @@ br_plotter_t* br_plotter_malloc(void) {
     .shaders_dirty = false,
 #endif
     .should_close = false,
-    .switch_to_active = false,
-    .active_plot_index = 0,
     .ui = {
       .dark_theme = true,
       .file_saver_inited = false,
     },
   };
 #if BR_HAS_HOTRELOAD
-  br->hot_state = (br_hotreload_state_t) { .handl = NULL, .func_loop = NULL, .func_init = NULL, .is_init_called = false };
-  pthread_mutexattr_t attrs;
-  pthread_mutexattr_init(&attrs);
-  pthread_mutex_init(&br->hot_state.lock, &attrs);
+  br->hot_state = (br_hotreload_state_t) { .handl = NULL, .plotter = br, .func_loop_ui = NULL, .func_loop = NULL, .func_init = NULL, .is_init_called = false };
 #endif
   br->commands = q_malloc();
   if (NULL == br->commands) {
@@ -95,13 +90,13 @@ void br_plotter_deinit(br_plotter_t* br) {
   br_plotter_deinit_specifics_platform(br);
   BR_FREE(br->plots.arr);
   br_dagens_free(&br->dagens);
-  LOGI("Plotter deinited\n");
+  LOGI("Plotter deinited");
 }
 
 void br_plotter_free(br_plotter_t* br) {
   q_free(br->commands);
   //BR_FREE(br);
-  LOGI("Plotter freed\n");
+  LOGI("Plotter freed");
 }
 
 void br_plotter_resize(br_plotter_t* br, float width, float height) {
@@ -114,33 +109,19 @@ br_datas_t* br_plotter_get_br_datas(br_plotter_t* br) {
 }
 
 void br_plotter_switch_2d(br_plotter_t* br) {
-  if (false == br->any_2d) {
-    br->active_plot_index = br_plotter_add_plot_2d(br);
-    br->switch_to_active = true;
-    return;
-  }
   for (int i = 0; i < br->plots.len; ++i) {
     if (br->plots.arr[i].kind != br_plot_kind_2d) continue;
-    br->active_plot_index = i;
-    br->switch_to_active = true;
     return;
   }
-  BR_ASSERT(0);
+  br_plotter_add_plot_2d(br);
 }
 
 void br_plotter_switch_3d(br_plotter_t* br) {
-  if (false == br->any_3d) {
-    br->active_plot_index = br_plotter_add_plot_3d(br);
-    br->switch_to_active = true;
-    return;
-  }
   for (int i = 0; i < br->plots.len; ++i) {
     if (br->plots.arr[i].kind != br_plot_kind_3d) continue;
-    br->active_plot_index = i;
-    br->switch_to_active = true;
     return;
   }
-  BR_ASSERT(0);
+  br_plotter_add_plot_3d(br);
 }
 
 int br_plotter_add_plot_2d(br_plotter_t* br) {
@@ -153,8 +134,8 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
     .mouse_inside_graph = false,
     .kind = br_plot_kind_2d,
     .dd =  {
-      .zoom = BR_VEC2(1.f, 1.f),
-      .offset = BR_VEC2(0.f, 0.f),
+      .zoom = BR_VEC2D(1.f, 1.f),
+      .offset = BR_VEC2D(0.f, 0.f),
       .grid_line_thickness = 1.f,
       .grid_major_line_thickness = 2.f,
       .line_thickness = 0.05f
@@ -163,9 +144,8 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
   br_plot_create_texture(&plot);
   plot.extent_handle = brui_resizable_new(BR_EXTENT((float)x, 50, (float)br->win.size.width - (float)x - 60.f, (float)br->win.size.height - 110), 0);
   plot.menu_extent_handle = brui_resizable_new2(BR_EXTENT(0, 0, 300, (float)plot.cur_extent.height), plot.extent_handle, (brui_resizable_t) { .target.hidden_factor = 1.f });
-  plot.legend_extent_handle = brui_resizable_new(BR_EXTENT((float)plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle);
+  plot.legend_extent_handle = brui_resizable_new2(BR_EXTENT((float)plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle, (brui_resizable_t) { 0 });
   br_da_push_t(int, (br->plots), plot);
-  br->any_2d = true;
   return br->plots.len - 1;
 }
 
@@ -189,9 +169,8 @@ int br_plotter_add_plot_3d(br_plotter_t* br) {
   br_plot_create_texture(&plot);
   plot.extent_handle = brui_resizable_new(BR_EXTENT(500, 50, (float)br->win.size.width - 500 - 60, (float)br->win.size.height - 110), 0);
   plot.menu_extent_handle = brui_resizable_new2(BR_EXTENT(0, 0, 300, (float)plot.cur_extent.height), plot.extent_handle, (brui_resizable_t) { .target.hidden_factor = 1.f });
-  plot.legend_extent_handle = brui_resizable_new(BR_EXTENT((float)plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle);
+  plot.legend_extent_handle = brui_resizable_new2(BR_EXTENT((float)plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle, (brui_resizable_t) { 0 });
   br_da_push_t(int, (br->plots), plot);
-  br->any_3d = true;
   return br->plots.len - 1;
 }
 
@@ -252,60 +231,61 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
   if(plot->kind != br_plot_kind_2d) return;
 
   TracyCFrameMarkStart("draw_grid_numbers");
-  br_extent_t r = plot->dd.graph_rect;
-  br_extent_t gr = BR_EXTENTI_TOF(plot->cur_extent);
-  br_size_t sz = gr.size;
+  br_extentd_t r = plot->dd.graph_rect;
+  br_extentd_t gr = BR_EXTENTI_TOD(plot->cur_extent);
+  br_vec2d_t sz = BR_VEC2D(gr.width, gr.height);
   int font_size = BR_THEME.ui.font_size;
   char* scrach = br_scrach_get(128);
-  br_extent_t vp = BR_EXTENTI_TOF(brtl_viewport());
-  br_bb_t limit = BR_EXTENT_TOBB(vp);
+  br_extentd_t vp = BR_EXTENTI_TOD(brtl_viewport());
+  br_bbd_t limit = BR_EXTENTD_TOBB(vp);
+  br_bb_t limitf = BR_BBD_TOF(limit);
 
   if (r.height > 0.f) {
-    float exp = floorf(log10f(r.height / 2.f));
+    double exp = floor(log10(r.height / 2.f));
     if (false == isnan(exp)) {
-      float base = powf(10.f, exp);
-      float start = floorf(r.y / base) * base;
+      double base = pow(10.0, exp);
+      double start = floor(r.y / base) * base;
 
-      float i = 0.f;
-      float x = -r.x * sz.width / r.width;
+      double i = 0.f;
+      double x = -r.x * sz.x / r.width;
       br_text_renderer_ancor_t ancor = br_text_renderer_ancor_mid_mid;
       const float padding = 10.f;
       if (x < padding) x = padding, ancor = br_text_renderer_ancor_left_mid;
-      else if (x > sz.width - padding) x = sz.width - padding, ancor = br_text_renderer_ancor_right_mid;
+      else if (x > sz.x - padding) x = sz.x - padding, ancor = br_text_renderer_ancor_right_mid;
       while (i < 50.f) {
-        float cur = start - base * i;
+        double cur = start - base * i;
         i += 1.f;
         int n = sprintf(scrach, "%.*f", exp < 0 ? -(int)exp : 1, cur);
         br_strv_t s = BR_STRV(scrach, (uint32_t)n);
         s = br_strv_trim_zeros(s);
-        float y = sz.height / r.height * (r.y - cur);
-        if (y > sz.height) break;
-        br_text_renderer_push2(tr, BR_VEC3(x, y, 0.9f), font_size, BR_THEME.colors.grid_nums, s, limit, ancor);
+        double y = sz.y / r.height * (r.y - cur);
+        if (y > sz.y) break;
+        br_text_renderer_push2(tr, BR_VEC3((float)x, (float)y, 0.9f), font_size, BR_THEME.colors.grid_nums, BR_COLOR(0,0,0,0), s, limitf, ancor);
       }
     }
   }
 
-  if (r.width > 0.f) {
-    float exp = floorf(log10f(r.width / 2.f));
+  if (r.width > 0.0) {
+    double exp = floor(log10(r.width / 2.0));
     if (false == isnan(exp)) {
-      float base = powf(10.f, exp);
+      double base = pow(10.0, exp);
       if (isnan(base) || isinf(base)) goto end;
-      float start = ceilf(r.x / base) * base;
-      float i = 0;
-      float y = r.y * sz.height / r.height;
+      double start = ceil(r.x / base) * base;
+      double i = 0;
+      double y = r.y * sz.y / r.height;
       const float padding = 10.f;
       br_text_renderer_ancor_t ancor = br_text_renderer_ancor_mid_mid;
       if (y < padding) y = padding, ancor = br_text_renderer_ancor_mid_up;
-      else if (y > sz.height - padding) y = sz.height - padding, ancor = br_text_renderer_ancor_mid_down;
-      while (i < 50.f) {
-        float cur = start + base * i;
-        i += 1.f;
+      else if (y > sz.y - padding) y = sz.y - padding, ancor = br_text_renderer_ancor_mid_down;
+      while (i < 50.0) {
+        double cur = start + base * i;
+        i += 1.0;
         int n = sprintf(scrach, "%.*f", exp < 0 ? -(int)exp : 1, cur);
         br_strv_t s = BR_STRV(scrach, (uint32_t)n);
         s = br_strv_trim_zeros(s);
-        float x = (sz.width / r.width) * (cur - r.x);
-        if (x > sz.width) break;
-        br_text_renderer_push2(tr, BR_VEC3(x, y, 0.9f), font_size, BR_THEME.colors.grid_nums, s, limit, ancor);
+        double x = (sz.x / r.width) * (cur - r.x);
+        if (x > sz.x) break;
+        br_text_renderer_push2(tr, BR_VEC3((float)x, (float)y, 0.9f), font_size, BR_THEME.colors.grid_nums, BR_COLOR(0,0,0,0), s, limitf, ancor);
       }
     }
   }

@@ -237,21 +237,20 @@ In the future they migh chage/be deleted.
 
 * Right mouse button + Move mouse        - Change offset
 * Mouse wheel                            - Change zoom
+* **LCTRL** + Mouse                      - Move or Resize plots ( and other windows )
 * **X** + Mouse Wheel                    - Change zoom only in **X** axis
 * **Y** + Mouse Wheel                    - Change zoom only in **Y** axis
 * [**X**|**Y**] + [**LSHIFT**|**LCRTL**] - Change zoom [in|out] only in [**X**|**Y**] axis
 * **F**                                  - Follow the visible lines. ( Camera will focus on the average of newest points added to each visible line. )
-* [**K**|**J**]                          - Change recoil for follow functionality ( quite fun if >1.f )
+* **LCTRL** + **F**                      - Camera will focus on the average of newest points added to each visible line.
 * **T**                                  - Add test points
 * **C** + **LSHIFT**                     - Clear all points
 * **C**                                  - Empty all points
-* **R**                                  - Reset camera offset and zoom to (0, 0) and (1, 1)
+* **R**                                  - Reset camera to default values
 * **R** + **LSHIFT**                     - Reset camera zoom to (1, 1)
 * **R** + **LCTRL**                      - Reset camera offest to (0, 0)
 * **D**                                  - Toggle debug view.
 * **S**                                  - Grab a screenshot.
-* **H**                                  - Hide all lines.
-* **H** + **LSHIFT**                     - Toggle visiblity of all lines.
 * **3**                                  - Switch to 3D plot.
 * **2**                                  - Switch to 2D plot.
 
@@ -397,6 +396,10 @@ sudo rm /usr/bin/brplot
 * ~~Turn on or off datasets~~
     * ~~Icons for checkboxes~~
 * ~~csht should genereate makefile dependency list~~
+* I want touch to work.
+  * But for that I need a way of adding stuff on screen without stdin.
+    * Say we need to implement read csv stuf..
+      * For that we need file browser ( agin ) to locate that file.
 
 ## Screenshots
 Here is a history of how brplot looked over time:

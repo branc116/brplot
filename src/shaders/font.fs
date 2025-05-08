@@ -3,7 +3,8 @@
 precision mediump float;
 
 in vec2 out_tpos;
-in vec4 vs_color;
+in vec4 vs_fg;
+in vec4 vs_bg;
 out vec4 out_color;
 
 uniform sampler2D atlas;
@@ -17,5 +18,5 @@ void main() {
   vec3 c = sub_pix_aa_map * dx * sub_pix_aa_scale + sum;
   c = vec3(1.0);
 
-  out_color = vs_color * vec4(c, v0.r);
+  out_color = mix(vs_bg, vs_fg, sum);
 }

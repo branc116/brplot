@@ -24,15 +24,15 @@ typedef enum {
 typedef struct br_plot_2d_t {
   // graph_rect is in the graph coordinates.
   //            That is if you zoom in and out, graph_rect will change.
-  br_extent_t graph_rect;
+  br_extentd_t graph_rect;
 
   float line_thickness;
   float grid_line_thickness;
   float grid_major_line_thickness;
 
-  br_vec2_t mouse_pos;
-  br_vec2_t zoom;
-  br_vec2_t offset;
+  br_vec2d_t mouse_pos;
+  br_vec2d_t zoom;
+  br_vec2d_t offset;
   bool show_closest, show_x_closest, show_y_closest;
 } br_plot_2d_t;
 
@@ -120,6 +120,7 @@ void start_refreshing_shaders(br_plotter_t* br);
 #endif
 #if BR_HAS_HOTRELOAD
 void br_hotreload_start(br_hotreload_state_t* s);
+void br_hotreload_tick_ui(br_hotreload_state_t* s);
 #endif
 
 #ifdef __cplusplus

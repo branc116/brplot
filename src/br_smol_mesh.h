@@ -8,8 +8,9 @@ extern "C" {
 #endif
 
 typedef struct br_smol_mesh_line_t {
-  br_vec2_t zoom, offset, screen_size;
+  br_vec2d_t zoom, offset, screen_size;
   float line_thickness;
+  br_vec2_t prev[2];
 } br_smol_mesh_line_t;
 
 typedef struct br_smol_mesh_line_3d_t {
@@ -23,7 +24,7 @@ typedef struct br_smol_mesh_line_3d_t {
 void smol_mesh_gen_bb(br_smol_mesh_line_t args, br_bb_t bb);
 void smol_mesh_gen_point(br_smol_mesh_line_t args, br_vec2_t point);
 void smol_mesh_gen_point1(br_smol_mesh_line_t args, br_vec2_t point, br_vec2_t size);
-void smol_mesh_gen_line(br_smol_mesh_line_t args, br_vec2_t p1, br_vec2_t p2);
+void smol_mesh_gen_line(br_smol_mesh_line_t* args, br_vec2_t p1, br_vec2_t p2);
 void smol_mesh_gen_line_strip(br_smol_mesh_line_t args, br_vec2_t const * points, size_t len);
 void smol_mesh_gen_line_strip2(br_smol_mesh_line_t args, float const* xs, float const* ys, size_t len);
 void smol_mesh_gen_line_strip_stride(br_smol_mesh_line_t args, br_vec2_t const * points, ssize_t len, int stride);

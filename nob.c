@@ -96,6 +96,7 @@ typedef struct {
 } command_deps_t;
 
 const char* sources[] = {
+ "external/shl_impls.c",
  "src/main.c",
  "src/ui.c",
  "src/data.c",
@@ -119,7 +120,6 @@ const char* sources[] = {
  "src/gl.c",
  "src/icons.c",
  "src/theme.c",
- "src/string_pool.c",
 };
 
 static const target_platform_t g_platform = 
@@ -135,10 +135,11 @@ static const target_platform_t g_platform =
 //  "brplot";
 //#endif
 
-#define compiler "clang"
+#define compiler "gcc"
 static const char* program_name;
 static n_command do_command = n_default;
 static bool is_debug = false;
+static bool has_hotreload = false;
 static bool is_headless = false;
 static bool enable_asan = false;
 static bool print_help = false;
@@ -250,6 +251,7 @@ static bool needs_rebuilding(br_strv_t input, br_strv_t output) {
 
 static void fill_command_flag_data(void) {
   command_flag_t debug_flag = (command_flag_t) {.name = BR_STRL("debug"), .alias = 'd', .description = BR_STRL("Build debug version"), .is_set = &is_debug};
+  command_flag_t has_hotreload_flag = (command_flag_t) {.name = BR_STRL("hot"), .alias = 'H', .description = BR_STRL("Build a version with hotreaload enabled"), .is_set = &has_hotreload};
   command_flag_t pedantic_flag = (command_flag_t) {.name = BR_STRL("pedantic"), .alias = 'p', .description = BR_STRL("Turn on all warnings and treat warnings as errors"), .is_set = &is_pedantic};
   command_flag_t headless_flag = (command_flag_t) {.name = BR_STRL("headless"), .alias = '\0', .description = BR_STRL("Create a build that will not spawn any windows"), .is_set = &is_headless};
   command_flag_t asan_flag = (command_flag_t) {.name = BR_STRL("asan"), .alias = 'a', .description = BR_STRL("Enable address sanitizer"), .is_set = &enable_asan};
@@ -260,6 +262,7 @@ static void fill_command_flag_data(void) {
   command_flag_t dist_flag = (command_flag_t) {.name = BR_STRL("dist"), .alias = 'D', .description = BR_STRL("Also create dist ( Needed for pip package but maybe you wanna disable this because it's slow )"), .is_set = &do_dist};
   command_flag_t pip_skip_build_flag = (command_flag_t) {.name = BR_STRL("skip-build"), .alias = '\0', .description = BR_STRL("Don't do anything except call pip to create a package"), .is_set = &pip_skip_build};
   br_da_push(command_flags[n_compile], debug_flag);
+  br_da_push(command_flags[n_compile], has_hotreload_flag);
   br_da_push(command_flags[n_compile], pedantic_flag);
   br_da_push(command_flags[n_compile], headless_flag);
   br_da_push(command_flags[n_compile], asan_flag);
@@ -381,12 +384,13 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
   br_str_t build_dir = { 0 };
   br_str_push_literal(&build_dir, "build");
   br_fs_cd(&build_dir, is_debug ? BR_STRL("debug") : BR_STRL("release"));
-  if (is_slib) br_fs_cd(&build_dir, BR_STRL("slib"));
+  if (is_slib)     br_fs_cd(&build_dir, BR_STRL("slib"));
   else if (is_lib) br_fs_cd(&build_dir, BR_STRL("lib"));
-  else br_fs_cd(&build_dir, BR_STRL("exe"));
+  else             br_fs_cd(&build_dir, BR_STRL("exe"));
   br_fs_cd(&build_dir, BR_STRV(file_name.data, (uint32_t)file_name.count));
-  if (enable_asan) br_str_push_literal(&build_dir, ".asan");
-  br_str_push_literal(&build_dir, ".o");
+  if (enable_asan)   br_str_push_literal(&build_dir, ".asan");
+  if (has_hotreload) br_str_push_literal(&build_dir, ".hot");
+                     br_str_push_literal(&build_dir, ".o");
   br_str_push_char(&build_dir, '\0');
   nob_cmd_append(link_cmd, build_dir.str);
 
@@ -409,6 +413,8 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
   if (enable_asan) nob_cmd_append(cmd, SANITIZER_FLAGS);
   if (is_debug) {
     nob_cmd_append(cmd, "-ggdb", "-DBR_DEBUG");
+    if (has_hotreload) nob_cmd_append(cmd, "-fpic", "-fpie");
+    else nob_cmd_append(cmd, "-DBR_HAS_HOTRELOAD=0");
   } else {
     nob_cmd_append(cmd, "-O3");
   }
@@ -441,6 +447,9 @@ static bool compile_and_link(Nob_Cmd* cmd) {
   if (is_slib) nob_cmd_append(&link_command, "-o", "bin/brplot" SLIB_EXT);
   else if (is_lib) nob_cmd_append(&link_command, "-shared", "-fPIC", "-o", "bin/brplot" LIB_EXT);
   else {
+    if (has_hotreload) {
+      nob_cmd_append(&link_command, "-fpic", "-fpie", "-rdynamic", "-ldl");
+    }
     nob_cmd_append(&link_command, "-o", "bin/brplot" EXE_EXT);
   }
   if (tp_linux == g_platform) {
