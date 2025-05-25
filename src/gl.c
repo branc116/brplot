@@ -165,8 +165,10 @@ GLuint brgl_load_texture(const void* data, int width, int height, int format) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+#if !defined(__EMSCRIPTEN__)
   GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_ONE };
   glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+#endif
 
   glBindTexture(GL_TEXTURE_2D, 0);
 

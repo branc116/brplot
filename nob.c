@@ -135,7 +135,7 @@ static const target_platform_t g_platform =
 //  "brplot";
 //#endif
 
-#define compiler "gcc"
+static const char* compiler = "cc";
 static const char* program_name;
 static n_command do_command = n_default;
 static bool is_debug = false;
@@ -146,6 +146,7 @@ static bool print_help = false;
 static bool is_lib = false;
 static bool is_rebuild = false;
 static bool is_slib = false;
+static bool is_wasm = false;
 static bool do_dist = true;
 static bool pip_skip_build = false;
 static bool disable_logs = false;
@@ -250,23 +251,25 @@ static bool needs_rebuilding(br_strv_t input, br_strv_t output) {
 }
 
 static void fill_command_flag_data(void) {
-  command_flag_t debug_flag = (command_flag_t) {.name = BR_STRL("debug"), .alias = 'd', .description = BR_STRL("Build debug version"), .is_set = &is_debug};
-  command_flag_t has_hotreload_flag = (command_flag_t) {.name = BR_STRL("hot"), .alias = 'H', .description = BR_STRL("Build a version with hotreaload enabled"), .is_set = &has_hotreload};
-  command_flag_t pedantic_flag = (command_flag_t) {.name = BR_STRL("pedantic"), .alias = 'p', .description = BR_STRL("Turn on all warnings and treat warnings as errors"), .is_set = &is_pedantic};
-  command_flag_t headless_flag = (command_flag_t) {.name = BR_STRL("headless"), .alias = '\0', .description = BR_STRL("Create a build that will not spawn any windows"), .is_set = &is_headless};
-  command_flag_t asan_flag = (command_flag_t) {.name = BR_STRL("asan"), .alias = 'a', .description = BR_STRL("Enable address sanitizer"), .is_set = &enable_asan};
-  command_flag_t lib_flag = (command_flag_t) {.name = BR_STRL("lib"), .alias = 'l', .description = BR_STRL("Build dynamic library"), .is_set = &is_lib};
-  command_flag_t force_rebuild = (command_flag_t) {.name = BR_STRL("force"), .alias = 'f', .description = BR_STRL("Force rebuild everything"), .is_set = &is_rebuild};
-  command_flag_t slib_flag = (command_flag_t) {.name = BR_STRL("slib"), .alias = 's', .description = BR_STRL("Build static library"), .is_set = &is_slib};
-  command_flag_t help_flag = (command_flag_t) {.name = BR_STRL("help"), .alias = 'h', .description = BR_STRL("Print help"), .is_set = &print_help};
-  command_flag_t dist_flag = (command_flag_t) {.name = BR_STRL("dist"), .alias = 'D', .description = BR_STRL("Also create dist ( Needed for pip package but maybe you wanna disable this because it's slow )"), .is_set = &do_dist};
-  command_flag_t pip_skip_build_flag = (command_flag_t) {.name = BR_STRL("skip-build"), .alias = '\0', .description = BR_STRL("Don't do anything except call pip to create a package"), .is_set = &pip_skip_build};
+  command_flag_t debug_flag          = (command_flag_t) {.name = BR_STRL("debug"),      .alias = 'd',  .description = BR_STRL("Build debug version"),                                                                            .is_set = &is_debug};
+  command_flag_t has_hotreload_flag  = (command_flag_t) {.name = BR_STRL("hot"),        .alias = 'H',  .description = BR_STRL("Build a version with hotreaload enabled"),                                                        .is_set = &has_hotreload};
+  command_flag_t pedantic_flag       = (command_flag_t) {.name = BR_STRL("pedantic"),   .alias = 'p',  .description = BR_STRL("Turn on all warnings and treat warnings as errors"),                                              .is_set = &is_pedantic};
+  command_flag_t headless_flag       = (command_flag_t) {.name = BR_STRL("headless"),   .alias = '\0', .description = BR_STRL("Create a build that will not spawn any windows"),                                                 .is_set = &is_headless};
+  command_flag_t asan_flag           = (command_flag_t) {.name = BR_STRL("asan"),       .alias = 'a',  .description = BR_STRL("Enable address sanitizer"),                                                                       .is_set = &enable_asan};
+  command_flag_t lib_flag            = (command_flag_t) {.name = BR_STRL("lib"),        .alias = 'l',  .description = BR_STRL("Build dynamic library"),                                                                          .is_set = &is_lib};
+  command_flag_t wasm_flag           = (command_flag_t) {.name = BR_STRL("wasm"),       .alias = 'w',  .description = BR_STRL("Wasm version of brplot"),                                                                         .is_set = &is_wasm};
+  command_flag_t force_rebuild       = (command_flag_t) {.name = BR_STRL("force"),      .alias = 'f',  .description = BR_STRL("Force rebuild everything"),                                                                       .is_set = &is_rebuild};
+  command_flag_t slib_flag           = (command_flag_t) {.name = BR_STRL("slib"),       .alias = 's',  .description = BR_STRL("Build static library"),                                                                           .is_set = &is_slib};
+  command_flag_t help_flag           = (command_flag_t) {.name = BR_STRL("help"),       .alias = 'h',  .description = BR_STRL("Print help"),                                                                                     .is_set = &print_help};
+  command_flag_t dist_flag           = (command_flag_t) {.name = BR_STRL("dist"),       .alias = 'D',  .description = BR_STRL("Also create dist ( Needed for pip package but maybe you wanna disable this because it's slow )"), .is_set = &do_dist};
+  command_flag_t pip_skip_build_flag = (command_flag_t) {.name = BR_STRL("skip-build"), .alias = '\0', .description = BR_STRL("Don't do anything except call pip to create a package"),                                          .is_set = &pip_skip_build};
   br_da_push(command_flags[n_compile], debug_flag);
   br_da_push(command_flags[n_compile], has_hotreload_flag);
   br_da_push(command_flags[n_compile], pedantic_flag);
   br_da_push(command_flags[n_compile], headless_flag);
   br_da_push(command_flags[n_compile], asan_flag);
   br_da_push(command_flags[n_compile], lib_flag);
+  br_da_push(command_flags[n_compile], wasm_flag);
   br_da_push(command_flags[n_compile], slib_flag);
   br_da_push(command_flags[n_compile], force_rebuild);
   br_da_push(command_flags[n_help], help_flag);
@@ -338,7 +341,7 @@ static bool bake_font(void) {
 }
 
 static bool generate_shaders(void) {
-  const char* out_name = ".generated/shaders.h";
+  const char* out_name = is_wasm ? "./.generated/shaders_web.h" : ".generated/shaders.h";
   LOGI("Generate: src/shaders/*.[vs|fs] -> %s", out_name);
   FILE* f = fopen(out_name, "wb+");
   if (NULL == f) {
@@ -353,7 +356,7 @@ static bool generate_shaders(void) {
   get_program_variables(programs);
   check_programs(programs);
   
-  shader_output_kind_t out_kind = g_platform == tp_web ? shader_output_kind_web : shader_output_kind_desktop;
+  shader_output_kind_t out_kind = is_wasm ? shader_output_kind_web : shader_output_kind_desktop;
   for (size_t i = 0; i < programs.len; ++i) {
     embed_tokens(f, programs.arr[i].name, br_str_from_c_str("fs"), programs.arr[i].fragment.tokens, out_kind);
     embed_tokens(f, programs.arr[i].name, br_str_from_c_str("vs"), programs.arr[i].vertex.tokens, out_kind);
@@ -388,8 +391,10 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
   else if (is_lib) br_fs_cd(&build_dir, BR_STRL("lib"));
   else             br_fs_cd(&build_dir, BR_STRL("exe"));
   br_fs_cd(&build_dir, BR_STRV(file_name.data, (uint32_t)file_name.count));
+  if (is_headless)   br_str_push_literal(&build_dir, ".headless");
   if (enable_asan)   br_str_push_literal(&build_dir, ".asan");
   if (has_hotreload) br_str_push_literal(&build_dir, ".hot");
+  if (is_wasm)       br_str_push_literal(&build_dir, ".wasm");
                      br_str_push_literal(&build_dir, ".o");
   br_str_push_char(&build_dir, '\0');
   nob_cmd_append(link_cmd, build_dir.str);
@@ -410,6 +415,7 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
   if (is_headless) {
     nob_cmd_append(cmd, "-DBR_NO_X11", "-DBR_NO_WAYLAND", "-DHEADLESS");
   }
+  if (is_wasm) nob_cmd_append(cmd, "-DGRAPHICS_API_OPENGL_ES3=1");
   if (enable_asan) nob_cmd_append(cmd, SANITIZER_FLAGS);
   if (is_debug) {
     nob_cmd_append(cmd, "-ggdb", "-DBR_DEBUG");
@@ -438,22 +444,35 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
 
 static bool compile_and_link(Nob_Cmd* cmd) {
   Nob_Cmd link_command = { 0 };
+  if (is_wasm) compiler = "emcc";
   nob_cmd_append(&link_command, compiler, "-ggdb");
 
   for (size_t i = 0; i < NOB_ARRAY_LEN(sources); ++i) {
     if (false == compile_one(cmd, nob_sv_from_cstr(sources[i]), &link_command)) return false;
   }
 
-  if (is_slib) nob_cmd_append(&link_command, "-o", "bin/brplot" SLIB_EXT);
-  else if (is_lib) nob_cmd_append(&link_command, "-shared", "-fPIC", "-o", "bin/brplot" LIB_EXT);
-  else {
-    if (has_hotreload) {
-      nob_cmd_append(&link_command, "-fpic", "-fpie", "-rdynamic", "-ldl");
+  if (is_wasm) {
+    nob_cmd_append(&link_command, "-sWASM_BIGINT", "-sALLOW_MEMORY_GROWTH", "-sUSE_GLFW=3", "-sUSE_WEBGL2=1",
+        "-sGL_ENABLE_GET_PROC_ADDRESS", "--shell-file=src/web/minshell.html",
+        "-sCHECK_NULL_WRITES=0", "-sDISABLE_EXCEPTION_THROWING=1", "-sFILESYSTEM=0", "-sDYNAMIC_EXECUTION=0");
+    if (is_lib) {
+      nob_cmd_append(&link_command, "-sMODULARIZE=1", "-sEXPORT_ES6=1");
+      nob_cmd_append(&link_command, "-o", "bin/brplot_lib.js");
+    } else {
+      BR_TODO("Implement wasm exe");
     }
-    nob_cmd_append(&link_command, "-o", "bin/brplot" EXE_EXT);
-  }
-  if (tp_linux == g_platform) {
-    nob_cmd_append(&link_command, "-lm", "-pthread");
+  } else {
+    if (is_slib) nob_cmd_append(&link_command, "-o", "bin/brplot" SLIB_EXT);
+    else if (is_lib) nob_cmd_append(&link_command, "-shared", "-fPIC", "-o", "bin/brplot" LIB_EXT);
+    else {
+      if (has_hotreload) {
+        nob_cmd_append(&link_command, "-fpic", "-fpie", "-rdynamic", "-ldl");
+      }
+      nob_cmd_append(&link_command, "-o", "bin/brplot" EXE_EXT);
+    }
+    if (tp_linux == g_platform) {
+      nob_cmd_append(&link_command, "-lm", "-pthread");
+    }
   }
 
   if (enable_asan) nob_cmd_append(&link_command, SANITIZER_FLAGS);

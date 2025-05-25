@@ -350,6 +350,7 @@ bool brui_button_icon(br_sizei_t size, br_extent_t icon) {
 
 bool brui_rectangle(br_bb_t bb, br_bb_t limit, br_color_t color, int z) {
   br_icons_draw(bb, BR_BB(0,0,0,0), color, color, limit, z);
+  return true;
 }
 
 bool brui_sliderf(br_strv_t text, float* val) {
@@ -1175,7 +1176,7 @@ static void bruir_update_extent(int index, br_extent_t new_ex, bool force) {
         child_extent.height = new_ex.height / 2;
         changed = true;
       }
-      if (changed == true) bruir_update_extent(child, child_extent, false);
+      if (changed == true) bruir_update_extent(child, child_extent, force);
     }
   }
 }

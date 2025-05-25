@@ -55,10 +55,10 @@ void br_plotter_draw(br_plotter_t* br) {
   brgl_enable_framebuffer(0, br->win.size.width, br->win.size.height);
   brgl_clear(BR_COLOR_COMPF(BR_THEME.colors.bg));
 
-  brgl_enable_clip_distance();
   brui_begin();
+    br_shaders_draw_all(br->shaders);
 #if BR_HAS_HOTRELOAD
-  br_hotreload_tick_ui(&br->hot_state);
+    br_hotreload_tick_ui(&br->hot_state);
 #endif
     int to_remove = -1;
     for (int i = 0; i < br->plots.len; ++i) {
@@ -72,7 +72,7 @@ void br_plotter_draw(br_plotter_t* br) {
     }
     if (to_remove != -1) br_plotter_remove_plot(br, to_remove);
     draw_left_panel(br);
-  brgui_draw_debug_window(br);
+    brgui_draw_debug_window(br);
   brui_end();
   br_plotter_end_drawing(br);
 }

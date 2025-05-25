@@ -170,6 +170,27 @@ static void print_tracy_impl(FILE* file, func_t* funcs, size_t len) {
   }
 }
 
+static void print_wasm_declarations(FILE* file, func_t* funcs, size_t len) {
+  fprintf(file, "\n// Declarations wasm\n\n");
+  for (int i = 0; i <  len; ++i) {
+    func_t f = funcs[i];
+    fprintf(file, "%.*s %.*s(", f.ret_type.len, f.ret_type.str, f.name.len, f.name.str);
+
+    if (f.params.len == 0) {
+      fprintf(file, "void");
+    } else {
+      for (int j = 0; j < f.params.len; ++j) {
+        fparam_t param = f.params.arr[j];
+        fprintf(file, "%.*s %.*s", param.type.len, param.type.str, param.name.len, param.name.str);
+        if (j + 1 < f.params.len) {
+          fprintf(file, ", ");
+        }
+      }
+    }
+    fprintf(file, ");\n");
+  }
+}
+
 static void print_declarations(FILE* file, func_t* funcs, size_t len, const char* postfix) {
   fprintf(file, "\n// Declarations ( %s )\n\n", postfix == NULL ? "null" : postfix);
   for (int i = 0; i <  len; ++i) {
@@ -195,17 +216,6 @@ static void print_declarations(FILE* file, func_t* funcs, size_t len, const char
 }
 
 void print_loader(FILE* file, func_t* funcs, size_t len, const char* postfix) {
-  /*
-void brgl_load(void) {
-#define X(type, name) name = (void*)glfwGetProcAddress(#name);
-  TO_LOAD(X)
-#undef X
-#define X(type, name) name = name ? name : (void*)dumby_func;
-  TO_LOAD(X)
-#undef X
-  glDebugMessageCallback(glDebug, NULL);
-}
-  */
   fprintf(file, "\n// Loader ( %s )\n", postfix == NULL ? "null" : postfix);
   fprintf(file, "void brgl_load(void) {\n");
   for (int i = 0; i <  len; ++i) {
@@ -339,7 +349,10 @@ int do_gl_gen(void) {
   fprintf(file, "#include \"external/glfw/include/GLFW/glfw3.h\"");
   fprintf(file, "\n");
 
-  fprintf(file, "#if !defined(TRACY_ENABLE) && !defined(HEADLESS)\n");
+  fprintf(file, "#if defined(__EMSCRIPTEN__)\n");
+  print_wasm_declarations(file, funcs.arr, funcs.len);
+  fprintf(file, "void brgl_load(void) {}\n\n");
+  fprintf(file, "#elif !defined(TRACY_ENABLE) && !defined(HEADLESS)\n");
   print_declarations(file, funcs.arr, funcs.len, NULL);
   print_loader(file, funcs.arr, funcs.len, NULL);
   fprintf(file, "#elif defined(HEADLESS) \n");

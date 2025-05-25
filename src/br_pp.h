@@ -48,6 +48,11 @@
      LOGF("Exiting"); \
   } \
 } while (0)
+#define BR_TODO(fmt, ...) do { \
+   LOGE("TODO: `" fmt "`", ##__VA_ARGS__); \
+   BR_UNREACHABLE(); \
+   LOGF("Exiting"); \
+} while (0)
 #define BR_ASSERTF(x, fmt, ...) do { \
    if (!(x)) { \
      LOGE("ASSERT FAILED: `" #x "`" fmt, ##__VA_ARGS__); \

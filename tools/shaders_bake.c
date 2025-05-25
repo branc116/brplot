@@ -250,11 +250,11 @@ void embed_tokens(FILE* out, br_str_t name, br_str_t name_postfix, tokens_t toke
   for (size_t i = 3; i < tokens.len; ++i) {
     token_t t = tokens.arr[i];
     if (t.kind == token_kind_preprocess) {
-      fprintf(out, "\\n\"\n\"");
+      fprintf(out, "\\n\" \\\n\"");
       for (; i < tokens.len && t.line == tokens.arr[i].line; ++i) {
         fprintf(out, "%s ", br_strv_to_c_str(tokens.arr[i].view));
       }
-      fprintf(out, "\\n\" \\\n\"\n");
+      fprintf(out, "\\n\" \\\n\"");
       was_last_iden = false;
       --i;
     } else {

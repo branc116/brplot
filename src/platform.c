@@ -205,7 +205,6 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
 #if !defined(HEADLESS)
     glfwMakeContextCurrent(br->win.glfw);
 #endif
-    //glfwSwapInterval(1);
   }
 
   stl_br = br;
@@ -213,6 +212,7 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
   brgl_disable_back_face_cull();
   brgl_enable_depth_test();
   brgl_enable(GL_BLEND);
+  brgl_enable_clip_distance();
   brgl_blend_func(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   brgl_blend_equation(GL_FUNC_ADD);
   br_sizei_t size = brtl_window_size();
@@ -255,13 +255,13 @@ static void br_glfw_on_mouse_button(struct GLFWwindow* window, int button, int a
   stl_br->key.mod = mods;
   switch (button) {
     case GLFW_MOUSE_BUTTON_LEFT: {
-                                   stl_br->mouse.down.left = action == GLFW_PRESS ? true : false;
-                                   stl_br->mouse.pressed.left = action == GLFW_RELEASE ? true : false;
-                                 } break;
+      stl_br->mouse.down.left = action == GLFW_PRESS ? true : false;
+      stl_br->mouse.pressed.left = action == GLFW_RELEASE ? true : false;
+    } break;
     case GLFW_MOUSE_BUTTON_RIGHT: {
-                                   stl_br->mouse.down.right = action == GLFW_PRESS ? true : false;
-                                   stl_br->mouse.pressed.right = action == GLFW_RELEASE ? true : false;
-                                 } break;
+      stl_br->mouse.down.right = action == GLFW_PRESS ? true : false;
+      stl_br->mouse.pressed.right = action == GLFW_RELEASE ? true : false;
+    } break;
     default: LOGI("Unknown button %d", button);
   }
 }
@@ -290,7 +290,7 @@ static void br_glfw_on_key(struct GLFWwindow* window, int key, int scancode, int
       stl_br->key.mod &= ~(GLFW_MOD_SHIFT);
     }
   }
-  if (scancode < 0 || scancode >= 64) {
+  if (scancode < 0 || scancode >= 128) {
     LOGW("Bad scancode %d, key %d", scancode, key);
     return;
   }
@@ -323,7 +323,6 @@ void br_plotter_begin_drawing(br_plotter_t* br) {
 void br_plotter_end_drawing(br_plotter_t* br) {
   br_shaders_draw_all(br->shaders);
   br_text_renderer_dump(br->text);
-  glfwSetWindowSize(br->win.glfw, br->win.size.width, br->win.size.height);
   handle_all_commands(br, br->commands);
 #if BR_HAS_SHADER_RELOAD
   if (br->shaders_dirty) {
@@ -381,8 +380,12 @@ bool brtl_mouser_pressed(void) {
 }
 
 bool brtl_key_down(int key) {
+#if defined(__EMSCRIPTEN__)
+  int code = key;
+#else
   int code = glfwGetKeyScancode(key);
-  if (code < 0 || code >= 64) {
+#endif
+  if (code < 0 || code >= 128) {
     LOGW("Key %d, scancode %d is not valid", key, code);
     return false;
   }
@@ -390,8 +393,12 @@ bool brtl_key_down(int key) {
 }
 
 bool brtl_key_pressed(int key) {
+#if defined(__EMSCRIPTEN__)
+  int code = key;
+#else
   int code = glfwGetKeyScancode(key);
-  if (code < 0 || code >= 64) {
+#endif
+  if (code < 0 || code >= 128) {
     LOGW("Key %d, scancode %d is not valid", key, code);
     return false;
   }

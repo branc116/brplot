@@ -26,7 +26,6 @@ void br_theme_dark(void) {
   BR_THEME.colors.ui_edge_bg_active = BR_THEME.colors.plot_menu_color;
 
   BR_THEME.colors.bg = bg;
-  BR_THEME.colors.bg.a = 0x00;
 
   BR_THEME.colors.highlite_factor = 1.05f;
 }
