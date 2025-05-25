@@ -220,8 +220,6 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
   br->win.size = size;
 
   br->shaders = br_shaders_malloc();
-  br->shaders.font->uvs.sub_pix_aa_map_uv =  BR_VEC3(-1, 0, 1);
-  br->shaders.font->uvs.sub_pix_aa_scale_uv = 0.2f;
   br->text = br_text_renderer_malloc(1024, 1024, br_font_data, &br->shaders.font);
   br->time.now = glfwGetTime();
 

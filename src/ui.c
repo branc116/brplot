@@ -784,18 +784,7 @@ void brui_resizable_update(void) {
   br_vec2_t mouse_pos = brtl_mouse_pos();
 
   float lerp_speed = brtl_frame_time() * brtl_theme()->ui.animation_speed;
-//  int min_max_z = 1<<20;
-//  for (int i = 0; i < bruir_childrens.arr[0].len; ++i) {
-//    if (bruirs.arr[bruir_childrens.arr[0].arr[i]].max_z < min_max_z) {
-//      min_max_z = bruirs.arr[bruir_childrens.arr[0].arr[i]].max_z;
-//    }
-//  }
-//  if (min_max_z > 0) {
-//    for (int i = 0; i < bruir_childrens.arr[0].len; ++i) {
-//      bruirs.arr[bruir_childrens.arr[0].arr[i]].max_z -= min_max_z;
-//    }
-//  }
-  for (int i = 1; i < bruirs.len; ++i) {
+  for (int i = 0; i < bruirs.len; ++i) {
     brui_resizable_t* res = br_da_getp(bruirs, i);
 
     res->hidden_factor = br_float_lerp(res->hidden_factor, res->target.hidden_factor, lerp_speed);
@@ -1016,7 +1005,6 @@ void brui_resizable_push(int id) {
   brui_max_z = 0;
   TOP.limit.min_y += res->title_height;
   TOP.cur.y += res->title_height;
-  brui_textf("z: %d %d %d", TOP.z, res->max_z, bruirs.arr[0].max_z);
 }
 
 void brui_resizable_pop(void) {
