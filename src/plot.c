@@ -15,9 +15,9 @@ static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas);
 
 void br_plot_deinit(br_plot_t* plot) {
   br_da_free(plot->data_info);
-  brui_resizable_delete(plot->extent_handle);
   brui_resizable_delete(plot->menu_extent_handle);
   brui_resizable_delete(plot->legend_extent_handle);
+  brui_resizable_delete(plot->extent_handle);
   brgl_destroy_framebuffer(plot->texture_id);
 }
 

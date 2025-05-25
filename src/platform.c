@@ -5,6 +5,7 @@
 #include "src/br_tl.h"
 #include "src/br_q.h"
 #include "src/br_icons.h"
+#include "src/br_ui.h"
 
 #include <string.h>
 
@@ -444,5 +445,16 @@ br_shaders_t* brtl_shaders(void) {
 }
 br_text_renderer_t* brtl_text_renderer(void) {
   return stl_br->text;
+}
+
+extern BR_THREAD_LOCAL bruirs_t bruirs;
+extern BR_THREAD_LOCAL bruir_childrens_t bruir_childrens;
+
+bruirs_t* brtl_bruirs(void) {
+  return &bruirs;
+}
+
+bruir_children_t* brtl_bruirs_childern(int handle) {
+  return &bruir_childrens.arr[handle];
 }
 
