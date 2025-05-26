@@ -8,12 +8,12 @@ in vec4 bg;
 in vec4 clip_dists;
 in float z;
 
-out vec2 out_tpos;
+out vec2 vs_tpos;
 out vec4 vs_fg;
 out vec4 vs_bg;
 
 void main() {
-  out_tpos = pos.zw;
+  vs_tpos = pos.zw;
   vs_fg = fg;
   vs_bg = bg;
 

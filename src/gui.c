@@ -6,6 +6,7 @@
 #include "src/br_permastate.h"
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
+#include "src/br_pp.h"
 #include "src/br_shaders.h"
 #include "src/br_smol_mesh.h"
 #include "src/br_str.h"
@@ -18,6 +19,8 @@ static void draw_left_panel(br_plotter_t* gv);
 static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas);
 static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas);
 static void brgui_draw_file_browser(br_plot_t* plot, br_datas_t datas);
+static void brgui_draw_file_browser(br_plot_t* plot, br_datas_t datas);
+static void brgui_draw_debug_window(br_plotter_t* gv);
 
 void br_plotter_draw(br_plotter_t* br) {
   br_plotter_begin_drawing(br);
@@ -69,6 +72,7 @@ void br_plotter_draw(br_plotter_t* br) {
     }
     if (to_remove != -1) br_plotter_remove_plot(br, to_remove);
     draw_left_panel(br);
+  brgui_draw_debug_window(br);
   brui_end();
   br_plotter_end_drawing(br);
 }
@@ -287,6 +291,21 @@ static void draw_left_panel(br_plotter_t* br) {
       br->should_close = true;
     }
     br_scrach_free();
+  brui_resizable_pop();
+}
+
+static void brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth) {
+   brui_resizable_t r = brtl_bruirs()->arr[handle];
+   brui_textf("%*s, %d Res: z: %d, max_z: %d, max_sib_z: %d, parent: %d", depth*2, "", handle, r.z, r.max_z, brui_resizable_sibling_max_z(handle), r.parent);
+   bruir_children_t* c = brtl_bruirs_childern(handle);
+   for (int i = 0; i < c->len; ++i) {
+     brgui_draw_debug_window_rec(br, c->arr[i], 1+depth);
+   }
+}
+static void brgui_draw_debug_window(br_plotter_t* br) {
+  (void)br;
+  brui_resizable_temp_push(BR_STRL("Debug"));
+    brgui_draw_debug_window_rec(br, 0, 0);
   brui_resizable_pop();
 }
 

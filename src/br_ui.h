@@ -75,6 +75,7 @@ typedef struct {
 #define brui_resizable_fields(X) \
   X(brui_ancor_t, ancor) \
   X(int, z) \
+  X(int, max_z) \
   X(int, parent) \
   brui_resizable_anim_fields(X) \
   X(float, full_height) \
@@ -104,6 +105,37 @@ typedef union {
   };
 } brui_resizable_t;
 
+typedef struct brui_resizable_temp_t {
+  size_t key;
+  int value;
+} brui_resizable_temp_t;
+
+typedef struct brui_resizable_temp_push_t {
+  int resizable_handle;
+  bool just_created;
+} brui_resizable_temp_push_t;
+
+typedef struct bruirs_t {
+  brui_resizable_t* arr;
+  int len, cap;
+
+  brui_drag_mode_t drag_mode;
+  int drag_index;
+  br_vec2_t drag_point;
+  br_extent_t drag_old_ex;
+  int next_free;
+} bruirs_t;
+
+typedef struct bruir_children_t {
+  int* arr;
+  int len, cap;
+} bruir_children_t;
+
+typedef struct bruir_childrens_t {
+  bruir_children_t* arr;
+  int len, cap;
+} bruir_childrens_t;
+
 typedef struct brui_split_t {
   enum {
     brui_split_absolute,
@@ -130,6 +162,7 @@ bool brui_checkbox(br_strv_t text, bool* checked);
 void brui_img(unsigned int texture_id);
 void brui_icon(float size, br_bb_t icon, br_color_t forground, br_color_t background);
 bool brui_button_icon(br_sizei_t size, br_extent_t icon);
+bool brui_rectangle(br_bb_t bb, br_bb_t limit, br_color_t color, int z);
 bool brui_sliderf(br_strv_t text, float* val);
 bool brui_sliderf2(br_strv_t text, float* value);
 bool brui_sliderf3(br_strv_t text, float* value, int percision);
@@ -177,6 +210,11 @@ void              brui_resizable_pop(void);
 int               brui_resizable_active(void);
 void              brui_resizable_show(int resizable_handle, bool show);
 bool              brui_resizable_is_hidden(int resizable_handle);
+br_vec2_t         brui_resizable_to_global(int resizable_handle, br_vec2_t pos);
+int               brui_resizable_sibling_max_z(int id);
+
+brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id);
+void              brui_resizable_temp_delete(br_strv_t id);
 
 void brui_resizable_save(FILE* file);
 void brui_resizable_load(FILE* file);

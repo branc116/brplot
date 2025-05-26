@@ -175,6 +175,7 @@ int br_plotter_add_plot_3d(br_plotter_t* br) {
 }
 
 void br_plotter_remove_plot(br_plotter_t* br, int plot_index) {
+  // TODO: Implement free list with plots...
   br_plot_deinit(br_da_getp(br->plots, plot_index));
   // 0 1 2 3 | 4
   //   |

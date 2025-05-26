@@ -770,3 +770,13 @@ static inline br_vec4_t br_bb_clip_dists(br_bb_t limit, br_vec2_t pos) {
 static inline br_bb_t br_bb_expand_with_point(br_bb_t bb, br_vec2_t v) {
   return BR_BB2(br_vec2_min(bb.min, v), br_vec2_max(bb.max, v));
 }
+
+// ----------------int-------------------------
+
+static inline int br_i_max(int a, int b) {
+  return a > b ? a : b;
+}
+
+static inline int br_i_max3(int a, int b, int c) {
+  return br_i_max(br_i_max(a, b), c);
+}
