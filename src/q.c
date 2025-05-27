@@ -5,6 +5,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #if defined(__linux__)
 #  include <pthread.h>
@@ -77,13 +78,13 @@ void handle_all_commands(br_plotter_t* br, q_commands* commands) {
       case q_command_screenshot:    br_plot_screenshot(br->text, &br->plots.arr[0], &br->shaders, br->groups, comm.path_arg.path); free(comm.path_arg.path); break;
       case q_command_export:        br_plotter_export(br, comm.path_arg.path);     free(comm.path_arg.path); break;
       case q_command_exportcsv:     br_plotter_export_csv(br, comm.path_arg.path); free(comm.path_arg.path); break;
-      case q_command_hide:          BR_ASSERT(0);
-      case q_command_show:          BR_ASSERT(0);
+      case q_command_hide:          BR_TODO("Command hide not implemented");
+      case q_command_show:          BR_TODO("Command show not implemented");
       case q_command_set_name:      br_data_set_name(&br->groups, comm.set_quoted_str.group, comm.set_quoted_str.str);  break;
       case q_command_flush:         return;
       case q_command_focus:         br_plots_focus_visible(br->plots, br->groups); break;
       case q_command_new_data:      br_datas_create(&br->groups, comm.new_data.data_id, comm.new_data.kind); break;
-      default:                      LOGE("Unknown command(%zu,%zu): %d\n", commands->read_index, commands->write_index, comm.type); BR_ASSERT(false);
+      default:                      BR_UNREACHABLE("Unknown command(%zu,%zu): %d\n", commands->read_index, commands->write_index, comm.type);
     }
   }
 }

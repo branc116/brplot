@@ -14,13 +14,15 @@
 #include "src/br_tl.h"
 #include "src/br_ui.h"
 #include "src/br_resampling2.h"
+#include "src/br_license.h"
 
-static void draw_left_panel(br_plotter_t* gv);
+static void draw_left_panel(br_plotter_t* br);
 static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas);
 static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas);
 static void brgui_draw_file_browser(br_plot_t* plot, br_datas_t datas);
 static void brgui_draw_file_browser(br_plot_t* plot, br_datas_t datas);
-static void brgui_draw_debug_window(br_plotter_t* gv);
+static void brgui_draw_debug_window(br_plotter_t* br);
+static void brgui_draw_license(br_plotter_t* br);
 
 void br_plotter_draw(br_plotter_t* br) {
   br_plotter_begin_drawing(br);
@@ -73,6 +75,7 @@ void br_plotter_draw(br_plotter_t* br) {
     if (to_remove != -1) br_plotter_remove_plot(br, to_remove);
     draw_left_panel(br);
     brgui_draw_debug_window(br);
+    brgui_draw_license(br);
   brui_end();
   br_plotter_end_drawing(br);
 }
@@ -287,6 +290,13 @@ static void draw_left_panel(br_plotter_t* br) {
       brui_collapsable_end();
     }
 
+    if (brui_collapsable(BR_STRL("About"), &br->ui.expand_about)) {
+      if (brui_button(BR_STRL("License"))) {
+        br->ui.show_license = true;
+      }
+      brui_collapsable_end();
+    }
+
     if (brui_button(BR_STRL("Exit"))) {
       br->should_close = true;
     }
@@ -302,11 +312,39 @@ static void brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth)
      brgui_draw_debug_window_rec(br, c->arr[i], 1+depth);
    }
 }
+
 static void brgui_draw_debug_window(br_plotter_t* br) {
   (void)br;
+  if (false == br_context.debug_bounds) return;
   brui_resizable_temp_push(BR_STRL("Debug"));
     brgui_draw_debug_window_rec(br, 0, 0);
   brui_resizable_pop();
+}
+
+static void brgui_draw_license(br_plotter_t* br) {
+  if (false == br->ui.show_license) return;
+  br_strv_t res_name = BR_STRL("License");
+  bool delete = false;
+  brui_resizable_temp_push_t tmp =  brui_resizable_temp_push(res_name);
+    if (tmp.just_created) {
+      tmp.res->target.cur_extent = BR_EXTENTI_TOF(brtl_viewport());
+      tmp.res->target.cur_extent.width -= 100;
+      tmp.res->target.cur_extent.height -= 100;
+      tmp.res->target.cur_extent.x += 50;
+      tmp.res->target.cur_extent.y += 50;
+    }
+    if (false == brui_resizable_is_hidden(tmp.resizable_handle)) {
+      for (int i = 0; i < br_license_lines; ++i) {
+        brui_text(br_license[i]);
+      }
+    } else {
+      delete = true;
+    }
+  brui_resizable_pop();
+  if (true == delete) {
+      br->ui.show_license = false;
+      brui_resizable_temp_delete(res_name);
+  }
 }
 
 void br_plot_screenshot(br_text_renderer_t* tr, br_plot_t* plot, br_shaders_t* shaders, br_datas_t groups, char const* path) {

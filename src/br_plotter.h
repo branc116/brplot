@@ -91,6 +91,8 @@ typedef struct br_plotter_t {
     bool expand_ui_styles;
     bool expand_export;
     bool expand_data;
+    bool expand_about;
+    bool show_license;
   } ui;
 } br_plotter_t;
 

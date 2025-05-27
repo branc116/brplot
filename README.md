@@ -400,6 +400,12 @@ sudo rm /usr/bin/brplot
   * But for that I need a way of adding stuff on screen without stdin.
     * Say we need to implement read csv stuf..
       * For that we need file browser ( agin ) to locate that file.
+        * For that we need text input widget.
+* Web resizing is again fucked, unfuck it.
+* Automaticaly generate functions to select icon that best fits wanted size..
+* Resizables should use br_free_list
+* Implement snappings for resizables
+  * Regions should be drawn on screen when moving resizables where if I move the resizable, it snaps on that side of the screen.
 
 ## Screenshots
 Here is a history of how brplot looked over time:

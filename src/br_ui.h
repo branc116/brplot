@@ -111,6 +111,7 @@ typedef struct brui_resizable_temp_t {
 } brui_resizable_temp_t;
 
 typedef struct brui_resizable_temp_push_t {
+  brui_resizable_t* res;
   int resizable_handle;
   bool just_created;
 } brui_resizable_temp_push_t;
@@ -205,7 +206,7 @@ void              brui_resizable_delete(int handle);
 void              brui_resizable_update(void);
 void              bruir_resizable_refresh(int index);
 brui_resizable_t* brui_resizable_get(int id);
-void              brui_resizable_push(int id);
+brui_resizable_t* brui_resizable_push(int id);
 void              brui_resizable_pop(void);
 int               brui_resizable_active(void);
 void              brui_resizable_show(int resizable_handle, bool show);

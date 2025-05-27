@@ -596,7 +596,6 @@ void brui_vsplit_end(void) {
 void brui_scroll_bar(float* bar_offset_fract) {
   float thick = TOP.padding.x * 0.5f;
   float slider_thick = TOP.padding.x * 0.8f;
-  int z = Z;
   br_vec2_t mouse = brtl_mouse_pos();
   bool is_down = brtl_mousel_down();
 
@@ -951,7 +950,7 @@ int brui_resizable_sibling_max_z(int id) {
   return max_z;
 }
 
-void brui_resizable_push(int id) {
+brui_resizable_t* brui_resizable_push(int id) {
   brui_resizable_t* res = br_da_getp(bruirs, id);
   br_extent_t rex = BR_EXTENTI_TOF(res->cur_extent);
   int cur_z = TOP.z;
@@ -1006,6 +1005,7 @@ void brui_resizable_push(int id) {
   brui_max_z = 0;
   TOP.limit.min_y += res->title_height;
   TOP.cur.y += res->title_height;
+  return res;
 }
 
 void brui_resizable_pop(void) {
@@ -1059,8 +1059,8 @@ brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id) {
     res_handle = bruir__temp_res[index].value;
   }
 
-  brui_resizable_push(res_handle);
-  return (brui_resizable_temp_push_t) { .resizable_handle = res_handle, .just_created = just_created };
+  brui_resizable_t* res = brui_resizable_push(res_handle);
+  return (brui_resizable_temp_push_t) { .res = res, .resizable_handle = res_handle, .just_created = just_created };
 }
 
 void brui_resizable_temp_delete(br_strv_t id) {

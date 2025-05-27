@@ -24,9 +24,9 @@
   abort(); \
 } while(0)
 
-#define BR_UNREACHABLE() do { \
-  LOGF("Reached unreachable state"); \
-  BR_ASSERT(0); \
+#define BR_UNREACHABLE(fmt, ...) do { \
+  LOGE("Reached unreachable state"); \
+  BR_ASSERTF(0, fmt, ##__VA_ARGS__); \
   assert(0); \
   exit(1); \
 } while(0)
@@ -48,11 +48,12 @@
      LOGF("Exiting"); \
   } \
 } while (0)
+
 #define BR_TODO(fmt, ...) do { \
-   LOGE("TODO: `" fmt "`", ##__VA_ARGS__); \
-   BR_UNREACHABLE(); \
+   BR_UNREACHABLE("TODO: " fmt, ##__VA_ARGS__); \
    LOGF("Exiting"); \
 } while (0)
+
 #define BR_ASSERTF(x, fmt, ...) do { \
    if (!(x)) { \
      LOGE("ASSERT FAILED: `" #x "`" fmt, ##__VA_ARGS__); \
@@ -158,6 +159,12 @@ extern "C" {
 #endif
 #if !defined(_GNU_SOURCE)
 #  define _GNU_SOURCE // Linux bullshit
+#endif
+
+#if defined(__has_include)
+#  define BR_HAS_INCLUDE(path) __has_include(path)
+#else
+#  define BR_HAS_INCLUDE(path)
 #endif
 
 #include "external/Tracy/tracy/TracyC.h"

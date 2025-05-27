@@ -20,3 +20,7 @@
 #if defined(__GNUC__) || defined(__CLANG__)
 #  pragma GCC diagnostic pop
 #endif
+
+#define BR_LICENSE_IMPLEMENTATION
+#include "src/br_license.h"
+
