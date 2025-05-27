@@ -332,6 +332,7 @@ static void brgui_draw_license(br_plotter_t* br) {
       tmp.res->target.cur_extent.height -= 100;
       tmp.res->target.cur_extent.x += 50;
       tmp.res->target.cur_extent.y += 50;
+      for (int i = 0; i < br_license_lines; ++i) printf("%.*s\n", br_license[i].len, br_license[i].str);
     }
     if (false == brui_resizable_is_hidden(tmp.resizable_handle)) {
       for (int i = 0; i < br_license_lines; ++i) {
