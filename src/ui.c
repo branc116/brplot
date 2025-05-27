@@ -798,7 +798,14 @@ void brui_resizable_update(void) {
     target_ex.size  = br_size_scale(target_ex.size, 1.f - cur_hidden_factor);
     target_ex.pos   = br_vec2_lerp(target_ex.pos, BR_VEC2(0, 0), res->maximized);
     target_ex.pos   = br_vec2_scale(target_ex.pos, 1.f - cur_hidden_factor);
+    br_extent_t old = res->cur_extent;
     res->cur_extent = br_extent_lerp(res->cur_extent, target_ex, lerp_speed);
+    if (false == br_extent_eq(res->cur_extent, old)) {
+      bruir_children_t ch = bruir_childrens.arr[i];
+      for (int j = 0; j < ch.len; ++j) {
+        bruir_update_extent(ch.arr[j], bruirs.arr[ch.arr[j]].target.cur_extent, true);
+      }
+    }
   }
 
   if (bruirs.drag_mode == brui_drag_mode_none) {
@@ -968,25 +975,26 @@ brui_resizable_t* brui_resizable_push(int id) {
   TOP.hide_border = true;
   TOP.hide_bg = true;
   brui_push();
-  TOP.cur.y -= scroll_y;
   TOP.cur_resizable = id;
   br_vec2_t mp = brtl_mouse_pos();
   if (res->title_enabled && false == brtl_key_ctrl() && TOP.is_active) {
     if (br_da_get(bruirs, res->parent).title_height < 0.1f) {
       br_vec2_t cur_p = bruir_pos_global(*res);
-      float y_dist = fabsf(mp.y - cur_p.y);
-      if (y_dist < 10.f) {
-        res->target.title_height = 30.f;
-      } else if (y_dist > 50.f) {
+      float y_dist = mp.y - cur_p.y;
+      float x_dist = mp.x - cur_p.x;
+      float slack = 30.f;
+      float title_full_height = (float)TOP.font_size + 2.f * TOP.padding.y;
+      if (y_dist > 0.f && y_dist < .2f * title_full_height && x_dist > 0.f && x_dist < res->cur_extent.width) {
+        res->target.title_height = title_full_height;
+      } else if (y_dist > title_full_height + slack || y_dist < -slack || x_dist < -slack  || x_dist > res->cur_extent.width + slack) {
         res->target.title_height= 0.f;
       }
     }
   } else res->target.title_height= 0.f;
-  if (res->title_height > 0.1f) {
+  if (res->title_height > .1f) {
     brui_push_simple();
-      TOP.start_z = res->max_z;
+      TOP.start_z = res->max_z + 5;
       TOP.z = TOP.start_z;
-      TOP.padding.y = 0;
       TOP.limit.max_y = fminf(TOP.limit.max_y, TOP.limit.min_y + res->title_height);
       float button_width = 20.f;
       brui_vsplitvp(5, BRUI_SPLITR(1), BRUI_SPLITA(button_width), BRUI_SPLITA(button_width), BRUI_SPLITA(button_width), BRUI_SPLITA(button_width));
@@ -995,13 +1003,14 @@ brui_resizable_t* brui_resizable_push(int id) {
       brui_vsplit_pop();
         if (brui_button(BR_STRL("Z+"))) brui_resizable_increment_z(res);
       brui_vsplit_pop();
-        if (brui_button(BR_STRL("[]"))) res->target.maximized = res->target.maximized > 0.5f ?  0.f : 1.f;
+        if (brui_button(BR_STRL("[]"))) res->target.maximized = res->target.maximized > .5f ?  0.f : 1.f;
       brui_vsplit_pop();
         if (brui_button(BR_STRL("X"))) res->target.hidden_factor = 1.f;
       brui_vsplit_end();
       brui_background(TOP.limit, BR_THEME.colors.plot_bg);
     brui_pop_simple();
   }
+  TOP.cur.y -= scroll_y;
   brui_max_z = 0;
   TOP.limit.min_y += res->title_height;
   TOP.cur.y += res->title_height;
@@ -1122,7 +1131,8 @@ static void bruir_update_extent(int index, br_extent_t new_ex, bool force) {
 
   if (force || br_extent_eq(new_ex, old_ex) == false) {
     if (index != 0) {
-      new_ex.x = BR_MAX(BR_MIN(new_ex.x, parent.target.cur_extent.width - new_ex.width),  0);
+      float max_x = BR_MAX(parent.cur_extent.width - new_ex.width, parent.target.cur_extent.width - new_ex.width);
+      new_ex.x = BR_MAX(BR_MIN(new_ex.x, max_x),  0);
       new_ex.y = BR_MAX(BR_MIN(new_ex.y, parent.target.cur_extent.height - new_ex.height), 0);
       bool new_is_good = brui_extent_is_good(new_ex, br_da_get(bruirs, res.parent).cur_extent);
       new_is_good |= brui_extent_is_good(new_ex, br_da_get(bruirs, res.parent).target.cur_extent);
