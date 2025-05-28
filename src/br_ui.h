@@ -100,8 +100,6 @@ typedef union {
       brui_resizable_anim_fields(X)
 #undef X
     } target;
-    int next_free;
-    bool alloced;
   };
 } brui_resizable_t;
 
@@ -119,6 +117,9 @@ typedef struct brui_resizable_temp_push_t {
 typedef struct bruirs_t {
   brui_resizable_t* arr;
   int len, cap;
+  int* free_arr;
+  int free_len;
+  int free_next;
 
   brui_drag_mode_t drag_mode;
   int drag_index;
@@ -131,11 +132,6 @@ typedef struct bruir_children_t {
   int* arr;
   int len, cap;
 } bruir_children_t;
-
-typedef struct bruir_childrens_t {
-  bruir_children_t* arr;
-  int len, cap;
-} bruir_childrens_t;
 
 typedef struct brui_split_t {
   enum {
@@ -213,6 +209,9 @@ void              brui_resizable_show(int resizable_handle, bool show);
 bool              brui_resizable_is_hidden(int resizable_handle);
 br_vec2_t         brui_resizable_to_global(int resizable_handle, br_vec2_t pos);
 int               brui_resizable_sibling_max_z(int id);
+bruir_children_t  brui_resizable_children_temp(int resizable_handle);
+int               brui_resizable_children_count(int resizable_handle);
+int               brui_resizable_children_top_z(int resizable_handle);
 
 brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id);
 void              brui_resizable_temp_delete(br_strv_t id);

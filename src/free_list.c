@@ -30,4 +30,55 @@ TEST_CASE(free_list_test) {
   TEST_EQUAL(two, 2);
   brfl_free(is);
 }
+
+TEST_CASE(free_list_test2) {
+  struct {
+    int* arr;
+    int* free_arr;
+    int len, cap;
+    int free_len;
+    int free_next;
+  } is = { 0 };
+  int one_handle = brfl_push(is, 1);
+  int two_handle = brfl_push(is, 2);
+  int three_handle = brfl_push(is, 3);
+  brfl_remove(is, three_handle);
+  brfl_remove(is, two_handle);
+  brfl_remove(is, one_handle);
+  one_handle = brfl_push(is, 1);
+  two_handle = brfl_push(is, 2);
+  three_handle = brfl_push(is, 3);
+  TEST_EQUAL(one_handle, 0);
+  TEST_EQUAL(two_handle, 1);
+  TEST_EQUAL(three_handle, 2);
+  brfl_free(is);
+}
+
+TEST_CASE(free_list_test3) {
+  struct {
+    int* arr, * free_arr;
+    int len, cap;
+    int free_len, free_next;
+  } is = { 0 };
+  brfl_push(is, -1);
+  brfl_push(is, -1);
+  brfl_push(is, -1);
+  int one_handle = brfl_push(is, 1);
+  int two_handle = brfl_push(is, 2);
+  int three_handle = brfl_push(is, 3);
+  brfl_push(is, -1);
+  brfl_push(is, -1);
+  brfl_push(is, -1);
+  brfl_remove(is, two_handle);
+  brfl_remove(is, three_handle);
+  brfl_remove(is, one_handle);
+  brfl_push(is, -1);
+  one_handle = brfl_push(is, 1);
+  two_handle = brfl_push(is, 2);
+  three_handle = brfl_push(is, 3);
+  TEST_EQUAL(one_handle, 5);
+  TEST_EQUAL(two_handle, 4);
+  TEST_EQUAL(three_handle, 9);
+  brfl_free(is);
+}
 #endif

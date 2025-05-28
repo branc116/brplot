@@ -453,13 +453,12 @@ br_text_renderer_t* brtl_text_renderer(void) {
 }
 
 extern BR_THREAD_LOCAL bruirs_t bruirs;
-extern BR_THREAD_LOCAL bruir_childrens_t bruir_childrens;
 
 bruirs_t* brtl_bruirs(void) {
   return &bruirs;
 }
 
-bruir_children_t* brtl_bruirs_childern(int handle) {
-  return &bruir_childrens.arr[handle];
+bruir_children_t brtl_bruirs_childern(int handle) {
+  return brui_resizable_children_temp(handle);
 }
 

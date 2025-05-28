@@ -1,5 +1,6 @@
 #include ".generated/icons.h"
 #include "src/br_da.h"
+#include "src/br_free_list.h"
 #include "src/br_gl.h"
 #include "src/br_gui_internal.h"
 #include "src/br_math.h"
@@ -307,14 +308,19 @@ static void draw_left_panel(br_plotter_t* br) {
 static void brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth) {
    brui_resizable_t r = brtl_bruirs()->arr[handle];
    brui_textf("%*s, %d Res: z: %d, max_z: %d, max_sib_z: %d, parent: %d", depth*2, "", handle, r.z, r.max_z, brui_resizable_sibling_max_z(handle), r.parent);
-   bruir_children_t* c = brtl_bruirs_childern(handle);
-   for (int i = 0; i < c->len; ++i) {
-     brgui_draw_debug_window_rec(br, c->arr[i], 1+depth);
-   }
+   brfl_foreach(i, *brtl_bruirs()) if (i != 0 && brtl_bruirs()->arr[i].parent == handle) brgui_draw_debug_window_rec(br, i, 1+depth);
 }
 
 static void brgui_draw_debug_window(br_plotter_t* br) {
   (void)br;
+  bruirs_t* res = brtl_bruirs();
+  printf("\n--------\n");
+  printf("next_free = %d\n", res->free_next);
+  for (int i = 0; i < res->len; ++i) {
+    printf("|%3d %3d| ", res->free_arr[i], res->arr[i].parent);
+    if ((i + 1) % 5 == 0) printf("\n");
+  }
+  printf("\n--------\n");
   if (false == br_context.debug_bounds) return;
   brui_resizable_temp_push(BR_STRL("Debug"));
     brgui_draw_debug_window_rec(br, 0, 0);
