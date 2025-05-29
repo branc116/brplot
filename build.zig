@@ -78,6 +78,7 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
 
     exe.addCSourceFiles(.{ .files = &.{
         "./src/data.c",
+        "./external/shl_impls.c",
         "./src/data_generator.c",
         "./src/filesystem.c",
         "./src/gl.c",

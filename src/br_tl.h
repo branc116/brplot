@@ -44,7 +44,7 @@ br_shaders_t* brtl_shaders(void);
 br_text_renderer_t* brtl_text_renderer(void);
 
 bruirs_t* brtl_bruirs(void);
-bruir_children_t* brtl_bruirs_childern(int handle);
+bruir_children_t brtl_bruirs_childern(int handle);
 
 #ifdef __cplusplus
 }

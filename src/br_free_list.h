@@ -1,3 +1,4 @@
+#pragma once
 /* for size_t */
 #include <stdlib.h>
 
@@ -49,8 +50,11 @@
   (FL).free_next = -1; \
 } while (0)
 
+#define brfl_foreach(INDEX, FL) for (int INDEX = 0; i < (FL).len; INDEX = brfl_next_free((FL).free_arr, (FL).free_next, (FL).len, INDEX))
+
 BR_THREAD_LOCAL extern int brfl__ret_handle;
 int brfl_push_internal_get_handle(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, const char* file, int line);
+int brfl_next_free(int const* free_arr, int free_next, int len, int index);
 
 #if defined(BRFL_IMPLEMENTATION)
 #include <stdio.h>
@@ -126,5 +130,11 @@ int brfl_push_internal_get_handle(void** const arrp, int** const free_arrp, int*
       return -1;
     }
   }
+}
+
+int brfl_next_free(int const* free_arr, int free_next, int len, int index) {
+  ++index;
+  for (; index < len; ++index) if (free_arr[index] == -1 && index != free_next) return index;
+  return index;
 }
 #endif

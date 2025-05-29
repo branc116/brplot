@@ -87,7 +87,7 @@ bool br_permastate_save_datas(br_str_t path_folder, br_dagens_t const* dagens, b
     }
     if (false == br_fs_cd(&path_folder, br_strv_from_literal("data")))                     goto error;
     if (false == br_str_push_int(&path_folder, data->group_id))                            goto error;
-    if (false == br_str_push_strv(&path_folder, br_strv_from_literal(".br")))           goto error;
+    if (false == br_str_push_strv(&path_folder, br_strv_from_literal(".br")))              goto error;
     br_str_to_c_str1(path_folder, buff);
     if (NULL == (file = fopen(buff, "wb")))                                                goto error;
     if (1 != fwrite(&command, sizeof(command), 1, file))                                   goto error;
@@ -106,9 +106,9 @@ bool br_permastate_save_datas(br_str_t path_folder, br_dagens_t const* dagens, b
       } break;
       case br_plot_kind_3d: {
         if (1 != fwrite(&data->ddd.bounding_box, sizeof(data->ddd.bounding_box), 1, file)) goto error;
-        if (1 != fwrite(&data->ddd.rebase_x, sizeof(data->ddd.rebase_x), 1, file))           goto error;
-        if (1 != fwrite(&data->ddd.rebase_y, sizeof(data->ddd.rebase_y), 1, file))           goto error;
-        if (1 != fwrite(&data->ddd.rebase_z, sizeof(data->ddd.rebase_z), 1, file))           goto error;
+        if (1 != fwrite(&data->ddd.rebase_x, sizeof(data->ddd.rebase_x), 1, file))         goto error;
+        if (1 != fwrite(&data->ddd.rebase_y, sizeof(data->ddd.rebase_y), 1, file))         goto error;
+        if (1 != fwrite(&data->ddd.rebase_z, sizeof(data->ddd.rebase_z), 1, file))         goto error;
         if (0 != data->len) {
           if (data->len != fwrite(data->ddd.xs, sizeof(*data->ddd.xs), data->len, file))   goto error;
           if (data->len != fwrite(data->ddd.ys, sizeof(*data->ddd.ys), data->len, file))   goto error;
@@ -125,9 +125,9 @@ bool br_permastate_save_datas(br_str_t path_folder, br_dagens_t const* dagens, b
   goto end;
 
 error:
-  if (buff[0] == '\0')  LOGI("Failed to allocatate memory from the plots permastate path\n");
-  else if (file == NULL)LOGI("Failed to open a file %s: %d(%s)\n", buff, errno, strerror(errno));
-  else                  LOGI("Failed to write to a file %s: %d(%s)\n", buff, errno, strerror(errno));
+  if (buff[0] == '\0')  LOGI("Failed to allocatate memory from the plots permastate path");
+  else if (file == NULL)LOGI("Failed to open a file %s: %d(%s)", buff, errno, strerror(errno));
+  else                  LOGI("Failed to write to a file %s: %d(%s)", buff, errno, strerror(errno));
   success = false;
 
 end:
@@ -157,9 +157,9 @@ bool br_permastate_save_plotter(br_str_t path_folder, br_plotter_t* br) {
   goto end;
 
 error:
-  if (buff[0] == '\0')  LOGI("Failed to allocatate memory from the plots permastate path\n");
-  else if (file == NULL)LOGI("Failed to open a file %s: %d(%s)\n", buff, errno, strerror(errno));
-  else                  LOGI("Failed to write to a file %s: %d(%s)\n", buff, errno, strerror(errno));
+  if (buff[0] == '\0')  LOGI("Failed to allocatate memory from the plots permastate path");
+  else if (file == NULL)LOGI("Failed to open a file %s: %d(%s)", buff, errno, strerror(errno));
+  else                  LOGI("Failed to write to a file %s: %d(%s)", buff, errno, strerror(errno));
   success = false;
 
 end:
@@ -184,8 +184,8 @@ void br_permastate_save(br_plotter_t* br) {
   goto end;
 
 error:
-  if (path.str == NULL) LOGI("Failed to allocatate memory from the plots permastate path\n");
-  LOGI("Failed to save state to permastate: %d(%s)\n", errno, strerror(errno));
+  if (path.str == NULL) LOGI("Failed to allocatate memory from the plots permastate path");
+  LOGI("Failed to save state to permastate: %d(%s)", errno, strerror(errno));
 
 end:
   br_str_free(path);
@@ -348,10 +348,10 @@ br_permastate_status_t br_permastate_load(br_plotter_t* br) {
   goto end;
 
 error:
-  if (path.str == NULL)          LOGE("Failed to allocatate memory from the plots permastate path\n");
-  else if (false == file_exists) LOGE("Tried to open a file that doesn't exists `%s`: %s\n", buff, strerror(errno));
-  else if (f == NULL)            LOGE("Failed to open a file %s: %d`%s`\n", buff, errno, strerror(errno));
-  else                           LOGE("Failed loading permastate %d`%s`\n", errno, strerror(errno));
+  if (path.str == NULL)          LOGE("Failed to allocatate memory from the plots permastate path");
+  else if (false == file_exists) LOGE("Tried to open a file that doesn't exists `%s`: %s", buff, strerror(errno));
+  else if (f == NULL)            LOGE("Failed to open a file %s: %d`%s`", buff, errno, strerror(errno));
+  else                           LOGE("Failed loading permastate %d`%s`", errno, strerror(errno));
   status = br_permastate_status_failed;
 
 end:

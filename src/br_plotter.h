@@ -60,8 +60,8 @@ typedef struct br_plotter_t {
   } mouse;
 
   struct {
-    bool down[64];
-    bool pressed[64];
+    bool down[128];
+    bool pressed[128];
     int mod;
   } key;
 
@@ -91,6 +91,8 @@ typedef struct br_plotter_t {
     bool expand_ui_styles;
     bool expand_export;
     bool expand_data;
+    bool expand_about;
+    bool show_license;
   } ui;
 } br_plotter_t;
 

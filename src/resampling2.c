@@ -503,7 +503,7 @@ void br_resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plo
     }
     case br_data_kind_3d: {
       switch (plot->kind) {
-        case br_plot_kind_2d: BR_ASSERTF(0, "Can't draw 3d data on 2d plot..");
+        case br_plot_kind_2d: BR_UNREACHABLE("Can't draw 3d data on 2d plot..");
         case br_plot_kind_3d: {
           br_vec3_t target = plot->ddd.target;
           target.x -= (float)pg->ddd.rebase_x;

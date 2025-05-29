@@ -22,13 +22,17 @@ typedef union {
   br_data_ctor_t data;
 } br_common_ctor;
 
+static void br_main_iter(br_plotter_t* br) {
+  br_plotter_draw(br);
+  br_dagens_handle(&br->groups, &br->dagens, &br->plots, brtl_time() + 0.010);
+  br_plotter_frame_end(br);
+}
+
 static BR_THREAD_RET_TYPE main_loop(void* plotterv) {
   br_plotter_t* plotter = plotterv;
   br_plotter_init(plotter);
   while (plotter->should_close == false) {
-    br_plotter_draw(plotter);
-    br_dagens_handle(&plotter->groups, &plotter->dagens, &plotter->plots, brtl_time() + 0.010);
-    br_plotter_frame_end(plotter);
+    br_main_iter(plotter);
   }
   br_plotter_deinit(plotter);
   plotter->exited = true;
@@ -252,4 +256,16 @@ void brp_focus_all(void) {
 
 #if defined(BR_PYTHON_BULLSHIT)
 BR_EXPORT void* PyInit_brplot(void) { return NULL; }
+#endif
+
+#if defined(__EMSCRIPTEN__)
+#  define BR_WASM_BULLSHIT 1
+#endif
+#if defined(BR_WASM_BULLSHIT)
+BR_EXPORT void br_wasm_init(br_plotter_t* br) {
+  br_plotter_init(br);
+}
+BR_EXPORT void br_wasm_loop(br_plotter_t* br) {
+  br_main_iter(br);
+}
 #endif
