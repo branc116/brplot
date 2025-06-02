@@ -935,13 +935,14 @@ brui_resizable_t* brui_resizable_push(int id) {
   brui_resizable_t* res = br_da_getp(bruirs, id);
   br_extent_t rex = BR_EXTENTI_TOF(res->cur_extent);
   int cur_z = TOP.z;
+  bool is_menu_shown = res->target.title_height > .01f;
   brui_push();
   BRUI_LOG("resizablepre [%f %f %f %f] %f", BR_EXTENT_(rex), res->scroll_offset_percent);
   TOP.psum = BR_VEC2(0, 0);
   TOP.cur = bruir_pos_global(*res);
   TOP.limit = BR_BB(TOP.cur.x, TOP.cur.y, TOP.cur.x + rex.width, TOP.cur.y + rex.height);
   float scroll_y = (res->full_height - (float)res->cur_extent.height) * res->scroll_offset_percent;
-  brui_z_set(cur_z + brui_resizable_sibling_max_z(id) + 5);
+  brui_z_set(cur_z + brui_resizable_sibling_max_z(id) + (is_menu_shown ? 5 : 15));
   TOP.cur_resizable = id;
   TOP.start_z = TOP.z;
   TOP.is_active = id == brui__stack.active_resizable;
@@ -965,9 +966,9 @@ brui_resizable_t* brui_resizable_push(int id) {
       }
     }
   } else res->target.title_height= 0.f;
-  if (res->title_height > .1f) {
+  if (is_menu_shown) {
     brui_push_simple();
-      TOP.start_z = res->max_z + 5;
+      TOP.start_z = res->max_z + 2;
       TOP.z = TOP.start_z;
       TOP.limit.max_y = fminf(TOP.limit.max_y, TOP.limit.min_y + res->title_height);
       float button_width = 20.f;
@@ -1108,8 +1109,9 @@ static void bruir_update_extent(int index, br_extent_t new_ex, bool force) {
   if (force || br_extent_eq(new_ex, old_ex) == false) {
     if (index != 0) {
       float max_x = BR_MAX(parent.cur_extent.width - new_ex.width, parent.target.cur_extent.width - new_ex.width);
+      float max_y = BR_MAX(parent.cur_extent.height - new_ex.height, parent.target.cur_extent.height - new_ex.height);
       new_ex.x = BR_MAX(BR_MIN(new_ex.x, max_x),  0);
-      new_ex.y = BR_MAX(BR_MIN(new_ex.y, parent.target.cur_extent.height - new_ex.height), 0);
+      new_ex.y = BR_MAX(BR_MIN(new_ex.y, max_y), 0);
       bool new_is_good = brui_extent_is_good(new_ex, br_da_get(bruirs, res.parent).cur_extent);
       new_is_good |= brui_extent_is_good(new_ex, br_da_get(bruirs, res.parent).target.cur_extent);
       bool old_is_good = brui_extent_is_good(res.cur_extent, br_da_get(bruirs, res.parent).cur_extent);

@@ -313,14 +313,6 @@ static void brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth)
 
 static void brgui_draw_debug_window(br_plotter_t* br) {
   (void)br;
-  bruirs_t* res = brtl_bruirs();
-  printf("\n--------\n");
-  printf("next_free = %d\n", res->free_next);
-  for (int i = 0; i < res->len; ++i) {
-    printf("|%3d %3d| ", res->free_arr[i], res->arr[i].parent);
-    if ((i + 1) % 5 == 0) printf("\n");
-  }
-  printf("\n--------\n");
   if (false == br_context.debug_bounds) return;
   brui_resizable_temp_push(BR_STRL("Debug"));
     brgui_draw_debug_window_rec(br, 0, 0);
