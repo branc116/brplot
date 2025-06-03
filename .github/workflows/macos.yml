@@ -55,6 +55,6 @@ jobs:
         ls -alFh
         clang -I. -o nob nob.c -lm
         ./nob
-        ls bin -alFh
+        ls -alFh
 
 
