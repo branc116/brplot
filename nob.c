@@ -693,7 +693,10 @@ static bool embed_file_as_string(const char* in_path, const char* variable_name)
   if (NULL == (in_file = fopen(in_path, "rb"))) goto error;
   if (NULL == (out_file = fopen(out_name.str, "wb"))) goto error;
 
-  fprintf(out_file, "const br_strv_t %s[] = {\n  BR_STRL(\"", variable_name);
+  fprintf(out_file, "#if !defined(BR_STRLC)\n"
+                    "#  define BR_STRLC(STR) { .str = STR, .len = sizeof(STR) - 1 }\n"
+                    "#endif\n", variable_name);
+  fprintf(out_file, "const br_strv_t %s[] = {\n  BR_STRLC(\"", variable_name);
   while ((read_len = fread(buff, 1, buff_cap, in_file))) {
     for (unsigned long i = 0; i < read_len; ++i) {
       cur_char = buff[i];
@@ -714,7 +717,7 @@ static bool embed_file_as_string(const char* in_path, const char* variable_name)
         if (1 != fwrite((unsigned char[]){ cur_char }, 1, 1, out_file)) goto error;
         read_bin_n = 3;
       } else if (cur_char == '\n') {
-        fprintf(out_file, "\"),\n  BR_STRL(\"");
+        fprintf(out_file, "\"),\n  BR_STRLC(\"");
         ++line_n;
         char_n = 0;
       } else {
