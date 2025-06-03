@@ -173,7 +173,7 @@ static bool do_dist = true;
 static bool pip_skip_build = false;
 static bool disable_logs = false;
 static bool is_pedantic = false;
-#if !defined(__MACOS__)
+#if !defined(__APPLE__)
 static bool is_macos = false;
 #else
 static bool is_macos = true;
