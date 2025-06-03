@@ -30,6 +30,14 @@
 #  define BR_THREAD_LOCAL       _Thread_local
 #endif
 
+#if !defined(BR_FREAD)
+#  define BR_FREAD fread
+#endif
+
+#if !defined(BR_FWRITE)
+#  define BR_FWRITE fwrite
+#endif
+
 #define brfl_push(FL, VALUE) \
   (brfl__ret_handle = brfl_push_internal_get_handle((void**)&((FL).arr), &((FL).free_arr), &((FL).len), &((FL).cap), &((FL).free_len), &((FL).free_next), sizeof((FL).arr[0]), __FILE__, __LINE__), \
    (FL).arr[brfl__ret_handle] = (VALUE), \
@@ -51,6 +59,88 @@
 } while (0)
 
 #define brfl_foreach(INDEX, FL) for (int INDEX = 0; i < (FL).len; INDEX = brfl_next_free((FL).free_arr, (FL).free_next, (FL).len, INDEX))
+
+#define brfl_write(FILE, FL, ERROR) do {                                                                              \
+  ERROR = 0;                                                                                                          \
+  size_t n_write = 0;                                                                                                 \
+  if (1 != (n_write = BR_FWRITE(&(FL), sizeof(FL), 1, (FILE)))) {                                                     \
+      BR_LOGE("Failed to write 1 free list to file, wrote %d: %s", n_write, strerror(errno));                         \
+      ERROR = 1;                                                                                                      \
+      break;                                                                                                          \
+  };                                                                                                                  \
+  if ((FL).len == 0) break;                                                                                           \
+  if ((FL).len != (n_write = BR_FWRITE((FL).arr, sizeof((FL).arr[0]), (size_t)(FL).len, (FILE)))) {                   \
+    BR_LOGE("Failed to write %d free list elements to file, wrote %zu: %s", (FL).len, n_write, strerror(errno));      \
+    ERROR = 1;                                                                                                        \
+    break;                                                                                                            \
+  }                                                                                                                   \
+  if ((size_t)(FL).len != (n_write = BR_FWRITE((FL).free_arr, sizeof((FL).free_arr[0]), (size_t)(FL).len, (FILE)))) { \
+    BR_LOGE("Failed to write %d free list free elements to file, wrote %zu: %s", (FL).len, n_write, strerror(errno)); \
+    ERROR = 1;                                                                                                        \
+    break;                                                                                                            \
+  }                                                                                                                   \
+} while (0)                                                                                                           \
+
+#define brfl_read(FILE, FL, ERROR) do {                                                                              \
+  ERROR = 0;                                                                                                         \
+  size_t n_read = 0;                                                                                                 \
+  if (1 != (n_read = BR_FREAD(&(FL), sizeof(FL), 1, FILE))) {                                                        \
+    ERROR = 1;                                                                                                       \
+    BR_LOGE("Failed to read 1 free list from file, read %d: %s", n_read, strerror(errno));                           \
+    break;                                                                                                           \
+  }                                                                                                                  \
+  if ((FL).len > (FL).cap) {                                                                                         \
+    ERROR = 1;                                                                                                       \
+    BR_LOGE("Free list len ( %d ) is bigger that cap ( %d )", (FL).len, (FL).cap);                                   \
+    memset(&(FL), 0, sizeof(FL));                                                                                    \
+    break;                                                                                                           \
+  }                                                                                                                  \
+  if ((FL).free_len > (FL).len) {                                                                                    \
+    ERROR = 1;                                                                                                       \
+    BR_LOGE("Free list free len ( %d ) is bigger that len ( %d )", (FL).free_len, (FL).free_len);                    \
+    memset(&(FL), 0, sizeof(FL));                                                                                    \
+    break;                                                                                                           \
+  }                                                                                                                  \
+  if ((FL).len == 0) break;                                                                                          \
+  (FL).cap = (FL).len;                                                                                               \
+  {                                                                                                                  \
+    size_t size = sizeof((FL).arr[0]) * (size_t)(FL).cap;                                                            \
+    (FL).arr = BR_MALLOC(size);                                                                                      \
+    if (NULL == (FL).arr) {                                                                                          \
+      ERROR = 1;                                                                                                     \
+      LOGE("Failed to allocate free list arr ( %zu bytes, %d elements ): %s", size, (FL).cap, strerror(errno));      \
+      memset(&(FL), 0, sizeof(FL));                                                                                  \
+      break;                                                                                                         \
+    }                                                                                                                \
+  }                                                                                                                  \
+  {                                                                                                                  \
+    size_t size = sizeof((FL).free_arr[0]) * (size_t)(FL).cap;                                                       \
+    (FL).free_arr = BR_MALLOC(size);                                                                                 \
+    if (NULL == (FL).arr) {                                                                                          \
+      ERROR = 1;                                                                                                     \
+      LOGE("Failed to allocate free list free arr ( %zu bytes, %d elements ): %s", size, (FL).cap, strerror(errno)); \
+      BR_FREE((FL).arr);                                                                                             \
+      memset(&(FL), 0, sizeof(FL));                                                                                  \
+      break;                                                                                                         \
+    }                                                                                                                \
+  }                                                                                                                  \
+  if ((size_t)(FL).cap != (n_read = BR_FREAD((FL).arr, sizeof((FL).arr[0]), (size_t)(FL).cap, (FILE)))) {            \
+    ERROR = 1;                                                                                                       \
+    LOGE("Failed to read %d free list elements, read %zu: %s", (FL).cap, n_read, strerror(errno));                   \
+    BR_FREE((FL).arr);                                                                                               \
+    BR_FREE((FL).free_arr);                                                                                          \
+    memset(&(FL), 0, sizeof(FL));                                                                                    \
+    break;                                                                                                           \
+  }                                                                                                                  \
+  if ((size_t)(FL).cap != (n_read = BR_FREAD((FL).free_arr, sizeof((FL).free_arr[0]), (size_t)(FL).cap, (FILE)))) {  \
+    ERROR = 1;                                                                                                       \
+    LOGE("Failed to read %d free list free elements, read %zu: %s", (FL).cap, n_read, strerror(errno));              \
+    BR_FREE((FL).arr);                                                                                               \
+    BR_FREE((FL).free_arr);                                                                                          \
+    memset(&(FL), 0, sizeof(FL));                                                                                    \
+    break;                                                                                                           \
+  }                                                                                                                  \
+} while(0)
 
 BR_THREAD_LOCAL extern int brfl__ret_handle;
 int brfl_push_internal_get_handle(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, const char* file, int line);

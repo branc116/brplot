@@ -8,6 +8,7 @@
 #include "src/br_data.h"
 #include "src/br_data_generator.h"
 #include "src/br_da.h"
+#include "src/br_free_list.h"
 #include "src/br_ui.h"
 
 #include <stdint.h>
@@ -33,26 +34,16 @@ bool br_permastate_save_plots(br_str_t path_folder, br_plots_t plots) {
   if (1 != fwrite(&command, sizeof(command), 1, f))                      goto error;
   if (1 != fwrite(&plots_len, sizeof(plots_len), 1, f))                  goto error;
 
-  // TODO: This is a hack.. This will need to be removed when resizables will be serizalized
-  for (int i = 0; i < plots.len; ++i) {
-    br_plot_t* plot = br_da_getp(plots, i);
-    br_extent_t cur_extent = brui_resizable_get(plot->extent_handle)->target.cur_extent;
-    plot->cur_extent = BR_EXTENT_TOI(cur_extent);
-  }
-
   if (plots_len != fwrite(plots.arr, sizeof(*plots.arr), plots_len, f))  goto error;
   crc = br_fs_crc(plots.arr, sizeof(*plots.arr) * plots_len, 0);
 
   for (int i = 0; i < plots.len; ++i) {
     br_plot_t* plot = &plots.arr[i];
-    // TODO: This is a hack.. This will need to be removed when resizables will be serizalized
-    br_extent_t cur_extent = brui_resizable_get(plot->extent_handle)->target.cur_extent;
-    plot->cur_extent = BR_EXTENT_TOI(cur_extent);
     br_plot_data_t* arr = plot->data_info.arr;
     int len = plot->data_info.len;
     if (1 != fwrite(&len, sizeof(len), 1, f))                            goto error;
     if (len == 0) continue;
-    if (len != (int32_t)fwrite(arr, sizeof(*arr), (uint32_t)len, f))    goto error;
+    if (len != (int32_t)fwrite(arr, sizeof(*arr), (uint32_t)len, f))     goto error;
     crc = br_fs_crc(arr, sizeof(*arr) * (size_t)len, crc);
   }
   if (1 != fwrite(&crc, sizeof(crc), 1, f))                              goto error;
@@ -141,6 +132,7 @@ bool br_permastate_save_plotter(br_str_t path_folder, br_plotter_t* br) {
   FILE* file = NULL;
   br_save_state_command_t command = br_save_state_command_plotter;
   bool success = true;
+  int fl_write_error = 0;
 
   if (false == br_fs_cd(&path_folder, br_strv_from_literal("plotter.br")))                       goto error;
   br_str_to_c_str1(path_folder, buff);
@@ -154,12 +146,13 @@ bool br_permastate_save_plotter(br_str_t path_folder, br_plotter_t* br) {
     if (data->name.len != fwrite(data->name.str, sizeof(*data->name.str), data->name.len, file)) goto error;
   }
   if (1 != fwrite(&br->ui, sizeof(br->ui), 1, file))                                             goto error;
+  brfl_write(file, br->resizables, fl_write_error); if (fl_write_error != 0)                     goto error;
   goto end;
 
 error:
-  if (buff[0] == '\0')  LOGI("Failed to allocatate memory from the plots permastate path");
-  else if (file == NULL)LOGI("Failed to open a file %s: %d(%s)", buff, errno, strerror(errno));
-  else                  LOGI("Failed to write to a file %s: %d(%s)", buff, errno, strerror(errno));
+  if (buff[0] == '\0')   LOGI("Failed to allocatate memory from the plots permastate path");
+  else if (file == NULL) LOGI("Failed to open a file %s: %d(%s)", buff, errno, strerror(errno));
+  else                   LOGI("Failed to write to a file %s: %d(%s)", buff, errno, strerror(errno));
   success = false;
 
 end:
@@ -207,6 +200,8 @@ bool br_permastate_load_plotter(FILE* file, br_plotter_t* br, br_data_descs_t* d
   size_t datas_len = 0;
   size_t active_plot_read = 0;
   size_t uis_read = 0;
+  int fl_read_error = 0;
+
   if (1 != fread(&datas_len, sizeof(datas_len), 1, file))                                              goto error;
   for (size_t i = 0; i < datas_len; ++i) {
     int id = 0;
@@ -222,12 +217,15 @@ bool br_permastate_load_plotter(FILE* file, br_plotter_t* br, br_data_descs_t* d
     br_da_push(*desc, d);
   }
   if (1 != (uis_read = fread(&br->ui, sizeof(br->ui), 1, file)))                                       goto error;
+  brfl_read(file, br->resizables, fl_read_error); if (fl_read_error != 0)                              goto error;
   return true;
   
 error:
-  if (active_plot_read == 0) LOGE("Failed to read active plot: %d`%s`", errno, strerror(errno));
-  else if (uis_read == 0) LOGE("Failed to read ui: %d`%s`", errno, strerror(errno));
-  LOGI("Failed to read plotter %d`%s`", errno, strerror(errno));
+  if (fl_read_error == 0) {
+    if (active_plot_read == 0) LOGE("Failed to read active plot: %s", strerror(errno));
+    else if (uis_read == 0) LOGE("Failed to read ui: %s", strerror(errno));
+    LOGI("Failed to read plotter");
+  }
   return false;
 }
 
@@ -266,12 +264,6 @@ bool br_permastate_load_plots(FILE* file, br_plotter_t* br) {
   if (plots_len != 0) {
     if (1 != fread(&read_crc, sizeof(read_crc), 1, file))                          goto error;
     if (calculated_crc != read_crc)                                                goto error;
-  }
-
-  for (size_t i = 0; i < plots_len; ++i) {
-    plots[i].extent_handle = brui_resizable_new(BR_EXTENTI_TOF(plots[i].cur_extent), 0);
-    plots[i].menu_extent_handle = brui_resizable_new2(BR_EXTENT(0, 0, 300, (float)plots[i].cur_extent.height), plots[i].extent_handle, (brui_resizable_t) { .target.hidden_factor = 1.f });
-    plots[i].legend_extent_handle = brui_resizable_new2(BR_EXTENT((float)plots[i].cur_extent.width - 110, 10, 100, 60), plots[i].extent_handle, (brui_resizable_t) { .target.hidden_factor = 1.f, .title_enabled = false });
   }
   return true;
 
