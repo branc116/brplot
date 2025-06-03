@@ -49,7 +49,9 @@ jobs:
       matrix:
         os: [ macos-13, macos-14, macos-15 ]
     steps:
+    - uses: actions/checkout@v4.1.7
     - run: |
+        ls -alFh
         clang -I. -o nob nob.c -lm
         ./nob
         ls bin -alFh
