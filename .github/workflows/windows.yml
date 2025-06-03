@@ -10,6 +10,7 @@ on:
       - 'external/**'
       - 'CMakeLists.txt'
       - 'build.zig'
+      - 'nob.c'
 
 permissions:
   contents: read

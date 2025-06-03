@@ -452,10 +452,8 @@ br_text_renderer_t* brtl_text_renderer(void) {
   return stl_br->text;
 }
 
-extern BR_THREAD_LOCAL bruirs_t bruirs;
-
 bruirs_t* brtl_bruirs(void) {
-  return &bruirs;
+  return &stl_br->resizables;
 }
 
 bruir_children_t brtl_bruirs_childern(int handle) {

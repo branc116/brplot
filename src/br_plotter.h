@@ -6,6 +6,7 @@
 #include "src/br_math.h"
 #include "src/br_theme.h"
 #include "src/br_permastate.h"
+#include "src/br_ui.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +34,7 @@ typedef struct br_plotter_t {
   br_plots_t plots;
   br_shaders_t shaders;
   br_dagens_t dagens;
+  bruirs_t resizables;
 
   br_text_renderer_t* text;
   // Any thread can write to this q, only render thread can pop
@@ -74,7 +76,6 @@ typedef struct br_plotter_t {
 #if BR_HAS_HOTRELOAD
   br_hotreload_state_t hot_state;
 #endif
-  int menu_extent_handle;
 
   br_permastate_status_t loaded_status;
 #if BR_HAS_SHADER_RELOAD

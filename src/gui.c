@@ -212,7 +212,7 @@ static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas) {
 }
 
 static void draw_left_panel(br_plotter_t* br) {
-  brui_resizable_push(br->menu_extent_handle);
+  brui_resizable_push(br->resizables.menu_extent_handle);
     char* scrach = br_scrach_get(4096);
     if (brui_collapsable(BR_STRL("Plots"), &br->ui.expand_plots)) {
       brui_vsplit(2);
@@ -313,14 +313,6 @@ static void brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth)
 
 static void brgui_draw_debug_window(br_plotter_t* br) {
   (void)br;
-  bruirs_t* res = brtl_bruirs();
-  printf("\n--------\n");
-  printf("next_free = %d\n", res->free_next);
-  for (int i = 0; i < res->len; ++i) {
-    printf("|%3d %3d| ", res->free_arr[i], res->arr[i].parent);
-    if ((i + 1) % 5 == 0) printf("\n");
-  }
-  printf("\n--------\n");
   if (false == br_context.debug_bounds) return;
   brui_resizable_temp_push(BR_STRL("Debug"));
     brgui_draw_debug_window_rec(br, 0, 0);

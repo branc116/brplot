@@ -77,6 +77,7 @@ typedef struct {
   X(int, z) \
   X(int, max_z) \
   X(int, parent) \
+  X(int, tag) \
   brui_resizable_anim_fields(X) \
   X(float, full_height) \
   X(bool, is_hoverd) \
@@ -84,11 +85,6 @@ typedef struct {
   X(bool, title_enabled) \
 
 typedef union {
-  struct {
-#define X(type, name) type name;
-    brui_resizable_fields(X)
-#undef X
-  };
   struct {
     struct {
 #define X(type, name) type name;
@@ -100,6 +96,11 @@ typedef union {
       brui_resizable_anim_fields(X)
 #undef X
     } target;
+  };
+  struct {
+#define X(type, name) type name;
+    brui_resizable_fields(X)
+#undef X
   };
 } brui_resizable_t;
 
@@ -121,6 +122,7 @@ typedef struct bruirs_t {
   int free_len;
   int free_next;
 
+  int menu_extent_handle;
   brui_drag_mode_t drag_mode;
   int drag_index;
   br_vec2_t drag_point;
@@ -198,6 +200,7 @@ void              brui_resizable_init(void);
 void              brui_resizable_deinit(void);
 int               brui_resizable_new(br_extent_t init_extent, int parent);
 int               brui_resizable_new2(br_extent_t init_extent, int parent, brui_resizable_t template);
+int               brui_resizable_new3(br_extent_t init_extent, int parent, brui_resizable_t template, brui_resizable_t target_template);
 void              brui_resizable_delete(int handle);
 void              brui_resizable_update(void);
 void              bruir_resizable_refresh(int index);

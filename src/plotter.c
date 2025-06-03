@@ -12,6 +12,7 @@
 #include "src/br_ui.h"
 #include "src/br_icons.h"
 #include "src/br_gl.h"
+#include "src/br_free_list.h"
 
 #include <math.h>
 #include <string.h>
@@ -57,21 +58,68 @@ br_plotter_t* br_plotter_malloc(void) {
 
 void br_plotter_init(br_plotter_t* br) {
   br_plotter_init_specifics_platform(br, 1280, 720);
-  brui_resizable_init();
   br->loaded_status = br_permastate_load(br);
   if (br->loaded_status != br_permastate_status_ok) {
     br_datas_deinit(&br->groups);
     br->plots.len = 0;
-    br_plotter_add_plot_2d(br);
+    if (br_permastate_status_ui_loaded == br->loaded_status) {
+      int x = 400;
+      br_plot_t plot = {
+        .cur_extent = BR_EXTENTI( x, 50, br->win.size.width - x - 60, br->win.size.height - 110 ),
+        .kind = br_plot_kind_2d,
+        .dd = {
+          .zoom = BR_VEC2D(1.f, 1.f),
+          .grid_line_thickness = 1.f,
+          .grid_major_line_thickness = 2.f,
+          .line_thickness = 0.05f
+        }
+      };
+      br_plot_create_texture(&plot);
+      bool found_resizable = false, found_menu_ex = false, found_legend_ex = false;
+      brfl_foreach(i, br->resizables) {
+        if (br_da_get(br->resizables, i).tag != 100) continue;
+        found_resizable = true;
+        plot.extent_handle = i;
+        break;
+      }
+      if (false == found_resizable) {
+        plot.extent_handle = brui_resizable_new2(BR_EXTENT((float)x, 50, (float)br->win.size.width - (float)x - 60.f, (float)br->win.size.height - 110), 0, (brui_resizable_t) { .title_enabled = true, .current.tag = 100 });
+      } else {
+        brfl_foreach(i, br->resizables) {
+          if (br_da_get(br->resizables, i).parent != plot.extent_handle) continue;
+          int tag = br_da_get(br->resizables, i).tag;
+          LOGI("Tag: %d", tag);
+          if (tag == 101) {
+            found_menu_ex = true;
+            plot.menu_extent_handle = i;
+          }
+          if (tag == 102) {
+            found_legend_ex = true;
+            plot.legend_extent_handle = i;
+          }
+        }
+      }
+      LOGI("Found menu: %d, legend: %d, ex: %d", found_menu_ex, found_legend_ex, found_resizable);
+      if (false == found_menu_ex) {
+        plot.menu_extent_handle = brui_resizable_new2(BR_EXTENT(0, 0, 300, (float)plot.cur_extent.height), plot.extent_handle, (brui_resizable_t) { .current.tag = 101, .target = { .hidden_factor = 1.f } });
+      }
+      if (false == found_legend_ex) {
+        plot.legend_extent_handle = brui_resizable_new2(BR_EXTENT((float)plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle, (brui_resizable_t) { .current.tag = 102 });
+      }
+      br_da_push_t(int, (br->plots), plot);
+    } else {
+      brui_resizable_init();
+      br_plotter_add_plot_2d(br);
+    }
   } else {
     for (int i = 0; i < br->plots.len; ++i) {
       br_plot_t* p = &br->plots.arr[i];
       br->plots.arr[i].texture_id = brgl_create_framebuffer(p->cur_extent.width, p->cur_extent.height);
     }
   }
-  br->menu_extent_handle = brui_resizable_new(BR_EXTENT(10, 40, 160, (float)brtl_viewport().height/2.f), 0); 
   br_icons_init(br->shaders.icon);
   if (br->loaded_status < br_permastate_status_ui_loaded) {
+    brtl_bruirs()->menu_extent_handle = brui_resizable_new(BR_EXTENT(10, 40, 160, (float)brtl_viewport().height/2.f), 0); 
     br_theme_dark();
     br_theme_reset_ui();
   }
@@ -142,9 +190,9 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
     }
   };
   br_plot_create_texture(&plot);
-  plot.extent_handle = brui_resizable_new(BR_EXTENT((float)x, 50, (float)br->win.size.width - (float)x - 60.f, (float)br->win.size.height - 110), 0);
-  plot.menu_extent_handle = brui_resizable_new2(BR_EXTENT(0, 0, 300, (float)plot.cur_extent.height), plot.extent_handle, (brui_resizable_t) { .target.hidden_factor = 1.f });
-  plot.legend_extent_handle = brui_resizable_new2(BR_EXTENT((float)plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle, (brui_resizable_t) { 0 });
+  plot.extent_handle = brui_resizable_new2(BR_EXTENT((float)x, 50, (float)br->win.size.width - (float)x - 60.f, (float)br->win.size.height - 110), 0, (brui_resizable_t) { .tag = 100, .title_enabled = true });
+  plot.menu_extent_handle = brui_resizable_new2(BR_EXTENT(0, 0, 300, (float)plot.cur_extent.height), plot.extent_handle, (brui_resizable_t) { .current.tag = 101, .target.hidden_factor = 1.f });
+  plot.legend_extent_handle = brui_resizable_new2(BR_EXTENT((float)plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle, (brui_resizable_t) { .current.tag = 102 });
   br_da_push_t(int, (br->plots), plot);
   return br->plots.len - 1;
 }
