@@ -9,6 +9,7 @@ on:
       - '.github/workflows/macos.yml'
       - 'external/**'
       - 'build.zig'
+      - 'nob.c'
 
 permissions:
   contents: read

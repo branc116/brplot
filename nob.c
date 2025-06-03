@@ -147,7 +147,17 @@ static const target_platform_t g_platform =
 //  "brplot";
 //#endif
 
+#if _WIN32
+#  if defined(__GNUC__)
+static const char* compiler = "gcc";
+#  elif defined(__clang__)
+static const char* compiler = "clang";
+#  elif defined(_MSC_VER)
+static const char* compiler = "cl.exe";
+#  endif
+#else
 static const char* compiler = "cc";
+#endif
 static const char* program_name;
 static n_command do_command = n_default;
 static bool is_debug = false;
@@ -163,6 +173,12 @@ static bool do_dist = true;
 static bool pip_skip_build = false;
 static bool disable_logs = false;
 static bool is_pedantic = false;
+#if !defined(__MACOS__)
+static bool is_macos = false;
+#else
+static bool is_macos = true;
+#endif
+
 #define X(name, desc) [n_ ## name] = { 0 },
 static command_flags_t command_flags[] = {
 COMMANDS(X)
@@ -425,6 +441,11 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
     }
   }
   nob_cmd_append(cmd, compiler, "-I.", "-o", build_dir.str, "-c", source.data);
+  if (is_macos) {
+    if (0 == strcmp(source.data, "src/platform.c")) {
+      nob_cmd_append(cmd, "-ObjC");
+    }
+  }
   if (is_headless) {
     nob_cmd_append(cmd, "-DBR_NO_X11", "-DBR_NO_WAYLAND", "-DHEADLESS");
   }
@@ -464,6 +485,13 @@ static bool compile_and_link(Nob_Cmd* cmd) {
     if (false == compile_one(cmd, nob_sv_from_cstr(sources[i]), &link_command)) return false;
   }
 
+  if (is_macos) {
+    nob_cmd_append(&link_command, "-framework", "Foundation");
+    nob_cmd_append(&link_command, "-framework", "CoreServices");
+    nob_cmd_append(&link_command, "-framework", "CoreGraphics");
+    nob_cmd_append(&link_command, "-framework", "AppKit");
+    nob_cmd_append(&link_command, "-framework", "IOKit");
+  }
   if (is_wasm) {
     nob_cmd_append(&link_command, "-sWASM_BIGINT", "-sALLOW_MEMORY_GROWTH", "-sUSE_GLFW=3", "-sUSE_WEBGL2=1",
         "-sGL_ENABLE_GET_PROC_ADDRESS", "--shell-file=src/web/minshell.html",
@@ -695,7 +723,7 @@ static bool embed_file_as_string(const char* in_path, const char* variable_name)
 
   fprintf(out_file, "#if !defined(BR_STRLC)\n"
                     "#  define BR_STRLC(STR) { .str = STR, .len = sizeof(STR) - 1 }\n"
-                    "#endif\n", variable_name);
+                    "#endif\n");
   fprintf(out_file, "const br_strv_t %s[] = {\n  BR_STRLC(\"", variable_name);
   while ((read_len = fread(buff, 1, buff_cap, in_file))) {
     for (unsigned long i = 0; i < read_len; ++i) {
