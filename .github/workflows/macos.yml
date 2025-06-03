@@ -43,4 +43,15 @@ jobs:
         ls
         zig build -DAll --summary all
         ls zig-out/bin
+  build-nob:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ macos-13, macos-14, macos-15 ]
+    steps:
+    - run: |
+        clang -I. -o nob nob.c -lm
+        ./nob
+        ls bin -alFh
+
 
