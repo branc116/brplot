@@ -405,8 +405,10 @@ sudo rm /usr/bin/brplot
 * Automaticaly generate functions to select icon that best fits wanted size..
 * ~~Resizables should use br_free_list~~
 * Implement snappings for resizables
-  * Regions should be drawn on screen when moving resizables where if I move the resizable, it snaps on that side of the screen.
-* When dragging resizables, they should not be lerped.
+  * ~~Regions should be drawn on screen when moving resizables where if I move the resizable, it snaps on that side of the screen.~~
+  * ~~If mouse over regions snap the resizable to that region~~
+  * If mouse over other resizable, draw regions over that other resizable and reparent the resizable that is being dragged
+* When dragging resizables, they should not be lerped
 
 ## Screenshots
 Here is a history of how brplot looked over time:
