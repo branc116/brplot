@@ -403,9 +403,10 @@ sudo rm /usr/bin/brplot
         * For that we need text input widget.
 * Web resizing is again fucked, unfuck it.
 * Automaticaly generate functions to select icon that best fits wanted size..
-* Resizables should use br_free_list
+* ~~Resizables should use br_free_list~~
 * Implement snappings for resizables
   * Regions should be drawn on screen when moving resizables where if I move the resizable, it snaps on that side of the screen.
+* When dragging resizables, they should not be lerped.
 
 ## Screenshots
 Here is a history of how brplot looked over time:

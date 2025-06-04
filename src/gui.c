@@ -27,7 +27,6 @@ static void brgui_draw_license(br_plotter_t* br);
 
 void br_plotter_draw(br_plotter_t* br) {
   br_plotter_begin_drawing(br);
-  brui_resizable_update();
   for (int i = 0; i < br->plots.len; ++i) {
 #define PLOT br_da_getp(br->plots, i)
     brui_resizable_t* r = brui_resizable_get(PLOT->extent_handle);
@@ -77,6 +76,7 @@ void br_plotter_draw(br_plotter_t* br) {
     draw_left_panel(br);
     brgui_draw_debug_window(br);
     brgui_draw_license(br);
+    brui_resizable_update();
   brui_end();
   br_plotter_end_drawing(br);
 }

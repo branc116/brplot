@@ -34,10 +34,9 @@ size_t test_write(void* src, size_t el_size, size_t n, void* null) {
 
 TEST_CASE(free_list_serizalize) {
   struct {
-    int* arr; int* free_arr;
+    int* arr, *free_arr;
     int len, cap;
-    int free_len;
-    int free_next;
+    int free_len, free_next;
   } is = { 0 };
   int one_handle = brfl_push(is, 1);
   int two_handle = brfl_push(is, 2);

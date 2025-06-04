@@ -218,6 +218,7 @@ bool br_permastate_load_plotter(FILE* file, br_plotter_t* br, br_data_descs_t* d
   }
   if (1 != (uis_read = fread(&br->ui, sizeof(br->ui), 1, file)))                                       goto error;
   brfl_read(file, br->resizables, fl_read_error); if (fl_read_error != 0)                              goto error;
+  if (0 != feof(file))                                                                               goto error;
   return true;
   
 error:
@@ -226,6 +227,7 @@ error:
     else if (uis_read == 0) LOGE("Failed to read ui: %s", strerror(errno));
     LOGI("Failed to read plotter");
   }
+  if (br && br->resizables.arr) brfl_free(br->resizables);
   return false;
 }
 
