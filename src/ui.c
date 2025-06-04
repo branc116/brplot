@@ -281,7 +281,7 @@ bool brui_checkbox(br_strv_t text, bool* checked) {
   bool hover = false;
 
   brui_push_simple();
-    br_extent_t icon = *checked ?  br_icons.cb_1.size_32 : br_icons.cb_0.size_32;
+    br_extent_t icon = *checked ?  br_icon_cb_1((float)TOP.font_size) : br_icon_cb_0((float)TOP.font_size);
     hover = br_col_vec2_bb(cb_extent, brtl_mouse_pos());
     br_color_t bg = hover ? BR_THEME.colors.btn_hovered : BR_THEME.colors.btn_inactive;
     br_color_t fg = hover ? BR_THEME.colors.btn_txt_hovered : BR_THEME.colors.btn_txt_inactive;
