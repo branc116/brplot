@@ -27,7 +27,6 @@ static void brgui_draw_license(br_plotter_t* br);
 
 void br_plotter_draw(br_plotter_t* br) {
   br_plotter_begin_drawing(br);
-  brui_resizable_update();
   for (int i = 0; i < br->plots.len; ++i) {
 #define PLOT br_da_getp(br->plots, i)
     brui_resizable_t* r = brui_resizable_get(PLOT->extent_handle);
@@ -77,6 +76,7 @@ void br_plotter_draw(br_plotter_t* br) {
     draw_left_panel(br);
     brgui_draw_debug_window(br);
     brgui_draw_license(br);
+    brui_resizable_update();
   brui_end();
   br_plotter_end_drawing(br);
 }
@@ -97,7 +97,7 @@ static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas) {
       active &= brui_y() < mp.y;
       brui_vsplitvp(3, BRUI_SPLITA((float)brui_text_size()), BRUI_SPLITA(brui_padding_x()), BRUI_SPLITR(1));
         if (plot->selected_data == data->group_id) {
-          brui_icon((float)brui_text_size(), BR_EXTENT_TOBB(br_icons.cb_0.size_32), brtl_theme()->colors.btn_hovered, data->color);
+          brui_icon((float)brui_text_size(), BR_EXTENT_TOBB(br_icon_cb_0((float)brui_text_size())), brtl_theme()->colors.btn_hovered, data->color);
         } else {
           brui_icon((float)brui_text_size(), BR_BB(0,0,0,0), data->color, data->color);
         }
@@ -148,12 +148,12 @@ static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas) {
   int icon_size = og_text_size;
   bool ret = false;
   if (brui_resizable_is_hidden(plot->menu_extent_handle)) {
-    if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icons.menu.size_32)) brui_resizable_show(plot->menu_extent_handle, true);
+    if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icon_menu((float)og_text_size))) brui_resizable_show(plot->menu_extent_handle, true);
   } else {
     brui_resizable_push(plot->menu_extent_handle);
       brui_vsplitvp(2, BRUI_SPLITA((float)icon_size), BRUI_SPLITR(1));
         char* c = br_scrach_get(4096);
-        if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icons.back.size_32)) brui_resizable_show(plot->menu_extent_handle, false);
+        if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icon_back((float)og_text_size))) brui_resizable_show(plot->menu_extent_handle, false);
       brui_vsplit_pop();
         brui_text_size_set(og_text_size);
         brui_text_align_set(br_text_renderer_ancor_mid_mid);

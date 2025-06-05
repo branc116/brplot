@@ -70,7 +70,6 @@ typedef struct {
   X(br_extent_t, cur_extent) \
   X(float, hidden_factor) \
   X(float, title_height) \
-  X(float, maximized) \
 
 #define brui_resizable_fields(X) \
   X(brui_ancor_t, ancor) \
