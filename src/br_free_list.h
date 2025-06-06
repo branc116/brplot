@@ -58,7 +58,7 @@
   (FL).free_next = -1; \
 } while (0)
 
-#define brfl_foreach(INDEX, FL) for (int INDEX = 0; i < (FL).len; INDEX = brfl_next_free((FL).free_arr, (FL).free_next, (FL).len, INDEX))
+#define brfl_foreach(INDEX, FL) for (int INDEX = 0; INDEX < (FL).len; INDEX = brfl_next_free((FL).free_arr, (FL).free_next, (FL).len, INDEX))
 
 #define brfl_write(FILE, FL, ERROR) do {                                                                              \
   ERROR = 0;                                                                                                          \
