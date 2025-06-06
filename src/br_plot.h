@@ -94,8 +94,6 @@ typedef struct br_context_t {
 } br_context_t;
 typedef struct br_plotter_t br_plotter_t;
 
-extern br_context_t br_context;
-
 br_vec2_t br_graph_to_screen(br_extent_t graph_rect, br_extenti_t screen_rect, br_vec2_t point);
 
 void br_plot_deinit(br_plot_t* plot);

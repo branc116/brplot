@@ -31,6 +31,9 @@ typedef struct br_theme_t {
     int font_size;
     float border_thick;
     float animation_speed;
+    float min_sampling;
+    float cull_min;
+    bool debug;
   } ui;
 } br_theme_t;
 

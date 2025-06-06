@@ -460,3 +460,16 @@ bruir_children_t brtl_bruirs_childern(int handle) {
   return brui_resizable_children_temp(handle);
 }
 
+
+bool* brtl_debug(void) {
+  return &stl_br->ui.theme.ui.debug;
+}
+
+float* brtl_cull_min(void) {
+  return &stl_br->ui.theme.ui.cull_min;
+}
+
+float* brtl_min_sampling(void) {
+  return &stl_br->ui.theme.ui.min_sampling;
+}
+

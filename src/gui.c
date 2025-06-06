@@ -235,9 +235,9 @@ static void draw_left_panel(br_plotter_t* br) {
     }
 
     if (brui_collapsable(BR_STRL("Optimizations"), &br->ui.expand_optimizations)) {
-      brui_sliderf3(BR_STRL("min something"), &br_context.min_sampling, 4);
-      brui_sliderf2(BR_STRL("cull min"), &br_context.cull_min);
-      brui_checkbox(BR_STRL("Debug"), &br_context.debug_bounds);
+      brui_sliderf3(BR_STRL("min something"), brtl_min_sampling(), 4);
+      brui_sliderf2(BR_STRL("cull min"), brtl_cull_min());
+      brui_checkbox(BR_STRL("Debug"), brtl_debug());
       brui_collapsable_end();
     }
 
@@ -313,7 +313,7 @@ static void brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth)
 
 static void brgui_draw_debug_window(br_plotter_t* br) {
   (void)br;
-  if (false == br_context.debug_bounds) return;
+  if (false == *brtl_debug()) return;
   brui_resizable_temp_push(BR_STRL("Debug"));
     brgui_draw_debug_window_rec(br, 0, 0);
   brui_resizable_pop();

@@ -223,8 +223,7 @@ int brfl_push_internal_get_handle(void** const arrp, int** const free_arrp, int*
 }
 
 int brfl_next_free(int const* free_arr, int free_next, int len, int index) {
-  ++index;
-  for (; index < len; ++index) if (free_arr[index] == -1 && index != free_next) return index;
+  for (++index; index < len; ++index) if (free_arr[index] == -1 && index != free_next) return index;
   return index;
 }
 #endif

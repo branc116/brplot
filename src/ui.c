@@ -17,6 +17,7 @@
 #include <stdarg.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -722,11 +723,6 @@ int brui_resizable_new2(br_extent_t init_extent, int parent, brui_resizable_t te
   return new_id;
 }
 
-int brui_resizable_new3(br_extent_t init_extent, int parent, brui_resizable_t template, brui_resizable_t target_template) {
-  template.target = target_template.target;
-  return brui_resizable_new2(init_extent, parent, template);
-}
-
 void brui_resizable_delete(int handle) {
   bruir_children_t children = brui_resizable_children_temp(handle);
   for (int i = 0; i < children.len; ++i) brui_resizable_delete(children.arr[i]);
@@ -1137,6 +1133,14 @@ void brui_resizable_temp_delete(br_strv_t id) {
   }
 }
 
+void brui_resizable_temp_delete_all(void) {
+  bruirs_t* rs = brtl_bruirs();
+  ptrdiff_t len = stbds_hmlen(bruir__temp_res);
+  for (int i = 0; i < len; ++i) {
+    brfl_remove(*rs, bruir__temp_res[i].value);
+  }
+}
+
 brui_resizable_t* brui_resizable_get(int id) {
   return br_da_getp(*brtl_bruirs(), id);
 }
@@ -1144,13 +1148,13 @@ brui_resizable_t* brui_resizable_get(int id) {
 static int bruir_find_at(int index, br_vec2_t loc, br_vec2_t* out_local_pos) {
   bruirs_t* rs = brtl_bruirs();
   brui_resizable_t res = br_da_get(*rs, index);
-  if (res.hidden_factor > 0.9f) return -1;
-  if (res.title_height > 0.1f) return index;
-  br_vec2_t local = BR_VEC2(loc.x - (float)res.cur_extent.x, loc.y - (float)res.cur_extent.y);
+  if (res.current.hidden_factor > 0.9f) return -1;
+  if (res.current.title_height > 0.1f) return index;
+  br_vec2_t local = BR_VEC2(loc.x - (float)res.current.cur_extent.x, loc.y - (float)res.current.cur_extent.y);
   if (local.x < 0) return -1;
   if (local.y < 0) return -1;
-  if (local.x > (float)res.cur_extent.width) return -1;
-  if (local.y > (float)res.cur_extent.height) return -1;
+  if (local.x > (float)res.current.cur_extent.width) return -1;
+  if (local.y > (float)res.current.cur_extent.height) return -1;
 
   int found = -1;
   int best_z = 0;

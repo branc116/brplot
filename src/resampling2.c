@@ -30,7 +30,7 @@ static void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_vec2
     BR_VEC2D_TOF(lc->args.screen_size)
   );
 
-  const float min_dist = br_context.cull_min;
+  const float min_dist = *brtl_cull_min();
   if (fabsf(d.x) + fabsf(d.y) < min_dist) {
     lc->mid = p;
     return;
@@ -547,7 +547,7 @@ void resampling2_change_something(br_datas_t pg) {
 
     pg.arr[i].resampling->something *= (float)mul;
     pg.arr[i].resampling->something2 *= (float)mul;
-    float mins = br_context.min_sampling;
+    float mins = *brtl_min_sampling();
     if (pg.arr[i].resampling->something < mins) pg.arr[i].resampling->something = mins;
     if (pg.arr[i].resampling->something2 < mins) pg.arr[i].resampling->something2 = mins;
     pg.arr[i].resampling->draw_count = 0;
