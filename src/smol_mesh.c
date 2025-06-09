@@ -101,7 +101,7 @@ void smol_mesh_gen_line(br_smol_mesh_line_t* args, br_vec2_t startPos, br_vec2_t
   args->prev[0] = BR_VEC2((float)poss[2].x, (float)poss[2].y);
   args->prev[1] = BR_VEC2((float)poss[3].x, (float)poss[3].y);
 
-  if (brtl_debug()) {
+  if (*brtl_debug()) {
     *brtl_debug() = false;
     smol_mesh_gen_point(*args, startPos);
     smol_mesh_gen_point(*args, endPos);
