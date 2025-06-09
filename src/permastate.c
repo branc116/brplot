@@ -146,6 +146,7 @@ bool br_permastate_save_plotter(br_str_t path_folder, br_plotter_t* br) {
     if (data->name.len != fwrite(data->name.str, sizeof(*data->name.str), data->name.len, file)) goto error;
   }
   if (1 != fwrite(&br->ui, sizeof(br->ui), 1, file))                                             goto error;
+  brui_resizable_temp_delete_all();
   brfl_write(file, br->resizables, fl_write_error); if (fl_write_error != 0)                     goto error;
   goto end;
 

@@ -55,6 +55,8 @@ void br_theme_light(void) {
 }
 
 void br_theme_reset_ui(void) {
+  BR_THEME.ui.min_sampling = 0.001f;
+  BR_THEME.ui.cull_min = 2.f;
   BR_THEME.ui.padding = BR_VEC2(4, 2);
   BR_THEME.ui.font_size = 20;
   BR_THEME.ui.border_thick = 1;

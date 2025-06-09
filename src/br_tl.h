@@ -46,6 +46,10 @@ br_text_renderer_t* brtl_text_renderer(void);
 bruirs_t* brtl_bruirs(void);
 bruir_children_t brtl_bruirs_childern(int handle);
 
+bool* brtl_debug(void);
+
+float* brtl_cull_min(void);
+float* brtl_min_sampling(void);
 #ifdef __cplusplus
 }
 #endif

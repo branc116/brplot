@@ -84,7 +84,8 @@ static inline void br_keybinding_follow(br_plotter_t* br, br_plot_t* plot, br_ke
 
 static inline void br_keybinding_debug(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
   (void)br; (void)cs; (void)plot;
-  br_context.debug_bounds = !br_context.debug_bounds;
+  bool old_d = *brtl_debug();
+  *brtl_debug() = !old_d;
 }
 
 static inline void br_keybinding_screenshot(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {

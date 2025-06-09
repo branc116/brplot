@@ -58,7 +58,7 @@
   (FL).free_next = -1; \
 } while (0)
 
-#define brfl_foreach(INDEX, FL) for (int INDEX = 0; i < (FL).len; INDEX = brfl_next_free((FL).free_arr, (FL).free_next, (FL).len, INDEX))
+#define brfl_foreach(INDEX, FL) for (int INDEX = 0; INDEX < (FL).len; INDEX = brfl_next_free((FL).free_arr, (FL).free_next, (FL).len, INDEX))
 
 #define brfl_write(FILE, FL, ERROR) do {                                                                              \
   ERROR = 0;                                                                                                          \
@@ -223,8 +223,7 @@ int brfl_push_internal_get_handle(void** const arrp, int** const free_arrp, int*
 }
 
 int brfl_next_free(int const* free_arr, int free_next, int len, int index) {
-  ++index;
-  for (; index < len; ++index) if (free_arr[index] == -1 && index != free_next) return index;
+  for (++index; index < len; ++index) if (free_arr[index] == -1 && index != free_next) return index;
   return index;
 }
 #endif

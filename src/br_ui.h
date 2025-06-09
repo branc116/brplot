@@ -199,7 +199,6 @@ void              brui_resizable_init(void);
 void              brui_resizable_deinit(void);
 int               brui_resizable_new(br_extent_t init_extent, int parent);
 int               brui_resizable_new2(br_extent_t init_extent, int parent, brui_resizable_t template);
-int               brui_resizable_new3(br_extent_t init_extent, int parent, brui_resizable_t template, brui_resizable_t target_template);
 void              brui_resizable_delete(int handle);
 void              brui_resizable_update(void);
 void              bruir_resizable_refresh(int index);
@@ -217,6 +216,7 @@ int               brui_resizable_children_top_z(int resizable_handle);
 
 brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id);
 void              brui_resizable_temp_delete(br_strv_t id);
+void              brui_resizable_temp_delete_all(void);
 
 void brui_resizable_save(FILE* file);
 void brui_resizable_load(FILE* file);
