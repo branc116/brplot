@@ -11,6 +11,7 @@ typedef struct br_text_renderer_t br_text_renderer_t;
 typedef struct br_theme_t br_theme_t;
 typedef struct bruirs_t bruirs_t;
 typedef struct bruir_children_t bruir_children_t;
+typedef struct brsp_t brsp_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,6 +43,8 @@ void brtl_viewport_set(br_extenti_t ex);
 br_plotter_t* brtl_plotter(void);
 br_shaders_t* brtl_shaders(void);
 br_text_renderer_t* brtl_text_renderer(void);
+
+brsp_t* brtl_brsp(void);
 
 bruirs_t* brtl_bruirs(void);
 bruir_children_t brtl_bruirs_childern(int handle);

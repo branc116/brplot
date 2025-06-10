@@ -3,6 +3,7 @@
 #include "src/br_str.h"
 #include "src/br_shaders.h"
 #include "src/br_math.h"
+#include "src/br_string_pool.h"
 
 #include <stdio.h>
 
@@ -54,7 +55,7 @@ typedef struct br_data_t {
   br_data_kind_t kind;
   int group_id;
   br_color_t color;
-  br_str_t name;
+  brsp_id_t name;
   bool is_new;
   union {
     br_data_2d_t dd;
@@ -69,7 +70,7 @@ typedef struct br_datas_t {
 
 typedef struct {
   int group_id;
-  br_str_t name;
+  brsp_id_t name;
 } br_data_desc_t;
 
 typedef struct {
@@ -81,7 +82,7 @@ void br_data_construct(void);
 int br_datas_get_new_id(br_datas_t* datas);
 br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind);
 br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind);
-br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, br_color_t color, size_t cap, br_str_t name);
+br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, br_color_t color, size_t cap, brsp_id_t name);
 br_data_t* br_data_get(br_datas_t* pg_array, int group);
 br_data_t* br_data_get1(br_datas_t pg, int group);
 br_data_t* br_data_get2(br_datas_t* pg_array, int group, br_data_kind_t kind);

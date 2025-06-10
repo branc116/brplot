@@ -135,7 +135,6 @@ bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* 
   if (1 != fread(&cap, sizeof(cap), 1, file)) goto error;
 
   br_data_t* data = br_datas_create2(datas, desc->group_id, kind, color, cap, desc->name);
-  br_str_invalidata(desc->name);
   if (NULL == data) goto error;
 
   if (0 != cap) {
@@ -217,6 +216,7 @@ static bool br_dagens_handle_once(br_datas_t* datas, br_dagens_t* dagens, br_plo
 }
 
 static void br_dagen_handle(br_dagen_t* dagen, br_data_t* data, br_datas_t datas) {
+  br_strv_t name;
   switch (dagen->kind) {
     case br_dagen_kind_file:
     {
@@ -252,7 +252,8 @@ static void br_dagen_handle(br_dagen_t* dagen, br_data_t* data, br_datas_t datas
       }
       return;
 error:
-      LOGE("Failed to read data for a plot %s: %d(%s)\n", br_str_to_c_str(data->name), errno, strerror(errno));
+      name = brsp_get(*brtl_brsp(), data->name);
+      LOGE("Failed to read data for a plot %.*s: %d(%s)\n", name.len, name.str, errno, strerror(errno));
       fclose(dagen->file.file);
       dagen->state = br_dagen_state_failed;
     } break;

@@ -452,6 +452,10 @@ br_text_renderer_t* brtl_text_renderer(void) {
   return stl_br->text;
 }
 
+brsp_t* brtl_brsp(void) {
+  return &stl_br->string_pool;
+}
+
 bruirs_t* brtl_bruirs(void) {
   return &stl_br->resizables;
 }

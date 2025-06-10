@@ -9,6 +9,7 @@
 #include "src/br_data_generator.h"
 #include "src/br_da.h"
 #include "src/br_free_list.h"
+#include "src/br_string_pool.h"
 #include "src/br_ui.h"
 
 #include <stdint.h>
@@ -134,20 +135,20 @@ bool br_permastate_save_plotter(br_str_t path_folder, br_plotter_t* br) {
   bool success = true;
   int fl_write_error = 0;
 
-  if (false == br_fs_cd(&path_folder, br_strv_from_literal("plotter.br")))                       goto error;
+  if (false == br_fs_cd(&path_folder, br_strv_from_literal("plotter.br")))   goto error;
   br_str_to_c_str1(path_folder, buff);
-  if (NULL == (file = fopen(buff, "wb")))                                                        goto error;
-  if (1 != fwrite(&command, sizeof(command), 1, file))                                           goto error;
-  if (1 != fwrite(&br->groups.len, sizeof(br->groups.len), 1, file))                             goto error;
+  if (NULL == (file = fopen(buff, "wb")))                                    goto error;
+  if (1 != fwrite(&command, sizeof(command), 1, file))                       goto error;
+  if (1 != fwrite(&br->groups.len, sizeof(br->groups.len), 1, file))         goto error;
   for (size_t i = 0; i < br->groups.len; ++i) {
     br_data_t* data = &br->groups.arr[i];
-    if (1 != fwrite(&data->group_id, sizeof(data->group_id), 1, file))                           goto error;
-    if (1 != fwrite(&data->name.len, sizeof(data->name.len), 1, file))                           goto error;
-    if (data->name.len != fwrite(data->name.str, sizeof(*data->name.str), data->name.len, file)) goto error;
+    if (1 != fwrite(&data->group_id, sizeof(data->group_id), 1, file))       goto error;
+    if (1 != fwrite(&data->name, sizeof(data->name), 1, file))               goto error;
   }
-  if (1 != fwrite(&br->ui, sizeof(br->ui), 1, file))                                             goto error;
+  if (1 != fwrite(&br->ui, sizeof(br->ui), 1, file))                         goto error;
   brui_resizable_temp_delete_all();
-  brfl_write(file, br->resizables, fl_write_error); if (fl_write_error != 0)                     goto error;
+  brfl_write(file, br->resizables, fl_write_error); if (fl_write_error != 0) goto error;
+  if (false == brsp_write(file, br->string_pool))                            goto error;
   goto end;
 
 error:
@@ -203,23 +204,19 @@ bool br_permastate_load_plotter(FILE* file, br_plotter_t* br, br_data_descs_t* d
   size_t uis_read = 0;
   int fl_read_error = 0;
 
-  if (1 != fread(&datas_len, sizeof(datas_len), 1, file))                                              goto error;
+  if (1 != fread(&datas_len, sizeof(datas_len), 1, file))                 goto error;
   for (size_t i = 0; i < datas_len; ++i) {
     int id = 0;
-    uint32_t len = 0;
-    char* str = NULL;
-    if (1 != fread(&id, sizeof(id), 1, file))                                                          goto error;
-    if (1 != fread(&len, sizeof(len), 1, file))                                                        goto error; 
-    if (len != 0) {
-      if (NULL == (str = BR_MALLOC(len * sizeof(*str))))                                               goto error;
-      if (len != fread(str, sizeof(*str), len, file))                                                  goto error;
-    }
-    br_data_desc_t d = { .group_id = id, .name = { .str = str, .len = len, .cap = len } };
+    brsp_id_t sp_id = 0;
+    if (1 != fread(&id, sizeof(id), 1, file))                             goto error;
+    if (1 != fread(&sp_id, sizeof(sp_id), 1, file))                       goto error; 
+    br_data_desc_t d = { .group_id = id, .name =  sp_id};
     br_da_push(*desc, d);
   }
-  if (1 != (uis_read = fread(&br->ui, sizeof(br->ui), 1, file)))                                       goto error;
-  brfl_read(file, br->resizables, fl_read_error); if (fl_read_error != 0)                              goto error;
-  if (0 != feof(file))                                                                               goto error;
+  if (1 != (uis_read = fread(&br->ui, sizeof(br->ui), 1, file)))          goto error;
+  brfl_read(file, br->resizables, fl_read_error); if (fl_read_error != 0) goto error;
+  if (false == brsp_read(file, &br->string_pool))                         goto error;
+  if (0 != feof(file))                                                    goto error;
   return true;
   
 error:
@@ -352,10 +349,6 @@ error:
 end:
   if (NULL != path.str) br_str_free(path);
   if (NULL != f)        fclose(f);
-  for (size_t i = 0; i < descs.len; ++i) {
-    br_str_t name = descs.arr[i].name;
-    if (NULL != name.str) br_str_free(name);
-  }
   br_da_free(descs);
   return status;
 }

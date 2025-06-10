@@ -117,7 +117,7 @@ br_str_t br_str_malloc(size_t size) {
 }
 
 void br_str_free(br_str_t str) {
-  BR_FREE(str.str);
+  if (NULL != str.str) BR_FREE(str.str);
 }
 
 bool br_str_realloc(br_str_t* s, size_t new_cap) {
@@ -242,14 +242,13 @@ bool br_str_push_c_str(br_str_t* s, char const* c) {
 }
 
 bool br_str_push_uninitialized(br_str_t* s, unsigned int n) {
-  if (n <= 0) return true;
-  if (s->len + n > s->cap) {
+  if (s->len + n >= s->cap) {
     size_t pot_size_1 = s->cap * 2, pot_size_2 = s->len + n;
     size_t new_size =  pot_size_2 > pot_size_1 ? pot_size_2 : pot_size_1;
     if (false == br_str_realloc(s, new_size)) return false;
   }
 
-  s->len += s->cap;
+  s->len += n;
   return true;
 }
 

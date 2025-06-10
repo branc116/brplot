@@ -79,6 +79,7 @@ typedef struct {
   X(int, tag) \
   brui_resizable_anim_fields(X) \
   X(float, full_height) \
+  X(br_extent_t, ancor_none_extent) \
   X(bool, is_hoverd) \
   X(bool, scroll_bar) \
   X(bool, title_enabled) \

@@ -7,6 +7,7 @@
 #include "src/br_theme.h"
 #include "src/br_permastate.h"
 #include "src/br_ui.h"
+#include "src/br_string_pool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,6 +36,7 @@ typedef struct br_plotter_t {
   br_shaders_t shaders;
   br_dagens_t dagens;
   bruirs_t resizables;
+  brsp_t string_pool;
 
   br_text_renderer_t* text;
   // Any thread can write to this q, only render thread can pop

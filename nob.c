@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <ctype.h>
 #include <stdio.h>
 #define _CRT_SECURE_NO_WARNINGS
@@ -46,6 +47,7 @@
   X(pip, "Create pip egg") \
   X(unittests, "Run unit tests") \
   X(dot, "Create Dot file with file dependencies") \
+  X(compile_commands, "Create compile_commands.json file") \
   X(help, "Print help") \
 
 #define SANITIZER_FLAGS "-fsanitize=address,undefined"
@@ -131,7 +133,8 @@ const char* sources[] = {
  "src/gl.c",
  "src/icons.c",
  "src/theme.c",
- "src/free_list.c"
+ "src/free_list.c",
+ "src/string_pool.c"
 };
 
 static const target_platform_t g_platform =
@@ -405,6 +408,7 @@ static bool gl_gen(void) {
   return do_gl_gen() == 0;
 }
 
+bool g_sike_compile = false;
 static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd) {
   static file_names_t names = { 0 };
   static indexies_t indexies = { 0 };
@@ -460,7 +464,9 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
   }
   if (disable_logs) nob_cmd_append(cmd, "-DBR_DISABLE_LOG");
   if (is_pedantic) {
-#if defined(_MSC_VER)
+#if defined(__clang__)
+    nob_cmd_append(cmd, "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-Wconversion", "-Wshadow");
+#elif defined(_MSC_VER)
     LOGF("Pedantic flags for msvc are not known");
 #else
     nob_cmd_append(cmd, "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-Wconversion", "-Wshadow");
@@ -473,7 +479,7 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
     nob_cmd_append(cmd, "-fPIC");
 #endif
   }
-  return nob_cmd_run_sync_and_reset(cmd);
+  return g_sike_compile || nob_cmd_run_sync_and_reset(cmd);
 }
 
 static bool compile_and_link(Nob_Cmd* cmd) {
@@ -986,6 +992,50 @@ static bool n_dot_do(void) {
   }
   printf("}\n");
   return true;
+}
+
+static bool n_compile_commands_do(void) {
+	bool success = true;
+	const char* file_name = "compile_commands.json";
+	FILE* f = fopen(file_name, "wb+");
+	if (NULL == f) goto error;
+	fprintf(f, "[\n");
+	Nob_Cmd compile_command = { 0 };
+	Nob_Cmd link_command = { 0 };
+	g_sike_compile = true;
+	is_rebuild = true;
+	is_pedantic = true;
+	is_debug = true;
+	for (int i = 0; i < ARR_LEN(sources); ++i) {
+		LOGI("Index: %d: %s", i, sources[i]);
+		fprintf(f, "  {\n    ");
+		compile_command.count = link_command.count = 0;
+		if (false == compile_one(&compile_command, nob_sv_from_cstr(sources[i]), &link_command)) goto error;
+		fprintf(f, "\"directory\": \"C:/Users/bricko/source/github.com/branc116/brplot\",\n    ");
+		fprintf(f, "\"command\": \"");
+		for (int j = 0; j < compile_command.count; ++j) {
+			fprintf(f, "%s ", compile_command.items[j]);
+		}
+		fprintf(f, "\",\n    ");
+		fprintf(f, "\"file\": \"%s\"\n", sources[i]);
+		fprintf(f, "  }");
+		if (i + 1 < ARR_LEN(sources)) fprintf(f, ",\n");
+		else fprintf(f, "\n");
+	}
+	fprintf(f, "]");
+	goto done;
+
+error:
+	if (NULL != f) LOGE("Failed to write to file %s: %s", file_name, strerror(errno));
+	else           LOGE("Failed to open file %s: %s", file_name, strerror(errno));
+	success = false;
+
+done:
+	if (NULL != f) fclose(f);
+	if (compile_command.items) nob_cmd_free(compile_command);
+	if (link_command.items) nob_cmd_free(link_command);
+	return success;
+
 }
 
 void br_go_rebuild_yourself(int argc, char** argv) {
