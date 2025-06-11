@@ -274,7 +274,7 @@ static void draw_left_panel(br_plotter_t* br) {
       for (size_t i = 0; i < br->groups.len; ++i) {
         brui_push();
           br_data_t data = br_da_get(br->groups, i);
-          br_strv_t name = brsp_get(br->string_pool, data.name);
+          br_strv_t name = brsp_get(*brtl_brsp(), data.name);
           int n = sprintf(scrach, "%.*s (%d) (%zu points)", name.len, name.str, data.group_id, data.len);
           brui_text(BR_STRV(scrach, (uint32_t)n));
           n = sprintf(scrach, "%.2fms (%.3f %.3f)", br_resampling2_get_draw_time(data.resampling)*1000.0f, br_resampling2_get_something(data.resampling), br_resampling2_get_something2(data.resampling));
@@ -323,24 +323,24 @@ static void brgui_draw_debug_window(br_plotter_t* br) {
     brgui_draw_debug_window_rec(br, 0, 0);
     uint32_t chars_per_row = 8;
     brui_push();
-      brui_textf("Pool size: %d, elements: %d, free_len: %d", br->string_pool.pool.len, br->string_pool.len, br->string_pool.free_len);
-      for (int i = 0; i < br->string_pool.len; ++i) {
-        brsp_node_t node = br->string_pool.arr[i];
-        brui_textf("#%d |%c| start_index: %d, len: %d, cap: %d prev: %d, next: %d", i, brfl_is_free(br->string_pool, i) ? ' ' : 'X', node.start_index, node.len, node.cap, node.prev_in_memory, node.next_in_memory);
+      brui_textf("Pool size: %d, elements: %d, free_len: %d", brtl_brsp()->pool.len, brtl_brsp()->len, brtl_brsp()->free_len);
+      for (int i = 0; i < brtl_brsp()->len; ++i) {
+        brsp_node_t node = brtl_brsp()->arr[i];
+        brui_textf("#%d |%c| start_index: %d, len: %d, cap: %d prev: %d, next: %d", i, brfl_is_free(*brtl_brsp(), i) ? ' ' : 'X', node.start_index, node.len, node.cap, node.prev_in_memory, node.next_in_memory);
       }
       char* buff = br_scrach_get(128);
-        int cur_node_index = br->string_pool.first_in_memory;
-        brsp_node_t cur_node = br->string_pool.arr[cur_node_index];
-        for (uint32_t i = 0; i < br->string_pool.pool.len; i += chars_per_row) {
+        int cur_node_index = brtl_brsp()->first_in_memory;
+        brsp_node_t cur_node = brtl_brsp()->arr[cur_node_index];
+        for (uint32_t i = 0; i < brtl_brsp()->pool.len; i += chars_per_row) {
           brui_vsplitvp(2, BRUI_SPLITA(70), BRUI_SPLITR(1));
             brui_text_color_set(brtl_theme()->colors.btn_txt_inactive);
             brui_textf("0x%x", i);
           brui_vsplit_pop();
             char* cur = buff;
-            for (uint32_t j = 0; j < chars_per_row && i + j < br->string_pool.pool.len; ++j) { 
-              br_color_t text_color = brfl_is_free(br->string_pool, cur_node_index) ? BR_COLOR(0x40, 0x40, 0x20, 0xFF) : BR_COLOR(0xE0, 0x20, 0xE0, 0xFF);
+            for (uint32_t j = 0; j < chars_per_row && i + j < brtl_brsp()->pool.len; ++j) { 
+              br_color_t text_color = brfl_is_free(*brtl_brsp(), cur_node_index) ? BR_COLOR(0x40, 0x40, 0x20, 0xFF) : BR_COLOR(0xE0, 0x20, 0xE0, 0xFF);
               brui_text_color_set(cur_node.len > 0 ? br_color_lighter(text_color, 10) : text_color);
-              unsigned char c = (unsigned char)br->string_pool.pool.str[i + j];
+              unsigned char c = (unsigned char)brtl_brsp()->pool.str[i + j];
               if (c < 16) {
                 *cur++ = '0';
                 *cur++ = c >= 10 ? 'A'+(c - 10) : ('0' + c);
@@ -358,7 +358,7 @@ static void brgui_draw_debug_window(br_plotter_t* br) {
               }
               if (0 == --cur_node.cap) {
                 brui_text(BR_STRV(buff, (uint32_t)(cur - buff)));
-                cur_node = br->string_pool.arr[cur_node.next_in_memory];
+                cur_node = brtl_brsp()->arr[cur_node.next_in_memory];
               }
             }
             brui_text(BR_STRV(buff, (uint32_t)(cur - buff)));

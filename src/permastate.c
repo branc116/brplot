@@ -11,6 +11,7 @@
 #include "src/br_free_list.h"
 #include "src/br_string_pool.h"
 #include "src/br_ui.h"
+#include "src/br_tl.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -148,7 +149,7 @@ bool br_permastate_save_plotter(br_str_t path_folder, br_plotter_t* br) {
   if (1 != fwrite(&br->ui, sizeof(br->ui), 1, file))                         goto error;
   brui_resizable_temp_delete_all();
   brfl_write(file, br->resizables, fl_write_error); if (fl_write_error != 0) goto error;
-  if (false == brsp_write(file, br->string_pool))                            goto error;
+  if (false == brsp_write(file, *brtl_brsp()))                               goto error;
   goto end;
 
 error:
@@ -215,7 +216,7 @@ bool br_permastate_load_plotter(FILE* file, br_plotter_t* br, br_data_descs_t* d
   }
   if (1 != (uis_read = fread(&br->ui, sizeof(br->ui), 1, file)))          goto error;
   brfl_read(file, br->resizables, fl_read_error); if (fl_read_error != 0) goto error;
-  if (false == brsp_read(file, &br->string_pool))                         goto error;
+  if (false == brsp_read(file, brtl_brsp()))                              goto error;
   if (0 != feof(file))                                                    goto error;
   return true;
   

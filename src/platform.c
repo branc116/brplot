@@ -452,8 +452,9 @@ br_text_renderer_t* brtl_text_renderer(void) {
   return stl_br->text;
 }
 
+static BR_THREAD_LOCAL brsp_t br_stl_string_pool;
 brsp_t* brtl_brsp(void) {
-  return &stl_br->string_pool;
+  return &br_stl_string_pool;
 }
 
 bruirs_t* brtl_bruirs(void) {
