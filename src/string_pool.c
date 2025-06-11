@@ -19,12 +19,13 @@ brsp_id_t brsp_new1(brsp_t* sp, int size) {
       if (prev == -1) sp->free_next      = sp->free_arr[i];
       else            sp->free_arr[prev] = sp->free_arr[i];
       sp->free_arr[i] = -1;
-      break;
+      ++sp->free_len;
+      return i;
     }
     prev = i;
   }
   brsp_node_t new_node = {
-    .start_index = (int)sp->pool.cap,
+    .start_index = (int)sp->pool.len,
     .len = 0,
     .cap = size,
     .prev_in_memory = sp->len - 1,

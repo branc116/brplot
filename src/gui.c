@@ -11,6 +11,7 @@
 #include "src/br_shaders.h"
 #include "src/br_smol_mesh.h"
 #include "src/br_str.h"
+#include "src/br_string_pool.h"
 #include "src/br_theme.h"
 #include "src/br_tl.h"
 #include "src/br_ui.h"
@@ -278,6 +279,7 @@ static void draw_left_panel(br_plotter_t* br) {
           brui_text(BR_STRV(scrach, (uint32_t)n));
           n = sprintf(scrach, "%.2fms (%.3f %.3f)", br_resampling2_get_draw_time(data.resampling)*1000.0f, br_resampling2_get_something(data.resampling), br_resampling2_get_something2(data.resampling));
           brui_text(BR_STRV(scrach, (uint32_t)n));
+          brui_textf("name id: %d", data.name);
           switch (data.kind) {
             case br_data_kind_2d: {
               brui_textf("2D rebase: %.3f, %.3f", data.dd.rebase_x, data.dd.rebase_y);
@@ -314,10 +316,56 @@ static void brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth)
 }
 
 static void brgui_draw_debug_window(br_plotter_t* br) {
-  (void)br;
   if (false == *brtl_debug()) return;
-  brui_resizable_temp_push(BR_STRL("Debug"));
+  if (brui_resizable_temp_push(BR_STRL("Debug")).just_created) {
+    brui_ancor_set(brui_ancor_left);
+  }
     brgui_draw_debug_window_rec(br, 0, 0);
+    uint32_t chars_per_row = 8;
+    brui_push();
+      brui_textf("Pool size: %d, elements: %d, free_len: %d", br->string_pool.pool.len, br->string_pool.len, br->string_pool.free_len);
+      for (int i = 0; i < br->string_pool.len; ++i) {
+        brsp_node_t node = br->string_pool.arr[i];
+        brui_textf("#%d |%c| start_index: %d, len: %d, cap: %d prev: %d, next: %d", i, brfl_is_free(br->string_pool, i) ? ' ' : 'X', node.start_index, node.len, node.cap, node.prev_in_memory, node.next_in_memory);
+      }
+      char* buff = br_scrach_get(128);
+        int cur_node_index = br->string_pool.first_in_memory;
+        brsp_node_t cur_node = br->string_pool.arr[cur_node_index];
+        for (uint32_t i = 0; i < br->string_pool.pool.len; i += chars_per_row) {
+          brui_vsplitvp(2, BRUI_SPLITA(70), BRUI_SPLITR(1));
+            brui_text_color_set(brtl_theme()->colors.btn_txt_inactive);
+            brui_textf("0x%x", i);
+          brui_vsplit_pop();
+            char* cur = buff;
+            for (uint32_t j = 0; j < chars_per_row && i + j < br->string_pool.pool.len; ++j) { 
+              br_color_t text_color = brfl_is_free(br->string_pool, cur_node_index) ? BR_COLOR(0x40, 0x40, 0x20, 0xFF) : BR_COLOR(0xE0, 0x20, 0xE0, 0xFF);
+              brui_text_color_set(cur_node.len > 0 ? br_color_lighter(text_color, 10) : text_color);
+              unsigned char c = (unsigned char)br->string_pool.pool.str[i + j];
+              if (c < 16) {
+                *cur++ = '0';
+                *cur++ = c >= 10 ? 'A'+(c - 10) : ('0' + c);
+                *cur++ = ' ';
+              } else {
+                char upper = c >> 4;
+                char downer = c & 0x0F;
+                *cur++ = upper >= 10 ? 'A'+(upper - 10) : ('0' + upper);
+                *cur++ = downer >= 10 ? 'A'+(downer - 10) : ('0' + downer);
+                *cur++ = ' ';
+              }
+              if (--cur_node.len == 0) {
+                brui_text(BR_STRV(buff, (uint32_t)(cur - buff)));
+                cur = buff;
+              }
+              if (0 == --cur_node.cap) {
+                brui_text(BR_STRV(buff, (uint32_t)(cur - buff)));
+                cur_node = br->string_pool.arr[cur_node.next_in_memory];
+              }
+            }
+            brui_text(BR_STRV(buff, (uint32_t)(cur - buff)));
+          brui_vsplit_end();
+        }
+      br_scrach_free();
+    brui_pop();
   brui_resizable_pop();
 }
 

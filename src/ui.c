@@ -632,6 +632,11 @@ void brui_text_color_set(br_color_t color) {
   TOP.font_color = color;
 }
 
+static void brui_resizable_set_ancor(brui_resizable_t* res, brui_ancor_t ancor);
+void brui_ancor_set(brui_ancor_t ancor) {
+  brui_resizable_set_ancor(br_da_getp(*brtl_bruirs(), TOP.cur_resizable), ancor);
+}
+
 int brui_text_size(void) {
   return TOP.font_size;
 }
@@ -681,7 +686,6 @@ brui_stack_t* brui_stack(void) {
 // ---------------------------Resizables--------------------------
 static int bruir_find_at(int index, br_vec2_t loc, br_vec2_t* out_local_pos);
 static void bruir_update_extent(int index, br_extent_t new_ex, bool force, bool animate);
-static void brui_resizable_set_ancor(brui_resizable_t* res, brui_ancor_t ancor);
 
 void brui_resizable_init(void) {
   brui_resizable_t screen = { 0 };
