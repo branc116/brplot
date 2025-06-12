@@ -193,7 +193,7 @@ done:
 #if defined(BR_UNIT_TEST)
 #include "external/tests.h"
 
-void brsp_debug(brsp_t sp) {
+static void brsp_debug(brsp_t sp) {
   int len_sum = 0;
   int cap_sum = 0;
   LOGI("\n");
@@ -233,7 +233,6 @@ TEST_CASE(string_pool_resize) {
     br_str_push_char(&s, 'c');
     brsp_set(&sp, t, br_str_as_view(s));
   }
-  brsp_debug(sp);
   brsp_remove(&sp, t);
   brsp_free(&sp);
   br_str_free(s);
@@ -248,18 +247,13 @@ TEST_CASE(string_pool_resize2) {
   for (int i = 0; i < 256; ++i) {
     br_str_push_char(&s, 'c');
     brsp_set(&sp, t, br_str_as_view(s));
-    LOGI("i = %d", i);
-    brsp_debug(sp);
 
     br_str_push_char(&s2, 'd');
     br_str_push_char(&s2, 'd');
     br_str_push_char(&s2, 'd');
     brsp_set(&sp, t2, br_str_as_view(s2));
-    LOGI("i2 = %d", i);
-    brsp_debug(sp);
   }
   TEST_STRNEQUAL(s.str, brsp_get(sp, t).str, s.len);
-  brsp_debug(sp);
   brsp_remove(&sp, t);
   brsp_remove(&sp, t2);
   brsp_free(&sp);

@@ -80,6 +80,7 @@ pub fn build_brplot(b: *std.Build, target: std.Build.ResolvedTarget, optimize: s
         "./src/data.c",
         "./external/shl_impls.c",
         "./src/free_list.c",
+        "./src/string_pool.c",
         "./src/data_generator.c",
         "./src/filesystem.c",
         "./src/gl.c",

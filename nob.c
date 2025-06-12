@@ -996,7 +996,6 @@ static bool n_pip_do(void) {
 
 static bool n_unittests_do(void) {
   Nob_Cmd cmd = { 0 };
-  LOGI("Unittest");
   is_debug = true;
   is_headless = true;
   if (false == n_build_do()) return false;
