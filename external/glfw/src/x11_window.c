@@ -1099,7 +1099,7 @@ static void acquireMonitor_x11(_GLFWwindow* window)
 
     if (window->x11.overrideRedirect)
     {
-        int xpos, ypos;
+        int xpos = 0, ypos = 0;
         GLFWvidmode mode;
 
         // Manually position the window over its monitor

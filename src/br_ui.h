@@ -2,6 +2,7 @@
 #include "src/br_math.h"
 #include "src/br_str.h"
 #include "src/br_text_renderer.h"
+#include "src/br_string_pool.h"
 
 extern BR_THREAD_LOCAL int brui__n__;
 #define brui_textf(...) (brui__n__ = sprintf(brui__scrach, __VA_ARGS__), brui_text(BR_STRV(brui__scrach, (uint32_t)brui__n__)))
@@ -59,9 +60,14 @@ typedef struct {
   brui_stack_el_t* arr;
   size_t len, cap;
 
-  int active_resizable;
   void* sliderf;
+  int active_resizable;
   br_vec2_t drag_ancor_point;
+  struct {
+    brsp_id_t id;
+    int cursor_pos;
+    bool is_active;
+  } text_input;
   bool log;
 } brui_stack_t;
 
@@ -127,7 +133,6 @@ typedef struct bruirs_t {
   int drag_index;
   br_vec2_t drag_point;
   br_extent_t drag_old_ex;
-  int next_free;
 } bruirs_t;
 
 typedef struct bruir_children_t {
@@ -155,6 +160,7 @@ void brui_begin(void);
 void brui_end(void);
 
 br_size_t brui_text(br_strv_t strv);
+bool brui_text_input(brsp_id_t str_id);
 void brui_new_lines(int n);
 bool brui_button(br_strv_t text);
 bool brui_checkbox(br_strv_t text, bool* checked);

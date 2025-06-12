@@ -290,15 +290,17 @@ static void br_glfw_on_key(struct GLFWwindow* window, int key, int scancode, int
       stl_br->key.mod &= ~(GLFW_MOD_SHIFT);
     }
   }
-  if (scancode < 0 || scancode >= 128) {
+  if (key < 0 || key >= 512) {
     LOGW("Bad scancode %d, key %d", scancode, key);
     return;
   }
   if (action == GLFW_PRESS) {
-    stl_br->key.pressed[scancode] = true;
-    stl_br->key.down[scancode] = true;
+    stl_br->key.pressed[key] = true;
+    stl_br->key.last_pressed = key;
+    stl_br->key.last_repeate_time = -2.f;
+    stl_br->key.down[key] = true;
   } else if (action == GLFW_RELEASE) {
-    stl_br->key.down[scancode] = false;
+    stl_br->key.down[key] = false;
   }
 }
 
@@ -310,6 +312,7 @@ void br_plotter_begin_drawing(br_plotter_t* br) {
   br->time.old = br->time.now;
   br->time.now = glfwGetTime();
   br->time.frame = (br->time.now - br->time.old);
+  br->key.last_repeate_time -= (float)br->time.frame;
 
   glfwPollEvents();
   br->mouse.delta = br_vec2_sub(br->mouse.pos, br->mouse.old_pos);
@@ -383,9 +386,9 @@ bool brtl_key_down(int key) {
 #if defined(__EMSCRIPTEN__)
   int code = key;
 #else
-  int code = glfwGetKeyScancode(key);
+  int code = key;
 #endif
-  if (code < 0 || code >= 128) {
+  if (code < 0 || code >= 512) {
     LOGW("Key %d, scancode %d is not valid", key, code);
     return false;
   }
@@ -396,13 +399,22 @@ bool brtl_key_pressed(int key) {
 #if defined(__EMSCRIPTEN__)
   int code = key;
 #else
-  int code = glfwGetKeyScancode(key);
+  int code = key;
 #endif
-  if (code < 0 || code >= 128) {
+  if (code < 0 || code >= 512) {
     LOGW("Key %d, scancode %d is not valid", key, code);
     return false;
   }
   return stl_br->key.pressed[code];
+}
+
+int brtl_key_last_pressed(void) {
+  if (stl_br->key.last_pressed == 0) return 0;
+  if (stl_br->key.last_repeate_time > 0) return 0;
+  stl_br->key.last_repeate_time = stl_br->key.last_repeate_time > -0.5f ? 0.05f : 0.5f;
+  int ret = stl_br->key.last_pressed;
+  if (false == stl_br->key.down[ret] && false == stl_br->key.pressed[ret]) ret = stl_br->key.last_pressed = 0;
+  return ret;
 }
 
 bool brtl_key_ctrl(void) {

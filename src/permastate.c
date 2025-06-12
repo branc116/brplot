@@ -149,7 +149,7 @@ bool br_permastate_save_plotter(br_str_t path_folder, br_plotter_t* br) {
   if (1 != fwrite(&br->ui, sizeof(br->ui), 1, file))                         goto error;
   brui_resizable_temp_delete_all();
   brfl_write(file, br->resizables, fl_write_error); if (fl_write_error != 0) goto error;
-  if (false == brsp_write(file, *brtl_brsp()))                               goto error;
+  if (false == brsp_write(file, brtl_brsp()))                                goto error;
   goto end;
 
 error:
@@ -218,6 +218,7 @@ bool br_permastate_load_plotter(FILE* file, br_plotter_t* br, br_data_descs_t* d
   brfl_read(file, br->resizables, fl_read_error); if (fl_read_error != 0) goto error;
   if (false == brsp_read(file, brtl_brsp()))                              goto error;
   if (0 != feof(file))                                                    goto error;
+  brsp_compress(brtl_brsp(), 1.3f, 16);
   return true;
   
 error:
@@ -286,7 +287,7 @@ br_permastate_status_t br_permastate_load(br_plotter_t* br) {
   br_data_descs_t descs           = {0};
 
   if (false == br_fs_get_config_dir(&path))                           goto error;
-  if (false == br_fs_cd(&path, br_strv_from_literal("plotter.br")))   goto error;
+  if (false == br_fs_cd(&path, BR_STRL("plotter.br")))                goto error;
   {
     br_str_to_c_str1(path, buff);
     if (false == (file_exists = br_fs_exists(br_str_sub1(path, 0))))  goto error;

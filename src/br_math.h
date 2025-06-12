@@ -773,6 +773,10 @@ static inline br_bb_t br_bb_expand_with_point(br_bb_t bb, br_vec2_t v) {
 
 // ----------------int-------------------------
 
+static inline int br_i_min(int a, int b) {
+  return a < b ? a : b;
+}
+
 static inline int br_i_max(int a, int b) {
   return a > b ? a : b;
 }

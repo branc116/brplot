@@ -167,5 +167,9 @@ extern "C" {
 #  define BR_HAS_INCLUDE(path)
 #endif
 
+#if defined(__EMSCRIPTEN__)
+#  define BR_IS_SIZE_T_32_BIT
+#endif
+
 #include "external/Tracy/tracy/TracyC.h"
 

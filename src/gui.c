@@ -21,8 +21,8 @@
 static void draw_left_panel(br_plotter_t* br);
 static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas);
 static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas);
-static void brgui_draw_file_browser(br_plot_t* plot, br_datas_t datas);
-static void brgui_draw_file_browser(br_plot_t* plot, br_datas_t datas);
+//static void brgui_draw_file_browser(br_plot_t* plot, br_datas_t datas);
+//static void brgui_draw_file_browser(br_plot_t* plot, br_datas_t datas);
 static void brgui_draw_debug_window(br_plotter_t* br);
 static void brgui_draw_license(br_plotter_t* br);
 
@@ -106,7 +106,7 @@ static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas) {
       brui_vsplit_pop();
         brui_text_align_set(br_text_renderer_ancor_left_mid);
         brui_height_set((float)brui_text_size());
-        brui_text(brsp_get(*brtl_brsp(), data->name));
+        brui_text_input(data->name);
       brui_vsplit_end();
       active &= brui_y() >= mp.y;
       if (active) {
@@ -215,7 +215,6 @@ static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas) {
 
 static void draw_left_panel(br_plotter_t* br) {
   brui_resizable_push(br->resizables.menu_extent_handle);
-    char* scrach = br_scrach_get(4096);
     if (brui_collapsable(BR_STRL("Plots"), &br->ui.expand_plots)) {
       brui_vsplit(2);
         if (brui_button(BR_STRL("Add 2D"))) {
@@ -228,10 +227,12 @@ static void draw_left_panel(br_plotter_t* br) {
       brui_vsplit_end();
 
       for (int i = 0; i < br->plots.len; ++i) {
-        br_plot_t* plot = br_da_getp(br->plots, i);
-        int n = sprintf(scrach, "%s Plot %d", plot->kind == br_plot_kind_2d ? "2D" : "3D", i);
-        bool is_visible = !brui_resizable_is_hidden(plot->extent_handle);
-        if (brui_checkbox(BR_STRV(scrach, (uint32_t)n), &is_visible)) brui_resizable_show(plot->extent_handle, is_visible);
+        char* scrach = br_scrach_get(4096);
+          br_plot_t* plot = br_da_getp(br->plots, i);
+          int n = sprintf(scrach, "%s Plot %d", plot->kind == br_plot_kind_2d ? "2D" : "3D", i);
+          bool is_visible = !brui_resizable_is_hidden(plot->extent_handle);
+          if (brui_checkbox(BR_STRV(scrach, (uint32_t)n), &is_visible)) brui_resizable_show(plot->extent_handle, is_visible);
+        br_scrach_free();
       }
       brui_collapsable_end();
     }
@@ -275,10 +276,9 @@ static void draw_left_panel(br_plotter_t* br) {
         brui_push();
           br_data_t data = br_da_get(br->groups, i);
           br_strv_t name = brsp_get(*brtl_brsp(), data.name);
-          int n = sprintf(scrach, "%.*s (%d) (%zu points)", name.len, name.str, data.group_id, data.len);
-          brui_text(BR_STRV(scrach, (uint32_t)n));
-          n = sprintf(scrach, "%.2fms (%.3f %.3f)", br_resampling2_get_draw_time(data.resampling)*1000.0f, br_resampling2_get_something(data.resampling), br_resampling2_get_something2(data.resampling));
-          brui_text(BR_STRV(scrach, (uint32_t)n));
+          brui_text_input(data.name);
+          brui_textf("%.*s (%d) (%zu points)", name.len, name.str, data.group_id, data.len);
+          brui_textf("%.2fms (%.3f %.3f)", br_resampling2_get_draw_time(data.resampling)*1000.0f, br_resampling2_get_something(data.resampling), br_resampling2_get_something2(data.resampling));
           brui_textf("name id: %d", data.name);
           switch (data.kind) {
             case br_data_kind_2d: {
@@ -305,7 +305,6 @@ static void draw_left_panel(br_plotter_t* br) {
     if (brui_button(BR_STRL("Exit"))) {
       br->should_close = true;
     }
-    br_scrach_free();
   brui_resizable_pop();
 }
 
@@ -316,21 +315,30 @@ static void brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth)
 }
 
 static void brgui_draw_debug_window(br_plotter_t* br) {
-  if (false == *brtl_debug()) return;
+  static BR_THREAD_LOCAL bool is_on = false;
+  if (false == *brtl_debug()) {
+    if (is_on) {
+      is_on = false;
+      brui_resizable_temp_delete(BR_STRL("Debug"));
+    }
+    return;
+  }
+  is_on = true;
   if (brui_resizable_temp_push(BR_STRL("Debug")).just_created) {
     brui_ancor_set(brui_ancor_left);
   }
     brgui_draw_debug_window_rec(br, 0, 0);
     uint32_t chars_per_row = 8;
     brui_push();
+      if (brui_button(BR_STRL("Compress"))) {
+        brsp_compress(brtl_brsp(), 1.0f, 0);
+      }
       brui_textf("Pool size: %d, elements: %d, free_len: %d", brtl_brsp()->pool.len, brtl_brsp()->len, brtl_brsp()->free_len);
       for (int i = 0; i < brtl_brsp()->len; ++i) {
         brsp_node_t node = brtl_brsp()->arr[i];
-        brui_textf("#%d |%c| start_index: %d, len: %d, cap: %d prev: %d, next: %d", i, brfl_is_free(*brtl_brsp(), i) ? ' ' : 'X', node.start_index, node.len, node.cap, node.prev_in_memory, node.next_in_memory);
+        brui_textf("#%d |%c| start_index: %04x, len: %d, cap: %d", i, brfl_is_free(*brtl_brsp(), i) ? ' ' : 'X', node.start_index, node.len, node.cap);
       }
       char* buff = br_scrach_get(128);
-        int cur_node_index = brtl_brsp()->first_in_memory;
-        brsp_node_t cur_node = brtl_brsp()->arr[cur_node_index];
         for (uint32_t i = 0; i < brtl_brsp()->pool.len; i += chars_per_row) {
           brui_vsplitvp(2, BRUI_SPLITA(70), BRUI_SPLITR(1));
             brui_text_color_set(brtl_theme()->colors.btn_txt_inactive);
@@ -338,27 +346,17 @@ static void brgui_draw_debug_window(br_plotter_t* br) {
           brui_vsplit_pop();
             char* cur = buff;
             for (uint32_t j = 0; j < chars_per_row && i + j < brtl_brsp()->pool.len; ++j) { 
-              br_color_t text_color = brfl_is_free(*brtl_brsp(), cur_node_index) ? BR_COLOR(0x40, 0x40, 0x20, 0xFF) : BR_COLOR(0xE0, 0x20, 0xE0, 0xFF);
-              brui_text_color_set(cur_node.len > 0 ? br_color_lighter(text_color, 10) : text_color);
               unsigned char c = (unsigned char)brtl_brsp()->pool.str[i + j];
               if (c < 16) {
                 *cur++ = '0';
-                *cur++ = c >= 10 ? 'A'+(c - 10) : ('0' + c);
+                *cur++ = (char)((int)c >= 10 ? 'A'+(char)(c - 10) : ('0' + c));
                 *cur++ = ' ';
               } else {
-                char upper = c >> 4;
+                char upper = (char)((int)c >> 4);
                 char downer = c & 0x0F;
-                *cur++ = upper >= 10 ? 'A'+(upper - 10) : ('0' + upper);
-                *cur++ = downer >= 10 ? 'A'+(downer - 10) : ('0' + downer);
+                *cur++ = (int)upper >= 10 ? 'A'+(char)(upper - 10) : ('0' + upper);
+                *cur++ = (int)downer >= 10 ? 'A'+(char)(downer - 10) : ('0' + downer);
                 *cur++ = ' ';
-              }
-              if (--cur_node.len == 0) {
-                brui_text(BR_STRV(buff, (uint32_t)(cur - buff)));
-                cur = buff;
-              }
-              if (0 == --cur_node.cap) {
-                brui_text(BR_STRV(buff, (uint32_t)(cur - buff)));
-                cur_node = brtl_brsp()->arr[cur_node.next_in_memory];
               }
             }
             brui_text(BR_STRV(buff, (uint32_t)(cur - buff)));

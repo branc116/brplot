@@ -1,7 +1,8 @@
+#include "src/br_pp.h"
+#include "src/br_string_pool.h"
 #include "src/br_ui.h"
 #include "src/br_icons.h"
 #include "src/br_math.h"
-#include "src/br_pp.h"
 #include "src/br_str.h"
 #include "src/br_text_renderer.h"
 #include "src/br_tl.h"
@@ -167,6 +168,95 @@ br_size_t brui_text(br_strv_t strv) {
   TOP.cur.y += opt_height;
   TOP.content_height += opt_height;
   return ex.size;
+}
+
+bool brui_text_input(brsp_id_t str_id) {
+  br_strv_t strv = brsp_get(*brtl_brsp(), str_id);
+  BRUI_LOG("Text: %.*s", strv.len, strv.str);
+  br_text_renderer_t* tr = brtl_text_renderer();
+  br_vec2_t loc = TOP.cur;
+  float out_top /* neg or 0 */ = fminf(TOP.cur.y - TOP.limit.min_y, 0.f);
+  float opt_height = (float)TOP.font_size + TOP.padding.y;
+  br_size_t space_left = BR_SIZE(BR_BBW(TOP.limit) - 2 * TOP.psum.x - (TOP.cur.x - (TOP.limit.min_x + TOP.psum.x)), TOP.limit.max_y - TOP.cur.y + out_top);
+  br_strv_t fit = br_text_renderer_fit(tr, space_left, TOP.font_size, strv);
+  br_extent_t ex = BR_EXTENT(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.cur.x, (float)TOP.font_size);
+  br_bb_t text_limit = TOP.limit;
+  float text_height = (float)TOP.font_size;
+  if (fit.len != 0) {
+    if (TOP.text_ancor & br_text_renderer_ancor_y_mid) loc.y += BR_BBH(TOP.limit) * 0.5f;
+    if (TOP.text_ancor & br_text_renderer_ancor_x_mid) loc.x += BR_BBW(TOP.limit) * 0.5f;
+    text_limit.min_x += TOP.psum.x;
+    text_limit.max_x -= TOP.psum.x;
+
+    text_height = br_text_renderer_push2(tr, BR_VEC3(loc.x, loc.y, BR_Z_TO_GL(TOP.z + 1)), TOP.font_size, TOP.font_color, TOP.background_color, fit, text_limit, TOP.text_ancor).height;
+  }
+  TOP.cur.x = TOP.limit.min_x + TOP.psum.x;
+  TOP.cur.y += opt_height;
+  TOP.content_height += opt_height;
+  if (false == brui__stack.text_input.is_active) {
+    if (TOP.is_active) {
+      if (brtl_mousel_pressed()) {
+        br_bb_t bb = BR_EXTENT_TOBB(ex);
+        if (br_col_vec2_bb(bb, brtl_mouse_pos())) {
+          brui__stack.text_input.is_active = true;
+          brui__stack.text_input.cursor_pos = 0;
+          brui__stack.text_input.id = str_id;
+        }
+      }
+    }
+  } else if (str_id == brui__stack.text_input.id) {
+    int cp = brui__stack.text_input.cursor_pos;
+    float half_thick = 1.0f;
+    int lp = brtl_key_last_pressed();
+    if (lp == BR_KEY_LEFT) brui__stack.text_input.cursor_pos = br_i_max(cp - 1, 0);
+    else if (lp == BR_KEY_RIGHT) brui__stack.text_input.cursor_pos = br_i_min(cp + 1, (int)strv.len);
+    else if (lp == BR_KEY_ESCAPE) brui__stack.text_input.is_active = false;
+    else if (lp == BR_KEY_ENTER) brui__stack.text_input.is_active = false;
+    else if (lp == BR_KEY_DELETE) {
+      if (strv.len > 0) {
+        if ((uint32_t)cp + 1 < strv.len) memmove((void*)(strv.str + cp), strv.str + cp + 1, strv.len - 1 - (uint32_t)cp);
+        if ((uint32_t)cp < strv.len) {
+          strv.len -= 1;
+          brsp_set(brtl_brsp(), str_id, strv);
+        }
+      }
+    } else if (lp == BR_KEY_BACKSPACE) {
+      if (strv.len > 0) {
+        if (cp > 0) {
+          if ((int)strv.len > cp) memmove((void*)(strv.str + cp - 1), strv.str + cp, strv.len - (uint32_t)cp);
+          --brui__stack.text_input.cursor_pos;
+          --strv.len;
+          brsp_set(brtl_brsp(), str_id, strv);
+        }
+      }
+    } else if (lp >= BR_KEY_0 && lp <= BR_KEY_9) {
+      brsp_insert_char(brtl_brsp(), str_id, cp, '0' + (char)(lp - BR_KEY_0));
+      ++brui__stack.text_input.cursor_pos;
+    } else if (lp >= BR_KEY_0 && lp <= BR_KEY_Z) {
+      brsp_insert_char(brtl_brsp(), str_id, cp, (char)((brtl_key_shift() ? 'A' : 'a') + (char)(lp - BR_KEY_A)));
+      ++brui__stack.text_input.cursor_pos;
+    } else if (lp == BR_KEY_SPACE) {
+      brsp_insert_char(brtl_brsp(), str_id, cp, ' ');
+      ++brui__stack.text_input.cursor_pos;
+    }
+    strv = brsp_get(*brtl_brsp(), str_id);
+    br_size_t size = br_text_renderer_measure(tr, TOP.font_size, br_str_sub(strv, 0, (uint32_t)brui__stack.text_input.cursor_pos));
+    loc.x += size.width - 1.0f;
+    text_limit.min_x -= 1.f;
+    brui_rectangle(BR_BB(loc.x - half_thick, loc.y, loc.x + half_thick, loc.y + (float)text_height), text_limit, TOP.font_color, TOP.z + 2);
+  } else {
+    if (TOP.is_active) {
+      if (brtl_mousel_pressed()) {
+        br_bb_t bb = BR_EXTENT_TOBB(ex);
+        if (br_col_vec2_bb(bb, brtl_mouse_pos())) {
+          brui__stack.text_input.is_active = true;
+          brui__stack.text_input.cursor_pos = 0;
+          brui__stack.text_input.id = str_id;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 void brui_new_lines(int n) {
@@ -1120,7 +1210,12 @@ br_vec2_t brui_resizable_to_global(int resizable_handle, br_vec2_t pos) {
 
 brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id) {
   // TODO: Handle hash collisions
+
+#if defined(BR_IS_SIZE_T_32_BIT)
+  size_t hash = stbds_hash_bytes((void*)id.str, id.len, 0xdeadbeef);
+#else
   size_t hash = stbds_hash_bytes((void*)id.str, id.len, 0xdeadbeefdeadbeef);
+#endif
   int res_handle = -1;
 
   ptrdiff_t index = stbds_hmgeti(bruir__temp_res, hash);
@@ -1138,7 +1233,11 @@ brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id) {
 }
 
 void brui_resizable_temp_delete(br_strv_t id) {
+#if defined(BR_IS_SIZE_T_32_BIT)
+  size_t hash = stbds_hash_bytes((void*)id.str, id.len, 0xdeadbeef);
+#else
   size_t hash = stbds_hash_bytes((void*)id.str, id.len, 0xdeadbeefdeadbeef);
+#endif
   int handle = -1;
   ptrdiff_t index = stbds_hmgeti(bruir__temp_res, hash);
   if (index >= 0) {

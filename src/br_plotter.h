@@ -62,9 +62,11 @@ typedef struct br_plotter_t {
   } mouse;
 
   struct {
-    bool down[128];
-    bool pressed[128];
+    bool down[512];
+    bool pressed[512];
+    int last_pressed;
     int mod;
+    float last_repeate_time;
   } key;
 
   struct {

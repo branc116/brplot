@@ -57,7 +57,7 @@ typedef struct input_token_t {
   union {
     struct {
       double value_d;
-      long value_l;
+      long long value_l;
     };
     char name[MAX_NAME];
     br_str_t br_str;

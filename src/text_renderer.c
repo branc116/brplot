@@ -177,7 +177,7 @@ br_strv_t br_text_renderer_fit(br_text_renderer_t* r, br_size_t size, int font_s
   ssize_t i = 0;
   if (size_index == -1) {
     // We don't have the font baked so be conservative
-    for (; i < text.len; ++i) {
+    for (; i < (ssize_t)text.len; ++i) {
       char c = text.str[i];
       if (c == '\n') {
         loc.y += (float)font_size * 1.1f;
@@ -188,7 +188,7 @@ br_strv_t br_text_renderer_fit(br_text_renderer_t* r, br_size_t size, int font_s
     }
   } else {
     size_to_font f = r->sizes[size_index];
-    for (; i < text.len; ++i) {
+    for (; i < (ssize_t)text.len; ++i) {
       if (loc.x > size.width) break;
       if (loc.y > size.height) break;
       if (false == brtr_move_loc(r, f, text.str[i], &loc)) break;
@@ -203,7 +203,7 @@ br_size_t br_text_renderer_measure(br_text_renderer_t* r, int font_size, br_strv
   ssize_t i = 0;
   if (size_index == -1) return BR_SIZE(0, 0);
   size_to_font f = r->sizes[size_index];
-  for (; i < str.len; ++i) brtr_move_loc(r, f, str.str[i], &loc);
+  for (; i < (ssize_t)str.len; ++i) brtr_move_loc(r, f, str.str[i], &loc);
   return BR_SIZE(loc.x, loc.y);
 }
 

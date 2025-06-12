@@ -63,7 +63,7 @@
   (FL).free_next = -1; \
 } while (0)
 
-#define brfl_foreach(INDEX, FL) for (int INDEX = brfl_next_taken((FL).free_arr, (FL).free_next, (FL).len, -1); INDEX < (FL).len; INDEX = brfl_next_taken((FL).free_arr, (FL).free_next, (FL).len, INDEX))
+#define brfl_foreach(INDEX, FL) for (int INDEX = brfl_next_taken((FL).free_arr, (FL).len, -1); INDEX < (FL).len; INDEX = brfl_next_taken((FL).free_arr, (FL).len, INDEX))
 #define brfl_foreach_free(INDEX, FL) for (int INDEX = (FL).free_next; INDEX > -1 && INDEX < (FL).len; INDEX = (FL).free_arr[INDEX])
 
 #define brfl_write(FILE, FL, ERROR) do {                                                                              \
@@ -75,7 +75,7 @@
       break;                                                                                                          \
   };                                                                                                                  \
   if ((FL).len == 0) break;                                                                                           \
-  if ((FL).len != (n_write = BR_FWRITE((FL).arr, sizeof((FL).arr[0]), (size_t)(FL).len, (FILE)))) {                   \
+  if ((FL).len != (int)(n_write = BR_FWRITE((FL).arr, sizeof((FL).arr[0]), (size_t)(FL).len, (FILE)))) {              \
     BR_LOGE("Failed to write %d free list elements to file, wrote %zu: %s", (FL).len, n_write, strerror(errno));      \
     ERROR = 1;                                                                                                        \
     break;                                                                                                            \
@@ -153,7 +153,7 @@
 BR_THREAD_LOCAL extern int brfl__ret_handle;
 int brfl_push_internal_get_handle(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, const char* file, int line);
 int brfl_push_end_internal_get_handle(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, const char* file, int line);
-int brfl_next_taken(int const* free_arr, int free_next, int len, int index);
+int brfl_next_taken(int const* free_arr, int len, int index);
 
 #if defined(BRFL_IMPLEMENTATION)
 #include <stdio.h>
@@ -236,7 +236,6 @@ int brfl_push_end_internal_get_handle(void** const arrp, int** const free_arrp, 
   int* free_arr = *free_arrp;
   int len = *lenp;
   int cap = *capp;
-  int free_next = *free_nextp;
   if (cap == 0) {
     BR_ASSERTF(*arrp == NULL, "[%s:%d] Cap is set to null, but arr is not null", file, line);
     *arrp = BR_MALLOC(value_size);
@@ -293,7 +292,7 @@ int brfl_push_end_internal_get_handle(void** const arrp, int** const free_arrp, 
   }
 }
 
-int brfl_next_taken(int const* free_arr, int free_next, int len, int index) {
+int brfl_next_taken(int const* free_arr, int len, int index) {
   for (++index; index < len; ++index) if (free_arr[index] == -1) return index;
   return index;
 }

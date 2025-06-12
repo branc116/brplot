@@ -98,8 +98,19 @@ typedef enum n_command {
 #undef X
   n_count,
   n_default = n_build,
-
 } n_command;
+
+typedef struct {
+  char const* name;
+  char const* desc;
+  n_command type;
+} command_t;
+
+command_t g_commands[n_count] = {
+#define X(NAME, DESC) { .name = #NAME, .desc = #DESC, .type = n_ ## NAME },
+  COMMANDS(X)
+#undef X
+};
 
 #define n_default n_build
 
@@ -176,6 +187,7 @@ static bool do_dist = true;
 static bool pip_skip_build = false;
 static bool disable_logs = false;
 static bool is_pedantic = false;
+static bool is_help_subcommands = false;
 #if !defined(__APPLE__)
 static bool is_macos = false;
 #else
@@ -292,6 +304,7 @@ static void fill_command_flag_data(void) {
   command_flag_t force_rebuild       = (command_flag_t) {.name = BR_STRL("force"),      .alias = 'f',  .description = BR_STRL("Force rebuild everything"),                                                                       .is_set = &is_rebuild};
   command_flag_t slib_flag           = (command_flag_t) {.name = BR_STRL("slib"),       .alias = 's',  .description = BR_STRL("Build static library"),                                                                           .is_set = &is_slib};
   command_flag_t help_flag           = (command_flag_t) {.name = BR_STRL("help"),       .alias = 'h',  .description = BR_STRL("Print help"),                                                                                     .is_set = &print_help};
+  command_flag_t help_sub_flag       = (command_flag_t) {.name = BR_STRL("help-sub"),   .alias = 's',  .description = BR_STRL("Print help for subcommands"),                                                                     .is_set = &is_help_subcommands};
   command_flag_t dist_flag           = (command_flag_t) {.name = BR_STRL("dist"),       .alias = 'D',  .description = BR_STRL("Also create dist ( Needed for pip package but maybe you wanna disable this because it's slow )"), .is_set = &do_dist};
   command_flag_t pip_skip_build_flag = (command_flag_t) {.name = BR_STRL("skip-build"), .alias = '\0', .description = BR_STRL("Don't do anything except call pip to create a package"),                                          .is_set = &pip_skip_build};
   br_da_push(command_flags[n_compile], debug_flag);
@@ -304,6 +317,7 @@ static void fill_command_flag_data(void) {
   br_da_push(command_flags[n_compile], slib_flag);
   br_da_push(command_flags[n_compile], force_rebuild);
   br_da_push(command_flags[n_help], help_flag);
+  br_da_push(command_flags[n_help], help_sub_flag);
   br_da_push(command_flags[n_pip], dist_flag);
   br_da_push(command_flags[n_pip], pip_skip_build_flag);
 
@@ -316,6 +330,7 @@ static void fill_command_flag_data(void) {
   br_da_push(command_deps[n_dist], n_build);
   br_da_push(command_deps[n_pip], n_dist);
   br_da_push(command_deps[n_unittests], n_build);
+  br_da_push(command_deps[n_compile_commands], n_compile);
   for (int i = 0; i < n_count; ++i) {
     br_da_push(command_deps[i], n_help);
   }
@@ -484,7 +499,6 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
 
 static bool compile_and_link(Nob_Cmd* cmd) {
   Nob_Cmd link_command = { 0 };
-  if (is_wasm) compiler = "emcc";
   nob_cmd_append(&link_command, compiler, "-ggdb");
 
   for (size_t i = 0; i < NOB_ARRAY_LEN(sources); ++i) {
@@ -529,19 +543,30 @@ static bool compile_and_link(Nob_Cmd* cmd) {
   return ret;
 }
 
-static void print_command_flags_usage(n_command command, bool visited[n_count]) {
+static void print_command_flags_usage(n_command command, int depth, bool visited[n_count]) {
   if (true == visited[command]) return;
   visited[command] = true;
 
   command_flags_t flags = command_flags[command];
   for (size_t i = 0; i < flags.len; ++i) {
     command_flag_t flag = flags.arr[i];
-    printf("        -%c, --%.*s - %.*s (%s)\n", flag.alias, flag.name.len, flag.name.str, flag.description.len, flag.description.str, *flag.is_set ? "ON" : "OFF");
+    printf("%*s-%c, --%.*s - %.*s (%s)\n", depth*4, "", flag.alias, flag.name.len, flag.name.str, flag.description.len, flag.description.str, *flag.is_set ? "ON" : "OFF");
   }
 
   for (size_t i = 0; i < command_deps[command].len; ++i) {
     n_command dep = command_deps[command].arr[i];
-    print_command_flags_usage(dep, visited);
+    if (false == visited[dep]) goto rec;
+  }
+  return;
+
+rec:
+  if (is_help_subcommands) {
+    for (size_t i = 0; i < command_deps[command].len; ++i) {
+      n_command dep = command_deps[command].arr[i];
+      if (true == visited[dep]) continue;
+      printf("%*s%s:\n", depth*4, "", g_commands[dep].name);
+      print_command_flags_usage(dep, depth + 1, visited);
+    }
   }
 }
 
@@ -551,7 +576,7 @@ static void print_usage(void) {
 #define X(name, desc) do { \
     bool visited[n_count] = { 0 }; \
     printf("  " #name " - " desc "\n"); \
-    print_command_flags_usage(n_ ## name, visited); \
+    print_command_flags_usage(n_ ## name, 2, visited); \
   } while (0);
   COMMANDS(X)
 #undef X
@@ -580,7 +605,6 @@ static bool apply_flag(n_command comm, char alias, bool turn_on, bool visited[n_
 static bool apply_flag1(n_command comm, br_strv_t name, bool turn_on, bool visited[n_count]) {
   if (true == visited[comm]) return false;
   visited[comm] = true;
-  LOGI("Founing: `%.*s`", name.len, name.str);
 
   bool found = false;
   command_flags_t fs = command_flags[comm];
@@ -616,6 +640,7 @@ static bool apply_flags(n_command comm, int argc, char** argv) {
         print_usage();
         return false;
       }
+      continue;
     } else if (arg[1] == '!') {
       turn_on = false;
       cur = &arg[2];
@@ -995,6 +1020,7 @@ static bool n_dot_do(void) {
 }
 
 static bool n_compile_commands_do(void) {
+  const char * cwd = nob_get_current_dir_temp();
 	bool success = true;
 	const char* file_name = "compile_commands.json";
 	FILE* f = fopen(file_name, "wb+");
@@ -1011,7 +1037,7 @@ static bool n_compile_commands_do(void) {
 		fprintf(f, "  {\n    ");
 		compile_command.count = link_command.count = 0;
 		if (false == compile_one(&compile_command, nob_sv_from_cstr(sources[i]), &link_command)) goto error;
-		fprintf(f, "\"directory\": \"C:/Users/bricko/source/github.com/branc116/brplot\",\n    ");
+		fprintf(f, "\"directory\": \"%s\",\n    ", cwd);
 		fprintf(f, "\"command\": \"");
 		for (int j = 0; j < compile_command.count; ++j) {
 			fprintf(f, "%s ", compile_command.items[j]);
@@ -1082,6 +1108,7 @@ int main(int argc, char** argv) {
     print_usage();
     return 0;
   }
+  if (is_wasm) compiler = "emcc";
 #define X(name, desc) if (do_command == n_ ## name) { return n_ ## name ## _do() ? 0 : 1; } else
   COMMANDS(X)
 #undef X

@@ -74,8 +74,19 @@
 #define GL_DRAW_FRAMEBUFFER 0x8CA9
 #define GL_TEXTURE_SWIZZLE_RGBA 0x8E46
 
+#define BR_KEY_SPACE 32
 #define BR_KEY_TWO 50
 #define BR_KEY_THREE 51
+#define BR_KEY_0 48
+#define BR_KEY_1 49
+#define BR_KEY_2 50
+#define BR_KEY_3 51
+#define BR_KEY_4 52
+#define BR_KEY_5 53
+#define BR_KEY_6 54
+#define BR_KEY_7 55
+#define BR_KEY_8 56
+#define BR_KEY_9 57
 #define BR_KEY_A 65
 #define BR_KEY_B 66
 #define BR_KEY_C 67
@@ -102,6 +113,17 @@
 #define BR_KEY_X 88
 #define BR_KEY_Y 89
 #define BR_KEY_Z 90
+
+#define BR_KEY_ESCAPE             256
+#define BR_KEY_ENTER              257
+#define BR_KEY_TAB                258
+#define BR_KEY_BACKSPACE          259
+#define BR_KEY_INSERT             260
+#define BR_KEY_DELETE             261
+#define BR_KEY_RIGHT 262
+#define BR_KEY_LEFT  263
+#define BR_KEY_DOWN  264
+#define BR_KEY_UP    265
 
 typedef int GLint;
 typedef unsigned int GLenum;
