@@ -33,6 +33,12 @@ typedef enum {
   brui_ancor_all = brui_ancor_left | brui_ancor_right | brui_ancor_top | brui_ancor_bottom,
 } brui_ancor_t;
 
+typedef enum brui_action_t {
+  brui_action_none = 0,
+  brui_action_sliding,
+  brui_action_typing
+} brui_action_t;
+
 typedef struct {
   br_vec2_t cur;
   br_bb_t limit;
@@ -60,14 +66,18 @@ typedef struct {
   brui_stack_el_t* arr;
   size_t len, cap;
 
-  void* sliderf;
   int active_resizable;
-  br_vec2_t drag_ancor_point;
-  struct {
-    brsp_id_t id;
-    int cursor_pos;
-    bool is_active;
-  } text_input;
+  brui_action_t cur_action;
+  union {
+    struct {
+      void* value;
+      br_vec2_t drag_ancor_point;
+    } slider;
+    struct {
+      brsp_id_t id;
+      int cursor_pos;
+    } text;
+  } action_args;
   bool log;
 } brui_stack_t;
 

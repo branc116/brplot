@@ -1,6 +1,7 @@
 #pragma once
 // Thread local stuff - this is implemented somewhere in the desktop/platfrom.c
 #include "src/br_math.h"
+#include "src/br_str.h"
 
 #include <stdbool.h>
 #define BR_THEME (*brtl_theme())
@@ -40,6 +41,8 @@ void brtl_window_size_set(int width, int height);
 
 br_extenti_t brtl_viewport(void);
 void brtl_viewport_set(br_extenti_t ex);
+
+br_strv_t brtl_clipboard(void);
 
 br_plotter_t* brtl_plotter(void);
 br_shaders_t* brtl_shaders(void);

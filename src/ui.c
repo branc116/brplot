@@ -29,6 +29,8 @@ BR_THREAD_LOCAL int brui__n__;
 
 BR_THREAD_LOCAL char brui__scrach[2048];
 #define TOP (brui__stack.arr[brui__stack.len ? brui__stack.len - 1 : 0])
+#define ACTION (brui__stack.cur_action)
+#define ACPARM (brui__stack.action_args)
 #define TOP2 (brui__stack.arr[brui__stack.len > 1 ? brui__stack.len - 2 : 0])
 #define Z (brui_max_z = br_i_max(brui_max_z, TOP.z), ++TOP.z)
 #define ZGL BR_Z_TO_GL(Z)
@@ -193,54 +195,53 @@ bool brui_text_input(brsp_id_t str_id) {
   TOP.cur.x = TOP.limit.min_x + TOP.psum.x;
   TOP.cur.y += opt_height;
   TOP.content_height += opt_height;
-  if (false == brui__stack.text_input.is_active) {
-    if (TOP.is_active) {
-      if (brtl_mousel_pressed()) {
-        br_bb_t bb = BR_EXTENT_TOBB(ex);
-        if (br_col_vec2_bb(bb, brtl_mouse_pos())) {
-          brui__stack.text_input.is_active = true;
-          brui__stack.text_input.cursor_pos = 0;
-          brui__stack.text_input.id = str_id;
-        }
-      }
-    }
-  } else if (str_id == brui__stack.text_input.id) {
-    int cp = brui__stack.text_input.cursor_pos;
+  if (brui_action_typing == ACTION && str_id == ACPARM.text.id) {
+    int cp = ACPARM.text.cursor_pos;
     float half_thick = 1.0f;
     int lp = brtl_key_last_pressed();
-    if (lp == BR_KEY_LEFT) brui__stack.text_input.cursor_pos = br_i_max(cp - 1, 0);
-    else if (lp == BR_KEY_RIGHT) brui__stack.text_input.cursor_pos = br_i_min(cp + 1, (int)strv.len);
-    else if (lp == BR_KEY_ESCAPE) brui__stack.text_input.is_active = false;
-    else if (lp == BR_KEY_ENTER) brui__stack.text_input.is_active = false;
-    else if (lp == BR_KEY_DELETE) {
-      if (strv.len > 0) {
-        if ((uint32_t)cp + 1 < strv.len) memmove((void*)(strv.str + cp), strv.str + cp + 1, strv.len - 1 - (uint32_t)cp);
-        if ((uint32_t)cp < strv.len) {
-          strv.len -= 1;
-          brsp_set(brtl_brsp(), str_id, strv);
+    if (brtl_key_ctrl()) {
+      if (lp == BR_KEY_V) {
+        br_strv_t content = brtl_clipboard();
+        for (uint32_t i = 0; i < content.len; ++i) {
+          brsp_insert_char(brtl_brsp(), str_id, cp, content.str[i]);
+          ++ACPARM.text.cursor_pos;
         }
       }
-    } else if (lp == BR_KEY_BACKSPACE) {
-      if (strv.len > 0) {
-        if (cp > 0) {
-          if ((int)strv.len > cp) memmove((void*)(strv.str + cp - 1), strv.str + cp, strv.len - (uint32_t)cp);
-          --brui__stack.text_input.cursor_pos;
-          --strv.len;
-          brsp_set(brtl_brsp(), str_id, strv);
+    } else {
+      if (lp == BR_KEY_LEFT) ACPARM.text.cursor_pos = br_i_max(cp - 1, 0);
+      else if (lp == BR_KEY_RIGHT) ACPARM.text.cursor_pos = br_i_min(cp + 1, (int)strv.len);
+      else if (lp == BR_KEY_ESCAPE) ACTION = brui_action_none;
+      else if (lp == BR_KEY_ENTER) ACTION = brui_action_none;
+      else if (lp == BR_KEY_DELETE) {
+        if (strv.len > 0) {
+          if ((uint32_t)cp + 1 < strv.len) memmove((void*)(strv.str + cp), strv.str + cp + 1, strv.len - 1 - (uint32_t)cp);
+          if ((uint32_t)cp < strv.len) {
+            strv.len -= 1;
+            brsp_set(brtl_brsp(), str_id, strv);
+          }
         }
+      } else if (lp == BR_KEY_BACKSPACE) {
+        if (strv.len > 0) {
+          if (cp > 0) {
+            if ((int)strv.len > cp) memmove((void*)(strv.str + cp - 1), strv.str + cp, strv.len - (uint32_t)cp);
+            --ACPARM.text.cursor_pos;
+            --strv.len;
+            brsp_set(brtl_brsp(), str_id, strv);
+          }
+        }
+      } else if (lp >= BR_KEY_0 && lp <= BR_KEY_9) {
+        brsp_insert_char(brtl_brsp(), str_id, cp, '0' + (char)(lp - BR_KEY_0));
+        ++ACPARM.text.cursor_pos;
+      } else if (lp >= BR_KEY_0 && lp <= BR_KEY_Z) {
+        brsp_insert_char(brtl_brsp(), str_id, cp, (char)((brtl_key_shift() ? 'A' : 'a') + (char)(lp - BR_KEY_A)));
+        ++ACPARM.text.cursor_pos;
+      } else if (lp == BR_KEY_SPACE) {
+        brsp_insert_char(brtl_brsp(), str_id, cp, ' ');
+        ++ACPARM.text.cursor_pos;
       }
-    } else if (lp >= BR_KEY_0 && lp <= BR_KEY_9) {
-      brsp_insert_char(brtl_brsp(), str_id, cp, '0' + (char)(lp - BR_KEY_0));
-      ++brui__stack.text_input.cursor_pos;
-    } else if (lp >= BR_KEY_0 && lp <= BR_KEY_Z) {
-      brsp_insert_char(brtl_brsp(), str_id, cp, (char)((brtl_key_shift() ? 'A' : 'a') + (char)(lp - BR_KEY_A)));
-      ++brui__stack.text_input.cursor_pos;
-    } else if (lp == BR_KEY_SPACE) {
-      brsp_insert_char(brtl_brsp(), str_id, cp, ' ');
-      ++brui__stack.text_input.cursor_pos;
     }
     strv = brsp_get(*brtl_brsp(), str_id);
-    br_size_t size = br_text_renderer_measure(tr, TOP.font_size, br_str_sub(strv, 0, (uint32_t)brui__stack.text_input.cursor_pos));
+    br_size_t size = br_text_renderer_measure(tr, TOP.font_size, br_str_sub(strv, 0, (uint32_t)ACPARM.text.cursor_pos));
     loc.x += size.width - 1.0f;
     text_limit.min_x -= 1.f;
     brui_rectangle(BR_BB(loc.x - half_thick, loc.y, loc.x + half_thick, loc.y + (float)text_height), text_limit, TOP.font_color, TOP.z + 2);
@@ -249,9 +250,9 @@ bool brui_text_input(brsp_id_t str_id) {
       if (brtl_mousel_pressed()) {
         br_bb_t bb = BR_EXTENT_TOBB(ex);
         if (br_col_vec2_bb(bb, brtl_mouse_pos())) {
-          brui__stack.text_input.is_active = true;
-          brui__stack.text_input.cursor_pos = 0;
-          brui__stack.text_input.id = str_id;
+          ACTION = brui_action_typing;
+          ACPARM.text.cursor_pos = 0;
+          ACPARM.text.id = str_id;
         }
       }
     }
@@ -468,8 +469,8 @@ bool brui_sliderf(br_strv_t text, float* val) {
       br_bb_t slider_bb = BR_BB(TOP.cur.x + (lw - ss)*.5f, TOP.cur.y, TOP.cur.x + (lw + ss)*.5f, TOP.cur.y + ss);
       br_color_t sc = BR_THEME.colors.btn_txt_inactive;
 
-      if (brui__stack.sliderf == val ||
-          (brui__stack.sliderf == NULL && mouse.x > line_bb.min_x &&
+      if ((ACTION == brui_action_sliding && ACPARM.slider.value == val) ||
+          (ACTION != brui_action_sliding && mouse.x > line_bb.min_x &&
           mouse.x < line_bb.max_x &&
           mouse.y > line_bb.min_y - 3 &&
           mouse.y < line_bb.max_y + 3)) {
@@ -481,11 +482,13 @@ bool brui_sliderf(br_strv_t text, float* val) {
           *val *= factor;
           slider_bb.min_x = br_float_clamp(mouse.x, line_bb.min_x, line_bb.max_x) - ss * 0.5f;
           slider_bb.max_x = slider_bb.min_x + ss;
-          brui__stack.sliderf = val;
+          ACPARM.slider.value = val;
+          ACTION = brui_action_sliding;
         } else {
           lc = BR_THEME.colors.btn_hovered;
           sc = BR_THEME.colors.btn_txt_hovered;
-          brui__stack.sliderf = NULL;
+          ACPARM.slider.value = NULL;
+          ACTION = brui_action_none;
         }
       }
 
@@ -518,16 +521,17 @@ bool brui_sliderf3(br_strv_t text, float* value, int percision) {
   float avaliable_width = BR_BBW(TOP.limit) - TOP.psum.x * 2.f;
   br_bb_t bb = BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_height);
   br_vec2_t mouse_pos = brtl_mouse_pos();
-  if (brui__stack.sliderf == value) {
+  if (ACTION == brui_action_sliding && ACPARM.slider.value == value) {
     if (brtl_mousel_down() == false) {
-      brui__stack.sliderf = NULL;
+      ACTION = brui_action_none;
     } else {
-      *value *= 1.f - brtl_frame_time() * (brui__stack.drag_ancor_point.x - mouse_pos.x) / 1000.f;
+      *value *= 1.f - brtl_frame_time() * (ACPARM.slider.drag_ancor_point.x - mouse_pos.x) / 1000.f;
       brui_background(bb, BR_THEME.colors.btn_active);
     }
-  } else if (brui__stack.sliderf == NULL && brtl_mousel_down() && br_col_vec2_bb(bb, mouse_pos)) {
-    brui__stack.sliderf = value;
-    brui__stack.drag_ancor_point = mouse_pos;
+  } else if (ACTION != brui_action_sliding && brtl_mousel_down() && br_col_vec2_bb(bb, mouse_pos)) {
+    ACTION = brui_action_sliding;
+    ACPARM.slider.value = value;
+    ACPARM.slider.drag_ancor_point = mouse_pos;
   }
   brui_push_simple();
     TOP.limit.min_y = fmaxf(TOP.cur.y, TOP.limit.min_y);
@@ -698,16 +702,17 @@ void brui_scroll_bar(float* bar_offset_fract) {
   br_bb_t slider_bb = BR_BB(TOP.limit.max_x - slider_thick, TOP.limit.min_y + slider_upper, TOP.limit.max_x, TOP.limit.max_y - slider_downer);
   br_color_t lc = BR_THEME.colors.btn_inactive;
   br_color_t bc = BR_THEME.colors.btn_txt_inactive;
-  if (brui__stack.sliderf == bar_offset_fract || (brui__stack.sliderf == NULL && br_col_vec2_bb(line_bb, mouse))) {
+  if ((ACTION == brui_action_sliding && ACPARM.slider.value == bar_offset_fract) || (ACTION == brui_action_none && br_col_vec2_bb(line_bb, mouse))) {
     if (is_down) {
       *bar_offset_fract = br_float_clamp((mouse.y - TOP.limit.min_y) / limit_height, 0, 1);
       lc = BR_THEME.colors.btn_active;
       bc = BR_THEME.colors.btn_txt_active;
-      brui__stack.sliderf = bar_offset_fract;
+      ACTION = brui_action_sliding;
+      ACPARM.slider.value = bar_offset_fract;
     } else {
       lc = BR_THEME.colors.btn_hovered;
       bc = BR_THEME.colors.btn_txt_hovered;
-      brui__stack.sliderf = NULL;
+      ACTION = brui_action_none;
     }
   }
   br_icons_draw(line_bb, BR_BB(0,0,0,0), lc, lc, TOP.limit, Z);
@@ -937,7 +942,9 @@ void brui_resizable_update(void) {
         }
         brtl_bruirs()->drag_mode = new_mode;
         brtl_bruirs()->drag_old_ex = hovered->current.cur_extent;
-        brui__stack.sliderf = hovered;
+
+        ACTION = brui_action_sliding;
+        ACPARM.slider.value = hovered;
       }
     } else if (scroll != 0) {
       if (hovered->full_height > (float)hovered->cur_extent.height) {
@@ -1004,7 +1011,7 @@ void brui_resizable_update(void) {
       rs->drag_index = 0;
       brtl_bruirs()->drag_mode = brui_drag_mode_none;
       brtl_bruirs()->drag_point = BR_VEC2(0, 0);
-      brui__stack.sliderf = NULL;
+      ACTION = brui_action_none;
     }
   }
 }
@@ -1373,3 +1380,5 @@ static void bruir_update_extent(int index, br_extent_t new_ex, bool force, bool 
 #undef Z
 #undef ZGL
 #undef RETURN_IF_OUT1
+#undef ACTION
+#undef ACPARM

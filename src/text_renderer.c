@@ -15,9 +15,6 @@
 #include <stdio.h>
 #include <float.h>
 
-#define IMG_SIZE 512
-#define CHARS 30
-
 typedef struct {
   char key;
   stbtt_packedchar value;
@@ -103,19 +100,18 @@ static int br_text_renderer_sort_by_size(const void* s1, const void* s2) {
 
 void br_text_renderer_dump(br_text_renderer_t* r) {
   stbtt_packedchar charz[256] = {0};
-  long hm_len = stbds_hmlen(r->to_bake);
+  ptrdiff_t hm_len = stbds_hmlen(r->to_bake);
   if (hm_len > 0) {
     qsort(r->to_bake, (size_t)hm_len, sizeof(r->to_bake[0]), br_text_renderer_sort_by_size);
     int old_size = r->to_bake[0].key.size;
     int pack_from = 0;
-
     for (int i = 1; i < hm_len; ++i) {
       int new_size = r->to_bake[i].key.size;
       int p_len = r->to_bake[i].key.ch - r->to_bake[i - 1].key.ch;
       if (new_size == old_size && p_len < 10) continue;
       p_len = 1 + r->to_bake[i - 1].key.ch - r->to_bake[pack_from].key.ch;
       stbtt_PackFontRange(&r->pack_cntx, r->font_data, 0, (float)old_size, r->to_bake[pack_from].key.ch, p_len, &charz[0]);
-      long k = stbds_hmgeti(r->sizes, old_size);
+      ptrdiff_t k = stbds_hmgeti(r->sizes, old_size);
       if (k == -1) {
         stbds_hmput(r->sizes, old_size, NULL);
         k = stbds_hmgeti(r->sizes, old_size);
@@ -130,7 +126,7 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
     if (pack_from < hm_len) {
       int s_len = 1 + r->to_bake[hm_len - 1].key.ch - r->to_bake[pack_from].key.ch;
       stbtt_PackFontRange(&r->pack_cntx, r->font_data, 0, (float)old_size, r->to_bake[pack_from].key.ch, s_len, &charz[0]);
-      long k = stbds_hmgeti(r->sizes, old_size);
+      ptrdiff_t k = stbds_hmgeti(r->sizes, old_size);
       if (k == -1) {
         stbds_hmput(r->sizes, old_size, NULL);
         k = stbds_hmgeti(r->sizes, old_size);
@@ -140,7 +136,6 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
         stbds_hmput(r->sizes[k].value, key, charz[j]);
       }
     }
-
     stbds_hmfree(r->to_bake);
     brgl_unload_texture(r->bitmap_texture_id);
     r->bitmap_texture_id = brgl_load_texture(r->bitmap_pixels, r->bitmap_pixels_width, r->bitmap_pixels_height, BRGL_TEX_GRAY);
@@ -158,7 +153,7 @@ static bool brtr_move_loc(br_text_renderer_t* tr, size_to_font s, char c, br_vec
     return true;
   }
   if (c == '\r') return true;
-  long char_index = stbds_hmgeti(s.value, c);
+  ptrdiff_t char_index = stbds_hmgeti(s.value, c);
   if (char_index == -1) {
     pos->x += (float)s.key;
   } else {
@@ -171,7 +166,7 @@ static bool brtr_move_loc(br_text_renderer_t* tr, size_to_font s, char c, br_vec
 
 br_strv_t br_text_renderer_fit(br_text_renderer_t* r, br_size_t size, int font_size, br_strv_t text) {
   br_vec2_t loc = { 0 };
-  long size_index = stbds_hmgeti(r->sizes, font_size);
+  ptrdiff_t size_index = stbds_hmgeti(r->sizes, font_size);
   r->tmp_quads.len = 0;
   br_extent_t exf = BR_EXTENT(0, 0, (float)size.width, (float)size.height);
   ssize_t i = 0;
@@ -199,7 +194,7 @@ br_strv_t br_text_renderer_fit(br_text_renderer_t* r, br_size_t size, int font_s
 
 br_size_t br_text_renderer_measure(br_text_renderer_t* r, int font_size, br_strv_t str) {
   br_vec2_t loc = { 0 };
-  long size_index = stbds_hmgeti(r->sizes, font_size);
+  ptrdiff_t size_index = stbds_hmgeti(r->sizes, font_size);
   ssize_t i = 0;
   if (size_index == -1) return BR_SIZE(0, 0);
   size_to_font f = r->sizes[size_index];
@@ -225,7 +220,7 @@ br_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, br_vec3_t pos, int
 
 br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color_fg, br_color_t color_bg, br_strv_t text, br_bb_t limit, br_text_renderer_ancor_t ancor) {
   float x = pos.x, y = pos.y, z = pos.z;
-  long size_index = stbds_hmgeti(r->sizes, font_size);
+  ptrdiff_t size_index = stbds_hmgeti(r->sizes, font_size);
   float og_x = pos.x;
   r->tmp_quads.len = 0;
   if (size_index == -1) {
@@ -235,7 +230,7 @@ br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int fon
   } else {
     size_to_font s = r->sizes[size_index];
     for (size_t i = 0; i < text.len; ++i) {
-      long char_index = stbds_hmgeti(s.value, text.str[i]);
+      ptrdiff_t char_index = stbds_hmgeti(s.value, text.str[i]);
       if (text.str[i] == '\n') {
         pos.y += (float)font_size * 1.1f;
         pos.x = og_x;

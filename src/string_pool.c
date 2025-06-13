@@ -78,13 +78,14 @@ bool brsp_resize(brsp_t* sp, brsp_id_t t, int new_size) {
   sp->free_next = new_id;
 
   int ex_size = new_size * 2;
+  int old_size = tn.cap;
   tn = (brsp_node_t) {
     .start_index = (int)sp->pool.len,
     .len = tn.len,
     .cap = (int)ex_size,
   };
   br_da_set(*sp, t, tn);
-  br_str_push_uninitialized(&sp->pool, (unsigned int)ex_size);
+  br_str_push_uninitialized(&sp->pool, (unsigned int)(ex_size));
   return true;
 }
 
@@ -97,10 +98,9 @@ void brsp_set(brsp_t* sp, brsp_id_t t, br_strv_t str) {
 }
 
 void brsp_insert_char(brsp_t* sp, brsp_id_t t, int at, char c) {
-  LOGI("Inserting %c", c);
   brsp_node_t* node = br_da_getp(*sp, t);
   int old_loc = node->start_index;
-  if (brsp_resize(sp, t, node->len + 1)) {
+  if (brsp_resize(sp, t, node->len + 2)) {
     node = br_da_getp(*sp, t);
     memmove(sp->pool.str + node->start_index, sp->pool.str + old_loc, (size_t)node->len);
   }

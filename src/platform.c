@@ -453,6 +453,12 @@ void brtl_viewport_set(br_extenti_t ex) {
   stl_br->win.viewport = ex;
 }
 
+br_strv_t brtl_clipboard(void) {
+  const char* str = glfwGetClipboardString(stl_br->win.glfw);
+  if (str == NULL) return BR_STRV(NULL, 0);
+  return br_strv_from_c_str(str);
+}
+
 br_plotter_t* brtl_plotter(void) {
   return stl_br;
 }
