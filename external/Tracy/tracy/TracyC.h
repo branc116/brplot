@@ -229,7 +229,7 @@ TRACY_API int ___tracy_connected(void);
 #  define TracyCZoneNC( ctx, name, color, active ) static const struct ___tracy_source_location_data TracyConcat(__tracy_source_location,TracyLine) = { name, __func__,  TracyFile, (uint32_t)TracyLine, color }; TracyCZoneCtx ctx = ___tracy_emit_zone_begin( &TracyConcat(__tracy_source_location,TracyLine), active );
 #endif
 
-#define TracyCZoneEnd( ctx ) ___tracy_emit_zone_end( ctx );
+#define TracyCZoneEnd( ctx ) ___tracy_emit_zone_end( ctx )
 
 #define TracyCZoneText( ctx, txt, size ) ___tracy_emit_zone_text( ctx, txt, size );
 #define TracyCZoneName( ctx, txt, size ) ___tracy_emit_zone_name( ctx, txt, size );
