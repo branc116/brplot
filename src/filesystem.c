@@ -9,7 +9,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <dirent.h>
 
 
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(__MINGW32__)
@@ -139,47 +138,3 @@ br_str_t br_fs_read1(const char* path) {
   return str;
 }
 
-static int br_fs_files_sort(void const* a, void const* b) {
-  br_fs_file_t const * af = a, *bf = b;
-  if (af->kind > bf->kind) return -1;
-  if (af->kind < bf->kind) return 1;
-  return strncmp(af->name.str, bf->name.str, af->name.len < bf->name.len ? af->name.len : bf->name.len);
-}
-
-bool br_fs_list_dir(br_strv_t path, br_fs_files_t* out_files) {
-  DIR* dir = NULL;
-  bool success = true;
-  struct dirent *de = NULL;
-  size_t i = 0;
-  br_fs_file_t* s = NULL;
-
-  out_files->cur_dir.len = 0;
-  br_str_push_strv(&out_files->cur_dir, path);
-  br_str_push_zero(&out_files->cur_dir);
-  if (NULL == (dir = opendir(out_files->cur_dir.str))) BR_ERROR("Failed to open directory %s: %s", out_files->cur_dir.str, strerror(errno));
-  br_str_copy2(&out_files->last_good_dir, out_files->cur_dir);
-  while (NULL != (de = readdir(dir))) {
-    if (strcmp(".", de->d_name) == 0) continue;
-    if (strcmp("..", de->d_name) == 0) continue;
-    if (out_files->len <= i) br_da_push(*out_files, ((br_fs_file_t) {0}));
-    s = br_da_getp(*out_files, i);
-    s->name.len = 0;
-    br_str_push_c_str(&s->name, de->d_name);
-    switch (de->d_type) {
-      case DT_DIR: s->kind = br_fs_file_kind_dir; break;
-      case DT_REG: s->kind = br_fs_file_kind_file; break;
-      default: s->kind = br_fs_file_kind_unknown; break;
-    };
-    ++i;
-  }
-  out_files->real_len = i;
-  qsort(out_files->arr, out_files->real_len, sizeof(out_files->arr[0]), br_fs_files_sort);
-  goto done;
-
-error:
-  success = false;
-
-done:
-  if (NULL != dir) closedir(dir);
-  return success;
-}
