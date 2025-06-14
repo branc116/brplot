@@ -37,8 +37,9 @@ br_plotter_t* br_plotter_malloc(void) {
 #endif
     .should_close = false,
     .ui = {
+      .file_manager_path_id = -1,
       .dark_theme = true,
-      .file_saver_inited = false,
+      .file_manager_inited = false,
     },
   };
 #if BR_HAS_HOTRELOAD
@@ -116,6 +117,7 @@ void br_plotter_init(br_plotter_t* br) {
   br_icons_init(br->shaders.icon);
   if (br->loaded_status < br_permastate_status_ui_loaded) {
     brtl_bruirs()->menu_extent_handle = brui_resizable_new(BR_EXTENT(10, 40, 160, (float)brtl_viewport().height/2.f), 0); 
+    br->ui.file_manager_path_id = -1;
     br_theme_dark();
     br_theme_reset_ui();
   }

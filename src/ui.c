@@ -29,8 +29,8 @@ BR_THREAD_LOCAL int brui__n__;
 
 BR_THREAD_LOCAL char brui__scrach[2048];
 #define TOP (brui__stack.arr[brui__stack.len ? brui__stack.len - 1 : 0])
-#define ACTION (brui__stack.cur_action)
-#define ACPARM (brui__stack.action_args)
+#define ACTION (brui__stack.action.kind)
+#define ACPARM (brui__stack.action.args)
 #define TOP2 (brui__stack.arr[brui__stack.len > 1 ? brui__stack.len - 2 : 0])
 #define Z (brui_max_z = br_i_max(brui_max_z, TOP.z), ++TOP.z)
 #define ZGL BR_Z_TO_GL(Z)
@@ -62,7 +62,6 @@ brui_stack_el_t brui_stack_el(void) {
     new_el.cur.x = new_el.limit.min_x + new_el.psum.x;
     new_el.cur.y += TOP.padding.y;
     new_el.start_z = new_el.z;
-    new_el.cur_resizable = 0;
     new_el.hide_border = false;
     new_el.hide_bg = false;
     new_el.content_height = new_el.padding.y;
@@ -82,7 +81,15 @@ brui_stack_el_t brui_stack_el(void) {
   }
 }
 
+#if TRACY_ENABLE
+BR_THREAD_LOCAL static struct ___tracy_source_location_data brui_begin_end_bench = { "UI Begin End", "Static",  __FILE__, (uint32_t)__LINE__, 0 };
+TracyCZoneCtx brui_begin_end_ctx;
+#endif
+
 void brui_begin(void) {
+#if TRACY_ENABLE
+  brui_begin_end_ctx = ___tracy_emit_zone_begin_callstack(&brui_begin_end_bench, 0, true );
+#endif
   brui__stack.log = brtl_key_pressed(BR_KEY_U);
   BRUI_LOG("begin");
   brui_stack_el_t new_el = brui_stack_el();
@@ -94,6 +101,9 @@ void brui_end(void) {
   BR_ASSERT(brui__stack.len == 1);
   brui__stack.len = 0;
   BRUI_LOG("end");
+#if TRACY_ENABLE
+  ___tracy_emit_zone_end(brui_begin_end_ctx);
+#endif
 }
 
 void brui_push(void) {
@@ -103,15 +113,19 @@ void brui_push(void) {
   TOP.background_color = BR_THEME.colors.plot_menu_color;
 }
 
-void brui_pop(void) {
+bool brui_pop(void) {
   float width = BR_BBW(TOP.limit) - 2 * fminf(TOP2.psum.x, TOP.psum.x);
   float height = TOP.content_height;
   br_size_t size = BR_SIZE(width, height);
   br_bb_t bb = BR_BB(TOP2.cur.x, TOP2.cur.y, TOP2.cur.x + size.width, TOP2.cur.y + size.height);
   float content_height = TOP.content_height;
+  bool clicked = false;
 
   if (TOP.hide_bg == false) brui_background(bb, BR_THEME.colors.plot_menu_color);
-  if (TOP.hide_border == false) brui_border(bb);
+  if (TOP.hide_border == false) brui_border1(bb);
+  if (TOP.is_active && brtl_mousel_pressed() && br_col_vec2_bb(bb, brtl_mouse_pos())) {
+    clicked = true;
+  }
 
   BRUI_LOG("Pre pop ex: [%.2f,%.2f,%.2f,%.2f]", BR_BB_(bb));
   float tt = TOP.cur.y;
@@ -120,6 +134,7 @@ void brui_pop(void) {
   TOP.cur.x = TOP.limit.min_x + TOP.psum.x;
   TOP.content_height += content_height + TOP.padding.y;
   BRUI_LOG("pop");
+  return clicked;
 }
 
 void brui_push_simple(void) {
@@ -137,6 +152,10 @@ void brui_push_y(float y) {
   TOP.cur.y += y;
 }
 
+void brui_select_next(void) {
+  brui__stack.select_next = true;
+}
+
 static inline bool brui_extent_is_good(br_extent_t e, br_extent_t parent) {
   return e.x >= 0 &&
     e.y >= 0 &&
@@ -147,33 +166,36 @@ static inline bool brui_extent_is_good(br_extent_t e, br_extent_t parent) {
 }
 
 br_size_t brui_text(br_strv_t strv) {
-  BRUI_LOG("Text: %.*s", strv.len, strv.str);
-  br_text_renderer_t* tr = brtl_text_renderer();
-  br_vec2_t loc = TOP.cur;
-  float out_top /* neg or 0 */ = fminf(TOP.cur.y - TOP.limit.min_y, 0.f);
-  float opt_height = (float)TOP.font_size + TOP.padding.y;
-
-  br_size_t space_left = BR_SIZE(BR_BBW(TOP.limit) - 2 * TOP.psum.x - (TOP.cur.x - (TOP.limit.min_x + TOP.psum.x)), TOP.limit.max_y - TOP.cur.y + out_top);
-  BRUI_LOG("TEXT: Space left %f %f", space_left.width, space_left.height);
-  br_strv_t fit = br_text_renderer_fit(tr, space_left, TOP.font_size, strv);
   br_extent_t ex = { 0 };
-  if (fit.len != 0) {
-    if (TOP.text_ancor & br_text_renderer_ancor_y_mid) loc.y += BR_BBH(TOP.limit) * 0.5f;
-    if (TOP.text_ancor & br_text_renderer_ancor_x_mid) loc.x += BR_BBW(TOP.limit) * 0.5f;
-    br_bb_t text_limit = TOP.limit;
-    text_limit.min_x += TOP.psum.x;
-    text_limit.max_x -= TOP.psum.x;
+  BR_PROFILE("brui_text") {
+    BRUI_LOG("Text: %.*s", strv.len, strv.str);
+    br_text_renderer_t* tr = brtl_text_renderer();
+    br_vec2_t loc = TOP.cur;
+    float out_top /* neg or 0 */ = fminf(TOP.cur.y - TOP.limit.min_y, 0.f);
+    float opt_height = (float)TOP.font_size + TOP.padding.y;
 
-    ex = br_text_renderer_push2(tr, BR_VEC3(loc.x, loc.y, BR_Z_TO_GL(TOP.z + 1)), TOP.font_size, TOP.font_color, TOP.background_color, fit, text_limit, TOP.text_ancor);
+    br_size_t space_left = BR_SIZE(BR_BBW(TOP.limit) - 2 * TOP.psum.x - (TOP.cur.x - (TOP.limit.min_x + TOP.psum.x)), TOP.limit.max_y - TOP.cur.y + out_top);
+    BRUI_LOG("TEXT: Space left %f %f", space_left.width, space_left.height);
+    br_strv_t fit = br_text_renderer_fit(tr, space_left, TOP.font_size, strv);
+    if (fit.len != 0) {
+      if (TOP.text_ancor & br_text_renderer_ancor_y_mid) loc.y += BR_BBH(TOP.limit) * 0.5f;
+      if (TOP.text_ancor & br_text_renderer_ancor_x_mid) loc.x += BR_BBW(TOP.limit) * 0.5f;
+      br_bb_t text_limit = TOP.limit;
+      text_limit.min_x += TOP.psum.x;
+      text_limit.max_x -= TOP.psum.x;
+
+      ex = br_text_renderer_push2(tr, BR_VEC3(loc.x, loc.y, BR_Z_TO_GL(TOP.z + 1)), TOP.font_size, TOP.font_color, TOP.background_color, fit, text_limit, TOP.text_ancor);
+    }
+    TOP.cur.x = TOP.limit.min_x + TOP.psum.x;
+    TOP.cur.y += opt_height;
+    TOP.content_height += opt_height;
   }
-  TOP.cur.x = TOP.limit.min_x + TOP.psum.x;
-  TOP.cur.y += opt_height;
-  TOP.content_height += opt_height;
   return ex.size;
 }
 
 bool brui_text_input(brsp_id_t str_id) {
   br_strv_t strv = brsp_get(*brtl_brsp(), str_id);
+  bool changed = false;
   BRUI_LOG("Text: %.*s", strv.len, strv.str);
   br_text_renderer_t* tr = brtl_text_renderer();
   br_vec2_t loc = TOP.cur;
@@ -204,7 +226,7 @@ bool brui_text_input(brsp_id_t str_id) {
         br_strv_t content = brtl_clipboard();
         for (uint32_t i = 0; i < content.len; ++i) {
           brsp_insert_char(brtl_brsp(), str_id, cp, content.str[i]);
-          ++ACPARM.text.cursor_pos;
+          cp = ++ACPARM.text.cursor_pos;
         }
       }
     } else {
@@ -220,6 +242,7 @@ bool brui_text_input(brsp_id_t str_id) {
             brsp_set(brtl_brsp(), str_id, strv);
           }
         }
+        changed = true;
       } else if (lp == BR_KEY_BACKSPACE) {
         if (strv.len > 0) {
           if (cp > 0) {
@@ -229,18 +252,27 @@ bool brui_text_input(brsp_id_t str_id) {
             brsp_set(brtl_brsp(), str_id, strv);
           }
         }
+        changed = true;
       } else if (lp >= BR_KEY_0 && lp <= BR_KEY_9) {
         brsp_insert_char(brtl_brsp(), str_id, cp, '0' + (char)(lp - BR_KEY_0));
         ++ACPARM.text.cursor_pos;
+        changed = true;
+      } else if (lp == BR_KEY_SLASH) {
+        brsp_insert_char(brtl_brsp(), str_id, cp, '/');
+        ++ACPARM.text.cursor_pos;
+        changed = true;
       } else if (lp >= BR_KEY_0 && lp <= BR_KEY_Z) {
         brsp_insert_char(brtl_brsp(), str_id, cp, (char)((brtl_key_shift() ? 'A' : 'a') + (char)(lp - BR_KEY_A)));
         ++ACPARM.text.cursor_pos;
+        changed = true;
       } else if (lp == BR_KEY_SPACE) {
         brsp_insert_char(brtl_brsp(), str_id, cp, ' ');
         ++ACPARM.text.cursor_pos;
+        changed = true;
       }
     }
     strv = brsp_get(*brtl_brsp(), str_id);
+    if ((uint32_t)ACPARM.text.cursor_pos > strv.len) ACPARM.text.cursor_pos = (int)strv.len;
     br_size_t size = br_text_renderer_measure(tr, TOP.font_size, br_str_sub(strv, 0, (uint32_t)ACPARM.text.cursor_pos));
     loc.x += size.width - 1.0f;
     text_limit.min_x -= 1.f;
@@ -257,11 +289,11 @@ bool brui_text_input(brsp_id_t str_id) {
       }
     }
   }
-  return false;
+  return changed;
 }
 
 void brui_new_lines(int n) {
-  float off = (float)TOP.font_size * (float)n;
+  float off = ((float)TOP.font_size + TOP.padding.y) * (float)n;
   TOP.cur.y += off;
   TOP.content_height += off;
 }
@@ -270,14 +302,18 @@ void brui_background(br_bb_t bb, br_color_t color) {
   br_icons_draw(bb, BR_BB(0,0,0,0), color, color, TOP.limit, TOP.start_z);
 }
 
-void brui_border(br_bb_t bb) {
+void brui_border1(br_bb_t bb) {
+  brui_border2(bb, TOP.is_active && br_col_vec2_bb(bb, brtl_mouse_pos()));
+}
+
+void brui_border2(br_bb_t bb, bool active) {
   br_color_t ec = BR_THEME.colors.ui_edge_inactive;
   br_color_t bc = BR_THEME.colors.ui_edge_bg_inactive;
 
   float edge = 0;
   float thick = BR_THEME.ui.border_thick;
 
-  if (TOP.is_active && br_col_vec2_bb(bb, brtl_mouse_pos())) {
+  if (active) {
     ec = BR_THEME.colors.ui_edge_active;
     bc = BR_THEME.colors.ui_edge_bg_active;
   }
@@ -291,7 +327,7 @@ void brui_border(br_bb_t bb) {
 
 bool brui_collapsable(br_strv_t name, bool* expanded) {
   float opt_header_height /* text + 2*1/2*padding */ = (float)TOP.font_size + TOP.padding.y;
-  brui_border(BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_header_height));
+  brui_border1(BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_header_height));
   brui_push_simple();
     brui_vsplitvp(2, BRUI_SPLITR(1), BRUI_SPLITA((float)TOP.font_size));
       TOP.limit.max_y = fminf(TOP.limit.max_y, TOP.cur.y + opt_header_height);
@@ -328,7 +364,7 @@ bool brui_collapsable(br_strv_t name, bool* expanded) {
 void brui_collapsable_end(void) {
   float ch = TOP.content_height;
   float opt_header_height /* text + 2*1/2*padding */ = (float)TOP.font_size + TOP.padding.y;
-  brui_border(BR_BB(TOP.limit.min_x, TOP.limit.min_y - opt_header_height, TOP.limit.max_x, TOP.cur.y));
+  brui_border1(BR_BB(TOP.limit.min_x, TOP.limit.min_y - opt_header_height, TOP.limit.max_x, TOP.cur.y));
   brui_pop_simple();
   TOP.content_height += ch + TOP.padding.y;
   TOP.cur.y += ch + TOP.padding.y;
@@ -342,7 +378,8 @@ bool brui_button(br_strv_t text) {
   float button_max_x = TOP.limit.max_x - TOP.psum.x;
   float button_max_y = fminf(TOP.cur.y + opt_height, TOP.limit.max_y);
   br_bb_t button_limit = BR_BB(TOP.cur.x, TOP.cur.y, button_max_x, button_max_y);
-  bool hovers = br_col_vec2_bb(button_limit, brtl_mouse_pos());
+  bool hovers = brui__stack.select_next || (br_col_vec2_bb(button_limit, brtl_mouse_pos()) && TOP.is_active);
+  brui__stack.select_next = false;
   BRUI_LOG("button_limit: %.2f %.2f %.2f %.2f", BR_BB_(button_limit));
   brui_push_simple();
     TOP.limit.min_x = TOP.cur.x;
@@ -356,7 +393,7 @@ bool brui_button(br_strv_t text) {
     brui_background(BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_height),
       hovers ? BR_THEME.colors.btn_hovered : BR_THEME.colors.btn_inactive
     );
-    brui_border(BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_height));
+    brui_border2(BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_height), hovers);
     brui_text(text);
   brui_pop_simple();
   TOP.content_height += opt_height + TOP.padding.y;
@@ -422,7 +459,8 @@ bool brui_button_icon(br_sizei_t size, br_extent_t icon) {
   br_bb_t bb = BR_BB(TOP.cur.x, TOP.cur.y, TOP.cur.x + (float)size.width, TOP.cur.y + height);
 
   if (bb.max_y > bb.min_y && bb.max_x > bb.min_x) {
-    if (TOP.is_active && br_col_vec2_bb(bb, brtl_mouse_pos())) {
+    if (brui__stack.select_next || (TOP.is_active && br_col_vec2_bb(bb, brtl_mouse_pos()))) {
+      brui__stack.select_next = false;
       br_color_t fg = BR_THEME.colors.btn_txt_hovered;
       br_color_t bg = BR_THEME.colors.btn_hovered;
       br_icons_draw(bb, BR_EXTENT_TOBB(icon), bg, fg, TOP.limit, Z);
@@ -545,7 +583,7 @@ bool brui_sliderf3(br_strv_t text, float* value, int percision) {
       brui_vsplit_end();
     }
   brui_pop_simple();
-  brui_border(bb);
+  brui_border1(bb);
   TOP.content_height += opt_height + TOP.padding.y;
   TOP.cur.y += opt_height + TOP.padding.y;
   return false;
@@ -575,7 +613,7 @@ bool brui_slideri(br_strv_t text, int* value) {
       brui_vsplit_end();
     }
   brui_pop_simple();
-  brui_border(bb);
+  brui_border1(bb);
   TOP.content_height += opt_height + TOP.padding.y;
   TOP.cur.y += opt_height + TOP.padding.y;
   return false;
@@ -592,7 +630,6 @@ void brui_vsplit(int n) {
     new_el.limit.min_x = (float)(n - i - 1) * width + top.cur.x;
     new_el.limit.max_x = new_el.limit.min_x + width;
     new_el.cur.x = new_el.limit.min.x;
-    new_el.cur_resizable = 0;
     new_el.hide_border = true;
     new_el.vsplit_max_height = 0;
     new_el.content_height = 0;
@@ -631,7 +668,6 @@ void brui_vsplitvp(int n, ...) {
     brui_stack_el_t top = TOP;
     top.z += 5;
     top.psum.x = 0;
-    top.cur_resizable = 0;
     top.hide_border = true;
     top.vsplit_max_height = 0;
     top.content_height = 0;
@@ -748,8 +784,27 @@ void brui_maxy_set(float value) {
   TOP.limit.max_y = value;
 }
 
+void brui_scroll_move(float value) {
+  brui_resizable_t* res = br_da_getp(*brtl_bruirs(), TOP.cur_resizable);
+  float hidden_height = res->full_height - res->current.cur_extent.height;
+  LOGI("res: %d, HH: %f", TOP.cur_resizable, hidden_height);
+  if (hidden_height <= 0) return;
+
+  float cur_scroll_px = hidden_height * res->target.scroll_offset_percent;
+  float next_scroll_px = cur_scroll_px + value;
+  if (next_scroll_px < 0) next_scroll_px = 0.f;
+  if (next_scroll_px > hidden_height) next_scroll_px = hidden_height;
+  float old = res->target.scroll_offset_percent;
+  res->target.scroll_offset_percent = next_scroll_px / hidden_height;
+  LOGI("old sc: %f, new sc: %f", old, res->target.scroll_offset_percent);
+}
+
 float brui_min_y(void) {
   return TOP.limit.min_y;
+}
+
+float brui_max_y(void) {
+  return TOP.limit.max_y;
 }
 
 void brui_height_set(float value) {
@@ -761,6 +816,10 @@ float brui_padding_x(void) {
   return TOP.padding.x;
 }
 
+float brui_padding_y(void) {
+  return TOP.padding.y;
+}
+
 void brui_padding_y_set(float value) {
   TOP.padding.y = value;
 }
@@ -769,13 +828,30 @@ float brui_y(void) {
   return TOP.cur.y;
 }
 
+float brui_width(void) {
+  return TOP.limit.max_x - TOP.limit.min_x;
+}
+
+float brui_local_y(void) {
+  return TOP.cur.y - TOP.limit.min_y;
+}
+
 bool brui_active(void) {
   return TOP.is_active;
+}
+
+void brui_debug(void) {
+  brui__stack.log = true;
+}
+
+brui_action_t* brui_action(void) {
+  return &brui__stack.action;
 }
 
 brui_stack_t* brui_stack(void) {
   return &brui__stack;
 }
+
 
 
 // ---------------------------Resizables--------------------------

@@ -88,6 +88,22 @@ image_t imgs[] = {
     .img = "edge",
     STATIC_ARRAY_INT(8)
   },
+  {
+    .img = "hidden_0",
+    STATIC_ARRAY_INT(32)
+  },
+  {
+    .img = "hidden_1",
+    STATIC_ARRAY_INT(32)
+  },
+  {
+    .img = "file",
+    STATIC_ARRAY_INT(32)
+  },
+  {
+    .img = "folder",
+    STATIC_ARRAY_INT(32)
+  },
 };
 
 int* image_sizes(int n, image_t* imgs, int* out_len) {

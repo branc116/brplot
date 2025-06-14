@@ -165,28 +165,30 @@ static bool brtr_move_loc(br_text_renderer_t* tr, size_to_font s, char c, br_vec
 }
 
 br_strv_t br_text_renderer_fit(br_text_renderer_t* r, br_size_t size, int font_size, br_strv_t text) {
-  br_vec2_t loc = { 0 };
-  ptrdiff_t size_index = stbds_hmgeti(r->sizes, font_size);
-  r->tmp_quads.len = 0;
-  br_extent_t exf = BR_EXTENT(0, 0, (float)size.width, (float)size.height);
   ssize_t i = 0;
-  if (size_index == -1) {
-    // We don't have the font baked so be conservative
-    for (; i < (ssize_t)text.len; ++i) {
-      char c = text.str[i];
-      if (c == '\n') {
-        loc.y += (float)font_size * 1.1f;
-        loc.x = 0;
-      } else if (c == '\r') continue;
-      else loc.x += (float)font_size * 1.1f;
-      if (false == br_col_vec2_extent(exf, loc)) break;
-    }
-  } else {
-    size_to_font f = r->sizes[size_index];
-    for (; i < (ssize_t)text.len; ++i) {
-      if (loc.x > size.width) break;
-      if (loc.y > size.height) break;
-      if (false == brtr_move_loc(r, f, text.str[i], &loc)) break;
+  BR_PROFILE("Text renderer fit") {
+    br_vec2_t loc = { 0 };
+    ptrdiff_t size_index = stbds_hmgeti(r->sizes, font_size);
+    r->tmp_quads.len = 0;
+    br_extent_t exf = BR_EXTENT(0, 0, (float)size.width, (float)size.height);
+    if (size_index == -1) {
+      // We don't have the font baked so be conservative
+      for (; i < (ssize_t)text.len; ++i) {
+        char c = text.str[i];
+        if (c == '\n') {
+          loc.y += (float)font_size * 1.1f;
+          loc.x = 0;
+        } else if (c == '\r') continue;
+        else loc.x += (float)font_size * 1.1f;
+        if (false == br_col_vec2_extent(exf, loc)) break;
+      }
+    } else {
+      size_to_font f = r->sizes[size_index];
+      for (; i < (ssize_t)text.len; ++i) {
+        if (loc.x > size.width) break;
+        if (loc.y > size.height) break;
+        if (false == brtr_move_loc(r, f, text.str[i], &loc)) break;
+      }
     }
   }
   return br_str_sub(text, 0, (uint32_t)(i < 0 ? 0 : i));
@@ -219,65 +221,67 @@ br_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, br_vec3_t pos, int
 }
 
 br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color_fg, br_color_t color_bg, br_strv_t text, br_bb_t limit, br_text_renderer_ancor_t ancor) {
-  float x = pos.x, y = pos.y, z = pos.z;
-  ptrdiff_t size_index = stbds_hmgeti(r->sizes, font_size);
-  float og_x = pos.x;
-  r->tmp_quads.len = 0;
-  if (size_index == -1) {
-    for (size_t i = 0; i < text.len; ++i) {
-      stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = text.str[i] }), 0);
-    }
-  } else {
-    size_to_font s = r->sizes[size_index];
-    for (size_t i = 0; i < text.len; ++i) {
-      ptrdiff_t char_index = stbds_hmgeti(s.value, text.str[i]);
-      if (text.str[i] == '\n') {
-        pos.y += (float)font_size * 1.1f;
-        pos.x = og_x;
-        continue;
-      }
-      if (text.str[i] == '\r') continue;
-      if (char_index == -1) {
-        stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = text.str[i] }), 0);
-      } else {
-        stbtt_aligned_quad q;
-        stbtt_packedchar ch = s.value[char_index].value;
-        stbtt_GetPackedQuad(&ch, r->bitmap_pixels_width, r->bitmap_pixels_height, 0, &pos.x, &pos.y, &q, false);
-        br_da_push(r->tmp_quads, q);
-      }
-    }
-  }
-#define MMIN(x, y) (x < y ? x : y)
-#define MMAX(x, y) (x > y ? x : y)
   float min_y = FLT_MAX, max_y = FLT_MIN, min_x = FLT_MAX, max_x = FLT_MIN;
-  for (size_t i = 0; i < r->tmp_quads.len; ++i) {
-    min_y = MMIN(r->tmp_quads.arr[i].y0, min_y);
-    min_x = MMIN(r->tmp_quads.arr[i].x0, min_x);
-    max_y = MMAX(r->tmp_quads.arr[i].y1, max_y);
-    max_x = MMAX(r->tmp_quads.arr[i].x1, max_x);
-  }
-#undef MMAX
-#undef MMIN
   float y_off = 0.f;
   float x_off = 0.f;
-  if (ancor & br_text_renderer_ancor_y_up)         y_off = min_y - y;
-  else if (ancor & br_text_renderer_ancor_y_mid)   y_off = (max_y + min_y) * 0.5f - y;
-  else if (ancor & br_text_renderer_ancor_y_down)  y_off = max_y - y;
-  if (ancor & br_text_renderer_ancor_x_left)       x_off = min_x - x;
-  else if (ancor & br_text_renderer_ancor_x_mid)   x_off = (max_x + min_x) * 0.5f - x;
-  else if (ancor & br_text_renderer_ancor_x_right) x_off = max_x - x;
-  br_sizei_t sz = brtl_viewport().size;
-  br_vec4_t fg = BR_COLOR_TO4(color_fg);
-  br_vec4_t bg = BR_COLOR_TO4(color_bg);
-  for (size_t i = 0; i < r->tmp_quads.len; ++i) {
-    br_bb_t bb = br_bb_sub(BR_BB(r->tmp_quads.arr[i].x0, r->tmp_quads.arr[i].y0, r->tmp_quads.arr[i].x1, r->tmp_quads.arr[i].y1), BR_VEC2(x_off, y_off));
-    br_bb_t tex = BR_BB(r->tmp_quads.arr[i].s0, r->tmp_quads.arr[i].t0, r->tmp_quads.arr[i].s1, r->tmp_quads.arr[i].t1);
-    br_shader_font_push_quad(*r->shader_f, (br_shader_font_el_t[4]) {
-        { .pos = BR_VEC42(br_vec2_stog(bb.min, sz), tex.min),             .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, bb.min),       .z = z },
-        { .pos = BR_VEC42(br_vec2_stog(br_bb_tr(bb), sz), br_bb_tr(tex)), .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, br_bb_tr(bb)), .z = z },
-        { .pos = BR_VEC42(br_vec2_stog(bb.max, sz), tex.max),             .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, bb.max),       .z = z },
-        { .pos = BR_VEC42(br_vec2_stog(br_bb_bl(bb), sz), br_bb_bl(tex)), .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, br_bb_bl(bb)), .z = z },
-    });
+  BR_PROFILE("text renderer push2") {
+    float x = pos.x, y = pos.y, z = pos.z;
+    ptrdiff_t size_index = stbds_hmgeti(r->sizes, font_size);
+    float og_x = pos.x;
+    r->tmp_quads.len = 0;
+    if (size_index == -1) {
+      for (size_t i = 0; i < text.len; ++i) {
+        stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = text.str[i] }), 0);
+      }
+    } else {
+      size_to_font s = r->sizes[size_index];
+      for (size_t i = 0; i < text.len; ++i) {
+        ptrdiff_t char_index = stbds_hmgeti(s.value, text.str[i]);
+        if (text.str[i] == '\n') {
+          pos.y += (float)font_size * 1.1f;
+          pos.x = og_x;
+          continue;
+        }
+        if (text.str[i] == '\r') continue;
+        if (char_index == -1) {
+          stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = text.str[i] }), 0);
+        } else {
+          stbtt_aligned_quad q;
+          stbtt_packedchar ch = s.value[char_index].value;
+          stbtt_GetPackedQuad(&ch, r->bitmap_pixels_width, r->bitmap_pixels_height, 0, &pos.x, &pos.y, &q, false);
+          br_da_push(r->tmp_quads, q);
+        }
+      }
+    }
+#define MMIN(x, y) (x < y ? x : y)
+#define MMAX(x, y) (x > y ? x : y)
+    for (size_t i = 0; i < r->tmp_quads.len; ++i) {
+      min_y = MMIN(r->tmp_quads.arr[i].y0, min_y);
+      min_x = MMIN(r->tmp_quads.arr[i].x0, min_x);
+      max_y = MMAX(r->tmp_quads.arr[i].y1, max_y);
+      max_x = MMAX(r->tmp_quads.arr[i].x1, max_x);
+    }
+#undef MMAX
+#undef MMIN
+    if (ancor & br_text_renderer_ancor_y_up)         y_off = min_y - y;
+    else if (ancor & br_text_renderer_ancor_y_mid)   y_off = (max_y + min_y) * 0.5f - y;
+    else if (ancor & br_text_renderer_ancor_y_down)  y_off = max_y - y;
+    if (ancor & br_text_renderer_ancor_x_left)       x_off = min_x - x;
+    else if (ancor & br_text_renderer_ancor_x_mid)   x_off = (max_x + min_x) * 0.5f - x;
+    else if (ancor & br_text_renderer_ancor_x_right) x_off = max_x - x;
+    br_sizei_t sz = brtl_viewport().size;
+    br_vec4_t fg = BR_COLOR_TO4(color_fg);
+    br_vec4_t bg = BR_COLOR_TO4(color_bg);
+    for (size_t i = 0; i < r->tmp_quads.len; ++i) {
+      br_bb_t bb = br_bb_sub(BR_BB(r->tmp_quads.arr[i].x0, r->tmp_quads.arr[i].y0, r->tmp_quads.arr[i].x1, r->tmp_quads.arr[i].y1), BR_VEC2(x_off, y_off));
+      br_bb_t tex = BR_BB(r->tmp_quads.arr[i].s0, r->tmp_quads.arr[i].t0, r->tmp_quads.arr[i].s1, r->tmp_quads.arr[i].t1);
+      br_shader_font_push_quad(*r->shader_f, (br_shader_font_el_t[4]) {
+          { .pos = BR_VEC42(br_vec2_stog(bb.min, sz), tex.min),             .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, bb.min),       .z = z },
+          { .pos = BR_VEC42(br_vec2_stog(br_bb_tr(bb), sz), br_bb_tr(tex)), .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, br_bb_tr(bb)), .z = z },
+          { .pos = BR_VEC42(br_vec2_stog(bb.max, sz), tex.max),             .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, bb.max),       .z = z },
+          { .pos = BR_VEC42(br_vec2_stog(br_bb_bl(bb), sz), br_bb_bl(tex)), .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, br_bb_bl(bb)), .z = z },
+      });
+    }
   }
   return BR_EXTENT(min_x - x_off, min_y - y_off, max_x - min_x, max_y - min_y);
 }

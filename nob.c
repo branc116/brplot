@@ -187,6 +187,7 @@ static bool do_dist = true;
 static bool pip_skip_build = false;
 static bool disable_logs = false;
 static bool is_pedantic = false;
+static bool is_tracy = false;
 static bool is_help_subcommands = false;
 #if !defined(__APPLE__)
 static bool is_macos = false;
@@ -297,6 +298,7 @@ static void fill_command_flag_data(void) {
   command_flag_t debug_flag          = (command_flag_t) {.name = BR_STRL("debug"),      .alias = 'd',  .description = BR_STRL("Build debug version"),                                                                            .is_set = &is_debug};
   command_flag_t has_hotreload_flag  = (command_flag_t) {.name = BR_STRL("hot"),        .alias = 'H',  .description = BR_STRL("Build a version with hotreaload enabled"),                                                        .is_set = &has_hotreload};
   command_flag_t pedantic_flag       = (command_flag_t) {.name = BR_STRL("pedantic"),   .alias = 'p',  .description = BR_STRL("Turn on all warnings and treat warnings as errors"),                                              .is_set = &is_pedantic};
+  command_flag_t tracy_flag          = (command_flag_t) {.name = BR_STRL("tracy"),      .alias = 't',  .description = BR_STRL("Turn tracy profiler on"),                                                                         .is_set = &is_tracy};
   command_flag_t headless_flag       = (command_flag_t) {.name = BR_STRL("headless"),   .alias = '\0', .description = BR_STRL("Create a build that will not spawn any windows"),                                                 .is_set = &is_headless};
   command_flag_t asan_flag           = (command_flag_t) {.name = BR_STRL("asan"),       .alias = 'a',  .description = BR_STRL("Enable address sanitizer"),                                                                       .is_set = &enable_asan};
   command_flag_t lib_flag            = (command_flag_t) {.name = BR_STRL("lib"),        .alias = 'l',  .description = BR_STRL("Build dynamic library"),                                                                          .is_set = &is_lib};
@@ -310,6 +312,7 @@ static void fill_command_flag_data(void) {
   br_da_push(command_flags[n_compile], debug_flag);
   br_da_push(command_flags[n_compile], has_hotreload_flag);
   br_da_push(command_flags[n_compile], pedantic_flag);
+  br_da_push(command_flags[n_compile], tracy_flag);
   br_da_push(command_flags[n_compile], headless_flag);
   br_da_push(command_flags[n_compile], asan_flag);
   br_da_push(command_flags[n_compile], lib_flag);
@@ -443,6 +446,7 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
   if (enable_asan)   br_str_push_literal(&build_dir, ".asan");
   if (has_hotreload) br_str_push_literal(&build_dir, ".hot");
   if (is_wasm)       br_str_push_literal(&build_dir, ".wasm");
+  if (is_tracy)      br_str_push_literal(&build_dir, ".tracy");
                      br_str_push_literal(&build_dir, ".o");
   br_str_push_char(&build_dir, '\0');
   nob_cmd_append(link_cmd, build_dir.str);
@@ -469,6 +473,7 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
     nob_cmd_append(cmd, "-DBR_NO_X11", "-DBR_NO_WAYLAND", "-DHEADLESS");
   }
   if (is_wasm) nob_cmd_append(cmd, "-DGRAPHICS_API_OPENGL_ES3=1");
+  if (is_tracy) nob_cmd_append(cmd, "-DTRACY_ENABLE=1");
   if (enable_asan) nob_cmd_append(cmd, SANITIZER_FLAGS);
   if (is_debug) {
     nob_cmd_append(cmd, "-ggdb", "-DBR_DEBUG");
@@ -523,6 +528,7 @@ static bool compile_and_link(Nob_Cmd* cmd) {
       BR_TODO("Implement wasm exe");
     }
   } else {
+    if (is_tracy) nob_cmd_append(&link_command, "-l:libTracyClient.a", "-lstdc++");
     if (is_slib) nob_cmd_append(&link_command, "-o", "bin/brplot" SLIB_EXT);
     else if (is_lib) nob_cmd_append(&link_command, "-shared", "-fPIC", "-o", "bin/brplot" LIB_EXT);
     else {

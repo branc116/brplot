@@ -20,7 +20,7 @@ extern "C" {
 #define br_strv_from_literal(literal) (BR_LITERAL(br_strv_t) { literal, sizeof(literal) - 1 })
 
 #define br_str_sub(s, start, new_length) ((br_strv_t) { .str = s.str + (start), .len = (new_length) })
-#define br_str_sub1(s, start) ((br_strv_t) { .str = s.str + (start), .len = s.len - (start) })
+#define br_str_sub1(s, start) ((br_strv_t) { .str = s.str + (start), .len = ((start) >= s.len ? 0 : s.len - (start)) })
 #define br_str_as_view(S) ((br_strv_t) { .str = (S).str, .len = (S).len })
 
 #define BR_STRV(STR, LEN) ((br_strv_t) { .str = (STR), .len = (LEN) })
@@ -42,6 +42,7 @@ br_str_t   br_str_malloc(size_t size);
 void       br_str_free(br_str_t str);
 bool       br_str_realloc(br_str_t* s, size_t new_cap);
 bool       br_str_push_char(br_str_t* s, char c);
+bool       br_str_push_zero(br_str_t* s);
 bool       br_str_push_int(br_str_t* s, int c);
 bool       br_str_push_float1(br_str_t* s, float c, int decimals);
 bool       br_str_push_float(br_str_t* s, float c);
@@ -52,6 +53,7 @@ bool       br_str_push_uninitialized(br_str_t* s, unsigned int n);
 char*      br_str_to_c_str(br_str_t s);
 char*      br_str_move_to_c_str(br_str_t* s);
 br_str_t   br_str_copy(br_str_t s);
+void       br_str_copy2(br_str_t* out, br_str_t from);
 br_str_t   br_str_from_c_str(const char* str);
 void       br_str_to_c_str1(br_str_t s, char* out_s);
 char*      br_str_to_scrach(br_str_t s);
@@ -70,9 +72,11 @@ br_strv_t  br_strv_splitrs(br_strv_t buff, br_strv_t split_strv);
 br_strv_t  br_strv_splitr(br_strv_t buff, char splitc);
 br_strv_t  br_strv_splitl(br_strv_t buff, char splitc);
 br_strv_t  br_strv_any_splitr(br_strv_t buff, int n, char arr[], int* out_index);
+br_strv_t  br_strv_any_rsplitr(br_strv_t buff, int n, char arr[], int* out_index);
 br_strv_t  br_strv_skip(br_strv_t buff, char to_skip);
 bool       br_strv_starts_with(br_strv_t buff, br_strv_t starts_with);
 int        br_strv_count(br_strv_t buff, char ch);
+bool       br_strv_match(br_strv_t full, br_strv_t sub);
 
 #if defined(BR_RELEASE)
 char*      br_scrach_get(size_t len);
@@ -147,8 +151,15 @@ static inline void br_str_push_char_unsafe(br_str_t* s, char c) {
 }
 
 bool br_str_push_char(br_str_t* s, char c) {
+  LOGI("Use br_str_push_zero if you wanna NULL terminate this string");
   if (s->len >= s->cap) if (false == br_str_realloc(s, s->cap * 2)) return false;
   br_str_push_char_unsafe(s, c);
+  return true;
+}
+
+bool br_str_push_zero(br_str_t* s) {
+  if (s->len >= s->cap) if (false == br_str_realloc(s, s->cap * 2)) return false;
+  s->str[s->len] = '\0';
   return true;
 }
 
@@ -281,6 +292,11 @@ br_str_t br_str_copy(br_str_t s) {
   }
   memcpy(r.str, s.str, s.len);
   return r;
+}
+
+void br_str_copy2(br_str_t* out, br_str_t const from) {
+  out->len = 0;
+  br_str_push_br_str(out, from);
 }
 
 br_str_t br_str_from_c_str(const char* str) {
@@ -465,6 +481,22 @@ out:
   return buff;
 }
 
+br_strv_t br_strv_any_rsplitr(br_strv_t buff, int n, char arr[], int* out_index) {
+  br_strv_t out = BR_STRV(buff.str + buff.len, 0);
+  for (uint32_t i = 0; i < buff.len; ++i) {
+    --out.str;
+    for (int j = 0; j < n; ++j) {
+      if (buff.str[0] == arr[j]) {
+        *out_index = j;
+        ++out.str;
+        return out;
+      }
+    }
+    ++out.len;
+  }
+  return out;
+}
+
 br_strv_t br_strv_skip(br_strv_t buff, char to_skip) {
   while (buff.len > 0 && buff.str[0] == to_skip) {
     ++buff.str;
@@ -483,6 +515,18 @@ int br_strv_count(br_strv_t buff, char ch) {
   int sum = 0;
   for (uint32_t i = 0; i < buff.len; ++i) if (buff.str[i] == ch) ++sum;
   return sum;
+}
+
+bool br_strv_match(br_strv_t full, br_strv_t sub) {
+  if (full.len < sub.len) return false;
+  if (sub.len == 0) return true;
+  uint32_t n = sub.len;
+  uint32_t i = 0, j = 0;
+  for (; i < n && j < n;) {
+    if (full.str[i] == sub.str[j]) ++i, ++j;
+    else ++i;
+  }
+  return i == n && j == n;
 }
 
 static BR_THREAD_LOCAL char*  br_scrach = NULL;

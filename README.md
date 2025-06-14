@@ -397,10 +397,14 @@ sudo rm /usr/bin/brplot
     * ~~Icons for checkboxes~~
 * ~~csht should genereate makefile dependency list~~
 * I want touch to work.
-  * But for that I need a way of adding stuff on screen without stdin.
-    * Say we need to implement read csv stuf..
-      * For that we need file browser ( agin ) to locate that file.
-        * For that we need text input widget.
+  * ~~But for that I need a way of adding stuff on screen without stdin.~~
+    * Done
+    * ~~Say we need to implement read csv stuf..~~
+      * Added csv reading and parsing and stuff, it's looking good
+      * ~~For that we need file browser ( agin ) to locate that file.~~
+        * Implemented file browser looking good
+        * ~~For that we need text input widget.~~
+          * Implemented it but it looks bad and needs more features..
 * Web resizing is again fucked, unfuck it.
 * ~~Automaticaly generate functions to select icon that best fits wanted size..~~
 * ~~Resizables should use br_free_list~~
@@ -408,12 +412,13 @@ sudo rm /usr/bin/brplot
   * ~~Regions should be drawn on screen when moving resizables where if I move the resizable, it snaps on that side of the screen.~~
   * ~~If mouse over regions snap the resizable to that region~~
   * If mouse over other resizable, draw regions over that other resizable and reparent the resizable that is being dragged
-* When dragging resizables, they should not be lerped
+* ~~When dragging resizables, they should not be lerped~~
+
 
 ## Screenshots
 Here is a history of how brplot looked over time:
 
-##### 2024-05-21
+##### 2025-05-21
 ![screenshot7](media/brplot_20250421_163315.png)
 ##### 2024-04-21
 ![screenshot6](media/brplot_20240421_172537.png)

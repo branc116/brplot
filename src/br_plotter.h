@@ -87,7 +87,9 @@ typedef struct br_plotter_t {
   bool exited;
   struct {
     br_theme_t theme;
-    bool file_saver_inited;
+    brsp_id_t csv_file_opened;
+    brsp_id_t file_manager_path_id;
+    bool file_manager_inited;
     bool dark_theme;
     bool expand_plots;
     bool expand_optimizations;

@@ -32,8 +32,9 @@
 } while(0)
 
 #define BR_LOG_GL_ERROR(ERROR) do { \
-  if (0 != (ERROR)) { \
-    LOGF("GL Error: %d", (ERROR)); \
+  int __err = ERROR; \
+  if (0 != __err) { \
+    LOGE("GL Error: %d", __err); \
   } \
 } while(0)
 
@@ -61,6 +62,11 @@
      LOGF("Exiting"); \
    } \
 } while (0)
+
+#define BR_ERROR(fmt, ...) do { \
+  LOGE(fmt, ##__VA_ARGS__); \
+  goto error; \
+} while(0)
 
 #if defined(BRPLOT_IMPLEMENTATION)
 #  define BR_LIB
@@ -140,6 +146,15 @@ extern "C" {
 #  define TEST_ONLY
 #else
 #  define TEST_ONLY __attribute__((__unused__))
+#endif
+
+#define BR_CAT(A, B) BR_CAT2(A, B)
+#define BR_CAT2(A, B) A##B
+#if TRACY_ENABLE
+#  define BR_PROFILE(NAME) TracyCZoneN(BR_CAT(br_profiler, __LINE__),  NAME, true); \
+     for (int BR_CAT(profile_loop_start, __LINE__) = 1; BR_CAT(profile_loop_start, __LINE__) == 1; BR_CAT(profile_loop_start, __LINE__) = 0, TracyCZoneEnd(BR_CAT(br_profiler, __LINE__)))
+#else
+#  define BR_PROFILE(NAME)
 #endif
 
 #if defined(__cplusplus) &&  __cplusplus >= 201103L

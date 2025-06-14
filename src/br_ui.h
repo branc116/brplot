@@ -33,10 +33,24 @@ typedef enum {
   brui_ancor_all = brui_ancor_left | brui_ancor_right | brui_ancor_top | brui_ancor_bottom,
 } brui_ancor_t;
 
-typedef enum brui_action_t {
+typedef enum brui_action_kind_t {
   brui_action_none = 0,
   brui_action_sliding,
   brui_action_typing
+} brui_action_kind_t;
+
+typedef struct brui_action_t {
+  brui_action_kind_t kind;
+  union {
+    struct {
+      void* value;
+      br_vec2_t drag_ancor_point;
+    } slider;
+    struct {
+      brsp_id_t id;
+      int cursor_pos;
+    } text;
+  } args;
 } brui_action_t;
 
 typedef struct {
@@ -66,18 +80,9 @@ typedef struct {
   brui_stack_el_t* arr;
   size_t len, cap;
 
+  brui_action_t action;
   int active_resizable;
-  brui_action_t cur_action;
-  union {
-    struct {
-      void* value;
-      br_vec2_t drag_ancor_point;
-    } slider;
-    struct {
-      brsp_id_t id;
-      int cursor_pos;
-    } text;
-  } action_args;
+  bool select_next;
   bool log;
 } brui_stack_t;
 
@@ -187,15 +192,18 @@ void brui_vsplitvp(int n, ...);
 void brui_vsplit_pop(void);
 void brui_vsplit_end(void);
 void brui_background(br_bb_t bb, br_color_t color);
-void brui_border(br_bb_t bb);
+void brui_border1(br_bb_t bb);
+void brui_border2(br_bb_t bb, bool active);
 bool brui_collapsable(br_strv_t name, bool* expanded);
 void brui_collapsable_end(void);
 
 void brui_push(void);
-void brui_pop(void);
+bool brui_pop(void);
 void brui_push_simple(void);
 void brui_pop_simple(void);
 void brui_push_y(float y);
+
+void brui_select_next(void);
 
 int   brui_text_size(void);
 void  brui_text_size_set(int size);
@@ -204,12 +212,20 @@ void  brui_text_color_set(br_color_t color);
 void  brui_ancor_set(brui_ancor_t ancor);
 void  brui_z_set(int z);
 void  brui_maxy_set(float value);
+void  brui_scroll_move(float value);
 float brui_min_y(void);
+float brui_max_y(void);
 void  brui_height_set(float value);
 float brui_padding_x(void);
+float brui_padding_y(void);
 void  brui_padding_y_set(float value);
 float brui_y(void);
+float brui_width(void);
+float brui_local_y(void);
 bool  brui_active(void);
+void  brui_debug(void);
+
+brui_action_t* brui_action(void);
 brui_stack_t* brui_stack(void);
 
 void              brui_resizable_init(void);

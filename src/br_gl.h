@@ -75,6 +75,7 @@
 #define GL_TEXTURE_SWIZZLE_RGBA 0x8E46
 
 #define BR_KEY_SPACE 32
+#define BR_KEY_SLASH 47
 #define BR_KEY_TWO 50
 #define BR_KEY_THREE 51
 #define BR_KEY_0 48
