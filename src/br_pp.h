@@ -68,6 +68,15 @@
   goto error; \
 } while(0)
 
+#if defined(BR_ASAN)
+void __sanitizer_print_stack_trace(void);
+#  define BR_STACKTRACE() __sanitizer_print_stack_trace()
+#else
+#  define BR_STACKTRACE()
+#endif
+
+
+
 #if defined(BRPLOT_IMPLEMENTATION)
 #  define BR_LIB
 #endif

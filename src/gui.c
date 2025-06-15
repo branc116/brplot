@@ -416,15 +416,13 @@ static void brgui_draw_csv_manager(br_plotter_t* br) {
     csv_state_t state;
     br_csv_parser_t csv_parser;
     brsp_id_t read_id;
-    size_t first_coord;
+    int first_coord;
   } state = { 0 };
 
   if (false == state.is_open && 0 == br->ui.csv_file_opened) return;
   state.is_open = true;
 
   brsp_t* sp = brtl_brsp();
-  size_t len = 0;
-  char* data = 0;
   bool delete = false;
 
   if (0 != br->ui.csv_file_opened) {
@@ -472,7 +470,7 @@ static void brgui_draw_csv_manager(br_plotter_t* br) {
               }
             if (brui_pop()) {
               if (state.first_coord == -1) {
-                state.first_coord = j;
+                state.first_coord = (int)j;
               } else {
                 for (size_t k = 0; k < state.csv_parser.rows.real_len; ++k) {
                   double x = strtod(state.csv_parser.rows.arr[k].arr[state.first_coord].str, NULL);

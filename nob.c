@@ -50,7 +50,7 @@
   X(compile_commands, "Create compile_commands.json file") \
   X(help, "Print help") \
 
-#define SANITIZER_FLAGS "-fsanitize=address,undefined"
+#define SANITIZER_FLAGS "-fsanitize=address,undefined", "-DBR_ASAN"
 
 #define STR(A) #A
 #define CAT3(A, B, C) STR(A) "." STR(B) "." STR(C)
@@ -448,7 +448,7 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
   if (is_wasm)       br_str_push_literal(&build_dir, ".wasm");
   if (is_tracy)      br_str_push_literal(&build_dir, ".tracy");
                      br_str_push_literal(&build_dir, ".o");
-  br_str_push_char(&build_dir, '\0');
+  br_str_push_zero(&build_dir);
   nob_cmd_append(link_cmd, build_dir.str);
 
   if (false == is_rebuild) {

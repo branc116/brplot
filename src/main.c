@@ -8,6 +8,7 @@
 #include "src/br_plot.h"
 #include "src/br_pp.h"
 
+
 static void* main_gui(void* plotter) {
   br_plotter_t* br = (br_plotter_t*)plotter;
   br_plotter_init(br);

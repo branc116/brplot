@@ -1,7 +1,6 @@
 #include "src/br_filesystem.h"
 #include "src/br_pp.h"
 #include "src/br_str.h"
-#include "src/br_da.h"
 
 #include <stdio.h>
 #include <errno.h>
@@ -104,23 +103,22 @@ uint32_t br_fs_crc(const void* data_p, size_t data_size, uint32_t seed) // Stole
 }
 
 bool br_fs_read(const char* path, br_str_t* out_content) {
-  char* content = NULL;
   FILE* file = fopen(path, "rb");
   long size = 0;
   size_t wanted_cap = 0;
   bool success = true;
 
-  if (file == NULL)                                                 BR_ERROR("Failed to open file %s: %s", path, strerror(errno));
-  if (-1 == fseek(file, 0, SEEK_END))                               BR_ERROR("Failed to seek file %s: %s", path, strerror(errno));
-  if (-1 == (size = ftell(file)))                                   BR_ERROR("Failed to get the file size %s: %s", path, strerror(errno));
-  if (-1 == fseek(file, 0, SEEK_SET))                               BR_ERROR("Failed to get seek set file %s: %s", path, strerror(errno));
+  if (file == NULL)                                                          BR_ERROR("Failed to open file %s: %s", path, strerror(errno));
+  if (-1 == fseek(file, 0, SEEK_END))                                        BR_ERROR("Failed to seek file %s: %s", path, strerror(errno));
+  if (-1 == (size = ftell(file)))                                            BR_ERROR("Failed to get the file size %s: %s", path, strerror(errno));
+  if (-1 == fseek(file, 0, SEEK_SET))                                        BR_ERROR("Failed to get seek set file %s: %s", path, strerror(errno));
   out_content->len = 0;
   wanted_cap = (size_t)size + 1;
-  if (false == br_str_push_uninitialized(out_content, wanted_cap))  BR_ERROR("Failed to push unininitialized string");
-  if (out_content->cap < wanted_cap)                                BR_ERROR("Failed to malloc %zu bytes file %s: %s", wanted_cap, path, strerror(errno));
-  if (size != (long)fread(out_content->str, 1, (size_t)size, file)) BR_ERROR("Failed to read file %s: %s", path, strerror(errno));
+  if (false == br_str_push_uninitialized(out_content, (uint32_t)wanted_cap)) BR_ERROR("Failed to push unininitialized string");
+  if (out_content->cap < wanted_cap)                                         BR_ERROR("Failed to malloc %zu bytes file %s: %s", wanted_cap, path, strerror(errno));
+  if (size != (long)fread(out_content->str, 1, (size_t)size, file))          BR_ERROR("Failed to read file %s: %s", path, strerror(errno));
   out_content->str[size] = '\0';
-  out_content->len = size;
+  out_content->len = (uint32_t)size;
   goto done;
 
 error:

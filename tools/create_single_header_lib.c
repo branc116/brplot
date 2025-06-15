@@ -45,8 +45,7 @@ bool has_visited(files_t all_visited, br_strv_t file) {
 }
 
 void cshl_get_includes(br_strv_t file_name, files_t* includes) {
-  static BR_THREAD_LOCAL br_str_t source_s = { 0 };
-  size_t len = 0;
+  br_str_t source_s = { 0 };
   if (false == br_fs_read(br_strv_to_scrach(file_name), &source_s)) {
     br_scrach_free();
     return;

@@ -151,7 +151,10 @@ static inline void br_str_push_char_unsafe(br_str_t* s, char c) {
 }
 
 bool br_str_push_char(br_str_t* s, char c) {
-  LOGI("Use br_str_push_zero if you wanna NULL terminate this string");
+  if (c == '\0') {
+    LOGI("Use br_str_push_zero if you wanna NULL terminate this string");
+    BR_STACKTRACE();
+  }
   if (s->len >= s->cap) if (false == br_str_realloc(s, s->cap * 2)) return false;
   br_str_push_char_unsafe(s, c);
   return true;

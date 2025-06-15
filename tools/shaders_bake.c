@@ -2,6 +2,7 @@
 #include "src/br_shaders.h"
 #include "src/br_da.h"
 #include "src/br_str.h"
+#include "src/br_filesystem.h"
 #define BR_STR_IMPLMENTATION
 #include "src/br_str.h"
 
@@ -127,18 +128,6 @@ TOKENS(X)
   }
 }
 
-br_str_t read_entire_file(br_str_t path) {
-  br_str_t ret = { 0 };
-  FILE* file = fopen(br_str_to_c_str(path), "r");
-  if (file == NULL) {
-    fprintf(stderr, "Error opening file %s: %d:%s\n", br_str_to_c_str(path), errno, strerror(errno));
-    exit(1);
-  }
-  int cur;
-  while ((cur = getc(file)) != EOF) br_str_push_char(&ret, (char)cur);
-  return ret;
-}
-
 programs_t get_programs(void) {
   programs_t ret = { 0 };
 # define X_U(NAME, SIZE) { \
@@ -177,8 +166,10 @@ programs_t get_programs(void) {
 # undef X_B
 # undef X_U
   for (size_t i = 0; i < ret.len; ++i) {
-    ret.arr[i].fragment.content = read_entire_file(ret.arr[i].fragment.path);
-    ret.arr[i].vertex.content = read_entire_file(ret.arr[i].vertex.path);
+    br_str_push_zero(&ret.arr[i].fragment.path);
+    br_str_push_zero(&ret.arr[i].vertex.path);
+    if (false == br_fs_read(ret.arr[i].fragment.path.str, &ret.arr[i].fragment.content)) LOGF("Failed to read a fragment shader");
+    if (false == br_fs_read(ret.arr[i].vertex.path.str, &ret.arr[i].vertex.content)) LOGF("Failed to read a vertex shader");
   }
   return ret;
 }
