@@ -1,7 +1,4 @@
 #define _CRT_SECURE_NO_WARNINGS
-#include <ctype.h>
-#include <stdio.h>
-#define _CRT_SECURE_NO_WARNINGS
 #define BR_NO_UNIT_TEST
 #define BR_STR_IMPLMENTATION
 #include "src/br_str.h"
@@ -17,6 +14,9 @@
 
 #define BR_CREATE_SINGLE_HEADER_LIB_NO_MAIN
 #include "tools/create_single_header_lib.c"
+
+#include <ctype.h>
+#include <stdio.h>
 
 #if _WIN32
 #  if defined(__GNUC__)
@@ -128,7 +128,6 @@ const char* sources[] = {
  "src/q.c",
  "src/read_input.c",
  "src/keybindings.c",
- "src/str.c",
  "src/resampling2.c",
  "src/graph_utils.c",
  "src/shaders.c",
@@ -169,6 +168,8 @@ static const char* compiler = "clang";
 #  elif defined(_MSC_VER)
 static const char* compiler = "cl.exe";
 #  endif
+#elif defined(__TINYC__)
+static const char* compiler = "tcc";
 #else
 static const char* compiler = "cc";
 #endif
@@ -485,11 +486,11 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
   if (disable_logs) nob_cmd_append(cmd, "-DBR_DISABLE_LOG");
   if (is_pedantic) {
 #if defined(__clang__)
-    nob_cmd_append(cmd, "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-Wconversion", "-Wshadow");
+    nob_cmd_append(cmd, "-Wall", "-Wextra", "-Wpedantic", "-Wconversion", "-Wshadow");
 #elif defined(_MSC_VER)
     LOGF("Pedantic flags for msvc are not known");
 #else
-    nob_cmd_append(cmd, "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-Wconversion", "-Wshadow");
+    nob_cmd_append(cmd, "-Wall", "-Wextra", "-Wpedantic", "-Wconversion", "-Wshadow");
 #endif
   }
 

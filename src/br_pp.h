@@ -129,6 +129,8 @@ extern "C" {
 #if defined(BR_DEBUG)
 #  if defined(_MSC_VER)
 #    define BR_BREAKPOINT() __debugbreak()
+#  elif defined(__TINYC__)
+#    define BR_BREAKPOINT()
 #  else
 #    define BR_BREAKPOINT() __builtin_trap()
 #  endif
@@ -168,6 +170,8 @@ extern "C" {
 
 #if defined(__cplusplus) &&  __cplusplus >= 201103L
 #  define BR_THREAD_LOCAL       thread_local
+#elif defined(__TINYC__)
+#  define BR_THREAD_LOCAL
 #elif defined(_MSC_VER)
 #  define BR_THREAD_LOCAL       __declspec(thread)
 #elif defined (__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)

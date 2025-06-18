@@ -311,7 +311,8 @@ static size_t expr_len(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_i
       return min_s(expr_len(datas, arena, expr.operands.op1), expr_len(datas, arena, expr.operands.op2));
     }
   }
-  BR_ASSERT(0);
+  BR_UNREACHABLE();
+  return 0;
 }
 
 static double br_dagen_rebase(br_data_t const* data, br_dagen_expr_kind_t kind) {
@@ -333,6 +334,7 @@ static double br_dagen_rebase(br_data_t const* data, br_dagen_expr_kind_t kind) 
     } break;
     default: BR_UNREACHABLE();
   }
+  return 0.0;
 }
 
 static size_t expr_read_n(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index, size_t offset, size_t n, float* data) {

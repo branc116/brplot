@@ -8,12 +8,10 @@
 
 #ifdef __cplusplus
 extern "C" {
-#define BR_LITERAL(TYPE) TYPE
+#  define BR_LITERAL(TYPE) TYPE
 #else
-#define BR_LITERAL(TYPE) (TYPE)
+#  define BR_LITERAL(TYPE) (TYPE)
 #endif
-
-
 
 #define br_str_invalidata(s) s = BR_LITERAL(br_str_t){0}
 #define br_str_push_literal(s, literal) br_str_push_strv(s, br_strv_from_literal(literal))

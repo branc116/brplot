@@ -1,7 +1,9 @@
-#include <stdio.h>
+#include "src/br_pp.h"
+#define BR_STR_IMPLMENTATION
 #include "src/br_str.h"
 #include "src/br_da.h"
-#include "src/br_pp.h"
+
+#include <stdio.h>
 
 #define FUNCTIONS \
 "void glActiveTexture(GLenum texture)" \

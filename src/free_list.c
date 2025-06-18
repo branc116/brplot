@@ -1,5 +1,7 @@
 #include "src/br_pp.h"
-#define BR_LOGE LOGE
+#if !defined(BR_LOGE)
+#  define BR_LOGE LOGE
+#endif
 #define BRFL_IMPLEMENTATION
 #include "src/br_free_list.h"
 #include "src/br_da.h"

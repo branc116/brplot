@@ -1,10 +1,11 @@
+#include "src/br_pp.h"
 #define BR_SHADER_TOOL
 #include "src/br_shaders.h"
 #include "src/br_da.h"
-#include "src/br_str.h"
-#include "src/br_filesystem.h"
 #define BR_STR_IMPLMENTATION
 #include "src/br_str.h"
+#include "src/br_filesystem.h"
+#include "src/br_da.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -16,7 +17,7 @@
 #define IS_ALPHA_TOKEN(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
 #define FATAL(shader, line, offset, msg, ...) do { \
   fprintf(stderr, "|" __FILE__ ":%d||%s:%d:%d|ERROR: "msg"\n", __LINE__, br_str_to_c_str(shader->path), line, offset, __VA_ARGS__); \
-  exit(1); \
+  BR_UNREACHABLE(); \
 } while(0)
 
 #define TOKENS(X) \
@@ -194,6 +195,7 @@ variable_type_t get_variable_type(shader_t const* shader, size_t token_index) {
   } else if (strcmp(s, "float") == 0) return variable_type_float;
   else if (strcmp(s, "sampler2D") == 0) return variable_type_tex;
   FATAL(shader, t.line, t.start, "Unknown variable type: %s", s);
+  return 0;
 }
 
 void get_shader_variables(shader_t* shader) {

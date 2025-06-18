@@ -6,73 +6,24 @@ Small application and library that plots lines that are sent to the application'
 brplot is designed in such a way that it plays nicely with other unix tools. You can just pipe the output of your program to brplot and brplot will do it's best to plot your data.
 
 ## Compile
-Brplot can be built using GNU make or cmake or use whatever you like.
-Only tested on linux. Maybe will work on other OSes.
-But it can cross compile for windows and for webassm.
+Brplot uses a custom build tools.
 
-### Ubuntu
-Tested on 22.04
+To use it you have to build it first:
 ```sh
-sudo apt install git make gcc
-git clone https://github.com/branc116/brplot
-cd brplot
-make
+cc -I. -o nob nob.c -lm
 ```
+On windows use clang or cl or mingw or any other c compiler should do.
 
-### Debian
-Tested on Debian-12
+Now that you have compiled the build tool, you can build the brplot.
+It has a standard command structure:
 ```sh
-sudo apt install git make gcc
-git clone https://github.com/branc116/brplot
-cd brplot
-make
+./nob [command] [flags]
 ```
 
-### Arch
+To see the list of commands and flags run:
 ```sh
-sudo pacman -Sy base-devel
-git clone https://github.com/branc116/brplot
-cd brplot
-make
+./nob help
 ```
-
-### FreeBSD
-Tested on FreeBSD 14.0
-```sh
-pkg install cmake
-git clone https://github.com/branc116/brplot
-cd brplot
-mkdir build
-cd build
-cmake ..
-make
-```
-
-### Windows
-Tested on Windows 11
-* Download [zig](https://ziglang.org/download/) - Tested with zig 0.12
-* Download [git](https://git-scm.com/downloads)
-* Open cmd/powershell
-```cmd
-git clone https://github.com/branc116/brplot
-cd brplot
-zig build
-./zig-out/brplot_imgui_windows_ReleaseSafe.exe
-```
-
-### Mac
-```cmd
-brew install git zig
-git clone https://github.com/branc116/brplot
-cd brplot
-zig build
-```
-
-Here are the parameters you can change ( for make, but some are also in cmake ):
-* EMSCRIPTEN - only useful if you are building for webassm ( path to emscripten )
-* PLATFORM   - LINUX | WINDOWS | WEB ( Default LINUX )
-* CONFIG     - RELEASE | DEBUG (Default RELEASE )
-* TYPE       - EXE | LIB  - ( To create executable or library. ) ( Default EXE )
 
 ## Examples
 I think that more or less all the examples listed on [ttyplot examples](https://github.com/tenox7/ttyplot#examples) should work with brplot ( just replace ttyplot with brplot. )

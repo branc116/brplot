@@ -1,0 +1,34 @@
+name: Build Unittest
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'src/**'
+      - 'tools/**'
+      - '.github/workflows/windows.yml'
+      - 'external/**'
+      - 'nob.c'
+
+permissions:
+  contents: read
+jobs:
+  windows_vs:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ windows-2019, windows-2022, macos-13, macos-14, macos-15, ubuntu-22.04, ubuntu-24.04 ]
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - name: Set up Clang
+        uses: egor-tensin/setup-clang@v1
+        with:
+          version: latest
+          platform: x64
+
+      - run: |
+          clang -I. -o nob.exe nob.c -lm
+          ./nob.exe
+
+      - run: |
+          ./nob.exe unittests -dap

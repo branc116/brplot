@@ -21,6 +21,8 @@
 #  pragma GCC diagnostic pop
 #endif
 
+#define BR_STR_IMPLMENTATION
+#include "src/br_str.h"
+
 #define BR_LICENSE_IMPLEMENTATION
 #include "src/br_license.h"
-
