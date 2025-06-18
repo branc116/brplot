@@ -26,6 +26,8 @@
 #  elif defined(_MSC_VER)
 #     define NOB_REBUILD_URSELF(binary_path, source_path) "cl.exe", "-I.", "-Zi", nob_temp_sprintf("/Fe:%s", (binary_path)), source_path
 #  endif
+#elif defined(__TINYC__)
+#  define NOB_REBUILD_URSELF(binary_path, source_path) "tcc", "-I.", "-ggdb", "-o", binary_path, source_path, "-lm"
 #else
 #  define NOB_REBUILD_URSELF(binary_path, source_path) "cc", "-I.", "-ggdb", "-o", binary_path, source_path, "-lm"
 #endif
@@ -1072,7 +1074,9 @@ done:
 
 void br_go_rebuild_yourself(int argc, char** argv) {
   inc_push(&g_inc_graph, BR_STRL(__FILE__));
+#if !defined(__TINYC__)
   create_include_graph();
+#endif
   file_names_t names = { 0 };
   indexies_t indexies = { 0 };
   all_deps(0, &names, &indexies);
