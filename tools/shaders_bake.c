@@ -416,6 +416,8 @@ void get_tokens(shader_t* shader) {
           br_da_push(shader->tokens, div);
         }
       }
+    } else if (cur == '\r') {
+      LOGW("Damn windows");
     } else if (cur == '\n') {
       ++line;
       offset = 0;
