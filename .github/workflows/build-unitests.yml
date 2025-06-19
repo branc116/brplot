@@ -21,7 +21,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.7
       - name: Set up Clang
-        if: ${{matrix.os}} != "macos-13" && ${{matrix.os}} != "macos-13" && ${{matrix.os}} != "macos-15"
         uses: egor-tensin/setup-clang@v1.4
         with:
           version: latest
