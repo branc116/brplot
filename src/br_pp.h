@@ -22,6 +22,11 @@
 #  define LOGE(...)
 #endif
 
+#define BR_LOG LOG
+#define BR_LOGI LOGI
+#define BR_LOGW LOGW
+#define BR_LOGE LOGE
+
 #define LOGF(format, ...) do { \
   fprintf(stderr, "[FATAL][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__); \
   BR_STACKTRACE(); \

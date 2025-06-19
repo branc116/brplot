@@ -92,7 +92,7 @@
   size_t n_read = 0;                                                                                                 \
   if (1 != (n_read = BR_FREAD(&(FL), sizeof(FL), 1, FILE))) {                                                        \
     ERROR = 1;                                                                                                       \
-    BR_LOGE("Failed to read 1 free list from file, read %zu: %s", n_read, strerror(errno);                           \
+    BR_LOGE("Failed to read 1 free list from file, read %zu: %s", n_read, strerror(errno));                          \
     break;                                                                                                           \
   }                                                                                                                  \
   if ((FL).len > (FL).cap) {                                                                                         \

@@ -1,7 +1,7 @@
 #pragma once
+#include "src/br_pp.h"
 #include "src/br_data.h"
 #include "src/br_plot.h"
-#include "src/br_pp.h"
 #include "src/br_data_generator.h"
 #include "src/br_math.h"
 #include "src/br_theme.h"

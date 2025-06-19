@@ -1,7 +1,7 @@
+#include "src/br_pp.h"
 #include "src/br_plotter.h"
 #include "src/br_str.h"
 #include "src/br_plot.h"
-#include "src/br_pp.h"
 #include "src/br_filesystem.h"
 #include "src/br_resampling2.h"
 #include "src/br_permastate.h"
@@ -199,6 +199,8 @@ bool br_permastate_load_plotter(FILE* file, br_plotter_t* br, br_data_descs_t* d
   size_t datas_len = 0;
   size_t uis_read = 0;
   int fl_read_error = 0;
+  int error = 0;
+  (void)error;
 
   if (1 != fread(&datas_len, sizeof(datas_len), 1, file))                 BR_ERROR("Failed to read number of datas");
   br_da_reserve(*desc, datas_len);
