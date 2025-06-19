@@ -6,7 +6,7 @@ on:
     paths:
       - 'src/**'
       - 'tools/**'
-      - '.github/workflows/windows.yml'
+      - '.github/workflows/build-unitests.yml'
       - 'external/**'
       - 'nob.c'
 
@@ -21,7 +21,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.7
       - name: Set up Clang
-        uses: egor-tensin/setup-clang@v1
+        if: ${{matrix.os}} != "macos-13" && ${{matrix.os}} != "macos-13" && ${{matrix.os}} != "macos-15"
+        uses: egor-tensin/setup-clang@v1.4
         with:
           version: latest
           platform: x64
