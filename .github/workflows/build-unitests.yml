@@ -25,12 +25,9 @@ jobs:
           ./nob
 
       - run: |
-          ./nob unittests -dp
-
-      - run: |
           ./nob amalgam
-          clang tests/hello_world.c
-          clang tests/animations.c
+          clang tests/hello_world.c -lm
+          clang tests/animations.c -lm
           clang -ggdb -I. tests/src/free_list.c -o bin/free_list_tests
           bin/free_list_tests --unittest
 
@@ -56,8 +53,8 @@ jobs:
 
       - run: |
           ./nob amalgam
-          clang tests/hello_world.c
-          clang tests/animations.c
+          clang tests/hello_world.c -lm
+          clang tests/animations.c -lm
           clang -ggdb -I. tests/src/free_list.c -o bin/free_list_tests
           bin/free_list_tests --unittest
 

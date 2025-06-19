@@ -788,6 +788,7 @@ static bool embed_file_as_string(const char* in_path, const char* variable_name)
         fprintf(out_file, "\"),\n  BR_STRLC(\"");
         ++line_n;
         char_n = 0;
+      } else if (cur_char == '\r') {
       } else {
         bad_char_flag = true;
         goto error;
