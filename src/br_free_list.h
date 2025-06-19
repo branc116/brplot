@@ -70,7 +70,7 @@
   ERROR = 0;                                                                                                          \
   size_t n_write = 0;                                                                                                 \
   if (1 != (n_write = BR_FWRITE(&(FL), sizeof(FL), 1, (FILE)))) {                                                     \
-      BR_LOGE("Failed to write 1 free list to file, wrote %d: %s", n_write, strerror(errno));                         \
+      BR_LOGE("Failed to write 1 free list to file, wrote %zu: %s", n_write, strerror(errno));                        \
       ERROR = 1;                                                                                                      \
       break;                                                                                                          \
   };                                                                                                                  \
@@ -92,7 +92,7 @@
   size_t n_read = 0;                                                                                                 \
   if (1 != (n_read = BR_FREAD(&(FL), sizeof(FL), 1, FILE))) {                                                        \
     ERROR = 1;                                                                                                       \
-    BR_LOGE("Failed to read 1 free list from file, read %d: %s", n_read, strerror(errno));                           \
+    BR_LOGE("Failed to read 1 free list from file, read %zu: %s", n_read, strerror(errno);                           \
     break;                                                                                                           \
   }                                                                                                                  \
   if ((FL).len > (FL).cap) {                                                                                         \

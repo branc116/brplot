@@ -197,13 +197,12 @@ bool br_permastate_remove_pointers(br_plot_t* plot) {
 
 bool br_permastate_load_plotter(FILE* file, br_plotter_t* br, br_data_descs_t* desc) {
   size_t datas_len = 0;
-  size_t active_plot_read = 0;
   size_t uis_read = 0;
   int fl_read_error = 0;
 
   if (1 != fread(&datas_len, sizeof(datas_len), 1, file))                 BR_ERROR("Failed to read number of datas");
   br_da_reserve(*desc, datas_len);
-  if (datas_len != fread(&desc->arr, sizeof(desc->arr[0]), datas_len, file)) BR_ERROR("Failed to read datas.");
+  if (datas_len != fread(desc->arr, sizeof(desc->arr[0]), datas_len, file)) BR_ERROR("Failed to read datas.");
   desc->len = datas_len;
 
   if (1 != (uis_read = fread(&br->ui, sizeof(br->ui), 1, file)))          BR_ERROR("Failed to read UI state.");
@@ -272,17 +271,18 @@ br_permastate_status_t br_permastate_load(br_plotter_t* br) {
   bool file_exists                = false;
   br_permastate_status_t status   = br_permastate_status_ok;
   br_data_descs_t descs           = {0};
+  bool error                      = false;
 
-  if (false == br_fs_get_config_dir(&path))                           goto error;
-  if (false == br_fs_cd(&path, BR_STRL("plotter.br")))                goto error;
+  if (false == br_fs_get_config_dir(&path))                           BR_ERROR("Failed to get a config dir.");
+  if (false == br_fs_cd(&path, BR_STRL("plotter.br")))                BR_ERROR("Failed to navigate to brplotter.br file.");
   {
     br_str_to_c_str1(path, buff);
-    if (false == (file_exists = br_fs_exists(br_str_sub1(path, 0))))  goto error;
+    if (false == (file_exists = br_fs_exists(br_str_sub1(path, 0))))  BR_ERROR("plotter.br doesn't exist: %.*s: %s", path.len, path.str, strerror(errno));
     f = fopen(buff, "rb");
-    if (NULL == f)                                                    goto error;
-    if (1 != fread(&command, sizeof(command), 1, f))                  goto error;
-    if (br_save_state_command_plotter != command)                     goto error;
-    if (false == br_permastate_load_plotter(f, br, &descs))           goto error;
+    if (NULL == f)                                                    BR_ERROR("Failed to open a file: %s", strerror(errno));
+    if (1 != fread(&command, sizeof(command), 1, f))                  BR_ERROR("Failed to read a command: %s", strerror(errno));
+    if (br_save_state_command_plotter != command)                     BR_ERROR("Bad command type: %d", command);
+    if (false == br_permastate_load_plotter(f, br, &descs))           BR_ERROR("Failed to load plotter");
     fclose(f);
     f = NULL;
   }
@@ -298,25 +298,25 @@ br_permastate_status_t br_permastate_load(br_plotter_t* br) {
   }
 #endif
 
-  if (false == br_fs_up_dir(&path))                                   goto error;
-  if (false == br_fs_cd(&path, br_strv_from_literal("plots.br")))     goto error;
+  if (false == br_fs_up_dir(&path))                                   BR_ERROR("Failed to go up a dir");
+  if (false == br_fs_cd(&path, br_strv_from_literal("plots.br")))     BR_ERROR("Failed to navigate to plots.br");
   {
     br_str_to_c_str1(path, buff);
-    if (false == (file_exists = br_fs_exists(br_str_sub1(path, 0))))  goto error;
+    if (false == (file_exists = br_fs_exists(br_str_sub1(path, 0))))  BR_ERROR("File doesn't exist: %.*s", path.len, path.str);
     f = fopen(buff, "rb");
-    if (NULL == f)                                                    goto error;
-    if (1 != fread(&command, sizeof(command), 1, f))                  goto error;
-    if (br_save_state_command_save_plots != command)                  goto error;
-    if (false == br_permastate_load_plots(f, br))                     goto error;
+    if (NULL == f)                                                    BR_ERROR("Failed to open a file %.*s: %s", path.len, path.str, strerror(errno));
+    if (1 != fread(&command, sizeof(command), 1, f))                  BR_ERROR("Failed to read a command: %s", strerror(errno));
+    if (br_save_state_command_save_plots != command)                  BR_ERROR("Bad command type: %d", command);
+    if (false == br_permastate_load_plots(f, br))                     BR_ERROR("Failed to load plots");
     fclose(f);
     f = NULL;
   }
 
-  if (false == br_fs_up_dir(&path))                                   goto error;
+  if (false == br_fs_up_dir(&path))                                   BR_ERROR("Failed to go up a dir");
   for (size_t i = 0; i < descs.len; ++i) {
-    if (false == br_fs_cd(&path, br_strv_from_literal("data")))       goto error;
-    if (false == br_str_push_int(&path, descs.arr[i].group_id))       goto error;
-    if (false == br_str_push_literal(&path, ".br"))                   goto error;
+    if (false == br_fs_cd(&path, br_strv_from_literal("data")))       BR_ERROR("Failed to navigate to data.br");
+    if (false == br_str_push_int(&path, br_da_get(descs, i).group_id))BR_ERROR("Failed to navigate to data.br");
+    if (false == br_str_push_literal(&path, ".br"))                   BR_ERROR("Failed to navigate to data.br");
     br_str_to_c_str1(path, buff);
     file_exists = br_fs_exists(br_str_as_view(path));
     if (false == file_exists || false == br_dagen_push_file(&br->dagens, &br->groups, &descs.arr[i], fopen(buff, "rb"))) {
@@ -324,21 +324,18 @@ br_permastate_status_t br_permastate_load(br_plotter_t* br) {
         br_da_remove_feeld(br->plots.arr[j].data_info, group_id, descs.arr[i].group_id);
       }
     }
-    if (false == br_fs_up_dir(&path))                                 goto error;
+    if (false == br_fs_up_dir(&path))                                 BR_ERROR("Failed to go up a dir");
   }
   goto end;
 
 error:
-  if (path.str == NULL)          LOGE("Failed to allocatate memory from the plots permastate path");
-  else if (false == file_exists) LOGE("Tried to open a file that doesn't exists `%s`: %s", buff, strerror(errno));
-  else if (f == NULL)            LOGE("Failed to open a file %s: %d`%s`", buff, errno, strerror(errno));
-  else                           LOGE("Failed loading permastate %d`%s`", errno, strerror(errno));
   status = br_permastate_status_failed;
+  if (error) memset(&descs, 0, sizeof(descs));
 
 end:
   if (NULL != path.str) br_str_free(path);
   if (NULL != f)        fclose(f);
-  br_da_free(descs);
+  if (NULL != descs.arr)br_da_free(descs);
   return status;
 }
 

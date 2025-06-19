@@ -35,10 +35,6 @@
 #  pragma comment(lib, "Shell32.lib")
 #endif
 
-#if defined(BR_UNIT_TEST)
-struct test_file_metadata * test_file_head;
-#endif
-
 #if defined(__linux__)
 #  if !defined(BR_NO_X11)
 #    define _GLFW_X11

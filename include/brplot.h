@@ -302,6 +302,7 @@ BR_EXPORT void br_plot_hide_data(br_plotter_t* plotter, br_plot_id plot, br_data
 // If you just wanna build brplot as an app you have to define this
 #if defined(BRPLOT_IMPLEMENTATION) || defined(BRPLOT_APP)
 #  include "src/br_pp.h"
+#  define BR_UNIT_TEST_IMPLEMENTATION
 #  include "external/tests.h"
 #  include "tools/unity/brplot.c"
 #endif

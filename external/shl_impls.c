@@ -4,6 +4,9 @@
 #  pragma GCC diagnostic ignored "-Wconversion"
 #endif
 
+#define BR_UNIT_TEST_IMPLEMENTATION
+#include "external/tests.h"
+
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "external/stb_rect_pack.h"
 
@@ -23,6 +26,9 @@
 
 #define BR_STR_IMPLMENTATION
 #include "src/br_str.h"
+
+#define BR_LICENSE_IMPLEMENTATION
+#include "src/br_license.h"
 
 #define BR_LICENSE_IMPLEMENTATION
 #include "src/br_license.h"

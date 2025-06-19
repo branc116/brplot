@@ -48,12 +48,7 @@ struct test_file_metadata {
   struct test_case_metadata *tests;
 };
 
-#if defined(_WIN32)
 extern struct test_file_metadata * test_file_head;
-#else
-struct test_file_metadata __attribute__((weak)) * test_file_head;
-#endif
-
 static struct test_file_metadata __test_h_file;
 
 #define SET_FAILURE(_message, _owned)                        \
@@ -219,6 +214,11 @@ static inline void __attribute__((constructor(1002))) run_tests(void) {
           failed, total);
   exit(failed == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+
+
+#if defined(BR_UNIT_TEST_IMPLEMENTATION)
+struct test_file_metadata * test_file_head;
+#endif
 
 #else
 

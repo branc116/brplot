@@ -4,9 +4,10 @@
 #define BR_FWRITE test_write
 #define BRFL_IMPLEMENTATION
 #include "src/br_free_list.h"
-#include "src/br_da.h"
 #define BR_UNIT_TEST
+#define BR_UNIT_TEST_IMPLEMENTATION
 #include "external/tests.h"
+#include "src/br_da.h"
 
 #include <errno.h>
 #include <string.h>
