@@ -230,7 +230,6 @@ bool cshl_get_tokens(br_strv_t file_name, files_t* all_visited, cshl_tokens_t* t
       br_da_push(*tokens, pret);
     }
   }
-  br_str_free(source_s);
   return true;
 }
 

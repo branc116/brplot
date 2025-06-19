@@ -1,7 +1,7 @@
 #define BRPLOT_IMPLEMENTATION
 #include "../.generated/brplot.c"
 
-int main() {
+int main(void) {
   br_data_id circle = 2, standing_wave = 3;
   float dr = 0.01f;
   brp_label("circle", circle);
