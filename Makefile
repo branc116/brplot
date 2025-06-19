@@ -270,7 +270,7 @@ bin/font_bake: tools/font_bake.c $(NOBS)
 	$(NATIVE_CC) -O3 -o bin/font_bake tools/font_bake.c
 
 bin/shaders_bake: tools/shaders_bake.c src/br_shaders.h $(NOBS)
-	$(NATIVE_CC) -I. -O3 -o bin/shaders_bake tools/shaders_bake.c
+	$(NATIVE_CC) -I. -O3 -o bin/shaders_bake tools/shaders_bake.c src/filesystem.c
 
 $(SHADERS_HEADER): ./src/shaders/* bin/shaders_bake
 	bin/shaders_bake $(PLATFORM) > $(SHADERS_HEADER)
