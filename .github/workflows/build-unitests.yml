@@ -13,11 +13,25 @@ on:
 permissions:
   contents: read
 jobs:
-  windows_vs:
+  mac:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ windows-2019, windows-2022, ubuntu-22.04, ubuntu-24.04 ]
+        os: [ macos-13, macos-14, macos-15 ]
+    steps:
+      - uses: actions/checkout@v4.1.7
+
+      - run: |
+          clang -I. -o nob nob.c -lm
+          ./nob
+
+      - run: |
+          ./nob unittests -dap
+  linux:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ ubuntu-22.04, ubuntu-24.04 ]
     steps:
       - uses: actions/checkout@v4.1.7
       - name: Set up Clang
@@ -27,7 +41,26 @@ jobs:
           platform: x64
 
       - run: |
-          clang -I. -o nob.exe nob.c -lm
+          clang -I. -o nob nob.c -lm
+          ./nob
+
+      - run: |
+          ./nob unittests -dap
+  windows:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ windows-2019, windows-2022 ]
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - name: Set up Clang
+        uses: egor-tensin/setup-clang@v1.4
+        with:
+          version: latest
+          platform: x64
+
+      - run: |
+          clang -I. -o nob.exe nob.c
           ./nob.exe
 
       - run: |
