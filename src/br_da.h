@@ -14,6 +14,30 @@ extern "C" {
 #endif
 
 
+#define br_da_reserve_t(SIZE_T, ARR, N) do { \
+  if ((ARR).cap == 0) {                                                                                             \
+    BR_ASSERT((ARR).arr == NULL && "Cap is set to null, but arr is not null");                                      \
+    (ARR).arr = (DECLTYPE((VALUE))*)BR_MALLOC(sizeof((ARR).arr[0]) * (N));                                          \
+    if ((ARR).arr != NULL) {                                                                                        \
+      (ARR).cap = (N);                                                                                              \
+    }                                                                                                               \
+  }                                                                                                                 \
+  else if ((ARR).len + (N) < (ARR).cap);                                                                            \
+  else {                                                                                                            \
+    BR_ASSERT((ARR).arr != NULL);                                                                                   \
+    SIZE_T new_cap =  (ARR).len + N;                                                                                \
+    DECLTYPE((VALUE))* new_arr = (DECLTYPE((VALUE))*)BR_REALLOC((ARR).arr, (size_t)new_cap * sizeof((ARR).arr[0])); \
+    if (new_arr) {                                                                                                  \
+      (ARR).arr = new_arr;                                                                                          \
+      (ARR).cap = new_cap;                                                                                          \
+    } else {                                                                                                        \
+      BR_LOGE("Failed to reserve %zu elements in the array.", (size_t)N);                                           \
+    }                                                                                                               \
+  }                                                                                                                 \
+} while(0)                                                                                                          \
+
+#define br_da_reserve(ARR, N) br_da_reserve_t(size_t, ARR, N)
+
 #define br_da_push_t(SIZE_T, ARR, VALUE) do {                                                                       \
   if ((ARR).cap == 0) {                                                                                             \
     BR_ASSERT((ARR).arr == NULL && "Cap is set to null, but arr is not null");                                                                                   \

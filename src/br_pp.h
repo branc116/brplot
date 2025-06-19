@@ -11,7 +11,10 @@
 #  define LOG(...)
 #  define LOGI(format, ...) fprintf(stderr, "[INFO][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__)
 #  define LOGW(format, ...) fprintf(stderr, "[WARNING][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__)
-#  define LOGE(format, ...) fprintf(stderr, "[ERROR][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__)
+#  define LOGE(format, ...) do { \
+    fprintf(stderr, "[ERROR][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__); \
+    BR_STACKTRACE(); \
+} while(0)
 #else
 #  define LOG(...)
 #  define LOGI(...)
@@ -21,6 +24,7 @@
 
 #define LOGF(format, ...) do { \
   fprintf(stderr, "[FATAL][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__); \
+  BR_STACKTRACE(); \
   abort(); \
 } while(0)
 

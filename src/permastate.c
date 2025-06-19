@@ -205,28 +205,19 @@ bool br_permastate_load_plotter(FILE* file, br_plotter_t* br, br_data_descs_t* d
   size_t uis_read = 0;
   int fl_read_error = 0;
 
-  if (1 != fread(&datas_len, sizeof(datas_len), 1, file))                 goto error;
-  for (size_t i = 0; i < datas_len; ++i) {
-    int id = 0;
-    brsp_id_t sp_id = 0;
-    if (1 != fread(&id, sizeof(id), 1, file))                             goto error;
-    if (1 != fread(&sp_id, sizeof(sp_id), 1, file))                       goto error; 
-    br_data_desc_t d = { .group_id = id, .name =  sp_id};
-    br_da_push(*desc, d);
-  }
-  if (1 != (uis_read = fread(&br->ui, sizeof(br->ui), 1, file)))          goto error;
-  brfl_read(file, br->resizables, fl_read_error); if (fl_read_error != 0) goto error;
-  if (false == brsp_read(file, brtl_brsp()))                              goto error;
-  if (0 != feof(file))                                                    goto error;
+  if (1 != fread(&datas_len, sizeof(datas_len), 1, file))                 BR_ERROR("Failed to read number of datas");
+  br_da_reserve(*desc, datas_len);
+  if (datas_len != fread(&desc->arr, sizeof(desc->arr[0]), datas_len, file)) BR_ERROR("Failed to read datas.");
+  desc->len = datas_len;
+
+  if (1 != (uis_read = fread(&br->ui, sizeof(br->ui), 1, file)))          BR_ERROR("Failed to read UI state.");
+  brfl_read(file, br->resizables, fl_read_error); if (fl_read_error != 0) BR_ERROR("Failed to read resizables.");
+  if (false == brsp_read(file, brtl_brsp()))                              BR_ERROR("Failed to read string pool.");
+  if (0 != feof(file))                                                    BR_ERROR("Expected eof.");
   brsp_compress(brtl_brsp(), 1.3f, 16);
   return true;
-  
+
 error:
-  if (fl_read_error == 0) {
-    if (active_plot_read == 0) LOGE("Failed to read active plot: %s", strerror(errno));
-    else if (uis_read == 0) LOGE("Failed to read ui: %s", strerror(errno));
-    LOGI("Failed to read plotter");
-  }
   if (br && br->resizables.arr) brfl_free(br->resizables);
   return false;
 }

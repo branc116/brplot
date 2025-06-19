@@ -107,7 +107,10 @@
     memset(&(FL), 0, sizeof(FL));                                                                                    \
     break;                                                                                                           \
   }                                                                                                                  \
-  if ((FL).len == 0) break;                                                                                          \
+  if ((FL).len == 0) {                                                                                               \
+    memset(&(FL), 0, sizeof(FL));                                                                                    \
+    break;                                                                                                           \
+  }                                                                                                                  \
   (FL).cap = (FL).len;                                                                                               \
   {                                                                                                                  \
     size_t size = sizeof((FL).arr[0]) * (size_t)(FL).cap;                                                            \

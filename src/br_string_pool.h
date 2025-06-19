@@ -25,6 +25,7 @@ extern "C" {
 brsp_id_t brsp_new(brsp_t* sp);
 brsp_id_t brsp_new1(brsp_t* sp, int size);
 br_strv_t brsp_get(brsp_t sp, brsp_id_t t);
+bool brsp_is_in(brsp_t sp, brsp_id_t t);
 void brsp_set(brsp_t* sp, brsp_id_t t, br_strv_t str);
 void brsp_insert_char(brsp_t* sp, brsp_id_t t, int at, char c);
 void brsp_insert_char_at_end(brsp_t* sp, brsp_id_t id, char c);

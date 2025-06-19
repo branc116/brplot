@@ -1,9 +1,9 @@
+#include "src/br_gui.h"
 #include ".generated/icons.h"
 #include "src/br_da.h"
 #include "src/br_filesystem.h"
 #include "src/br_free_list.h"
 #include "src/br_gl.h"
-#include "src/br_gui_internal.h"
 #include "src/br_math.h"
 #include "src/br_permastate.h"
 #include "src/br_plot.h"
@@ -22,7 +22,6 @@
 static void draw_left_panel(br_plotter_t* br);
 static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas);
 static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas);
-static void brgui_draw_file_manager(br_plotter_t* br);
 static void brgui_draw_csv_manager(br_plotter_t* br);
 //static void brgui_draw_file_browser(br_plot_t* plot, br_datas_t datas);
 static void brgui_draw_debug_window(br_plotter_t* br);
@@ -83,7 +82,7 @@ void br_plotter_draw(br_plotter_t* br) {
         draw_left_panel(br);
         brgui_draw_debug_window(br);
         brgui_draw_license(br);
-        brgui_draw_file_manager(br);
+        brgui_draw_file_manager(&br->ui.fm_state);
         brgui_draw_csv_manager(br);
         brui_resizable_update();
       brui_end();
@@ -154,86 +153,77 @@ static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas) {
   brui_resizable_pop();
 }
 
-static void brgui_draw_file_manager(br_plotter_t* br) {
-  static BR_THREAD_LOCAL struct {
-    br_strv_t cur_path;
-    brsp_id_t csv_file_open;
-    br_fs_files_t cur_dir;
-    int select_index;
-    bool is_open;
-    bool show_hidden_files;
-  } state = {
-    .cur_path = { 0 },
-    .cur_dir = { 0 },
-    .select_index = -1,
-    .is_open = false,
-    .show_hidden_files = false
-  };
-  if (false == state.is_open && false == br->ui.file_manager_inited) return;
+void brgui_draw_file_manager(brui_file_manager_t* state) {
+  if (false == state->is_open && false == state->is_inited) return;
 
+  br_strv_t cur_path;
   brsp_t* sp = brtl_brsp();
   br_strv_t resizable_name = BR_STRL("File Manager");
   bool delete = false;
   brui_action_t* action = brui_action();
-  br->ui.file_manager_inited = false;
+  state->is_inited = false;
   brui_resizable_temp_push_t t = brui_resizable_temp_push(resizable_name);
-    state.is_open = true;
+    state->is_open = true;
     if (t.just_created) {
-      if (br->ui.file_manager_path_id == -1) {
-        br->ui.file_manager_path_id = brsp_new(sp);
-        state.cur_path = BR_STRL("/home/branimir");
-        brsp_set(sp, br->ui.file_manager_path_id, state.cur_path);
+      if (state->path_id > 0 || false == brsp_is_in(*sp, state->path_id)) {
+        state->path_id = brsp_new(sp);
+        cur_path = BR_STRL("/home/branimir");
+        brsp_set(sp, state->path_id, cur_path);
       } else {
-        state.cur_path = brsp_get(*sp, br->ui.file_manager_path_id);
+        cur_path = brsp_get(*sp, state->path_id);
       }
+      state->cur_dir = (br_fs_files_t) { 0 };
       t.res->target.cur_extent = BR_EXTENTI_TOF(brtl_viewport());
       t.res->target.cur_extent.width -= 100;
       t.res->target.cur_extent.height -= 100;
       t.res->target.cur_extent.x += 50;
       t.res->target.cur_extent.y += 50;
-      state.select_index = -1;
-      br_fs_list_dir(state.cur_path, &state.cur_dir);
+      state->select_index = -1;
+      if (false == br_fs_list_dir(cur_path, &state->cur_dir)) {
+        char c = brsp_remove_char_end(sp, state->path_id);
+        while (cur_path.len > 1 && c != '/' && c != '\\') {
+          c = brsp_remove_char_end(sp, state->path_id);
+          cur_path = brsp_get(*sp, state->path_id);
+        }
+        br_fs_list_dir(cur_path, &state->cur_dir);
+      }
       action->kind = brui_action_typing;
-      action->args.text.cursor_pos = (int)state.cur_path.len;
-      action->args.text.id = br->ui.file_manager_path_id;
+      action->args.text.cursor_pos = (int)cur_path.len;
+      action->args.text.id = state->path_id;
     }
 
-    if (brui_resizable_is_hidden(t.resizable_handle)) {
-      state.is_open = false;
-      delete = true;
-    }
+    if (brui_resizable_is_hidden(t.resizable_handle)) delete = true;
 
-    state.cur_path = brsp_get(*sp, br->ui.file_manager_path_id);
+    cur_path = brsp_get(*sp, state->path_id);
 
-    br_str_t cur_dir = state.cur_dir.last_good_dir;
+    br_str_t cur_dir = state->cur_dir.last_good_dir;
     uint32_t cur_dir_name_len = cur_dir.len;
     bool tab = brtl_key_pressed(BR_KEY_TAB);
     bool dir_changed = false;
-    brui_new_lines(1);
     brui_push();
       int ts = brui_text_size();
       brui_vsplitvp(3, BRUI_SPLITA((float)ts + 5.f), BRUI_SPLITA((float)ts + 5.f), BRUI_SPLITR(1));
-        if (brui_button_icon(BR_SIZEI(ts, ts), state.show_hidden_files ? br_icon_hidden_1((float)ts) : br_icon_hidden_0((float)ts))) state.show_hidden_files = !state.show_hidden_files;
+        if (brui_button_icon(BR_SIZEI(ts, ts), state->show_hidden_files ? br_icon_hidden_1((float)ts) : br_icon_hidden_0((float)ts))) state->show_hidden_files = !state->show_hidden_files;
       brui_vsplit_pop();
         if (brui_button_icon(BR_SIZEI(ts, ts), br_icon_back((float)ts))) {
-          if (state.cur_path.len > 1) {
-            char c = brsp_remove_char_end(sp, br->ui.file_manager_path_id);
-            state.cur_path = brsp_get(*sp, br->ui.file_manager_path_id);
-            while (state.cur_path.len > 1 && c != '/' && c != '\\') {
-              c = brsp_remove_char_end(sp, br->ui.file_manager_path_id);
-              state.cur_path = brsp_get(*sp, br->ui.file_manager_path_id);
+          if (cur_path.len > 1) {
+            char c = brsp_remove_char_end(sp, state->path_id);
+            cur_path = brsp_get(*sp, state->path_id);
+            while (cur_path.len > 1 && c != '/' && c != '\\') {
+              c = brsp_remove_char_end(sp, state->path_id);
+              cur_path = brsp_get(*sp, state->path_id);
             }
             dir_changed = true;
           }
         }
       brui_vsplit_pop();
-        if (brui_text_input(br->ui.file_manager_path_id)) dir_changed = true;
-        if (action->kind == brui_action_typing && action->args.text.id == br->ui.file_manager_path_id) {
+        if (brui_text_input(state->path_id)) dir_changed = true;
+        if (action->kind == brui_action_typing && action->args.text.id == state->path_id) {
           bool shift = brtl_key_shift();
           if (tab) {
-            if (shift) --state.select_index;
-            else       ++state.select_index;
-            state.select_index = state.select_index % (int)state.cur_dir.real_len;
+            if (shift) --state->select_index;
+            else       ++state->select_index;
+            state->select_index = state->select_index % (int)state->cur_dir.real_len;
           }
         }
       brui_vsplit_end();
@@ -243,13 +233,13 @@ static void brgui_draw_file_manager(br_plotter_t* br) {
       int real_i = 0;
       bool split = brui_width() > 400;
       bool listing_dirs = true;
-      br_strv_t search_str = br_str_sub1(state.cur_path, cur_dir_name_len);
+      br_strv_t search_str = br_str_sub1(cur_path, cur_dir_name_len);
       if (split) brui_vsplitvp(3, BRUI_SPLITR(1), BRUI_SPLITA(5), BRUI_SPLITR(1));
-      for (size_t i = 0; i < state.cur_dir.real_len; ++i) {
-        br_fs_file_t file = state.cur_dir.arr[i];
-        if (false == state.show_hidden_files && (file.name.len > 0 && file.name.str[0] == '.')) continue;
+      for (size_t i = 0; i < state->cur_dir.real_len; ++i) {
+        br_fs_file_t file = state->cur_dir.arr[i];
+        if (false == state->show_hidden_files && (file.name.len > 0 && file.name.str[0] == '.')) continue;
         if (false == br_strv_match(br_str_as_view(file.name), search_str)) continue;
-        bool is_selected = state.select_index == (int)real_i;
+        bool is_selected = state->select_index == (int)real_i;
         ++real_i;
         bool entered = false;
         if (listing_dirs && file.kind != br_fs_file_kind_dir) {
@@ -278,19 +268,20 @@ static void brgui_draw_file_manager(br_plotter_t* br) {
             char last = cur_dir.str[cur_dir.len - 1];
             if (file.kind == br_fs_file_kind_dir) {
               if (false == dir_changed) {
-                brsp_set(sp, br->ui.file_manager_path_id, br_str_as_view(cur_dir));
-                if (last != '/' && last != '\\')  brsp_insert_char_at_end(sp, br->ui.file_manager_path_id, '/');
-                brsp_insert_strv_at_end(sp, br->ui.file_manager_path_id, br_str_as_view(file.name));
+                brsp_set(sp, state->path_id, br_str_as_view(cur_dir));
+                if (last != '/' && last != '\\')  brsp_insert_char_at_end(sp, state->path_id, '/');
+                brsp_insert_strv_at_end(sp, state->path_id, br_str_as_view(file.name));
                 dir_changed = true;
               }
             } else if (file.kind == br_fs_file_kind_file) {
-              if (br->ui.csv_file_opened == 0) br->ui.csv_file_opened = brsp_new(sp);
-              brsp_id_t csv_id = br->ui.csv_file_opened;
+              if (state->file_selected == 0 || false == brsp_is_in(*sp, state->file_selected)) state->file_selected = brsp_new(sp);
+              brsp_id_t csv_id = state->file_selected;
               brsp_clear(sp, csv_id);
               brsp_set(sp, csv_id, br_str_as_view(cur_dir));
               if (last != '/' && last != '\\')  brsp_insert_char_at_end(sp, csv_id, '/');
               brsp_insert_strv_at_end(sp, csv_id, br_str_as_view(file.name));
               brsp_zero(sp, csv_id);
+              delete = true;
             }
           }
         brui_vsplit_end();
@@ -302,21 +293,24 @@ static void brgui_draw_file_manager(br_plotter_t* br) {
         }
         brui_vsplit_end();
       }
-      if (real_i == 0) state.select_index = -1;
-      else state.select_index = state.select_index % (int)real_i;
+      if (real_i == 0) state->select_index = -1;
+      else state->select_index = state->select_index % (int)real_i;
     brui_pop();
-//end:
   brui_resizable_pop();
   if (dir_changed) {
-    state.cur_path = brsp_get(*sp, br->ui.file_manager_path_id);
-    if (true == br_fs_list_dir(state.cur_path, &state.cur_dir)) {
-      state.select_index = -1;
+    cur_path = brsp_get(*sp, state->path_id);
+    if (true == br_fs_list_dir(cur_path, &state->cur_dir)) {
+      state->select_index = -1;
       action->kind = brui_action_typing;
-      action->args.text.id = br->ui.file_manager_path_id;
-      action->args.text.cursor_pos = (int)state.cur_path.len;
+      action->args.text.id = state->path_id;
+      action->args.text.cursor_pos = (int)cur_path.len;
     };
   }
-  if (true == delete) brui_resizable_temp_delete(resizable_name);
+  if (true == delete) {
+    state->is_open = false;
+    brui_resizable_temp_delete(resizable_name);
+    br_da_free(state->cur_dir);
+  }
 }
 
 
@@ -566,7 +560,7 @@ static void draw_left_panel(br_plotter_t* br) {
   brui_resizable_push(br->resizables.menu_extent_handle);
     if (brui_collapsable(BR_STRL("File"), &br->ui.expand_plots)) {
       if (brui_button(BR_STRL("Import CSV"))) {
-        br->ui.file_manager_inited = true;
+        br->ui.fm_state.is_inited = true;
       }
       brui_collapsable_end();
     }

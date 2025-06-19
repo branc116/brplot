@@ -523,11 +523,11 @@ bool br_strv_match(br_strv_t full, br_strv_t sub) {
   if (sub.len == 0) return true;
   uint32_t n = sub.len;
   uint32_t i = 0, j = 0;
-  for (; i < n && j < n;) {
+  for (; i < full.len && j < n;) {
     if (full.str[i] == sub.str[j]) ++i, ++j;
     else ++i;
   }
-  return i == n && j == n;
+  return j == n;
 }
 
 static BR_THREAD_LOCAL char*  br_scrach = NULL;

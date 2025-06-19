@@ -1,7 +1,7 @@
 #include "src/br_da.h"
 #include "src/br_data.h"
 #include "src/br_gl.h"
-#include "src/br_gui_internal.h"
+#include "src/br_gui.h"
 #include "src/br_math.h"
 #include "src/br_plot.h"
 #include "src/br_resampling2.h"

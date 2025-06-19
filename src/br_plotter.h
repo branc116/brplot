@@ -7,6 +7,7 @@
 #include "src/br_theme.h"
 #include "src/br_permastate.h"
 #include "src/br_ui.h"
+#include "src/br_gui.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,9 +71,9 @@ typedef struct br_plotter_t {
   } key;
 
   struct {
-    double old; 
-    double now; 
-    double frame; 
+    double old;
+    double now;
+    double frame;
   } time;
 
 #if BR_HAS_HOTRELOAD
@@ -88,8 +89,7 @@ typedef struct br_plotter_t {
   struct {
     br_theme_t theme;
     brsp_id_t csv_file_opened;
-    brsp_id_t file_manager_path_id;
-    bool file_manager_inited;
+    brui_file_manager_t fm_state;
     bool dark_theme;
     bool expand_plots;
     bool expand_optimizations;

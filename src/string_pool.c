@@ -55,6 +55,12 @@ br_strv_t brsp_get(brsp_t sp, brsp_id_t t) {
   return BR_STRV(sp.pool.str + ti.start_index, (uint32_t)ti.len);
 }
 
+bool brsp_is_in(brsp_t sp, brsp_id_t t) {
+  if (t < 0) return false;
+  if (sp.len <= t) return false;
+  if (brfl_is_free(sp, t)) return false;
+  return true;
+}
 
 bool brsp_resize(brsp_t* sp, brsp_id_t t, int new_size) {
   brsp_node_t tn = br_da_get(*sp, t);
@@ -206,22 +212,22 @@ bool brsp_write(FILE* file, brsp_t* sp) {
 }
 
 bool brsp_read(FILE* file, brsp_t* sp) {
-  int error = false;
+  int error = 0;
   bool success = true;
   memset(sp, 0, sizeof(*sp));
-  brfl_read(file, (*sp), error); if (error != 0) goto error;
+  brfl_read(file, (*sp), error); if (error != 0) BR_ERROR("Failed to read free list");
   sp->pool.str = NULL;
-  if (sp->len < 0) goto error;
+  if (sp->len < 0) BR_ERROR("string pool length %d < 0", sp->len);
   for (int i = 0; i < sp->len; ++i) {
-    if (sp->arr[i].start_index < 0 || sp->arr[i].start_index + sp->arr[i].cap > (int)sp->pool.len) goto error;
+    brsp_node_t n = br_da_get(*sp, i);
+    if (n.start_index < 0 || n.start_index + n.cap > (int)sp->pool.len) BR_ERROR("i=%d, start_index = %d < 0, start_index + cap = %d > pool.len = %d", i, n.start_index, n.start_index + n.cap, sp->pool.len);
   }
   sp->pool.str = BR_MALLOC(sp->pool.cap);
-  if (NULL == sp->pool.str) goto error;
-  if (sp->pool.len != fread(sp->pool.str, 1, sp->pool.len, file)) goto error;
+  if (NULL == sp->pool.str) BR_ERROR("Failed to allocated the pool");
+  if (sp->pool.len != fread(sp->pool.str, 1, sp->pool.len, file)) BR_ERROR("Failed to read the pool");
   goto done;
 
 error:
-  LOGE("Failed to read string pool: %s", strerror(errno));
   brsp_free(sp);
   success = false;
 

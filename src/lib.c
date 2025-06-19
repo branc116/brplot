@@ -2,7 +2,7 @@
 #include "src/br_da.h"
 #include "src/br_data.h"
 #include "src/br_plotter.h"
-#include "src/br_gui_internal.h"
+#include "src/br_gui.h"
 #include "src/br_resampling2.h"
 #include "src/br_threads.h"
 #include "src/br_q.h"

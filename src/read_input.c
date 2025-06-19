@@ -755,7 +755,7 @@ static void lex(br_plotter_t* br) {
       s.c = read_input_read_next();
       if (s.c == -1) {
         input_tokens_reduce(br, &s, true);
-        LOGE("Exiting read_input thread");
+        LOGI("Exiting read_input thread");
         break;
       }
       lex_step_extractor(br, &s);
@@ -781,7 +781,7 @@ void read_input_main_worker(br_plotter_t* gv) {
 #if defined(FUZZ)
 #include "src/br_data_generator.h"
 #include "src/br_plotter.h"
-#include "src/br_gui_internal.h"
+#include "src/br_gui.h"
 #include "src/br_icons.h"
 #include "src/br_tl.h"
 int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
