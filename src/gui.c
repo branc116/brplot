@@ -22,8 +22,6 @@
 static void draw_left_panel(br_plotter_t* br);
 static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas);
 static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas);
-static void brgui_draw_csv_manager(br_plotter_t* br);
-//static void brgui_draw_file_browser(br_plot_t* plot, br_datas_t datas);
 static void brgui_draw_debug_window(br_plotter_t* br);
 static void brgui_draw_license(br_plotter_t* br);
 
@@ -82,8 +80,12 @@ void br_plotter_draw(br_plotter_t* br) {
         draw_left_panel(br);
         brgui_draw_debug_window(br);
         brgui_draw_license(br);
-        brgui_draw_file_manager(&br->ui.fm_state);
-        brgui_draw_csv_manager(br);
+        brgui_fm_result_t fs_r = brgui_draw_file_manager(&br->ui.fm_state);
+        if (fs_r.is_selected) {
+          br->ui.csv_state.read_id = fs_r.selected_file;
+          br->ui.csv_state.is_open = true;
+        }
+        brgui_draw_csv_manager(&br->ui.csv_state, &br->csv_parser);
         brui_resizable_update();
       brui_end();
     }
@@ -153,15 +155,17 @@ static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas) {
   brui_resizable_pop();
 }
 
-void brgui_draw_file_manager(brui_file_manager_t* state) {
-  if (false == state->is_open && false == state->is_inited) return;
+brgui_fm_result_t brgui_draw_file_manager(brgui_file_manager_t* state) {
+  brgui_fm_result_t ret = { 0 };
+  if (false == state->is_open && false == state->is_inited) return ret;
 
   br_strv_t cur_path;
   brsp_t* sp = brtl_brsp();
-  br_strv_t resizable_name = BR_STRL("File Manager");
   brui_action_t* action = brui_action();
+
   state->is_inited = false;
-  brui_resizable_temp_push_t t = brui_resizable_temp_push(resizable_name);
+
+  brui_resizable_temp_push_t t = brui_resizable_temp_push(BR_STRL("File Manager"));
     state->is_open = true;
     if (t.just_created) {
       if (state->path_id > 0 || false == brsp_is_in(*sp, state->path_id)) {
@@ -269,16 +273,20 @@ void brgui_draw_file_manager(brui_file_manager_t* state) {
                 if (last != '/' && last != '\\')  brsp_insert_char_at_end(sp, state->path_id, '/');
                 brsp_insert_strv_at_end(sp, state->path_id, br_str_as_view(file.name));
                 dir_changed = true;
+                i = 10000;
               }
             } else if (file.kind == br_fs_file_kind_file) {
               if (state->file_selected == 0 || false == brsp_is_in(*sp, state->file_selected)) state->file_selected = brsp_new(sp);
-              brsp_id_t csv_id = state->file_selected;
-              brsp_clear(sp, csv_id);
-              brsp_set(sp, csv_id, br_str_as_view(cur_dir));
-              if (last != '/' && last != '\\')  brsp_insert_char_at_end(sp, csv_id, '/');
-              brsp_insert_strv_at_end(sp, csv_id, br_str_as_view(file.name));
-              brsp_zero(sp, csv_id);
+              brsp_id_t selected_file = state->file_selected;
+              brsp_clear(sp, selected_file);
+              brsp_set(sp, selected_file, br_str_as_view(cur_dir));
+              if (last != '/' && last != '\\')  brsp_insert_char_at_end(sp, selected_file, '/');
+              brsp_insert_strv_at_end(sp, selected_file, br_str_as_view(file.name));
+              brsp_zero(sp, selected_file);
+              ret.is_selected = true;
+              ret.selected_file = selected_file;
               brui_resizable_show(t.resizable_handle, false);
+              i = 10000;
             }
           }
         brui_vsplit_end();
@@ -303,34 +311,14 @@ void brgui_draw_file_manager(brui_file_manager_t* state) {
       action->args.text.cursor_pos = (int)cur_path.len;
     };
   }
+
+  return ret;
 }
 
 
-typedef struct br_csv_header_t {
-  br_strv_t* arr;
-  size_t len, cap;
-} br_csv_header_t;
-
-typedef struct br_csv_cells_t {
-  br_strv_t* arr;
-  size_t len, cap;
-} br_csv_cells_t;
-
-typedef struct br_csv_rows_t {
-  br_csv_cells_t* arr;
-  size_t len, cap;
-
-  size_t real_len;
-} br_csv_rows_t;
-
-
-typedef struct br_csv_parser_t {
-  br_csv_header_t header;
-  br_csv_rows_t rows;
-} br_csv_parser_t;
-
-static bool br_csv_parse(br_csv_parser_t* parser, br_strv_t str) {
+static bool br_csv_parse(br_csv_parser_t* parser) {
   bool read_header = true;
+  br_strv_t str = br_str_as_view(parser->content);
   br_strv_t cur = BR_STRV(str.str, 0);
   const char delimiter = ',';
   br_csv_cells_t* cells = NULL;
@@ -389,43 +377,10 @@ done:
   return true;
 }
 
-static void brgui_draw_csv_manager(br_plotter_t* br) {
-  typedef enum {
-    csv_state_file_read_error,
-    csv_state_parse_error,
-    csv_state_ok
-  } csv_state_t;
-  static BR_THREAD_LOCAL struct {
-    bool is_open;
-    br_strv_t file_path;
-    br_str_t content;
-    csv_state_t state;
-    br_csv_parser_t csv_parser;
-    brsp_id_t read_id;
-    int first_coord;
-  } state = { 0 };
-
-  if (false == state.is_open && 0 == br->ui.csv_file_opened) return;
-  state.is_open = true;
+void brgui_draw_csv_manager(brgui_csv_reader_t* reader, br_csv_parser_t* parser) {
+  if (false == reader->is_open) return;
 
   brsp_t* sp = brtl_brsp();
-  bool delete = false;
-
-  if (0 != br->ui.csv_file_opened) {
-    if (state.read_id > 0) {
-      brsp_remove(sp, state.read_id);
-    }
-    state.read_id = br->ui.csv_file_opened;
-    br->ui.csv_file_opened = 0;
-    state.file_path = brsp_get(*sp, state.read_id);
-    if (false == br_fs_read(state.file_path.str, &state.content)) state.state = csv_state_file_read_error;
-    else {
-      state.state = csv_state_ok;
-      if (false == br_csv_parse(&state.csv_parser, br_str_as_view(state.content))) {
-        state.state = csv_state_parse_error;
-      }
-    }
-  }
 
   br_strv_t r_name = BR_STRL("CSV");
   brui_resizable_temp_push_t tr = brui_resizable_temp_push(r_name);
@@ -435,48 +390,66 @@ static void brgui_draw_csv_manager(br_plotter_t* br) {
       tr.res->target.cur_extent.height -= 100;
       tr.res->target.cur_extent.x += 50;
       tr.res->target.cur_extent.y += 50;
-      state.first_coord = -1;
+      reader->first_coord = -1;
     }
-    if (brui_resizable_is_hidden(tr.resizable_handle)) {
-      state.is_open = false;
-      delete = true;
+    switch (parser->state) {
+      case br_csv_state_init: {
+        parser->file_path.len = 0;
+        br_str_push_strv(&parser->file_path, brsp_get(*sp, reader->read_id));
+        br_str_push_zero(&parser->file_path);
+        if (false == br_fs_read(parser->file_path.str, &parser->content)) {
+          parser->state = br_csv_state_file_read_error;
+          break;
+        }
+        if (false == br_csv_parse(parser)) {
+          parser->state = br_csv_state_parse_error;
+          break;
+        }
+        parser->state = br_csv_state_ok;
+      } break;
+      default: {
+        br_strv_t new_file_path = brsp_get(*sp, reader->read_id);
+        if (false == br_strv_eq(new_file_path, br_str_as_view(parser->file_path))) {
+          parser->state = br_csv_state_init;
+        }
+      } break;
     }
-    switch (state.state) {
-      case csv_state_ok: {
-        brui_textf("Rows: %zu, Cols: %zu", state.csv_parser.rows.real_len, state.csv_parser.header.len);
-        if (-1 == state.first_coord) brui_textf("Select first coordinate");
-        else brui_textf("Select second coordinate, first is '%.*s'", state.csv_parser.header.arr[state.first_coord].len, state.csv_parser.header.arr[state.first_coord].str);
-        brui_vsplit((int)state.csv_parser.header.len);
-          for (size_t j = 0; j < state.csv_parser.header.len; ++j) {
+    switch (parser->state) {
+      case br_csv_state_init: {
+        brui_textf("Init");
+      } break;
+      case br_csv_state_ok: {
+        brui_textf("Rows: %zu, Cols: %zu", parser->rows.real_len, parser->header.len);
+        if (-1 == reader->first_coord) brui_textf("Select first coordinate");
+        else brui_textf("Select second coordinate, first is '%.*s'", parser->header.arr[reader->first_coord].len, parser->header.arr[reader->first_coord].str);
+        brui_vsplit((int)parser->header.len);
+          for (size_t j = 0; j < parser->header.len; ++j) {
             brui_push();
-              brui_text(state.csv_parser.header.arr[j]);
-              for (size_t i = 0; i < state.csv_parser.rows.real_len; ++i) {
-                br_csv_cells_t cells = br_da_get(state.csv_parser.rows, i);
+              brui_text(parser->header.arr[j]);
+              for (size_t i = 0; i < parser->rows.real_len; ++i) {
+                br_csv_cells_t cells = br_da_get(parser->rows, i);
                 brui_text(br_da_get(cells, j));
               }
             if (brui_pop()) {
-              if (state.first_coord == -1) {
-                state.first_coord = (int)j;
+              if (reader->first_coord == -1) {
+                reader->first_coord = (int)j;
               } else {
-                for (size_t k = 0; k < state.csv_parser.rows.real_len; ++k) {
-                  double x = strtod(state.csv_parser.rows.arr[k].arr[state.first_coord].str, NULL);
-                  double y = strtod(state.csv_parser.rows.arr[k].arr[j].str, NULL);
-                  br_data_push_xy(&br->groups, x, y, 0);
+                for (size_t k = 0; k < parser->rows.real_len; ++k) {
+                  double x = strtod(parser->rows.arr[k].arr[reader->first_coord].str, NULL);
+                  double y = strtod(parser->rows.arr[k].arr[j].str, NULL);
+                  br_data_push_xy(brtl_datas(), x, y, 0);
                 }
-                state.first_coord = -1;
+                reader->first_coord = -1;
               }
             }
-            if (j + 1 < state.csv_parser.header.len) brui_vsplit_pop();
+            if (j + 1 < parser->header.len) brui_vsplit_pop();
           }
         brui_vsplit_end();
       } break;
-      case csv_state_file_read_error: brui_text(BR_STRL("File read error")); break;
-      case csv_state_parse_error: brui_text(BR_STRL("Parse error")); break;
+      case br_csv_state_file_read_error: brui_text(BR_STRL("File read error")); break;
+      case br_csv_state_parse_error: brui_text(BR_STRL("Parse error")); break;
     }
-  brui_resizable_pop();
-  if (delete) {
-    brui_resizable_temp_delete(r_name);
-  }
+  if (brui_resizable_temp_pop()) reader->is_open = false;
 }
 
 static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas) {
@@ -703,8 +676,7 @@ static void brgui_draw_debug_window(br_plotter_t* br) {
 
 static void brgui_draw_license(br_plotter_t* br) {
   if (false == br->ui.show_license) return;
-  br_strv_t res_name = BR_STRL("License");
-  brui_resizable_temp_push_t tmp =  brui_resizable_temp_push(res_name);
+  brui_resizable_temp_push_t tmp = brui_resizable_temp_push(BR_STRL("License"));
     if (tmp.just_created) {
       tmp.res->target.cur_extent = BR_EXTENTI_TOF(brtl_viewport());
       tmp.res->target.cur_extent.width -= 100;

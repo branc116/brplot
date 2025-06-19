@@ -8,6 +8,7 @@
 
 typedef struct br_plotter_t br_plotter_t;
 typedef struct br_shaders_t br_shaders_t;
+typedef struct br_datas_t br_datas_t;
 typedef struct br_text_renderer_t br_text_renderer_t;
 typedef struct br_theme_t br_theme_t;
 typedef struct bruirs_t bruirs_t;
@@ -46,6 +47,7 @@ br_strv_t brtl_clipboard(void);
 
 br_plotter_t* brtl_plotter(void);
 br_shaders_t* brtl_shaders(void);
+br_datas_t* brtl_datas(void);
 br_text_renderer_t* brtl_text_renderer(void);
 
 brsp_t* brtl_brsp(void);

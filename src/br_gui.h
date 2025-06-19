@@ -9,15 +9,59 @@ extern "C" {
 
 typedef struct br_plotter_t br_plotter_t;
 
-typedef struct brui_file_manager_t {
+typedef struct brgui_file_manager_t {
   brsp_id_t file_selected;
   brsp_id_t path_id;
-  br_fs_files_t cur_dir;
   int select_index;
   bool is_inited;
   bool is_open;
   bool show_hidden_files;
-} brui_file_manager_t;
+
+  br_fs_files_t cur_dir;
+} brgui_file_manager_t;
+
+typedef struct brgui_fm_result_t {
+  bool is_selected;
+  brsp_id_t selected_file;
+} brgui_fm_result_t;
+
+typedef enum br_csv_state_t {
+  br_csv_state_init,
+  br_csv_state_file_read_error,
+  br_csv_state_parse_error,
+  br_csv_state_ok
+} br_csv_state_t;
+
+typedef struct br_csv_header_t {
+  br_strv_t* arr;
+  size_t len, cap;
+} br_csv_header_t;
+
+typedef struct br_csv_cells_t {
+  br_strv_t* arr;
+  size_t len, cap;
+} br_csv_cells_t;
+
+typedef struct br_csv_rows_t {
+  br_csv_cells_t* arr;
+  size_t len, cap;
+
+  size_t real_len;
+} br_csv_rows_t;
+
+typedef struct br_csv_parser_t {
+  br_csv_header_t header;
+  br_csv_rows_t rows;
+  br_str_t file_path;
+  br_str_t content;
+  br_csv_state_t state;
+} br_csv_parser_t;
+
+typedef struct brgui_csv_reader_t {
+  bool is_open;
+  int first_coord;
+  brsp_id_t read_id;
+} brgui_csv_reader_t;
 
 void draw_grid_numbers(br_text_renderer_t* r, br_plot_t* br);
 void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos);
@@ -26,7 +70,8 @@ bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, br_ve
 void br_plot_remove_group(br_plots_t plots, int group);
 void br_plot_update_context(br_plot_t* plot, br_vec2_t mouse_pos);
 void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders);
-void brgui_draw_file_manager(brui_file_manager_t* state);
+brgui_fm_result_t brgui_draw_file_manager(brgui_file_manager_t* state);
+void brgui_draw_csv_manager(brgui_csv_reader_t* reader, br_csv_parser_t* parser);
 
 
 #ifdef __cplusplus

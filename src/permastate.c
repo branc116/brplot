@@ -192,10 +192,6 @@ bool br_permastate_remove_pointers(br_plot_t* plot) {
   plot->data_info.cap = 0;
   plot->data_info.len = 0;
   plot->data_info.arr = NULL;
-  switch (plot->kind) {
-    case br_plot_kind_2d: case br_plot_kind_3d: break;
-    default: return false;
-  }
   return true;
 }
 

@@ -466,6 +466,11 @@ br_plotter_t* brtl_plotter(void) {
 br_shaders_t* brtl_shaders(void) {
   return &stl_br->shaders;
 }
+
+br_datas_t* brtl_datas(void) {
+  return &stl_br->groups;
+}
+
 br_text_renderer_t* brtl_text_renderer(void) {
   return stl_br->text;
 }

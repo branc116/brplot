@@ -88,7 +88,7 @@ bool br_fs_list_dir(br_strv_t path, br_fs_files_t* out_files) {
   out_files->cur_dir.len = 0;
   br_str_push_strv(&out_files->cur_dir, path);
   br_str_push_zero(&out_files->cur_dir);
-  if (NULL == (dir = opendir(out_files->cur_dir.str))) BR_ERROR("Failed to open directory %s: %s", out_files->cur_dir.str, strerror(errno));
+  if (NULL == (dir = opendir(out_files->cur_dir.str))) goto error;
   br_str_copy2(&out_files->last_good_dir, out_files->cur_dir);
   while (NULL != (de = readdir(dir))) {
     if (strcmp(".", de->d_name) == 0) continue;

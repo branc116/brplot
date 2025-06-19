@@ -36,6 +36,7 @@ typedef struct br_plotter_t {
   br_shaders_t shaders;
   br_dagens_t dagens;
   bruirs_t resizables;
+  br_csv_parser_t csv_parser;
 
   br_text_renderer_t* text;
   // Any thread can write to this q, only render thread can pop
@@ -89,7 +90,8 @@ typedef struct br_plotter_t {
   struct {
     br_theme_t theme;
     brsp_id_t csv_file_opened;
-    brui_file_manager_t fm_state;
+    brgui_file_manager_t fm_state;
+    brgui_csv_reader_t csv_state;
     bool dark_theme;
     bool expand_plots;
     bool expand_optimizations;
