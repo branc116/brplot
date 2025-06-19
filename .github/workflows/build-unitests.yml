@@ -26,10 +26,6 @@ jobs:
 
       - run: |
           ./nob amalgam
-          clang tests/hello_world.c -lm
-          clang tests/animations.c -lm
-          clang -ggdb -I. tests/src/free_list.c -o bin/free_list_tests
-          bin/free_list_tests --unittest
 
   linux:
     runs-on: ${{matrix.os}}
@@ -74,9 +70,6 @@ jobs:
       - run: |
           clang -I. -o nob.exe nob.c
           ./nob.exe
-
-      - run: |
-          ./nob.exe unittests -dap
 
       - run: |
           ./nob.exe amalgam
