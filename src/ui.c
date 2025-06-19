@@ -1090,6 +1090,10 @@ void brui_resizable_update(void) {
       ACTION = brui_action_none;
     }
   }
+
+  brfl_foreach(i, *brtl_bruirs()) {
+    br_da_getp(*brtl_bruirs(), i)->current.was_draw_last_frame = false;
+  }
 }
 
 void bruir_resizable_refresh(int index) {
@@ -1196,6 +1200,7 @@ static void brui_resizable_set_ancor(brui_resizable_t* res, brui_ancor_t ancor) 
 
 brui_resizable_t* brui_resizable_push(int id) {
   brui_resizable_t* res = br_da_getp(*brtl_bruirs(), id);
+  res->was_draw_last_frame = true;
   br_extent_t rex = BR_EXTENTI_TOF(res->cur_extent);
   int cur_z = TOP.z;
   bool is_menu_shown = res->target.title_height > .01f;
@@ -1275,11 +1280,11 @@ int brui_resizable_active(void) {
 }
 
 void brui_resizable_show(int resizable_handle, bool show) {
-  brtl_bruirs()->arr[resizable_handle].target.hidden_factor = show ? 0.f : 1.f;
+  br_da_getp(*brtl_bruirs(), resizable_handle)->target.hidden_factor = show ? 0.f : 1.f;
 }
 
 bool brui_resizable_is_hidden(int resizable_handle) {
-  return brtl_bruirs()->arr[resizable_handle].hidden_factor > 0.99f;
+  return br_da_get(*brtl_bruirs(), resizable_handle).hidden_factor > 0.99f;
 }
 
 br_vec2_t brui_resizable_to_global(int resizable_handle, br_vec2_t pos) {
@@ -1291,9 +1296,14 @@ br_vec2_t brui_resizable_to_global(int resizable_handle, br_vec2_t pos) {
   return brui_resizable_to_global(r->parent, pos);
 }
 
+
+static BR_THREAD_LOCAL int brui_resizable_temp_last = -1;
+static BR_THREAD_LOCAL br_strv_t brui_resizable_temp_last_str;
 brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id) {
   // TODO: Handle hash collisions
 
+  if (-1 != brui_resizable_temp_last) LOGF("Can't have temp resizables in temp resizables, yet");
+  brui_resizable_temp_last_str = id;
 #if defined(BR_IS_SIZE_T_32_BIT)
   size_t hash = stbds_hash_bytes((void*)id.str, id.len, 0xdeadbeef);
 #else
@@ -1311,8 +1321,23 @@ brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id) {
     res_handle = bruir__temp_res[index].value;
   }
 
+
+  brui_resizable_temp_last = res_handle;
   brui_resizable_t* res = brui_resizable_push(res_handle);
   return (brui_resizable_temp_push_t) { .res = res, .resizable_handle = res_handle, .just_created = just_created };
+}
+
+bool brui_resizable_temp_pop(void) {
+  int id = brui_resizable_temp_last;
+  br_strv_t handle = brui_resizable_temp_last_str;
+  bool is_hidden = brui_resizable_is_hidden(id);
+  brui_resizable_pop();
+  brui_resizable_temp_last = -1;
+  if (is_hidden) {
+    brui_resizable_temp_delete(handle);
+    return true;
+  }
+  return false;
 }
 
 void brui_resizable_temp_delete(br_strv_t id) {
@@ -1346,6 +1371,7 @@ static int bruir_find_at(int index, br_vec2_t loc, br_vec2_t* out_local_pos) {
   bruirs_t* rs = brtl_bruirs();
   brui_resizable_t res = br_da_get(*rs, index);
   if (res.current.hidden_factor > 0.9f) return -1;
+  if (index != 0 && false == res.current.was_draw_last_frame) return -1;
   if (res.current.title_height > 0.1f) return index;
   br_vec2_t local = BR_VEC2(loc.x - (float)res.current.cur_extent.x, loc.y - (float)res.current.cur_extent.y);
   if (local.x < 0) return -1;

@@ -104,6 +104,7 @@ typedef struct {
   X(bool, is_hoverd) \
   X(bool, scroll_bar) \
   X(bool, title_enabled) \
+  X(bool, was_draw_last_frame) \
 
 typedef union {
   struct {
@@ -248,6 +249,7 @@ int               brui_resizable_children_count(int resizable_handle);
 int               brui_resizable_children_top_z(int resizable_handle);
 
 brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id);
+bool              brui_resizable_temp_pop(void);
 void              brui_resizable_temp_delete(br_strv_t id);
 void              brui_resizable_temp_delete_all(void);
 

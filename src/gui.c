@@ -159,7 +159,6 @@ void brgui_draw_file_manager(brui_file_manager_t* state) {
   br_strv_t cur_path;
   brsp_t* sp = brtl_brsp();
   br_strv_t resizable_name = BR_STRL("File Manager");
-  bool delete = false;
   brui_action_t* action = brui_action();
   state->is_inited = false;
   brui_resizable_temp_push_t t = brui_resizable_temp_push(resizable_name);
@@ -191,8 +190,6 @@ void brgui_draw_file_manager(brui_file_manager_t* state) {
       action->args.text.cursor_pos = (int)cur_path.len;
       action->args.text.id = state->path_id;
     }
-
-    if (brui_resizable_is_hidden(t.resizable_handle)) delete = true;
 
     cur_path = brsp_get(*sp, state->path_id);
 
@@ -281,7 +278,7 @@ void brgui_draw_file_manager(brui_file_manager_t* state) {
               if (last != '/' && last != '\\')  brsp_insert_char_at_end(sp, csv_id, '/');
               brsp_insert_strv_at_end(sp, csv_id, br_str_as_view(file.name));
               brsp_zero(sp, csv_id);
-              delete = true;
+              brui_resizable_show(t.resizable_handle, false);
             }
           }
         brui_vsplit_end();
@@ -296,7 +293,7 @@ void brgui_draw_file_manager(brui_file_manager_t* state) {
       if (real_i == 0) state->select_index = -1;
       else state->select_index = state->select_index % (int)real_i;
     brui_pop();
-  brui_resizable_pop();
+  if (brui_resizable_temp_pop()) state->is_open = false;
   if (dir_changed) {
     cur_path = brsp_get(*sp, state->path_id);
     if (true == br_fs_list_dir(cur_path, &state->cur_dir)) {
@@ -305,11 +302,6 @@ void brgui_draw_file_manager(brui_file_manager_t* state) {
       action->args.text.id = state->path_id;
       action->args.text.cursor_pos = (int)cur_path.len;
     };
-  }
-  if (true == delete) {
-    state->is_open = false;
-    brui_resizable_temp_delete(resizable_name);
-    br_da_free(state->cur_dir);
   }
 }
 
@@ -665,15 +657,7 @@ static void brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth)
 }
 
 static void brgui_draw_debug_window(br_plotter_t* br) {
-  static BR_THREAD_LOCAL bool is_on = false;
-  if (false == *brtl_debug()) {
-    if (is_on) {
-      is_on = false;
-      brui_resizable_temp_delete(BR_STRL("Debug"));
-    }
-    return;
-  }
-  is_on = true;
+  if (false == *brtl_debug()) return;
   if (brui_resizable_temp_push(BR_STRL("Debug")).just_created) {
     brui_ancor_set(brui_ancor_left);
   }
@@ -714,13 +698,12 @@ static void brgui_draw_debug_window(br_plotter_t* br) {
         }
       br_scrach_free();
     brui_pop();
-  brui_resizable_pop();
+  if (brui_resizable_temp_pop()) *brtl_debug() = false;
 }
 
 static void brgui_draw_license(br_plotter_t* br) {
   if (false == br->ui.show_license) return;
   br_strv_t res_name = BR_STRL("License");
-  bool delete = false;
   brui_resizable_temp_push_t tmp =  brui_resizable_temp_push(res_name);
     if (tmp.just_created) {
       tmp.res->target.cur_extent = BR_EXTENTI_TOF(brtl_viewport());
@@ -730,33 +713,23 @@ static void brgui_draw_license(br_plotter_t* br) {
       tmp.res->target.cur_extent.y += 50;
       for (int i = 0; i < br_license_lines; ++i) printf("%.*s\n", br_license[i].len, br_license[i].str);
     }
-    if (false == brui_resizable_is_hidden(tmp.resizable_handle)) {
-      float local_y = brui_local_y();
-      float ts = (float)brui_text_size() + brui_padding_y();
-      int i = 0;
-      if (local_y < -ts) {
-        int n = (int)(-(local_y + 2.f*ts)/ts);
-        if (n > 0) {
-          brui_new_lines(n);
-          i += n;
-        }
+    float local_y = brui_local_y();
+    float ts = (float)brui_text_size() + brui_padding_y();
+    int i = 0;
+    if (local_y < -ts) {
+      int n = (int)(-(local_y + 2.f*ts)/ts);
+      if (n > 0) {
+        brui_new_lines(n);
+        i += n;
       }
-      float space_left = brui_max_y() - brui_y();
-      int max_n = (int)(space_left / ts) + 1;
-
-      LOGI("i = %d max_n=%d", i, max_n);
-      for (int j = 0; j < max_n && i < br_license_lines; ++j, ++i) {
-        brui_text(br_license[i]);
-      }
-      brui_new_lines(br_license_lines - i);
-    } else {
-      delete = true;
     }
-  brui_resizable_pop();
-  if (true == delete) {
-      br->ui.show_license = false;
-      brui_resizable_temp_delete(res_name);
-  }
+    float space_left = brui_max_y() - brui_y();
+    int max_n = (int)(space_left / ts) + 1;
+
+    for (int j = 0; j < max_n && i < br_license_lines; ++j, ++i) brui_text(br_license[i]);
+
+    brui_new_lines(br_license_lines - i);
+  if (brui_resizable_temp_pop()) br->ui.show_license = false;
 }
 
 void br_plot_screenshot(br_text_renderer_t* tr, br_plot_t* plot, br_shaders_t* shaders, br_datas_t groups, char const* path) {
