@@ -623,9 +623,11 @@ static bool expr_parse_mul(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* 
 
 static bool expr_parse_primary(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out) {
   if (false == expr_parse_ref(arena, tokens, out)) return false;
+  token_t t;
+  uint32_t ref;
 start:
-  token_t t = expr_peek(*tokens);
-  uint32_t ref = 0;
+  t = expr_peek(*tokens);
+  ref = 0;
   switch (t.kind) {
     case token_kind_plus: {
       if (false == expr_parse_add(arena, tokens, &ref)) return false;
