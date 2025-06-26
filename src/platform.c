@@ -390,7 +390,7 @@ bool brtl_key_down(int key) {
 }
 
 bool brtl_key_pressed(int key) {
-  for (int i = 0; i < stl_br->pressed_chars.len; ++i) if (br_da_get(stl_br->pressed_chars, i) == key) return true;
+  for (size_t i = 0; i < stl_br->pressed_chars.len; ++i) if (br_da_get(stl_br->pressed_chars, i) == (uint32_t)key) return true;
   return false;
 }
 

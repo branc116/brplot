@@ -48,6 +48,7 @@
   X(token_kind_ident, 'z')
 
 #define TOKEN_KINDS(X) \
+  X(token_kind_invalid) \
   X(token_kind_number) \
   X(token_kind_ident) \
   X(token_kind_hash) \
@@ -561,7 +562,7 @@ static const char* token_to_str(token_kind_t kind) {
 }
 
 static token_t expr_peek(tokens_t tokens) {
-  return tokens.pos >= tokens.len ? (token_t){-1} : tokens.arr[tokens.pos];
+  return tokens.pos >= tokens.len ? (token_t){0} : tokens.arr[tokens.pos];
 }
 
 static bool expr_parse_primary(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out);

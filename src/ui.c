@@ -243,8 +243,8 @@ bool brui_text_input(brsp_id_t str_id) {
           changed = brsp_remove_utf8_after(sp, str_id, ACPARM.text.cursor_pos) > 0;
         } else if (lp >= BR_KEY_0 && lp <= BR_KEY_9) to_insert = '0' + (char)(lp - BR_KEY_0);
         else if (lp == BR_KEY_SLASH) to_insert = '/';
-        else if (lp >= BR_KEY_A && lp <= BR_KEY_Z) to_insert = lp;
-        else if (lp >= BR_KEY_a && lp <= BR_KEY_z) to_insert = lp;
+        else if (lp >= BR_KEY_A && lp <= BR_KEY_Z) to_insert = (char)lp;
+        else if (lp >= BR_KEY_a && lp <= BR_KEY_z) to_insert = (char)lp;
         else if (lp == BR_KEY_SPACE) to_insert = ' ';
         else if (lp == BR_KEY_HASH) to_insert = '#';
         else if (lp == BR_KEY_DOT) to_insert = '.';
