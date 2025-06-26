@@ -35,10 +35,10 @@ ifeq ($(PLATFORM), LINUX)
 endif
 
 SOURCE             = src/main.c           src/ui.c         src/data.c        src/smol_mesh.c   src/q.c       src/read_input.c \
-										 src/keybindings.c    src/str.c        src/resampling2.c src/graph_utils.c src/shaders.c src/plotter.c    \
+										 src/keybindings.c    src/free_list.c  src/resampling2.c src/graph_utils.c src/shaders.c src/plotter.c    \
 										 src/plot.c           src/permastate.c src/filesystem.c  src/gui.c         src/text_renderer.c \
 										 src/data_generator.c src/platform.c   src/threads.c     src/gl.c          src/icons.c   src/theme.c \
-										 src/string_pool.c    src/free_list.c
+										 src/string_pool.c    external/shl_impls.c
 COMMONFLAGS        = -I. -MMD -MP -fvisibility=hidden -std=gnu11
 WARNING_FLAGS      = -Wconversion -Wall -Wextra -Wshadow -D_GNU_SOURCE -Wno-gnu-folding-constant
 LD_FLAGS           =
@@ -146,6 +146,7 @@ ifeq ($(CONFIG), DEBUG)
 	ifeq ($(PLATFORM), LINUX)
 		SOURCE+= tests/src/math.c
 		ifeq ($(SANITIZE), YES)
+			COMMONFLAGS+= -DBR_ASAN
 			ifeq ($(COMPILER), GCC)
 				COMMONFLAGS+= -fsanitize=bounds-strict
 			endif
@@ -269,8 +270,8 @@ npm-imgui:
 bin/font_bake: tools/font_bake.c $(NOBS)
 	$(NATIVE_CC) -O3 -o bin/font_bake tools/font_bake.c
 
-bin/shaders_bake: tools/shaders_bake.c src/br_shaders.h src/str.c $(NOBS)
-	$(NATIVE_CC) -I. -O3 -o bin/shaders_bake src/str.c tools/shaders_bake.c
+bin/shaders_bake: tools/shaders_bake.c src/br_shaders.h $(NOBS)
+	$(NATIVE_CC) -I. -O3 -o bin/shaders_bake tools/shaders_bake.c src/filesystem.c
 
 $(SHADERS_HEADER): ./src/shaders/* bin/shaders_bake
 	bin/shaders_bake $(PLATFORM) > $(SHADERS_HEADER)
@@ -285,7 +286,7 @@ bin/pack_icons: tools/pack_icons.c $(NOBS)
 	bin/gl_gen 
 
 bin/gl_gen: tools/gl_gen.c $(NOBS)
-	$(NATIVE_CC) -I. -O0 -ggdb -g3 -o bin/gl_gen tools/gl_gen.c src/str.c
+	$(NATIVE_CC) -I. -O0 -ggdb -g3 -o bin/gl_gen tools/gl_gen.c
 
 .generated/brplot.c: bin/cshl
 	./bin/cshl
@@ -301,7 +302,7 @@ bench: bin/bench
 	./bin/bench >> bench.txt
 	cat bench.txt
 
-SOURCE_BENCH= ./src/misc/benchmark.c ./src/resampling2.c ./src/smol_mesh.c ./src/shaders.c ./src/plotter.c ./src/gui.c ./src/data.c ./src/str.c ./src/plot.c ./src/q.c ./src/keybindings.c ./src/graph_utils.c ./src/data_generator.c ./src/platform.c  ./src/permastate.c ./src/filesystem.c
+SOURCE_BENCH= ./src/misc/benchmark.c ./src/resampling2.c ./src/smol_mesh.c ./src/shaders.c ./src/plotter.c ./src/gui.c ./src/data.c ./src/plot.c ./src/q.c ./src/keybindings.c ./src/graph_utils.c ./src/data_generator.c ./src/platform.c  ./src/permastate.c ./src/filesystem.c
 OBJS_BENCH= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(SOURCE_BENCH))
 
 bin/bench: $(OBJS_BENCH) $(NOBS)

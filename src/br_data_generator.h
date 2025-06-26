@@ -27,16 +27,19 @@ typedef enum {
   br_dagen_expr_kind_reference_z,
   br_dagen_expr_kind_add,
   br_dagen_expr_kind_mul,
+  br_dagen_expr_kind_pair,
+  br_dagen_expr_kind_iota,
 } br_dagen_expr_kind_t;
 
 typedef struct br_dagen_expr_t {
   br_dagen_expr_kind_t kind;
   union {
-    int group_id;
     struct {
       uint32_t op1;
       uint32_t op2;
     } operands;
+    int group_id;
+	int iota_state;
   };
 } br_dagen_expr_t;
 

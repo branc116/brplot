@@ -24,6 +24,7 @@
 //
 //========================================================================
 
+#include "src/br_pp.h"
 #include "external/glfw/src/internal.h"
 
 #if defined(_GLFW_COCOA)
@@ -81,7 +82,7 @@ static void swapIntervalNSGL(int interval)
     @autoreleasepool {
 
     _GLFWwindow* window = _glfwPlatformGetTls(&_glfw.contextSlot);
-    assert(window != NULL);
+    BR_ASSERT(window != NULL);
 
     [window->context.nsgl.object setValues:&interval
                               forParameter:NSOpenGLContextParameterSwapInterval];
@@ -196,7 +197,7 @@ GLFWbool _glfwCreateContextNSGL(_GLFWwindow* window,
 
 #define ADD_ATTRIB(a) \
 { \
-    assert((size_t) index < sizeof(attribs) / sizeof(attribs[0])); \
+    BR_ASSERT((size_t) index < sizeof(attribs) / sizeof(attribs[0])); \
     attribs[index++] = a; \
 }
 #define SET_ATTRIB(a, v) { ADD_ATTRIB(a); ADD_ATTRIB(v); }

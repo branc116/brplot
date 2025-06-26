@@ -5,13 +5,16 @@
 #include "src/br_tl.h"
 #include "src/br_q.h"
 #include "src/br_icons.h"
+#include "src/br_ui.h"
+#include "src/br_text_renderer.h"
+#include "src/br_da.h"
 
 #include <string.h>
 
 #define GLAD_MALLOC BR_MALLOC
 #define GLAD_FREE BR_FREE
 
-#if !defined(_MSC_VER)
+#if defined(__GNUC__) || defined(__clang__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wreturn-type"
 #  pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -29,13 +32,11 @@
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #  define _GLFW_WIN32
-#  pragma comment(lib, "user32.lib")
-#  pragma comment(lib, "Gdi32.lib")
-#  pragma comment(lib, "Shell32.lib")
-#endif
-
-#if defined(BR_UNIT_TEST)
-struct test_file_metadata * test_file_head;
+#  if !defined(__MINGW32__)
+#    pragma comment(lib, "user32.lib")
+#    pragma comment(lib, "Gdi32.lib")
+#    pragma comment(lib, "Shell32.lib")
+#  endif
 #endif
 
 #if defined(__linux__)
@@ -148,7 +149,7 @@ struct test_file_metadata * test_file_head;
 #  include "external/glfw/src/nsgl_context.m"
 #endif
 
-#if !defined(_MSC_VER)
+#if defined(__GNUC__) || defined(__clang__)
 #  pragma GCC diagnostic pop
 #endif
 
@@ -159,6 +160,10 @@ struct test_file_metadata * test_file_head;
 #  include <synchapi.h>
 #endif
 
+#if BR_HAS_HOTRELOAD
+#  include "src/desktop/hotreload.c"
+#endif
+
 static BR_THREAD_LOCAL br_plotter_t* stl_br = NULL;
 
 static void log_glfw_errors(int level, const char* error);
@@ -166,6 +171,7 @@ static void br_glfw_on_scroll(struct GLFWwindow* window, double x, double y);
 static void br_glfw_on_mouse_move(struct GLFWwindow* window, double x, double y);
 static void br_glfw_on_mouse_button(struct GLFWwindow* window, int button, int action, int mods);
 static void br_glfw_on_key(struct GLFWwindow* window, int key, int scancode, int action, int mods);
+static void br_glfw_on_char(GLFWwindow* window, uint32_t codepoint);
 
 void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height) {
   br->win.glfw = glfwGetCurrentContext();
@@ -200,7 +206,6 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
 #if !defined(HEADLESS)
     glfwMakeContextCurrent(br->win.glfw);
 #endif
-    //glfwSwapInterval(1);
   }
 
   stl_br = br;
@@ -208,6 +213,7 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
   brgl_disable_back_face_cull();
   brgl_enable_depth_test();
   brgl_enable(GL_BLEND);
+  brgl_enable_clip_distance();
   brgl_blend_func(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   brgl_blend_equation(GL_FUNC_ADD);
   br_sizei_t size = brtl_window_size();
@@ -215,8 +221,6 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
   br->win.size = size;
 
   br->shaders = br_shaders_malloc();
-  br->shaders.font->uvs.sub_pix_aa_map_uv =  BR_VEC3(-1, 0, 1);
-  br->shaders.font->uvs.sub_pix_aa_scale_uv = 0.2f;
   br->text = br_text_renderer_malloc(1024, 1024, br_font_data, &br->shaders.font);
   br->time.now = glfwGetTime();
 
@@ -225,6 +229,10 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
   glfwSetCursorPosCallback(br->win.glfw, br_glfw_on_mouse_move);
   glfwSetMouseButtonCallback(br->win.glfw, br_glfw_on_mouse_button);
   glfwSetKeyCallback(br->win.glfw, br_glfw_on_key);
+  glfwSetCharCallback(br->win.glfw, br_glfw_on_char);
+#if BR_HAS_HOTRELOAD
+  br_hotreload_start(&br->hot_state);
+#endif
 }
 
 void br_plotter_deinit_specifics_platform(br_plotter_t* br) {
@@ -249,13 +257,13 @@ static void br_glfw_on_mouse_button(struct GLFWwindow* window, int button, int a
   stl_br->key.mod = mods;
   switch (button) {
     case GLFW_MOUSE_BUTTON_LEFT: {
-                                   stl_br->mouse.down.left = action == GLFW_PRESS ? true : false;
-                                   stl_br->mouse.pressed.left = action == GLFW_RELEASE ? true : false;
-                                 } break;
+      stl_br->mouse.down.left = action == GLFW_PRESS ? true : false;
+      stl_br->mouse.pressed.left = action == GLFW_RELEASE ? true : false;
+    } break;
     case GLFW_MOUSE_BUTTON_RIGHT: {
-                                   stl_br->mouse.down.right = action == GLFW_PRESS ? true : false;
-                                   stl_br->mouse.pressed.right = action == GLFW_RELEASE ? true : false;
-                                 } break;
+      stl_br->mouse.down.right = action == GLFW_PRESS ? true : false;
+      stl_br->mouse.pressed.right = action == GLFW_RELEASE ? true : false;
+    } break;
     default: LOGI("Unknown button %d", button);
   }
 }
@@ -284,16 +292,20 @@ static void br_glfw_on_key(struct GLFWwindow* window, int key, int scancode, int
       stl_br->key.mod &= ~(GLFW_MOD_SHIFT);
     }
   }
-  if (scancode < 0 || scancode >= 64) {
+  if (key < 0 || key >= 512) {
     LOGW("Bad scancode %d, key %d", scancode, key);
     return;
   }
   if (action == GLFW_PRESS) {
-    stl_br->key.pressed[scancode] = true;
-    stl_br->key.down[scancode] = true;
+    stl_br->key.down[key] = true;
   } else if (action == GLFW_RELEASE) {
-    stl_br->key.down[scancode] = false;
+    stl_br->key.down[key] = false;
   }
+}
+
+void br_glfw_on_char(GLFWwindow* window, uint32_t codepoint) {
+  (void)window;
+  br_da_push(stl_br->pressed_chars, codepoint);
 }
 
 static void log_glfw_errors(int level, const char* error) {
@@ -309,12 +321,14 @@ void br_plotter_begin_drawing(br_plotter_t* br) {
   br->mouse.delta = br_vec2_sub(br->mouse.pos, br->mouse.old_pos);
   br->mouse.old_pos = br->mouse.pos;
   glfwGetWindowSize(br->win.glfw, &br->win.size.width, &br->win.size.height);
+#if BR_HAS_HOTRELOAD
+  br_hotreload_tick(&br->hot_state);
+#endif
 }
 
 void br_plotter_end_drawing(br_plotter_t* br) {
   br_shaders_draw_all(br->shaders);
   br_text_renderer_dump(br->text);
-  glfwSetWindowSize(br->win.glfw, br->win.size.width, br->win.size.height);
   handle_all_commands(br, br->commands);
 #if BR_HAS_SHADER_RELOAD
   if (br->shaders_dirty) {
@@ -324,7 +338,7 @@ void br_plotter_end_drawing(br_plotter_t* br) {
 #endif
   br->mouse.scroll = BR_VEC2(0, 0);
   br->mouse.pressed.right = br->mouse.pressed.left = false;
-  memset(&br->key.pressed[0], 0, sizeof(br->key.pressed));
+  br->pressed_chars.len = 0;
   glfwSwapBuffers(br->win.glfw);
 
   br->should_close = br->should_close || glfwWindowShouldClose(br->win.glfw);
@@ -372,26 +386,20 @@ bool brtl_mouser_pressed(void) {
 }
 
 bool brtl_key_down(int key) {
-  int code = glfwGetKeyScancode(key);
-  if (code < 0 || code >= 64) {
-    LOGW("Key %d, scancode %d is not valid", key, code);
-    return false;
-  }
-  return stl_br->key.down[code];
+  return stl_br->key.down[key - 0x20] || stl_br->key.down[key];
 }
 
 bool brtl_key_pressed(int key) {
-  int code = glfwGetKeyScancode(key);
-  if (code < 0 || code >= 64) {
-    LOGW("Key %d, scancode %d is not valid", key, code);
-    return false;
-  }
-  return stl_br->key.pressed[code];
+  for (int i = 0; i < stl_br->pressed_chars.len; ++i) if (br_da_get(stl_br->pressed_chars, i) == key) return true;
+  return false;
+}
+
+br_pressed_chars_t brtl_pressed_chars() {
+  return stl_br->pressed_chars;
 }
 
 bool brtl_key_ctrl(void) {
   bool is_down = (stl_br->key.mod & GLFW_MOD_CONTROL) == GLFW_MOD_CONTROL;
-  //LOGI("CTRL: %d", is_down);
   return is_down;
 }
 
@@ -400,7 +408,8 @@ bool brtl_key_alt(void) {
 }
 
 bool brtl_key_shift(void) {
-  return (stl_br->key.mod & GLFW_MOD_SHIFT) == GLFW_MOD_SHIFT;
+  bool is_down = (stl_br->key.mod & GLFW_MOD_SHIFT) == GLFW_MOD_SHIFT;
+  return is_down;
 }
 
 br_theme_t* brtl_theme(void) {
@@ -425,6 +434,12 @@ void brtl_viewport_set(br_extenti_t ex) {
   stl_br->win.viewport = ex;
 }
 
+br_strv_t brtl_clipboard(void) {
+  const char* str = glfwGetClipboardString(stl_br->win.glfw);
+  if (str == NULL) return BR_STRV(NULL, 0);
+  return br_strv_from_c_str(str);
+}
+
 br_plotter_t* brtl_plotter(void) {
   return stl_br;
 }
@@ -432,7 +447,38 @@ br_plotter_t* brtl_plotter(void) {
 br_shaders_t* brtl_shaders(void) {
   return &stl_br->shaders;
 }
+
+br_datas_t* brtl_datas(void) {
+  return &stl_br->groups;
+}
+
 br_text_renderer_t* brtl_text_renderer(void) {
   return stl_br->text;
+}
+
+static BR_THREAD_LOCAL brsp_t br_stl_string_pool;
+brsp_t* brtl_brsp(void) {
+  return &br_stl_string_pool;
+}
+
+bruirs_t* brtl_bruirs(void) {
+  return &stl_br->resizables;
+}
+
+bruir_children_t brtl_bruirs_childern(int handle) {
+  return brui_resizable_children_temp(handle);
+}
+
+
+bool* brtl_debug(void) {
+  return &stl_br->ui.theme.ui.debug;
+}
+
+float* brtl_cull_min(void) {
+  return &stl_br->ui.theme.ui.cull_min;
+}
+
+float* brtl_min_sampling(void) {
+  return &stl_br->ui.theme.ui.min_sampling;
 }
 

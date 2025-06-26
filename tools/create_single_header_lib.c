@@ -45,11 +45,13 @@ bool has_visited(files_t all_visited, br_strv_t file) {
 }
 
 void cshl_get_includes(br_strv_t file_name, files_t* includes) {
-  size_t len = 0;
-  const char* source_c = br_fs_read(br_strv_to_scrach(file_name), &len);
+  br_str_t source_s = { 0 };
+  if (false == br_fs_read(br_strv_to_scrach(file_name), &source_s)) {
+    br_scrach_free();
+    return;
+  }
   br_scrach_free();
-  if (source_c == NULL) return;
-  br_strv_t source = BR_STRV(source_c, len);
+  br_strv_t source = br_str_as_view(source_s);
   while (source.len > 0) {
     br_strv_t pp = br_strv_splitr(source, '#');
     br_strv_t single_comment = br_strv_splitrs(source, BR_STRL("//"));
@@ -82,10 +84,13 @@ bool cshl_get_tokens(br_strv_t file_name, files_t* all_visited, cshl_tokens_t* t
   br_da_push(*all_visited, file_name);
 
   size_t len = 0;
-  const char* source_c = br_fs_read(br_strv_to_scrach(file_name), &len);
+  br_str_t source_s = { 0 };
+  if (false == br_fs_read(br_strv_to_scrach(file_name), &source_s)) {
+    br_scrach_free();
+    return false;
+  }
   br_scrach_free();
-  if (source_c == NULL) return false;
-  br_strv_t source = BR_STRV(source_c, len);
+  br_strv_t source = br_str_as_view(source_s);
 
   const char* end = &source.str[source.len - 1];
   br_strv_t preq = source;

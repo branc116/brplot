@@ -79,12 +79,11 @@
       X_BUF(z, 1)                       \
     )                                   \
   X(font, 1024,                         \
-      X_VEC(sub_pix_aa_map, 3)          \
-      X_VEC(sub_pix_aa_scale, 1)        \
       X_VEC(atlas, _TEX),               \
                                         \
       X_BUF(pos, 4)                     \
-      X_BUF(color, 4)                   \
+      X_BUF(fg, 4)                      \
+      X_BUF(bg, 4)                      \
       X_BUF(clip_dists, 4)              \
       X_BUF(z, 1)                       \
     )                                   \

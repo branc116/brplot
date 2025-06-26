@@ -25,11 +25,11 @@
 //
 //========================================================================
 
+#include "src/br_pp.h"
 #include "external/glfw/src/internal.h"
 
 #if defined(GLFW_BUILD_POSIX_THREAD)
 
-#include <assert.h>
 #include <string.h>
 
 
@@ -39,7 +39,7 @@
 
 GLFWbool _glfwPlatformCreateTls(_GLFWtls* tls)
 {
-    assert(tls->posix.allocated == GLFW_FALSE);
+    BR_ASSERT(tls->posix.allocated == GLFW_FALSE);
 
     if (pthread_key_create(&tls->posix.key, NULL) != 0)
     {
@@ -61,19 +61,19 @@ void _glfwPlatformDestroyTls(_GLFWtls* tls)
 
 void* _glfwPlatformGetTls(_GLFWtls* tls)
 {
-    assert(tls->posix.allocated == GLFW_TRUE);
+    BR_ASSERT(tls->posix.allocated == GLFW_TRUE);
     return pthread_getspecific(tls->posix.key);
 }
 
 void _glfwPlatformSetTls(_GLFWtls* tls, void* value)
 {
-    assert(tls->posix.allocated == GLFW_TRUE);
+    BR_ASSERT(tls->posix.allocated == GLFW_TRUE);
     pthread_setspecific(tls->posix.key, value);
 }
 
 GLFWbool _glfwPlatformCreateMutex(_GLFWmutex* mutex)
 {
-    assert(mutex->posix.allocated == GLFW_FALSE);
+    BR_ASSERT(mutex->posix.allocated == GLFW_FALSE);
 
     if (pthread_mutex_init(&mutex->posix.handle, NULL) != 0)
     {
@@ -93,13 +93,13 @@ void _glfwPlatformDestroyMutex(_GLFWmutex* mutex)
 
 void _glfwPlatformLockMutex(_GLFWmutex* mutex)
 {
-    assert(mutex->posix.allocated == GLFW_TRUE);
+    BR_ASSERT(mutex->posix.allocated == GLFW_TRUE);
     pthread_mutex_lock(&mutex->posix.handle);
 }
 
 void _glfwPlatformUnlockMutex(_GLFWmutex* mutex)
 {
-    assert(mutex->posix.allocated == GLFW_TRUE);
+    BR_ASSERT(mutex->posix.allocated == GLFW_TRUE);
     pthread_mutex_unlock(&mutex->posix.handle);
 }
 

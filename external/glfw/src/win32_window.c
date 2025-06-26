@@ -26,6 +26,7 @@
 //========================================================================
 
 #include "external/glfw/src/internal.h"
+#include "src/br_pp.h"
 
 #if defined(_GLFW_WIN32)
 
@@ -2345,13 +2346,34 @@ void _glfwSetCursorWin32(_GLFWwindow* window, _GLFWcursor* cursor)
 
 void _glfwSetClipboardStringWin32(const char* string)
 {
-    assert("TODO" && false);
+    BR_ASSERT("TODO" && false);
 }
 
-const char* _glfwGetClipboardStringWin32(void)
-{
-    assert("TODO" && false);
-    return NULL;
+const char* _glfwGetClipboardStringWin32(void) {
+  static BR_THREAD_LOCAL char buffer[1024];
+  
+  bool   success = true;
+  bool   is_open = false;
+  HANDLE hData   = NULL;
+  LPSTR text     = NULL;
+  size_t len     = 0;
+
+  if (false == (is_open = OpenClipboard(NULL)))       goto error;
+  if (NULL  == (hData   = GetClipboardData(CF_TEXT))) goto error;
+  if (NULL  == (text    = GlobalLock(hData)))         goto error;
+  if (0     == (len     = strlen(text)))              goto error;
+  if (len > sizeof(buffer) - 1) len = sizeof(buffer) - 1;
+  memcpy(buffer, text, len);
+  buffer[len] = '\0';
+  goto done;
+  
+error:
+  success = false;
+
+done:
+  if (NULL != text) GlobalUnlock(text);
+  if (true == is_open) CloseClipboard();
+  return success ? buffer : NULL;
 }
 
 EGLenum _glfwGetEGLPlatformWin32(EGLint** attribs)

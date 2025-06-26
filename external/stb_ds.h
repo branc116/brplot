@@ -584,7 +584,11 @@ extern void * stbds_shmode_func(size_t elemsize, int mode);
     ((void) stbds_hmgeti_ts(t,k,temp), &(t)[temp])
 
 #define stbds_hmdel(t,k) \
-    (((t) = stbds_hmdel_key_wrapper((t),sizeof *(t), (void*) STBDS_ADDRESSOF((t)->key, (k)), sizeof (t)->key, STBDS_OFFSETOF((t),key), STBDS_HM_BINARY)),(t)?stbds_temp((t)-1):0)
+    (((t) = stbds_hmdel_key_wrapper((t),sizeof *(t), \
+                                    (void*) STBDS_ADDRESSOF((t)->key, (k)), \
+                                    sizeof (t)->key, \
+                                    (size_t)STBDS_OFFSETOF((t),key), \
+                                    STBDS_HM_BINARY)),(t)?stbds_temp((t)-1):0)
 
 #define stbds_hmdefault(t, v) \
     ((t) = stbds_hmput_default_wrapper((t), sizeof *(t)), (t)[-1].value = (v))
@@ -730,12 +734,10 @@ template<class T> static T * stbds_shmode_func_wrapper(T *, size_t elemsize, int
 //
 
 #ifdef STB_DS_IMPLEMENTATION
-#include <assert.h>
 #include <string.h>
 
 #ifndef STBDS_ASSERT
-#define STBDS_ASSERT_WAS_UNDEFINED
-#define STBDS_ASSERT(x)   ((void) 0)
+#  error "Define STBDS_ASSERT"
 #endif
 
 #ifdef STBDS_STATISTICS
@@ -1494,7 +1496,7 @@ void * stbds_hmdel_key(void *a, size_t elemsize, void *key, size_t keysize, size
         --table->used_count;
         ++table->tombstone_count;
         stbds_temp(raw_a) = 1;
-        STBDS_ASSERT(table->used_count >= 0);
+        STBDS_ASSERT(table->used_count >= 0); // wtf
         //STBDS_ASSERT(table->tombstone_count < table->slot_count/4);
         b->hash[i] = STBDS_HASH_DELETED;
         b->index[i] = STBDS_INDEX_DELETED;
@@ -1627,8 +1629,7 @@ void stbds_strreset(stbds_string_arena *a)
 #undef STBDS_ASSERT
 #endif
 #ifndef STBDS_ASSERT
-#define STBDS_ASSERT assert
-#include <assert.h>
+#  error "Define STBDS_ASSERT"
 #endif
 
 typedef struct { int key,b,c,d; } stbds_struct;

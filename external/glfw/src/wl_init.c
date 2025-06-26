@@ -25,6 +25,7 @@
 //========================================================================
 
 #include "external/glfw/src/internal.h"
+#include "src/br_pp.h"
 
 #if defined(_GLFW_WAYLAND)
 
@@ -38,7 +39,6 @@
 #include <sys/timerfd.h>
 #include <unistd.h>
 #include <time.h>
-#include <assert.h>
 
 #include "external/wayland/wayland-private.c"
 #include "external/wayland/xdg-shell-private.c"
@@ -214,7 +214,7 @@ static void libdecorReadyCallback(void* userData,
 {
     _glfw.wl.libdecor.ready = GLFW_TRUE;
 
-    assert(_glfw.wl.libdecor.callback == callback);
+    BR_ASSERT(_glfw.wl.libdecor.callback == callback);
     wl_callback_destroy(_glfw.wl.libdecor.callback);
     _glfw.wl.libdecor.callback = NULL;
 }

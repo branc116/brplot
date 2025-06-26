@@ -1,0 +1,75 @@
+name: Build Unittest
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'src/**'
+      - 'tools/**'
+      - '.github/workflows/build-unitests.yml'
+      - 'external/**'
+      - 'nob.c'
+
+permissions:
+  contents: read
+jobs:
+  mac:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ macos-13, macos-14, macos-15 ]
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - run: |
+          clang -I. -o nob nob.c -lm
+          ./nob
+
+      - run: |
+          ./nob amalgam
+
+  linux:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ ubuntu-22.04, ubuntu-24.04 ]
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - name: Set up Clang
+        uses: egor-tensin/setup-clang@v1.4
+        with:
+          version: latest
+          platform: x64
+
+      - run: |
+          clang -I. -o nob nob.c -lm
+          ./nob
+
+      - run: |
+          ./nob unittests -dpa
+
+      - run: |
+          ./nob amalgam
+          clang tests/hello_world.c -lm
+          clang tests/animations.c -lm
+          clang -ggdb -I. tests/src/free_list.c -o bin/free_list_tests
+          bin/free_list_tests --unittest
+
+  windows:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ windows-2019, windows-2022 ]
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - name: Set up Clang
+        uses: egor-tensin/setup-clang@v1.4
+        with:
+          version: latest
+          platform: x64
+
+      - run: |
+          clang -I. -o nob.exe nob.c
+          ./nob.exe
+
+      - run: |
+          ./nob.exe amalgam

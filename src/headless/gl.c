@@ -4,6 +4,7 @@
 #  pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
+#defien PGL_ASSERT BR_ASSERT
 #include "external/portablegl.h"
 
 #define WIDTH 800

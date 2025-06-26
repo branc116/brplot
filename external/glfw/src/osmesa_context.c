@@ -25,11 +25,11 @@
 //
 //========================================================================
 
+#include "src/br_pp.h"
 #include "external/glfw/src/internal.h"
 
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 static void makeContextCurrentOSMesa(_GLFWwindow* window)
 {
@@ -184,7 +184,7 @@ void _glfwTerminateOSMesa(void)
 
 #define SET_ATTRIB(a, v) \
 { \
-    assert(((size_t) index + 1) < sizeof(attribs) / sizeof(attribs[0])); \
+    BR_ASSERT(((size_t) index + 1) < sizeof(attribs) / sizeof(attribs[0])); \
     attribs[index++] = a; \
     attribs[index++] = v; \
 }
@@ -292,7 +292,7 @@ GLFWAPI int glfwGetOSMesaColorBuffer(GLFWwindow* handle, int* width,
     void* mesaBuffer;
     GLint mesaWidth, mesaHeight, mesaFormat;
     _GLFWwindow* window = (_GLFWwindow*) handle;
-    assert(window != NULL);
+    BR_ASSERT(window != NULL);
 
     _GLFW_REQUIRE_INIT_OR_RETURN(GLFW_FALSE);
 
@@ -331,7 +331,7 @@ GLFWAPI int glfwGetOSMesaDepthBuffer(GLFWwindow* handle,
     void* mesaBuffer;
     GLint mesaWidth, mesaHeight, mesaBytes;
     _GLFWwindow* window = (_GLFWwindow*) handle;
-    assert(window != NULL);
+    BR_ASSERT(window != NULL);
 
     _GLFW_REQUIRE_INIT_OR_RETURN(GLFW_FALSE);
 

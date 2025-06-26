@@ -1,7 +1,14 @@
+#include "src/br_pp.h"
+
+#define STBIW_ASSERT BR_ASSERT
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "external/stb_image_write.h"
+
+#define STBI_ASSERT BR_ASSERT
 #define STB_IMAGE_IMPLEMENTATION
 #include "external/stb_image.h"
+
+#define STBRP_ASSERT BR_ASSERT
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "external/stb_rect_pack.h"
 
@@ -78,15 +85,31 @@ image_t imgs[] = {
   },
   {
     .img = "cb_0",
-    STATIC_ARRAY_INT(32)
+    STATIC_ARRAY_INT(4, 8, 16, 32)
   },
   {
     .img = "cb_1",
-    STATIC_ARRAY_INT(32)
+    STATIC_ARRAY_INT(4, 8, 16, 32)
   },
   {
     .img = "edge",
     STATIC_ARRAY_INT(8)
+  },
+  {
+    .img = "hidden_0",
+    STATIC_ARRAY_INT(32)
+  },
+  {
+    .img = "hidden_1",
+    STATIC_ARRAY_INT(32)
+  },
+  {
+    .img = "file",
+    STATIC_ARRAY_INT(32)
+  },
+  {
+    .img = "folder",
+    STATIC_ARRAY_INT(32)
   },
 };
 
@@ -147,7 +170,10 @@ void generate_code(unsigned char* atlas, int sz, stbrp_rect* rects) {
   fprintf(f, "extern const br_icons_t br_icons;\n");
   fprintf(f, "extern const unsigned char br_icons_atlas[%d*%d];\n", sz, sz);
   fprintf(f, "extern const int br_icons_atlas_width;\n");
-  fprintf(f, "extern const int br_icons_atlas_height;\n");
+  fprintf(f, "extern const int br_icons_atlas_height;\n\n");
+  for (int i = 0; i < STATIC_ARRAY_SIZE(imgs); ++i) {
+    fprintf(f, "br_extent_t br_icon_%s(float size);\n", imgs[i].img);
+  }
   fclose(f);
   f = fopen(".generated/icons.c", "wb+");
   fprintf(f, "#include \".generated/icons.h\"\n");
@@ -185,7 +211,16 @@ void generate_code(unsigned char* atlas, int sz, stbrp_rect* rects) {
   }
   fprintf(f, "};\n");
   fprintf(f, "const int br_icons_atlas_width = %d;\n", sz);
-  fprintf(f, "const int br_icons_atlas_height = %d;\n", sz);
+  fprintf(f, "const int br_icons_atlas_height = %d;\n\n", sz);
+  for (int i = 0; i < STATIC_ARRAY_SIZE(imgs); ++i) {
+    fprintf(f, "br_extent_t br_icon_%s(float size) {\n", imgs[i].img);
+    for (int j = imgs[i].len - 1; j >= 0; --j) {
+      if (j > 0) fprintf(f, "  if (size >= %d) return br_icons.%s.size_%d;\n", imgs[i].arr[j], imgs[i].img, imgs[i].arr[j]);
+      else       fprintf(f, "  return br_icons.%s.size_%d;\n", imgs[i].img, imgs[i].arr[j]);
+    }
+    if (imgs[i].len <= 1) fprintf(f, "  (void)size;\n");
+    fprintf(f, "}\n");
+  }
   fclose(f);
 }
 

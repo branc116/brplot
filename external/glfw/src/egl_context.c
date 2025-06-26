@@ -25,12 +25,12 @@
 //
 //========================================================================
 
+#include "src/br_pp.h"
 #include "external/glfw/src/internal.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
 
 
 // Return a description of the specified EGL error
@@ -309,7 +309,7 @@ static int extensionSupportedEGL(const char* extension)
 static GLFWglproc getProcAddressEGL(const char* procname)
 {
     _GLFWwindow* window = _glfwPlatformGetTls(&_glfw.contextSlot);
-    assert(window != NULL);
+    BR_ASSERT(window != NULL);
 
     if (window->context.egl.client)
     {
@@ -537,7 +537,7 @@ void _glfwTerminateEGL(void)
 
 #define SET_ATTRIB(a, v) \
 { \
-    assert(((size_t) index + 1) < sizeof(attribs) / sizeof(attribs[0])); \
+    BR_ASSERT(((size_t) index + 1) < sizeof(attribs) / sizeof(attribs[0])); \
     attribs[index++] = a; \
     attribs[index++] = v; \
 }

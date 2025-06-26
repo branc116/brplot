@@ -15,6 +15,9 @@
 #define BR_CREATE_SINGLE_HEADER_LIB_NO_MAIN
 #include "tools/create_single_header_lib.c"
 
+#include <ctype.h>
+#include <stdio.h>
+
 #if _WIN32
 #  if defined(__GNUC__)
 #     define NOB_REBUILD_URSELF(binary_path, source_path) "gcc", "-I.", "-ggdb", "-o", binary_path, source_path
@@ -23,6 +26,8 @@
 #  elif defined(_MSC_VER)
 #     define NOB_REBUILD_URSELF(binary_path, source_path) "cl.exe", "-I.", "-Zi", nob_temp_sprintf("/Fe:%s", (binary_path)), source_path
 #  endif
+#elif defined(__TINYC__)
+#  define NOB_REBUILD_URSELF(binary_path, source_path) "tcc", "-I.", "-ggdb", "-o", binary_path, source_path, "-lm"
 #else
 #  define NOB_REBUILD_URSELF(binary_path, source_path) "cc", "-I.", "-ggdb", "-o", binary_path, source_path, "-lm"
 #endif
@@ -38,14 +43,16 @@
   X(run, "Build and run brplot") \
   X(crun, "compile and run brplot") \
   X(debug, "Build and run brplot with gdb") \
+  X(cdebug, "Compile (don't generate files) and run brplot with gdb") \
   X(amalgam, "Create amalgamation file that will be shipped to users") \
   X(dist, "Create distribution zip") \
   X(pip, "Create pip egg") \
   X(unittests, "Run unit tests") \
   X(dot, "Create Dot file with file dependencies") \
+  X(compile_commands, "Create compile_commands.json file") \
   X(help, "Print help") \
 
-#define SANITIZER_FLAGS "-fsanitize=address,undefined"
+#define SANITIZER_FLAGS "-fsanitize=address,undefined", "-DBR_ASAN"
 
 #define STR(A) #A
 #define CAT3(A, B, C) STR(A) "." STR(B) "." STR(C)
@@ -60,6 +67,14 @@
 #  define SLIB_EXT ".a"
 #  define LIB_EXT ".so"
 #endif
+
+#define DIST "dist"
+#define PREFIX DIST "/brplot"
+#define PLIB PREFIX "/lib"
+#define PBIN PREFIX "/bin"
+#define PINC PREFIX "/include"
+#define PSHARE PREFIX "/share"
+#define PSHARE PREFIX "/share"
 
 typedef enum target_platform_t {
   tp_linux,
@@ -85,8 +100,19 @@ typedef enum n_command {
 #undef X
   n_count,
   n_default = n_build,
-
 } n_command;
+
+typedef struct {
+  char const* name;
+  char const* desc;
+  n_command type;
+} command_t;
+
+command_t g_commands[n_count] = {
+#define X(NAME, DESC) { .name = #NAME, .desc = #DESC, .type = n_ ## NAME },
+  COMMANDS(X)
+#undef X
+};
 
 #define n_default n_build
 
@@ -96,6 +122,7 @@ typedef struct {
 } command_deps_t;
 
 const char* sources[] = {
+ "external/shl_impls.c",
  "src/main.c",
  "src/ui.c",
  "src/data.c",
@@ -103,7 +130,6 @@ const char* sources[] = {
  "src/q.c",
  "src/read_input.c",
  "src/keybindings.c",
- "src/str.c",
  "src/resampling2.c",
  "src/graph_utils.c",
  "src/shaders.c",
@@ -119,36 +145,60 @@ const char* sources[] = {
  "src/gl.c",
  "src/icons.c",
  "src/theme.c",
- "src/string_pool.c",
+ "src/free_list.c",
+ "src/string_pool.c"
 };
 
-static const target_platform_t g_platform = 
+static const target_platform_t g_platform =
 #if defined(_WIN32)
   tp_windows;
 #else
   tp_linux;
 #endif
-//static const char* out_name = 
+//static const char* out_name =
 //#if defined(_WIN32)
 //  "brplot.exe";
 //#else
 //  "brplot";
 //#endif
 
-#define compiler "clang"
+#if _WIN32
+#  if defined(__GNUC__)
+static const char* compiler = "gcc";
+#  elif defined(__clang__)
+static const char* compiler = "clang";
+#  elif defined(_MSC_VER)
+static const char* compiler = "cl.exe";
+#  endif
+#elif defined(__TINYC__)
+static const char* compiler = "tcc";
+#else
+static const char* compiler = "cc";
+#endif
 static const char* program_name;
 static n_command do_command = n_default;
 static bool is_debug = false;
+static bool has_hotreload = false;
 static bool is_headless = false;
 static bool enable_asan = false;
 static bool print_help = false;
 static bool is_lib = false;
 static bool is_rebuild = false;
 static bool is_slib = false;
+static bool is_wasm = false;
 static bool do_dist = true;
 static bool pip_skip_build = false;
+static bool no_gen = false;
 static bool disable_logs = false;
 static bool is_pedantic = false;
+static bool is_tracy = false;
+static bool is_help_subcommands = false;
+#if !defined(__APPLE__)
+static bool is_macos = false;
+#else
+static bool is_macos = true;
+#endif
+
 #define X(name, desc) [n_ ## name] = { 0 },
 static command_flags_t command_flags[] = {
 COMMANDS(X)
@@ -249,28 +299,39 @@ static bool needs_rebuilding(br_strv_t input, br_strv_t output) {
 }
 
 static void fill_command_flag_data(void) {
-  command_flag_t debug_flag = (command_flag_t) {.name = BR_STRL("debug"), .alias = 'd', .description = BR_STRL("Build debug version"), .is_set = &is_debug};
-  command_flag_t pedantic_flag = (command_flag_t) {.name = BR_STRL("pedantic"), .alias = 'p', .description = BR_STRL("Turn on all warnings and treat warnings as errors"), .is_set = &is_pedantic};
-  command_flag_t headless_flag = (command_flag_t) {.name = BR_STRL("headless"), .alias = '\0', .description = BR_STRL("Create a build that will not spawn any windows"), .is_set = &is_headless};
-  command_flag_t asan_flag = (command_flag_t) {.name = BR_STRL("asan"), .alias = 'a', .description = BR_STRL("Enable address sanitizer"), .is_set = &enable_asan};
-  command_flag_t lib_flag = (command_flag_t) {.name = BR_STRL("lib"), .alias = 'l', .description = BR_STRL("Build dynamic library"), .is_set = &is_lib};
-  command_flag_t force_rebuild = (command_flag_t) {.name = BR_STRL("force"), .alias = 'f', .description = BR_STRL("Force rebuild everything"), .is_set = &is_rebuild};
-  command_flag_t slib_flag = (command_flag_t) {.name = BR_STRL("slib"), .alias = 's', .description = BR_STRL("Build static library"), .is_set = &is_slib};
-  command_flag_t help_flag = (command_flag_t) {.name = BR_STRL("help"), .alias = 'h', .description = BR_STRL("Print help"), .is_set = &print_help};
-  command_flag_t dist_flag = (command_flag_t) {.name = BR_STRL("dist"), .alias = 'D', .description = BR_STRL("Also create dist ( Needed for pip package but maybe you wanna disable this because it's slow )"), .is_set = &do_dist};
-  command_flag_t pip_skip_build_flag = (command_flag_t) {.name = BR_STRL("skip-build"), .alias = '\0', .description = BR_STRL("Don't do anything except call pip to create a package"), .is_set = &pip_skip_build};
+  command_flag_t debug_flag          = (command_flag_t) {.name = BR_STRL("debug"),      .alias = 'd',  .description = BR_STRL("Build debug version"),                                                                            .is_set = &is_debug};
+  command_flag_t has_hotreload_flag  = (command_flag_t) {.name = BR_STRL("hot"),        .alias = 'H',  .description = BR_STRL("Build a version with hotreaload enabled"),                                                        .is_set = &has_hotreload};
+  command_flag_t pedantic_flag       = (command_flag_t) {.name = BR_STRL("pedantic"),   .alias = 'p',  .description = BR_STRL("Turn on all warnings and treat warnings as errors"),                                              .is_set = &is_pedantic};
+  command_flag_t tracy_flag          = (command_flag_t) {.name = BR_STRL("tracy"),      .alias = 't',  .description = BR_STRL("Turn tracy profiler on"),                                                                         .is_set = &is_tracy};
+  command_flag_t headless_flag       = (command_flag_t) {.name = BR_STRL("headless"),   .alias = '\0', .description = BR_STRL("Create a build that will not spawn any windows"),                                                 .is_set = &is_headless};
+  command_flag_t asan_flag           = (command_flag_t) {.name = BR_STRL("asan"),       .alias = 'a',  .description = BR_STRL("Enable address sanitizer"),                                                                       .is_set = &enable_asan};
+  command_flag_t lib_flag            = (command_flag_t) {.name = BR_STRL("lib"),        .alias = 'l',  .description = BR_STRL("Build dynamic library"),                                                                          .is_set = &is_lib};
+  command_flag_t wasm_flag           = (command_flag_t) {.name = BR_STRL("wasm"),       .alias = 'w',  .description = BR_STRL("Wasm version of brplot"),                                                                         .is_set = &is_wasm};
+  command_flag_t force_rebuild       = (command_flag_t) {.name = BR_STRL("force"),      .alias = 'f',  .description = BR_STRL("Force rebuild everything"),                                                                       .is_set = &is_rebuild};
+  command_flag_t slib_flag           = (command_flag_t) {.name = BR_STRL("slib"),       .alias = 's',  .description = BR_STRL("Build static library"),                                                                           .is_set = &is_slib};
+  command_flag_t help_flag           = (command_flag_t) {.name = BR_STRL("help"),       .alias = 'h',  .description = BR_STRL("Print help"),                                                                                     .is_set = &print_help};
+  command_flag_t help_sub_flag       = (command_flag_t) {.name = BR_STRL("help-sub"),   .alias = 's',  .description = BR_STRL("Print help for subcommands"),                                                                     .is_set = &is_help_subcommands};
+  command_flag_t dist_flag           = (command_flag_t) {.name = BR_STRL("dist"),       .alias = 'D',  .description = BR_STRL("Also create dist ( Needed for pip package but maybe you wanna disable this because it's slow )"), .is_set = &do_dist};
+  command_flag_t pip_skip_build_flag = (command_flag_t) {.name = BR_STRL("skip-build"), .alias = '\0', .description = BR_STRL("Don't do anything except call pip to create a package"),                                          .is_set = &pip_skip_build};
+  command_flag_t unittest_no_gen     = (command_flag_t) {.name = BR_STRL("no-gen"),     .alias = 'n',  .description = BR_STRL("Don't generate files when running unittests"),                                                    .is_set = &no_gen};
   br_da_push(command_flags[n_compile], debug_flag);
+  br_da_push(command_flags[n_compile], has_hotreload_flag);
   br_da_push(command_flags[n_compile], pedantic_flag);
+  br_da_push(command_flags[n_compile], tracy_flag);
   br_da_push(command_flags[n_compile], headless_flag);
   br_da_push(command_flags[n_compile], asan_flag);
   br_da_push(command_flags[n_compile], lib_flag);
+  br_da_push(command_flags[n_compile], wasm_flag);
   br_da_push(command_flags[n_compile], slib_flag);
   br_da_push(command_flags[n_compile], force_rebuild);
   br_da_push(command_flags[n_help], help_flag);
+  br_da_push(command_flags[n_help], help_sub_flag);
   br_da_push(command_flags[n_pip], dist_flag);
   br_da_push(command_flags[n_pip], pip_skip_build_flag);
+  br_da_push(command_flags[n_unittests], unittest_no_gen);
 
   br_da_push(command_deps[n_debug], n_build);
+  br_da_push(command_deps[n_cdebug], n_compile);
   br_da_push(command_deps[n_run], n_build);
   br_da_push(command_deps[n_crun], n_compile);
   br_da_push(command_deps[n_build], n_compile);
@@ -278,6 +339,7 @@ static void fill_command_flag_data(void) {
   br_da_push(command_deps[n_dist], n_build);
   br_da_push(command_deps[n_pip], n_dist);
   br_da_push(command_deps[n_unittests], n_build);
+  br_da_push(command_deps[n_compile_commands], n_compile);
   for (int i = 0; i < n_count; ++i) {
     br_da_push(command_deps[i], n_help);
   }
@@ -295,17 +357,17 @@ static bool create_dirs(Nob_String_View sv) {
 }
 
 static bool create_all_dirs(void) {
-  nob_mkdir_if_not_exists("build");
-  nob_mkdir_if_not_exists("build/debug");
-  nob_mkdir_if_not_exists("build/debug/exe");
-  nob_mkdir_if_not_exists("build/debug/slib");
-  nob_mkdir_if_not_exists("build/debug/lib");
-  nob_mkdir_if_not_exists("build/release");
-  nob_mkdir_if_not_exists("build/release/exe");
-  nob_mkdir_if_not_exists("build/release/slib");
-  nob_mkdir_if_not_exists("build/release/lib");
-  nob_mkdir_if_not_exists("bin");
-  nob_mkdir_if_not_exists(".generated");
+  if (false == nob_mkdir_if_not_exists("build"))              return false;
+  if (false == nob_mkdir_if_not_exists("build/debug"))        return false;
+  if (false == nob_mkdir_if_not_exists("build/debug/exe"))    return false;
+  if (false == nob_mkdir_if_not_exists("build/debug/slib"))   return false;
+  if (false == nob_mkdir_if_not_exists("build/debug/lib"))    return false;
+  if (false == nob_mkdir_if_not_exists("build/release"))      return false;
+  if (false == nob_mkdir_if_not_exists("build/release/exe"))  return false;
+  if (false == nob_mkdir_if_not_exists("build/release/slib")) return false;
+  if (false == nob_mkdir_if_not_exists("build/release/lib"))  return false;
+  if (false == nob_mkdir_if_not_exists("bin"))                return false;
+  if (false == nob_mkdir_if_not_exists(".generated"))         return false;
   return true;
 }
 
@@ -335,7 +397,7 @@ static bool bake_font(void) {
 }
 
 static bool generate_shaders(void) {
-  const char* out_name = ".generated/shaders.h";
+  const char* out_name = is_wasm ? "./.generated/shaders_web.h" : ".generated/shaders.h";
   LOGI("Generate: src/shaders/*.[vs|fs] -> %s", out_name);
   FILE* f = fopen(out_name, "wb+");
   if (NULL == f) {
@@ -349,8 +411,8 @@ static bool generate_shaders(void) {
   }
   get_program_variables(programs);
   check_programs(programs);
-  
-  shader_output_kind_t out_kind = g_platform == tp_web ? shader_output_kind_web : shader_output_kind_desktop;
+
+  shader_output_kind_t out_kind = is_wasm ? shader_output_kind_web : shader_output_kind_desktop;
   for (size_t i = 0; i < programs.len; ++i) {
     embed_tokens(f, programs.arr[i].name, br_str_from_c_str("fs"), programs.arr[i].fragment.tokens, out_kind);
     embed_tokens(f, programs.arr[i].name, br_str_from_c_str("vs"), programs.arr[i].vertex.tokens, out_kind);
@@ -370,6 +432,7 @@ static bool gl_gen(void) {
   return do_gl_gen() == 0;
 }
 
+bool g_sike_compile = false;
 static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd) {
   static file_names_t names = { 0 };
   static indexies_t indexies = { 0 };
@@ -381,13 +444,17 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
   br_str_t build_dir = { 0 };
   br_str_push_literal(&build_dir, "build");
   br_fs_cd(&build_dir, is_debug ? BR_STRL("debug") : BR_STRL("release"));
-  if (is_slib) br_fs_cd(&build_dir, BR_STRL("slib"));
+  if (is_slib)     br_fs_cd(&build_dir, BR_STRL("slib"));
   else if (is_lib) br_fs_cd(&build_dir, BR_STRL("lib"));
-  else br_fs_cd(&build_dir, BR_STRL("exe"));
+  else             br_fs_cd(&build_dir, BR_STRL("exe"));
   br_fs_cd(&build_dir, BR_STRV(file_name.data, (uint32_t)file_name.count));
-  if (enable_asan) br_str_push_literal(&build_dir, ".asan");
-  br_str_push_literal(&build_dir, ".o");
-  br_str_push_char(&build_dir, '\0');
+  if (is_headless)   br_str_push_literal(&build_dir, ".headless");
+  if (enable_asan)   br_str_push_literal(&build_dir, ".asan");
+  if (has_hotreload) br_str_push_literal(&build_dir, ".hot");
+  if (is_wasm)       br_str_push_literal(&build_dir, ".wasm");
+  if (is_tracy)      br_str_push_literal(&build_dir, ".tracy");
+                     br_str_push_literal(&build_dir, ".o");
+  br_str_push_zero(&build_dir);
   nob_cmd_append(link_cmd, build_dir.str);
 
   if (false == is_rebuild) {
@@ -403,21 +470,33 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
     }
   }
   nob_cmd_append(cmd, compiler, "-I.", "-o", build_dir.str, "-c", source.data);
+  if (is_macos) {
+    if (0 == strcmp(source.data, "src/platform.c")) {
+      nob_cmd_append(cmd, "-ObjC");
+    }
+  }
   if (is_headless) {
     nob_cmd_append(cmd, "-DBR_NO_X11", "-DBR_NO_WAYLAND", "-DHEADLESS");
   }
+  if (is_wasm) nob_cmd_append(cmd, "-DGRAPHICS_API_OPENGL_ES3=1");
+  if (is_tracy) nob_cmd_append(cmd, "-DTRACY_ENABLE=1");
   if (enable_asan) nob_cmd_append(cmd, SANITIZER_FLAGS);
   if (is_debug) {
     nob_cmd_append(cmd, "-ggdb", "-DBR_DEBUG");
+    if (has_hotreload) nob_cmd_append(cmd, "-fpic", "-fpie");
+    else nob_cmd_append(cmd, "-DBR_HAS_HOTRELOAD=0");
   } else {
     nob_cmd_append(cmd, "-O3");
   }
   if (disable_logs) nob_cmd_append(cmd, "-DBR_DISABLE_LOG");
   if (is_pedantic) {
-#if defined(_MSC_VER)
+#if defined(__clang__)
+    nob_cmd_append(cmd, "-Wall", "-Wextra", "-Wpedantic", "-Wconversion", "-Wshadow");
+    nob_cmd_append(cmd, "-Wno-gnu-binary-literal");
+#elif defined(_MSC_VER)
     LOGF("Pedantic flags for msvc are not known");
 #else
-    nob_cmd_append(cmd, "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-Wconversion", "-Wshadow");
+    nob_cmd_append(cmd, "-Wall", "-Wextra", "-Wpedantic", "-Wconversion", "-Wshadow");
 #endif
   }
 
@@ -427,7 +506,7 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
     nob_cmd_append(cmd, "-fPIC");
 #endif
   }
-  return nob_cmd_run_sync_and_reset(cmd);
+  return g_sike_compile || nob_cmd_run_sync_and_reset(cmd);
 }
 
 static bool compile_and_link(Nob_Cmd* cmd) {
@@ -438,13 +517,36 @@ static bool compile_and_link(Nob_Cmd* cmd) {
     if (false == compile_one(cmd, nob_sv_from_cstr(sources[i]), &link_command)) return false;
   }
 
-  if (is_slib) nob_cmd_append(&link_command, "-o", "bin/brplot" SLIB_EXT);
-  else if (is_lib) nob_cmd_append(&link_command, "-shared", "-fPIC", "-o", "bin/brplot" LIB_EXT);
-  else {
-    nob_cmd_append(&link_command, "-o", "bin/brplot" EXE_EXT);
+  if (is_macos) {
+    nob_cmd_append(&link_command, "-framework", "Foundation");
+    nob_cmd_append(&link_command, "-framework", "CoreServices");
+    nob_cmd_append(&link_command, "-framework", "CoreGraphics");
+    nob_cmd_append(&link_command, "-framework", "AppKit");
+    nob_cmd_append(&link_command, "-framework", "IOKit");
   }
-  if (tp_linux == g_platform) {
-    nob_cmd_append(&link_command, "-lm", "-pthread");
+  if (is_wasm) {
+    nob_cmd_append(&link_command, "-sWASM_BIGINT", "-sALLOW_MEMORY_GROWTH", "-sUSE_GLFW=3", "-sUSE_WEBGL2=1",
+        "-sGL_ENABLE_GET_PROC_ADDRESS", "--shell-file=src/web/minshell.html",
+        "-sCHECK_NULL_WRITES=0", "-sDISABLE_EXCEPTION_THROWING=1", "-sFILESYSTEM=0", "-sDYNAMIC_EXECUTION=0");
+    if (is_lib) {
+      nob_cmd_append(&link_command, "-sMODULARIZE=1", "-sEXPORT_ES6=1");
+      nob_cmd_append(&link_command, "-o", "bin/brplot_lib.js");
+    } else {
+      BR_TODO("Implement wasm exe");
+    }
+  } else {
+    if (is_tracy) nob_cmd_append(&link_command, "-l:libTracyClient.a", "-lstdc++");
+    if (is_slib) nob_cmd_append(&link_command, "-o", "bin/brplot" SLIB_EXT);
+    else if (is_lib) nob_cmd_append(&link_command, "-shared", "-fPIC", "-o", "bin/brplot" LIB_EXT);
+    else {
+      if (has_hotreload) {
+        nob_cmd_append(&link_command, "-fpic", "-fpie", "-rdynamic", "-ldl");
+      }
+      nob_cmd_append(&link_command, "-o", "bin/brplot" EXE_EXT);
+    }
+    if (tp_linux == g_platform) {
+      nob_cmd_append(&link_command, "-lm", "-pthread");
+    }
   }
 
   if (enable_asan) nob_cmd_append(&link_command, SANITIZER_FLAGS);
@@ -454,19 +556,30 @@ static bool compile_and_link(Nob_Cmd* cmd) {
   return ret;
 }
 
-static void print_command_flags_usage(n_command command, bool visited[n_count]) {
+static void print_command_flags_usage(n_command command, int depth, bool visited[n_count]) {
   if (true == visited[command]) return;
   visited[command] = true;
 
   command_flags_t flags = command_flags[command];
   for (size_t i = 0; i < flags.len; ++i) {
     command_flag_t flag = flags.arr[i];
-    printf("        -%c, --%.*s - %.*s (%s)\n", flag.alias, flag.name.len, flag.name.str, flag.description.len, flag.description.str, *flag.is_set ? "ON" : "OFF");
+    printf("%*s-%c, --%.*s - %.*s (%s)\n", depth*4, "", flag.alias, flag.name.len, flag.name.str, flag.description.len, flag.description.str, *flag.is_set ? "ON" : "OFF");
   }
 
   for (size_t i = 0; i < command_deps[command].len; ++i) {
     n_command dep = command_deps[command].arr[i];
-    print_command_flags_usage(dep, visited);
+    if (false == visited[dep]) goto rec;
+  }
+  return;
+
+rec:
+  if (is_help_subcommands) {
+    for (size_t i = 0; i < command_deps[command].len; ++i) {
+      n_command dep = command_deps[command].arr[i];
+      if (true == visited[dep]) continue;
+      printf("%*s%s:\n", depth*4, "", g_commands[dep].name);
+      print_command_flags_usage(dep, depth + 1, visited);
+    }
   }
 }
 
@@ -476,7 +589,7 @@ static void print_usage(void) {
 #define X(name, desc) do { \
     bool visited[n_count] = { 0 }; \
     printf("  " #name " - " desc "\n"); \
-    print_command_flags_usage(n_ ## name, visited); \
+    print_command_flags_usage(n_ ## name, 2, visited); \
   } while (0);
   COMMANDS(X)
 #undef X
@@ -505,7 +618,6 @@ static bool apply_flag(n_command comm, char alias, bool turn_on, bool visited[n_
 static bool apply_flag1(n_command comm, br_strv_t name, bool turn_on, bool visited[n_count]) {
   if (true == visited[comm]) return false;
   visited[comm] = true;
-  LOGI("Founing: `%.*s`", name.len, name.str);
 
   bool found = false;
   command_flags_t fs = command_flags[comm];
@@ -541,6 +653,7 @@ static bool apply_flags(n_command comm, int argc, char** argv) {
         print_usage();
         return false;
       }
+      continue;
     } else if (arg[1] == '!') {
       turn_on = false;
       cur = &arg[2];
@@ -558,20 +671,167 @@ static bool apply_flags(n_command comm, int argc, char** argv) {
   return true;
 }
 
+static bool cat_files(const char* in_paths[], int n, const char* out_path) {
+  static BR_THREAD_LOCAL br_str_t msg = {0};
+  FILE* in_file = NULL;
+  FILE* out_file = NULL;
+  int i = 0;
+  unsigned long read_len = 0;
+  unsigned long write_len = 0;
+  bool success = true;
+  enum { buff_cap = 1024 };
+  unsigned char* buff[buff_cap];
+
+  if (false == is_rebuild) {
+    if (false == nob_needs_rebuild(out_path, in_paths, (size_t)n)) {
+      LOGI("Cat `%s`: SKIPPED", out_path);
+      return true;
+    }
+  }
+
+  msg.len = 0;
+  br_str_push_literal(&msg, "cat: [");
+
+  out_file = fopen(out_path, "wb");
+  if (NULL == out_file) goto error;
+
+  for (; i < n; ++i) {
+    in_file = fopen(in_paths[i], "rb");
+    if (NULL == in_file) goto error;
+
+    while (0 != (read_len = fread(buff, 1, buff_cap, in_file))) {
+      if (read_len != (write_len = fwrite(buff, 1, read_len, out_file))) goto error;
+    }
+
+    br_str_push_c_str(&msg, in_paths[i]);
+    if (i + 1 < n) br_str_push_literal(&msg, ", ");
+
+    fclose(in_file);
+    in_file = NULL;
+  }
+  goto done;
+
+error:
+  if (NULL == out_file) LOGE("Failed to open output file `%s`: %s", out_path, strerror(errno));
+  else if (i < n) {
+    if (NULL == in_file) LOGE("Failed to open input file `%s`: %s", in_paths[i], strerror(errno));
+    else if (write_len != read_len) LOGE("Read and write length don't match %lu != %lu: %s", read_len, write_len, strerror(errno));
+    else LOGE("Unknown error: %s", strerror(errno));
+  }
+  else LOGE("Unknown error 2: %s", strerror(errno));
+  success = false;
+
+done:
+  if (out_file) fclose(out_file);
+  if (in_file) fclose(in_file);
+  if (success) {
+    br_str_push_literal(&msg, "] -> ");
+    br_str_push_c_str(&msg, out_path);
+    br_str_push_literal(&msg, " OK");
+  } else {
+    br_str_push_literal(&msg, " FAILED");
+  }
+  LOGI("%.*s", msg.len, msg.str);
+  return success;
+}
+
+static bool embed_file_as_string(const char* in_path, const char* variable_name) {
+  static BR_THREAD_LOCAL br_str_t out_name = { 0 };
+  FILE* out_file = NULL;
+  FILE* in_file = NULL;
+  unsigned long read_len = 0;
+  unsigned char cur_char = '\0';
+  bool bad_char_flag = false;
+  int line_n = 1;
+  int char_n = 1;
+  int read_bin_n = 0;
+  enum { buff_cap = 1024 };
+  unsigned char buff[buff_cap];
+  bool success = true;
+
+  out_name.len = 0;
+  br_str_push_literal(&out_name, "./.generated/");
+  br_str_push_c_str(&out_name, variable_name);
+  br_str_push_literal(&out_name, ".c\0");
+
+  if (false == is_rebuild) {
+    if (false == nob_needs_rebuild(out_name.str, (const char*[]){ in_path }, 1)) {
+      LOGI("Generate `%s`: SKIPPED", out_name.str);
+      return true;
+    }
+  }
+
+
+  if (NULL == (in_file = fopen(in_path, "rb"))) goto error;
+  if (NULL == (out_file = fopen(out_name.str, "wb"))) goto error;
+
+  fprintf(out_file, "#if !defined(BR_STRLC)\n"
+                    "#  define BR_STRLC(STR) { .str = STR, .len = sizeof(STR) - 1 }\n"
+                    "#endif\n");
+  fprintf(out_file, "const br_strv_t %s[] = {\n  BR_STRLC(\"", variable_name);
+  while ((read_len = fread(buff, 1, buff_cap, in_file))) {
+    for (unsigned long i = 0; i < read_len; ++i) {
+      cur_char = buff[i];
+      if (read_bin_n) {
+        if (1 != fwrite((unsigned char[]){ cur_char }, 1, 1, out_file)) goto error;
+        --read_bin_n;
+      } else if ('"' == cur_char) {
+        fprintf(out_file, "\\\"");
+      } else if (isprint(cur_char)) {
+        fprintf(out_file, "%c", buff[i]);
+      } else if ((cur_char & 0b11100000) == 0b11000000) {
+        if (1 != fwrite((unsigned char[]){ cur_char }, 1, 1, out_file)) goto error;
+        read_bin_n = 1;
+      } else if ((cur_char & 0b11110000) == 0b11100000) {
+        if (1 != fwrite((unsigned char[]){ cur_char }, 1, 1, out_file)) goto error;
+        read_bin_n = 2;
+      } else if ((cur_char & 0b11111000) == 0b11110000) {
+        if (1 != fwrite((unsigned char[]){ cur_char }, 1, 1, out_file)) goto error;
+        read_bin_n = 3;
+      } else if (cur_char == '\n') {
+        fprintf(out_file, "\"),\n  BR_STRLC(\"");
+        ++line_n;
+        char_n = 0;
+      } else if (cur_char == '\r') {
+      } else {
+        bad_char_flag = true;
+        goto error;
+      }
+      ++char_n;
+    }
+  }
+  fprintf(out_file, "\")\n};\n");
+  fprintf(out_file, "int %s_lines = %d;\n\n", variable_name, line_n);
+  goto done;
+
+error:
+  if (NULL == in_file) LOGE("Failed to open input file `%s`: %s", in_path, strerror(errno));
+  else if (NULL == out_file) LOGE("Failed to open output file `%s`: %s", out_name.str, strerror(errno));
+  else if (bad_char_flag) LOGE("Unexpected character found in input file `%s:%d:%d`: %c(%d[0x%x])", in_path, line_n, char_n, cur_char, cur_char, cur_char);
+  success = false;
+
+done:
+  if (NULL != out_file) fclose(out_file);
+  if (NULL != in_file) fclose(in_file);
+  if (success) LOGI("Generate %s: OK", out_name.str);
+  return success;
+}
+
 static bool n_generate_do(void) {
   if (false == create_all_dirs())  return false;
   if (false == bake_font())        return false;
   if (false == generate_shaders()) return false;
   if (false == pack_icons())       return false;
   if (false == gl_gen())           return false;
+  if (false == cat_files((const char*[]){"LICENSE", "./external/LICENCES"}, 2, ".generated/FULL_LICENSE")) return false;
+  if (false == embed_file_as_string(".generated/FULL_LICENSE", "br_license")) return false;
   LOGI("Generate OK");
   return true;
 }
 
 static bool n_compile_do(void) {
   Nob_Cmd cmd = { 0 };
-  if (false == compile_and_link(&cmd)) return false;
-  return true;
+  return compile_and_link(&cmd);
 }
 
 static bool n_build_do(void) {
@@ -594,12 +854,23 @@ static bool n_crun_do(void) {
   return true;
 }
 
-static bool n_debug_do(void) {
-  is_debug = true;
-  if (false == n_build_do()) return false;
+static void just_debug(void) {
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "gdb", "bin/brplot" EXE_EXT);
   nob_cmd_run_sync(cmd);
+}
+
+static bool n_cdebug_do(void) {
+  is_debug = true;
+  if (false == n_compile_do()) return false;
+  just_debug();
+  return true;
+}
+
+static bool n_debug_do(void) {
+  is_debug = true;
+  if (false == n_build_do()) return false;
+  just_debug();
   return true;
 }
 
@@ -611,14 +882,6 @@ static bool n_help_do(void) {
   print_usage();
   return true;
 }
-
-#define DIST "dist"
-#define PREFIX DIST "/brplot"
-#define PLIB PREFIX "/lib"
-#define PBIN PREFIX "/bin"
-#define PINC PREFIX "/include"
-#define PSHARE PREFIX "/share"
-#define PSHARE PREFIX "/share"
 
 static bool replace_in_file(const char* file_name, br_strv_t to_replace, br_strv_t replace_with) {
   Nob_String_Builder nob_content = { 0 };
@@ -681,7 +944,6 @@ static bool n_dist_do(void) {
   is_slib = false;
   is_lib = true;
   if (false == n_compile_do()) return false;
-  if (false == nob_copy_file("LICENSE", PSHARE "/licenses/brplot/LICENSE")) return false;
   if (false == nob_copy_file("bin/brplot" EXE_EXT, PBIN "/brplot" EXE_EXT)) return false;
   if (false == nob_copy_file("bin/brplot" SLIB_EXT, PLIB "/brplot" SLIB_EXT)) return false;
   if (false == nob_copy_file("bin/brplot" LIB_EXT, PLIB "/brplot" LIB_EXT)) return false;
@@ -748,10 +1010,13 @@ static bool n_pip_do(void) {
 
 static bool n_unittests_do(void) {
   Nob_Cmd cmd = { 0 };
-  LOGI("Unittest");
   is_debug = true;
   is_headless = true;
-  if (false == n_build_do()) return false;
+  if (no_gen) {
+    if (false == n_compile_do()) return false;
+  } else {
+    if (false == n_build_do()) return false;
+  }
   nob_cmd_append(&cmd, "./bin/brplot" EXE_EXT, "--unittest");
 
   if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
@@ -771,9 +1036,56 @@ static bool n_dot_do(void) {
   return true;
 }
 
+static bool n_compile_commands_do(void) {
+  const char * cwd = nob_get_current_dir_temp();
+	bool success = true;
+	const char* file_name = "compile_commands.json";
+	FILE* f = fopen(file_name, "wb+");
+	if (NULL == f) goto error;
+	fprintf(f, "[\n");
+	Nob_Cmd compile_command = { 0 };
+	Nob_Cmd link_command = { 0 };
+	g_sike_compile = true;
+	is_rebuild = true;
+	is_pedantic = true;
+	is_debug = true;
+	for (int i = 0; i < ARR_LEN(sources); ++i) {
+		LOGI("Index: %d: %s", i, sources[i]);
+		fprintf(f, "  {\n    ");
+		compile_command.count = link_command.count = 0;
+		if (false == compile_one(&compile_command, nob_sv_from_cstr(sources[i]), &link_command)) goto error;
+		fprintf(f, "\"directory\": \"%s\",\n    ", cwd);
+		fprintf(f, "\"command\": \"");
+		for (int j = 0; j < compile_command.count; ++j) {
+			fprintf(f, "%s ", compile_command.items[j]);
+		}
+		fprintf(f, "\",\n    ");
+		fprintf(f, "\"file\": \"%s\"\n", sources[i]);
+		fprintf(f, "  }");
+		if (i + 1 < ARR_LEN(sources)) fprintf(f, ",\n");
+		else fprintf(f, "\n");
+	}
+	fprintf(f, "]");
+	goto done;
+
+error:
+	if (NULL != f) LOGE("Failed to write to file %s: %s", file_name, strerror(errno));
+	else           LOGE("Failed to open file %s: %s", file_name, strerror(errno));
+	success = false;
+
+done:
+	if (NULL != f) fclose(f);
+	if (compile_command.items) nob_cmd_free(compile_command);
+	if (link_command.items) nob_cmd_free(link_command);
+	return success;
+
+}
+
 void br_go_rebuild_yourself(int argc, char** argv) {
   inc_push(&g_inc_graph, BR_STRL(__FILE__));
+#if !defined(__TINYC__)
   create_include_graph();
+#endif
   file_names_t names = { 0 };
   indexies_t indexies = { 0 };
   all_deps(0, &names, &indexies);
@@ -815,6 +1127,7 @@ int main(int argc, char** argv) {
     print_usage();
     return 0;
   }
+  if (is_wasm) compiler = "emcc";
 #define X(name, desc) if (do_command == n_ ## name) { return n_ ## name ## _do() ? 0 : 1; } else
   COMMANDS(X)
 #undef X

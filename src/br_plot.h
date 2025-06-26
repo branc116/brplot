@@ -24,15 +24,15 @@ typedef enum {
 typedef struct br_plot_2d_t {
   // graph_rect is in the graph coordinates.
   //            That is if you zoom in and out, graph_rect will change.
-  br_extent_t graph_rect;
+  br_extentd_t graph_rect;
 
   float line_thickness;
   float grid_line_thickness;
   float grid_major_line_thickness;
 
-  br_vec2_t mouse_pos;
-  br_vec2_t zoom;
-  br_vec2_t offset;
+  br_vec2d_t mouse_pos;
+  br_vec2d_t zoom;
+  br_vec2d_t offset;
   bool show_closest, show_x_closest, show_y_closest;
 } br_plot_2d_t;
 
@@ -86,17 +86,11 @@ typedef struct br_plots_t {
   int len, cap;
 } br_plots_t;
 
-typedef struct br_context_t {
-  float min_sampling;
-  float cull_min;
-  bool debug_bounds;
-  size_t alloc_size, alloc_count, alloc_total_size, alloc_total_count, alloc_max_size, alloc_max_count, free_of_unknown_memory;
-} br_context_t;
 typedef struct br_plotter_t br_plotter_t;
 
-extern br_context_t br_context;
-
 br_vec2_t br_graph_to_screen(br_extent_t graph_rect, br_extenti_t screen_rect, br_vec2_t point);
+
+void br_plots_remove_group(br_plots_t plots, int group);
 
 void br_plot_deinit(br_plot_t* plot);
 void br_plot_create_texture(br_plot_t* br);
@@ -120,6 +114,7 @@ void start_refreshing_shaders(br_plotter_t* br);
 #endif
 #if BR_HAS_HOTRELOAD
 void br_hotreload_start(br_hotreload_state_t* s);
+void br_hotreload_tick_ui(br_hotreload_state_t* s);
 #endif
 
 #ifdef __cplusplus

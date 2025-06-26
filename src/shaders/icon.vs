@@ -1,4 +1,5 @@
 #version 330
+#extension GL_ANGLE_clip_cull_distance : enable
 
 precision mediump float;
 

@@ -13,8 +13,6 @@ vim.opt.expandtab = true
 vim.opt.nu = true
 vim.opt.relativenumber = true
 
-local dap = require('dap')
-
 vim.keymap.set("n", "<F5>", function()
   dap.list_breakpoints()
   local file = io.open("BPS", "w");

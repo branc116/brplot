@@ -1,11 +1,12 @@
+#include "src/br_pp.h"
 #define BR_SHADER_TOOL
 #include "src/br_shaders.h"
 #include "src/br_da.h"
-#include "src/br_str.h"
 #define BR_STR_IMPLMENTATION
 #include "src/br_str.h"
+#include "src/br_filesystem.h"
+#include "src/br_da.h"
 
-#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -15,7 +16,7 @@
 #define IS_ALPHA_TOKEN(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
 #define FATAL(shader, line, offset, msg, ...) do { \
   fprintf(stderr, "|" __FILE__ ":%d||%s:%d:%d|ERROR: "msg"\n", __LINE__, br_str_to_c_str(shader->path), line, offset, __VA_ARGS__); \
-  exit(1); \
+  BR_UNREACHABLE(); \
 } while(0)
 
 #define TOKENS(X) \
@@ -127,18 +128,6 @@ TOKENS(X)
   }
 }
 
-br_str_t read_entire_file(br_str_t path) {
-  br_str_t ret = { 0 };
-  FILE* file = fopen(br_str_to_c_str(path), "r");
-  if (file == NULL) {
-    fprintf(stderr, "Error opening file %s: %d:%s\n", br_str_to_c_str(path), errno, strerror(errno));
-    exit(1);
-  }
-  int cur;
-  while ((cur = getc(file)) != EOF) br_str_push_char(&ret, (char)cur);
-  return ret;
-}
-
 programs_t get_programs(void) {
   programs_t ret = { 0 };
 # define X_U(NAME, SIZE) { \
@@ -177,8 +166,10 @@ programs_t get_programs(void) {
 # undef X_B
 # undef X_U
   for (size_t i = 0; i < ret.len; ++i) {
-    ret.arr[i].fragment.content = read_entire_file(ret.arr[i].fragment.path);
-    ret.arr[i].vertex.content = read_entire_file(ret.arr[i].vertex.path);
+    br_str_push_zero(&ret.arr[i].fragment.path);
+    br_str_push_zero(&ret.arr[i].vertex.path);
+    if (false == br_fs_read(ret.arr[i].fragment.path.str, &ret.arr[i].fragment.content)) LOGF("Failed to read a fragment shader");
+    if (false == br_fs_read(ret.arr[i].vertex.path.str, &ret.arr[i].vertex.content)) LOGF("Failed to read a vertex shader");
   }
   return ret;
 }
@@ -203,6 +194,7 @@ variable_type_t get_variable_type(shader_t const* shader, size_t token_index) {
   } else if (strcmp(s, "float") == 0) return variable_type_float;
   else if (strcmp(s, "sampler2D") == 0) return variable_type_tex;
   FATAL(shader, t.line, t.start, "Unknown variable type: %s", s);
+  return 0;
 }
 
 void get_shader_variables(shader_t* shader) {
@@ -250,11 +242,11 @@ void embed_tokens(FILE* out, br_str_t name, br_str_t name_postfix, tokens_t toke
   for (size_t i = 3; i < tokens.len; ++i) {
     token_t t = tokens.arr[i];
     if (t.kind == token_kind_preprocess) {
-      fprintf(out, "\\n\"\n\"");
+      fprintf(out, "\\n\" \\\n\"");
       for (; i < tokens.len && t.line == tokens.arr[i].line; ++i) {
         fprintf(out, "%s ", br_strv_to_c_str(tokens.arr[i].view));
       }
-      fprintf(out, "\\n\" \\\n\"\n");
+      fprintf(out, "\\n\" \\\n\"");
       was_last_iden = false;
       --i;
     } else {
@@ -423,6 +415,8 @@ void get_tokens(shader_t* shader) {
           br_da_push(shader->tokens, div);
         }
       }
+    } else if (cur == '\r') {
+      LOGW("Damn windows");
     } else if (cur == '\n') {
       ++line;
       offset = 0;

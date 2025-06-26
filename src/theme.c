@@ -26,7 +26,6 @@ void br_theme_dark(void) {
   BR_THEME.colors.ui_edge_bg_active = BR_THEME.colors.plot_menu_color;
 
   BR_THEME.colors.bg = bg;
-  BR_THEME.colors.bg.a = 0x00;
 
   BR_THEME.colors.highlite_factor = 1.05f;
 }
@@ -56,6 +55,8 @@ void br_theme_light(void) {
 }
 
 void br_theme_reset_ui(void) {
+  BR_THEME.ui.min_sampling = 0.001f;
+  BR_THEME.ui.cull_min = 2.f;
   BR_THEME.ui.padding = BR_VEC2(4, 2);
   BR_THEME.ui.font_size = 20;
   BR_THEME.ui.border_thick = 1;

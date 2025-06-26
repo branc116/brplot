@@ -2,16 +2,15 @@
 #include "src/br_plotter.h"
 
 #include <math.h>
-#include <assert.h>
 
 // TODO: rename to br_plot_
 void br_plotter_set_bottom_left(br_plot_t* plot, float left, float bottom) {
   // TODO 2D/3D
-  assert(plot->kind == br_plot_kind_2d);
+  BR_ASSERTF(plot->kind == br_plot_kind_2d, "Kind is %d", plot->kind);
   br_vec2_t bl = BR_VEC2(left, bottom);
-  br_vec2_t tr = BR_VEC2(plot->dd.graph_rect.x + plot->dd.graph_rect.width, plot->dd.graph_rect.y);
-  float newWidth = (tr.x - bl.x);
-  float newHeight = (tr.y - bl.y);
+  br_vec2d_t tr = BR_VEC2D(plot->dd.graph_rect.x + plot->dd.graph_rect.width, plot->dd.graph_rect.y);
+  double newWidth = (tr.x - bl.x);
+  double newHeight = (tr.y - bl.y);
   plot->dd.zoom.x = BR_EXTENTI_ASPECT(plot->cur_extent) * newWidth;
   plot->dd.offset.x -= (newWidth - plot->dd.graph_rect.width) / 2.f;
   plot->dd.zoom.y = newHeight;
@@ -20,11 +19,11 @@ void br_plotter_set_bottom_left(br_plot_t* plot, float left, float bottom) {
 
 void br_plotter_set_top_right(br_plot_t* plot, float right, float top) {
   // TODO 2D/3D
-  assert(plot->kind == br_plot_kind_2d);
+  BR_ASSERTF(plot->kind == br_plot_kind_2d, "Kind is %d", plot->kind);
   br_vec2_t tr = BR_VEC2(right, top);
-  br_vec2_t bl = BR_VEC2(plot->dd.graph_rect.x, plot->dd.graph_rect.y - plot->dd.graph_rect.height);
-  float newWidth = (tr.x - bl.x);
-  float newHeight = (tr.y - bl.y);
+  br_vec2d_t bl = BR_VEC2D(plot->dd.graph_rect.x, plot->dd.graph_rect.y - plot->dd.graph_rect.height);
+  double newWidth = (tr.x - bl.x);
+  double newHeight = (tr.y - bl.y);
   plot->dd.zoom.x = BR_EXTENTI_ASPECT(plot->cur_extent) * newWidth;
   plot->dd.offset.x += (newWidth - plot->dd.graph_rect.width) / 2.f;
   plot->dd.zoom.y = newHeight;

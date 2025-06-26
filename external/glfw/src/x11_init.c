@@ -25,6 +25,7 @@
 //
 //========================================================================
 
+#include "src/br_pp.h"
 #include "external/glfw/src/internal.h"
 
 #if defined(_GLFW_X11)
@@ -37,7 +38,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <assert.h>
 
 
 // Translate the X11 KeySyms for a key to a GLFW key code
@@ -1096,7 +1096,7 @@ static int errorHandler(Display *display, XErrorEvent* event)
 //
 void _glfwGrabErrorHandlerX11(void)
 {
-    assert(_glfw.x11.errorHandler == NULL);
+    BR_ASSERT(_glfw.x11.errorHandler == NULL);
     _glfw.x11.errorCode = Success;
     _glfw.x11.errorHandler = XSetErrorHandler(errorHandler);
 }

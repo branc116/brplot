@@ -25,6 +25,7 @@
 //
 //========================================================================
 
+#include "src/br_pp.h"
 #include "external/glfw/src/internal.h"
 
 #if defined(_GLFW_X11)
@@ -39,7 +40,6 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <errno.h>
-#include <assert.h>
 
 // Action for EWMH client messages
 #define _NET_WM_STATE_REMOVE        0
@@ -424,7 +424,7 @@ static uint32_t decodeUTF8(const char** s)
         count++;
     } while ((**s & 0xc0) == 0x80);
 
-    assert(count <= 6);
+    BR_ASSERT(count <= 6);
     return codepoint - offsets[count - 1];
 }
 
@@ -1099,7 +1099,7 @@ static void acquireMonitor_x11(_GLFWwindow* window)
 
     if (window->x11.overrideRedirect)
     {
-        int xpos, ypos;
+        int xpos = 0, ypos = 0;
         GLFWvidmode mode;
 
         // Manually position the window over its monitor
@@ -1286,6 +1286,8 @@ static void processEvent(XEvent *event)
                         chars[count] = '\0';
                         while (c - chars < count)
                             _glfwInputChar(window, decodeUTF8(&c), mods, plain);
+                    } else if (status == XLookupNone) {
+                        _glfwInputChar(window, key, mods, plain);
                     }
 
                     if (chars != buffer)

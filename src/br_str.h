@@ -8,23 +8,25 @@
 
 #ifdef __cplusplus
 extern "C" {
-#define BR_LITERAL(TYPE) TYPE
+#  define BR_LITERAL(TYPE) TYPE
 #else
-#define BR_LITERAL(TYPE) (TYPE)
+#  define BR_LITERAL(TYPE) (TYPE)
 #endif
-
-
 
 #define br_str_invalidata(s) s = BR_LITERAL(br_str_t){0}
 #define br_str_push_literal(s, literal) br_str_push_strv(s, br_strv_from_literal(literal))
 #define br_strv_from_literal(literal) (BR_LITERAL(br_strv_t) { literal, sizeof(literal) - 1 })
 
 #define br_str_sub(s, start, new_length) ((br_strv_t) { .str = s.str + (start), .len = (new_length) })
-#define br_str_sub1(s, start) ((br_strv_t) { .str = s.str + (start), .len = s.len - (start) })
+#define br_str_sub1(s, start) ((br_strv_t) { .str = s.str + (start), .len = ((start) >= s.len ? 0 : s.len - (start)) })
 #define br_str_as_view(S) ((br_strv_t) { .str = (S).str, .len = (S).len })
+#define br_strv_pop(S)  (--(S).len, *(S).str++)
+#define br_strv_popu(S) (--(S).len, *(uint8_t*)((S).str++))
 
 #define BR_STRV(STR, LEN) ((br_strv_t) { .str = (STR), .len = (LEN) })
 #define BR_STRL(STR) ((br_strv_t) { .str = (STR), .len = (uint32_t)(sizeof((STR)) - 1) })
+
+#define BR_STRV_FOREACH_UTF8(SV, CHAR) for (int CHAR = br_strv_pop_utf8(&(SV)); CHAR; CHAR = br_strv_pop_utf8(&(SV)))
 
 
 typedef struct br_str_t {
@@ -42,6 +44,7 @@ br_str_t   br_str_malloc(size_t size);
 void       br_str_free(br_str_t str);
 bool       br_str_realloc(br_str_t* s, size_t new_cap);
 bool       br_str_push_char(br_str_t* s, char c);
+bool       br_str_push_zero(br_str_t* s);
 bool       br_str_push_int(br_str_t* s, int c);
 bool       br_str_push_float1(br_str_t* s, float c, int decimals);
 bool       br_str_push_float(br_str_t* s, float c);
@@ -52,6 +55,7 @@ bool       br_str_push_uninitialized(br_str_t* s, unsigned int n);
 char*      br_str_to_c_str(br_str_t s);
 char*      br_str_move_to_c_str(br_str_t* s);
 br_str_t   br_str_copy(br_str_t s);
+void       br_str_copy2(br_str_t* out, br_str_t from);
 br_str_t   br_str_from_c_str(const char* str);
 void       br_str_to_c_str1(br_str_t s, char* out_s);
 char*      br_str_to_scrach(br_str_t s);
@@ -70,9 +74,12 @@ br_strv_t  br_strv_splitrs(br_strv_t buff, br_strv_t split_strv);
 br_strv_t  br_strv_splitr(br_strv_t buff, char splitc);
 br_strv_t  br_strv_splitl(br_strv_t buff, char splitc);
 br_strv_t  br_strv_any_splitr(br_strv_t buff, int n, char arr[], int* out_index);
+br_strv_t  br_strv_any_rsplitr(br_strv_t buff, int n, char arr[], int* out_index);
 br_strv_t  br_strv_skip(br_strv_t buff, char to_skip);
 bool       br_strv_starts_with(br_strv_t buff, br_strv_t starts_with);
 int        br_strv_count(br_strv_t buff, char ch);
+bool       br_strv_match(br_strv_t full, br_strv_t sub);
+int        br_strv_pop_utf8(br_strv_t* t);
 
 #if defined(BR_RELEASE)
 char*      br_scrach_get(size_t len);
@@ -117,7 +124,7 @@ br_str_t br_str_malloc(size_t size) {
 }
 
 void br_str_free(br_str_t str) {
-  BR_FREE(str.str);
+  if (NULL != str.str) BR_FREE(str.str);
 }
 
 bool br_str_realloc(br_str_t* s, size_t new_cap) {
@@ -147,8 +154,18 @@ static inline void br_str_push_char_unsafe(br_str_t* s, char c) {
 }
 
 bool br_str_push_char(br_str_t* s, char c) {
+  if (c == '\0') {
+    LOGI("Use br_str_push_zero if you wanna NULL terminate this string");
+    BR_STACKTRACE();
+  }
   if (s->len >= s->cap) if (false == br_str_realloc(s, s->cap * 2)) return false;
   br_str_push_char_unsafe(s, c);
+  return true;
+}
+
+bool br_str_push_zero(br_str_t* s) {
+  if (s->len >= s->cap) if (false == br_str_realloc(s, s->cap * 2)) return false;
+  s->str[s->len] = '\0';
   return true;
 }
 
@@ -242,14 +259,13 @@ bool br_str_push_c_str(br_str_t* s, char const* c) {
 }
 
 bool br_str_push_uninitialized(br_str_t* s, unsigned int n) {
-  if (n <= 0) return true;
-  if (s->len + n > s->cap) {
+  if (s->len + n >= s->cap) {
     size_t pot_size_1 = s->cap * 2, pot_size_2 = s->len + n;
     size_t new_size =  pot_size_2 > pot_size_1 ? pot_size_2 : pot_size_1;
     if (false == br_str_realloc(s, new_size)) return false;
   }
 
-  s->len += s->cap;
+  s->len += n;
   return true;
 }
 
@@ -284,6 +300,11 @@ br_str_t br_str_copy(br_str_t s) {
   return r;
 }
 
+void br_str_copy2(br_str_t* out, br_str_t const from) {
+  out->len = 0;
+  br_str_push_br_str(out, from);
+}
+
 br_str_t br_str_from_c_str(const char* str) {
   unsigned int len = (unsigned int)strlen(str);
   br_str_t r = { .str = BR_MALLOC(len), .len = len, .cap = len };
@@ -316,7 +337,7 @@ char* br_str_move_to_scrach(br_str_t s) {
 bool br_str_replace_one(br_str_t* out, br_strv_t in, br_strv_t to_replace, br_strv_t replace_with) {
   out->len = 0;
 
-  uint32_t new_size = in.len + (replace_with.len > to_replace.len ? replace_with.len - to_replace.len : 0); 
+  uint32_t new_size = in.len + (replace_with.len > to_replace.len ? replace_with.len - to_replace.len : 0);
 
   br_str_realloc(out, (size_t)new_size);
   for (uint32_t i = 0; i < in.len; ++i) {
@@ -466,6 +487,22 @@ out:
   return buff;
 }
 
+br_strv_t br_strv_any_rsplitr(br_strv_t buff, int n, char arr[], int* out_index) {
+  br_strv_t out = BR_STRV(buff.str + buff.len, 0);
+  for (uint32_t i = 0; i < buff.len; ++i) {
+    --out.str;
+    for (int j = 0; j < n; ++j) {
+      if (buff.str[0] == arr[j]) {
+        *out_index = j;
+        ++out.str;
+        return out;
+      }
+    }
+    ++out.len;
+  }
+  return out;
+}
+
 br_strv_t br_strv_skip(br_strv_t buff, char to_skip) {
   while (buff.len > 0 && buff.str[0] == to_skip) {
     ++buff.str;
@@ -485,6 +522,58 @@ int br_strv_count(br_strv_t buff, char ch) {
   for (uint32_t i = 0; i < buff.len; ++i) if (buff.str[i] == ch) ++sum;
   return sum;
 }
+
+bool br_strv_match(br_strv_t full, br_strv_t sub) {
+  if (full.len < sub.len) return false;
+  if (sub.len == 0) return true;
+  uint32_t n = sub.len;
+  uint32_t i = 0, j = 0;
+  for (; i < full.len && j < n;) {
+    if (full.str[i] == sub.str[j]) ++i, ++j;
+    else ++i;
+  }
+  return j == n;
+}
+
+int br_strv_pop_utf8(br_strv_t* t) {
+//  U+0000    U+007F    0yyyzzzz
+//  U+0080    U+07FF    110xxxyy  10yyzzzz
+//  U+0800    U+FFFF    1110wwww  10xxxxyy  10yyzzzz
+//  U+010000  U+10FFFF  11110uvv  10vvwwww  10xxxxyy  10yyzzzz
+//  U+uvwxyz
+  int ret = 0;
+  if (t->len == 0) return ret;
+
+  int initial = (int)br_strv_popu(*t);
+  ret = initial;
+  if (0 == (initial & 0x80)) return ret;
+
+  BR_ASSERTF(initial != 0b10000000, "Decoding from the middle of the UTF8 character");
+
+  BR_ASSERT(t->len > 0);
+  int next = (int)br_strv_popu(*t);
+  ret &= 0b00011111;
+  ret <<= 6;
+  ret |= next & 0b00111111;
+  if ((initial & 0b11100000) == 0b11000000) return ret;
+
+  BR_ASSERT(t->len > 0);
+  next = (int)br_strv_popu(*t);
+  ret &= 0b0000111100000000;
+  ret <<= 6;
+  ret |= next & 0b00111111;
+  if ((initial & 0b11110000) == 0b11100000) return ret;
+
+  BR_ASSERT(t->len > 0);
+  next = (int)br_strv_popu(*t);
+  ret &= 0b000001111111111111111111;
+  ret <<= 6;
+  ret |= next & 0b00111111;
+  if ((initial & 0b11111000) == 0b11110000) return ret;
+
+  BR_UNREACHABLE("Bad UTF8 character...");
+}
+
 
 static BR_THREAD_LOCAL char*  br_scrach = NULL;
 static BR_THREAD_LOCAL size_t br_scrach_cur_cap = 0;

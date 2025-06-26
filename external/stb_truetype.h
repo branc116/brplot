@@ -473,8 +473,7 @@ int main(int arg, char **argv)
    #endif
 
    #ifndef STBTT_assert
-   #include <assert.h>
-   #define STBTT_assert(x)    assert(x)
+   #  error "Define STBTT_assert"
    #endif
 
    #ifndef STBTT_strlen

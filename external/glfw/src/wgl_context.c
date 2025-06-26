@@ -30,7 +30,6 @@
 #if defined(_GLFW_WIN32)
 
 #include <stdlib.h>
-#include <assert.h>
 
 // Return the value corresponding to the specified attribute
 //
@@ -54,7 +53,7 @@ static int findPixelFormatAttribValueWGL(const int* attribs,
 
 #define ADD_ATTRIB(a) \
 { \
-    assert((size_t) attribCount < sizeof(attribs) / sizeof(attribs[0])); \
+    BR_ASSERT((size_t) attribCount < sizeof(attribs) / sizeof(attribs[0])); \
     attribs[attribCount++] = a; \
 }
 #define FIND_ATTRIB_VALUE(a) \
@@ -347,7 +346,7 @@ static void swapBuffersWGL(_GLFWwindow* window)
 static void swapIntervalWGL(int interval)
 {
     _GLFWwindow* window = _glfwPlatformGetTls(&_glfw.contextSlot);
-    assert(window != NULL);
+    BR_ASSERT(window != NULL);
 
     window->context.wgl.interval = interval;
 
@@ -529,7 +528,7 @@ void _glfwTerminateWGL(void)
 
 #define SET_ATTRIB(a, v) \
 { \
-    assert(((size_t) index + 1) < sizeof(attribs) / sizeof(attribs[0])); \
+    BR_ASSERT(((size_t) index + 1) < sizeof(attribs) / sizeof(attribs[0])); \
     attribs[index++] = a; \
     attribs[index++] = v; \
 }

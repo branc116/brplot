@@ -25,12 +25,10 @@
 //
 //========================================================================
 
+#include "src/br_pp.h"
 #include "external/glfw/src/internal.h"
 
 #if defined(GLFW_BUILD_WIN32_THREAD)
-
-#include <assert.h>
-
 
 //////////////////////////////////////////////////////////////////////////
 //////                       GLFW platform API                      //////
@@ -38,7 +36,7 @@
 
 GLFWbool _glfwPlatformCreateTls(_GLFWtls* tls)
 {
-    assert(tls->win32.allocated == GLFW_FALSE);
+    BR_ASSERT(tls->win32.allocated == GLFW_FALSE);
 
     tls->win32.index = TlsAlloc();
     if (tls->win32.index == TLS_OUT_OF_INDEXES)
@@ -60,19 +58,19 @@ void _glfwPlatformDestroyTls(_GLFWtls* tls)
 
 void* _glfwPlatformGetTls(_GLFWtls* tls)
 {
-    assert(tls->win32.allocated == GLFW_TRUE);
+    BR_ASSERT(tls->win32.allocated == GLFW_TRUE);
     return TlsGetValue(tls->win32.index);
 }
 
 void _glfwPlatformSetTls(_GLFWtls* tls, void* value)
 {
-    assert(tls->win32.allocated == GLFW_TRUE);
+    BR_ASSERT(tls->win32.allocated == GLFW_TRUE);
     TlsSetValue(tls->win32.index, value);
 }
 
 GLFWbool _glfwPlatformCreateMutex(_GLFWmutex* mutex)
 {
-    assert(mutex->win32.allocated == GLFW_FALSE);
+    BR_ASSERT(mutex->win32.allocated == GLFW_FALSE);
     InitializeCriticalSection(&mutex->win32.section);
     return mutex->win32.allocated = GLFW_TRUE;
 }
@@ -86,13 +84,13 @@ void _glfwPlatformDestroyMutex(_GLFWmutex* mutex)
 
 void _glfwPlatformLockMutex(_GLFWmutex* mutex)
 {
-    assert(mutex->win32.allocated == GLFW_TRUE);
+    BR_ASSERT(mutex->win32.allocated == GLFW_TRUE);
     EnterCriticalSection(&mutex->win32.section);
 }
 
 void _glfwPlatformUnlockMutex(_GLFWmutex* mutex)
 {
-    assert(mutex->win32.allocated == GLFW_TRUE);
+    BR_ASSERT(mutex->win32.allocated == GLFW_TRUE);
     LeaveCriticalSection(&mutex->win32.section);
 }
 

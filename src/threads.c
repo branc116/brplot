@@ -18,6 +18,7 @@ void br_thread_start(long unsigned int(*function)(void *), void* args) {
 #elif defined(__EMSCRIPTEN__)
 #include <stdio.h>
 void br_thread_start(void *(*function)(void *), void* args) {
+  (void)function; (void)args;
   printf("Can't create thread on the web...\n");
 }
 #else

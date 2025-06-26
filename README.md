@@ -6,73 +6,25 @@ Small application and library that plots lines that are sent to the application'
 brplot is designed in such a way that it plays nicely with other unix tools. You can just pipe the output of your program to brplot and brplot will do it's best to plot your data.
 
 ## Compile
-Brplot can be built using GNU make or cmake or use whatever you like.
-Only tested on linux. Maybe will work on other OSes.
-But it can cross compile for windows and for webassm.
+Brplot uses a custom build tools.
 
-### Ubuntu
-Tested on 22.04
+To use it you have to build it first:
 ```sh
-sudo apt install git make gcc
-git clone https://github.com/branc116/brplot
-cd brplot
-make
+cc -I. -o nob nob.c -lm
 ```
+On windows use clang or cl or mingw or any other c compiler should do.
 
-### Debian
-Tested on Debian-12
+To just build the brplot run:
 ```sh
-sudo apt install git make gcc
-git clone https://github.com/branc116/brplot
-cd brplot
-make
+./nob
 ```
 
-### Arch
+But now that you have compiled the build tool, you can do a bit more than just build.
+
+To see what you can do, run:
 ```sh
-sudo pacman -Sy base-devel
-git clone https://github.com/branc116/brplot
-cd brplot
-make
+./nob help
 ```
-
-### FreeBSD
-Tested on FreeBSD 14.0
-```sh
-pkg install cmake
-git clone https://github.com/branc116/brplot
-cd brplot
-mkdir build
-cd build
-cmake ..
-make
-```
-
-### Windows
-Tested on Windows 11
-* Download [zig](https://ziglang.org/download/) - Tested with zig 0.12
-* Download [git](https://git-scm.com/downloads)
-* Open cmd/powershell
-```cmd
-git clone https://github.com/branc116/brplot
-cd brplot
-zig build
-./zig-out/brplot_imgui_windows_ReleaseSafe.exe
-```
-
-### Mac
-```cmd
-brew install git zig
-git clone https://github.com/branc116/brplot
-cd brplot
-zig build
-```
-
-Here are the parameters you can change ( for make, but some are also in cmake ):
-* EMSCRIPTEN - only useful if you are building for webassm ( path to emscripten )
-* PLATFORM   - LINUX | WINDOWS | WEB ( Default LINUX )
-* CONFIG     - RELEASE | DEBUG (Default RELEASE )
-* TYPE       - EXE | LIB  - ( To create executable or library. ) ( Default EXE )
 
 ## Examples
 I think that more or less all the examples listed on [ttyplot examples](https://github.com/tenox7/ttyplot#examples) should work with brplot ( just replace ttyplot with brplot. )
@@ -237,21 +189,20 @@ In the future they migh chage/be deleted.
 
 * Right mouse button + Move mouse        - Change offset
 * Mouse wheel                            - Change zoom
+* **LCTRL** + Mouse                      - Move or Resize plots ( and other windows )
 * **X** + Mouse Wheel                    - Change zoom only in **X** axis
 * **Y** + Mouse Wheel                    - Change zoom only in **Y** axis
 * [**X**|**Y**] + [**LSHIFT**|**LCRTL**] - Change zoom [in|out] only in [**X**|**Y**] axis
 * **F**                                  - Follow the visible lines. ( Camera will focus on the average of newest points added to each visible line. )
-* [**K**|**J**]                          - Change recoil for follow functionality ( quite fun if >1.f )
+* **LCTRL** + **F**                      - Camera will focus on the average of newest points added to each visible line.
 * **T**                                  - Add test points
 * **C** + **LSHIFT**                     - Clear all points
 * **C**                                  - Empty all points
-* **R**                                  - Reset camera offset and zoom to (0, 0) and (1, 1)
+* **R**                                  - Reset camera to default values
 * **R** + **LSHIFT**                     - Reset camera zoom to (1, 1)
 * **R** + **LCTRL**                      - Reset camera offest to (0, 0)
 * **D**                                  - Toggle debug view.
 * **S**                                  - Grab a screenshot.
-* **H**                                  - Hide all lines.
-* **H** + **LSHIFT**                     - Toggle visiblity of all lines.
 * **3**                                  - Switch to 3D plot.
 * **2**                                  - Switch to 2D plot.
 
@@ -397,11 +348,38 @@ sudo rm /usr/bin/brplot
 * ~~Turn on or off datasets~~
     * ~~Icons for checkboxes~~
 * ~~csht should genereate makefile dependency list~~
+* I want touch to work.
+  * ~~But for that I need a way of adding stuff on screen without stdin.~~
+    * Done
+    * ~~Say we need to implement read csv stuf..~~
+      * Added csv reading and parsing and stuff, it's looking good
+      * ~~For that we need file browser ( agin ) to locate that file.~~
+        * Implemented file browser looking good
+        * Impelement ALT-LEFT to go back.
+        * ~~For that we need text input widget.~~
+          * Implemented it but it looks bad and needs more features..
+              * Impelement CTRL-BACKSPACE to delete a work.
+
+* Web resizing is again fucked, unfuck it.
+* ~~Automaticaly generate functions to select icon that best fits wanted size..~~
+* ~~Resizables should use br_free_list~~
+* Implement snappings for resizables
+  * ~~Regions should be drawn on screen when moving resizables where if I move the resizable, it snaps on that side of the screen.~~
+  * ~~If mouse over regions snap the resizable to that region~~
+  * If mouse over other resizable, draw regions over that other resizable and reparent the resizable that is being dragged
+* ~~When dragging resizables, they should not be lerped~~
+* Make all inputs to the app go trough the same interface
+  * That interface should be some kind of queue structure
+    * For that we need multithreaded queue implmenetation
+* ~~Remove dependency on assert.h~~
+* Make collapasables animated.
+
+
 
 ## Screenshots
 Here is a history of how brplot looked over time:
 
-##### 2024-05-21
+##### 2025-05-21
 ![screenshot7](media/brplot_20250421_163315.png)
 ##### 2024-04-21
 ![screenshot6](media/brplot_20240421_172537.png)

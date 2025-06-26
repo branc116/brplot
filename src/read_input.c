@@ -15,7 +15,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <math.h>
 
 #define MAX_REDUCE 6
@@ -57,7 +56,7 @@ typedef struct input_token_t {
   union {
     struct {
       double value_d;
-      long value_l;
+      long long value_l;
     };
     char name[MAX_NAME];
     br_str_t br_str;
@@ -326,7 +325,7 @@ static int extractor_extract_number(br_strv_t view, float* outF) {
         }
         break;
       default:
-        assert("Unhandled state while extracting number" && false);
+        BR_UNREACHABLE("Unhandled state while extracting number. state = %d", state);
         return -1;
     }
   }
@@ -345,7 +344,7 @@ static int extractor_extract_number(br_strv_t view, float* outF) {
       *outF = is_neg_whole ? -value_f : value_f;
       return (int)view.len;
     default:
-      assert("Unhandled state while extracting number" && false);
+      BR_UNREACHABLE("Unhandled state while extracting number. state=%d", state);
       return -1;
   }
   return -1;
@@ -400,7 +399,7 @@ static extractor_res_state_t extractor_extract(br_strv_t ex, br_strv_t view, flo
           } else if (ex_c == 'y') {
             *y = temp_float;
             res |= extractor_res_state_y;
-          } else assert(false);
+          } else BR_UNREACHABLE("Extracting unknown capture: %c(%u)", ex_c, (uint32_t)ex_c);
           ++ex_i;
           view_i += (unsigned int)r;
           state = extractor_state_init;
@@ -715,7 +714,7 @@ static void lex_step(br_plotter_t* br, lex_state_t* s) {
       break;
     case input_lex_state_quoted:
       if (s->c == '"' || s->c == '\0' || s->c == -1) {
-        br_str_push_char(&s->tokens[s->tokens_len].br_str, (char)0);
+        br_str_push_zero(&s->tokens[s->tokens_len].br_str);
         ++s->tokens_len;
         s->state = input_lex_state_init;
       } else br_str_push_char(&s->tokens[s->tokens_len].br_str, (char)s->c);
@@ -755,7 +754,7 @@ static void lex(br_plotter_t* br) {
       s.c = read_input_read_next();
       if (s.c == -1) {
         input_tokens_reduce(br, &s, true);
-        LOGE("Exiting read_input thread");
+        LOGI("Exiting read_input thread");
         break;
       }
       lex_step_extractor(br, &s);
@@ -781,7 +780,7 @@ void read_input_main_worker(br_plotter_t* gv) {
 #if defined(FUZZ)
 #include "src/br_data_generator.h"
 #include "src/br_plotter.h"
-#include "src/br_gui_internal.h"
+#include "src/br_gui.h"
 #include "src/br_icons.h"
 #include "src/br_tl.h"
 int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
@@ -871,7 +870,9 @@ TEST_CASE(InputTestsExp) {
   br_plotter_t br;
   test_input(&br, "10e10");
   TEST_COMMAND_PUSH_POINT_Y(br.commands, 10e10f, 0);
+  TEST_COMMAND_END(br.commands);
 }
+
 TEST_CASE(InputTests) {
   br_plotter_t br;
   test_input(&br, "8.0,-16.0;1 -0.0078,16.0;1 \" \n \n 4.0;1\n\n\n\n\n\n 2.0 1;10;1;;;; 10e10 3e38 --test 1.2 --zoomx 10.0 1;12");

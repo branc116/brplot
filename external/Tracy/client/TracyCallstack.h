@@ -8,7 +8,6 @@
 #  endif
 
 #  if defined _WIN32
-#    include "external/Tracy/common/TracyUwp.hpp"
 #    ifndef TRACY_UWP
 #      define TRACY_HAS_CALLSTACK 1
 #    endif

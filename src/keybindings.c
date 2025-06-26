@@ -3,25 +3,24 @@
 #include "src/br_tl.h"
 #include "src/br_gl.h"
 
-#include <assert.h>
 #include <stdbool.h>
 
 typedef struct {
   bool ctrl, shift;
 } br_keybinding_ctrl_shift_t;
 
-#define BR_KEY_DOWN 1
-#define BR_KEY_PRESS 2
+#define BR_KEY_STATE_DOWN 1
+#define BR_KEY_STATE_PRESS 2
 
 #define KEY_BINDINGS(x) \
-  x(BR_KEY_R, BR_KEY_PRESS, br_keybinding_gui_reset) \
-  x(BR_KEY_C, BR_KEY_PRESS, br_keybinding_clear) \
-  x(BR_KEY_T, BR_KEY_PRESS, br_keybinding_test_points) \
-  x(BR_KEY_F, BR_KEY_PRESS, br_keybinding_follow) \
-  x(BR_KEY_D, BR_KEY_PRESS, br_keybinding_debug) \
-  x(BR_KEY_S, BR_KEY_PRESS, br_keybinding_screenshot) \
-  x(BR_KEY_THREE, BR_KEY_PRESS, br_keybinding_switch_3d) \
-  x(BR_KEY_TWO, BR_KEY_PRESS, br_keybinding_switch_2d)
+  x('r', BR_KEY_STATE_PRESS, br_keybinding_gui_reset) \
+  x('c', BR_KEY_STATE_PRESS, br_keybinding_clear) \
+  x('t', BR_KEY_STATE_PRESS, br_keybinding_test_points) \
+  x('f', BR_KEY_STATE_PRESS, br_keybinding_follow) \
+  x('d', BR_KEY_STATE_PRESS, br_keybinding_debug) \
+  x('s', BR_KEY_STATE_PRESS, br_keybinding_screenshot) \
+  x('3', BR_KEY_STATE_PRESS, br_keybinding_switch_3d) \
+  x('2', BR_KEY_STATE_PRESS, br_keybinding_switch_2d)
 
 #define X(key, kind, name) static inline void name(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t meta);
 KEY_BINDINGS(X)
@@ -29,7 +28,7 @@ KEY_BINDINGS(X)
 
 void br_keybinding_handle_keys(br_plotter_t* br, br_plot_t* plot) {
   br_keybinding_ctrl_shift_t meta = { brtl_key_ctrl(), brtl_key_shift() };
-#define X(key, kind, name) if (((kind) == BR_KEY_PRESS && brtl_key_pressed(key)) || ((kind) == BR_KEY_DOWN && brtl_key_down(key))) name(br, plot, meta);
+#define X(key, kind, name) if (((kind) == BR_KEY_STATE_PRESS && brtl_key_pressed(key)) || ((kind) == BR_KEY_STATE_DOWN && brtl_key_down(key))) name(br, plot, meta);
   KEY_BINDINGS(X)
 #undef X
 }
@@ -84,7 +83,8 @@ static inline void br_keybinding_follow(br_plotter_t* br, br_plot_t* plot, br_ke
 
 static inline void br_keybinding_debug(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
   (void)br; (void)cs; (void)plot;
-  br_context.debug_bounds = !br_context.debug_bounds;
+  bool old_d = *brtl_debug();
+  *brtl_debug() = !old_d;
 }
 
 static inline void br_keybinding_screenshot(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {

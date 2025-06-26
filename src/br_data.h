@@ -3,6 +3,7 @@
 #include "src/br_str.h"
 #include "src/br_shaders.h"
 #include "src/br_math.h"
+#include "src/br_string_pool.h"
 
 #include <stdio.h>
 
@@ -54,7 +55,7 @@ typedef struct br_data_t {
   br_data_kind_t kind;
   int group_id;
   br_color_t color;
-  br_str_t name;
+  brsp_id_t name;
   bool is_new;
   union {
     br_data_2d_t dd;
@@ -69,7 +70,7 @@ typedef struct br_datas_t {
 
 typedef struct {
   int group_id;
-  br_str_t name;
+  brsp_id_t name;
 } br_data_desc_t;
 
 typedef struct {
@@ -81,7 +82,7 @@ void br_data_construct(void);
 int br_datas_get_new_id(br_datas_t* datas);
 br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind);
 br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind);
-br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, br_color_t color, size_t cap, br_str_t name);
+br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, br_color_t color, size_t cap, brsp_id_t name);
 br_data_t* br_data_get(br_datas_t* pg_array, int group);
 br_data_t* br_data_get1(br_datas_t pg, int group);
 br_data_t* br_data_get2(br_datas_t* pg_array, int group, br_data_kind_t kind);
@@ -92,16 +93,18 @@ void br_data_push_xy(br_datas_t* pg, double x, double y, int group);
 void br_data_push_xyz(br_datas_t* pg, double x, double y, double z, int group);
 
 br_vec2d_t br_data_el_xy(br_datas_t datas, int group, int index);
+br_vec2d_t br_data_el_xy1(br_data_t data, int index);
 br_vec3d_t br_data_el_xyz(br_datas_t datas, int group, int index);
+br_vec3d_t br_data_el_xyz1(br_data_t data, int index);
 
-// TODO: this should be br_plotter_clear_data()
-void br_data_clear(br_datas_t* pg, br_plots_t* plots, int group_id);
 // Only remove all points from a group, don't remove the group itself.
 void br_data_empty(br_data_t* pg);
+void br_data_remove(br_datas_t* pg, int data_id);
 void br_data_export(br_data_t const* pg, FILE* file);
 void br_data_export_csv(br_data_t const* pg, FILE* file);
 void br_datas_draw(br_datas_t pg_array, br_plot_t* plot);
 void br_datas_add_test_points(br_datas_t* pg_array);
+void br_data_deinit(br_data_t* g);
 void br_datas_deinit(br_datas_t* pg_array);
 // Only remove all points from all groups, don't remove groups themselfs.
 void br_datas_empty(br_datas_t* pg_array);

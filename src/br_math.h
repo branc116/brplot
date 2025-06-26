@@ -11,7 +11,9 @@
 #define BR_VEC2I(X, Y) ((br_vec2i_t) { .x = (X), .y = (Y) })
 #define BR_VEC2D(X, Y) ((br_vec2d_t) { .x = (X), .y = (Y) })
 #define BR_VEC2_TOI(V) ((br_vec2i_t) { .x = (int)(V).x, .y = (int)(V).y })
+#define BR_VEC2_TOD(V) ((br_vec2d_t) { .x = (double)(V).x, .y = (double)(V).y })
 #define BR_VEC2I_TOF(V) ((br_vec2_t) { .x = (float)(V).x, .y = (float)(V).y })
+#define BR_VEC2I_TOD(V) ((br_vec2d_t) { .x = (double)(V).x, .y = (double)(V).y })
 #define BR_VEC2I_SUB(A, B) ((br_vec2i_t) { .x = (A).x - (B).x, .y = (A).y - (B).y })
 #define BR_VEC2I_SCALE(V, B) ((br_vec2i_t) { .x = (V).x * (B), .y = (V).y * (B) })
 #define BR_VEC2D_TOF(V) ((br_vec2_t) { .x = (float)(V).x, .y = (float)(V).y })
@@ -26,18 +28,24 @@
 #define BR_EXTENT_ASPECT(E) ((E).height / (E).width)
 #define BR_EXTENT(X, Y, WIDTH, HEIGHT) (br_extent_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
 #define BR_EXTENT2(POS, SIZE) (br_extent_t) { .pos = (POS), .size = (SIZE) }
+#define BR_EXTENTD(X, Y, WIDTH, HEIGHT) (br_extentd_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
 #define BR_EXTENT_TOBB(E) ((br_bb_t) { .min_x = (E).x, .min_y = (E).y, .max_x = (E).x + (E).width, .max_y = (E).y + (E).height })
 #define BR_EXTENT_TOI(E) ((br_extenti_t) { .arr = { (int)(E).arr[0], (int)(E).arr[1], (int)(E).arr[2], (int)(E).arr[3] } })
 #define BR_EXTENTI_TOF(E) ((br_extent_t) { .arr = { (float)(E).arr[0], (float)(E).arr[1], (float)(E).arr[2], (float)(E).arr[3] } })
+#define BR_EXTENTI_TOD(E) ((br_extentd_t) { .arr = { (double)(E).arr[0], (double)(E).arr[1], (double)(E).arr[2], (double)(E).arr[3] } })
 #define BR_EXTENTI_TOBB(E) ((br_bb_t) { .min_x = (float)(E).x, .min_y = (float)(E).y, .max_x = (float)(E).x + (float)(E).width, .max_y = (float)(E).y + (float)(E).height })
+#define BR_EXTENTD_TOBB(E) ((br_bbd_t) { .min_x = (double)(E).x, .min_y = (double)(E).y, .max_x = (double)(E).x + (double)(E).width, .max_y = (double)(E).y + (double)(E).height })
 #define BR_EXTENTI_ASPECT(E) ((float)(E).height / (float)(E).width)
+#define BR_EXTENTD_ASPECT(E) ((E).height / (E).width)
 #define BR_EXTENTI(X, Y, WIDTH, HEIGHT) (br_extenti_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
 #define BR_EXTENTI2(POS, SIZE) (br_extenti_t) { { .pos = POS, .size = SIZE } }
+#define BR_EXTENTD_TOF(E) ((br_extent_t) { .arr = { (float)(E).arr[0], (float)(E).arr[1], (float)(E).arr[2], (float)(E).arr[3] } })
 #define BR_EXTENT_(EX) (EX).x, (EX).y, (EX).width, (EX).height
 
 #define BR_BB(Xm, Ym, XM, YM) (br_bb_t) { .arr = { (Xm), (Ym), (XM), (YM) } }
 #define BR_BB2(MIN, MAX) (br_bb_t) { .min = (MIN), .max = (MAX) }
 #define BR_BB_TOEX(BB) (br_extent_t) { .arr = { (BB).min_x, (BB).min_y, (BB).max_x - (BB).min_x, (BB).max_y - (BB).min_y } }
+#define BR_BBD_TOF(BB) (br_bb_t) { .arr = { (float)(BB).arr[0], (float)(BB).arr[1], (float)(BB).arr[2], (float)(BB).arr[3] } }
 #define BR_BBW(BB) ((BB).max_x - (BB).min_x)
 #define BR_BBH(BB) ((BB).max_y - (BB).min_y)
 #define BR_BB_(BB) (BB).min_x, (BB).min_y, (BB).max_x, (BB).max_y
@@ -144,6 +152,18 @@ typedef struct {
 typedef struct {
   union {
     struct {
+      double x, y, width, height;
+    };
+    struct {
+      br_vec2d_t pos;
+    };
+    double arr[4];
+  };
+} br_extentd_t;
+
+typedef struct {
+  union {
+    struct {
       float min_x, min_y, max_x, max_y;
     };
     struct {
@@ -157,12 +177,25 @@ typedef struct {
 typedef struct {
   union {
     struct {
+      double min_x, min_y, max_x, max_y;
+    };
+    struct {
+      br_vec2d_t min;
+      br_vec2d_t max;
+    };
+    double arr[4];
+  };
+} br_bbd_t;
+
+typedef struct {
+  union {
+    struct {
       float x, y, z;
     };
     br_vec2_t xy;
     float arr[3];
   };
-}  br_vec3_t;
+} br_vec3_t;
 
 typedef struct {
   union {
@@ -220,6 +253,11 @@ static inline float br_float_clamp(float x, float m, float M) {
 
 static inline float br_float_lerp(float from, float to, float factor) {
   return from * (1 - factor) + to * (factor);
+}
+
+static inline float br_float_lerp2(float from, float to, float factor) {
+  float fact2 = sqrtf(factor);
+  return from * (1 - fact2) + to * (fact2);
 }
 
 static inline bool br_float_near_zero(float value) {
@@ -286,13 +324,27 @@ static inline br_vec2_t br_vec2_mul(br_vec2_t a, br_vec2_t b) {
   return BR_VEC2(a.x * b.x, a.y * b.y);
 }
 
+
 static inline br_vec2_t br_vec2_div(br_vec2_t a, br_vec2_t b) {
   return BR_VEC2(a.x / b.x, a.y / b.y);
+}
+
+static inline br_vec3_t br_vec3_cross(br_vec3_t a, br_vec3_t b);
+
+static inline bool br_vec2_ccv(br_vec2_t a, br_vec2_t b, br_vec2_t c) {
+  br_vec2_t ab = br_vec2_sub(b, a);
+  br_vec2_t cb = br_vec2_sub(b, c);
+  return br_vec3_cross(BR_VEC3(ab.x, ab.y, 0), BR_VEC3(cb.x, cb.y, 0)).z > 0;
 }
 
 static inline br_vec2_t br_vec2_lerp(br_vec2_t a, br_vec2_t b, float t) {
   return BR_VEC2(a.x*(1-t) + b.x*t,
                  a.y*(1-t) + b.y*t);
+}
+
+static inline br_size_t br_size_lerp(br_size_t a, br_size_t b, float t) {
+  return BR_SIZE(a.width*(1-t) + b.width*t,
+                 a.height*(1-t) + b.height*t);
 }
 
 static inline float br_vec2_dist2(br_vec2_t a, br_vec2_t b) {
@@ -318,6 +370,16 @@ static inline br_vec2_t br_vec2_stog(br_vec2_t v, br_sizei_t screen) {
   return BR_VEC2(v.x / (float)screen.width * 2.f - 1.f, (1.f - v.y / (float)screen.height) * 2.f - 1.f);
 }
 
+static inline br_vec2_t br_vec2_normalize(br_vec2_t a) {
+  float len2 = br_vec2_len2(a);
+  if (fabsf(len2) > FLT_EPSILON) {
+    float len = sqrtf(len2);
+    for (size_t i = 0; i < BR_VEC_ELS(a); ++i) a.arr[i] /= len;
+    return a;
+  }
+  return BR_VEC2(0,0);
+}
+
 //------------------------br_vec2d_t------------------------------
 
 static inline br_vec2d_t br_vec2d_scale(br_vec2d_t v, double s) {
@@ -330,6 +392,49 @@ static inline br_vec2d_t br_vec2d_add(br_vec2d_t v, br_vec2d_t w) {
 
 static inline br_vec2d_t br_vec2d_sub(br_vec2d_t v, br_vec2d_t w) {
   return BR_VEC2D(v.x-w.x, v.y-w.y);
+}
+
+static inline br_vec2d_t br_vec2d_mul(br_vec2d_t a, br_vec2d_t b) {
+  return BR_VEC2D(a.x * b.x, a.y * b.y);
+}
+
+static inline br_vec2d_t br_vec2d_div(br_vec2d_t v, br_vec2d_t w) {
+  return BR_VEC2D(v.x/w.x, v.y/w.y);
+}
+
+static inline br_vec2d_t br_vec2d_max(br_vec2d_t v, br_vec2d_t w) {
+  return BR_VEC2D(fmax(v.x, w.x), fmax(v.y, w.y));
+}
+
+static inline br_vec2d_t br_vec2d_lerp(br_vec2d_t a, br_vec2d_t b, double t) {
+  return BR_VEC2D(a.x*(1-t) + b.x*t,
+                  a.y*(1-t) + b.y*t);
+}
+
+
+static inline double br_vec2d_len2(br_vec2d_t a) {
+  double sum = 0.f;
+  for (size_t i = 0; i < BR_VEC_ELS(a); ++i) sum += a.arr[i] * a.arr[i];
+  return sum;
+}
+
+static inline double br_vec2d_len(br_vec2d_t a) {
+  return sqrt(br_vec2d_len2(a));
+}
+
+static inline double br_vec2d_dist2(br_vec2d_t a, br_vec2d_t b) {
+  double len2 = br_vec2d_len2(br_vec2d_sub(a, b));
+  return len2;
+}
+
+static inline br_vec2d_t br_vec2d_normalize(br_vec2d_t a) {
+  double len2 = br_vec2d_len2(a);
+  if (fabs(len2) > DBL_EPSILON) {
+    double len = sqrt(len2);
+    for (size_t i = 0; i < BR_VEC_ELS(a); ++i) a.arr[i] /= len;
+    return a;
+  }
+  return BR_VEC2D(0,0);
 }
 
 //------------------------size------------------------------
@@ -356,16 +461,6 @@ static inline br_size_t br_size_addv(br_size_t a, br_vec2_t b) {
 
 static inline br_size_t br_size_scale(br_size_t a, float b) {
   return BR_SIZE(a.width * b, a.height * b);
-}
-
-static inline br_vec2_t br_vec2_normalize(br_vec2_t a) {
-  float len2 = br_vec2_len2(a);
-  if (fabsf(len2) > FLT_EPSILON) {
-    float len = sqrtf(len2);
-    for (size_t i = 0; i < BR_VEC_ELS(a); ++i) a.arr[i] /= len;
-    return a;
-  }
-  return BR_VEC2(0,0);
 }
 
 //------------------------vec3------------------------------
@@ -674,4 +769,18 @@ static inline br_vec4_t br_bb_clip_dists(br_bb_t limit, br_vec2_t pos) {
 
 static inline br_bb_t br_bb_expand_with_point(br_bb_t bb, br_vec2_t v) {
   return BR_BB2(br_vec2_min(bb.min, v), br_vec2_max(bb.max, v));
+}
+
+// ----------------int-------------------------
+
+static inline int br_i_min(int a, int b) {
+  return a < b ? a : b;
+}
+
+static inline int br_i_max(int a, int b) {
+  return a > b ? a : b;
+}
+
+static inline int br_i_max3(int a, int b, int c) {
+  return br_i_max(br_i_max(a, b), c);
 }

@@ -32,7 +32,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <assert.h>
 
 
 // NOTE: The global variables below comprise all mutable global data in GLFW

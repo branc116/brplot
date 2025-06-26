@@ -4,8 +4,10 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(__MINGW32__)
@@ -63,18 +65,14 @@ bool br_fs_exists(br_strv_t path) {
   return 0 != ((s.st_mode & S_IFMT) & (S_IFDIR | S_IFCHR | S_IFBLK | S_IFREG));
 }
 #elif defined(__MINGW32__)
-bool br_fs_mkdir(br_strv_t path) { }
-bool br_fs_exists(br_strv_t path) { }
+bool br_fs_mkdir(br_strv_t path) { (void)path; return false; }
+bool br_fs_exists(br_strv_t path) { (void)path; return false; }
 #elif defined(_WIN32) || defined(__CYGWIN__)
 #elif defined(__EMSCRIPTEN__)
 bool br_fs_mkdir(br_strv_t path) { (void)path; return false; }
 bool br_fs_exists(br_strv_t path) { (void)path; return false; }
 #endif
 
-#if !defined(IMGUI)
-// CRC32 needs a 1KB lookup table (not cache friendly)
-// Although the code to generate the table is simple and shorter than the table itself, using a const table allows us to easily:
-// - avoid an unnecessary branch/memory tap, - keep the ImHashXXX functions usable by static constructors, - make it thread-safe.
 static const uint32_t GCrc32LookupTable[256] =
 {
     0x00000000,0x77073096,0xEE0E612C,0x990951BA,0x076DC419,0x706AF48F,0xE963A535,0x9E6495A3,0x0EDB8832,0x79DCB8A4,0xE0D5E91E,0x97D2D988,0x09B64C2B,0x7EB17CBD,0xE7B82D07,0x90BF1D91,
@@ -103,48 +101,38 @@ uint32_t br_fs_crc(const void* data_p, size_t data_size, uint32_t seed) // Stole
         crc = (crc >> 8) ^ GCrc32LookupTable[(crc & 0xFF) ^ *data++];
     return ~crc;
 }
-#endif
 
-char* br_fs_read(const char* path, size_t* len) {
-  char* content = NULL;
+bool br_fs_read(const char* path, br_str_t* out_content) {
   FILE* file = fopen(path, "rb");
   long size = 0;
-  *len = 0;
+  size_t wanted_cap = 0;
+  bool success = true;
 
-  if (file == NULL) {
-    LOGE("Failed to open file %s: %s", path, strerror(errno));
-    goto error;
-  }
-  if (-1 == fseek(file, 0, SEEK_END)) {
-    LOGE("Failed to seek file %s: %s", path, strerror(errno));
-    goto error;
-  }
-  size = ftell(file);
-  if (-1 == size) {
-    LOGE("Failed to get the file size %s: %s", path, strerror(errno));
-    goto error;
-  }
-  if (-1 == fseek(file, 0, SEEK_SET)) {
-    LOGE("Failed to get seek set file %s: %s", path, strerror(errno));
-    goto error;
-  }
-  content = BR_MALLOC((size_t)size + 1);
-  if (NULL == content) {
-    LOGE("Failed to malloc file %s: %s", path, strerror(errno));
-    goto error;
-  }
-  if (size != (long)fread(content, 1, (size_t)size, file)) {
-    LOGE("Failed to read file %s: %s", path, strerror(errno));
-    goto error;
-  }
-  content[size] = '\0';
+  if (file == NULL)                                                          BR_ERROR("Failed to open file %s: %s", path, strerror(errno));
+  if (-1 == fseek(file, 0, SEEK_END))                                        BR_ERROR("Failed to seek file %s: %s", path, strerror(errno));
+  if (-1 == (size = ftell(file)))                                            BR_ERROR("Failed to get the file size %s: %s", path, strerror(errno));
+  if (-1 == fseek(file, 0, SEEK_SET))                                        BR_ERROR("Failed to get seek set file %s: %s", path, strerror(errno));
+  out_content->len = 0;
+  wanted_cap = (size_t)size + 1;
+  if (false == br_str_push_uninitialized(out_content, (uint32_t)wanted_cap)) BR_ERROR("Failed to push unininitialized string");
+  if (out_content->cap < wanted_cap)                                         BR_ERROR("Failed to malloc %zu bytes file %s: %s", wanted_cap, path, strerror(errno));
+  if (size != (long)fread(out_content->str, 1, (size_t)size, file))          BR_ERROR("Failed to read file %s: %s", path, strerror(errno));
+  out_content->str[size] = '\0';
+  out_content->len = (uint32_t)size;
   goto done;
 
 error:
-  BR_FREE(content);
-  content = NULL;
+  success = false;
+  out_content->len = 0;
+
 done:
   if (file != NULL) fclose(file);
-  *len = (size_t)size;
-  return content;
+  return success;
 }
+
+br_str_t br_fs_read1(const char* path) {
+  br_str_t str = { 0 };
+  br_fs_read(path, &str);
+  return str;
+}
+

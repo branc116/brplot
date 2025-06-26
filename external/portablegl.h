@@ -319,11 +319,8 @@ IN THE SOFTWARE.
 extern "C" {
 #endif
 
-
-
 #ifndef PGL_ASSERT
-#include <assert.h>
-#define PGL_ASSERT(x) assert(x)
+#  error "Define PGL_ASSERT"
 #endif
 
 #ifndef CVEC_ASSERT
@@ -4170,8 +4167,7 @@ void lookAt(mat4 mat, vec3 eye, vec3 center, vec3 up)
 #endif
 
 #ifndef CVEC_ASSERT
-#include <assert.h>
-#define CVEC_ASSERT(x)       assert(x)
+#  error "Define CVEC_ASSERT"
 #endif
 
 cvec_sz CVEC_glVertex_Array_SZ = 50;
@@ -10003,7 +9999,7 @@ static int wrap(int i, int size, GLenum mode)
 		return tmp;
 	default:
 		//should never happen, get rid of compile warning
-		assert(0);
+		BR_UNREACHABLE("loool");
 		return 0;
 	}
 }

@@ -1,6 +1,8 @@
 #define _GNU_SOURCE
 #include "include/brplot.h"
-#include "src/str.c"
+#include "external/shl_impls.c"
+#include "src/free_list.c"
+#include "src/string_pool.c"
 #include "src/platform.c"
 #include "src/da.c"
 #include "src/data.c"

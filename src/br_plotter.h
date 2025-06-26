@@ -1,11 +1,14 @@
 #pragma once
+#include "src/br_pp.h"
 #include "src/br_data.h"
 #include "src/br_plot.h"
-#include "src/br_pp.h"
 #include "src/br_data_generator.h"
 #include "src/br_math.h"
 #include "src/br_theme.h"
 #include "src/br_permastate.h"
+#include "src/br_ui.h"
+#include "src/br_gui.h"
+#include "src/br_tl.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,11 +21,13 @@ typedef struct GLFWwindow GLFWwindow;
 
 #if BR_HAS_HOTRELOAD
 typedef struct br_hotreload_state_t {
-  LOCK(lock)
   void (*func_loop)(struct br_plotter_t* gv);
+  void (*func_loop_ui)(struct br_plotter_t* gv);
   void (*func_init)(struct br_plotter_t* gv);
   bool is_init_called;
+  bool has_changed;
   void* handl;
+  br_plotter_t* plotter;
 } br_hotreload_state_t;
 #endif
 
@@ -31,6 +36,8 @@ typedef struct br_plotter_t {
   br_plots_t plots;
   br_shaders_t shaders;
   br_dagens_t dagens;
+  bruirs_t resizables;
+  br_csv_parser_t csv_parser;
 
   br_text_renderer_t* text;
   // Any thread can write to this q, only render thread can pop
@@ -58,22 +65,21 @@ typedef struct br_plotter_t {
   } mouse;
 
   struct {
-    bool down[64];
-    bool pressed[64];
+    bool down[512];
     int mod;
   } key;
 
+  br_pressed_chars_t pressed_chars;
+
   struct {
-    double old; 
-    double now; 
-    double frame; 
+    double old;
+    double now;
+    double frame;
   } time;
 
 #if BR_HAS_HOTRELOAD
   br_hotreload_state_t hot_state;
 #endif
-  int active_plot_index;
-  int menu_extent_handle;
 
   br_permastate_status_t loaded_status;
 #if BR_HAS_SHADER_RELOAD
@@ -81,17 +87,22 @@ typedef struct br_plotter_t {
 #endif
   bool should_close;
   bool exited;
-  bool switch_to_active;
-  bool any_2d, any_3d;
   struct {
     br_theme_t theme;
-    bool file_saver_inited;
+    brsp_id_t csv_file_opened;
+    brgui_file_manager_t fm_state;
+    brgui_csv_reader_t csv_state;
+    brsp_id_t font_path_id;
+    brgui_add_expression_t add_expression;
+    brgui_show_data_t show_data;
     bool dark_theme;
     bool expand_plots;
     bool expand_optimizations;
     bool expand_ui_styles;
     bool expand_export;
     bool expand_data;
+    bool expand_about;
+    bool show_license;
   } ui;
 } br_plotter_t;
 
@@ -111,6 +122,7 @@ void        br_plot_focus_visible(br_plot_t* plot, br_datas_t groups);
 int         br_plotter_add_plot_2d(br_plotter_t* br);
 int         br_plotter_add_plot_3d(br_plotter_t* br);
 void        br_plotter_remove_plot(br_plotter_t* br, int plot_index);
+void        br_plotter_data_remove(br_plotter_t* br, int group_id);
 void        br_plotter_export(br_plotter_t const* br, char const* path);
 void        br_plotter_export_csv(br_plotter_t const* br, char const* path);
 void        br_plotter_draw(br_plotter_t* br);

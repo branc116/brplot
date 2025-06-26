@@ -6,7 +6,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <poll.h>
-#include <assert.h>
 
 static int br_pipes[2];
 static pthread_t thread;

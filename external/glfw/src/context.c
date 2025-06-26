@@ -25,9 +25,9 @@
 //
 //========================================================================
 
+#include "src/br_pp.h"
 #include "external/glfw/src/internal.h"
 
-#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
@@ -648,7 +648,7 @@ GLFWAPI GLFWwindow* glfwGetCurrentContext(void)
 GLFWAPI void glfwSwapBuffers(GLFWwindow* handle)
 {
     _GLFWwindow* window = (_GLFWwindow*) handle;
-    assert(window != NULL);
+    BR_ASSERT(window != NULL);
 
     _GLFW_REQUIRE_INIT();
 
@@ -682,7 +682,7 @@ GLFWAPI void glfwSwapInterval(int interval)
 GLFWAPI int glfwExtensionSupported(const char* extension)
 {
     _GLFWwindow* window;
-    assert(extension != NULL);
+    BR_ASSERT(extension != NULL);
 
     _GLFW_REQUIRE_INIT_OR_RETURN(GLFW_FALSE);
 
@@ -748,7 +748,7 @@ GLFWAPI int glfwExtensionSupported(const char* extension)
 GLFWAPI GLFWglproc glfwGetProcAddress(const char* procname)
 {
     _GLFWwindow* window;
-    assert(procname != NULL);
+    BR_ASSERT(procname != NULL);
 
     _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
 

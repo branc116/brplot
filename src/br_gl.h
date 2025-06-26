@@ -74,20 +74,43 @@
 #define GL_DRAW_FRAMEBUFFER 0x8CA9
 #define GL_TEXTURE_SWIZZLE_RGBA 0x8E46
 
-#define BR_KEY_TWO 50
-#define BR_KEY_THREE 51
-#define BR_KEY_C 67
-#define BR_KEY_D 68
-#define BR_KEY_F 70
-#define BR_KEY_H 72
-#define BR_KEY_J 74
-#define BR_KEY_K 75
-#define BR_KEY_R 82
-#define BR_KEY_S 83
-#define BR_KEY_T 84
-#define BR_KEY_U 85
-#define BR_KEY_X 88
-#define BR_KEY_Y 89
+#define BR_KEY_SPACE 32
+#define BR_KEY_MUL 42
+#define BR_KEY_PLUS 43
+#define BR_KEY_COMMA 44
+#define BR_KEY_MINUS 45
+#define BR_KEY_DOT 46
+#define BR_KEY_SLASH 47
+#define BR_KEY_0 48
+#define BR_KEY_1 49
+#define BR_KEY_2 50
+#define BR_KEY_3 51
+#define BR_KEY_4 52
+#define BR_KEY_5 53
+#define BR_KEY_6 54
+#define BR_KEY_7 55
+#define BR_KEY_8 56
+#define BR_KEY_9 57
+#define BR_KEY_A 65
+#define BR_KEY_Z 90
+#define BR_KEY_a 97
+#define BR_KEY_z 122
+#define BR_KEY_HASH 35
+
+#define BR_KEY_ESCAPE             27
+#define BR_KEY_ENTER              13
+#define BR_KEY_TAB                9
+#define BR_KEY_BACKSPACE          8
+#define BR_KEY_INSERT             260
+#define BR_KEY_DELETE             127
+#define BR_KEY_RIGHT              262
+#define BR_KEY_LEFT               263
+#define BR_KEY_DOWN               264
+#define BR_KEY_UP                 265
+#define BR_KEY_PAGE_UP            266
+#define BR_KEY_PAGE_DOWN          267
+#define BR_KEY_PAGE_HOME          268
+#define BR_KEY_PAGE_END           269
 
 typedef int GLint;
 typedef unsigned int GLenum;

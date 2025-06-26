@@ -25,13 +25,14 @@
 //
 //========================================================================
 
+
+#include "src/br_pp.h"
 #include "external/glfw/src/internal.h"
 
 #if defined(_GLFW_X11)
 
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #ifndef GLXBadProfileARB
  #define GLXBadProfileARB 13
@@ -190,7 +191,7 @@ static void swapBuffersGLX(_GLFWwindow* window)
 static void swapIntervalGLX(int interval)
 {
     _GLFWwindow* window = _glfwPlatformGetTls(&_glfw.contextSlot);
-    assert(window != NULL);
+    BR_ASSERT(window != NULL);
 
     if (_glfw.glx.EXT_swap_control)
     {
@@ -434,7 +435,7 @@ void _glfwTerminateGLX(void)
 
 #define SET_ATTRIB(a, v) \
 { \
-    assert(((size_t) index + 1) < sizeof(attribs) / sizeof(attribs[0])); \
+    BR_ASSERT(((size_t) index + 1) < sizeof(attribs) / sizeof(attribs[0])); \
     attribs[index++] = a; \
     attribs[index++] = v; \
 }

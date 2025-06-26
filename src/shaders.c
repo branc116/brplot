@@ -93,7 +93,7 @@ BR_ALL_SHADERS(X, X_VEC, X_BUF)
 #  define FREE_FILE_CONTENT(file)
 #  define FILE_CONTNET_TYPE const char*
 #else
-#  define READ_FILE(file_name) br_fs_read(file_name, &(size_t) { 0 })
+#  define READ_FILE(file_name) br_fs_read1(file_name).str
 #  define FREE_FILE_CONTENT(file) BR_FREE(file)
 #  define FILE_CONTNET_TYPE char*
 #endif
@@ -200,8 +200,10 @@ BR_ALL_SHADERS(X, NOP2, X_B)
 
 #define X(NAME, CAP, V, B) \
 void br_shader_ ## NAME ## _push_quad(br_shader_ ## NAME ## _t *shader, br_shader_ ## NAME ## _el_t el[4]) { \
-  br_shader_ ## NAME ## _push_tri(shader, (br_shader_ ## NAME ## _el_t[3]) { el[0], el[1], el[2] }); \
-  br_shader_ ## NAME ## _push_tri(shader, (br_shader_ ## NAME ## _el_t[3]) { el[0], el[2], el[3] }); \
+  BR_PROFILE("Shader push quad" #NAME) { \
+    br_shader_ ## NAME ## _push_tri(shader, (br_shader_ ## NAME ## _el_t[3]) { el[0], el[1], el[2] }); \
+    br_shader_ ## NAME ## _push_tri(shader, (br_shader_ ## NAME ## _el_t[3]) { el[0], el[2], el[3] }); \
+  } \
 }
 BR_ALL_SHADERS(X, NOP2, NOP2)
 #undef X

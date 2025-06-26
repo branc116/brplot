@@ -597,8 +597,7 @@ STBIDEF int   stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const ch
 #endif
 
 #ifndef STBI_ASSERT
-#include <assert.h>
-#define STBI_ASSERT(x) assert(x)
+#  error "Define STBI_ASSERT"
 #endif
 
 #ifdef __cplusplus
@@ -716,6 +715,9 @@ typedef unsigned char validate_uint32[sizeof(stbi__uint32)==4 ? 1 : -1];
 //
 // So default to no SSE2 on 32-bit MinGW. If you've read this far and added
 // -mstackrealign to your build settings, feel free to #define STBI_MINGW_ENABLE_SSE2.
+#define STBI_NO_SIMD
+#endif
+#if defined(__TINYC__)
 #define STBI_NO_SIMD
 #endif
 

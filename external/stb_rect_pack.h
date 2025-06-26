@@ -209,8 +209,7 @@ struct stbrp_context
 #endif
 
 #ifndef STBRP_ASSERT
-#include <assert.h>
-#define STBRP_ASSERT assert
+#  error "Define STBRP_ASSERT"
 #endif
 
 #ifdef _MSC_VER

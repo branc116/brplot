@@ -11,7 +11,10 @@
 #  define LOG(...)
 #  define LOGI(format, ...) fprintf(stderr, "[INFO][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__)
 #  define LOGW(format, ...) fprintf(stderr, "[WARNING][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__)
-#  define LOGE(format, ...) fprintf(stderr, "[ERROR][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__)
+#  define LOGE(format, ...) do { \
+    fprintf(stderr, "[ERROR][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__); \
+    BR_STACKTRACE(); \
+} while(0)
 #else
 #  define LOG(...)
 #  define LOGI(...)
@@ -19,14 +22,27 @@
 #  define LOGE(...)
 #endif
 
+#define BR_LOG LOG
+#define BR_LOGI LOGI
+#define BR_LOGW LOGW
+#define BR_LOGE LOGE
+
 #define LOGF(format, ...) do { \
   fprintf(stderr, "[FATAL][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__); \
+  BR_STACKTRACE(); \
   abort(); \
 } while(0)
 
+#define BR_UNREACHABLE(fmt, ...) do { \
+  LOGE("Reached unreachable state"); \
+  BR_ASSERTF(0, fmt, ##__VA_ARGS__); \
+  exit(1); \
+} while(0)
+
 #define BR_LOG_GL_ERROR(ERROR) do { \
-  if (0 != (ERROR)) { \
-    LOGF("GL Error: %d", (ERROR)); \
+  int __err = ERROR; \
+  if (0 != __err) { \
+    LOGE("GL Error: %d", __err); \
   } \
 } while(0)
 
@@ -34,20 +50,25 @@
 #define BR_CALLOC calloc
 #define BR_REALLOC realloc
 #define BR_FREE free
-#define BR_ASSERT(x) do { \
-  if (!(x)) { \
-     LOGE("ASSERT FAILED: `" #x "`"); \
-     BR_BREAKPOINT(); \
-     LOGF("Exiting"); \
-  } \
+
+#define BR_TODO(fmt, ...) do { \
+   BR_UNREACHABLE("TODO: " fmt, ##__VA_ARGS__); \
+   LOGF("Exiting"); \
 } while (0)
-#define BR_ASSERTF(x, fmt, ...) do { \
-   if (!(x)) { \
-     LOGE("ASSERT FAILED: `" #x "`" fmt, ##__VA_ARGS__); \
-     BR_BREAKPOINT(); \
-     LOGF("Exiting"); \
-   } \
-} while (0)
+
+
+#define BR_ERROR(fmt, ...) do { \
+  LOGE(fmt, ##__VA_ARGS__); \
+  success = false; \
+  goto error; \
+} while(0)
+
+#if defined(BR_ASAN)
+void __sanitizer_print_stack_trace(void);
+#  define BR_STACKTRACE() __sanitizer_print_stack_trace()
+#else
+#  define BR_STACKTRACE()
+#endif
 
 #if defined(BRPLOT_IMPLEMENTATION)
 #  define BR_LIB
@@ -58,6 +79,26 @@
 #endif
 #if !defined(BR_DEBUG)
 #  define BR_RELEASE
+#endif
+
+#if defined(BR_RELEASE)
+#  define BR_ASSERT(...)
+#  define BR_ASSERTF(...)
+#else
+#  define BR_ASSERT(x) do { \
+    if (!(x)) { \
+       LOGE("ASSERT FAILED: `%s`", #x); \
+       BR_BREAKPOINT(); \
+       LOGF("Exiting"); \
+    } \
+  } while (0)
+#  define BR_ASSERTF(x, fmt, ...) do { \
+     if (!(x)) { \
+       LOGE("ASSERT FAILED: `" #x "`" fmt, ##__VA_ARGS__); \
+       BR_BREAKPOINT(); \
+       LOGF("Exiting"); \
+     } \
+  } while (0)
 #endif
 
 #if defined(_MSC_VER)
@@ -101,6 +142,8 @@ extern "C" {
 #if defined(BR_DEBUG)
 #  if defined(_MSC_VER)
 #    define BR_BREAKPOINT() __debugbreak()
+#  elif defined(__TINYC__)
+#    define BR_BREAKPOINT()
 #  else
 #    define BR_BREAKPOINT() __builtin_trap()
 #  endif
@@ -109,7 +152,7 @@ extern "C" {
 #endif
 
 #if !defined(BR_HAS_HOTRELOAD)
-#  if defined(BR_DEBUG) && defined(IMGUI) && defined(__linux__) && !defined(LIB)
+#  if defined(BR_DEBUG) && defined(__linux__) && !defined(LIB)
 #    define BR_HAS_HOTRELOAD 1
 #  else
 #    define BR_HAS_HOTRELOAD 0
@@ -124,13 +167,28 @@ extern "C" {
 
 #if defined(_MSC_VER)
 #  define ssize_t long long int
+#  if defined(__clang__)
+#    define TEST_ONLY __attribute__((__unused__))
+#  else
 #  define TEST_ONLY
+#  endif
 #else
 #  define TEST_ONLY __attribute__((__unused__))
 #endif
 
+#define BR_CAT(A, B) BR_CAT2(A, B)
+#define BR_CAT2(A, B) A##B
+#if TRACY_ENABLE
+#  define BR_PROFILE(NAME) TracyCZoneN(BR_CAT(br_profiler, __LINE__),  NAME, true); \
+     for (int BR_CAT(profile_loop_start, __LINE__) = 1; BR_CAT(profile_loop_start, __LINE__) == 1; BR_CAT(profile_loop_start, __LINE__) = 0, TracyCZoneEnd(BR_CAT(br_profiler, __LINE__)))
+#else
+#  define BR_PROFILE(NAME)
+#endif
+
 #if defined(__cplusplus) &&  __cplusplus >= 201103L
 #  define BR_THREAD_LOCAL       thread_local
+#elif defined(__TINYC__)
+#  define BR_THREAD_LOCAL
 #elif defined(_MSC_VER)
 #  define BR_THREAD_LOCAL       __declspec(thread)
 #elif defined (__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
@@ -148,5 +206,17 @@ extern "C" {
 #  define _GNU_SOURCE // Linux bullshit
 #endif
 
+#if defined(__has_include)
+#  define BR_HAS_INCLUDE(path) __has_include(path)
+#else
+#  define BR_HAS_INCLUDE(path)
+#endif
+
+#if defined(__EMSCRIPTEN__)
+#  define BR_IS_SIZE_T_32_BIT
+#endif
+
 #include "external/Tracy/tracy/TracyC.h"
+
+#include <stdio.h>
 

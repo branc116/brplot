@@ -6,35 +6,18 @@
 #include "src/br_str.h"
 #include "src/br_text_renderer.h"
 #include "src/br_tl.h"
+#include "src/br_filesystem.h"
 
-#if defined(__GNUC__) || defined(__CLANG__)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-#  pragma GCC diagnostic ignored "-Wconversion"
-#endif
-
-#define STB_RECT_PACK_IMPLEMENTATION
 #include "external/stb_rect_pack.h"
-
-#define STB_TRUETYPE_IMPLEMENTATION
 #include "external/stb_truetype.h"
-
-#define STB_DS_IMPLEMENTATION
 #include "external/stb_ds.h"
-
-#if defined(__GNUC__) || defined(__CLANG__)
-#  pragma GCC diagnostic pop
-#endif
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <float.h>
 
-#define IMG_SIZE 512
-#define CHARS 30
-
 typedef struct {
-  char key;
+  int key;
   stbtt_packedchar value;
 } key_to_packedchar_t;
 
@@ -45,12 +28,12 @@ typedef struct {
 
 typedef struct {
   int size;
-  char ch;
+  int ch;
 } char_sz;
 
 typedef struct {
   char_sz key;
-  unsigned char value; 
+  int value;
 } to_bake_t;
 
 typedef struct br_text_renderer_t {
@@ -65,8 +48,11 @@ typedef struct br_text_renderer_t {
   unsigned int bitmap_texture_id;
   stbtt_pack_context pack_cntx;
   unsigned char const* font_data;
+  unsigned char const* default_font_data;
+  unsigned char* custom_font_data;
 
   struct {stbtt_aligned_quad* arr; size_t len, cap; } tmp_quads;
+  struct {stbtt_packedchar* arr; size_t len, cap; } baking_chars;
 } br_text_renderer_t;
 
 br_text_renderer_t* br_text_renderer_malloc(int bitmap_width, int bitmap_height, unsigned char const* font_data, br_shader_font_t** shader) {
@@ -75,7 +61,7 @@ br_text_renderer_t* br_text_renderer_malloc(int bitmap_width, int bitmap_height,
     br_text_renderer_t r;
     unsigned char data[];
   };
-  
+
   struct tmp* t = BR_MALLOC(total_mem);
   t->r = (br_text_renderer_t) {
     .shader_f = shader,
@@ -87,12 +73,59 @@ br_text_renderer_t* br_text_renderer_malloc(int bitmap_width, int bitmap_height,
     .bitmap_pixels_height = bitmap_height,
     .bitmap_texture_id = 0,
     .pack_cntx = {0},
+    .default_font_data = font_data,
     .font_data = font_data
   };
   int res = stbtt_PackBegin(&t->r.pack_cntx, t->r.bitmap_pixels, bitmap_width, bitmap_height, 0, 1, NULL);
   stbtt_PackSetOversampling(&t->r.pack_cntx, 2, 2);
-  if (res == 0) fprintf(stderr, "Failed to pack begin\n");
+  if (res == 0) LOGE("Failed to load font");
   return &t->r;
+}
+
+bool br_text_renderer_load_font(br_text_renderer_t* r, br_strv_t path) {
+  br_str_t content = { 0 };
+  if (false == br_fs_read(path.str, &content)) return false;
+
+  // Some TTF formats are not support by stbtt, of if font is not supported, don't event try to load that font...
+  stbtt_fontinfo info = { 0 };
+  stbtt_InitFont(&info, (unsigned char*)content.str, stbtt_GetFontOffsetForIndex((unsigned char*)content.str, 0));
+  uint8_t *data = info.data;
+  int32_t index_map = info.index_map;
+  uint8_t* addr = data + index_map + 0;
+  uint16_t format = (uint16_t)((uint16_t)(addr[0])*256 + (uint16_t)addr[1]);
+  if (format != 0 && format != 6 && format != 4 && format != 12 && format != 13) {
+    LOGI("Font format %d not supported..", format);
+    return false;
+  }
+
+  // Free old
+  stbds_hmfree(r->to_bake);
+  for (long i = 0; i < stbds_hmlen(r->sizes); ++i) {
+    stbds_hmfree(r->sizes[i].value);
+  }
+  stbds_hmfree(r->sizes);
+  stbtt_PackEnd(&r->pack_cntx);
+  br_da_free(r->tmp_quads);
+  br_da_free(r->baking_chars);
+  if (r->custom_font_data) BR_FREE(r->custom_font_data);
+
+  // Set everythin to zero
+  r->sizes = NULL;
+  r->to_bake = NULL;
+  memset(&r->pack_cntx, 0, sizeof(r->pack_cntx));
+
+  // Set new data
+  r->custom_font_data = (unsigned char*)content.str;
+  r->font_data = r->custom_font_data;
+
+  // Load new data
+  int res = stbtt_PackBegin(&r->pack_cntx, r->bitmap_pixels, r->bitmap_pixels_width, r->bitmap_pixels_height, 0, 1, NULL);
+  r->pack_cntx.skip_missing = true;
+  if (res == 0) LOGE("Failed to load font");
+  stbtt_PackSetOversampling(&r->pack_cntx, 2, 2);
+  r->tmp_quads.len = 0;
+  BR_LOGI("Loading font %.*s success, size=%ukB", path.len, path.str, content.len >> 10);
+  return true;
 }
 
 void br_text_renderer_free(br_text_renderer_t* r) {
@@ -104,6 +137,8 @@ void br_text_renderer_free(br_text_renderer_t* r) {
   stbtt_PackEnd(&r->pack_cntx);
   brgl_unload_texture((*r->shader_f)->uvs.atlas_uv);
   br_da_free(r->tmp_quads);
+  br_da_free(r->baking_chars);
+  if (r->custom_font_data) BR_FREE(r->custom_font_data);
   BR_FREE(r);
 }
 
@@ -116,46 +151,41 @@ static int br_text_renderer_sort_by_size(const void* s1, const void* s2) {
   else return 0;
 }
 
+static void br_text_renderer_bake_range(br_text_renderer_t* r, int size, int start, int len) {
+  r->baking_chars.len = 0;
+  br_da_reserve(r->baking_chars, (size_t)len);
+  r->baking_chars.len = (size_t)len;
+  stbtt_PackFontRange(&r->pack_cntx, r->font_data, 0, (float)size, start, len, br_da_getp(r->baking_chars, 0));
+  ptrdiff_t k = stbds_hmgeti(r->sizes, size);
+  if (k == -1) {
+    stbds_hmput(r->sizes, size, NULL);
+    k = stbds_hmgeti(r->sizes, size);
+  }
+  for (int j = 0; j < len; ++j) {
+    int key = start + j;
+    stbds_hmput(r->sizes[k].value, key, br_da_get(r->baking_chars, j));
+  }
+}
+
 void br_text_renderer_dump(br_text_renderer_t* r) {
-  stbtt_packedchar charz[256] = {0};
-  long hm_len = stbds_hmlen(r->to_bake);
+  ptrdiff_t hm_len = stbds_hmlen(r->to_bake);
   if (hm_len > 0) {
     qsort(r->to_bake, (size_t)hm_len, sizeof(r->to_bake[0]), br_text_renderer_sort_by_size);
     int old_size = r->to_bake[0].key.size;
     int pack_from = 0;
-
     for (int i = 1; i < hm_len; ++i) {
       int new_size = r->to_bake[i].key.size;
       int p_len = r->to_bake[i].key.ch - r->to_bake[i - 1].key.ch;
       if (new_size == old_size && p_len < 10) continue;
       p_len = 1 + r->to_bake[i - 1].key.ch - r->to_bake[pack_from].key.ch;
-      stbtt_PackFontRange(&r->pack_cntx, r->font_data, 0, (float)old_size, r->to_bake[pack_from].key.ch, p_len, &charz[0]);
-      long k = stbds_hmgeti(r->sizes, old_size);
-      if (k == -1) {
-        stbds_hmput(r->sizes, old_size, NULL);
-        k = stbds_hmgeti(r->sizes, old_size);
-      }
-      for (int j = 0; j < p_len; ++j) {
-        char key = ((char)(r->to_bake[pack_from].key.ch + j));
-        stbds_hmput(r->sizes[k].value, key, charz[j]);
-      }
+      br_text_renderer_bake_range(r, old_size, r->to_bake[pack_from].key.ch, p_len);
       old_size = new_size;
       pack_from = i;
     }
     if (pack_from < hm_len) {
       int s_len = 1 + r->to_bake[hm_len - 1].key.ch - r->to_bake[pack_from].key.ch;
-      stbtt_PackFontRange(&r->pack_cntx, r->font_data, 0, (float)old_size, r->to_bake[pack_from].key.ch, s_len, &charz[0]);
-      long k = stbds_hmgeti(r->sizes, old_size);
-      if (k == -1) {
-        stbds_hmput(r->sizes, old_size, NULL);
-        k = stbds_hmgeti(r->sizes, old_size);
-      }
-      for (int j = 0; j < s_len; ++j) {
-        char key = r->to_bake[pack_from].key.ch + (char)j;
-        stbds_hmput(r->sizes[k].value, key, charz[j]);
-      }
+      br_text_renderer_bake_range(r, old_size, r->to_bake[pack_from].key.ch, s_len);
     }
-
     stbds_hmfree(r->to_bake);
     brgl_unload_texture(r->bitmap_texture_id);
     r->bitmap_texture_id = brgl_load_texture(r->bitmap_pixels, r->bitmap_pixels_width, r->bitmap_pixels_height, BRGL_TEX_GRAY);
@@ -166,137 +196,127 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
   simp->len = 0;
 }
 
-static bool brtr_move_loc(br_text_renderer_t* tr, size_to_font s, char c, br_vec2_t* pos) {
+uint32_t br_text_renderer_texture_id(br_text_renderer_t* r) {
+  return r->bitmap_texture_id;
+}
+
+static bool brtr_move_loc(size_to_font s, int c, br_vec2_t* pos) {
   if (c == '\n') {
     pos->y += (float)s.key * 1.1f;
     pos->x = 0;
     return true;
   }
   if (c == '\r') return true;
-  long char_index = stbds_hmgeti(s.value, c);
-  if (char_index == -1) {
-    pos->x += (float)s.key;
-  } else {
-    stbtt_packedchar ch = s.value[char_index].value;
-    stbtt_aligned_quad q;
-    stbtt_GetPackedQuad(&ch, tr->bitmap_pixels_width, tr->bitmap_pixels_height, 0, &pos->x, &pos->y, &q, false);
-  }
+  ptrdiff_t char_index = s.value == NULL ? -1 : stbds_hmgeti(s.value, c);
+  if (char_index == -1) pos->x += (float)s.key;
+  else                  pos->x += s.value[char_index].value.xadvance;
   return true;
 }
 
 br_strv_t br_text_renderer_fit(br_text_renderer_t* r, br_size_t size, int font_size, br_strv_t text) {
-  br_vec2_t loc = { 0 };
-  long size_index = stbds_hmgeti(r->sizes, font_size);
-  r->tmp_quads.len = 0;
-  br_extent_t exf = BR_EXTENT(0, 0, (float)size.width, (float)size.height);
-  ssize_t i = 0;
-  if (size_index == -1) {
-    // We don't have the font baked so be conservative
-    for (; i < text.len; ++i) {
-      char c = text.str[i];
-      if (c == '\n') {
-        loc.y += (float)font_size * 1.1f;
-        loc.x = 0;
-      } else if (c == '\r') continue;
-      else loc.x += (float)font_size * 1.1f;
-      if (false == br_col_vec2_extent(exf, loc)) break;
-    }
-  } else {
-    size_to_font f = r->sizes[size_index];
-    for (; i < text.len; ++i) {
+  br_strv_t iter = text;
+  BR_PROFILE("Text renderer fit") {
+    br_vec2_t loc = { 0 };
+    size_to_font stof = { .key = font_size, .value = NULL };
+    ptrdiff_t size_index = stbds_hmgeti(r->sizes, font_size);
+
+    if (size_index != -1) stof = r->sizes[size_index];
+    BR_STRV_FOREACH_UTF8(iter, ch) {
       if (loc.x > size.width) break;
       if (loc.y > size.height) break;
-      if (false == brtr_move_loc(r, f, text.str[i], &loc)) break;
+      if (false == brtr_move_loc(stof, ch, &loc)) break;
     }
   }
-  return br_str_sub(text, 0, (uint32_t)(i < 0 ? 0 : i));
+  return br_str_sub(text, 0, text.len - iter.len);
 }
 
 br_size_t br_text_renderer_measure(br_text_renderer_t* r, int font_size, br_strv_t str) {
   br_vec2_t loc = { 0 };
-  long size_index = stbds_hmgeti(r->sizes, font_size);
-  ssize_t i = 0;
+  size_to_font f = { 0 };
+  ptrdiff_t size_index = stbds_hmgeti(r->sizes, font_size);
+
   if (size_index == -1) return BR_SIZE(0, 0);
-  size_to_font f = r->sizes[size_index];
-  for (; i < str.len; ++i) brtr_move_loc(r, f, str.str[i], &loc);
+  f = r->sizes[size_index];
+  BR_STRV_FOREACH_UTF8(str, ch) brtr_move_loc(f, ch, &loc);
   return BR_SIZE(loc.x, loc.y);
 }
 
-br_extent_t br_text_renderer_push0(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, const char* text) {
-  return br_text_renderer_push(r, pos, font_size, color, text, BR_BB(0,0,10000,10000));
+br_extent_t br_text_renderer_push0(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color_fg, br_color_t color_bg, const char* text) {
+  return br_text_renderer_push(r, pos, font_size, color_fg, color_bg, text, BR_BB(0,0,10000,10000));
 }
 
-br_extent_t br_text_renderer_push_strv0(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, br_strv_t text) {
-  return br_text_renderer_push_strv(r, pos, font_size, color, text, BR_BB(0,0,10000,10000));
+br_extent_t br_text_renderer_push_strv0(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color_fg, br_color_t color_bg, br_strv_t text) {
+  return br_text_renderer_push_strv(r, pos, font_size, color_fg, color_bg, text, BR_BB(0,0,10000,10000));
 }
 
-br_extent_t br_text_renderer_push(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, const char* text, br_bb_t limit) {
-  return br_text_renderer_push2(r, pos, font_size, color, br_strv_from_c_str(text), limit, br_text_renderer_ancor_left_up);
+br_extent_t br_text_renderer_push(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color_fg, br_color_t color_bg, const char* text, br_bb_t limit) {
+  return br_text_renderer_push2(r, pos, font_size, color_fg, color_bg, br_strv_from_c_str(text), limit, br_text_renderer_ancor_left_up);
 }
 
-br_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, br_strv_t text, br_bb_t limit) {
-  return br_text_renderer_push2(r, pos, font_size, color, text, limit, br_text_renderer_ancor_left_up);
+br_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color_fg, br_color_t color_bg, br_strv_t text, br_bb_t limit) {
+  return br_text_renderer_push2(r, pos, font_size, color_fg, color_bg, text, limit, br_text_renderer_ancor_left_up);
 }
 
-br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color, br_strv_t text, br_bb_t limit, br_text_renderer_ancor_t ancor) {
-  float x = pos.x, y = pos.y, z = pos.z;
-  long size_index = stbds_hmgeti(r->sizes, font_size);
-  float og_x = pos.x;
-  r->tmp_quads.len = 0;
-  if (size_index == -1) {
-    for (size_t i = 0; i < text.len; ++i) {
-      stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = text.str[i] }), 0);
-    }
-  } else {
-    size_to_font s = r->sizes[size_index];
-    for (size_t i = 0; i < text.len; ++i) {
-      long char_index = stbds_hmgeti(s.value, text.str[i]);
-      if (text.str[i] == '\n') {
-        pos.y += (float)font_size * 1.1f;
-        pos.x = og_x;
-        continue;
-      }
-      if (text.str[i] == '\r') continue;
-      if (char_index == -1) {
-        stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = text.str[i] }), 0);
-      } else {
-        stbtt_aligned_quad q;
-        stbtt_packedchar ch = s.value[char_index].value;
-        stbtt_GetPackedQuad(&ch, r->bitmap_pixels_width, r->bitmap_pixels_height, 0, &pos.x, &pos.y, &q, false);
-        br_da_push(r->tmp_quads, q);
-      }
-    }
-  }
-#define MMIN(x, y) (x < y ? x : y)
-#define MMAX(x, y) (x > y ? x : y)
+br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color_fg, br_color_t color_bg, br_strv_t text, br_bb_t limit, br_text_renderer_ancor_t ancor) {
   float min_y = FLT_MAX, max_y = FLT_MIN, min_x = FLT_MAX, max_x = FLT_MIN;
-  for (size_t i = 0; i < r->tmp_quads.len; ++i) {
-    min_y = MMIN(r->tmp_quads.arr[i].y0, min_y);
-    min_x = MMIN(r->tmp_quads.arr[i].x0, min_x);
-    max_y = MMAX(r->tmp_quads.arr[i].y1, max_y);
-    max_x = MMAX(r->tmp_quads.arr[i].x1, max_x);
-  }
-#undef MMAX
-#undef MMIN
   float y_off = 0.f;
   float x_off = 0.f;
-  if (ancor & br_text_renderer_ancor_y_up)         y_off = min_y - y;
-  else if (ancor & br_text_renderer_ancor_y_mid)   y_off = (max_y + min_y) * 0.5f - y;
-  else if (ancor & br_text_renderer_ancor_y_down)  y_off = max_y - y;
-  if (ancor & br_text_renderer_ancor_x_left)       x_off = min_x - x;
-  else if (ancor & br_text_renderer_ancor_x_mid)   x_off = (max_x + min_x) * 0.5f - x;
-  else if (ancor & br_text_renderer_ancor_x_right) x_off = max_x - x;
-  br_sizei_t sz = brtl_viewport().size;
-  br_vec4_t cv = BR_COLOR_TO4(color);
-  for (size_t i = 0; i < r->tmp_quads.len; ++i) {
-    br_bb_t bb = br_bb_sub(BR_BB(r->tmp_quads.arr[i].x0, r->tmp_quads.arr[i].y0, r->tmp_quads.arr[i].x1, r->tmp_quads.arr[i].y1), BR_VEC2(x_off, y_off));
-    br_bb_t tex = BR_BB(r->tmp_quads.arr[i].s0, r->tmp_quads.arr[i].t0, r->tmp_quads.arr[i].s1, r->tmp_quads.arr[i].t1);
-    br_shader_font_push_quad(*r->shader_f, (br_shader_font_el_t[4]) {
-        { .pos = BR_VEC42(br_vec2_stog(bb.min, sz), tex.min),             .color = cv, .clip_dists = br_bb_clip_dists(limit, bb.min),       .z = z },
-        { .pos = BR_VEC42(br_vec2_stog(br_bb_tr(bb), sz), br_bb_tr(tex)), .color = cv, .clip_dists = br_bb_clip_dists(limit, br_bb_tr(bb)), .z = z },
-        { .pos = BR_VEC42(br_vec2_stog(bb.max, sz), tex.max),             .color = cv, .clip_dists = br_bb_clip_dists(limit, bb.max),       .z = z },
-        { .pos = BR_VEC42(br_vec2_stog(br_bb_bl(bb), sz), br_bb_bl(tex)), .color = cv, .clip_dists = br_bb_clip_dists(limit, br_bb_bl(bb)), .z = z },
-    });
+  BR_PROFILE("text renderer push2") {
+    float x = pos.x, y = pos.y, z = pos.z;
+    ptrdiff_t size_index = stbds_hmgeti(r->sizes, font_size);
+    float og_x = pos.x;
+    r->tmp_quads.len = 0;
+    if (size_index == -1) {
+      BR_STRV_FOREACH_UTF8(text, ch) stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = ch }), 0);
+    } else {
+      size_to_font s = r->sizes[size_index];
+      BR_STRV_FOREACH_UTF8(text, ch) {
+        ptrdiff_t char_index = stbds_hmgeti(s.value, ch);
+        if (ch == '\n') {
+          pos.y += (float)font_size * 1.1f;
+          pos.x = og_x;
+          continue;
+        }
+        if (ch == '\r') continue;
+        if (char_index == -1) {
+          stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = ch }), 0);
+        } else {
+          stbtt_aligned_quad q;
+          stbtt_packedchar pack = s.value[char_index].value;
+          stbtt_GetPackedQuad(&pack, r->bitmap_pixels_width, r->bitmap_pixels_height, 0, &pos.x, &pos.y, &q, false);
+          br_da_push(r->tmp_quads, q);
+        }
+      }
+    }
+#define MMIN(x, y) (x < y ? x : y)
+#define MMAX(x, y) (x > y ? x : y)
+    for (size_t i = 0; i < r->tmp_quads.len; ++i) {
+      min_y = MMIN(r->tmp_quads.arr[i].y0, min_y);
+      min_x = MMIN(r->tmp_quads.arr[i].x0, min_x);
+      max_y = MMAX(r->tmp_quads.arr[i].y1, max_y);
+      max_x = MMAX(r->tmp_quads.arr[i].x1, max_x);
+    }
+#undef MMAX
+#undef MMIN
+    if (ancor & br_text_renderer_ancor_y_up)         y_off = min_y - y;
+    else if (ancor & br_text_renderer_ancor_y_mid)   y_off = (max_y + min_y) * 0.5f - y;
+    else if (ancor & br_text_renderer_ancor_y_down)  y_off = max_y - y;
+    if (ancor & br_text_renderer_ancor_x_left)       x_off = min_x - x;
+    else if (ancor & br_text_renderer_ancor_x_mid)   x_off = (max_x + min_x) * 0.5f - x;
+    else if (ancor & br_text_renderer_ancor_x_right) x_off = max_x - x;
+    br_sizei_t sz = brtl_viewport().size;
+    br_vec4_t fg = BR_COLOR_TO4(color_fg);
+    br_vec4_t bg = BR_COLOR_TO4(color_bg);
+    for (size_t i = 0; i < r->tmp_quads.len; ++i) {
+      br_bb_t bb = br_bb_sub(BR_BB(r->tmp_quads.arr[i].x0, r->tmp_quads.arr[i].y0, r->tmp_quads.arr[i].x1, r->tmp_quads.arr[i].y1), BR_VEC2(x_off, y_off));
+      br_bb_t tex = BR_BB(r->tmp_quads.arr[i].s0, r->tmp_quads.arr[i].t0, r->tmp_quads.arr[i].s1, r->tmp_quads.arr[i].t1);
+      br_shader_font_push_quad(*r->shader_f, (br_shader_font_el_t[4]) {
+          { .pos = BR_VEC42(br_vec2_stog(bb.min, sz), tex.min),             .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, bb.min),       .z = z },
+          { .pos = BR_VEC42(br_vec2_stog(br_bb_tr(bb), sz), br_bb_tr(tex)), .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, br_bb_tr(bb)), .z = z },
+          { .pos = BR_VEC42(br_vec2_stog(bb.max, sz), tex.max),             .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, bb.max),       .z = z },
+          { .pos = BR_VEC42(br_vec2_stog(br_bb_bl(bb), sz), br_bb_bl(tex)), .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, br_bb_bl(bb)), .z = z },
+      });
+    }
   }
   return BR_EXTENT(min_x - x_off, min_y - y_off, max_x - min_x, max_y - min_y);
 }
