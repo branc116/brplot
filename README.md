@@ -1,32 +1,13 @@
 # Brplot
 brplot - [b]etter [r]l[plot]
-Small application and library that plots lines that are sent to the application's stdin.
+Small application and library that plots data.
 
-## Running brplot
-brplot is designed in such a way that it plays nicely with other unix tools. You can just pipe the output of your program to brplot and brplot will do it's best to plot your data.
+It works as a [`library`](#Brplot as an library) or as an standalone application.
 
-## Compile
-Brplot uses a custom build tools.
+## Running brplot as an application
+brplot reads data from standard input and draws the data. There is a format of expected that [`Input format`](#Input format).
 
-To use it you have to build it first:
-```sh
-cc -I. -o nob nob.c -lm
-```
-On windows use clang or cl or mingw or any other c compiler should do.
-
-To just build the brplot run:
-```sh
-./nob
-```
-
-But now that you have compiled the build tool, you can do a bit more than just build.
-
-To see what you can do, run:
-```sh
-./nob help
-```
-
-## Examples
+### Examples
 I think that more or less all the examples listed on [ttyplot examples](https://github.com/tenox7/ttyplot#examples) should work with brplot ( just replace ttyplot with brplot. )
 But here are some more examples:
 
@@ -126,7 +107,7 @@ nc -ulkp 8888 | brplot;
 ```
 
 ### Input format
-```[[x-value],]y-value[;[line-index]]```
+```[[x-value],]y-value[,[z-value]][;[line-index]]```
 ```--command value```
 
 #### Input examples
@@ -149,8 +130,8 @@ nc -ulkp 8888 | brplot;
 This is a string used to define how to transform input to get the data out.
 
 Example Extract strings are:
-|extractor string|input string|out-x|out-y|
-|--------------|--------------|-----|-----|
+|extractor string  |input string                          |out-x  |out-y|
+|------------------|--------------------------------------|-------|-----|
 | ```abc%x```      | ```abc12```                          |12.f   |NULL|
 | ```abc%x```      | ```abc-12```                         |-12.f  |NULL|
 | ```a%xbc```      | ```a12.2bc```                        |12.2f  |NULL|
@@ -182,6 +163,98 @@ Some more examples of valid and invalid extractors:
 
 In the future they migh chage/be deleted.
 
+## Brplot as an library
+Brplot is designed to also be used as an library. 
+
+### Working with C
+Intended way to use brplot from C is to download the amalgamation version
+of brplot which is a singe header library and just include it into your program.
+
+
+```c
+#define BRPLOT_IMPLEMENTATION
+#include "brplot.c"
+
+int main(void) {
+ for (int i = -10; i < 10; ++i) brp_1(i, /* group_id */ 0);
+ brp_wait(); // Wait until plot window is closed
+}
+```
+
+```c
+/* Animated plots */
+#define BRPLOT_IMPLEMENTATION
+#include "../.generated/brplot.c"
+
+int main(void) {
+  br_data_id circle = 2, standing_wave = 3;
+  float dr = 0.01f;
+  brp_label("Circle", circle);
+  brp_label("Standing wave", standing_wave);
+  for (float radius = 0.0f; true; radius += dr) {
+	  for (float t = -10; t < 10; t += 0.1f) brp_2(radius*sinf(t),                 radius*cosf(t),        circle);
+	  for (float t = -10; t < 10; t += 0.1f) brp_2(         t/2.f, cosf(2*BR_PI*radius)*sinf(t)/t, standing_wave);
+	  brp_flush();
+	  brp_empty(circle);
+	  brp_empty(standing_wave);
+	  if (radius > 1 || radius < 0.0) dr *= -1.f;
+  }
+  brp_focus_all();
+  brp_wait();
+  return 0;
+}
+```
+
+### Working with python
+There are also python bindings for brplot.
+
+```cmd
+pip install brplot
+```
+
+```python
+import brplot
+brplot.plot(range(100))
+```
+
+```python
+# Stock market simulation
+import brplot
+import random
+
+for set in range(10):
+  value = 1.1
+  time = 0
+  dt = 0.1
+  for i in range(100000):
+    value = value + value * random.uniform(-0.08, 0.0801) * dt
+    time += dt
+    brplot.plot(time, value, set)
+```
+
+### Working with javascript ( Wasm )
+This bindings are a bit more messy and I don't like it that much..
+```html
+<html>
+  <body>
+    <canvas width="800" height="600" id="canvas"></canvas>
+    <script type="module">
+      // TODO: change 0.0.6 to the latest version...
+      import { Brplot } from "https://cdn.jsdelivr.net/npm/brplot@0.0.6/index.js"
+
+      const b = new Brplot("canvas");
+      await b.initializeAsync();
+
+      b.pushPoint(0, 1);
+      b.setOnNewFrame(() => {
+        b.pushPoint(Math.random());
+      });
+
+      b.startDrawing();
+    </script>
+  </body>
+</html>
+```
 
 ### Controls
 
@@ -211,17 +284,33 @@ In the future they migh chage/be deleted.
 * **C**              - Empty all points over which the mouse is over.
 * Left mouse button  - Toggle visiblity of the line over which the mouse is over
 
+## Compile
+Brplot uses a custom build tools.
+
+To use it you have to build it first:
+```sh
+cc -I. -o nob nob.c -lm
+```
+On windows use clang or cl or mingw or any other c compiler should do.
+
+To just build the brplot run:
+```sh
+./nob
+```
+
+But now that you have compiled the build tool, you can do a bit more than just build.
+
+To see what you can do, run:
+```sh
+./nob help
+```
+
 ## Install
 When built, brplot is only one file and you can install it using ```install``` command.
 Here I'm installing it to ```/usr/bin``` directory, but this can be any other directory...
 
 ```bash
-sudo install bin/brplot_imgui_linux_release /usr/bin/brplot
-```
-
-## Clean
-```bash
-make clean
+sudo install bin/brplot /usr/bin/brplot
 ```
 
 ## Uninstall
@@ -258,8 +347,9 @@ sudo rm /usr/bin/brplot
   * Text doesn't look like shit any more. I found a way to fix it.
 * ~~Values on x,y axis should be on each horizontal and vertical line. ( Not in corners. )~~
   * Did this and it looks awesome.
-* Colors should be configurable. Black background is the best background, but maybe there will be a need for a white background.
-  * This will require having a configuration file ( Maybe )
+* ~~Colors should be configurable. Black background is the best background, but maybe there will be a need for a white background.~~
+  * ~~This will require having a configuration file ( Maybe )~~
+  * Add setting of colors to the library api.
   * Or parse tty codes for changing colors... hmmm ( could be cool )
     * Does ttyplot do this ??
 * Add something to plot points. ( scatter plot )
@@ -279,9 +369,9 @@ sudo rm /usr/bin/brplot
   * ~~make it more general. So that it accepts any kind of element, not just button~~
   * ~~add like a scroll bar on the left size of a stack~~
   * ~~Fuck this shit. I moved to use imgui for this sort of stuff...~~
-  * Fuck ImGui I moved back to my own gui implementaion
+  * ~~Fuck ImGui I moved back to my own gui implementaion~~
 * ~~Zig build doesn't build tools/font_export.c... Make zig build that also, else default_font.h can't be created.~~
-  * This is not needed anymore, because I no longer use zig. Zig is not ready yet.
+  * ~~This is not needed anymore, because I no longer use zig. Zig is not ready yet.~~
 * ~~Export image with numbers.~~
   * This now works more or less. Still needs a better UI and ability to change image resoultion. For now it's hardcoded
   * Make screenshots work on Web
@@ -293,14 +383,14 @@ sudo rm /usr/bin/brplot
 * Export of data to a text file.
   * ~~Export to format readable by brplot.~~
   * ~~Export to csv.~~
-  * This will require some sort of file explorer to be implemented.
+  * ~~This will require some sort of file explorer to be implemented.~~
 * ~~Export the whole graph ( That includes current offset and current zoom )~~
   * ~~This will require setting current offest and zoom from stdin ( Extend input format to handle this. )~~
     * ~~Maybe something like ``--zoomx 69.0``~~
       * Did this.
   * This is done.
 * ~~Export what plots are visible and invisible.~~
-  * Need some file explorer.
+  * ~~Need some file explorer.~~
 * Support for touch input.
   * Support for draging with one finger.
   * Support for multitouch zoom.
