@@ -5,7 +5,7 @@ Small application and library that plots data.
 It works as a [`library`](#Brplot-as-an-library) or as an standalone application.
 
 ## Running brplot as an application
-brplot reads data from standard input and draws the data. There is a format of expected that [`Input format`](#Input-format).
+brplot reads data from standard input and draws the data. Expected format is described [`here`](#Input-format). But I think you'd be better of just reading the examples:
 
 ### Examples
 I think that more or less all the examples listed on [ttyplot examples](https://github.com/tenox7/ttyplot#examples) should work with brplot ( just replace ttyplot with brplot. )
@@ -184,7 +184,7 @@ int main(void) {
 ```c
 /* Animated plots */
 #define BRPLOT_IMPLEMENTATION
-#include "../.generated/brplot.c"
+#include "brplot.c"
 
 int main(void) {
   br_data_id circle = 2, standing_wave = 3;
