@@ -69,7 +69,7 @@
 #endif
 
 #define DIST "dist"
-#define PREFIX DIST "/brplot"
+#define PREFIX DIST "/brplot-" BR_VERSION_STR
 #define PLIB PREFIX "/lib"
 #define PBIN PREFIX "/bin"
 #define PINC PREFIX "/include"
@@ -397,14 +397,21 @@ static bool bake_font(void) {
 }
 
 static bool generate_shaders(void) {
-  const char* out_name = is_wasm ? "./.generated/shaders_web.h" : ".generated/shaders.h";
-  LOGI("Generate: src/shaders/*.[vs|fs] -> %s", out_name);
-  FILE* f = fopen(out_name, "wb+");
-  if (NULL == f) {
-    fprintf(stderr, "[ERROR] Failed to open a file %s: %s\n", out_name, strerror(errno));
-    return false;
-  }
-  programs_t programs = get_programs();
+  static struct {
+    const char* fn;
+    shader_output_kind_t kind;
+  } outs[] = {
+    { ".generated/shaders.h", shader_output_kind_desktop },
+    { ".generated/shaders_web.h", shader_output_kind_web }
+  };
+
+  FILE* f = NULL;
+  const char* out_name = NULL;
+  shader_output_kind_t out_kind = 0;
+  programs_t programs = { 0 };
+  bool success = true;
+
+  programs = get_programs();
   for (size_t i = 0; i < programs.len; ++i) {
     get_tokens(&programs.arr[i].vertex);
     get_tokens(&programs.arr[i].fragment);
@@ -412,13 +419,26 @@ static bool generate_shaders(void) {
   get_program_variables(programs);
   check_programs(programs);
 
-  shader_output_kind_t out_kind = is_wasm ? shader_output_kind_web : shader_output_kind_desktop;
-  for (size_t i = 0; i < programs.len; ++i) {
-    embed_tokens(f, programs.arr[i].name, br_str_from_c_str("fs"), programs.arr[i].fragment.tokens, out_kind);
-    embed_tokens(f, programs.arr[i].name, br_str_from_c_str("vs"), programs.arr[i].vertex.tokens, out_kind);
+  for (int i = 0; i < ARR_LEN(outs); ++i) {
+    out_kind = outs[i].kind;
+    const char* out_name = outs[i].fn;
+    if (NULL == (f = fopen(out_name, "wb+"))) BR_ERROR("Failed to open %s: %s", out_name, strerror(errno));
+    LOGI("Generate: src/shaders/*.[vs|fs] -> %s", out_name);
+    for (size_t i = 0; i < programs.len; ++i) {
+      embed_tokens(f, programs.arr[i].name, br_str_from_c_str("fs"), programs.arr[i].fragment.tokens, out_kind);
+      embed_tokens(f, programs.arr[i].name, br_str_from_c_str("vs"), programs.arr[i].vertex.tokens, out_kind);
+    }
+    fclose(f);
+    f = NULL;
   }
-  fclose(f);
-  return true;
+  goto done;
+
+error:
+  success = false;
+
+done:
+  if (f != NULL) fclose(f);
+  return success;
 }
 
 static bool pack_icons(void) {
@@ -875,6 +895,7 @@ static bool n_debug_do(void) {
 }
 
 static bool n_amalgam_do(void) {
+  if (false == n_generate_do()) return false;
   return do_create_single_header_lib() == 0;
 }
 
@@ -949,7 +970,14 @@ static bool n_dist_do(void) {
   if (false == nob_copy_file("bin/brplot" LIB_EXT, PLIB "/brplot" LIB_EXT)) return false;
   if (false == nob_copy_file("include/brplot.h", PINC "/brplot.h")) return false;
   if (false == n_amalgam_do()) return false;
-  if (false == nob_copy_file(".generated/brplot.c", PINC "brplot.c")) return false;
+  if (false == nob_copy_file(".generated/brplot.c", PINC "/brplot.c")) return false;
+
+  Nob_Cmd cmd = { 0 };
+  nob_cmd_append(&cmd, "tar", "-C", DIST, "czf", "brplot-" BR_VERSION_STR ".tar.gz", "brplot-" BR_VERSION_STR);
+  if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
+  nob_cmd_free(cmd);
+    
+
   return true;
 }
 

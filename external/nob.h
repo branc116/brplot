@@ -166,7 +166,7 @@
 
 #include "src/br_pp.h"
 
-#define NOB_ASSERT assert
+#define NOB_ASSERT BR_ASSERT
 #define NOB_REALLOC BR_REALLOC
 #define NOB_FREE BR_FREE
 
@@ -220,7 +220,7 @@
 
 // It is an equivalent of shift command from bash. It basically pops an element from
 // the beginning of a sized array.
-#define nob_shift(xs, xs_sz) (NOB_ASSERT((xs_sz) > 0), (xs_sz)--, *(xs)++)
+#define nob_shift(xs, xs_sz) ((xs_sz)--, *(xs)++)
 // NOTE: nob_shift_args() is an alias for an old variant of nob_shift that only worked with
 // the command line arguments passed to the main() function. nob_shift() is more generic.
 // So nob_shift_args() is semi-deprecated, but I don't see much reason to urgently

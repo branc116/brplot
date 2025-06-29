@@ -1,7 +1,6 @@
 #pragma once
 #include "src/br_pp.h"
 
-#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>

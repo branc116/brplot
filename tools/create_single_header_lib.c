@@ -137,6 +137,7 @@ bool cshl_get_tokens(br_strv_t file_name, files_t* all_visited, cshl_tokens_t* t
           if (false == cshl_get_tokens(name, all_visited, tokens, depth + 1, only_includes)) {
             LOGE("Failed to get tokens from : %.*s:%d", file_name.len, file_name.str, line);
             --tokens->len;
+            return false;
           }
           const char* next_preq_start = name.str + name.len + 1;
           preq = BR_STRV(next_preq_start, end - next_preq_start + 1);
@@ -257,7 +258,7 @@ int do_create_single_header_lib(void) {
     for (size_t i = 0; i < tokens.len; ++i) {
       cshl_token_t token = tokens.arr[i];
       if (token.kind == cshl_token_kind_include) {
-        fprintf(amalgam_file, "/* %.*s */\n", tokens.arr[i].str.len, tokens.arr[i].str.str);
+        //fprintf(amalgam_file, "/* %.*s */\n", tokens.arr[i].str.len, tokens.arr[i].str.str);
       } else if (token.kind == cshl_token_kind_include_system) {
         fprintf(amalgam_file, "%.*s", tokens.arr[i].str.len, tokens.arr[i].str.str);
       } else {
