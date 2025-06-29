@@ -1286,8 +1286,6 @@ static void processEvent(XEvent *event)
                         chars[count] = '\0';
                         while (c - chars < count)
                             _glfwInputChar(window, decodeUTF8(&c), mods, plain);
-                    } else if (status == XLookupNone) {
-                        _glfwInputChar(window, key, mods, plain);
                     }
 
                     if (chars != buffer)

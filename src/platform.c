@@ -292,6 +292,9 @@ static void br_glfw_on_key(struct GLFWwindow* window, int key, int scancode, int
       stl_br->key.mod &= ~(GLFW_MOD_SHIFT);
     }
   }
+  if (action == GLFW_REPEAT || action == GLFW_PRESS) {
+    if (key >= BR_KEY_ESCAPE && key <= GLFW_KEY_MENU) br_da_push(stl_br->pressed_chars, key);
+  }
   if (key < 0 || key >= 512) {
     LOGW("Bad scancode %d, key %d", scancode, key);
     return;

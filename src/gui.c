@@ -448,10 +448,11 @@ void brgui_draw_csv_manager(brgui_csv_reader_t* reader, br_csv_parser_t* parser)
         }
       } break;
     }
-    brui_vsplit(2);
+    brui_vsplitvp(3, BRUI_SPLITA(80), BRUI_SPLITA(4), BRUI_SPLITR(1));
       if (brui_button(BR_STRL("Refresh"))) {
         parser->state = br_csv_state_init;
       }
+    brui_vsplit_pop();
     brui_vsplit_pop();
       brui_text(brsp_get(*sp, reader->read_id));
     brui_vsplit_end();
