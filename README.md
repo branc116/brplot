@@ -1,6 +1,6 @@
 # Brplot
 brplot - [b]etter [r]l[plot]
-Small application and library that plots data.
+Small application and library that plots data. [`Screenshots`](#Screenshots)
 
 It works as a [`library`](#Brplot-as-an-library) or as an standalone application.
 
@@ -464,8 +464,6 @@ sudo rm /usr/bin/brplot
 * ~~Remove dependency on assert.h~~
 * Make collapasables animated.
 
-
-
 ## Screenshots
 Here is a history of how brplot looked over time:
 
@@ -486,5 +484,6 @@ Here is a history of how brplot looked over time:
 
 ### License
 
-MIT
+[`MIT`](./LICENSE)
+[`Third party`](./external/LICENCES)
 
