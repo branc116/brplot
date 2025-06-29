@@ -61,5 +61,6 @@ void br_theme_reset_ui(void) {
   BR_THEME.ui.font_size = 20;
   BR_THEME.ui.border_thick = 1;
   BR_THEME.ui.animation_speed = 10.f;
+  BR_THEME.ui.default_grid_line_thickenss = 1.5f;
 }
 

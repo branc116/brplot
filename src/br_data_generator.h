@@ -29,6 +29,7 @@ typedef enum {
   br_dagen_expr_kind_mul,
   br_dagen_expr_kind_pair,
   br_dagen_expr_kind_iota,
+  br_dagen_expr_kind_constant,
 } br_dagen_expr_kind_t;
 
 typedef struct br_dagen_expr_t {
@@ -39,7 +40,8 @@ typedef struct br_dagen_expr_t {
       uint32_t op2;
     } operands;
     int group_id;
-	int iota_state;
+    int iota_state;
+    int value;
   };
 } br_dagen_expr_t;
 

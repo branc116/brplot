@@ -55,6 +55,7 @@
   X(token_kind_plus) \
   X(token_kind_star) \
   X(token_kind_dot) \
+  X(token_kind_contant) \
   X(token_kind_comma)
 
 typedef enum {
@@ -155,7 +156,8 @@ bool br_dagens_add_expr_str(br_dagens_t* dagens, br_datas_t* datas, br_strv_t st
     case br_dagen_expr_kind_reference_z:
     case br_dagen_expr_kind_add:
     case br_dagen_expr_kind_mul:
-    case br_dagen_expr_kind_iota: {
+    case br_dagen_expr_kind_iota:
+    case br_dagen_expr_kind_constant: {
       uint32_t x_id;
       PUSH_EXPR(x_id, arena, br_dagen_expr_iota(0));
       br_dagen_push_expr_xy(dagens, datas, arena, x_id, entry, group_id);
@@ -326,8 +328,9 @@ error:
           size_t x_len = expr_len(datas, arena, dagen->expr_2d.x_expr_index);
           size_t y_len = expr_len(datas, arena, dagen->expr_2d.y_expr_index);
           size_t min_len = x_len < y_len ? x_len : y_len;
+          if (min_len == 0xFFFFFFFF) min_len = 1024;
           if (data->cap < min_len) if (false == br_data_realloc(data, min_len)) {
-            LOGE("Failed to alloc memory for generated plot");
+            LOGE("Failed to alloc %zu kB of memory for generated plot", min_len >> 10);
             dagen->state = br_dagen_state_failed;
           }
           min_len -= read_index;
@@ -370,6 +373,7 @@ static size_t expr_len(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_i
       return min_s(expr_len(datas, arena, expr.operands.op1), expr_len(datas, arena, expr.operands.op2));
     } break;
     case br_dagen_expr_kind_iota: return 0xFFFFFFFF;
+    case br_dagen_expr_kind_constant: return 0xFFFFFFFF;
   }
   BR_UNREACHABLE("expr.kind: %d", expr.kind);
   return 0;
@@ -399,6 +403,7 @@ static double br_dagen_rebase(br_data_t const* data, br_dagen_expr_kind_t kind) 
 
 static size_t expr_read_n(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index, size_t offset, size_t n, float* data) {
   br_dagen_expr_t expr = arena.arr[expr_index];
+  LOGI("%d", expr.kind);
   switch (expr.kind) {
     case br_dagen_expr_kind_add: {
       size_t read = expr_read_n(datas, arena, expr.operands.op1, offset, n, data);
@@ -431,74 +436,99 @@ static size_t expr_read_n(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
       arena.arr[expr_index] = expr;
       return n;
     } break;
+    case br_dagen_expr_kind_constant: {
+      for (size_t i = 0; i < n; ++i) data[i] = expr.value;
+      return n;
+    } break;
     default: BR_UNREACHABLE("Expr kind unknown: %d", expr.kind);
   }
 }
 
 static size_t expr_add_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index, size_t offset, size_t n, float* data) {
   br_dagen_expr_t expr = arena.arr[expr_index];
-  if (expr.kind == br_dagen_expr_kind_add) {
-    size_t read = expr_add_to(datas, arena, expr.operands.op1, offset, n, data);
-    read = expr_add_to(datas, arena, expr.operands.op2, offset, read, data);
-    return read;
-  }
-
-  if (expr.kind == br_dagen_expr_kind_mul) {
-    float* batch = push_batch();
-    size_t read = expr_read_n(datas, arena, expr.operands.op1, offset, n, batch);
-    read = expr_mul_to(datas, arena, expr.operands.op2, offset, read, batch);
-    for (size_t i = 0; i < read; ++i) data[i] += batch[i];
-    return read;
-  }
-
-  br_data_t* data_in = br_data_get1(datas, expr.group_id);
-  if (data_in == NULL) return 0;
-  float* fs = NULL;
-  double rebase = br_dagen_rebase(data_in, expr.kind);
-  size_t real_n = (offset + n > data_in->len) ? data_in->len - offset : n;
+  LOGI("%d", expr.kind);
   switch (expr.kind) {
-    case br_dagen_expr_kind_reference_x: fs = &data_in->dd.xs[offset]; break;
-    case br_dagen_expr_kind_reference_y: fs = &data_in->dd.ys[offset]; break;
-    case br_dagen_expr_kind_reference_z: fs = &data_in->ddd.zs[offset]; break;
-    default: BR_ASSERT(0);
+    case br_dagen_expr_kind_add: {
+      size_t read = expr_add_to(datas, arena, expr.operands.op1, offset, n, data);
+      read = expr_add_to(datas, arena, expr.operands.op2, offset, read, data);
+      return read;
+    } break;
+    case br_dagen_expr_kind_mul: {
+      float* batch = push_batch();
+      size_t read = expr_read_n(datas, arena, expr.operands.op1, offset, n, batch);
+      read = expr_mul_to(datas, arena, expr.operands.op2, offset, read, batch);
+      for (size_t i = 0; i < read; ++i) data[i] += batch[i];
+      pop_batch();
+      return read;
+    } break;
+    case br_dagen_expr_kind_reference_x:
+    case br_dagen_expr_kind_reference_y:
+    case br_dagen_expr_kind_reference_z: {
+      br_data_t* data_in = br_data_get1(datas, expr.group_id);
+      if (data_in == NULL) return 0;
+      float* fs = NULL;
+      double rebase = br_dagen_rebase(data_in, expr.kind);
+      size_t real_n = (offset + n > data_in->len) ? data_in->len - offset : n;
+      switch (expr.kind) {
+        case br_dagen_expr_kind_reference_x: fs = &data_in->dd.xs[offset]; break;
+        case br_dagen_expr_kind_reference_y: fs = &data_in->dd.ys[offset]; break;
+        case br_dagen_expr_kind_reference_z: fs = &data_in->ddd.zs[offset]; break;
+        default: BR_UNREACHABLE("Expr kind: %d", expr.kind);
+      }
+      for (size_t i = 0; i < real_n; ++i) {
+        // TODO: Make this also be rebasable
+        data[i] += (float)((double)fs[i] + rebase);
+      }
+      return real_n;
+    } break;
+    case br_dagen_expr_kind_constant: {
+      for (size_t i = 0; i < n; ++i) data[i] += (float)expr.value;
+      return n;
+    } break;
+    default: BR_UNREACHABLE("Expr kind: %d", expr.kind);
   }
-  for (size_t i = 0; i < real_n; ++i) {
-    // TODO: Make this also be rebasable
-    data[i] += (float)((double)fs[i] + rebase);
-  }
-  return real_n;
 }
 
 static size_t expr_mul_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index, size_t offset, size_t n, float* data) {
   br_dagen_expr_t expr = arena.arr[expr_index];
-  if (expr.kind == br_dagen_expr_kind_add) {
-    float* new_batch = push_batch();
-    size_t read = expr_read_n(datas, arena, expr.operands.op1, offset, n, new_batch);
-    read = expr_add_to(datas, arena, expr.operands.op2, offset, read, new_batch);
-    for (size_t i = 0; i < read; ++i) data[i] *= new_batch[i];
-    pop_batch();
-    return read;
-  }
-
-  if (expr.kind == br_dagen_expr_kind_mul) {
-    size_t read = expr_mul_to(datas, arena, expr.operands.op1, offset, n, data);
-    read = expr_mul_to(datas, arena, expr.operands.op2, offset, read, data);
-    return read;
-  }
-
-  br_data_t* data_in = br_data_get1(datas, expr.group_id);
-  if (data_in == NULL) return 0;
-  double rebase = br_dagen_rebase(data_in, expr.kind);
-  float* fs = NULL;
-  size_t real_n = (offset + n > data_in->len) ? data_in->len - offset : n;
+  LOGI("%d", expr.kind);
   switch (expr.kind) {
-    case br_dagen_expr_kind_reference_x: fs = &data_in->dd.xs[offset]; break;
-    case br_dagen_expr_kind_reference_y: fs = &data_in->dd.ys[offset]; break;
-    case br_dagen_expr_kind_reference_z: fs = &data_in->ddd.zs[offset]; break;
-    default: BR_ASSERT(0);
+    case br_dagen_expr_kind_add: {
+      float* new_batch = push_batch();
+      size_t read = expr_read_n(datas, arena, expr.operands.op1, offset, n, new_batch);
+      read = expr_add_to(datas, arena, expr.operands.op2, offset, read, new_batch);
+      for (size_t i = 0; i < read; ++i) data[i] *= new_batch[i];
+      pop_batch();
+      return read;
+    } break;
+    case br_dagen_expr_kind_mul: {
+      size_t read = expr_mul_to(datas, arena, expr.operands.op1, offset, n, data);
+      read = expr_mul_to(datas, arena, expr.operands.op2, offset, read, data);
+      return read;
+    } break;
+    case br_dagen_expr_kind_reference_x:
+    case br_dagen_expr_kind_reference_y:
+    case br_dagen_expr_kind_reference_z: {
+      br_data_t* data_in = br_data_get1(datas, expr.group_id);
+      if (data_in == NULL) return 0;
+      double rebase = br_dagen_rebase(data_in, expr.kind);
+      float* fs = NULL;
+      size_t real_n = (offset + n > data_in->len) ? data_in->len - offset : n;
+      switch (expr.kind) {
+        case br_dagen_expr_kind_reference_x: fs = &data_in->dd.xs[offset]; break;
+        case br_dagen_expr_kind_reference_y: fs = &data_in->dd.ys[offset]; break;
+        case br_dagen_expr_kind_reference_z: fs = &data_in->ddd.zs[offset]; break;
+        default: BR_UNREACHABLE("Unknown expr kind %d", expr.kind);
+      }
+      for (size_t i = 0; i < real_n; ++i) data[i] *= (float)((double)fs[i] + rebase);
+      return real_n;
+    } break;
+    case br_dagen_expr_kind_constant: {
+      for (size_t i = 0; i < n; ++i) data[i] *= (float)expr.value;
+      return n;
+    } break;
+    default: BR_UNREACHABLE("Unknown expr kind %d", expr.kind);
   }
-  for (size_t i = 0; i < real_n; ++i) data[i] *= (float)((double)fs[i] + rebase);
-  return real_n;
 }
 
 static float* push_batch(void) {
@@ -583,22 +613,33 @@ static bool expr_parse(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out)
 
 static bool expr_parse_ref(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out) {
   token_t t;
-  GET_TOKEN(t, tokens, token_kind_hash);
-  GET_TOKEN(t, tokens, token_kind_number);
-  int group_id = br_strv_to_int(t.str);
-  GET_TOKEN(t, tokens, token_kind_dot);
-  GET_TOKEN(t, tokens, token_kind_ident);
-  br_dagen_expr_kind_t kind;
-  switch (t.str.str[0]) {
-    case 'x': kind = br_dagen_expr_kind_reference_x; break;
-    case 'y': kind = br_dagen_expr_kind_reference_y; break;
-    case 'z': kind = br_dagen_expr_kind_reference_z; break;
-    default: LOGE("[Parser] Unexpected identifier '%.*s' at location %zu. Expected: 'x'|'y'|'z'", t.str.len, t.str.str, t.position); return false;
+  t = expr_peek(*tokens);
+  if (t.kind == token_kind_number) {
+    GET_TOKEN(t, tokens, token_kind_number);
+    br_dagen_expr_t expr = { .kind = br_dagen_expr_kind_constant, .value = br_strv_to_int(t.str) };
+    *out = (uint32_t)arena->len;
+    br_da_push(*arena, expr);
+    return true;
+  } else if (t.kind == token_kind_hash) {
+    GET_TOKEN(t, tokens, token_kind_hash);
+    GET_TOKEN(t, tokens, token_kind_number);
+    int group_id = br_strv_to_int(t.str);
+    GET_TOKEN(t, tokens, token_kind_dot);
+    GET_TOKEN(t, tokens, token_kind_ident);
+    br_dagen_expr_kind_t kind;
+    switch (t.str.str[0]) {
+      case 'x': kind = br_dagen_expr_kind_reference_x; break;
+      case 'y': kind = br_dagen_expr_kind_reference_y; break;
+      case 'z': kind = br_dagen_expr_kind_reference_z; break;
+      default: LOGE("[Parser] Unexpected identifier '%.*s' at location %zu. Expected: 'x'|'y'|'z'", t.str.len, t.str.str, t.position); return false;
+    }
+    br_dagen_expr_t expr = { .kind = kind, .group_id = group_id };
+    *out = (uint32_t)arena->len;
+    br_da_push(*arena, expr);
+    return true;
   }
-  br_dagen_expr_t expr = { .kind = kind, .group_id = group_id };
-  *out = (uint32_t)arena->len;
-  br_da_push(*arena, expr);
-  return true;
+  LOGE("[Parser] Unexpected identifier '%.*s' at location %zu. Expected ref or number", t.str.len, t.str.str, t.position); return false;
+  return false;
 }
 
 
@@ -667,6 +708,8 @@ TEST_ONLY static void expr_to_str(br_str_t* out, br_dagen_exprs_t* arena, uint32
                                  expr_to_str(out, arena, t.operands.op2);
                                  return;
     case br_dagen_expr_kind_iota: br_str_push_literal(out, "0..4.8e9");
+                                  return;
+    case br_dagen_expr_kind_constant: br_str_push_int(out, t.value);
                                   return;
   }
   BR_UNREACHABLE("Unknown kind: %d", t.kind);
@@ -1000,6 +1043,56 @@ TEST_CASE(dagen_parser_basic_xy) {
   br_vec2d_t val = br_data_el_xy(datas, 2, 0);
   TEST_EQUALF((float)val.x, 10.f);
   TEST_EQUALF((float)val.y, 20.f);
+  FREE
+}
+
+TEST_CASE(dagen_parser_mul_const) {
+  INIT
+  br_data_push_xyz(&datas, 10.f, 20.f, 30.f, 1);
+  br_strv_t s = br_strv_from_literal("#1.x * 10");
+  TEST_TRUE(br_dagens_add_expr_str(&dagens, &datas, s, 2));
+
+  br_str_t dbg = { 0 };
+  expr_to_str(&dbg, &dagens.arr[0].expr_2d.arena, dagens.arr[0].expr_2d.x_expr_index);
+  LOGI("xid = %d, yid = %d", dagens.arr[0].expr_2d.x_expr_index, dagens.arr[0].expr_2d.y_expr_index);
+  br_str_push_char(&dbg, '|');
+  expr_to_str(&dbg, &dagens.arr[0].expr_2d.arena, dagens.arr[0].expr_2d.y_expr_index);
+  LOGI("Expr: %.*s", dbg.len, dbg.str);
+  br_str_free(dbg);
+
+  br_dagens_handle_once(&datas, &dagens, &plots);
+  br_data_t* res = br_data_get1(datas, 2);
+
+
+  TEST_EQUAL(res->len, 1);
+  TEST_EQUAL(res->kind, br_data_kind_2d);
+  br_vec2d_t val = br_data_el_xy(datas, 2, 0);
+  TEST_EQUALF((float)val.y, 100.f);
+  FREE
+}
+
+TEST_CASE(dagen_parser_add_mul_const) {
+  INIT
+  br_data_push_xyz(&datas, 10.f, 20.f, 30.f, 1);
+  br_strv_t s = br_strv_from_literal("2 * 3 + #1.x * 2 * 2");
+  TEST_TRUE(br_dagens_add_expr_str(&dagens, &datas, s, 2));
+
+  br_str_t dbg = { 0 };
+  expr_to_str(&dbg, &dagens.arr[0].expr_2d.arena, dagens.arr[0].expr_2d.x_expr_index);
+  LOGI("xid = %d, yid = %d", dagens.arr[0].expr_2d.x_expr_index, dagens.arr[0].expr_2d.y_expr_index);
+  br_str_push_char(&dbg, '|');
+  expr_to_str(&dbg, &dagens.arr[0].expr_2d.arena, dagens.arr[0].expr_2d.y_expr_index);
+  LOGI("Expr: %.*s", dbg.len, dbg.str);
+  br_str_free(dbg);
+
+  br_dagens_handle_once(&datas, &dagens, &plots);
+  br_data_t* res = br_data_get1(datas, 2);
+
+
+  TEST_EQUAL(res->len, 1);
+  TEST_EQUAL(res->kind, br_data_kind_2d);
+  br_vec2d_t val = br_data_el_xy(datas, 2, 0);
+  TEST_EQUALF((float)val.y, 46.f);
   FREE
 }
 

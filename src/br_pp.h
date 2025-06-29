@@ -34,8 +34,8 @@
 } while(0)
 
 #define BR_UNREACHABLE(fmt, ...) do { \
-  LOGE("Reached unreachable state"); \
-  BR_ASSERTF(0, fmt, ##__VA_ARGS__); \
+  LOGE("Reached unreachable state: " fmt, ##__VA_ARGS__); \
+  BR_ASSERTF(0, "Exiting"); \
   exit(1); \
 } while(0)
 

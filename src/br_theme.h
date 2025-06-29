@@ -33,6 +33,7 @@ typedef struct br_theme_t {
     float animation_speed;
     float min_sampling;
     float cull_min;
+    float default_grid_line_thickenss;
     bool debug;
   } ui;
 } br_theme_t;

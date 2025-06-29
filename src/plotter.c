@@ -58,6 +58,7 @@ br_plotter_t* br_plotter_malloc(void) {
 
 void br_plotter_init(br_plotter_t* br) {
   br_plotter_init_specifics_platform(br, 1280, 720);
+  br_theme_reset_ui();
   br->loaded_status = br_permastate_load(br);
   if (br->loaded_status != br_permastate_status_ok) {
     br_datas_deinit(&br->groups);
@@ -69,7 +70,7 @@ void br_plotter_init(br_plotter_t* br) {
         .kind = br_plot_kind_2d,
         .dd = {
           .zoom = BR_VEC2D(1.f, 1.f),
-          .grid_line_thickness = 1.f,
+          .grid_line_thickness = brtl_theme()->ui.default_grid_line_thickenss,
           .grid_major_line_thickness = 2.f,
           .line_thickness = 0.05f
         }
@@ -193,7 +194,7 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
     .dd =  {
       .zoom = BR_VEC2D(1.f, 1.f),
       .offset = BR_VEC2D(0.f, 0.f),
-      .grid_line_thickness = 1.f,
+      .grid_line_thickness =  brtl_theme()->ui.default_grid_line_thickenss,
       .grid_major_line_thickness = 2.f,
       .line_thickness = 0.05f
     }
