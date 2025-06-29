@@ -106,9 +106,6 @@ void br_plotter_draw(br_plotter_t* br) {
             } break;
           }
         }
-        brui_resizable_temp_push(BR_STRL("Texture"));
-          brui_img_hack(br_text_renderer_texture_id(br->text));
-        brui_resizable_temp_pop();
         brgui_draw_csv_manager(&br->ui.csv_state, &br->csv_parser);
         brgui_draw_add_expression(br);
         brgui_draw_show_data(&br->ui.show_data, br->groups);
