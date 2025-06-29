@@ -2,10 +2,10 @@
 brplot - [b]etter [r]l[plot]
 Small application and library that plots data.
 
-It works as a [`library`](#Brplot as an library) or as an standalone application.
+It works as a [`library`](#Brplot-as-an-library) or as an standalone application.
 
 ## Running brplot as an application
-brplot reads data from standard input and draws the data. There is a format of expected that [`Input format`](#Input format).
+brplot reads data from standard input and draws the data. There is a format of expected that [`Input format`](#Input-format).
 
 ### Examples
 I think that more or less all the examples listed on [ttyplot examples](https://github.com/tenox7/ttyplot#examples) should work with brplot ( just replace ttyplot with brplot. )
