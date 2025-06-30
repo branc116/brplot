@@ -30,18 +30,23 @@ typedef enum {
   br_dagen_expr_kind_pair,
   br_dagen_expr_kind_iota,
   br_dagen_expr_kind_constant,
+  br_dagen_expr_kind_function_call,
 } br_dagen_expr_kind_t;
 
 typedef struct br_dagen_expr_t {
   br_dagen_expr_kind_t kind;
   union {
     struct {
+      br_strv_t func_name;
+      uint32_t arg;
+    } function;
+    struct {
       uint32_t op1;
       uint32_t op2;
     } operands;
     int group_id;
     int iota_state;
-    int value;
+    float value;
   };
 } br_dagen_expr_t;
 

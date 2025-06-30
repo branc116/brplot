@@ -252,6 +252,9 @@ bool brui_text_input(brsp_id_t str_id) {
         else if (lp == BR_KEY_MINUS) to_insert = '-';
         else if (lp == BR_KEY_MUL) to_insert = '*';
         else if (lp == BR_KEY_COMMA) to_insert = ',';
+        else if (lp == BR_KEY_COMMA) to_insert = ',';
+        else if (lp == BR_KEY_OPEN_PAREN) to_insert = '(';
+        else if (lp == BR_KEY_CLOSE_PAREN) to_insert = ')';
         if ('\0' != to_insert) {
           brsp_insert_char(brtl_brsp(), str_id, cp, to_insert);
           ++ACPARM.text.cursor_pos;
