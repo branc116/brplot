@@ -407,6 +407,12 @@ static void expr_apply_function(float* data, size_t n, br_strv_t func_name) {
     for (size_t i = 0; i < n; ++i) data[i] = sinf(data[i]);
   } else if (br_strv_eq(func_name, BR_STRL("cos"))) {
     for (size_t i = 0; i < n; ++i) data[i] = cosf(data[i]);
+  } else if (br_strv_eq(func_name, BR_STRL("tg"))) {
+    for (size_t i = 0; i < n; ++i) data[i] = tanf(data[i]);
+  } else if (br_strv_eq(func_name, BR_STRL("log"))) {
+    for (size_t i = 0; i < n; ++i) data[i] = logf(data[i]);
+  } else if (br_strv_eq(func_name, BR_STRL("abs"))) {
+    for (size_t i = 0; i < n; ++i) data[i] = fabsf(data[i]);
   } else if (br_strv_eq(func_name, BR_STRL("fft"))) {
     float* im_part = push_batch();
     float* re_part = push_batch();

@@ -81,7 +81,6 @@ bool br_fs_exists(br_strv_t path) {
   char* buff = br_strv_to_scrach(path);
   DWORD dwAttrib = GetFileAttributesA(buff);
   bool exists = dwAttrib != INVALID_FILE_ATTRIBUTES;
-  LOGI("dwAttrib: %lu %lx", dwAttrib, dwAttrib);
   br_scrach_free();
   return exists;
 }
