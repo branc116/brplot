@@ -407,8 +407,27 @@ static void expr_apply_function(float* data, size_t n, br_strv_t func_name) {
     for (size_t i = 0; i < n; ++i) data[i] = sinf(data[i]);
   } else if (br_strv_eq(func_name, BR_STRL("cos"))) {
     for (size_t i = 0; i < n; ++i) data[i] = cosf(data[i]);
+  } else if (br_strv_eq(func_name, BR_STRL("fft"))) {
+    float* im_part = push_batch();
+    float* re_part = push_batch();
+    for (size_t k = 0; k < n; ++k) im_part[k] = 0.f;
+    for (size_t k = 0; k < n; ++k) re_part[k] = 0.f;
+    for (size_t k = 0; k < n; ++k) {
+      im_part[k] = 0;
+      re_part[k] = 0;
+      float om = 2.f*BR_PI*(float)k/(float)n;
+      for (size_t i = 0; i < n; ++i) {
+        im_part[k] -= data[i] * sinf(om*(float)i);
+        re_part[k] += data[i] * cosf(om*(float)i);
+      }
+    }
+    for (size_t k = 0; k < n; ++k) {
+      data[k] = sqrtf(im_part[k] * im_part[k] + re_part[k] * re_part[k]);
+    }
+    pop_batch();
+    pop_batch();
   } else {
-    BR_UNREACHABLE("Unknown function name `%.*s`", func_name.len, func_name.str);
+    LOGE("Unknown function name `%.*s`", func_name.len, func_name.str);
   }
 }
 
@@ -769,7 +788,6 @@ void br_expr_debug(br_dagens_t dagens) {
   LOGI("xid = %d, yid = %d", dagens.arr[0].expr_2d.x_expr_index, dagens.arr[0].expr_2d.y_expr_index);
   br_str_push_char(&dbg, '|');
   expr_to_str(&dbg, &dagens.arr[0].expr_2d.arena, dagens.arr[0].expr_2d.y_expr_index);
-  LOGI("Expr: %.*s", dbg.len, dbg.str);
   br_str_free(dbg);
 }
 
@@ -1138,6 +1156,26 @@ TEST_CASE(dagen_parser_sin) {
   TEST_EQUAL(res->kind, br_data_kind_2d);
   br_vec2d_t val = br_data_el_xy(datas, 2, 0);
   TEST_EQUALF((float)val.y, cosf(10.f + sinf(20.f)) + sinf(20.f) * sinf(30.f));
+  FREE
+}
+
+TEST_CASE(dagen_parser_fft) {
+  INIT
+  br_data_push_xyz(&datas, 10.f, 20.f, 30.f, 1);
+  br_data_push_xyz(&datas, 20.f, 20.f, 30.f, 1);
+  br_data_push_xyz(&datas, 30.f, 20.f, 30.f, 1);
+  br_strv_t s = br_strv_from_literal("fft(#1.x)");
+  TEST_TRUE(br_dagens_add_expr_str(&dagens, &datas, s, 2));
+
+  br_expr_debug(dagens);
+
+  br_dagens_handle_once(&datas, &dagens, &plots);
+  br_data_t* res = br_data_get1(datas, 2);
+
+  TEST_EQUAL(res->len, 3);
+  TEST_EQUAL(res->kind, br_data_kind_2d);
+  br_vec2d_t val = br_data_el_xy(datas, 2, 0);
+  TEST_EQUALF((float)val.y, 60.f);
   FREE
 }
 
