@@ -9,10 +9,10 @@
 
 #if !defined(BR_DISABLE_LOG)
 #  define LOG(...)
-#  define LOGI(format, ...) fprintf(stderr, "[INFO][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__)
-#  define LOGW(format, ...) fprintf(stderr, "[WARNING][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__)
+#  define LOGI(format, ...) fprintf(stderr, "[INFO][ " __FILE__ ":%d ] " format "\n", __LINE__, ##__VA_ARGS__)
+#  define LOGW(format, ...) fprintf(stderr, "[WARNING][ " __FILE__ ":%d ] " format "\n", __LINE__, ##__VA_ARGS__)
 #  define LOGE(format, ...) do { \
-    fprintf(stderr, "[ERROR][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__); \
+    fprintf(stderr, "[ERROR][ " __FILE__ ":%d ] " format "\n", __LINE__, ##__VA_ARGS__); \
     BR_STACKTRACE(); \
 } while(0)
 #else

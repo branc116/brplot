@@ -103,12 +103,13 @@ uint32_t br_fs_crc(const void* data_p, size_t data_size, uint32_t seed) // Stole
 }
 
 bool br_fs_read(const char* path, br_str_t* out_content) {
-  FILE* file = fopen(path, "rb");
-  long size = 0;
+  FILE* file        = NULL;
+  long size         = 0;
   size_t wanted_cap = 0;
-  bool success = true;
+  bool success      = true;
 
-  if (file == NULL)                                                          BR_ERROR("Failed to open file %s: %s", path, strerror(errno));
+  if (NULL == path)                                                          BR_ERROR("Provided path is NULL");
+  if (NULL == (file = fopen(path, "rb")))                                    BR_ERROR("Failed to open file %s: %s", path, strerror(errno));
   if (-1 == fseek(file, 0, SEEK_END))                                        BR_ERROR("Failed to seek file %s: %s", path, strerror(errno));
   if (-1 == (size = ftell(file)))                                            BR_ERROR("Failed to get the file size %s: %s", path, strerror(errno));
   if (-1 == fseek(file, 0, SEEK_SET))                                        BR_ERROR("Failed to get seek set file %s: %s", path, strerror(errno));

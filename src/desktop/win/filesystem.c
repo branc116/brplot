@@ -79,9 +79,9 @@ bool br_fs_mkdir(br_strv_t path) {
 
 bool br_fs_exists(br_strv_t path) {
   char* buff = br_strv_to_scrach(path);
-  DWORD dwAttrib = GetFileAttributes(buff);
-  bool exists = (dwAttrib != INVALID_FILE_ATTRIBUTES && 
-         (dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+  DWORD dwAttrib = GetFileAttributesA(buff);
+  bool exists = dwAttrib != INVALID_FILE_ATTRIBUTES;
+  LOGI("dwAttrib: %lu %lx", dwAttrib, dwAttrib);
   br_scrach_free();
   return exists;
 }

@@ -35,7 +35,7 @@ float brtl_frame_time(void);
 int brtl_fps(void);
 bool brtl_key_down(int key);
 bool brtl_key_pressed(int key);
-br_pressed_chars_t brtl_pressed_chars();
+br_pressed_chars_t brtl_pressed_chars(void);
 bool brtl_key_ctrl(void);
 bool brtl_key_alt(void);
 bool brtl_key_shift(void);

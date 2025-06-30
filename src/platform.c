@@ -397,7 +397,7 @@ bool brtl_key_pressed(int key) {
   return false;
 }
 
-br_pressed_chars_t brtl_pressed_chars() {
+br_pressed_chars_t brtl_pressed_chars(void) {
   return stl_br->pressed_chars;
 }
 
