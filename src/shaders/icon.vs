@@ -1,5 +1,7 @@
 #version 330
-#extension GL_ANGLE_clip_cull_distance : enable
+#ifdef GL_ANGLE_clip_cull_distance
+#  extension GL_ANGLE_clip_cull_distance : enable
+#endif
 
 precision mediump float;
 
@@ -18,8 +20,10 @@ void main() {
   outin_fg = fg;
   outin_bg = bg;
   gl_Position = vec4(pos.xy, z, 1.0);
+#ifdef GL_ANGLE_clip_cull_distance
   gl_ClipDistance[0] = clip_dists.x;
   gl_ClipDistance[1] = clip_dists.y;
   gl_ClipDistance[2] = clip_dists.z;
   gl_ClipDistance[3] = clip_dists.w;
+#endif
 }

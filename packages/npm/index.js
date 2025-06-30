@@ -33,6 +33,7 @@ export class Brplot {
   resize(width, height) {
     this.canvas.width = this.width = width;
     this.canvas.height = this.height = height;
+    this.module._br_wasm_resize(this.plotter, width, height);
   }
 
   startDrawing() {

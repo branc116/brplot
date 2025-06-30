@@ -450,7 +450,7 @@ sudo rm /usr/bin/brplot
           * Implemented it but it looks bad and needs more features..
               * Impelement CTRL-BACKSPACE to delete a work.
 
-* Web resizing is again fucked, unfuck it.
+* ~~Web resizing is again fucked, unfuck it.~~
 * ~~Automaticaly generate functions to select icon that best fits wanted size..~~
 * ~~Resizables should use br_free_list~~
 * Implement snappings for resizables

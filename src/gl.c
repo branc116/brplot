@@ -19,7 +19,6 @@
 
 typedef void (*glDebugProc)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
 
-
 #include ".generated/gl.c"
 
 unsigned int brgl_load_shader(const char* vs, const char* fs, int* ok) {

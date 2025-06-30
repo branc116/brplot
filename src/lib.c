@@ -261,11 +261,18 @@ BR_EXPORT void* PyInit_brplot(void) { return NULL; }
 #if defined(__EMSCRIPTEN__)
 #  define BR_WASM_BULLSHIT 1
 #endif
+
 #if defined(BR_WASM_BULLSHIT)
 BR_EXPORT void br_wasm_init(br_plotter_t* br) {
   br_plotter_init(br);
 }
+
 BR_EXPORT void br_wasm_loop(br_plotter_t* br) {
   br_main_iter(br);
+}
+
+void glfwSetWindowSize(GLFWwindow* window, int width, int height);
+BR_EXPORT void br_wasm_resize(br_plotter_t* br, int width, int height) {
+  glfwSetWindowSize(br->win.glfw, width, height);
 }
 #endif
