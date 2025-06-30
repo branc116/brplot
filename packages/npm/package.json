@@ -1,6 +1,6 @@
 {
   "name": "brplot",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Library for plotting huge amount of points. (100+ million)",
   "private": false,
   "scripts": {

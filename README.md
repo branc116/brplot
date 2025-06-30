@@ -239,8 +239,8 @@ This bindings are a bit more messy and I don't like it that much..
   <body>
     <canvas width="800" height="600" id="canvas"></canvas>
     <script type="module">
-      // TODO: change 0.0.6 to the latest version...
-      import { Brplot } from "https://cdn.jsdelivr.net/npm/brplot@0.0.6/index.js"
+      // TODO: change 0.0.7 to the latest version...
+      import { Brplot } from "https://cdn.jsdelivr.net/npm/brplot@0.0.7/index.js"
 
       const b = new Brplot("canvas");
       await b.initializeAsync();

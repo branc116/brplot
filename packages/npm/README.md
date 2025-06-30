@@ -24,8 +24,8 @@ Both should work.
   <body>
     <canvas width="800" height="600" id="canvas1"></canvas>
     <script type="module">
-      // TODO: change 0.0.2 to the latest version...
-      import { Brplot } from "https://cdn.jsdelivr.net/npm/brplot@0.0.2/index.js"
+      // TODO: change 0.0.7 to the latest version...
+      import { Brplot } from "https://cdn.jsdelivr.net/npm/brplot@0.0.7/index.js"
 
       const b = new Brplot("canvas1");
       await b.initializeAsync();
@@ -71,7 +71,7 @@ b.setOnNewFrame(() => {
 // Start rendering loop.
 b.startDrawing();
 
-// Can this if you want to stop rendering loop.
+// Call this if you want to stop rendering loop.
 // b.stopDrawing()
 
 // Call this if you only what to render 1 frame to the canvas.
