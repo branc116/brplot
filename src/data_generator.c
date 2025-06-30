@@ -574,7 +574,6 @@ static void pop_batch(void) {
 
 static bool tokens_get(tokens_t* tokens, br_strv_t str) {
   token_t t;
-  uint32_t j = 0;
 
   for (uint32_t i = 0; i < str.len; ++i) {
     uint32_t n = 0;
@@ -586,7 +585,6 @@ static bool tokens_get(tokens_t* tokens, br_strv_t str) {
     }
     if (str.str[i] >= '0' && str.str[i] <= '9') {
       while ((str.str[i + n] >= '0' && str.str[i + n] <= '9') || str.str[i + n] == 'e' || str.str[i + n] == '.') ++n; 
-      LOGI("i = %u, n = %u", i, n);
       if (str.str[i + n - 1] == '.') --n;
       t = (token_t) { .kind = token_kind_number, .str = br_str_sub(str, i, n), .position = i };
       i += n - 1;
@@ -749,7 +747,7 @@ TEST_ONLY static void expr_to_str(br_str_t* out, br_dagen_exprs_t* arena, uint32
                                  return;
     case br_dagen_expr_kind_iota: br_str_push_literal(out, "0..4.8e9");
                                   return;
-    case br_dagen_expr_kind_constant: br_str_push_int(out, t.value);
+    case br_dagen_expr_kind_constant: br_str_push_float(out, t.value);
                                       return;
     case br_dagen_expr_kind_function_call: br_str_push_strv(out, t.function.func_name);
                                            br_str_push_char(out, '(');
