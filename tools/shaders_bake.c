@@ -42,6 +42,7 @@
   X(token_kind_plus) \
   X(token_kind_minus) \
   X(token_kind_times) \
+  X(token_kind_exclam) \
   X(token_kind_mod) \
   X(token_kind_div) \
 
@@ -233,8 +234,16 @@ void get_program_variables(programs_t programs) {
 void embed_tokens(FILE* out, br_str_t name, br_str_t name_postfix, tokens_t tokens, shader_output_kind_t kind) {
   fprintf(out, "#define %s_%s \"", br_str_to_c_str(name), br_str_to_c_str(name_postfix));
   switch (kind) {
-    case shader_output_kind_desktop: fprintf(out, "#version 330\\n"); break;
-    case shader_output_kind_web: fprintf(out, "#version 300 es\\n"); break;
+    case shader_output_kind_desktop: {
+      fprintf(out, "#version 330\\n");
+      fprintf(out, "#define BR_CULL\\n");
+    } break;
+    case shader_output_kind_web: {
+      fprintf(out, "#version 300 es\\n");
+      fprintf(out, "#ifdef GL_ANGLE_clip_cull_distance\\n");
+      fprintf(out, "#  define BR_CULL\\n");
+      fprintf(out, "#endif\\n");
+    } break;
     default: fprintf(stderr, "ERROR: Bad output kind: %d\n", kind);
   }
   fprintf(out, "\" \\\n\"");
@@ -387,6 +396,10 @@ void get_tokens(shader_t* shader) {
       token_t times = init_token(token_kind_times, line, offset, &shader->content.str[i]);
       ++offset;
       br_da_push(shader->tokens, times);
+    } else if (cur == '!') {
+      token_t exclam = init_token(token_kind_exclam, line, offset, &shader->content.str[i]);
+      ++offset;
+      br_da_push(shader->tokens, exclam);
     } else if (cur == '%') {
       token_t modulo = init_token(token_kind_mod, line, offset, &shader->content.str[i]);
       ++offset;

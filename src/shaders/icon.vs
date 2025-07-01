@@ -1,5 +1,6 @@
 #version 330
-#ifdef GL_ANGLE_clip_cull_distance
+
+#ifdef BR_CULL
 #  extension GL_ANGLE_clip_cull_distance : enable
 #endif
 
@@ -20,7 +21,7 @@ void main() {
   outin_fg = fg;
   outin_bg = bg;
   gl_Position = vec4(pos.xy, z, 1.0);
-#ifdef GL_ANGLE_clip_cull_distance
+#ifdef BR_CULL
   gl_ClipDistance[0] = clip_dists.x;
   gl_ClipDistance[1] = clip_dists.y;
   gl_ClipDistance[2] = clip_dists.z;
