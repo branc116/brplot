@@ -25,7 +25,7 @@ void br_plot_draw(br_plot_t* plot, br_datas_t datas) {
   switch (plot->kind) {
     case br_plot_kind_2d: br_plot_2d_draw(plot, datas); break;
     case br_plot_kind_3d: br_plot_3d_draw(plot, datas); break;
-    default: BR_ASSERT(0);
+    default: BR_UNREACHABLE("Plot kind %d is not handled", plot->kind);
   }
 }
 
@@ -33,6 +33,7 @@ void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t grou
   for (int i = 0; i < plot->data_info.len; ++i) {
     plot->data_info.arr[i].thickness_multiplyer = br_float_lerp(plot->data_info.arr[i].thickness_multiplyer, plot->data_info.arr[i].thickness_multiplyer_target, brtl_frame_time()*5);
   }
+  if (brui_action()->kind != brui_action_none) return;
   switch (plot->kind) {
     case br_plot_kind_2d: {
       if (br_plot_update_variables_2d(plot, groups, mouse_pos))
@@ -42,7 +43,7 @@ void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t grou
       if (br_plot_update_variables_3d(plot, groups, mouse_pos))
         br_keybinding_handle_keys(br, plot);
     } break;
-    default: BR_ASSERT(0);
+    default: BR_UNREACHABLE("Plot kind %d is not handled", plot->kind);
   }
 }
 

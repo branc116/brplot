@@ -482,6 +482,7 @@ static size_t expr_read_n(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
     } break;
     default: BR_UNREACHABLE("Expr kind unknown: %d", expr.kind);
   }
+  return 0;
 }
 
 static size_t expr_add_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index, size_t offset, size_t n, float* data) {
@@ -534,6 +535,7 @@ static size_t expr_add_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
     } break;
     default: BR_UNREACHABLE("Expr kind: %d", expr.kind);
   }
+  return 0;
 }
 
 static size_t expr_mul_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index, size_t offset, size_t n, float* data) {
@@ -583,6 +585,7 @@ static size_t expr_mul_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
     } break;
     default: BR_UNREACHABLE("Unknown expr kind %d", expr.kind);
   }
+  return 0;
 }
 
 static float* push_batch(void) {

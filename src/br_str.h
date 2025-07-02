@@ -580,6 +580,7 @@ int br_strv_pop_utf8(br_strv_t* t) {
   if ((initial & 0b11111000) == 0b11110000) return ret;
 
   BR_UNREACHABLE("Bad UTF8 character...");
+  return 0;
 }
 
 
