@@ -33,18 +33,18 @@ void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t grou
   for (int i = 0; i < plot->data_info.len; ++i) {
     plot->data_info.arr[i].thickness_multiplyer = br_float_lerp(plot->data_info.arr[i].thickness_multiplyer, plot->data_info.arr[i].thickness_multiplyer_target, brtl_frame_time()*5);
   }
-  if (brui_action()->kind != brui_action_none) return;
+  bool apply_kb = true;
   switch (plot->kind) {
     case br_plot_kind_2d: {
-      if (br_plot_update_variables_2d(plot, groups, mouse_pos))
-        br_keybinding_handle_keys(br, plot);
+      apply_kb = br_plot_update_variables_2d(plot, groups, mouse_pos);
     } break;
     case br_plot_kind_3d: {
-      if (br_plot_update_variables_3d(plot, groups, mouse_pos))
-        br_keybinding_handle_keys(br, plot);
+      apply_kb = br_plot_update_variables_3d(plot, groups, mouse_pos);
     } break;
     default: BR_UNREACHABLE("Plot kind %d is not handled", plot->kind);
   }
+  apply_kb &= brui_action()->kind == brui_action_none;
+  if (apply_kb) br_keybinding_handle_keys(br, plot);
 }
 
 bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos) {
@@ -106,6 +106,7 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_ve
         br_vec2d_t now = plot->dd.mouse_pos;
         plot->dd.offset.x -= now.x - old.x;
         plot->dd.offset.y -= now.y - old.y;
+        brui_action_stop();
       }
     }
     if (false && plot->jump_around) {
@@ -120,6 +121,7 @@ bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_ve
       float height = (float)plot->cur_extent.height;
       plot->dd.offset.x -= plot->dd.zoom.x*delt.x/height;
       plot->dd.offset.y += plot->dd.zoom.y*delt.y/height;
+      brui_action_stop();
       return false;
     } else return true;
   }

@@ -228,6 +228,7 @@ bool  brui_active(void);
 void  brui_debug(void);
 
 brui_action_t* brui_action(void);
+void brui_action_stop(void);
 brui_stack_t* brui_stack(void);
 
 void              brui_resizable_init(void);

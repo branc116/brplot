@@ -856,6 +856,10 @@ brui_action_t* brui_action(void) {
   return &brui__stack.action;
 }
 
+void brui_action_stop(void) {
+  ACTION = brui_action_none;
+}
+
 brui_stack_t* brui_stack(void) {
   return &brui__stack;
 }
