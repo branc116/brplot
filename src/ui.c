@@ -242,6 +242,14 @@ bool brui_text_input(brsp_id_t str_id) {
           while (ACPARM.text.cursor_pos > 0 && ((strv.str[--ACPARM.text.cursor_pos] & 0b11000000) == 0b10000000));
           changed = brsp_remove_utf8_after(sp, str_id, ACPARM.text.cursor_pos) > 0;
         } else if (lp >= BR_KEY_0 && lp <= BR_KEY_9) to_insert = '0' + (char)(lp - BR_KEY_0);
+        else if (lp == BR_KEY_HOME) {
+          ACPARM.text.cursor_pos = 0;
+          changed = true;
+        }
+        else if (lp == BR_KEY_END) {
+          ACPARM.text.cursor_pos = brsp_get(*sp, str_id).len;
+          changed = true;
+        }
         else if (lp == BR_KEY_SLASH) to_insert = '/';
         else if (lp >= BR_KEY_A && lp <= BR_KEY_Z) to_insert = (char)lp;
         else if (lp >= BR_KEY_a && lp <= BR_KEY_z) to_insert = (char)lp;
@@ -863,8 +871,6 @@ void brui_action_stop(void) {
 brui_stack_t* brui_stack(void) {
   return &brui__stack;
 }
-
-
 
 // ---------------------------Resizables--------------------------
 static int bruir_find_at(int index, br_vec2_t loc, br_vec2_t* out_local_pos);
