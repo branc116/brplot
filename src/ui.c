@@ -1014,6 +1014,21 @@ void brui_resizable_update(void) {
       return;
     }
     brui_resizable_t* hovered = br_da_getp(*rs, index);
+    if (brtl_key_pressed(BR_KEY_HOME)) hovered->target.scroll_offset_percent = 0.f;
+    if (brtl_key_pressed(BR_KEY_END))  hovered->target.scroll_offset_percent = 1.f;
+    if (brtl_key_pressed(BR_KEY_PAGE_UP)) {
+      float hidden_height = hovered->full_height - hovered->cur_extent.height;
+      float page_percent = hovered->cur_extent.height / hidden_height;
+      page_percent *= 0.9f;
+      hovered->target.scroll_offset_percent = br_float_clamp(hovered->current.scroll_offset_percent - page_percent, 0.f, 1.f);
+    }
+    if (brtl_key_pressed(BR_KEY_PAGE_DOWN)) {
+      float hidden_height = hovered->full_height - hovered->cur_extent.height;
+      float page_percent = hovered->cur_extent.height / hidden_height;
+      page_percent *= 0.9f;
+      hovered->target.scroll_offset_percent = br_float_clamp(hovered->current.scroll_offset_percent + page_percent, 0.f, 1.f);
+    }
+
     bool ml = brtl_mousel_down();
     bool mr = brtl_mouser_down();
     if (false == ml && false == mr) brui__stack.active_resizable = index;
@@ -1422,7 +1437,6 @@ static void bruir_update_extent(int index, br_extent_t new_ex, bool force, bool 
   bruirs_t* rs = brtl_bruirs();
   brui_resizable_t* res = br_da_getp(*rs, index);
   br_extent_t old_ex = res->target.cur_extent;
-
   if (force || br_extent_eq(new_ex, old_ex) == false) {
     if (index != 0) {
       brui_resizable_t parent = br_da_get(*rs, res->parent);
