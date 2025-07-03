@@ -258,8 +258,7 @@ brgui_fm_result_t brgui_draw_file_manager(brgui_file_manager_t* state) {
           if (tab) {
             if (shift) --state->select_index;
             else       ++state->select_index;
-            state->select_index = state->select_index % (int)state->cur_dir.real_len;
-            LOGI("real_len: %zu", state->cur_dir.real_len);
+            if (state->select_index < 0 || state->select_index >= state->cur_dir.real_len) state->select_index = 0;
           }
         }
       brui_vsplit_end();

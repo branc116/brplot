@@ -222,9 +222,9 @@ bool brui_text_input(brsp_id_t str_id) {
     float half_thick = 1.0f;
     br_pressed_chars_t pressed = brtl_pressed_chars();
     for (size_t i = 0; i < pressed.len; ++i) {
-      uint32_t lp = br_da_get(pressed, i);
+      brtl_pressed_char_t p = br_da_get(pressed, i);
       if (brtl_key_ctrl()) {
-        if (lp == 'v') {
+        if (p.key == 'v') {
           br_strv_t content = brtl_clipboard();
           for (uint32_t j = 0; j < content.len; ++j) {
             brsp_insert_char(brtl_brsp(), str_id, cp, content.str[j]);
@@ -233,39 +233,27 @@ bool brui_text_input(brsp_id_t str_id) {
           changed = true;
         }
       } else {
-        char to_insert = '\0';
-        if (lp == BR_KEY_LEFT) while (ACPARM.text.cursor_pos > 0 && (strv.str[--ACPARM.text.cursor_pos] & 0b11000000) == 0b10000000);
-        else if (lp == BR_KEY_RIGHT) while (ACPARM.text.cursor_pos < (int)strv.len && (strv.str[++ACPARM.text.cursor_pos] & 0b11000000) == 0b10000000);
-        else if (lp == BR_KEY_ESCAPE) ACTION = brui_action_none;
-        else if (lp == BR_KEY_DELETE) changed = brsp_remove_utf8_after(sp, str_id, ACPARM.text.cursor_pos) > 0;
-        else if (lp == BR_KEY_BACKSPACE) {
-          while (ACPARM.text.cursor_pos > 0 && ((strv.str[--ACPARM.text.cursor_pos] & 0b11000000) == 0b10000000));
-          changed = brsp_remove_utf8_after(sp, str_id, ACPARM.text.cursor_pos) > 0;
-        } else if (lp >= BR_KEY_0 && lp <= BR_KEY_9) to_insert = '0' + (char)(lp - BR_KEY_0);
-        else if (lp == BR_KEY_HOME) {
-          ACPARM.text.cursor_pos = 0;
-          changed = true;
-        }
-        else if (lp == BR_KEY_END) {
-          ACPARM.text.cursor_pos = brsp_get(*sp, str_id).len;
-          changed = true;
-        }
-        else if (lp == BR_KEY_SLASH) to_insert = '/';
-        else if (lp >= BR_KEY_A && lp <= BR_KEY_Z) to_insert = (char)lp;
-        else if (lp >= BR_KEY_a && lp <= BR_KEY_z) to_insert = (char)lp;
-        else if (lp == BR_KEY_SPACE) to_insert = ' ';
-        else if (lp == BR_KEY_HASH) to_insert = '#';
-        else if (lp == BR_KEY_DOT) to_insert = '.';
-        else if (lp == BR_KEY_PLUS) to_insert = '+';
-        else if (lp == BR_KEY_MINUS) to_insert = '-';
-        else if (lp == BR_KEY_MUL) to_insert = '*';
-        else if (lp == BR_KEY_COMMA) to_insert = ',';
-        else if (lp == BR_KEY_COMMA) to_insert = ',';
-        else if (lp == BR_KEY_OPEN_PAREN) to_insert = '(';
-        else if (lp == BR_KEY_CLOSE_PAREN) to_insert = ')';
-        if ('\0' != to_insert) {
-          brsp_insert_char(brtl_brsp(), str_id, cp, to_insert);
-          ++ACPARM.text.cursor_pos;
+        uint32_t lp = p.key;
+        if (p.is_special) {
+          if (lp == BR_KEY_LEFT) while (ACPARM.text.cursor_pos > 0 && (strv.str[--ACPARM.text.cursor_pos] & 0b11000000) == 0b10000000);
+          else if (lp == BR_KEY_RIGHT) while (ACPARM.text.cursor_pos < (int)strv.len && (strv.str[++ACPARM.text.cursor_pos] & 0b11000000) == 0b10000000);
+          else if (lp == BR_KEY_ESCAPE) ACTION = brui_action_none;
+          else if (lp == BR_KEY_DELETE) {
+            changed = brsp_remove_utf8_after(sp, str_id, ACPARM.text.cursor_pos) > 0;
+          } else if (lp == BR_KEY_BACKSPACE) {
+            while (ACPARM.text.cursor_pos > 0 && ((strv.str[--ACPARM.text.cursor_pos] & 0b11000000) == 0b10000000));
+            changed = brsp_remove_utf8_after(sp, str_id, ACPARM.text.cursor_pos) > 0;
+          } else if (lp == BR_KEY_HOME) {
+            ACPARM.text.cursor_pos = 0;
+            changed = true;
+          }
+          else if (lp == BR_KEY_END) {
+            ACPARM.text.cursor_pos = brsp_get(*sp, str_id).len;
+            changed = true;
+          }
+        } else if (p.key >= 32 && p.key != 127) {
+          int inserted = brsp_insert_unicode(brtl_brsp(), str_id, cp, p.key);
+          ACPARM.text.cursor_pos += inserted;
           changed = true;
         }
       }
@@ -803,7 +791,6 @@ void brui_maxy_set(float value) {
 void brui_scroll_move(float value) {
   brui_resizable_t* res = br_da_getp(*brtl_bruirs(), TOP.cur_resizable);
   float hidden_height = res->full_height - res->current.cur_extent.height;
-  LOGI("res: %d, HH: %f", TOP.cur_resizable, hidden_height);
   if (hidden_height <= 0) return;
 
   float cur_scroll_px = hidden_height * res->target.scroll_offset_percent;
@@ -812,7 +799,6 @@ void brui_scroll_move(float value) {
   if (next_scroll_px > hidden_height) next_scroll_px = hidden_height;
   float old = res->target.scroll_offset_percent;
   res->target.scroll_offset_percent = next_scroll_px / hidden_height;
-  LOGI("old sc: %f, new sc: %f", old, res->target.scroll_offset_percent);
 }
 
 float brui_min_y(void) {

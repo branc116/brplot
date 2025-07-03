@@ -14,8 +14,14 @@ typedef struct br_theme_t br_theme_t;
 typedef struct bruirs_t bruirs_t;
 typedef struct bruir_children_t bruir_children_t;
 typedef struct brsp_t brsp_t;
+
+typedef struct brtl_pressed_char_t {
+  uint32_t key;
+  bool is_special;
+} brtl_pressed_char_t;
+
 typedef struct {
-  uint32_t* arr;
+  brtl_pressed_char_t* arr;
   size_t len, cap;
 } br_pressed_chars_t;
 

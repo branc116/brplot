@@ -293,7 +293,10 @@ static void br_glfw_on_key(struct GLFWwindow* window, int key, int scancode, int
     }
   }
   if (action == GLFW_REPEAT || action == GLFW_PRESS) {
-    if (key >= BR_KEY_ESCAPE && key <= GLFW_KEY_MENU) br_da_push(stl_br->pressed_chars, key);
+    if (key >= BR_KEY_ESCAPE && key <= GLFW_KEY_MENU) {
+      brtl_pressed_char_t c = { .key = key, .is_special = true };
+      br_da_push(stl_br->pressed_chars, c);
+    }
   }
   if (key < 0 || key >= 512) {
     LOGW("Bad scancode %d, key %d", scancode, key);
@@ -308,7 +311,8 @@ static void br_glfw_on_key(struct GLFWwindow* window, int key, int scancode, int
 
 void br_glfw_on_char(GLFWwindow* window, uint32_t codepoint) {
   (void)window;
-  br_da_push(stl_br->pressed_chars, codepoint);
+  brtl_pressed_char_t c = { .key = codepoint, .is_special = false };
+  br_da_push(stl_br->pressed_chars, c);
 }
 
 static void log_glfw_errors(int level, const char* error) {
@@ -393,7 +397,7 @@ bool brtl_key_down(int key) {
 }
 
 bool brtl_key_pressed(int key) {
-  for (size_t i = 0; i < stl_br->pressed_chars.len; ++i) if (br_da_get(stl_br->pressed_chars, i) == (uint32_t)key) return true;
+  for (size_t i = 0; i < stl_br->pressed_chars.len; ++i) if (br_da_get(stl_br->pressed_chars, i).key == (uint32_t)key) return true;
   return false;
 }
 

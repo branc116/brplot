@@ -106,7 +106,7 @@ void brsp_set(brsp_t* sp, brsp_id_t t, br_strv_t str) {
   tn->len = (int)str.len;
 }
 
-void brsp_insert_char(brsp_t* sp, brsp_id_t t, int at, char c) {
+void brsp_insert_char(brsp_t* sp, brsp_id_t t, int at, unsigned char c) {
   brsp_node_t* node = br_da_getp(*sp, t);
   int old_loc = node->start_index;
   if (brsp_resize(sp, t, node->len + 2)) {
@@ -116,6 +116,35 @@ void brsp_insert_char(brsp_t* sp, brsp_id_t t, int at, char c) {
   for (int i = node->len; i >= at; --i) sp->pool.str[node->start_index + i + 1] = sp->pool.str[node->start_index + i];
   sp->pool.str[node->start_index + at] = c;
   ++node->len;
+}
+
+int brsp_insert_unicode(brsp_t* sp, brsp_id_t t, int at, uint32_t u) {
+  //  U+0000    U+007F    0yyyzzzz
+  //  U+0080    U+07FF    110xxxyy  10yyzzzz => xxxyy yyzzzz
+  //  U+0800    U+FFFF    1110wwww  10xxxxyy  10yyzzzz => wwww xxxxyy yyzzzz
+  //  U+010000  U+10FFFF  11110uvv  10vvwwww  10xxxxyy  10yyzzzz
+  //  U+uvwxyz
+  if (u < 0x80) {
+    brsp_insert_char(sp, t, at, (uint8_t)u);
+    return 1;
+  } else if (u < 0x0800) {
+    brsp_insert_char(sp, t, at + 0, (uint8_t)(0b11000000 | ((u >>  6) & 0b00011111)));
+    brsp_insert_char(sp, t, at + 1, (uint8_t)(0b10000000 | ((u >>  0) & 0b00111111)));
+    return 2;
+  } else if (u < 0x800) {
+    brsp_insert_char(sp, t, at + 0, (uint8_t)(0b11100000 | ((u >> 12) & 0b00001111)));
+    brsp_insert_char(sp, t, at + 1, (uint8_t)(0b10000000 | ((u >>  6) & 0b00111111)));
+    brsp_insert_char(sp, t, at + 2, (uint8_t)(0b10000000 | ((u >>  0) & 0b00111111)));
+    return 3;
+  } else if (u < 0x10000) {
+    brsp_insert_char(sp, t, at + 0, (uint8_t)(0b11110000 | ((u >> 18) & 0b00000111)));
+    brsp_insert_char(sp, t, at + 1, (uint8_t)(0b10000000 | ((u >> 12) & 0b00111111)));
+    brsp_insert_char(sp, t, at + 2, (uint8_t)(0b10000000 | ((u >>  6) & 0b00111111)));
+    brsp_insert_char(sp, t, at + 3, (uint8_t)(0b10000000 | ((u >>  0) & 0b00111111)));
+    return 4;
+  }
+  BR_UNREACHABLE("Don't know how to encode character %u", u);
+  return 0;
 }
 
 void brsp_insert_char_at_end(brsp_t* sp, brsp_id_t id, char c) {
