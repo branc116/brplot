@@ -872,8 +872,10 @@ static bool generate_version_file(void) {
   goto done;
 
 error:
+  success = false;
 
 done:
+  if (NULL != out_file) fclose(out_file);
   nob_cmd_free(cmd);
   return success;
 }

@@ -63,6 +63,8 @@
   goto error; \
 } while(0)
 
+#define BR_ERRORE(fmt, ...) BR_ERROR("[%s] " fmt, strerror(errno), ##__VA_ARGS__)
+
 #if defined(BR_ASAN)
 void __sanitizer_print_stack_trace(void);
 #  define BR_STACKTRACE() __sanitizer_print_stack_trace()

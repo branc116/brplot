@@ -176,41 +176,82 @@ error:
   return false;
 }
 
+bool br_dagen_push_file_2d(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* desc, FILE* file) {
+  size_t data_left = 0;
+  bool success = true;
+  br_color_t color;
+  size_t cap;
+
+  if (file == NULL)                               BR_ERRORE("File is null");
+  if (1 != fread(&color, sizeof(color), 1, file)) BR_ERRORE("Failed to read color");
+  if (1 != fread(&cap, sizeof(cap), 1, file))     BR_ERROR("Failed to read capacity");
+
+  br_data_t* data = br_datas_create2(datas, desc->group_id, br_data_kind_2d, color, cap, desc->name);
+  if (NULL == data)                               BR_ERROR("Failed to create data");
+
+  if (0 != cap) {
+    data_left = cap;
+    if (1 != fread(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file)) BR_ERRORE("Failed to read bounding box");
+    if (1 != fread(&data->dd.rebase_x, sizeof(data->dd.rebase_x), 1, file)) BR_ERRORE("Failed to read rebase x");
+    if (1 != fread(&data->dd.rebase_y, sizeof(data->dd.rebase_y), 1, file)) BR_ERRORE("Failed to read rebase y");
+    br_dagen_t new = {
+      .data_kind = br_data_kind_2d,
+      .state = br_dagen_state_inprogress,
+      .group_id = desc->group_id,
+      .file = {
+        .file = file,
+        .x_left = data_left,
+        .y_left = data_left,
+        .num_points = data_left
+      }
+    };
+    br_da_push(*dagens, new);
+  }
+  goto done;
+
+error:
+  success = false;
+
+done:
+  return success;
+}
+
 bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* desc, FILE* file) {
-  if (file == NULL) goto error;
   br_save_state_command_t command = br_save_state_command_save_plots;
   size_t data_left = 0;
   br_data_kind_t kind;
   br_color_t color;
   size_t cap;
+  bool success = true;
 
-  if (1 != fread(&command, sizeof(command), 1, file)) goto error;
+  if (file == NULL)                                   BR_ERRORE("File is null");
+  if (1 != fread(&command, sizeof(command), 1, file)) BR_ERRORE("Failed to read command");
   switch (command) {
     case br_save_state_command_save_data_2d: kind = br_data_kind_2d; break;
     case br_save_state_command_save_data_3d: kind = br_data_kind_3d; break;
-    default: goto error;
+    default:                                          BR_ERROR("Unknown save command: %d", command);
   }
-  if (1 != fread(&color, sizeof(color), 1, file)) goto error;
-  if (1 != fread(&cap, sizeof(cap), 1, file)) goto error;
+  if (1 != fread(&color, sizeof(color), 1, file))     BR_ERRORE("Failed to read color");
+  if (1 != fread(&cap, sizeof(cap), 1, file))         BR_ERROR("Failed to read capacity");
 
   br_data_t* data = br_datas_create2(datas, desc->group_id, kind, color, cap, desc->name);
-  if (NULL == data) goto error;
+  if (NULL == data)                                   BR_ERROR("Failed to create data");
 
   if (0 != cap) {
     data_left = cap;
     switch (kind) {
       case br_data_kind_2d: {
-        if (1 != fread(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file)) goto error;
-        if (1 != fread(&data->dd.rebase_x, sizeof(data->dd.rebase_x), 1, file)) goto error;
-        if (1 != fread(&data->dd.rebase_y, sizeof(data->dd.rebase_y), 1, file)) goto error;
+        if (1 != fread(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file)) BR_ERRORE("Failed to read bounding box");
+        if (1 != fread(&data->dd.rebase_x, sizeof(data->dd.rebase_x), 1, file))         BR_ERRORE("Failed to read rebase x");
+        if (1 != fread(&data->dd.rebase_y, sizeof(data->dd.rebase_y), 1, file))         BR_ERRORE("Failed to read rebase y");
       } break;
       case br_data_kind_3d: {
-        if (1 != fread(&data->ddd.bounding_box, sizeof(data->ddd.bounding_box), 1, file)) goto error;
-        if (1 != fread(&data->ddd.rebase_x, sizeof(data->ddd.rebase_x), 1, file)) goto error;
-        if (1 != fread(&data->ddd.rebase_y, sizeof(data->ddd.rebase_y), 1, file)) goto error;
-        if (1 != fread(&data->ddd.rebase_z, sizeof(data->ddd.rebase_z), 1, file)) goto error;
+        if (1 != fread(&data->ddd.bounding_box, sizeof(data->ddd.bounding_box), 1, file)) BR_ERRORE("Failed to read bounding box");
+        if (1 != fread(&data->ddd.rebase_x, sizeof(data->ddd.rebase_x), 1, file))         BR_ERRORE("Failed to read rebase x");
+        if (1 != fread(&data->ddd.rebase_y, sizeof(data->ddd.rebase_y), 1, file))         BR_ERRORE("Failed to read rebase y");
+        if (1 != fread(&data->ddd.rebase_z, sizeof(data->ddd.rebase_z), 1, file))         BR_ERRORE("Failed to read rebase z");
       } break;
-      default: BR_ASSERT(0);
+      default:                                                                            BR_ERROR("data kind unknown %d", kind);
     }
   }
   br_dagen_t new = {
@@ -226,12 +267,11 @@ bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* 
     }
   };
   br_da_push(*dagens, new);
-  return true;
+  return success;
 
 error:
-  LOGE("Failed to read plot file: %d(%s)", errno, strerror(errno));
   if (file != NULL) fclose(file);
-  return false;
+  return success;
 }
 
 void br_dagens_handle(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots, double until) {

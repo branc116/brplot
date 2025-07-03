@@ -46,6 +46,8 @@ typedef enum br_permastate_status_t {
 void                   br_permastate_save(br_plotter_t* br);
 br_permastate_status_t br_permastate_load(br_plotter_t* br);
 
+bool                   br_permastate_save_as(br_plotter_t* br, const char* path_to);
+
 #ifdef __cplusplus
 }
 #endif

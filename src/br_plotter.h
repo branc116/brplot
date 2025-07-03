@@ -96,6 +96,7 @@ typedef struct br_plotter_t {
     brgui_add_expression_t add_expression;
     brgui_show_data_t show_data;
     bool dark_theme;
+    bool expand_file;
     bool expand_plots;
     bool expand_optimizations;
     bool expand_ui_styles;

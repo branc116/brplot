@@ -637,7 +637,7 @@ static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas) {
 
 static void draw_left_panel(br_plotter_t* br) {
   brui_resizable_push(br->resizables.menu_extent_handle);
-    if (brui_collapsable(BR_STRL("File"), &br->ui.expand_plots)) {
+    if (brui_collapsable(BR_STRL("File"), &br->ui.expand_file)) {
       if (brui_button(BR_STRL("Import CSV"))) {
         br->ui.fm_state.is_inited = true;
         br->ui.fm_state.action = brgui_file_manager_import_csv;
