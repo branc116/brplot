@@ -837,6 +837,47 @@ done:
   return success;
 }
 
+bool nob_cmd_run_sync_str_and_reset(Nob_Cmd* cmd, br_str_t* str) {
+  bool success = true;
+  br_strv_t temp_file = BR_STRL(".generated/temp_file");
+
+  Nob_Fd fdout = nob_fd_open_for_write(temp_file.str);
+  if (fdout == NOB_INVALID_FD) BR_ERROR("Invalid file");
+  if (false == nob_cmd_run_sync_redirect_and_reset(cmd, (Nob_Cmd_Redirect) { .fdout = &fdout })) BR_ERROR("Failed to run git branch command");
+  if (false == br_fs_read(temp_file.str, str)) BR_ERROR("Failed to read temp file");
+
+error:
+
+done:
+  nob_fd_close(fdout);
+  return success;
+}
+
+static bool generate_version_file(void) {
+  bool success = true;
+  Nob_Cmd cmd = { 0 };
+  br_str_t value = { 0 };
+  FILE* out_file = NULL;
+
+  if (NULL == (out_file = fopen(".generated/br_version.h", "wb"))) BR_ERROR("Failed to open file: %s", strerror(errno));
+
+  nob_cmd_append(&cmd, "git", "branch", "--show-current");
+  if (false == nob_cmd_run_sync_str_and_reset(&cmd, &value)) BR_ERROR("Failed to run a command");
+  fprintf(out_file, "#define BR_GIT_BRANCH \"%.*s\"\n", value.len - 1, value.str);
+
+  nob_cmd_append(&cmd, "git", "rev-parse", "HEAD");
+  if (false == nob_cmd_run_sync_str_and_reset(&cmd, &value)) BR_ERROR("Failed to run a command");
+  fprintf(out_file, "#define BR_GIT_HASH \"%.*s\"\n", value.len - 1, value.str);
+
+  goto done;
+
+error:
+
+done:
+  nob_cmd_free(cmd);
+  return success;
+}
+
 static bool n_generate_do(void) {
   if (false == create_all_dirs())  return false;
   if (false == bake_font())        return false;
@@ -845,6 +886,7 @@ static bool n_generate_do(void) {
   if (false == gl_gen())           return false;
   if (false == cat_files((const char*[]){"LICENSE", "./external/LICENCES"}, 2, ".generated/FULL_LICENSE")) return false;
   if (false == embed_file_as_string(".generated/FULL_LICENSE", "br_license")) return false;
+  if (false == generate_version_file()) return false;
   LOGI("Generate OK");
   return true;
 }

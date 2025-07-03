@@ -1,14 +1,18 @@
 #include "src/br_gui.h"
+#include ".generated/br_version.h"
 #include ".generated/icons.h"
+#include "include/brplot.h"
 #include "src/br_da.h"
 #include "src/br_filesystem.h"
 #include "src/br_free_list.h"
 #include "src/br_gl.h"
+#include "src/br_license.h"
 #include "src/br_math.h"
 #include "src/br_permastate.h"
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
 #include "src/br_pp.h"
+#include "src/br_resampling2.h"
 #include "src/br_shaders.h"
 #include "src/br_smol_mesh.h"
 #include "src/br_str.h"
@@ -16,14 +20,13 @@
 #include "src/br_theme.h"
 #include "src/br_tl.h"
 #include "src/br_ui.h"
-#include "src/br_resampling2.h"
-#include "src/br_license.h"
 
 static void draw_left_panel(br_plotter_t* br);
 static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas);
 static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas);
 static void brgui_draw_debug_window(br_plotter_t* br);
 static void brgui_draw_license(br_plotter_t* br);
+static void brgui_draw_about(br_plotter_t* br);
 static void brgui_draw_add_expression(br_plotter_t* br);
 static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas);
 
@@ -83,6 +86,7 @@ void br_plotter_draw(br_plotter_t* br) {
         draw_left_panel(br);
         brgui_draw_debug_window(br);
         brgui_draw_license(br);
+        brgui_draw_about(br);
         brgui_fm_result_t fs_r = brgui_draw_file_manager(&br->ui.fm_state);
         if (fs_r.is_selected) {
           switch (br->ui.fm_state.action) {
@@ -732,6 +736,9 @@ static void draw_left_panel(br_plotter_t* br) {
     }
 
     if (brui_collapsable(BR_STRL("About"), &br->ui.expand_about)) {
+      if (brui_button(BR_STRL("About"))) {
+        br->ui.show_about = true;
+      }
       if (brui_button(BR_STRL("License"))) {
         br->ui.show_license = true;
       }
@@ -823,6 +830,21 @@ static void brgui_draw_license(br_plotter_t* br) {
 
     brui_new_lines(br_license_lines - i);
   if (brui_resizable_temp_pop()) br->ui.show_license = false;
+}
+
+static void brgui_draw_about(br_plotter_t* br) {
+  if (false == br->ui.show_about) return;
+  brui_resizable_temp_push_t tmp = brui_resizable_temp_push(BR_STRL("About"));
+    if (tmp.just_created) {
+      tmp.res->target.cur_extent = BR_EXTENTI_TOF(brtl_viewport());
+      tmp.res->target.cur_extent.width -= 100;
+      tmp.res->target.cur_extent.height -= 100;
+      tmp.res->target.cur_extent.x += 50;
+      tmp.res->target.cur_extent.y += 50;
+    }
+    brui_text(BR_STRL("Brplot © 2025 Branimir Ričko [branc116]"));
+    brui_textf("%d.%d.%d-%s-%s", BR_MAJOR_VERSION, BR_MINOR_VERSION, BR_PATCH_VERSION, BR_GIT_BRANCH, BR_GIT_HASH);
+  if (brui_resizable_temp_pop()) br->ui.show_about = false;
 }
 
 void br_plot_screenshot(br_text_renderer_t* tr, br_plot_t* plot, br_shaders_t* shaders, br_datas_t groups, char const* path) {
