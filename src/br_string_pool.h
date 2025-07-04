@@ -232,7 +232,8 @@ int brsp_remove_utf8_after(brsp_t* sp, brsp_id_t id, int position) {
   if (position >= node->len) return 0;
   int to_remove = 0;
   int start = node->start_index + position;
-  while (position + ++to_remove < node->len && ((sp->pool.str[to_remove + start] & 0b11000000) == 0b10000000));
+  while (position + ++to_remove < node->len && ((sp->pool.str[to_remove + start] & 0b11000000) == 0b10000000))
+    ;
   BR_ASSERTF(position + to_remove <= node->len, "pos: %d, to_remove: %d, node->len: %d", position, to_remove, node->len);
   int to_move = node->len - position - to_remove;
   node->len -= to_remove;

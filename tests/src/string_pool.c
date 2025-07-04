@@ -3,6 +3,9 @@
 #include "src/br_pp.h"
 static size_t test_read(void* dest, size_t el_size, size_t n, void* null);
 static size_t test_write(void* src, size_t el_size, size_t n, void* null);
+
+#include <errno.h>
+
 #define BRFL_IMPLEMENTATION
 #include "src/br_free_list.h"
 #define BR_UNIT_TEST

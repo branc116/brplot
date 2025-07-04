@@ -148,6 +148,7 @@ void brgl_viewport(GLint x, GLint y, GLsizei width, GLsizei height) {
 }
 
 GLuint brgl_load_texture(const void* data, int width, int height, int format) {
+  (void)format;
   BR_ASSERT(format == BRGL_TEX_GRAY);
   GLuint id = 0;
 

@@ -1,11 +1,14 @@
+#include "src/br_pp.h"
+
 #if defined(__GNUC__) || defined(__clang__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsign-conversion"
 #  pragma GCC diagnostic ignored "-Wconversion"
-#  pragma GCC diagnostic ignored "-Wgnu-binary-literal"
 #endif
 
-#define BR_UNIT_TEST_IMPLEMENTATION
+#ifdef BR_UNIT_TEST
+#  define BR_UNIT_TEST_IMPLEMENTATION
+#endif
 #include "external/tests.h"
 
 #define STBRP_ASSERT BR_ASSERT

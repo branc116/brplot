@@ -334,7 +334,7 @@ void draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot) {
     double exp = floor(log10(r.width / 2.0));
     if (false == isnan(exp)) {
       double base = pow(10.0, exp);
-      if (isnan(base) || isinf(base)) goto end;
+      if (false == isfinite(base)) goto end;
       double start = ceil(r.x / base) * base;
       double i = 0;
       double y = r.y * sz.y / r.height;

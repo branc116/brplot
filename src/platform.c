@@ -294,7 +294,7 @@ static void br_glfw_on_key(struct GLFWwindow* window, int key, int scancode, int
   }
   if (action == GLFW_REPEAT || action == GLFW_PRESS) {
     if (key >= BR_KEY_ESCAPE && key <= GLFW_KEY_MENU) {
-      brtl_pressed_char_t c = { .key = key, .is_special = true };
+      brtl_pressed_char_t c = { .key = (uint32_t)key, .is_special = true };
       br_da_push(stl_br->pressed_chars, c);
     }
   }

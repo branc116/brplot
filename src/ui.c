@@ -227,7 +227,7 @@ bool brui_text_input(brsp_id_t str_id) {
         if (p.key == 'v') {
           br_strv_t content = brtl_clipboard();
           for (uint32_t j = 0; j < content.len; ++j) {
-            brsp_insert_char(brtl_brsp(), str_id, cp, content.str[j]);
+            brsp_insert_char(brtl_brsp(), str_id, cp, (uint8_t)content.str[j]);
             cp = ++ACPARM.text.cursor_pos;
           }
           changed = true;
@@ -248,7 +248,7 @@ bool brui_text_input(brsp_id_t str_id) {
             changed = true;
           }
           else if (lp == BR_KEY_END) {
-            ACPARM.text.cursor_pos = brsp_get(*sp, str_id).len;
+            ACPARM.text.cursor_pos = (int)brsp_get(*sp, str_id).len;
             changed = true;
           }
         } else if (p.key >= 32 && p.key != 127) {
@@ -797,7 +797,6 @@ void brui_scroll_move(float value) {
   float next_scroll_px = cur_scroll_px + value;
   if (next_scroll_px < 0) next_scroll_px = 0.f;
   if (next_scroll_px > hidden_height) next_scroll_px = hidden_height;
-  float old = res->target.scroll_offset_percent;
   res->target.scroll_offset_percent = next_scroll_px / hidden_height;
 }
 

@@ -1106,6 +1106,9 @@ static bool n_unittests_do(void) {
     cmd.count = 0;
     nob_cmd_append(&cmd, compiler, "-I.", "-o", test_programs[i].out_bin, test_programs[i].test_file);
     nob_cmd_append(&cmd, "-ggdb", "-DBR_DEBUG");
+    if (tp_linux == g_platform) {
+      nob_cmd_append(&cmd, "-lm", "-pthread");
+    }
     if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
     nob_cmd_append(&cmd, test_programs[i].out_bin, "--unittest");
     if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;

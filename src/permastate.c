@@ -122,7 +122,6 @@ done:
 bool br_permastate_save_datas(br_str_t path_folder, br_dagens_t const* dagens, br_datas_t datas) {
   char buff[512]; buff[0] = '\0';
   FILE* file = NULL;
-  br_save_state_command_t command;
   bool success = true;
 
   for (size_t i = 0; i < datas.len; ++i) {
@@ -133,7 +132,7 @@ bool br_permastate_save_datas(br_str_t path_folder, br_dagens_t const* dagens, b
     if (false == br_str_push_strv(&path_folder, br_strv_from_literal(".br"))) BR_ERROR("Failed to push strv");
     br_str_to_c_str1(path_folder, buff);
     if (NULL == (file = fopen(buff, "wb")))                                   BR_ERRORE("Failed to open file %s", buff);
-    if (false == br_permastate_savef_data(file, dagens, data))                BR_ERROR("Failed to write data %d", i);
+    if (false == br_permastate_savef_data(file, dagens, data))                BR_ERROR("Failed to write data %zu", i);
     fclose(file);
     file = NULL;
     buff[0] = '\0';
@@ -219,15 +218,13 @@ done:
 }
 
 bool br_permastate_save_as(br_plotter_t* br, const char* path_to) {
-  char buff[512] /* = uninitialized */;
-  br_str_t path     = {0};
   FILE* f           = NULL;
   bool success      = true;
 
   if (NULL == (f = fopen(path_to, "wb")))                                      BR_ERROR("Failed to open a file %s: %s", path_to, strerror(errno));
   if (false == br_permastate_savef_plots(f, br->plots))                        BR_ERROR("Failed to save plots");
   for (size_t i = 0; i < br->groups.len; ++i) {
-    if (false == br_permastate_savef_data(f, &br->dagens, &br->groups.arr[i])) BR_ERROR("Failed to save data %d", i);
+    if (false == br_permastate_savef_data(f, &br->dagens, &br->groups.arr[i])) BR_ERROR("Failed to save data %zu", i);
   }
   if (false == br_permastate_savef_plotter(f, br))                             BR_ERROR("Failed to plotter");
   goto done;
