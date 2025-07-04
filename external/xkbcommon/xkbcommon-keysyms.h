@@ -2712,7 +2712,7 @@ SOFTWARE.
 #define XKB_KEY_XF86Battery               0x1008ff93  /* Display battery information */
 #define XKB_KEY_XF86Bluetooth             0x1008ff94  /* Enable/disable Bluetooth    */
 #define XKB_KEY_XF86WLAN                  0x1008ff95  /* Enable/disable WLAN         */
-#define XKB_KEY_XF86UWB                   0x1008ff96  /* Enable/disable UWB	    */
+#define XKB_KEY_XF86UWB                   0x1008ff96  /* Enable/disable UWB      */
 
 #define XKB_KEY_XF86AudioForward          0x1008ff97  /* fast-forward audio track    */
 #define XKB_KEY_XF86AudioRepeat           0x1008ff98  /* toggle repeat mode          */
@@ -2779,11 +2779,11 @@ SOFTWARE.
  *
  * Key syms within this range must match the Linux kernel
  * input-event-codes.h file in the format:
- *     XKB_KEY_XF86CamelCaseKernelName	_EVDEVK(kernel value)
+ *     XKB_KEY_XF86CamelCaseKernelName  _EVDEVK(kernel value)
  * For example, the kernel
- *   #define KEY_MACRO_RECORD_START	0x2b0
+ *   #define KEY_MACRO_RECORD_START  0x2b0
  * effectively ends up as:
- *   #define XKB_KEY_XF86MacroRecordStart	0x100812b0
+ *   #define XKB_KEY_XF86MacroRecordStart  0x100812b0
  *
  * For historical reasons, some keysyms within the reserved range will be
  * missing, most notably all "normal" keys that are mapped through default
@@ -2807,7 +2807,7 @@ SOFTWARE.
  *
  * Where the evdev keycode is mapped to a different symbol, please add a
  * comment line starting with Use: but otherwise the same format, e.g.
- *  Use: XKB_KEY_XF86RotationLockToggle	_EVDEVK(0x231)		   v4.16 KEY_ROTATE_LOCK_TOGGLE
+ *  Use: XKB_KEY_XF86RotationLockToggle  _EVDEVK(0x231)       v4.16 KEY_ROTATE_LOCK_TOGGLE
  *
  */
 /* Use: XKB_KEY_XF86Eject                    _EVDEVK(0x0a2)             KEY_EJECTCLOSECD */

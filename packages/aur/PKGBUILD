@@ -26,11 +26,11 @@ sha256sums=('SKIP') # from VCS you don't need checksums
 
 build() {
    cmake \
-	   -B "${pkgname}/build" \
-	   -S "${pkgname}" \
-	   -DCMAKE_BUILD_TYPE:STRING='Release' \
-	   -DCMAKE_INSTALL_PREFIX:PATH='/usr' \
-	   -Wno-dev
+     -B "${pkgname}/build" \
+     -S "${pkgname}" \
+     -DCMAKE_BUILD_TYPE:STRING='Release' \
+     -DCMAKE_INSTALL_PREFIX:PATH='/usr' \
+     -Wno-dev
    cmake --build "${pkgname}/build"
 }
 

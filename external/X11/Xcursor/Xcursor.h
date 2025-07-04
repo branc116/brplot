@@ -29,14 +29,14 @@
 #include "external/X11/Xfuncproto.h"
 #include "external/X11/Xlib.h"
 
-typedef int		XcursorBool;
-typedef uint32_t	XcursorUInt;
+typedef int    XcursorBool;
+typedef uint32_t  XcursorUInt;
 
-typedef XcursorUInt	XcursorDim;
-typedef XcursorUInt	XcursorPixel;
+typedef XcursorUInt  XcursorDim;
+typedef XcursorUInt  XcursorPixel;
 
-#define XcursorTrue	1
-#define XcursorFalse	0
+#define XcursorTrue  1
+#define XcursorFalse  0
 
 /*
  * Cursor files start with a header.  The header
@@ -53,23 +53,23 @@ typedef XcursorUInt	XcursorPixel;
  * header lengths are specified in the file.
  *
  *  File:
- *	FileHeader
- *	LISTofChunk
+ *  FileHeader
+ *  LISTofChunk
  *
  *  FileHeader:
- *	CARD32		magic	    magic number
- *	CARD32		header	    bytes in file header
- *	CARD32		version	    file version
- *	CARD32		ntoc	    number of toc entries
- *	LISTofFileToc   toc	    table of contents
+ *  CARD32    magic      magic number
+ *  CARD32    header      bytes in file header
+ *  CARD32    version      file version
+ *  CARD32    ntoc      number of toc entries
+ *  LISTofFileToc   toc      table of contents
  *
  *  FileToc:
- *	CARD32		type	    entry type
- *	CARD32		subtype	    entry subtype (size for images)
- *	CARD32		position    absolute file position
+ *  CARD32    type      entry type
+ *  CARD32    subtype      entry subtype (size for images)
+ *  CARD32    position    absolute file position
  */
 
-#define XCURSOR_MAGIC	0x72756358  /* "Xcur" LSBFirst */
+#define XCURSOR_MAGIC  0x72756358  /* "Xcur" LSBFirst */
 
 /*
  * Current Xcursor version number.  Will be substituted by configure
@@ -79,32 +79,32 @@ typedef XcursorUInt	XcursorPixel;
 #define XCURSOR_LIB_MAJOR 1
 #define XCURSOR_LIB_MINOR 2
 #define XCURSOR_LIB_REVISION 3
-#define XCURSOR_LIB_VERSION	((XCURSOR_LIB_MAJOR * 10000) + \
-				 (XCURSOR_LIB_MINOR * 100) + \
-				 (XCURSOR_LIB_REVISION))
+#define XCURSOR_LIB_VERSION  ((XCURSOR_LIB_MAJOR * 10000) + \
+         (XCURSOR_LIB_MINOR * 100) + \
+         (XCURSOR_LIB_REVISION))
 
 /*
  * This version number is stored in cursor files; changes to the
  * file format require updating this version number
  */
-#define XCURSOR_FILE_MAJOR	1
-#define XCURSOR_FILE_MINOR	0
-#define XCURSOR_FILE_VERSION	((XCURSOR_FILE_MAJOR << 16) | (XCURSOR_FILE_MINOR))
-#define XCURSOR_FILE_HEADER_LEN	(4 * 4)
-#define XCURSOR_FILE_TOC_LEN	(3 * 4)
+#define XCURSOR_FILE_MAJOR  1
+#define XCURSOR_FILE_MINOR  0
+#define XCURSOR_FILE_VERSION  ((XCURSOR_FILE_MAJOR << 16) | (XCURSOR_FILE_MINOR))
+#define XCURSOR_FILE_HEADER_LEN  (4 * 4)
+#define XCURSOR_FILE_TOC_LEN  (3 * 4)
 
 typedef struct _XcursorFileToc {
-    XcursorUInt	    type;	/* chunk type */
-    XcursorUInt	    subtype;	/* subtype (size for images) */
-    XcursorUInt	    position;	/* absolute position in file */
+    XcursorUInt      type;  /* chunk type */
+    XcursorUInt      subtype;  /* subtype (size for images) */
+    XcursorUInt      position;  /* absolute position in file */
 } XcursorFileToc;
 
 typedef struct _XcursorFileHeader {
-    XcursorUInt	    magic;	/* magic number */
-    XcursorUInt	    header;	/* byte length of header */
-    XcursorUInt	    version;	/* file version number */
-    XcursorUInt	    ntoc;	/* number of toc entries */
-    XcursorFileToc  *tocs;	/* table of contents */
+    XcursorUInt      magic;  /* magic number */
+    XcursorUInt      header;  /* byte length of header */
+    XcursorUInt      version;  /* file version number */
+    XcursorUInt      ntoc;  /* number of toc entries */
+    XcursorFileToc  *tocs;  /* table of contents */
 } XcursorFileHeader;
 
 /*
@@ -112,24 +112,24 @@ typedef struct _XcursorFileHeader {
  * and version.
  *
  *  Chunk:
- *	ChunkHeader
- *	<extra type-specific header fields>
- *	<type-specific data>
+ *  ChunkHeader
+ *  <extra type-specific header fields>
+ *  <type-specific data>
  *
  *  ChunkHeader:
- *	CARD32	    header	bytes in chunk header + type header
- *	CARD32	    type	chunk type
- *	CARD32	    subtype	chunk subtype
- *	CARD32	    version	chunk type version
+ *  CARD32      header  bytes in chunk header + type header
+ *  CARD32      type  chunk type
+ *  CARD32      subtype  chunk subtype
+ *  CARD32      version  chunk type version
  */
 
 #define XCURSOR_CHUNK_HEADER_LEN    (4 * 4)
 
 typedef struct _XcursorChunkHeader {
-    XcursorUInt	    header;	/* bytes in chunk header */
-    XcursorUInt	    type;	/* chunk type */
-    XcursorUInt	    subtype;	/* chunk subtype (size for images) */
-    XcursorUInt	    version;	/* version of this type */
+    XcursorUInt      header;  /* bytes in chunk header */
+    XcursorUInt      type;  /* chunk type */
+    XcursorUInt      subtype;  /* chunk subtype (size for images) */
+    XcursorUInt      version;  /* version of this type */
 } XcursorChunkHeader;
 
 /*
@@ -141,23 +141,23 @@ typedef struct _XcursorChunkHeader {
  * UTF-8 encoded text
  *
  *  Comment:
- *	ChunkHeader header	chunk header
- *	CARD32	    length	bytes in text
- *	LISTofCARD8 text	UTF-8 encoded text
+ *  ChunkHeader header  chunk header
+ *  CARD32      length  bytes in text
+ *  LISTofCARD8 text  UTF-8 encoded text
  */
 
-#define XCURSOR_COMMENT_TYPE	    0xfffe0001
-#define XCURSOR_COMMENT_VERSION	    1
+#define XCURSOR_COMMENT_TYPE      0xfffe0001
+#define XCURSOR_COMMENT_VERSION      1
 #define XCURSOR_COMMENT_HEADER_LEN  (XCURSOR_CHUNK_HEADER_LEN + (1 *4))
 #define XCURSOR_COMMENT_COPYRIGHT   1
-#define XCURSOR_COMMENT_LICENSE	    2
-#define XCURSOR_COMMENT_OTHER	    3
-#define XCURSOR_COMMENT_MAX_LEN	    0x100000
+#define XCURSOR_COMMENT_LICENSE      2
+#define XCURSOR_COMMENT_OTHER      3
+#define XCURSOR_COMMENT_MAX_LEN      0x100000
 
 typedef struct _XcursorComment {
-    XcursorUInt	    version;
-    XcursorUInt	    comment_type;
-    char	    *comment;
+    XcursorUInt      version;
+    XcursorUInt      comment_type;
+    char      *comment;
 } XcursorComment;
 
 /*
@@ -167,64 +167,64 @@ typedef struct _XcursorComment {
  * breaking older applications
  *
  *  Image:
- *	ChunkHeader	header	chunk header
- *	CARD32		width	actual width
- *	CARD32		height	actual height
- *	CARD32		xhot	hot spot x
- *	CARD32		yhot	hot spot y
- *	CARD32		delay	animation delay
- *	LISTofCARD32	pixels	ARGB pixels
+ *  ChunkHeader  header  chunk header
+ *  CARD32    width  actual width
+ *  CARD32    height  actual height
+ *  CARD32    xhot  hot spot x
+ *  CARD32    yhot  hot spot y
+ *  CARD32    delay  animation delay
+ *  LISTofCARD32  pixels  ARGB pixels
  */
 
-#define XCURSOR_IMAGE_TYPE    	    0xfffd0002
-#define XCURSOR_IMAGE_VERSION	    1
+#define XCURSOR_IMAGE_TYPE          0xfffd0002
+#define XCURSOR_IMAGE_VERSION      1
 #define XCURSOR_IMAGE_HEADER_LEN    (XCURSOR_CHUNK_HEADER_LEN + (5*4))
-#define XCURSOR_IMAGE_MAX_SIZE	    0x7fff	/* 32767x32767 max cursor size */
+#define XCURSOR_IMAGE_MAX_SIZE      0x7fff  /* 32767x32767 max cursor size */
 
 typedef struct _XcursorImage {
-    XcursorUInt	    version;	/* version of the image data */
-    XcursorDim	    size;	/* nominal size for matching */
-    XcursorDim	    width;	/* actual width */
-    XcursorDim	    height;	/* actual height */
-    XcursorDim	    xhot;	/* hot spot x (must be inside image) */
-    XcursorDim	    yhot;	/* hot spot y (must be inside image) */
-    XcursorUInt	    delay;	/* animation delay to next frame (ms) */
-    XcursorPixel    *pixels;	/* pointer to pixels */
+    XcursorUInt      version;  /* version of the image data */
+    XcursorDim      size;  /* nominal size for matching */
+    XcursorDim      width;  /* actual width */
+    XcursorDim      height;  /* actual height */
+    XcursorDim      xhot;  /* hot spot x (must be inside image) */
+    XcursorDim      yhot;  /* hot spot y (must be inside image) */
+    XcursorUInt      delay;  /* animation delay to next frame (ms) */
+    XcursorPixel    *pixels;  /* pointer to pixels */
 } XcursorImage;
 
 /*
  * Other data structures exposed by the library API
  */
 typedef struct _XcursorImages {
-    int		    nimage;	/* number of images */
-    XcursorImage    **images;	/* array of XcursorImage pointers */
-    char	    *name;	/* name used to load images */
+    int        nimage;  /* number of images */
+    XcursorImage    **images;  /* array of XcursorImage pointers */
+    char      *name;  /* name used to load images */
 } XcursorImages;
 
 typedef struct _XcursorCursors {
-    Display	    *dpy;	/* Display holding cursors */
-    int		    ref;	/* reference count */
-    int		    ncursor;	/* number of cursors */
-    Cursor	    *cursors;	/* array of cursors */
+    Display      *dpy;  /* Display holding cursors */
+    int        ref;  /* reference count */
+    int        ncursor;  /* number of cursors */
+    Cursor      *cursors;  /* array of cursors */
 } XcursorCursors;
 
 typedef struct _XcursorAnimate {
-    XcursorCursors   *cursors;	/* list of cursors to use */
-    int		    sequence;	/* which cursor is next */
+    XcursorCursors   *cursors;  /* list of cursors to use */
+    int        sequence;  /* which cursor is next */
 } XcursorAnimate;
 
 typedef struct _XcursorFile XcursorFile;
 
 struct _XcursorFile {
     void    *closure;
-    int	    (*read)  (XcursorFile *file, unsigned char *buf, int len);
-    int	    (*write) (XcursorFile *file, unsigned char *buf, int len);
-    int	    (*seek)  (XcursorFile *file, long offset, int whence);
+    int      (*read)  (XcursorFile *file, unsigned char *buf, int len);
+    int      (*write) (XcursorFile *file, unsigned char *buf, int len);
+    int      (*seek)  (XcursorFile *file, long offset, int whence);
 };
 
 typedef struct _XcursorComments {
-    int		    ncomment;	/* number of comments */
-    XcursorComment  **comments;	/* array of XcursorComment pointers */
+    int        ncomment;  /* number of comments */
+    XcursorComment  **comments;  /* array of XcursorComment pointers */
 } XcursorComments;
 
 #define XCURSOR_CORE_THEME  "core"
@@ -301,14 +301,14 @@ XcursorImages *
 XcursorXcFileLoadAllImages (XcursorFile *file);
 
 XcursorBool
-XcursorXcFileLoad (XcursorFile	    *file,
-		   XcursorComments  **commentsp,
-		   XcursorImages    **imagesp);
+XcursorXcFileLoad (XcursorFile      *file,
+       XcursorComments  **commentsp,
+       XcursorImages    **imagesp);
 
 XcursorBool
-XcursorXcFileSave (XcursorFile		    *file,
-		   const XcursorComments    *comments,
-		   const XcursorImages	    *images);
+XcursorXcFileSave (XcursorFile        *file,
+       const XcursorComments    *comments,
+       const XcursorImages      *images);
 
 /*
  * FILE/Image APIs
@@ -323,17 +323,17 @@ XcursorImages *
 XcursorFileLoadAllImages (FILE *file);
 
 XcursorBool
-XcursorFileLoad (FILE		    *file,
-		 XcursorComments    **commentsp,
-		 XcursorImages	    **imagesp);
+XcursorFileLoad (FILE        *file,
+     XcursorComments    **commentsp,
+     XcursorImages      **imagesp);
 
 XcursorBool
 XcursorFileSaveImages (FILE *file, const XcursorImages *images);
 
 XcursorBool
-XcursorFileSave (FILE *			file,
-		 const XcursorComments	*comments,
-		 const XcursorImages	*images);
+XcursorFileSave (FILE *      file,
+     const XcursorComments  *comments,
+     const XcursorImages  *images);
 
 /*
  * Filename/Image APIs
@@ -348,17 +348,17 @@ XcursorImages *
 XcursorFilenameLoadAllImages (const char *filename);
 
 XcursorBool
-XcursorFilenameLoad (const char		*file,
-		     XcursorComments	**commentsp,
-		     XcursorImages	**imagesp);
+XcursorFilenameLoad (const char    *file,
+         XcursorComments  **commentsp,
+         XcursorImages  **imagesp);
 
 XcursorBool
 XcursorFilenameSaveImages (const char *filename, const XcursorImages *images);
 
 XcursorBool
-XcursorFilenameSave (const char		    *file,
-		     const XcursorComments  *comments,
-		     const XcursorImages    *images);
+XcursorFilenameSave (const char        *file,
+         const XcursorComments  *comments,
+         const XcursorImages    *images);
 
 /*
  * Library/Image APIs
@@ -436,39 +436,39 @@ XcursorShapeLoadCursors (Display *dpy, unsigned int shape);
  * a specific major version
  */
 Cursor
-XcursorTryShapeCursor (Display	    *dpy,
-		       Font	    source_font,
-		       Font	    mask_font,
-		       unsigned int source_char,
-		       unsigned int mask_char,
-		       XColor _Xconst *foreground,
-		       XColor _Xconst *background);
+XcursorTryShapeCursor (Display      *dpy,
+           Font      source_font,
+           Font      mask_font,
+           unsigned int source_char,
+           unsigned int mask_char,
+           XColor _Xconst *foreground,
+           XColor _Xconst *background);
 
 void
-XcursorNoticeCreateBitmap (Display	*dpy,
-			   Pixmap	pid,
-			   unsigned int width,
-			   unsigned int height);
+XcursorNoticeCreateBitmap (Display  *dpy,
+         Pixmap  pid,
+         unsigned int width,
+         unsigned int height);
 
 void
-XcursorNoticePutBitmap (Display	    *dpy,
-			Drawable    draw,
-			XImage	    *image);
+XcursorNoticePutBitmap (Display      *dpy,
+      Drawable    draw,
+      XImage      *image);
 
 Cursor
-XcursorTryShapeBitmapCursor (Display		*dpy,
-			     Pixmap		source,
-			     Pixmap		mask,
-			     XColor		*foreground,
-			     XColor		*background,
-			     unsigned int	x,
-			     unsigned int	y);
+XcursorTryShapeBitmapCursor (Display    *dpy,
+           Pixmap    source,
+           Pixmap    mask,
+           XColor    *foreground,
+           XColor    *background,
+           unsigned int  x,
+           unsigned int  y);
 
 #define XCURSOR_BITMAP_HASH_SIZE    16
 
 void
-XcursorImageHash (XImage	*image,
-		  unsigned char	hash[XCURSOR_BITMAP_HASH_SIZE]);
+XcursorImageHash (XImage  *image,
+      unsigned char  hash[XCURSOR_BITMAP_HASH_SIZE]);
 
 /*
  * Display information APIs

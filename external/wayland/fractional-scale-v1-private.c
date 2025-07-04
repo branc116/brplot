@@ -42,33 +42,33 @@ extern const struct wl_interface wl_surface_interface;
 extern const struct wl_interface wp_fractional_scale_v1_interface;
 
 static const struct wl_interface *fractional_scale_v1_types[] = {
-	NULL,
-	&wp_fractional_scale_v1_interface,
-	&wl_surface_interface,
+  NULL,
+  &wp_fractional_scale_v1_interface,
+  &wl_surface_interface,
 };
 
 static const struct wl_message wp_fractional_scale_manager_v1_requests[] = {
-	{ "destroy", "", fractional_scale_v1_types + 0 },
-	{ "get_fractional_scale", "no", fractional_scale_v1_types + 1 },
+  { "destroy", "", fractional_scale_v1_types + 0 },
+  { "get_fractional_scale", "no", fractional_scale_v1_types + 1 },
 };
 
 WL_PRIVATE const struct wl_interface wp_fractional_scale_manager_v1_interface = {
-	"wp_fractional_scale_manager_v1", 1,
-	2, wp_fractional_scale_manager_v1_requests,
-	0, NULL,
+  "wp_fractional_scale_manager_v1", 1,
+  2, wp_fractional_scale_manager_v1_requests,
+  0, NULL,
 };
 
 static const struct wl_message wp_fractional_scale_v1_requests[] = {
-	{ "destroy", "", fractional_scale_v1_types + 0 },
+  { "destroy", "", fractional_scale_v1_types + 0 },
 };
 
 static const struct wl_message wp_fractional_scale_v1_events[] = {
-	{ "preferred_scale", "u", fractional_scale_v1_types + 0 },
+  { "preferred_scale", "u", fractional_scale_v1_types + 0 },
 };
 
 WL_PRIVATE const struct wl_interface wp_fractional_scale_v1_interface = {
-	"wp_fractional_scale_v1", 1,
-	1, wp_fractional_scale_v1_requests,
-	1, wp_fractional_scale_v1_events,
+  "wp_fractional_scale_v1", 1,
+  1, wp_fractional_scale_v1_requests,
+  1, wp_fractional_scale_v1_events,
 };
 

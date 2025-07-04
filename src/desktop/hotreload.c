@@ -38,12 +38,12 @@ static bool br_hotreload_compile(void) {
   return true;
 }
 //TODO: Check This shit up
-//#define RTLD_DEEPBIND	0x00008	/* Use deep binding.  */
+//#define RTLD_DEEPBIND  0x00008  /* Use deep binding.  */
 //
 ///* If the following bit is set in the MODE argument to `dlopen',
 //   the symbols of the loaded object and its dependencies are made
 //   visible as if the object were linked directly into the program.  */
-//#define RTLD_GLOBAL	0x00100
+//#define RTLD_GLOBAL  0x00100
 
 static void br_hotreload_link(br_hotreload_state_t* s) {
   s->handl = dlopen("build/hot.o", RTLD_NOW);

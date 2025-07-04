@@ -23,7 +23,7 @@
  * OF THIS SOFTWARE.
  *
  * Author:  Jim Gettys, HP Labs, Hewlett-Packard, Inc.
- *	    Keith Packard, Intel Corporation
+ *      Keith Packard, Intel Corporation
  */
 
 #ifndef _XRANDR_H_
@@ -42,8 +42,8 @@ typedef XID RRMode;
 typedef XID RRProvider;
 
 typedef struct {
-    int	width, height;
-    int	mwidth, mheight;
+    int  width, height;
+    int  mwidth, mheight;
 } XRRScreenSize;
 
 /*
@@ -51,14 +51,14 @@ typedef struct {
  */
 
 typedef struct {
-    int type;			/* event base */
-    unsigned long serial;	/* # of last request processed by server */
-    Bool send_event;		/* true if this came from a SendEvent request */
-    Display *display;		/* Display the event was read from */
-    Window window;		/* window which selected for this event */
-    Window root;		/* Root window for changed screen */
-    Time timestamp;		/* when the screen change occurred */
-    Time config_timestamp;	/* when the last configuration change */
+    int type;      /* event base */
+    unsigned long serial;  /* # of last request processed by server */
+    Bool send_event;    /* true if this came from a SendEvent request */
+    Display *display;    /* Display the event was read from */
+    Window window;    /* window which selected for this event */
+    Window root;    /* Root window for changed screen */
+    Time timestamp;    /* when the screen change occurred */
+    Time config_timestamp;  /* when the last configuration change */
     SizeID size_index;
     SubpixelOrder subpixel_order;
     Rotation rotation;
@@ -69,103 +69,103 @@ typedef struct {
 } XRRScreenChangeNotifyEvent;
 
 typedef struct {
-    int type;			/* event base */
-    unsigned long serial;	/* # of last request processed by server */
-    Bool send_event;		/* true if this came from a SendEvent request */
-    Display *display;		/* Display the event was read from */
-    Window window;		/* window which selected for this event */
-    int subtype;		/* RRNotify_ subtype */
+    int type;      /* event base */
+    unsigned long serial;  /* # of last request processed by server */
+    Bool send_event;    /* true if this came from a SendEvent request */
+    Display *display;    /* Display the event was read from */
+    Window window;    /* window which selected for this event */
+    int subtype;    /* RRNotify_ subtype */
 } XRRNotifyEvent;
 
 typedef struct {
-    int type;			/* event base */
-    unsigned long serial;	/* # of last request processed by server */
-    Bool send_event;		/* true if this came from a SendEvent request */
-    Display *display;		/* Display the event was read from */
-    Window window;		/* window which selected for this event */
-    int subtype;		/* RRNotify_OutputChange */
-    RROutput output;		/* affected output */
-    RRCrtc crtc;	    	/* current crtc (or None) */
-    RRMode mode;	    	/* current mode (or None) */
-    Rotation rotation;		/* current rotation of associated crtc */
-    Connection connection;	/* current connection status */
+    int type;      /* event base */
+    unsigned long serial;  /* # of last request processed by server */
+    Bool send_event;    /* true if this came from a SendEvent request */
+    Display *display;    /* Display the event was read from */
+    Window window;    /* window which selected for this event */
+    int subtype;    /* RRNotify_OutputChange */
+    RROutput output;    /* affected output */
+    RRCrtc crtc;        /* current crtc (or None) */
+    RRMode mode;        /* current mode (or None) */
+    Rotation rotation;    /* current rotation of associated crtc */
+    Connection connection;  /* current connection status */
     SubpixelOrder subpixel_order;
 } XRROutputChangeNotifyEvent;
 
 typedef struct {
-    int type;			/* event base */
-    unsigned long serial;	/* # of last request processed by server */
-    Bool send_event;		/* true if this came from a SendEvent request */
-    Display *display;		/* Display the event was read from */
-    Window window;		/* window which selected for this event */
-    int subtype;		/* RRNotify_CrtcChange */
-    RRCrtc crtc;    		/* current crtc (or None) */
-    RRMode mode;	    	/* current mode (or None) */
-    Rotation rotation;		/* current rotation of associated crtc */
-    int x, y;			/* position */
-    unsigned int width, height;	/* size */
+    int type;      /* event base */
+    unsigned long serial;  /* # of last request processed by server */
+    Bool send_event;    /* true if this came from a SendEvent request */
+    Display *display;    /* Display the event was read from */
+    Window window;    /* window which selected for this event */
+    int subtype;    /* RRNotify_CrtcChange */
+    RRCrtc crtc;        /* current crtc (or None) */
+    RRMode mode;        /* current mode (or None) */
+    Rotation rotation;    /* current rotation of associated crtc */
+    int x, y;      /* position */
+    unsigned int width, height;  /* size */
 } XRRCrtcChangeNotifyEvent;
 
 typedef struct {
-    int type;			/* event base */
-    unsigned long serial;	/* # of last request processed by server */
-    Bool send_event;		/* true if this came from a SendEvent request */
-    Display *display;		/* Display the event was read from */
-    Window window;		/* window which selected for this event */
-    int subtype;		/* RRNotify_OutputProperty */
-    RROutput output;		/* related output */
-    Atom property;		/* changed property */
-    Time timestamp;		/* time of change */
-    int state;			/* NewValue, Deleted */
+    int type;      /* event base */
+    unsigned long serial;  /* # of last request processed by server */
+    Bool send_event;    /* true if this came from a SendEvent request */
+    Display *display;    /* Display the event was read from */
+    Window window;    /* window which selected for this event */
+    int subtype;    /* RRNotify_OutputProperty */
+    RROutput output;    /* related output */
+    Atom property;    /* changed property */
+    Time timestamp;    /* time of change */
+    int state;      /* NewValue, Deleted */
 } XRROutputPropertyNotifyEvent;
 
 typedef struct {
-    int type;			/* event base */
-    unsigned long serial;	/* # of last request processed by server */
-    Bool send_event;		/* true if this came from a SendEvent request */
-    Display *display;		/* Display the event was read from */
-    Window window;		/* window which selected for this event */
-    int subtype;		/* RRNotify_ProviderChange */
-    RRProvider provider; 	/* current provider (or None) */
-    Time timestamp;		/* time of change */
+    int type;      /* event base */
+    unsigned long serial;  /* # of last request processed by server */
+    Bool send_event;    /* true if this came from a SendEvent request */
+    Display *display;    /* Display the event was read from */
+    Window window;    /* window which selected for this event */
+    int subtype;    /* RRNotify_ProviderChange */
+    RRProvider provider;   /* current provider (or None) */
+    Time timestamp;    /* time of change */
     unsigned int current_role;
 } XRRProviderChangeNotifyEvent;
 
 typedef struct {
-    int type;			/* event base */
-    unsigned long serial;	/* # of last request processed by server */
-    Bool send_event;		/* true if this came from a SendEvent request */
-    Display *display;		/* Display the event was read from */
-    Window window;		/* window which selected for this event */
-    int subtype;		/* RRNotify_ProviderProperty */
-    RRProvider provider;		/* related provider */
-    Atom property;		/* changed property */
-    Time timestamp;		/* time of change */
-    int state;			/* NewValue, Deleted */
+    int type;      /* event base */
+    unsigned long serial;  /* # of last request processed by server */
+    Bool send_event;    /* true if this came from a SendEvent request */
+    Display *display;    /* Display the event was read from */
+    Window window;    /* window which selected for this event */
+    int subtype;    /* RRNotify_ProviderProperty */
+    RRProvider provider;    /* related provider */
+    Atom property;    /* changed property */
+    Time timestamp;    /* time of change */
+    int state;      /* NewValue, Deleted */
 } XRRProviderPropertyNotifyEvent;
 
 typedef struct {
-    int type;			/* event base */
-    unsigned long serial;	/* # of last request processed by server */
-    Bool send_event;		/* true if this came from a SendEvent request */
-    Display *display;		/* Display the event was read from */
-    Window window;		/* window which selected for this event */
-    int subtype;		/* RRNotify_ResourceChange */
-    Time timestamp;		/* time of change */
+    int type;      /* event base */
+    unsigned long serial;  /* # of last request processed by server */
+    Bool send_event;    /* true if this came from a SendEvent request */
+    Display *display;    /* Display the event was read from */
+    Window window;    /* window which selected for this event */
+    int subtype;    /* RRNotify_ResourceChange */
+    Time timestamp;    /* time of change */
 } XRRResourceChangeNotifyEvent;
 
 /* internal representation is private to the library */
 typedef struct _XRRScreenConfiguration XRRScreenConfiguration;
 
 Bool XRRQueryExtension (Display *dpy,
-			int *event_base_return,
-			int *error_base_return);
+      int *event_base_return,
+      int *error_base_return);
 Status XRRQueryVersion (Display *dpy,
-			    int     *major_version_return,
-			    int     *minor_version_return);
+          int     *major_version_return,
+          int     *minor_version_return);
 
 XRRScreenConfiguration *XRRGetScreenInfo (Display *dpy,
-					  Window window);
+            Window window);
 
 void XRRFreeScreenConfigInfo (XRRScreenConfiguration *config);
 
@@ -177,20 +177,20 @@ void XRRFreeScreenConfigInfo (XRRScreenConfiguration *config);
  * changes.
  */
 Status XRRSetScreenConfig (Display *dpy,
-			   XRRScreenConfiguration *config,
-			   Drawable draw,
-			   int size_index,
-			   Rotation rotation,
-			   Time timestamp);
+         XRRScreenConfiguration *config,
+         Drawable draw,
+         int size_index,
+         Rotation rotation,
+         Time timestamp);
 
 /* added in v1.1, sorry for the lame name */
 Status XRRSetScreenConfigAndRate (Display *dpy,
-				  XRRScreenConfiguration *config,
-				  Drawable draw,
-				  int size_index,
-				  Rotation rotation,
-				  short rate,
-				  Time timestamp);
+          XRRScreenConfiguration *config,
+          Drawable draw,
+          int size_index,
+          Rotation rotation,
+          short rate,
+          Time timestamp);
 
 
 Rotation XRRConfigRotations(XRRScreenConfiguration *config, Rotation *current_rotation);
@@ -202,7 +202,7 @@ XRRScreenSize *XRRConfigSizes(XRRScreenConfiguration *config, int *nsizes);
 short *XRRConfigRates (XRRScreenConfiguration *config, int sizeID, int *nrates);
 
 SizeID XRRConfigCurrentConfiguration (XRRScreenConfiguration *config,
-			      Rotation *rotation);
+            Rotation *rotation);
 
 short XRRConfigCurrentRate (XRRScreenConfiguration *config);
 
@@ -235,42 +235,42 @@ Time XRRTimes (Display *dpy, int screen, Time *config_timestamp);
 
 Status
 XRRGetScreenSizeRange (Display *dpy, Window window,
-		       int *minWidth, int *minHeight,
-		       int *maxWidth, int *maxHeight);
+           int *minWidth, int *minHeight,
+           int *maxWidth, int *maxHeight);
 
 void
 XRRSetScreenSize (Display *dpy, Window window,
-		  int width, int height,
-		  int mmWidth, int mmHeight);
+      int width, int height,
+      int mmWidth, int mmHeight);
 
 typedef unsigned long XRRModeFlags;
 
 typedef struct _XRRModeInfo {
-    RRMode		id;
-    unsigned int	width;
-    unsigned int	height;
-    unsigned long	dotClock;
-    unsigned int	hSyncStart;
-    unsigned int	hSyncEnd;
-    unsigned int	hTotal;
-    unsigned int	hSkew;
-    unsigned int	vSyncStart;
-    unsigned int	vSyncEnd;
-    unsigned int	vTotal;
-    char		*name;
-    unsigned int	nameLength;
-    XRRModeFlags	modeFlags;
+    RRMode    id;
+    unsigned int  width;
+    unsigned int  height;
+    unsigned long  dotClock;
+    unsigned int  hSyncStart;
+    unsigned int  hSyncEnd;
+    unsigned int  hTotal;
+    unsigned int  hSkew;
+    unsigned int  vSyncStart;
+    unsigned int  vSyncEnd;
+    unsigned int  vTotal;
+    char    *name;
+    unsigned int  nameLength;
+    XRRModeFlags  modeFlags;
 } XRRModeInfo;
 
 typedef struct _XRRScreenResources {
-    Time	timestamp;
-    Time	configTimestamp;
-    int		ncrtc;
-    RRCrtc	*crtcs;
-    int		noutput;
-    RROutput	*outputs;
-    int		nmode;
-    XRRModeInfo	*modes;
+    Time  timestamp;
+    Time  configTimestamp;
+    int    ncrtc;
+    RRCrtc  *crtcs;
+    int    noutput;
+    RROutput  *outputs;
+    int    nmode;
+    XRRModeInfo  *modes;
 } XRRScreenResources;
 
 XRRScreenResources *
@@ -280,21 +280,21 @@ void
 XRRFreeScreenResources (XRRScreenResources *resources);
 
 typedef struct _XRROutputInfo {
-    Time	    timestamp;
-    RRCrtc	    crtc;
-    char	    *name;
-    int		    nameLen;
+    Time      timestamp;
+    RRCrtc      crtc;
+    char      *name;
+    int        nameLen;
     unsigned long   mm_width;
     unsigned long   mm_height;
-    Connection	    connection;
+    Connection      connection;
     SubpixelOrder   subpixel_order;
-    int		    ncrtc;
-    RRCrtc	    *crtcs;
-    int		    nclone;
-    RROutput	    *clones;
-    int		    nmode;
-    int		    npreferred;
-    RRMode	    *modes;
+    int        ncrtc;
+    RRCrtc      *crtcs;
+    int        nclone;
+    RROutput      *clones;
+    int        nmode;
+    int        npreferred;
+    RRMode      *modes;
 } XRROutputInfo;
 
 XRROutputInfo *
@@ -310,7 +310,7 @@ typedef struct {
     Bool    pending;
     Bool    range;
     Bool    immutable;
-    int	    num_values;
+    int      num_values;
     long    *values;
 } XRRPropertyInfo;
 
@@ -319,25 +319,25 @@ XRRQueryOutputProperty (Display *dpy, RROutput output, Atom property);
 
 void
 XRRConfigureOutputProperty (Display *dpy, RROutput output, Atom property,
-			    Bool pending, Bool range, int num_values,
-			    long *values);
+          Bool pending, Bool range, int num_values,
+          long *values);
 
 void
 XRRChangeOutputProperty (Display *dpy, RROutput output,
-			 Atom property, Atom type,
-			 int format, int mode,
-			 _Xconst unsigned char *data, int nelements);
+       Atom property, Atom type,
+       int format, int mode,
+       _Xconst unsigned char *data, int nelements);
 
 void
 XRRDeleteOutputProperty (Display *dpy, RROutput output, Atom property);
 
 int
 XRRGetOutputProperty (Display *dpy, RROutput output,
-		      Atom property, long offset, long length,
-		      Bool _delete, Bool pending, Atom req_type,
-		      Atom *actual_type, int *actual_format,
-		      unsigned long *nitems, unsigned long *bytes_after,
-		      unsigned char **prop);
+          Atom property, long offset, long length,
+          Bool _delete, Bool pending, Atom req_type,
+          Atom *actual_type, int *actual_format,
+          unsigned long *nitems, unsigned long *bytes_after,
+          unsigned char **prop);
 
 XRRModeInfo *
 XRRAllocModeInfo (_Xconst char *name, int nameLength);
@@ -358,16 +358,16 @@ void
 XRRFreeModeInfo (XRRModeInfo *modeInfo);
 
 typedef struct _XRRCrtcInfo {
-    Time	    timestamp;
-    int		    x, y;
+    Time      timestamp;
+    int        x, y;
     unsigned int    width, height;
-    RRMode	    mode;
-    Rotation	    rotation;
-    int		    noutput;
-    RROutput	    *outputs;
-    Rotation	    rotations;
-    int		    npossible;
-    RROutput	    *possible;
+    RRMode      mode;
+    Rotation      rotation;
+    int        noutput;
+    RROutput      *outputs;
+    Rotation      rotations;
+    int        npossible;
+    RROutput      *possible;
 } XRRCrtcInfo;
 
 XRRCrtcInfo *
@@ -378,20 +378,20 @@ XRRFreeCrtcInfo (XRRCrtcInfo *crtcInfo);
 
 Status
 XRRSetCrtcConfig (Display *dpy,
-		  XRRScreenResources *resources,
-		  RRCrtc crtc,
-		  Time timestamp,
-		  int x, int y,
-		  RRMode mode,
-		  Rotation rotation,
-		  RROutput *outputs,
-		  int noutputs);
+      XRRScreenResources *resources,
+      RRCrtc crtc,
+      Time timestamp,
+      int x, int y,
+      RRMode mode,
+      Rotation rotation,
+      RROutput *outputs,
+      int noutputs);
 
 int
 XRRGetCrtcGammaSize (Display *dpy, RRCrtc crtc);
 
 typedef struct _XRRCrtcGamma {
-    int		    size;
+    int        size;
     unsigned short  *red;
     unsigned short  *green;
     unsigned short  *blue;
@@ -415,22 +415,22 @@ XRRScreenResources *
 XRRGetScreenResourcesCurrent (Display *dpy, Window window);
 
 void
-XRRSetCrtcTransform (Display	*dpy,
-		     RRCrtc	crtc,
-		     XTransform	*transform,
-		     _Xconst char *filter,
-		     XFixed	*params,
-		     int	nparams);
+XRRSetCrtcTransform (Display  *dpy,
+         RRCrtc  crtc,
+         XTransform  *transform,
+         _Xconst char *filter,
+         XFixed  *params,
+         int  nparams);
 
 typedef struct _XRRCrtcTransformAttributes {
-    XTransform	pendingTransform;
-    char	*pendingFilter;
-    int		pendingNparams;
-    XFixed	*pendingParams;
-    XTransform	currentTransform;
-    char	*currentFilter;
-    int		currentNparams;
-    XFixed	*currentParams;
+    XTransform  pendingTransform;
+    char  *pendingFilter;
+    int    pendingNparams;
+    XFixed  *pendingParams;
+    XTransform  currentTransform;
+    char  *currentFilter;
+    int    currentNparams;
+    XFixed  *currentParams;
 } XRRCrtcTransformAttributes;
 
 /*
@@ -438,9 +438,9 @@ typedef struct _XRRCrtcTransformAttributes {
  * Pass *attributes to XFree to free
  */
 Status
-XRRGetCrtcTransform (Display	*dpy,
-		     RRCrtc	crtc,
-		     XRRCrtcTransformAttributes **attributes);
+XRRGetCrtcTransform (Display  *dpy,
+         RRCrtc  crtc,
+         XRRCrtcTransformAttributes **attributes);
 
 /*
  * intended to take RRScreenChangeNotify,  or
@@ -473,18 +473,18 @@ XRRFreePanning (XRRPanning *panning);
 
 Status
 XRRSetPanning (Display *dpy,
-	       XRRScreenResources *resources,
-	       RRCrtc crtc,
-	       XRRPanning *panning);
+         XRRScreenResources *resources,
+         RRCrtc crtc,
+         XRRPanning *panning);
 
 void
 XRRSetOutputPrimary(Display *dpy,
-		    Window window,
-		    RROutput output);
+        Window window,
+        RROutput output);
 
 RROutput
 XRRGetOutputPrimary(Display *dpy,
-		    Window window);
+        Window window);
 
 typedef struct _XRRProviderResources {
     Time timestamp;
@@ -501,14 +501,14 @@ XRRFreeProviderResources(XRRProviderResources *resources);
 typedef struct _XRRProviderInfo {
     unsigned int capabilities;
     int ncrtcs;
-    RRCrtc	*crtcs;
+    RRCrtc  *crtcs;
     int noutputs;
     RROutput    *outputs;
-    char	    *name;
+    char      *name;
     int nassociatedproviders;
     RRProvider *associated_providers;
     unsigned int *associated_capability;
-    int		    nameLen;
+    int        nameLen;
 } XRRProviderInfo;
   
 XRRProviderInfo *
@@ -531,25 +531,25 @@ XRRQueryProviderProperty (Display *dpy, RRProvider provider, Atom property);
 
 void
 XRRConfigureProviderProperty (Display *dpy, RRProvider provider, Atom property,
-			    Bool pending, Bool range, int num_values,
-			    long *values);
-			
+          Bool pending, Bool range, int num_values,
+          long *values);
+      
 void
 XRRChangeProviderProperty (Display *dpy, RRProvider provider,
-			 Atom property, Atom type,
-			 int format, int mode,
-			 _Xconst unsigned char *data, int nelements);
+       Atom property, Atom type,
+       int format, int mode,
+       _Xconst unsigned char *data, int nelements);
 
 void
 XRRDeleteProviderProperty (Display *dpy, RRProvider provider, Atom property);
 
 int
 XRRGetProviderProperty (Display *dpy, RRProvider provider,
-			Atom property, long offset, long length,
-			Bool _delete, Bool pending, Atom req_type,
-			Atom *actual_type, int *actual_format,
-			unsigned long *nitems, unsigned long *bytes_after,
-			unsigned char **prop);
+      Atom property, long offset, long length,
+      Bool _delete, Bool pending, Atom req_type,
+      Atom *actual_type, int *actual_format,
+      unsigned long *nitems, unsigned long *bytes_after,
+      unsigned char **prop);
 
 
 typedef struct _XRRMonitorInfo {

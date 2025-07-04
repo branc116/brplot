@@ -951,22 +951,22 @@ extern const struct wl_interface wl_subsurface_interface;
  * server request.
  */
 enum wl_display_error {
-	/**
-	 * server couldn't find object
-	 */
-	WL_DISPLAY_ERROR_INVALID_OBJECT = 0,
-	/**
-	 * method doesn't exist on the specified interface or malformed request
-	 */
-	WL_DISPLAY_ERROR_INVALID_METHOD = 1,
-	/**
-	 * server is out of memory
-	 */
-	WL_DISPLAY_ERROR_NO_MEMORY = 2,
-	/**
-	 * implementation error in compositor
-	 */
-	WL_DISPLAY_ERROR_IMPLEMENTATION = 3,
+  /**
+   * server couldn't find object
+   */
+  WL_DISPLAY_ERROR_INVALID_OBJECT = 0,
+  /**
+   * method doesn't exist on the specified interface or malformed request
+   */
+  WL_DISPLAY_ERROR_INVALID_METHOD = 1,
+  /**
+   * server is out of memory
+   */
+  WL_DISPLAY_ERROR_NO_MEMORY = 2,
+  /**
+   * implementation error in compositor
+   */
+  WL_DISPLAY_ERROR_IMPLEMENTATION = 3,
 };
 #endif /* WL_DISPLAY_ERROR_ENUM */
 
@@ -975,38 +975,38 @@ enum wl_display_error {
  * @struct wl_display_listener
  */
 struct wl_display_listener {
-	/**
-	 * fatal error event
-	 *
-	 * The error event is sent out when a fatal (non-recoverable)
-	 * error has occurred. The object_id argument is the object where
-	 * the error occurred, most often in response to a request to that
-	 * object. The code identifies the error and is defined by the
-	 * object interface. As such, each interface defines its own set of
-	 * error codes. The message is a brief description of the error,
-	 * for (debugging) convenience.
-	 * @param object_id object where the error occurred
-	 * @param code error code
-	 * @param message error description
-	 */
-	void (*error)(void *data,
-		      struct wl_display *wl_display,
-		      void *object_id,
-		      uint32_t code,
-		      const char *message);
-	/**
-	 * acknowledge object ID deletion
-	 *
-	 * This event is used internally by the object ID management
-	 * logic. When a client deletes an object that it had created, the
-	 * server will send this event to acknowledge that it has seen the
-	 * delete request. When the client receives this event, it will
-	 * know that it can safely reuse the object ID.
-	 * @param id deleted object ID
-	 */
-	void (*delete_id)(void *data,
-			  struct wl_display *wl_display,
-			  uint32_t id);
+  /**
+   * fatal error event
+   *
+   * The error event is sent out when a fatal (non-recoverable)
+   * error has occurred. The object_id argument is the object where
+   * the error occurred, most often in response to a request to that
+   * object. The code identifies the error and is defined by the
+   * object interface. As such, each interface defines its own set of
+   * error codes. The message is a brief description of the error,
+   * for (debugging) convenience.
+   * @param object_id object where the error occurred
+   * @param code error code
+   * @param message error description
+   */
+  void (*error)(void *data,
+          struct wl_display *wl_display,
+          void *object_id,
+          uint32_t code,
+          const char *message);
+  /**
+   * acknowledge object ID deletion
+   *
+   * This event is used internally by the object ID management
+   * logic. When a client deletes an object that it had created, the
+   * server will send this event to acknowledge that it has seen the
+   * delete request. When the client receives this event, it will
+   * know that it can safely reuse the object ID.
+   * @param id deleted object ID
+   */
+  void (*delete_id)(void *data,
+        struct wl_display *wl_display,
+        uint32_t id);
 };
 
 /**
@@ -1014,10 +1014,10 @@ struct wl_display_listener {
  */
 static inline int
 wl_display_add_listener(struct wl_display *wl_display,
-			const struct wl_display_listener *listener, void *data)
+      const struct wl_display_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) wl_display,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) wl_display,
+             (void (**)(void)) listener, data);
 }
 
 #define WL_DISPLAY_SYNC 0
@@ -1045,20 +1045,20 @@ wl_display_add_listener(struct wl_display *wl_display,
 static inline void
 wl_display_set_user_data(struct wl_display *wl_display, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_display, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_display, user_data);
 }
 
 /** @ingroup iface_wl_display */
 static inline void *
 wl_display_get_user_data(struct wl_display *wl_display)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_display);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_display);
 }
 
 static inline uint32_t
 wl_display_get_version(struct wl_display *wl_display)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_display);
+  return wl_proxy_get_version((struct wl_proxy *) wl_display);
 }
 
 /**
@@ -1079,12 +1079,12 @@ wl_display_get_version(struct wl_display *wl_display)
 static inline struct wl_callback *
 wl_display_sync(struct wl_display *wl_display)
 {
-	struct wl_proxy *callback;
+  struct wl_proxy *callback;
 
-	callback = wl_proxy_marshal_flags((struct wl_proxy *) wl_display,
-			 WL_DISPLAY_SYNC, &wl_callback_interface, wl_proxy_get_version((struct wl_proxy *) wl_display), 0, NULL);
+  callback = wl_proxy_marshal_flags((struct wl_proxy *) wl_display,
+       WL_DISPLAY_SYNC, &wl_callback_interface, wl_proxy_get_version((struct wl_proxy *) wl_display), 0, NULL);
 
-	return (struct wl_callback *) callback;
+  return (struct wl_callback *) callback;
 }
 
 /**
@@ -1103,12 +1103,12 @@ wl_display_sync(struct wl_display *wl_display)
 static inline struct wl_registry *
 wl_display_get_registry(struct wl_display *wl_display)
 {
-	struct wl_proxy *registry;
+  struct wl_proxy *registry;
 
-	registry = wl_proxy_marshal_flags((struct wl_proxy *) wl_display,
-			 WL_DISPLAY_GET_REGISTRY, &wl_registry_interface, wl_proxy_get_version((struct wl_proxy *) wl_display), 0, NULL);
+  registry = wl_proxy_marshal_flags((struct wl_proxy *) wl_display,
+       WL_DISPLAY_GET_REGISTRY, &wl_registry_interface, wl_proxy_get_version((struct wl_proxy *) wl_display), 0, NULL);
 
-	return (struct wl_registry *) registry;
+  return (struct wl_registry *) registry;
 }
 
 /**
@@ -1116,41 +1116,41 @@ wl_display_get_registry(struct wl_display *wl_display)
  * @struct wl_registry_listener
  */
 struct wl_registry_listener {
-	/**
-	 * announce global object
-	 *
-	 * Notify the client of global objects.
-	 *
-	 * The event notifies the client that a global object with the
-	 * given name is now available, and it implements the given version
-	 * of the given interface.
-	 * @param name numeric name of the global object
-	 * @param interface interface implemented by the object
-	 * @param version interface version
-	 */
-	void (*global)(void *data,
-		       struct wl_registry *wl_registry,
-		       uint32_t name,
-		       const char *interface,
-		       uint32_t version);
-	/**
-	 * announce removal of global object
-	 *
-	 * Notify the client of removed global objects.
-	 *
-	 * This event notifies the client that the global identified by
-	 * name is no longer available. If the client bound to the global
-	 * using the bind request, the client should now destroy that
-	 * object.
-	 *
-	 * The object remains valid and requests to the object will be
-	 * ignored until the client destroys it, to avoid races between the
-	 * global going away and a client sending a request to it.
-	 * @param name numeric name of the global object
-	 */
-	void (*global_remove)(void *data,
-			      struct wl_registry *wl_registry,
-			      uint32_t name);
+  /**
+   * announce global object
+   *
+   * Notify the client of global objects.
+   *
+   * The event notifies the client that a global object with the
+   * given name is now available, and it implements the given version
+   * of the given interface.
+   * @param name numeric name of the global object
+   * @param interface interface implemented by the object
+   * @param version interface version
+   */
+  void (*global)(void *data,
+           struct wl_registry *wl_registry,
+           uint32_t name,
+           const char *interface,
+           uint32_t version);
+  /**
+   * announce removal of global object
+   *
+   * Notify the client of removed global objects.
+   *
+   * This event notifies the client that the global identified by
+   * name is no longer available. If the client bound to the global
+   * using the bind request, the client should now destroy that
+   * object.
+   *
+   * The object remains valid and requests to the object will be
+   * ignored until the client destroys it, to avoid races between the
+   * global going away and a client sending a request to it.
+   * @param name numeric name of the global object
+   */
+  void (*global_remove)(void *data,
+            struct wl_registry *wl_registry,
+            uint32_t name);
 };
 
 /**
@@ -1158,10 +1158,10 @@ struct wl_registry_listener {
  */
 static inline int
 wl_registry_add_listener(struct wl_registry *wl_registry,
-			 const struct wl_registry_listener *listener, void *data)
+       const struct wl_registry_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) wl_registry,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) wl_registry,
+             (void (**)(void)) listener, data);
 }
 
 #define WL_REGISTRY_BIND 0
@@ -1184,27 +1184,27 @@ wl_registry_add_listener(struct wl_registry *wl_registry,
 static inline void
 wl_registry_set_user_data(struct wl_registry *wl_registry, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_registry, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_registry, user_data);
 }
 
 /** @ingroup iface_wl_registry */
 static inline void *
 wl_registry_get_user_data(struct wl_registry *wl_registry)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_registry);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_registry);
 }
 
 static inline uint32_t
 wl_registry_get_version(struct wl_registry *wl_registry)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_registry);
+  return wl_proxy_get_version((struct wl_proxy *) wl_registry);
 }
 
 /** @ingroup iface_wl_registry */
 static inline void
 wl_registry_destroy(struct wl_registry *wl_registry)
 {
-	wl_proxy_destroy((struct wl_proxy *) wl_registry);
+  wl_proxy_destroy((struct wl_proxy *) wl_registry);
 }
 
 /**
@@ -1216,12 +1216,12 @@ wl_registry_destroy(struct wl_registry *wl_registry)
 static inline void *
 wl_registry_bind(struct wl_registry *wl_registry, uint32_t name, const struct wl_interface *interface, uint32_t version)
 {
-	struct wl_proxy *id;
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) wl_registry,
-			 WL_REGISTRY_BIND, interface, version, 0, name, interface->name, version, NULL);
+  id = wl_proxy_marshal_flags((struct wl_proxy *) wl_registry,
+       WL_REGISTRY_BIND, interface, version, 0, name, interface->name, version, NULL);
 
-	return (void *) id;
+  return (void *) id;
 }
 
 /**
@@ -1229,15 +1229,15 @@ wl_registry_bind(struct wl_registry *wl_registry, uint32_t name, const struct wl
  * @struct wl_callback_listener
  */
 struct wl_callback_listener {
-	/**
-	 * done event
-	 *
-	 * Notify the client when the related request is done.
-	 * @param callback_data request-specific data for the callback
-	 */
-	void (*done)(void *data,
-		     struct wl_callback *wl_callback,
-		     uint32_t callback_data);
+  /**
+   * done event
+   *
+   * Notify the client when the related request is done.
+   * @param callback_data request-specific data for the callback
+   */
+  void (*done)(void *data,
+         struct wl_callback *wl_callback,
+         uint32_t callback_data);
 };
 
 /**
@@ -1245,10 +1245,10 @@ struct wl_callback_listener {
  */
 static inline int
 wl_callback_add_listener(struct wl_callback *wl_callback,
-			 const struct wl_callback_listener *listener, void *data)
+       const struct wl_callback_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) wl_callback,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) wl_callback,
+             (void (**)(void)) listener, data);
 }
 
 /**
@@ -1261,27 +1261,27 @@ wl_callback_add_listener(struct wl_callback *wl_callback,
 static inline void
 wl_callback_set_user_data(struct wl_callback *wl_callback, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_callback, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_callback, user_data);
 }
 
 /** @ingroup iface_wl_callback */
 static inline void *
 wl_callback_get_user_data(struct wl_callback *wl_callback)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_callback);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_callback);
 }
 
 static inline uint32_t
 wl_callback_get_version(struct wl_callback *wl_callback)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_callback);
+  return wl_proxy_get_version((struct wl_proxy *) wl_callback);
 }
 
 /** @ingroup iface_wl_callback */
 static inline void
 wl_callback_destroy(struct wl_callback *wl_callback)
 {
-	wl_proxy_destroy((struct wl_proxy *) wl_callback);
+  wl_proxy_destroy((struct wl_proxy *) wl_callback);
 }
 
 #define WL_COMPOSITOR_CREATE_SURFACE 0
@@ -1301,27 +1301,27 @@ wl_callback_destroy(struct wl_callback *wl_callback)
 static inline void
 wl_compositor_set_user_data(struct wl_compositor *wl_compositor, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_compositor, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_compositor, user_data);
 }
 
 /** @ingroup iface_wl_compositor */
 static inline void *
 wl_compositor_get_user_data(struct wl_compositor *wl_compositor)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_compositor);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_compositor);
 }
 
 static inline uint32_t
 wl_compositor_get_version(struct wl_compositor *wl_compositor)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_compositor);
+  return wl_proxy_get_version((struct wl_proxy *) wl_compositor);
 }
 
 /** @ingroup iface_wl_compositor */
 static inline void
 wl_compositor_destroy(struct wl_compositor *wl_compositor)
 {
-	wl_proxy_destroy((struct wl_proxy *) wl_compositor);
+  wl_proxy_destroy((struct wl_proxy *) wl_compositor);
 }
 
 /**
@@ -1332,12 +1332,12 @@ wl_compositor_destroy(struct wl_compositor *wl_compositor)
 static inline struct wl_surface *
 wl_compositor_create_surface(struct wl_compositor *wl_compositor)
 {
-	struct wl_proxy *id;
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) wl_compositor,
-			 WL_COMPOSITOR_CREATE_SURFACE, &wl_surface_interface, wl_proxy_get_version((struct wl_proxy *) wl_compositor), 0, NULL);
+  id = wl_proxy_marshal_flags((struct wl_proxy *) wl_compositor,
+       WL_COMPOSITOR_CREATE_SURFACE, &wl_surface_interface, wl_proxy_get_version((struct wl_proxy *) wl_compositor), 0, NULL);
 
-	return (struct wl_surface *) id;
+  return (struct wl_surface *) id;
 }
 
 /**
@@ -1348,12 +1348,12 @@ wl_compositor_create_surface(struct wl_compositor *wl_compositor)
 static inline struct wl_region *
 wl_compositor_create_region(struct wl_compositor *wl_compositor)
 {
-	struct wl_proxy *id;
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) wl_compositor,
-			 WL_COMPOSITOR_CREATE_REGION, &wl_region_interface, wl_proxy_get_version((struct wl_proxy *) wl_compositor), 0, NULL);
+  id = wl_proxy_marshal_flags((struct wl_proxy *) wl_compositor,
+       WL_COMPOSITOR_CREATE_REGION, &wl_region_interface, wl_proxy_get_version((struct wl_proxy *) wl_compositor), 0, NULL);
 
-	return (struct wl_region *) id;
+  return (struct wl_region *) id;
 }
 
 #define WL_SHM_POOL_CREATE_BUFFER 0
@@ -1378,20 +1378,20 @@ wl_compositor_create_region(struct wl_compositor *wl_compositor)
 static inline void
 wl_shm_pool_set_user_data(struct wl_shm_pool *wl_shm_pool, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_shm_pool, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_shm_pool, user_data);
 }
 
 /** @ingroup iface_wl_shm_pool */
 static inline void *
 wl_shm_pool_get_user_data(struct wl_shm_pool *wl_shm_pool)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_shm_pool);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_shm_pool);
 }
 
 static inline uint32_t
 wl_shm_pool_get_version(struct wl_shm_pool *wl_shm_pool)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_shm_pool);
+  return wl_proxy_get_version((struct wl_proxy *) wl_shm_pool);
 }
 
 /**
@@ -1412,12 +1412,12 @@ wl_shm_pool_get_version(struct wl_shm_pool *wl_shm_pool)
 static inline struct wl_buffer *
 wl_shm_pool_create_buffer(struct wl_shm_pool *wl_shm_pool, int32_t offset, int32_t width, int32_t height, int32_t stride, uint32_t format)
 {
-	struct wl_proxy *id;
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) wl_shm_pool,
-			 WL_SHM_POOL_CREATE_BUFFER, &wl_buffer_interface, wl_proxy_get_version((struct wl_proxy *) wl_shm_pool), 0, NULL, offset, width, height, stride, format);
+  id = wl_proxy_marshal_flags((struct wl_proxy *) wl_shm_pool,
+       WL_SHM_POOL_CREATE_BUFFER, &wl_buffer_interface, wl_proxy_get_version((struct wl_proxy *) wl_shm_pool), 0, NULL, offset, width, height, stride, format);
 
-	return (struct wl_buffer *) id;
+  return (struct wl_buffer *) id;
 }
 
 /**
@@ -1432,8 +1432,8 @@ wl_shm_pool_create_buffer(struct wl_shm_pool *wl_shm_pool, int32_t offset, int32
 static inline void
 wl_shm_pool_destroy(struct wl_shm_pool *wl_shm_pool)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_shm_pool,
-			 WL_SHM_POOL_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shm_pool), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_shm_pool,
+       WL_SHM_POOL_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shm_pool), WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -1453,8 +1453,8 @@ wl_shm_pool_destroy(struct wl_shm_pool *wl_shm_pool)
 static inline void
 wl_shm_pool_resize(struct wl_shm_pool *wl_shm_pool, int32_t size)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_shm_pool,
-			 WL_SHM_POOL_RESIZE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shm_pool), 0, size);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_shm_pool,
+       WL_SHM_POOL_RESIZE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shm_pool), 0, size);
 }
 
 #ifndef WL_SHM_ERROR_ENUM
@@ -1466,18 +1466,18 @@ wl_shm_pool_resize(struct wl_shm_pool *wl_shm_pool, int32_t size)
  * These errors can be emitted in response to wl_shm requests.
  */
 enum wl_shm_error {
-	/**
-	 * buffer format is not known
-	 */
-	WL_SHM_ERROR_INVALID_FORMAT = 0,
-	/**
-	 * invalid size or stride during pool or buffer creation
-	 */
-	WL_SHM_ERROR_INVALID_STRIDE = 1,
-	/**
-	 * mmapping the file descriptor failed
-	 */
-	WL_SHM_ERROR_INVALID_FD = 2,
+  /**
+   * buffer format is not known
+   */
+  WL_SHM_ERROR_INVALID_FORMAT = 0,
+  /**
+   * invalid size or stride during pool or buffer creation
+   */
+  WL_SHM_ERROR_INVALID_STRIDE = 1,
+  /**
+   * mmapping the file descriptor failed
+   */
+  WL_SHM_ERROR_INVALID_FD = 2,
 };
 #endif /* WL_SHM_ERROR_ENUM */
 
@@ -1501,462 +1501,462 @@ enum wl_shm_error {
  * extension, pre-multiplied alpha is used for pixel values.
  */
 enum wl_shm_format {
-	/**
-	 * 32-bit ARGB format, [31:0] A:R:G:B 8:8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_ARGB8888 = 0,
-	/**
-	 * 32-bit RGB format, [31:0] x:R:G:B 8:8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_XRGB8888 = 1,
-	/**
-	 * 8-bit color index format, [7:0] C
-	 */
-	WL_SHM_FORMAT_C8 = 0x20203843,
-	/**
-	 * 8-bit RGB format, [7:0] R:G:B 3:3:2
-	 */
-	WL_SHM_FORMAT_RGB332 = 0x38424752,
-	/**
-	 * 8-bit BGR format, [7:0] B:G:R 2:3:3
-	 */
-	WL_SHM_FORMAT_BGR233 = 0x38524742,
-	/**
-	 * 16-bit xRGB format, [15:0] x:R:G:B 4:4:4:4 little endian
-	 */
-	WL_SHM_FORMAT_XRGB4444 = 0x32315258,
-	/**
-	 * 16-bit xBGR format, [15:0] x:B:G:R 4:4:4:4 little endian
-	 */
-	WL_SHM_FORMAT_XBGR4444 = 0x32314258,
-	/**
-	 * 16-bit RGBx format, [15:0] R:G:B:x 4:4:4:4 little endian
-	 */
-	WL_SHM_FORMAT_RGBX4444 = 0x32315852,
-	/**
-	 * 16-bit BGRx format, [15:0] B:G:R:x 4:4:4:4 little endian
-	 */
-	WL_SHM_FORMAT_BGRX4444 = 0x32315842,
-	/**
-	 * 16-bit ARGB format, [15:0] A:R:G:B 4:4:4:4 little endian
-	 */
-	WL_SHM_FORMAT_ARGB4444 = 0x32315241,
-	/**
-	 * 16-bit ABGR format, [15:0] A:B:G:R 4:4:4:4 little endian
-	 */
-	WL_SHM_FORMAT_ABGR4444 = 0x32314241,
-	/**
-	 * 16-bit RBGA format, [15:0] R:G:B:A 4:4:4:4 little endian
-	 */
-	WL_SHM_FORMAT_RGBA4444 = 0x32314152,
-	/**
-	 * 16-bit BGRA format, [15:0] B:G:R:A 4:4:4:4 little endian
-	 */
-	WL_SHM_FORMAT_BGRA4444 = 0x32314142,
-	/**
-	 * 16-bit xRGB format, [15:0] x:R:G:B 1:5:5:5 little endian
-	 */
-	WL_SHM_FORMAT_XRGB1555 = 0x35315258,
-	/**
-	 * 16-bit xBGR 1555 format, [15:0] x:B:G:R 1:5:5:5 little endian
-	 */
-	WL_SHM_FORMAT_XBGR1555 = 0x35314258,
-	/**
-	 * 16-bit RGBx 5551 format, [15:0] R:G:B:x 5:5:5:1 little endian
-	 */
-	WL_SHM_FORMAT_RGBX5551 = 0x35315852,
-	/**
-	 * 16-bit BGRx 5551 format, [15:0] B:G:R:x 5:5:5:1 little endian
-	 */
-	WL_SHM_FORMAT_BGRX5551 = 0x35315842,
-	/**
-	 * 16-bit ARGB 1555 format, [15:0] A:R:G:B 1:5:5:5 little endian
-	 */
-	WL_SHM_FORMAT_ARGB1555 = 0x35315241,
-	/**
-	 * 16-bit ABGR 1555 format, [15:0] A:B:G:R 1:5:5:5 little endian
-	 */
-	WL_SHM_FORMAT_ABGR1555 = 0x35314241,
-	/**
-	 * 16-bit RGBA 5551 format, [15:0] R:G:B:A 5:5:5:1 little endian
-	 */
-	WL_SHM_FORMAT_RGBA5551 = 0x35314152,
-	/**
-	 * 16-bit BGRA 5551 format, [15:0] B:G:R:A 5:5:5:1 little endian
-	 */
-	WL_SHM_FORMAT_BGRA5551 = 0x35314142,
-	/**
-	 * 16-bit RGB 565 format, [15:0] R:G:B 5:6:5 little endian
-	 */
-	WL_SHM_FORMAT_RGB565 = 0x36314752,
-	/**
-	 * 16-bit BGR 565 format, [15:0] B:G:R 5:6:5 little endian
-	 */
-	WL_SHM_FORMAT_BGR565 = 0x36314742,
-	/**
-	 * 24-bit RGB format, [23:0] R:G:B little endian
-	 */
-	WL_SHM_FORMAT_RGB888 = 0x34324752,
-	/**
-	 * 24-bit BGR format, [23:0] B:G:R little endian
-	 */
-	WL_SHM_FORMAT_BGR888 = 0x34324742,
-	/**
-	 * 32-bit xBGR format, [31:0] x:B:G:R 8:8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_XBGR8888 = 0x34324258,
-	/**
-	 * 32-bit RGBx format, [31:0] R:G:B:x 8:8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_RGBX8888 = 0x34325852,
-	/**
-	 * 32-bit BGRx format, [31:0] B:G:R:x 8:8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_BGRX8888 = 0x34325842,
-	/**
-	 * 32-bit ABGR format, [31:0] A:B:G:R 8:8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_ABGR8888 = 0x34324241,
-	/**
-	 * 32-bit RGBA format, [31:0] R:G:B:A 8:8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_RGBA8888 = 0x34324152,
-	/**
-	 * 32-bit BGRA format, [31:0] B:G:R:A 8:8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_BGRA8888 = 0x34324142,
-	/**
-	 * 32-bit xRGB format, [31:0] x:R:G:B 2:10:10:10 little endian
-	 */
-	WL_SHM_FORMAT_XRGB2101010 = 0x30335258,
-	/**
-	 * 32-bit xBGR format, [31:0] x:B:G:R 2:10:10:10 little endian
-	 */
-	WL_SHM_FORMAT_XBGR2101010 = 0x30334258,
-	/**
-	 * 32-bit RGBx format, [31:0] R:G:B:x 10:10:10:2 little endian
-	 */
-	WL_SHM_FORMAT_RGBX1010102 = 0x30335852,
-	/**
-	 * 32-bit BGRx format, [31:0] B:G:R:x 10:10:10:2 little endian
-	 */
-	WL_SHM_FORMAT_BGRX1010102 = 0x30335842,
-	/**
-	 * 32-bit ARGB format, [31:0] A:R:G:B 2:10:10:10 little endian
-	 */
-	WL_SHM_FORMAT_ARGB2101010 = 0x30335241,
-	/**
-	 * 32-bit ABGR format, [31:0] A:B:G:R 2:10:10:10 little endian
-	 */
-	WL_SHM_FORMAT_ABGR2101010 = 0x30334241,
-	/**
-	 * 32-bit RGBA format, [31:0] R:G:B:A 10:10:10:2 little endian
-	 */
-	WL_SHM_FORMAT_RGBA1010102 = 0x30334152,
-	/**
-	 * 32-bit BGRA format, [31:0] B:G:R:A 10:10:10:2 little endian
-	 */
-	WL_SHM_FORMAT_BGRA1010102 = 0x30334142,
-	/**
-	 * packed YCbCr format, [31:0] Cr0:Y1:Cb0:Y0 8:8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_YUYV = 0x56595559,
-	/**
-	 * packed YCbCr format, [31:0] Cb0:Y1:Cr0:Y0 8:8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_YVYU = 0x55595659,
-	/**
-	 * packed YCbCr format, [31:0] Y1:Cr0:Y0:Cb0 8:8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_UYVY = 0x59565955,
-	/**
-	 * packed YCbCr format, [31:0] Y1:Cb0:Y0:Cr0 8:8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_VYUY = 0x59555956,
-	/**
-	 * packed AYCbCr format, [31:0] A:Y:Cb:Cr 8:8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_AYUV = 0x56555941,
-	/**
-	 * 2 plane YCbCr Cr:Cb format, 2x2 subsampled Cr:Cb plane
-	 */
-	WL_SHM_FORMAT_NV12 = 0x3231564e,
-	/**
-	 * 2 plane YCbCr Cb:Cr format, 2x2 subsampled Cb:Cr plane
-	 */
-	WL_SHM_FORMAT_NV21 = 0x3132564e,
-	/**
-	 * 2 plane YCbCr Cr:Cb format, 2x1 subsampled Cr:Cb plane
-	 */
-	WL_SHM_FORMAT_NV16 = 0x3631564e,
-	/**
-	 * 2 plane YCbCr Cb:Cr format, 2x1 subsampled Cb:Cr plane
-	 */
-	WL_SHM_FORMAT_NV61 = 0x3136564e,
-	/**
-	 * 3 plane YCbCr format, 4x4 subsampled Cb (1) and Cr (2) planes
-	 */
-	WL_SHM_FORMAT_YUV410 = 0x39565559,
-	/**
-	 * 3 plane YCbCr format, 4x4 subsampled Cr (1) and Cb (2) planes
-	 */
-	WL_SHM_FORMAT_YVU410 = 0x39555659,
-	/**
-	 * 3 plane YCbCr format, 4x1 subsampled Cb (1) and Cr (2) planes
-	 */
-	WL_SHM_FORMAT_YUV411 = 0x31315559,
-	/**
-	 * 3 plane YCbCr format, 4x1 subsampled Cr (1) and Cb (2) planes
-	 */
-	WL_SHM_FORMAT_YVU411 = 0x31315659,
-	/**
-	 * 3 plane YCbCr format, 2x2 subsampled Cb (1) and Cr (2) planes
-	 */
-	WL_SHM_FORMAT_YUV420 = 0x32315559,
-	/**
-	 * 3 plane YCbCr format, 2x2 subsampled Cr (1) and Cb (2) planes
-	 */
-	WL_SHM_FORMAT_YVU420 = 0x32315659,
-	/**
-	 * 3 plane YCbCr format, 2x1 subsampled Cb (1) and Cr (2) planes
-	 */
-	WL_SHM_FORMAT_YUV422 = 0x36315559,
-	/**
-	 * 3 plane YCbCr format, 2x1 subsampled Cr (1) and Cb (2) planes
-	 */
-	WL_SHM_FORMAT_YVU422 = 0x36315659,
-	/**
-	 * 3 plane YCbCr format, non-subsampled Cb (1) and Cr (2) planes
-	 */
-	WL_SHM_FORMAT_YUV444 = 0x34325559,
-	/**
-	 * 3 plane YCbCr format, non-subsampled Cr (1) and Cb (2) planes
-	 */
-	WL_SHM_FORMAT_YVU444 = 0x34325659,
-	/**
-	 * [7:0] R
-	 */
-	WL_SHM_FORMAT_R8 = 0x20203852,
-	/**
-	 * [15:0] R little endian
-	 */
-	WL_SHM_FORMAT_R16 = 0x20363152,
-	/**
-	 * [15:0] R:G 8:8 little endian
-	 */
-	WL_SHM_FORMAT_RG88 = 0x38384752,
-	/**
-	 * [15:0] G:R 8:8 little endian
-	 */
-	WL_SHM_FORMAT_GR88 = 0x38385247,
-	/**
-	 * [31:0] R:G 16:16 little endian
-	 */
-	WL_SHM_FORMAT_RG1616 = 0x32334752,
-	/**
-	 * [31:0] G:R 16:16 little endian
-	 */
-	WL_SHM_FORMAT_GR1616 = 0x32335247,
-	/**
-	 * [63:0] x:R:G:B 16:16:16:16 little endian
-	 */
-	WL_SHM_FORMAT_XRGB16161616F = 0x48345258,
-	/**
-	 * [63:0] x:B:G:R 16:16:16:16 little endian
-	 */
-	WL_SHM_FORMAT_XBGR16161616F = 0x48344258,
-	/**
-	 * [63:0] A:R:G:B 16:16:16:16 little endian
-	 */
-	WL_SHM_FORMAT_ARGB16161616F = 0x48345241,
-	/**
-	 * [63:0] A:B:G:R 16:16:16:16 little endian
-	 */
-	WL_SHM_FORMAT_ABGR16161616F = 0x48344241,
-	/**
-	 * [31:0] X:Y:Cb:Cr 8:8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_XYUV8888 = 0x56555958,
-	/**
-	 * [23:0] Cr:Cb:Y 8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_VUY888 = 0x34325556,
-	/**
-	 * Y followed by U then V, 10:10:10. Non-linear modifier only
-	 */
-	WL_SHM_FORMAT_VUY101010 = 0x30335556,
-	/**
-	 * [63:0] Cr0:0:Y1:0:Cb0:0:Y0:0 10:6:10:6:10:6:10:6 little endian per 2 Y pixels
-	 */
-	WL_SHM_FORMAT_Y210 = 0x30313259,
-	/**
-	 * [63:0] Cr0:0:Y1:0:Cb0:0:Y0:0 12:4:12:4:12:4:12:4 little endian per 2 Y pixels
-	 */
-	WL_SHM_FORMAT_Y212 = 0x32313259,
-	/**
-	 * [63:0] Cr0:Y1:Cb0:Y0 16:16:16:16 little endian per 2 Y pixels
-	 */
-	WL_SHM_FORMAT_Y216 = 0x36313259,
-	/**
-	 * [31:0] A:Cr:Y:Cb 2:10:10:10 little endian
-	 */
-	WL_SHM_FORMAT_Y410 = 0x30313459,
-	/**
-	 * [63:0] A:0:Cr:0:Y:0:Cb:0 12:4:12:4:12:4:12:4 little endian
-	 */
-	WL_SHM_FORMAT_Y412 = 0x32313459,
-	/**
-	 * [63:0] A:Cr:Y:Cb 16:16:16:16 little endian
-	 */
-	WL_SHM_FORMAT_Y416 = 0x36313459,
-	/**
-	 * [31:0] X:Cr:Y:Cb 2:10:10:10 little endian
-	 */
-	WL_SHM_FORMAT_XVYU2101010 = 0x30335658,
-	/**
-	 * [63:0] X:0:Cr:0:Y:0:Cb:0 12:4:12:4:12:4:12:4 little endian
-	 */
-	WL_SHM_FORMAT_XVYU12_16161616 = 0x36335658,
-	/**
-	 * [63:0] X:Cr:Y:Cb 16:16:16:16 little endian
-	 */
-	WL_SHM_FORMAT_XVYU16161616 = 0x38345658,
-	/**
-	 * [63:0]   A3:A2:Y3:0:Cr0:0:Y2:0:A1:A0:Y1:0:Cb0:0:Y0:0  1:1:8:2:8:2:8:2:1:1:8:2:8:2:8:2 little endian
-	 */
-	WL_SHM_FORMAT_Y0L0 = 0x304c3059,
-	/**
-	 * [63:0]   X3:X2:Y3:0:Cr0:0:Y2:0:X1:X0:Y1:0:Cb0:0:Y0:0  1:1:8:2:8:2:8:2:1:1:8:2:8:2:8:2 little endian
-	 */
-	WL_SHM_FORMAT_X0L0 = 0x304c3058,
-	/**
-	 * [63:0]   A3:A2:Y3:Cr0:Y2:A1:A0:Y1:Cb0:Y0  1:1:10:10:10:1:1:10:10:10 little endian
-	 */
-	WL_SHM_FORMAT_Y0L2 = 0x324c3059,
-	/**
-	 * [63:0]   X3:X2:Y3:Cr0:Y2:X1:X0:Y1:Cb0:Y0  1:1:10:10:10:1:1:10:10:10 little endian
-	 */
-	WL_SHM_FORMAT_X0L2 = 0x324c3058,
-	WL_SHM_FORMAT_YUV420_8BIT = 0x38305559,
-	WL_SHM_FORMAT_YUV420_10BIT = 0x30315559,
-	WL_SHM_FORMAT_XRGB8888_A8 = 0x38415258,
-	WL_SHM_FORMAT_XBGR8888_A8 = 0x38414258,
-	WL_SHM_FORMAT_RGBX8888_A8 = 0x38415852,
-	WL_SHM_FORMAT_BGRX8888_A8 = 0x38415842,
-	WL_SHM_FORMAT_RGB888_A8 = 0x38413852,
-	WL_SHM_FORMAT_BGR888_A8 = 0x38413842,
-	WL_SHM_FORMAT_RGB565_A8 = 0x38413552,
-	WL_SHM_FORMAT_BGR565_A8 = 0x38413542,
-	/**
-	 * non-subsampled Cr:Cb plane
-	 */
-	WL_SHM_FORMAT_NV24 = 0x3432564e,
-	/**
-	 * non-subsampled Cb:Cr plane
-	 */
-	WL_SHM_FORMAT_NV42 = 0x3234564e,
-	/**
-	 * 2x1 subsampled Cr:Cb plane, 10 bit per channel
-	 */
-	WL_SHM_FORMAT_P210 = 0x30313250,
-	/**
-	 * 2x2 subsampled Cr:Cb plane 10 bits per channel
-	 */
-	WL_SHM_FORMAT_P010 = 0x30313050,
-	/**
-	 * 2x2 subsampled Cr:Cb plane 12 bits per channel
-	 */
-	WL_SHM_FORMAT_P012 = 0x32313050,
-	/**
-	 * 2x2 subsampled Cr:Cb plane 16 bits per channel
-	 */
-	WL_SHM_FORMAT_P016 = 0x36313050,
-	/**
-	 * [63:0] A:x:B:x:G:x:R:x 10:6:10:6:10:6:10:6 little endian
-	 */
-	WL_SHM_FORMAT_AXBXGXRX106106106106 = 0x30314241,
-	/**
-	 * 2x2 subsampled Cr:Cb plane
-	 */
-	WL_SHM_FORMAT_NV15 = 0x3531564e,
-	WL_SHM_FORMAT_Q410 = 0x30313451,
-	WL_SHM_FORMAT_Q401 = 0x31303451,
-	/**
-	 * [63:0] x:R:G:B 16:16:16:16 little endian
-	 */
-	WL_SHM_FORMAT_XRGB16161616 = 0x38345258,
-	/**
-	 * [63:0] x:B:G:R 16:16:16:16 little endian
-	 */
-	WL_SHM_FORMAT_XBGR16161616 = 0x38344258,
-	/**
-	 * [63:0] A:R:G:B 16:16:16:16 little endian
-	 */
-	WL_SHM_FORMAT_ARGB16161616 = 0x38345241,
-	/**
-	 * [63:0] A:B:G:R 16:16:16:16 little endian
-	 */
-	WL_SHM_FORMAT_ABGR16161616 = 0x38344241,
-	/**
-	 * [7:0] C0:C1:C2:C3:C4:C5:C6:C7 1:1:1:1:1:1:1:1 eight pixels/byte
-	 */
-	WL_SHM_FORMAT_C1 = 0x20203143,
-	/**
-	 * [7:0] C0:C1:C2:C3 2:2:2:2 four pixels/byte
-	 */
-	WL_SHM_FORMAT_C2 = 0x20203243,
-	/**
-	 * [7:0] C0:C1 4:4 two pixels/byte
-	 */
-	WL_SHM_FORMAT_C4 = 0x20203443,
-	/**
-	 * [7:0] D0:D1:D2:D3:D4:D5:D6:D7 1:1:1:1:1:1:1:1 eight pixels/byte
-	 */
-	WL_SHM_FORMAT_D1 = 0x20203144,
-	/**
-	 * [7:0] D0:D1:D2:D3 2:2:2:2 four pixels/byte
-	 */
-	WL_SHM_FORMAT_D2 = 0x20203244,
-	/**
-	 * [7:0] D0:D1 4:4 two pixels/byte
-	 */
-	WL_SHM_FORMAT_D4 = 0x20203444,
-	/**
-	 * [7:0] D
-	 */
-	WL_SHM_FORMAT_D8 = 0x20203844,
-	/**
-	 * [7:0] R0:R1:R2:R3:R4:R5:R6:R7 1:1:1:1:1:1:1:1 eight pixels/byte
-	 */
-	WL_SHM_FORMAT_R1 = 0x20203152,
-	/**
-	 * [7:0] R0:R1:R2:R3 2:2:2:2 four pixels/byte
-	 */
-	WL_SHM_FORMAT_R2 = 0x20203252,
-	/**
-	 * [7:0] R0:R1 4:4 two pixels/byte
-	 */
-	WL_SHM_FORMAT_R4 = 0x20203452,
-	/**
-	 * [15:0] x:R 6:10 little endian
-	 */
-	WL_SHM_FORMAT_R10 = 0x20303152,
-	/**
-	 * [15:0] x:R 4:12 little endian
-	 */
-	WL_SHM_FORMAT_R12 = 0x20323152,
-	/**
-	 * [31:0] A:Cr:Cb:Y 8:8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_AVUY8888 = 0x59555641,
-	/**
-	 * [31:0] X:Cr:Cb:Y 8:8:8:8 little endian
-	 */
-	WL_SHM_FORMAT_XVUY8888 = 0x59555658,
-	/**
-	 * 2x2 subsampled Cr:Cb plane 10 bits per channel packed
-	 */
-	WL_SHM_FORMAT_P030 = 0x30333050,
+  /**
+   * 32-bit ARGB format, [31:0] A:R:G:B 8:8:8:8 little endian
+   */
+  WL_SHM_FORMAT_ARGB8888 = 0,
+  /**
+   * 32-bit RGB format, [31:0] x:R:G:B 8:8:8:8 little endian
+   */
+  WL_SHM_FORMAT_XRGB8888 = 1,
+  /**
+   * 8-bit color index format, [7:0] C
+   */
+  WL_SHM_FORMAT_C8 = 0x20203843,
+  /**
+   * 8-bit RGB format, [7:0] R:G:B 3:3:2
+   */
+  WL_SHM_FORMAT_RGB332 = 0x38424752,
+  /**
+   * 8-bit BGR format, [7:0] B:G:R 2:3:3
+   */
+  WL_SHM_FORMAT_BGR233 = 0x38524742,
+  /**
+   * 16-bit xRGB format, [15:0] x:R:G:B 4:4:4:4 little endian
+   */
+  WL_SHM_FORMAT_XRGB4444 = 0x32315258,
+  /**
+   * 16-bit xBGR format, [15:0] x:B:G:R 4:4:4:4 little endian
+   */
+  WL_SHM_FORMAT_XBGR4444 = 0x32314258,
+  /**
+   * 16-bit RGBx format, [15:0] R:G:B:x 4:4:4:4 little endian
+   */
+  WL_SHM_FORMAT_RGBX4444 = 0x32315852,
+  /**
+   * 16-bit BGRx format, [15:0] B:G:R:x 4:4:4:4 little endian
+   */
+  WL_SHM_FORMAT_BGRX4444 = 0x32315842,
+  /**
+   * 16-bit ARGB format, [15:0] A:R:G:B 4:4:4:4 little endian
+   */
+  WL_SHM_FORMAT_ARGB4444 = 0x32315241,
+  /**
+   * 16-bit ABGR format, [15:0] A:B:G:R 4:4:4:4 little endian
+   */
+  WL_SHM_FORMAT_ABGR4444 = 0x32314241,
+  /**
+   * 16-bit RBGA format, [15:0] R:G:B:A 4:4:4:4 little endian
+   */
+  WL_SHM_FORMAT_RGBA4444 = 0x32314152,
+  /**
+   * 16-bit BGRA format, [15:0] B:G:R:A 4:4:4:4 little endian
+   */
+  WL_SHM_FORMAT_BGRA4444 = 0x32314142,
+  /**
+   * 16-bit xRGB format, [15:0] x:R:G:B 1:5:5:5 little endian
+   */
+  WL_SHM_FORMAT_XRGB1555 = 0x35315258,
+  /**
+   * 16-bit xBGR 1555 format, [15:0] x:B:G:R 1:5:5:5 little endian
+   */
+  WL_SHM_FORMAT_XBGR1555 = 0x35314258,
+  /**
+   * 16-bit RGBx 5551 format, [15:0] R:G:B:x 5:5:5:1 little endian
+   */
+  WL_SHM_FORMAT_RGBX5551 = 0x35315852,
+  /**
+   * 16-bit BGRx 5551 format, [15:0] B:G:R:x 5:5:5:1 little endian
+   */
+  WL_SHM_FORMAT_BGRX5551 = 0x35315842,
+  /**
+   * 16-bit ARGB 1555 format, [15:0] A:R:G:B 1:5:5:5 little endian
+   */
+  WL_SHM_FORMAT_ARGB1555 = 0x35315241,
+  /**
+   * 16-bit ABGR 1555 format, [15:0] A:B:G:R 1:5:5:5 little endian
+   */
+  WL_SHM_FORMAT_ABGR1555 = 0x35314241,
+  /**
+   * 16-bit RGBA 5551 format, [15:0] R:G:B:A 5:5:5:1 little endian
+   */
+  WL_SHM_FORMAT_RGBA5551 = 0x35314152,
+  /**
+   * 16-bit BGRA 5551 format, [15:0] B:G:R:A 5:5:5:1 little endian
+   */
+  WL_SHM_FORMAT_BGRA5551 = 0x35314142,
+  /**
+   * 16-bit RGB 565 format, [15:0] R:G:B 5:6:5 little endian
+   */
+  WL_SHM_FORMAT_RGB565 = 0x36314752,
+  /**
+   * 16-bit BGR 565 format, [15:0] B:G:R 5:6:5 little endian
+   */
+  WL_SHM_FORMAT_BGR565 = 0x36314742,
+  /**
+   * 24-bit RGB format, [23:0] R:G:B little endian
+   */
+  WL_SHM_FORMAT_RGB888 = 0x34324752,
+  /**
+   * 24-bit BGR format, [23:0] B:G:R little endian
+   */
+  WL_SHM_FORMAT_BGR888 = 0x34324742,
+  /**
+   * 32-bit xBGR format, [31:0] x:B:G:R 8:8:8:8 little endian
+   */
+  WL_SHM_FORMAT_XBGR8888 = 0x34324258,
+  /**
+   * 32-bit RGBx format, [31:0] R:G:B:x 8:8:8:8 little endian
+   */
+  WL_SHM_FORMAT_RGBX8888 = 0x34325852,
+  /**
+   * 32-bit BGRx format, [31:0] B:G:R:x 8:8:8:8 little endian
+   */
+  WL_SHM_FORMAT_BGRX8888 = 0x34325842,
+  /**
+   * 32-bit ABGR format, [31:0] A:B:G:R 8:8:8:8 little endian
+   */
+  WL_SHM_FORMAT_ABGR8888 = 0x34324241,
+  /**
+   * 32-bit RGBA format, [31:0] R:G:B:A 8:8:8:8 little endian
+   */
+  WL_SHM_FORMAT_RGBA8888 = 0x34324152,
+  /**
+   * 32-bit BGRA format, [31:0] B:G:R:A 8:8:8:8 little endian
+   */
+  WL_SHM_FORMAT_BGRA8888 = 0x34324142,
+  /**
+   * 32-bit xRGB format, [31:0] x:R:G:B 2:10:10:10 little endian
+   */
+  WL_SHM_FORMAT_XRGB2101010 = 0x30335258,
+  /**
+   * 32-bit xBGR format, [31:0] x:B:G:R 2:10:10:10 little endian
+   */
+  WL_SHM_FORMAT_XBGR2101010 = 0x30334258,
+  /**
+   * 32-bit RGBx format, [31:0] R:G:B:x 10:10:10:2 little endian
+   */
+  WL_SHM_FORMAT_RGBX1010102 = 0x30335852,
+  /**
+   * 32-bit BGRx format, [31:0] B:G:R:x 10:10:10:2 little endian
+   */
+  WL_SHM_FORMAT_BGRX1010102 = 0x30335842,
+  /**
+   * 32-bit ARGB format, [31:0] A:R:G:B 2:10:10:10 little endian
+   */
+  WL_SHM_FORMAT_ARGB2101010 = 0x30335241,
+  /**
+   * 32-bit ABGR format, [31:0] A:B:G:R 2:10:10:10 little endian
+   */
+  WL_SHM_FORMAT_ABGR2101010 = 0x30334241,
+  /**
+   * 32-bit RGBA format, [31:0] R:G:B:A 10:10:10:2 little endian
+   */
+  WL_SHM_FORMAT_RGBA1010102 = 0x30334152,
+  /**
+   * 32-bit BGRA format, [31:0] B:G:R:A 10:10:10:2 little endian
+   */
+  WL_SHM_FORMAT_BGRA1010102 = 0x30334142,
+  /**
+   * packed YCbCr format, [31:0] Cr0:Y1:Cb0:Y0 8:8:8:8 little endian
+   */
+  WL_SHM_FORMAT_YUYV = 0x56595559,
+  /**
+   * packed YCbCr format, [31:0] Cb0:Y1:Cr0:Y0 8:8:8:8 little endian
+   */
+  WL_SHM_FORMAT_YVYU = 0x55595659,
+  /**
+   * packed YCbCr format, [31:0] Y1:Cr0:Y0:Cb0 8:8:8:8 little endian
+   */
+  WL_SHM_FORMAT_UYVY = 0x59565955,
+  /**
+   * packed YCbCr format, [31:0] Y1:Cb0:Y0:Cr0 8:8:8:8 little endian
+   */
+  WL_SHM_FORMAT_VYUY = 0x59555956,
+  /**
+   * packed AYCbCr format, [31:0] A:Y:Cb:Cr 8:8:8:8 little endian
+   */
+  WL_SHM_FORMAT_AYUV = 0x56555941,
+  /**
+   * 2 plane YCbCr Cr:Cb format, 2x2 subsampled Cr:Cb plane
+   */
+  WL_SHM_FORMAT_NV12 = 0x3231564e,
+  /**
+   * 2 plane YCbCr Cb:Cr format, 2x2 subsampled Cb:Cr plane
+   */
+  WL_SHM_FORMAT_NV21 = 0x3132564e,
+  /**
+   * 2 plane YCbCr Cr:Cb format, 2x1 subsampled Cr:Cb plane
+   */
+  WL_SHM_FORMAT_NV16 = 0x3631564e,
+  /**
+   * 2 plane YCbCr Cb:Cr format, 2x1 subsampled Cb:Cr plane
+   */
+  WL_SHM_FORMAT_NV61 = 0x3136564e,
+  /**
+   * 3 plane YCbCr format, 4x4 subsampled Cb (1) and Cr (2) planes
+   */
+  WL_SHM_FORMAT_YUV410 = 0x39565559,
+  /**
+   * 3 plane YCbCr format, 4x4 subsampled Cr (1) and Cb (2) planes
+   */
+  WL_SHM_FORMAT_YVU410 = 0x39555659,
+  /**
+   * 3 plane YCbCr format, 4x1 subsampled Cb (1) and Cr (2) planes
+   */
+  WL_SHM_FORMAT_YUV411 = 0x31315559,
+  /**
+   * 3 plane YCbCr format, 4x1 subsampled Cr (1) and Cb (2) planes
+   */
+  WL_SHM_FORMAT_YVU411 = 0x31315659,
+  /**
+   * 3 plane YCbCr format, 2x2 subsampled Cb (1) and Cr (2) planes
+   */
+  WL_SHM_FORMAT_YUV420 = 0x32315559,
+  /**
+   * 3 plane YCbCr format, 2x2 subsampled Cr (1) and Cb (2) planes
+   */
+  WL_SHM_FORMAT_YVU420 = 0x32315659,
+  /**
+   * 3 plane YCbCr format, 2x1 subsampled Cb (1) and Cr (2) planes
+   */
+  WL_SHM_FORMAT_YUV422 = 0x36315559,
+  /**
+   * 3 plane YCbCr format, 2x1 subsampled Cr (1) and Cb (2) planes
+   */
+  WL_SHM_FORMAT_YVU422 = 0x36315659,
+  /**
+   * 3 plane YCbCr format, non-subsampled Cb (1) and Cr (2) planes
+   */
+  WL_SHM_FORMAT_YUV444 = 0x34325559,
+  /**
+   * 3 plane YCbCr format, non-subsampled Cr (1) and Cb (2) planes
+   */
+  WL_SHM_FORMAT_YVU444 = 0x34325659,
+  /**
+   * [7:0] R
+   */
+  WL_SHM_FORMAT_R8 = 0x20203852,
+  /**
+   * [15:0] R little endian
+   */
+  WL_SHM_FORMAT_R16 = 0x20363152,
+  /**
+   * [15:0] R:G 8:8 little endian
+   */
+  WL_SHM_FORMAT_RG88 = 0x38384752,
+  /**
+   * [15:0] G:R 8:8 little endian
+   */
+  WL_SHM_FORMAT_GR88 = 0x38385247,
+  /**
+   * [31:0] R:G 16:16 little endian
+   */
+  WL_SHM_FORMAT_RG1616 = 0x32334752,
+  /**
+   * [31:0] G:R 16:16 little endian
+   */
+  WL_SHM_FORMAT_GR1616 = 0x32335247,
+  /**
+   * [63:0] x:R:G:B 16:16:16:16 little endian
+   */
+  WL_SHM_FORMAT_XRGB16161616F = 0x48345258,
+  /**
+   * [63:0] x:B:G:R 16:16:16:16 little endian
+   */
+  WL_SHM_FORMAT_XBGR16161616F = 0x48344258,
+  /**
+   * [63:0] A:R:G:B 16:16:16:16 little endian
+   */
+  WL_SHM_FORMAT_ARGB16161616F = 0x48345241,
+  /**
+   * [63:0] A:B:G:R 16:16:16:16 little endian
+   */
+  WL_SHM_FORMAT_ABGR16161616F = 0x48344241,
+  /**
+   * [31:0] X:Y:Cb:Cr 8:8:8:8 little endian
+   */
+  WL_SHM_FORMAT_XYUV8888 = 0x56555958,
+  /**
+   * [23:0] Cr:Cb:Y 8:8:8 little endian
+   */
+  WL_SHM_FORMAT_VUY888 = 0x34325556,
+  /**
+   * Y followed by U then V, 10:10:10. Non-linear modifier only
+   */
+  WL_SHM_FORMAT_VUY101010 = 0x30335556,
+  /**
+   * [63:0] Cr0:0:Y1:0:Cb0:0:Y0:0 10:6:10:6:10:6:10:6 little endian per 2 Y pixels
+   */
+  WL_SHM_FORMAT_Y210 = 0x30313259,
+  /**
+   * [63:0] Cr0:0:Y1:0:Cb0:0:Y0:0 12:4:12:4:12:4:12:4 little endian per 2 Y pixels
+   */
+  WL_SHM_FORMAT_Y212 = 0x32313259,
+  /**
+   * [63:0] Cr0:Y1:Cb0:Y0 16:16:16:16 little endian per 2 Y pixels
+   */
+  WL_SHM_FORMAT_Y216 = 0x36313259,
+  /**
+   * [31:0] A:Cr:Y:Cb 2:10:10:10 little endian
+   */
+  WL_SHM_FORMAT_Y410 = 0x30313459,
+  /**
+   * [63:0] A:0:Cr:0:Y:0:Cb:0 12:4:12:4:12:4:12:4 little endian
+   */
+  WL_SHM_FORMAT_Y412 = 0x32313459,
+  /**
+   * [63:0] A:Cr:Y:Cb 16:16:16:16 little endian
+   */
+  WL_SHM_FORMAT_Y416 = 0x36313459,
+  /**
+   * [31:0] X:Cr:Y:Cb 2:10:10:10 little endian
+   */
+  WL_SHM_FORMAT_XVYU2101010 = 0x30335658,
+  /**
+   * [63:0] X:0:Cr:0:Y:0:Cb:0 12:4:12:4:12:4:12:4 little endian
+   */
+  WL_SHM_FORMAT_XVYU12_16161616 = 0x36335658,
+  /**
+   * [63:0] X:Cr:Y:Cb 16:16:16:16 little endian
+   */
+  WL_SHM_FORMAT_XVYU16161616 = 0x38345658,
+  /**
+   * [63:0]   A3:A2:Y3:0:Cr0:0:Y2:0:A1:A0:Y1:0:Cb0:0:Y0:0  1:1:8:2:8:2:8:2:1:1:8:2:8:2:8:2 little endian
+   */
+  WL_SHM_FORMAT_Y0L0 = 0x304c3059,
+  /**
+   * [63:0]   X3:X2:Y3:0:Cr0:0:Y2:0:X1:X0:Y1:0:Cb0:0:Y0:0  1:1:8:2:8:2:8:2:1:1:8:2:8:2:8:2 little endian
+   */
+  WL_SHM_FORMAT_X0L0 = 0x304c3058,
+  /**
+   * [63:0]   A3:A2:Y3:Cr0:Y2:A1:A0:Y1:Cb0:Y0  1:1:10:10:10:1:1:10:10:10 little endian
+   */
+  WL_SHM_FORMAT_Y0L2 = 0x324c3059,
+  /**
+   * [63:0]   X3:X2:Y3:Cr0:Y2:X1:X0:Y1:Cb0:Y0  1:1:10:10:10:1:1:10:10:10 little endian
+   */
+  WL_SHM_FORMAT_X0L2 = 0x324c3058,
+  WL_SHM_FORMAT_YUV420_8BIT = 0x38305559,
+  WL_SHM_FORMAT_YUV420_10BIT = 0x30315559,
+  WL_SHM_FORMAT_XRGB8888_A8 = 0x38415258,
+  WL_SHM_FORMAT_XBGR8888_A8 = 0x38414258,
+  WL_SHM_FORMAT_RGBX8888_A8 = 0x38415852,
+  WL_SHM_FORMAT_BGRX8888_A8 = 0x38415842,
+  WL_SHM_FORMAT_RGB888_A8 = 0x38413852,
+  WL_SHM_FORMAT_BGR888_A8 = 0x38413842,
+  WL_SHM_FORMAT_RGB565_A8 = 0x38413552,
+  WL_SHM_FORMAT_BGR565_A8 = 0x38413542,
+  /**
+   * non-subsampled Cr:Cb plane
+   */
+  WL_SHM_FORMAT_NV24 = 0x3432564e,
+  /**
+   * non-subsampled Cb:Cr plane
+   */
+  WL_SHM_FORMAT_NV42 = 0x3234564e,
+  /**
+   * 2x1 subsampled Cr:Cb plane, 10 bit per channel
+   */
+  WL_SHM_FORMAT_P210 = 0x30313250,
+  /**
+   * 2x2 subsampled Cr:Cb plane 10 bits per channel
+   */
+  WL_SHM_FORMAT_P010 = 0x30313050,
+  /**
+   * 2x2 subsampled Cr:Cb plane 12 bits per channel
+   */
+  WL_SHM_FORMAT_P012 = 0x32313050,
+  /**
+   * 2x2 subsampled Cr:Cb plane 16 bits per channel
+   */
+  WL_SHM_FORMAT_P016 = 0x36313050,
+  /**
+   * [63:0] A:x:B:x:G:x:R:x 10:6:10:6:10:6:10:6 little endian
+   */
+  WL_SHM_FORMAT_AXBXGXRX106106106106 = 0x30314241,
+  /**
+   * 2x2 subsampled Cr:Cb plane
+   */
+  WL_SHM_FORMAT_NV15 = 0x3531564e,
+  WL_SHM_FORMAT_Q410 = 0x30313451,
+  WL_SHM_FORMAT_Q401 = 0x31303451,
+  /**
+   * [63:0] x:R:G:B 16:16:16:16 little endian
+   */
+  WL_SHM_FORMAT_XRGB16161616 = 0x38345258,
+  /**
+   * [63:0] x:B:G:R 16:16:16:16 little endian
+   */
+  WL_SHM_FORMAT_XBGR16161616 = 0x38344258,
+  /**
+   * [63:0] A:R:G:B 16:16:16:16 little endian
+   */
+  WL_SHM_FORMAT_ARGB16161616 = 0x38345241,
+  /**
+   * [63:0] A:B:G:R 16:16:16:16 little endian
+   */
+  WL_SHM_FORMAT_ABGR16161616 = 0x38344241,
+  /**
+   * [7:0] C0:C1:C2:C3:C4:C5:C6:C7 1:1:1:1:1:1:1:1 eight pixels/byte
+   */
+  WL_SHM_FORMAT_C1 = 0x20203143,
+  /**
+   * [7:0] C0:C1:C2:C3 2:2:2:2 four pixels/byte
+   */
+  WL_SHM_FORMAT_C2 = 0x20203243,
+  /**
+   * [7:0] C0:C1 4:4 two pixels/byte
+   */
+  WL_SHM_FORMAT_C4 = 0x20203443,
+  /**
+   * [7:0] D0:D1:D2:D3:D4:D5:D6:D7 1:1:1:1:1:1:1:1 eight pixels/byte
+   */
+  WL_SHM_FORMAT_D1 = 0x20203144,
+  /**
+   * [7:0] D0:D1:D2:D3 2:2:2:2 four pixels/byte
+   */
+  WL_SHM_FORMAT_D2 = 0x20203244,
+  /**
+   * [7:0] D0:D1 4:4 two pixels/byte
+   */
+  WL_SHM_FORMAT_D4 = 0x20203444,
+  /**
+   * [7:0] D
+   */
+  WL_SHM_FORMAT_D8 = 0x20203844,
+  /**
+   * [7:0] R0:R1:R2:R3:R4:R5:R6:R7 1:1:1:1:1:1:1:1 eight pixels/byte
+   */
+  WL_SHM_FORMAT_R1 = 0x20203152,
+  /**
+   * [7:0] R0:R1:R2:R3 2:2:2:2 four pixels/byte
+   */
+  WL_SHM_FORMAT_R2 = 0x20203252,
+  /**
+   * [7:0] R0:R1 4:4 two pixels/byte
+   */
+  WL_SHM_FORMAT_R4 = 0x20203452,
+  /**
+   * [15:0] x:R 6:10 little endian
+   */
+  WL_SHM_FORMAT_R10 = 0x20303152,
+  /**
+   * [15:0] x:R 4:12 little endian
+   */
+  WL_SHM_FORMAT_R12 = 0x20323152,
+  /**
+   * [31:0] A:Cr:Cb:Y 8:8:8:8 little endian
+   */
+  WL_SHM_FORMAT_AVUY8888 = 0x59555641,
+  /**
+   * [31:0] X:Cr:Cb:Y 8:8:8:8 little endian
+   */
+  WL_SHM_FORMAT_XVUY8888 = 0x59555658,
+  /**
+   * 2x2 subsampled Cr:Cb plane 10 bits per channel packed
+   */
+  WL_SHM_FORMAT_P030 = 0x30333050,
 };
 #endif /* WL_SHM_FORMAT_ENUM */
 
@@ -1965,16 +1965,16 @@ enum wl_shm_format {
  * @struct wl_shm_listener
  */
 struct wl_shm_listener {
-	/**
-	 * pixel format description
-	 *
-	 * Informs the client about a valid pixel format that can be used
-	 * for buffers. Known formats include argb8888 and xrgb8888.
-	 * @param format buffer pixel format
-	 */
-	void (*format)(void *data,
-		       struct wl_shm *wl_shm,
-		       uint32_t format);
+  /**
+   * pixel format description
+   *
+   * Informs the client about a valid pixel format that can be used
+   * for buffers. Known formats include argb8888 and xrgb8888.
+   * @param format buffer pixel format
+   */
+  void (*format)(void *data,
+           struct wl_shm *wl_shm,
+           uint32_t format);
 };
 
 /**
@@ -1982,10 +1982,10 @@ struct wl_shm_listener {
  */
 static inline int
 wl_shm_add_listener(struct wl_shm *wl_shm,
-		    const struct wl_shm_listener *listener, void *data)
+        const struct wl_shm_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) wl_shm,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) wl_shm,
+             (void (**)(void)) listener, data);
 }
 
 #define WL_SHM_CREATE_POOL 0
@@ -2009,27 +2009,27 @@ wl_shm_add_listener(struct wl_shm *wl_shm,
 static inline void
 wl_shm_set_user_data(struct wl_shm *wl_shm, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_shm, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_shm, user_data);
 }
 
 /** @ingroup iface_wl_shm */
 static inline void *
 wl_shm_get_user_data(struct wl_shm *wl_shm)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_shm);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_shm);
 }
 
 static inline uint32_t
 wl_shm_get_version(struct wl_shm *wl_shm)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_shm);
+  return wl_proxy_get_version((struct wl_proxy *) wl_shm);
 }
 
 /** @ingroup iface_wl_shm */
 static inline void
 wl_shm_destroy(struct wl_shm *wl_shm)
 {
-	wl_proxy_destroy((struct wl_proxy *) wl_shm);
+  wl_proxy_destroy((struct wl_proxy *) wl_shm);
 }
 
 /**
@@ -2044,12 +2044,12 @@ wl_shm_destroy(struct wl_shm *wl_shm)
 static inline struct wl_shm_pool *
 wl_shm_create_pool(struct wl_shm *wl_shm, int32_t fd, int32_t size)
 {
-	struct wl_proxy *id;
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) wl_shm,
-			 WL_SHM_CREATE_POOL, &wl_shm_pool_interface, wl_proxy_get_version((struct wl_proxy *) wl_shm), 0, NULL, fd, size);
+  id = wl_proxy_marshal_flags((struct wl_proxy *) wl_shm,
+       WL_SHM_CREATE_POOL, &wl_shm_pool_interface, wl_proxy_get_version((struct wl_proxy *) wl_shm), 0, NULL, fd, size);
 
-	return (struct wl_shm_pool *) id;
+  return (struct wl_shm_pool *) id;
 }
 
 /**
@@ -2063,8 +2063,8 @@ wl_shm_create_pool(struct wl_shm *wl_shm, int32_t fd, int32_t size)
 static inline void
 wl_shm_release(struct wl_shm *wl_shm)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_shm,
-			 WL_SHM_RELEASE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shm), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_shm,
+       WL_SHM_RELEASE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shm), WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -2072,24 +2072,24 @@ wl_shm_release(struct wl_shm *wl_shm)
  * @struct wl_buffer_listener
  */
 struct wl_buffer_listener {
-	/**
-	 * compositor releases buffer
-	 *
-	 * Sent when this wl_buffer is no longer used by the compositor.
-	 * The client is now free to reuse or destroy this buffer and its
-	 * backing storage.
-	 *
-	 * If a client receives a release event before the frame callback
-	 * requested in the same wl_surface.commit that attaches this
-	 * wl_buffer to a surface, then the client is immediately free to
-	 * reuse the buffer and its backing storage, and does not need a
-	 * second buffer for the next surface content update. Typically
-	 * this is possible, when the compositor maintains a copy of the
-	 * wl_surface contents, e.g. as a GL texture. This is an important
-	 * optimization for GL(ES) compositors with wl_shm clients.
-	 */
-	void (*release)(void *data,
-			struct wl_buffer *wl_buffer);
+  /**
+   * compositor releases buffer
+   *
+   * Sent when this wl_buffer is no longer used by the compositor.
+   * The client is now free to reuse or destroy this buffer and its
+   * backing storage.
+   *
+   * If a client receives a release event before the frame callback
+   * requested in the same wl_surface.commit that attaches this
+   * wl_buffer to a surface, then the client is immediately free to
+   * reuse the buffer and its backing storage, and does not need a
+   * second buffer for the next surface content update. Typically
+   * this is possible, when the compositor maintains a copy of the
+   * wl_surface contents, e.g. as a GL texture. This is an important
+   * optimization for GL(ES) compositors with wl_shm clients.
+   */
+  void (*release)(void *data,
+      struct wl_buffer *wl_buffer);
 };
 
 /**
@@ -2097,10 +2097,10 @@ struct wl_buffer_listener {
  */
 static inline int
 wl_buffer_add_listener(struct wl_buffer *wl_buffer,
-		       const struct wl_buffer_listener *listener, void *data)
+           const struct wl_buffer_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) wl_buffer,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) wl_buffer,
+             (void (**)(void)) listener, data);
 }
 
 #define WL_BUFFER_DESTROY 0
@@ -2119,20 +2119,20 @@ wl_buffer_add_listener(struct wl_buffer *wl_buffer,
 static inline void
 wl_buffer_set_user_data(struct wl_buffer *wl_buffer, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_buffer, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_buffer, user_data);
 }
 
 /** @ingroup iface_wl_buffer */
 static inline void *
 wl_buffer_get_user_data(struct wl_buffer *wl_buffer)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_buffer);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_buffer);
 }
 
 static inline uint32_t
 wl_buffer_get_version(struct wl_buffer *wl_buffer)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_buffer);
+  return wl_proxy_get_version((struct wl_proxy *) wl_buffer);
 }
 
 /**
@@ -2146,29 +2146,29 @@ wl_buffer_get_version(struct wl_buffer *wl_buffer)
 static inline void
 wl_buffer_destroy(struct wl_buffer *wl_buffer)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_buffer,
-			 WL_BUFFER_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wl_buffer), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_buffer,
+       WL_BUFFER_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wl_buffer), WL_MARSHAL_FLAG_DESTROY);
 }
 
 #ifndef WL_DATA_OFFER_ERROR_ENUM
 #define WL_DATA_OFFER_ERROR_ENUM
 enum wl_data_offer_error {
-	/**
-	 * finish request was called untimely
-	 */
-	WL_DATA_OFFER_ERROR_INVALID_FINISH = 0,
-	/**
-	 * action mask contains invalid values
-	 */
-	WL_DATA_OFFER_ERROR_INVALID_ACTION_MASK = 1,
-	/**
-	 * action argument has an invalid value
-	 */
-	WL_DATA_OFFER_ERROR_INVALID_ACTION = 2,
-	/**
-	 * offer doesn't accept this request
-	 */
-	WL_DATA_OFFER_ERROR_INVALID_OFFER = 3,
+  /**
+   * finish request was called untimely
+   */
+  WL_DATA_OFFER_ERROR_INVALID_FINISH = 0,
+  /**
+   * action mask contains invalid values
+   */
+  WL_DATA_OFFER_ERROR_INVALID_ACTION_MASK = 1,
+  /**
+   * action argument has an invalid value
+   */
+  WL_DATA_OFFER_ERROR_INVALID_ACTION = 2,
+  /**
+   * offer doesn't accept this request
+   */
+  WL_DATA_OFFER_ERROR_INVALID_OFFER = 3,
 };
 #endif /* WL_DATA_OFFER_ERROR_ENUM */
 
@@ -2177,75 +2177,75 @@ enum wl_data_offer_error {
  * @struct wl_data_offer_listener
  */
 struct wl_data_offer_listener {
-	/**
-	 * advertise offered mime type
-	 *
-	 * Sent immediately after creating the wl_data_offer object. One
-	 * event per offered mime type.
-	 * @param mime_type offered mime type
-	 */
-	void (*offer)(void *data,
-		      struct wl_data_offer *wl_data_offer,
-		      const char *mime_type);
-	/**
-	 * notify the source-side available actions
-	 *
-	 * This event indicates the actions offered by the data source.
-	 * It will be sent immediately after creating the wl_data_offer
-	 * object, or anytime the source side changes its offered actions
-	 * through wl_data_source.set_actions.
-	 * @param source_actions actions offered by the data source
-	 * @since 3
-	 */
-	void (*source_actions)(void *data,
-			       struct wl_data_offer *wl_data_offer,
-			       uint32_t source_actions);
-	/**
-	 * notify the selected action
-	 *
-	 * This event indicates the action selected by the compositor
-	 * after matching the source/destination side actions. Only one
-	 * action (or none) will be offered here.
-	 *
-	 * This event can be emitted multiple times during the
-	 * drag-and-drop operation in response to destination side action
-	 * changes through wl_data_offer.set_actions.
-	 *
-	 * This event will no longer be emitted after wl_data_device.drop
-	 * happened on the drag-and-drop destination, the client must honor
-	 * the last action received, or the last preferred one set through
-	 * wl_data_offer.set_actions when handling an "ask" action.
-	 *
-	 * Compositors may also change the selected action on the fly,
-	 * mainly in response to keyboard modifier changes during the
-	 * drag-and-drop operation.
-	 *
-	 * The most recent action received is always the valid one. Prior
-	 * to receiving wl_data_device.drop, the chosen action may change
-	 * (e.g. due to keyboard modifiers being pressed). At the time of
-	 * receiving wl_data_device.drop the drag-and-drop destination must
-	 * honor the last action received.
-	 *
-	 * Action changes may still happen after wl_data_device.drop,
-	 * especially on "ask" actions, where the drag-and-drop destination
-	 * may choose another action afterwards. Action changes happening
-	 * at this stage are always the result of inter-client negotiation,
-	 * the compositor shall no longer be able to induce a different
-	 * action.
-	 *
-	 * Upon "ask" actions, it is expected that the drag-and-drop
-	 * destination may potentially choose a different action and/or
-	 * mime type, based on wl_data_offer.source_actions and finally
-	 * chosen by the user (e.g. popping up a menu with the available
-	 * options). The final wl_data_offer.set_actions and
-	 * wl_data_offer.accept requests must happen before the call to
-	 * wl_data_offer.finish.
-	 * @param dnd_action action selected by the compositor
-	 * @since 3
-	 */
-	void (*action)(void *data,
-		       struct wl_data_offer *wl_data_offer,
-		       uint32_t dnd_action);
+  /**
+   * advertise offered mime type
+   *
+   * Sent immediately after creating the wl_data_offer object. One
+   * event per offered mime type.
+   * @param mime_type offered mime type
+   */
+  void (*offer)(void *data,
+          struct wl_data_offer *wl_data_offer,
+          const char *mime_type);
+  /**
+   * notify the source-side available actions
+   *
+   * This event indicates the actions offered by the data source.
+   * It will be sent immediately after creating the wl_data_offer
+   * object, or anytime the source side changes its offered actions
+   * through wl_data_source.set_actions.
+   * @param source_actions actions offered by the data source
+   * @since 3
+   */
+  void (*source_actions)(void *data,
+             struct wl_data_offer *wl_data_offer,
+             uint32_t source_actions);
+  /**
+   * notify the selected action
+   *
+   * This event indicates the action selected by the compositor
+   * after matching the source/destination side actions. Only one
+   * action (or none) will be offered here.
+   *
+   * This event can be emitted multiple times during the
+   * drag-and-drop operation in response to destination side action
+   * changes through wl_data_offer.set_actions.
+   *
+   * This event will no longer be emitted after wl_data_device.drop
+   * happened on the drag-and-drop destination, the client must honor
+   * the last action received, or the last preferred one set through
+   * wl_data_offer.set_actions when handling an "ask" action.
+   *
+   * Compositors may also change the selected action on the fly,
+   * mainly in response to keyboard modifier changes during the
+   * drag-and-drop operation.
+   *
+   * The most recent action received is always the valid one. Prior
+   * to receiving wl_data_device.drop, the chosen action may change
+   * (e.g. due to keyboard modifiers being pressed). At the time of
+   * receiving wl_data_device.drop the drag-and-drop destination must
+   * honor the last action received.
+   *
+   * Action changes may still happen after wl_data_device.drop,
+   * especially on "ask" actions, where the drag-and-drop destination
+   * may choose another action afterwards. Action changes happening
+   * at this stage are always the result of inter-client negotiation,
+   * the compositor shall no longer be able to induce a different
+   * action.
+   *
+   * Upon "ask" actions, it is expected that the drag-and-drop
+   * destination may potentially choose a different action and/or
+   * mime type, based on wl_data_offer.source_actions and finally
+   * chosen by the user (e.g. popping up a menu with the available
+   * options). The final wl_data_offer.set_actions and
+   * wl_data_offer.accept requests must happen before the call to
+   * wl_data_offer.finish.
+   * @param dnd_action action selected by the compositor
+   * @since 3
+   */
+  void (*action)(void *data,
+           struct wl_data_offer *wl_data_offer,
+           uint32_t dnd_action);
 };
 
 /**
@@ -2253,10 +2253,10 @@ struct wl_data_offer_listener {
  */
 static inline int
 wl_data_offer_add_listener(struct wl_data_offer *wl_data_offer,
-			   const struct wl_data_offer_listener *listener, void *data)
+         const struct wl_data_offer_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) wl_data_offer,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) wl_data_offer,
+             (void (**)(void)) listener, data);
 }
 
 #define WL_DATA_OFFER_ACCEPT 0
@@ -2303,20 +2303,20 @@ wl_data_offer_add_listener(struct wl_data_offer *wl_data_offer,
 static inline void
 wl_data_offer_set_user_data(struct wl_data_offer *wl_data_offer, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_data_offer, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_data_offer, user_data);
 }
 
 /** @ingroup iface_wl_data_offer */
 static inline void *
 wl_data_offer_get_user_data(struct wl_data_offer *wl_data_offer)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_data_offer);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_data_offer);
 }
 
 static inline uint32_t
 wl_data_offer_get_version(struct wl_data_offer *wl_data_offer)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_data_offer);
+  return wl_proxy_get_version((struct wl_proxy *) wl_data_offer);
 }
 
 /**
@@ -2340,8 +2340,8 @@ wl_data_offer_get_version(struct wl_data_offer *wl_data_offer)
 static inline void
 wl_data_offer_accept(struct wl_data_offer *wl_data_offer, uint32_t serial, const char *mime_type)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_data_offer,
-			 WL_DATA_OFFER_ACCEPT, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_offer), 0, serial, mime_type);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_data_offer,
+       WL_DATA_OFFER_ACCEPT, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_offer), 0, serial, mime_type);
 }
 
 /**
@@ -2366,8 +2366,8 @@ wl_data_offer_accept(struct wl_data_offer *wl_data_offer, uint32_t serial, const
 static inline void
 wl_data_offer_receive(struct wl_data_offer *wl_data_offer, const char *mime_type, int32_t fd)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_data_offer,
-			 WL_DATA_OFFER_RECEIVE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_offer), 0, mime_type, fd);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_data_offer,
+       WL_DATA_OFFER_RECEIVE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_offer), 0, mime_type, fd);
 }
 
 /**
@@ -2378,8 +2378,8 @@ wl_data_offer_receive(struct wl_data_offer *wl_data_offer, const char *mime_type
 static inline void
 wl_data_offer_destroy(struct wl_data_offer *wl_data_offer)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_data_offer,
-			 WL_DATA_OFFER_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_offer), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_data_offer,
+       WL_DATA_OFFER_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_offer), WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -2403,8 +2403,8 @@ wl_data_offer_destroy(struct wl_data_offer *wl_data_offer)
 static inline void
 wl_data_offer_finish(struct wl_data_offer *wl_data_offer)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_data_offer,
-			 WL_DATA_OFFER_FINISH, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_offer), 0);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_data_offer,
+       WL_DATA_OFFER_FINISH, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_offer), 0);
 }
 
 /**
@@ -2445,21 +2445,21 @@ wl_data_offer_finish(struct wl_data_offer *wl_data_offer)
 static inline void
 wl_data_offer_set_actions(struct wl_data_offer *wl_data_offer, uint32_t dnd_actions, uint32_t preferred_action)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_data_offer,
-			 WL_DATA_OFFER_SET_ACTIONS, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_offer), 0, dnd_actions, preferred_action);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_data_offer,
+       WL_DATA_OFFER_SET_ACTIONS, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_offer), 0, dnd_actions, preferred_action);
 }
 
 #ifndef WL_DATA_SOURCE_ERROR_ENUM
 #define WL_DATA_SOURCE_ERROR_ENUM
 enum wl_data_source_error {
-	/**
-	 * action mask contains invalid values
-	 */
-	WL_DATA_SOURCE_ERROR_INVALID_ACTION_MASK = 0,
-	/**
-	 * source doesn't accept this request
-	 */
-	WL_DATA_SOURCE_ERROR_INVALID_SOURCE = 1,
+  /**
+   * action mask contains invalid values
+   */
+  WL_DATA_SOURCE_ERROR_INVALID_ACTION_MASK = 0,
+  /**
+   * source doesn't accept this request
+   */
+  WL_DATA_SOURCE_ERROR_INVALID_SOURCE = 1,
 };
 #endif /* WL_DATA_SOURCE_ERROR_ENUM */
 
@@ -2468,123 +2468,123 @@ enum wl_data_source_error {
  * @struct wl_data_source_listener
  */
 struct wl_data_source_listener {
-	/**
-	 * a target accepts an offered mime type
-	 *
-	 * Sent when a target accepts pointer_focus or motion events. If
-	 * a target does not accept any of the offered types, type is NULL.
-	 *
-	 * Used for feedback during drag-and-drop.
-	 * @param mime_type mime type accepted by the target
-	 */
-	void (*target)(void *data,
-		       struct wl_data_source *wl_data_source,
-		       const char *mime_type);
-	/**
-	 * send the data
-	 *
-	 * Request for data from the client. Send the data as the
-	 * specified mime type over the passed file descriptor, then close
-	 * it.
-	 * @param mime_type mime type for the data
-	 * @param fd file descriptor for the data
-	 */
-	void (*send)(void *data,
-		     struct wl_data_source *wl_data_source,
-		     const char *mime_type,
-		     int32_t fd);
-	/**
-	 * selection was cancelled
-	 *
-	 * This data source is no longer valid. There are several reasons
-	 * why this could happen:
-	 *
-	 * - The data source has been replaced by another data source. -
-	 * The drag-and-drop operation was performed, but the drop
-	 * destination did not accept any of the mime types offered through
-	 * wl_data_source.target. - The drag-and-drop operation was
-	 * performed, but the drop destination did not select any of the
-	 * actions present in the mask offered through
-	 * wl_data_source.action. - The drag-and-drop operation was
-	 * performed but didn't happen over a surface. - The compositor
-	 * cancelled the drag-and-drop operation (e.g. compositor dependent
-	 * timeouts to avoid stale drag-and-drop transfers).
-	 *
-	 * The client should clean up and destroy this data source.
-	 *
-	 * For objects of version 2 or older, wl_data_source.cancelled will
-	 * only be emitted if the data source was replaced by another data
-	 * source.
-	 */
-	void (*cancelled)(void *data,
-			  struct wl_data_source *wl_data_source);
-	/**
-	 * the drag-and-drop operation physically finished
-	 *
-	 * The user performed the drop action. This event does not
-	 * indicate acceptance, wl_data_source.cancelled may still be
-	 * emitted afterwards if the drop destination does not accept any
-	 * mime type.
-	 *
-	 * However, this event might however not be received if the
-	 * compositor cancelled the drag-and-drop operation before this
-	 * event could happen.
-	 *
-	 * Note that the data_source may still be used in the future and
-	 * should not be destroyed here.
-	 * @since 3
-	 */
-	void (*dnd_drop_performed)(void *data,
-				   struct wl_data_source *wl_data_source);
-	/**
-	 * the drag-and-drop operation concluded
-	 *
-	 * The drop destination finished interoperating with this data
-	 * source, so the client is now free to destroy this data source
-	 * and free all associated data.
-	 *
-	 * If the action used to perform the operation was "move", the
-	 * source can now delete the transferred data.
-	 * @since 3
-	 */
-	void (*dnd_finished)(void *data,
-			     struct wl_data_source *wl_data_source);
-	/**
-	 * notify the selected action
-	 *
-	 * This event indicates the action selected by the compositor
-	 * after matching the source/destination side actions. Only one
-	 * action (or none) will be offered here.
-	 *
-	 * This event can be emitted multiple times during the
-	 * drag-and-drop operation, mainly in response to destination side
-	 * changes through wl_data_offer.set_actions, and as the data
-	 * device enters/leaves surfaces.
-	 *
-	 * It is only possible to receive this event after
-	 * wl_data_source.dnd_drop_performed if the drag-and-drop operation
-	 * ended in an "ask" action, in which case the final
-	 * wl_data_source.action event will happen immediately before
-	 * wl_data_source.dnd_finished.
-	 *
-	 * Compositors may also change the selected action on the fly,
-	 * mainly in response to keyboard modifier changes during the
-	 * drag-and-drop operation.
-	 *
-	 * The most recent action received is always the valid one. The
-	 * chosen action may change alongside negotiation (e.g. an "ask"
-	 * action can turn into a "move" operation), so the effects of the
-	 * final action must always be applied in
-	 * wl_data_offer.dnd_finished.
-	 *
-	 * Clients can trigger cursor surface changes from this point, so
-	 * they reflect the current action.
-	 * @param dnd_action action selected by the compositor
-	 * @since 3
-	 */
-	void (*action)(void *data,
-		       struct wl_data_source *wl_data_source,
-		       uint32_t dnd_action);
+  /**
+   * a target accepts an offered mime type
+   *
+   * Sent when a target accepts pointer_focus or motion events. If
+   * a target does not accept any of the offered types, type is NULL.
+   *
+   * Used for feedback during drag-and-drop.
+   * @param mime_type mime type accepted by the target
+   */
+  void (*target)(void *data,
+           struct wl_data_source *wl_data_source,
+           const char *mime_type);
+  /**
+   * send the data
+   *
+   * Request for data from the client. Send the data as the
+   * specified mime type over the passed file descriptor, then close
+   * it.
+   * @param mime_type mime type for the data
+   * @param fd file descriptor for the data
+   */
+  void (*send)(void *data,
+         struct wl_data_source *wl_data_source,
+         const char *mime_type,
+         int32_t fd);
+  /**
+   * selection was cancelled
+   *
+   * This data source is no longer valid. There are several reasons
+   * why this could happen:
+   *
+   * - The data source has been replaced by another data source. -
+   * The drag-and-drop operation was performed, but the drop
+   * destination did not accept any of the mime types offered through
+   * wl_data_source.target. - The drag-and-drop operation was
+   * performed, but the drop destination did not select any of the
+   * actions present in the mask offered through
+   * wl_data_source.action. - The drag-and-drop operation was
+   * performed but didn't happen over a surface. - The compositor
+   * cancelled the drag-and-drop operation (e.g. compositor dependent
+   * timeouts to avoid stale drag-and-drop transfers).
+   *
+   * The client should clean up and destroy this data source.
+   *
+   * For objects of version 2 or older, wl_data_source.cancelled will
+   * only be emitted if the data source was replaced by another data
+   * source.
+   */
+  void (*cancelled)(void *data,
+        struct wl_data_source *wl_data_source);
+  /**
+   * the drag-and-drop operation physically finished
+   *
+   * The user performed the drop action. This event does not
+   * indicate acceptance, wl_data_source.cancelled may still be
+   * emitted afterwards if the drop destination does not accept any
+   * mime type.
+   *
+   * However, this event might however not be received if the
+   * compositor cancelled the drag-and-drop operation before this
+   * event could happen.
+   *
+   * Note that the data_source may still be used in the future and
+   * should not be destroyed here.
+   * @since 3
+   */
+  void (*dnd_drop_performed)(void *data,
+           struct wl_data_source *wl_data_source);
+  /**
+   * the drag-and-drop operation concluded
+   *
+   * The drop destination finished interoperating with this data
+   * source, so the client is now free to destroy this data source
+   * and free all associated data.
+   *
+   * If the action used to perform the operation was "move", the
+   * source can now delete the transferred data.
+   * @since 3
+   */
+  void (*dnd_finished)(void *data,
+           struct wl_data_source *wl_data_source);
+  /**
+   * notify the selected action
+   *
+   * This event indicates the action selected by the compositor
+   * after matching the source/destination side actions. Only one
+   * action (or none) will be offered here.
+   *
+   * This event can be emitted multiple times during the
+   * drag-and-drop operation, mainly in response to destination side
+   * changes through wl_data_offer.set_actions, and as the data
+   * device enters/leaves surfaces.
+   *
+   * It is only possible to receive this event after
+   * wl_data_source.dnd_drop_performed if the drag-and-drop operation
+   * ended in an "ask" action, in which case the final
+   * wl_data_source.action event will happen immediately before
+   * wl_data_source.dnd_finished.
+   *
+   * Compositors may also change the selected action on the fly,
+   * mainly in response to keyboard modifier changes during the
+   * drag-and-drop operation.
+   *
+   * The most recent action received is always the valid one. The
+   * chosen action may change alongside negotiation (e.g. an "ask"
+   * action can turn into a "move" operation), so the effects of the
+   * final action must always be applied in
+   * wl_data_offer.dnd_finished.
+   *
+   * Clients can trigger cursor surface changes from this point, so
+   * they reflect the current action.
+   * @param dnd_action action selected by the compositor
+   * @since 3
+   */
+  void (*action)(void *data,
+           struct wl_data_source *wl_data_source,
+           uint32_t dnd_action);
 };
 
 /**
@@ -2592,10 +2592,10 @@ struct wl_data_source_listener {
  */
 static inline int
 wl_data_source_add_listener(struct wl_data_source *wl_data_source,
-			    const struct wl_data_source_listener *listener, void *data)
+          const struct wl_data_source_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) wl_data_source,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) wl_data_source,
+             (void (**)(void)) listener, data);
 }
 
 #define WL_DATA_SOURCE_OFFER 0
@@ -2644,20 +2644,20 @@ wl_data_source_add_listener(struct wl_data_source *wl_data_source,
 static inline void
 wl_data_source_set_user_data(struct wl_data_source *wl_data_source, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_data_source, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_data_source, user_data);
 }
 
 /** @ingroup iface_wl_data_source */
 static inline void *
 wl_data_source_get_user_data(struct wl_data_source *wl_data_source)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_data_source);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_data_source);
 }
 
 static inline uint32_t
 wl_data_source_get_version(struct wl_data_source *wl_data_source)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_data_source);
+  return wl_proxy_get_version((struct wl_proxy *) wl_data_source);
 }
 
 /**
@@ -2670,8 +2670,8 @@ wl_data_source_get_version(struct wl_data_source *wl_data_source)
 static inline void
 wl_data_source_offer(struct wl_data_source *wl_data_source, const char *mime_type)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_data_source,
-			 WL_DATA_SOURCE_OFFER, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_source), 0, mime_type);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_data_source,
+       WL_DATA_SOURCE_OFFER, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_source), 0, mime_type);
 }
 
 /**
@@ -2682,8 +2682,8 @@ wl_data_source_offer(struct wl_data_source *wl_data_source, const char *mime_typ
 static inline void
 wl_data_source_destroy(struct wl_data_source *wl_data_source)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_data_source,
-			 WL_DATA_SOURCE_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_source), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_data_source,
+       WL_DATA_SOURCE_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_source), WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -2706,21 +2706,21 @@ wl_data_source_destroy(struct wl_data_source *wl_data_source)
 static inline void
 wl_data_source_set_actions(struct wl_data_source *wl_data_source, uint32_t dnd_actions)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_data_source,
-			 WL_DATA_SOURCE_SET_ACTIONS, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_source), 0, dnd_actions);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_data_source,
+       WL_DATA_SOURCE_SET_ACTIONS, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_source), 0, dnd_actions);
 }
 
 #ifndef WL_DATA_DEVICE_ERROR_ENUM
 #define WL_DATA_DEVICE_ERROR_ENUM
 enum wl_data_device_error {
-	/**
-	 * given wl_surface has another role
-	 */
-	WL_DATA_DEVICE_ERROR_ROLE = 0,
-	/**
-	 * source has already been used
-	 */
-	WL_DATA_DEVICE_ERROR_USED_SOURCE = 1,
+  /**
+   * given wl_surface has another role
+   */
+  WL_DATA_DEVICE_ERROR_ROLE = 0,
+  /**
+   * source has already been used
+   */
+  WL_DATA_DEVICE_ERROR_USED_SOURCE = 1,
 };
 #endif /* WL_DATA_DEVICE_ERROR_ENUM */
 
@@ -2729,105 +2729,105 @@ enum wl_data_device_error {
  * @struct wl_data_device_listener
  */
 struct wl_data_device_listener {
-	/**
-	 * introduce a new wl_data_offer
-	 *
-	 * The data_offer event introduces a new wl_data_offer object,
-	 * which will subsequently be used in either the data_device.enter
-	 * event (for drag-and-drop) or the data_device.selection event
-	 * (for selections). Immediately following the
-	 * data_device.data_offer event, the new data_offer object will
-	 * send out data_offer.offer events to describe the mime types it
-	 * offers.
-	 * @param id the new data_offer object
-	 */
-	void (*data_offer)(void *data,
-			   struct wl_data_device *wl_data_device,
-			   struct wl_data_offer *id);
-	/**
-	 * initiate drag-and-drop session
-	 *
-	 * This event is sent when an active drag-and-drop pointer enters
-	 * a surface owned by the client. The position of the pointer at
-	 * enter time is provided by the x and y arguments, in
-	 * surface-local coordinates.
-	 * @param serial serial number of the enter event
-	 * @param surface client surface entered
-	 * @param x surface-local x coordinate
-	 * @param y surface-local y coordinate
-	 * @param id source data_offer object
-	 */
-	void (*enter)(void *data,
-		      struct wl_data_device *wl_data_device,
-		      uint32_t serial,
-		      struct wl_surface *surface,
-		      wl_fixed_t x,
-		      wl_fixed_t y,
-		      struct wl_data_offer *id);
-	/**
-	 * end drag-and-drop session
-	 *
-	 * This event is sent when the drag-and-drop pointer leaves the
-	 * surface and the session ends. The client must destroy the
-	 * wl_data_offer introduced at enter time at this point.
-	 */
-	void (*leave)(void *data,
-		      struct wl_data_device *wl_data_device);
-	/**
-	 * drag-and-drop session motion
-	 *
-	 * This event is sent when the drag-and-drop pointer moves within
-	 * the currently focused surface. The new position of the pointer
-	 * is provided by the x and y arguments, in surface-local
-	 * coordinates.
-	 * @param time timestamp with millisecond granularity
-	 * @param x surface-local x coordinate
-	 * @param y surface-local y coordinate
-	 */
-	void (*motion)(void *data,
-		       struct wl_data_device *wl_data_device,
-		       uint32_t time,
-		       wl_fixed_t x,
-		       wl_fixed_t y);
-	/**
-	 * end drag-and-drop session successfully
-	 *
-	 * The event is sent when a drag-and-drop operation is ended
-	 * because the implicit grab is removed.
-	 *
-	 * The drag-and-drop destination is expected to honor the last
-	 * action received through wl_data_offer.action, if the resulting
-	 * action is "copy" or "move", the destination can still perform
-	 * wl_data_offer.receive requests, and is expected to end all
-	 * transfers with a wl_data_offer.finish request.
-	 *
-	 * If the resulting action is "ask", the action will not be
-	 * considered final. The drag-and-drop destination is expected to
-	 * perform one last wl_data_offer.set_actions request, or
-	 * wl_data_offer.destroy in order to cancel the operation.
-	 */
-	void (*drop)(void *data,
-		     struct wl_data_device *wl_data_device);
-	/**
-	 * advertise new selection
-	 *
-	 * The selection event is sent out to notify the client of a new
-	 * wl_data_offer for the selection for this device. The
-	 * data_device.data_offer and the data_offer.offer events are sent
-	 * out immediately before this event to introduce the data offer
-	 * object. The selection event is sent to a client immediately
-	 * before receiving keyboard focus and when a new selection is set
-	 * while the client has keyboard focus. The data_offer is valid
-	 * until a new data_offer or NULL is received or until the client
-	 * loses keyboard focus. Switching surface with keyboard focus
-	 * within the same client doesn't mean a new selection will be
-	 * sent. The client must destroy the previous selection data_offer,
-	 * if any, upon receiving this event.
-	 * @param id selection data_offer object
-	 */
-	void (*selection)(void *data,
-			  struct wl_data_device *wl_data_device,
-			  struct wl_data_offer *id);
+  /**
+   * introduce a new wl_data_offer
+   *
+   * The data_offer event introduces a new wl_data_offer object,
+   * which will subsequently be used in either the data_device.enter
+   * event (for drag-and-drop) or the data_device.selection event
+   * (for selections). Immediately following the
+   * data_device.data_offer event, the new data_offer object will
+   * send out data_offer.offer events to describe the mime types it
+   * offers.
+   * @param id the new data_offer object
+   */
+  void (*data_offer)(void *data,
+         struct wl_data_device *wl_data_device,
+         struct wl_data_offer *id);
+  /**
+   * initiate drag-and-drop session
+   *
+   * This event is sent when an active drag-and-drop pointer enters
+   * a surface owned by the client. The position of the pointer at
+   * enter time is provided by the x and y arguments, in
+   * surface-local coordinates.
+   * @param serial serial number of the enter event
+   * @param surface client surface entered
+   * @param x surface-local x coordinate
+   * @param y surface-local y coordinate
+   * @param id source data_offer object
+   */
+  void (*enter)(void *data,
+          struct wl_data_device *wl_data_device,
+          uint32_t serial,
+          struct wl_surface *surface,
+          wl_fixed_t x,
+          wl_fixed_t y,
+          struct wl_data_offer *id);
+  /**
+   * end drag-and-drop session
+   *
+   * This event is sent when the drag-and-drop pointer leaves the
+   * surface and the session ends. The client must destroy the
+   * wl_data_offer introduced at enter time at this point.
+   */
+  void (*leave)(void *data,
+          struct wl_data_device *wl_data_device);
+  /**
+   * drag-and-drop session motion
+   *
+   * This event is sent when the drag-and-drop pointer moves within
+   * the currently focused surface. The new position of the pointer
+   * is provided by the x and y arguments, in surface-local
+   * coordinates.
+   * @param time timestamp with millisecond granularity
+   * @param x surface-local x coordinate
+   * @param y surface-local y coordinate
+   */
+  void (*motion)(void *data,
+           struct wl_data_device *wl_data_device,
+           uint32_t time,
+           wl_fixed_t x,
+           wl_fixed_t y);
+  /**
+   * end drag-and-drop session successfully
+   *
+   * The event is sent when a drag-and-drop operation is ended
+   * because the implicit grab is removed.
+   *
+   * The drag-and-drop destination is expected to honor the last
+   * action received through wl_data_offer.action, if the resulting
+   * action is "copy" or "move", the destination can still perform
+   * wl_data_offer.receive requests, and is expected to end all
+   * transfers with a wl_data_offer.finish request.
+   *
+   * If the resulting action is "ask", the action will not be
+   * considered final. The drag-and-drop destination is expected to
+   * perform one last wl_data_offer.set_actions request, or
+   * wl_data_offer.destroy in order to cancel the operation.
+   */
+  void (*drop)(void *data,
+         struct wl_data_device *wl_data_device);
+  /**
+   * advertise new selection
+   *
+   * The selection event is sent out to notify the client of a new
+   * wl_data_offer for the selection for this device. The
+   * data_device.data_offer and the data_offer.offer events are sent
+   * out immediately before this event to introduce the data offer
+   * object. The selection event is sent to a client immediately
+   * before receiving keyboard focus and when a new selection is set
+   * while the client has keyboard focus. The data_offer is valid
+   * until a new data_offer or NULL is received or until the client
+   * loses keyboard focus. Switching surface with keyboard focus
+   * within the same client doesn't mean a new selection will be
+   * sent. The client must destroy the previous selection data_offer,
+   * if any, upon receiving this event.
+   * @param id selection data_offer object
+   */
+  void (*selection)(void *data,
+        struct wl_data_device *wl_data_device,
+        struct wl_data_offer *id);
 };
 
 /**
@@ -2835,10 +2835,10 @@ struct wl_data_device_listener {
  */
 static inline int
 wl_data_device_add_listener(struct wl_data_device *wl_data_device,
-			    const struct wl_data_device_listener *listener, void *data)
+          const struct wl_data_device_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) wl_data_device,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) wl_data_device,
+             (void (**)(void)) listener, data);
 }
 
 #define WL_DATA_DEVICE_START_DRAG 0
@@ -2887,27 +2887,27 @@ wl_data_device_add_listener(struct wl_data_device *wl_data_device,
 static inline void
 wl_data_device_set_user_data(struct wl_data_device *wl_data_device, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_data_device, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_data_device, user_data);
 }
 
 /** @ingroup iface_wl_data_device */
 static inline void *
 wl_data_device_get_user_data(struct wl_data_device *wl_data_device)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_data_device);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_data_device);
 }
 
 static inline uint32_t
 wl_data_device_get_version(struct wl_data_device *wl_data_device)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_data_device);
+  return wl_proxy_get_version((struct wl_proxy *) wl_data_device);
 }
 
 /** @ingroup iface_wl_data_device */
 static inline void
 wl_data_device_destroy(struct wl_data_device *wl_data_device)
 {
-	wl_proxy_destroy((struct wl_proxy *) wl_data_device);
+  wl_proxy_destroy((struct wl_proxy *) wl_data_device);
 }
 
 /**
@@ -2946,8 +2946,8 @@ wl_data_device_destroy(struct wl_data_device *wl_data_device)
 static inline void
 wl_data_device_start_drag(struct wl_data_device *wl_data_device, struct wl_data_source *source, struct wl_surface *origin, struct wl_surface *icon, uint32_t serial)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_data_device,
-			 WL_DATA_DEVICE_START_DRAG, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_device), 0, source, origin, icon, serial);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_data_device,
+       WL_DATA_DEVICE_START_DRAG, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_device), 0, source, origin, icon, serial);
 }
 
 /**
@@ -2965,8 +2965,8 @@ wl_data_device_start_drag(struct wl_data_device *wl_data_device, struct wl_data_
 static inline void
 wl_data_device_set_selection(struct wl_data_device *wl_data_device, struct wl_data_source *source, uint32_t serial)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_data_device,
-			 WL_DATA_DEVICE_SET_SELECTION, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_device), 0, source, serial);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_data_device,
+       WL_DATA_DEVICE_SET_SELECTION, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_device), 0, source, serial);
 }
 
 /**
@@ -2977,8 +2977,8 @@ wl_data_device_set_selection(struct wl_data_device *wl_data_device, struct wl_da
 static inline void
 wl_data_device_release(struct wl_data_device *wl_data_device)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_data_device,
-			 WL_DATA_DEVICE_RELEASE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_device), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_data_device,
+       WL_DATA_DEVICE_RELEASE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_data_device), WL_MARSHAL_FLAG_DESTROY);
 }
 
 #ifndef WL_DATA_DEVICE_MANAGER_DND_ACTION_ENUM
@@ -3012,22 +3012,22 @@ wl_data_device_release(struct wl_data_device *wl_data_device)
  * actions (e.g. "ask").
  */
 enum wl_data_device_manager_dnd_action {
-	/**
-	 * no action
-	 */
-	WL_DATA_DEVICE_MANAGER_DND_ACTION_NONE = 0,
-	/**
-	 * copy action
-	 */
-	WL_DATA_DEVICE_MANAGER_DND_ACTION_COPY = 1,
-	/**
-	 * move action
-	 */
-	WL_DATA_DEVICE_MANAGER_DND_ACTION_MOVE = 2,
-	/**
-	 * ask action
-	 */
-	WL_DATA_DEVICE_MANAGER_DND_ACTION_ASK = 4,
+  /**
+   * no action
+   */
+  WL_DATA_DEVICE_MANAGER_DND_ACTION_NONE = 0,
+  /**
+   * copy action
+   */
+  WL_DATA_DEVICE_MANAGER_DND_ACTION_COPY = 1,
+  /**
+   * move action
+   */
+  WL_DATA_DEVICE_MANAGER_DND_ACTION_MOVE = 2,
+  /**
+   * ask action
+   */
+  WL_DATA_DEVICE_MANAGER_DND_ACTION_ASK = 4,
 };
 #endif /* WL_DATA_DEVICE_MANAGER_DND_ACTION_ENUM */
 
@@ -3048,27 +3048,27 @@ enum wl_data_device_manager_dnd_action {
 static inline void
 wl_data_device_manager_set_user_data(struct wl_data_device_manager *wl_data_device_manager, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_data_device_manager, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_data_device_manager, user_data);
 }
 
 /** @ingroup iface_wl_data_device_manager */
 static inline void *
 wl_data_device_manager_get_user_data(struct wl_data_device_manager *wl_data_device_manager)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_data_device_manager);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_data_device_manager);
 }
 
 static inline uint32_t
 wl_data_device_manager_get_version(struct wl_data_device_manager *wl_data_device_manager)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_data_device_manager);
+  return wl_proxy_get_version((struct wl_proxy *) wl_data_device_manager);
 }
 
 /** @ingroup iface_wl_data_device_manager */
 static inline void
 wl_data_device_manager_destroy(struct wl_data_device_manager *wl_data_device_manager)
 {
-	wl_proxy_destroy((struct wl_proxy *) wl_data_device_manager);
+  wl_proxy_destroy((struct wl_proxy *) wl_data_device_manager);
 }
 
 /**
@@ -3079,12 +3079,12 @@ wl_data_device_manager_destroy(struct wl_data_device_manager *wl_data_device_man
 static inline struct wl_data_source *
 wl_data_device_manager_create_data_source(struct wl_data_device_manager *wl_data_device_manager)
 {
-	struct wl_proxy *id;
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) wl_data_device_manager,
-			 WL_DATA_DEVICE_MANAGER_CREATE_DATA_SOURCE, &wl_data_source_interface, wl_proxy_get_version((struct wl_proxy *) wl_data_device_manager), 0, NULL);
+  id = wl_proxy_marshal_flags((struct wl_proxy *) wl_data_device_manager,
+       WL_DATA_DEVICE_MANAGER_CREATE_DATA_SOURCE, &wl_data_source_interface, wl_proxy_get_version((struct wl_proxy *) wl_data_device_manager), 0, NULL);
 
-	return (struct wl_data_source *) id;
+  return (struct wl_data_source *) id;
 }
 
 /**
@@ -3095,21 +3095,21 @@ wl_data_device_manager_create_data_source(struct wl_data_device_manager *wl_data
 static inline struct wl_data_device *
 wl_data_device_manager_get_data_device(struct wl_data_device_manager *wl_data_device_manager, struct wl_seat *seat)
 {
-	struct wl_proxy *id;
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) wl_data_device_manager,
-			 WL_DATA_DEVICE_MANAGER_GET_DATA_DEVICE, &wl_data_device_interface, wl_proxy_get_version((struct wl_proxy *) wl_data_device_manager), 0, NULL, seat);
+  id = wl_proxy_marshal_flags((struct wl_proxy *) wl_data_device_manager,
+       WL_DATA_DEVICE_MANAGER_GET_DATA_DEVICE, &wl_data_device_interface, wl_proxy_get_version((struct wl_proxy *) wl_data_device_manager), 0, NULL, seat);
 
-	return (struct wl_data_device *) id;
+  return (struct wl_data_device *) id;
 }
 
 #ifndef WL_SHELL_ERROR_ENUM
 #define WL_SHELL_ERROR_ENUM
 enum wl_shell_error {
-	/**
-	 * given wl_surface has another role
-	 */
-	WL_SHELL_ERROR_ROLE = 0,
+  /**
+   * given wl_surface has another role
+   */
+  WL_SHELL_ERROR_ROLE = 0,
 };
 #endif /* WL_SHELL_ERROR_ENUM */
 
@@ -3125,27 +3125,27 @@ enum wl_shell_error {
 static inline void
 wl_shell_set_user_data(struct wl_shell *wl_shell, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_shell, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_shell, user_data);
 }
 
 /** @ingroup iface_wl_shell */
 static inline void *
 wl_shell_get_user_data(struct wl_shell *wl_shell)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_shell);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_shell);
 }
 
 static inline uint32_t
 wl_shell_get_version(struct wl_shell *wl_shell)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_shell);
+  return wl_proxy_get_version((struct wl_proxy *) wl_shell);
 }
 
 /** @ingroup iface_wl_shell */
 static inline void
 wl_shell_destroy(struct wl_shell *wl_shell)
 {
-	wl_proxy_destroy((struct wl_proxy *) wl_shell);
+  wl_proxy_destroy((struct wl_proxy *) wl_shell);
 }
 
 /**
@@ -3160,12 +3160,12 @@ wl_shell_destroy(struct wl_shell *wl_shell)
 static inline struct wl_shell_surface *
 wl_shell_get_shell_surface(struct wl_shell *wl_shell, struct wl_surface *surface)
 {
-	struct wl_proxy *id;
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) wl_shell,
-			 WL_SHELL_GET_SHELL_SURFACE, &wl_shell_surface_interface, wl_proxy_get_version((struct wl_proxy *) wl_shell), 0, NULL, surface);
+  id = wl_proxy_marshal_flags((struct wl_proxy *) wl_shell,
+       WL_SHELL_GET_SHELL_SURFACE, &wl_shell_surface_interface, wl_proxy_get_version((struct wl_proxy *) wl_shell), 0, NULL, surface);
 
-	return (struct wl_shell_surface *) id;
+  return (struct wl_shell_surface *) id;
 }
 
 #ifndef WL_SHELL_SURFACE_RESIZE_ENUM
@@ -3180,42 +3180,42 @@ wl_shell_get_shell_surface(struct wl_shell *wl_shell, struct wl_surface *surface
  * an appropriate cursor image.
  */
 enum wl_shell_surface_resize {
-	/**
-	 * no edge
-	 */
-	WL_SHELL_SURFACE_RESIZE_NONE = 0,
-	/**
-	 * top edge
-	 */
-	WL_SHELL_SURFACE_RESIZE_TOP = 1,
-	/**
-	 * bottom edge
-	 */
-	WL_SHELL_SURFACE_RESIZE_BOTTOM = 2,
-	/**
-	 * left edge
-	 */
-	WL_SHELL_SURFACE_RESIZE_LEFT = 4,
-	/**
-	 * top and left edges
-	 */
-	WL_SHELL_SURFACE_RESIZE_TOP_LEFT = 5,
-	/**
-	 * bottom and left edges
-	 */
-	WL_SHELL_SURFACE_RESIZE_BOTTOM_LEFT = 6,
-	/**
-	 * right edge
-	 */
-	WL_SHELL_SURFACE_RESIZE_RIGHT = 8,
-	/**
-	 * top and right edges
-	 */
-	WL_SHELL_SURFACE_RESIZE_TOP_RIGHT = 9,
-	/**
-	 * bottom and right edges
-	 */
-	WL_SHELL_SURFACE_RESIZE_BOTTOM_RIGHT = 10,
+  /**
+   * no edge
+   */
+  WL_SHELL_SURFACE_RESIZE_NONE = 0,
+  /**
+   * top edge
+   */
+  WL_SHELL_SURFACE_RESIZE_TOP = 1,
+  /**
+   * bottom edge
+   */
+  WL_SHELL_SURFACE_RESIZE_BOTTOM = 2,
+  /**
+   * left edge
+   */
+  WL_SHELL_SURFACE_RESIZE_LEFT = 4,
+  /**
+   * top and left edges
+   */
+  WL_SHELL_SURFACE_RESIZE_TOP_LEFT = 5,
+  /**
+   * bottom and left edges
+   */
+  WL_SHELL_SURFACE_RESIZE_BOTTOM_LEFT = 6,
+  /**
+   * right edge
+   */
+  WL_SHELL_SURFACE_RESIZE_RIGHT = 8,
+  /**
+   * top and right edges
+   */
+  WL_SHELL_SURFACE_RESIZE_TOP_RIGHT = 9,
+  /**
+   * bottom and right edges
+   */
+  WL_SHELL_SURFACE_RESIZE_BOTTOM_RIGHT = 10,
 };
 #endif /* WL_SHELL_SURFACE_RESIZE_ENUM */
 
@@ -3229,10 +3229,10 @@ enum wl_shell_surface_resize {
  * of transient surfaces. Used in the set_transient request.
  */
 enum wl_shell_surface_transient {
-	/**
-	 * do not set keyboard focus
-	 */
-	WL_SHELL_SURFACE_TRANSIENT_INACTIVE = 0x1,
+  /**
+   * do not set keyboard focus
+   */
+  WL_SHELL_SURFACE_TRANSIENT_INACTIVE = 0x1,
 };
 #endif /* WL_SHELL_SURFACE_TRANSIENT_ENUM */
 
@@ -3247,22 +3247,22 @@ enum wl_shell_surface_transient {
  * output. The compositor is free to ignore this parameter.
  */
 enum wl_shell_surface_fullscreen_method {
-	/**
-	 * no preference, apply default policy
-	 */
-	WL_SHELL_SURFACE_FULLSCREEN_METHOD_DEFAULT = 0,
-	/**
-	 * scale, preserve the surface's aspect ratio and center on output
-	 */
-	WL_SHELL_SURFACE_FULLSCREEN_METHOD_SCALE = 1,
-	/**
-	 * switch output mode to the smallest mode that can fit the surface, add black borders to compensate size mismatch
-	 */
-	WL_SHELL_SURFACE_FULLSCREEN_METHOD_DRIVER = 2,
-	/**
-	 * no upscaling, center on output and add black borders to compensate size mismatch
-	 */
-	WL_SHELL_SURFACE_FULLSCREEN_METHOD_FILL = 3,
+  /**
+   * no preference, apply default policy
+   */
+  WL_SHELL_SURFACE_FULLSCREEN_METHOD_DEFAULT = 0,
+  /**
+   * scale, preserve the surface's aspect ratio and center on output
+   */
+  WL_SHELL_SURFACE_FULLSCREEN_METHOD_SCALE = 1,
+  /**
+   * switch output mode to the smallest mode that can fit the surface, add black borders to compensate size mismatch
+   */
+  WL_SHELL_SURFACE_FULLSCREEN_METHOD_DRIVER = 2,
+  /**
+   * no upscaling, center on output and add black borders to compensate size mismatch
+   */
+  WL_SHELL_SURFACE_FULLSCREEN_METHOD_FILL = 3,
 };
 #endif /* WL_SHELL_SURFACE_FULLSCREEN_METHOD_ENUM */
 
@@ -3271,54 +3271,54 @@ enum wl_shell_surface_fullscreen_method {
  * @struct wl_shell_surface_listener
  */
 struct wl_shell_surface_listener {
-	/**
-	 * ping client
-	 *
-	 * Ping a client to check if it is receiving events and sending
-	 * requests. A client is expected to reply with a pong request.
-	 * @param serial serial number of the ping
-	 */
-	void (*ping)(void *data,
-		     struct wl_shell_surface *wl_shell_surface,
-		     uint32_t serial);
-	/**
-	 * suggest resize
-	 *
-	 * The configure event asks the client to resize its surface.
-	 *
-	 * The size is a hint, in the sense that the client is free to
-	 * ignore it if it doesn't resize, pick a smaller size (to satisfy
-	 * aspect ratio or resize in steps of NxM pixels).
-	 *
-	 * The edges parameter provides a hint about how the surface was
-	 * resized. The client may use this information to decide how to
-	 * adjust its content to the new size (e.g. a scrolling area might
-	 * adjust its content position to leave the viewable content
-	 * unmoved).
-	 *
-	 * The client is free to dismiss all but the last configure event
-	 * it received.
-	 *
-	 * The width and height arguments specify the size of the window in
-	 * surface-local coordinates.
-	 * @param edges how the surface was resized
-	 * @param width new width of the surface
-	 * @param height new height of the surface
-	 */
-	void (*configure)(void *data,
-			  struct wl_shell_surface *wl_shell_surface,
-			  uint32_t edges,
-			  int32_t width,
-			  int32_t height);
-	/**
-	 * popup interaction is done
-	 *
-	 * The popup_done event is sent out when a popup grab is broken,
-	 * that is, when the user clicks a surface that doesn't belong to
-	 * the client owning the popup surface.
-	 */
-	void (*popup_done)(void *data,
-			   struct wl_shell_surface *wl_shell_surface);
+  /**
+   * ping client
+   *
+   * Ping a client to check if it is receiving events and sending
+   * requests. A client is expected to reply with a pong request.
+   * @param serial serial number of the ping
+   */
+  void (*ping)(void *data,
+         struct wl_shell_surface *wl_shell_surface,
+         uint32_t serial);
+  /**
+   * suggest resize
+   *
+   * The configure event asks the client to resize its surface.
+   *
+   * The size is a hint, in the sense that the client is free to
+   * ignore it if it doesn't resize, pick a smaller size (to satisfy
+   * aspect ratio or resize in steps of NxM pixels).
+   *
+   * The edges parameter provides a hint about how the surface was
+   * resized. The client may use this information to decide how to
+   * adjust its content to the new size (e.g. a scrolling area might
+   * adjust its content position to leave the viewable content
+   * unmoved).
+   *
+   * The client is free to dismiss all but the last configure event
+   * it received.
+   *
+   * The width and height arguments specify the size of the window in
+   * surface-local coordinates.
+   * @param edges how the surface was resized
+   * @param width new width of the surface
+   * @param height new height of the surface
+   */
+  void (*configure)(void *data,
+        struct wl_shell_surface *wl_shell_surface,
+        uint32_t edges,
+        int32_t width,
+        int32_t height);
+  /**
+   * popup interaction is done
+   *
+   * The popup_done event is sent out when a popup grab is broken,
+   * that is, when the user clicks a surface that doesn't belong to
+   * the client owning the popup surface.
+   */
+  void (*popup_done)(void *data,
+         struct wl_shell_surface *wl_shell_surface);
 };
 
 /**
@@ -3326,10 +3326,10 @@ struct wl_shell_surface_listener {
  */
 static inline int
 wl_shell_surface_add_listener(struct wl_shell_surface *wl_shell_surface,
-			      const struct wl_shell_surface_listener *listener, void *data)
+            const struct wl_shell_surface_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) wl_shell_surface,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) wl_shell_surface,
+             (void (**)(void)) listener, data);
 }
 
 #define WL_SHELL_SURFACE_PONG 0
@@ -3401,27 +3401,27 @@ wl_shell_surface_add_listener(struct wl_shell_surface *wl_shell_surface,
 static inline void
 wl_shell_surface_set_user_data(struct wl_shell_surface *wl_shell_surface, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_shell_surface, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_shell_surface, user_data);
 }
 
 /** @ingroup iface_wl_shell_surface */
 static inline void *
 wl_shell_surface_get_user_data(struct wl_shell_surface *wl_shell_surface)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_shell_surface);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_shell_surface);
 }
 
 static inline uint32_t
 wl_shell_surface_get_version(struct wl_shell_surface *wl_shell_surface)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_shell_surface);
+  return wl_proxy_get_version((struct wl_proxy *) wl_shell_surface);
 }
 
 /** @ingroup iface_wl_shell_surface */
 static inline void
 wl_shell_surface_destroy(struct wl_shell_surface *wl_shell_surface)
 {
-	wl_proxy_destroy((struct wl_proxy *) wl_shell_surface);
+  wl_proxy_destroy((struct wl_proxy *) wl_shell_surface);
 }
 
 /**
@@ -3433,8 +3433,8 @@ wl_shell_surface_destroy(struct wl_shell_surface *wl_shell_surface)
 static inline void
 wl_shell_surface_pong(struct wl_shell_surface *wl_shell_surface, uint32_t serial)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
-			 WL_SHELL_SURFACE_PONG, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, serial);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
+       WL_SHELL_SURFACE_PONG, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, serial);
 }
 
 /**
@@ -3449,8 +3449,8 @@ wl_shell_surface_pong(struct wl_shell_surface *wl_shell_surface, uint32_t serial
 static inline void
 wl_shell_surface_move(struct wl_shell_surface *wl_shell_surface, struct wl_seat *seat, uint32_t serial)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
-			 WL_SHELL_SURFACE_MOVE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, seat, serial);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
+       WL_SHELL_SURFACE_MOVE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, seat, serial);
 }
 
 /**
@@ -3465,8 +3465,8 @@ wl_shell_surface_move(struct wl_shell_surface *wl_shell_surface, struct wl_seat 
 static inline void
 wl_shell_surface_resize(struct wl_shell_surface *wl_shell_surface, struct wl_seat *seat, uint32_t serial, uint32_t edges)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
-			 WL_SHELL_SURFACE_RESIZE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, seat, serial, edges);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
+       WL_SHELL_SURFACE_RESIZE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, seat, serial, edges);
 }
 
 /**
@@ -3479,8 +3479,8 @@ wl_shell_surface_resize(struct wl_shell_surface *wl_shell_surface, struct wl_sea
 static inline void
 wl_shell_surface_set_toplevel(struct wl_shell_surface *wl_shell_surface)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
-			 WL_SHELL_SURFACE_SET_TOPLEVEL, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
+       WL_SHELL_SURFACE_SET_TOPLEVEL, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0);
 }
 
 /**
@@ -3497,8 +3497,8 @@ wl_shell_surface_set_toplevel(struct wl_shell_surface *wl_shell_surface)
 static inline void
 wl_shell_surface_set_transient(struct wl_shell_surface *wl_shell_surface, struct wl_surface *parent, int32_t x, int32_t y, uint32_t flags)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
-			 WL_SHELL_SURFACE_SET_TRANSIENT, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, parent, x, y, flags);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
+       WL_SHELL_SURFACE_SET_TRANSIENT, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, parent, x, y, flags);
 }
 
 /**
@@ -3541,8 +3541,8 @@ wl_shell_surface_set_transient(struct wl_shell_surface *wl_shell_surface, struct
 static inline void
 wl_shell_surface_set_fullscreen(struct wl_shell_surface *wl_shell_surface, uint32_t method, uint32_t framerate, struct wl_output *output)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
-			 WL_SHELL_SURFACE_SET_FULLSCREEN, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, method, framerate, output);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
+       WL_SHELL_SURFACE_SET_FULLSCREEN, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, method, framerate, output);
 }
 
 /**
@@ -3571,8 +3571,8 @@ wl_shell_surface_set_fullscreen(struct wl_shell_surface *wl_shell_surface, uint3
 static inline void
 wl_shell_surface_set_popup(struct wl_shell_surface *wl_shell_surface, struct wl_seat *seat, uint32_t serial, struct wl_surface *parent, int32_t x, int32_t y, uint32_t flags)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
-			 WL_SHELL_SURFACE_SET_POPUP, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, seat, serial, parent, x, y, flags);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
+       WL_SHELL_SURFACE_SET_POPUP, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, seat, serial, parent, x, y, flags);
 }
 
 /**
@@ -3600,8 +3600,8 @@ wl_shell_surface_set_popup(struct wl_shell_surface *wl_shell_surface, struct wl_
 static inline void
 wl_shell_surface_set_maximized(struct wl_shell_surface *wl_shell_surface, struct wl_output *output)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
-			 WL_SHELL_SURFACE_SET_MAXIMIZED, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, output);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
+       WL_SHELL_SURFACE_SET_MAXIMIZED, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, output);
 }
 
 /**
@@ -3618,8 +3618,8 @@ wl_shell_surface_set_maximized(struct wl_shell_surface *wl_shell_surface, struct
 static inline void
 wl_shell_surface_set_title(struct wl_shell_surface *wl_shell_surface, const char *title)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
-			 WL_SHELL_SURFACE_SET_TITLE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, title);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
+       WL_SHELL_SURFACE_SET_TITLE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, title);
 }
 
 /**
@@ -3635,8 +3635,8 @@ wl_shell_surface_set_title(struct wl_shell_surface *wl_shell_surface, const char
 static inline void
 wl_shell_surface_set_class(struct wl_shell_surface *wl_shell_surface, const char *class_)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
-			 WL_SHELL_SURFACE_SET_CLASS, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, class_);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_shell_surface,
+       WL_SHELL_SURFACE_SET_CLASS, NULL, wl_proxy_get_version((struct wl_proxy *) wl_shell_surface), 0, class_);
 }
 
 #ifndef WL_SURFACE_ERROR_ENUM
@@ -3648,26 +3648,26 @@ wl_shell_surface_set_class(struct wl_shell_surface *wl_shell_surface, const char
  * These errors can be emitted in response to wl_surface requests.
  */
 enum wl_surface_error {
-	/**
-	 * buffer scale value is invalid
-	 */
-	WL_SURFACE_ERROR_INVALID_SCALE = 0,
-	/**
-	 * buffer transform value is invalid
-	 */
-	WL_SURFACE_ERROR_INVALID_TRANSFORM = 1,
-	/**
-	 * buffer size is invalid
-	 */
-	WL_SURFACE_ERROR_INVALID_SIZE = 2,
-	/**
-	 * buffer offset is invalid
-	 */
-	WL_SURFACE_ERROR_INVALID_OFFSET = 3,
-	/**
-	 * surface was destroyed before its role object
-	 */
-	WL_SURFACE_ERROR_DEFUNCT_ROLE_OBJECT = 4,
+  /**
+   * buffer scale value is invalid
+   */
+  WL_SURFACE_ERROR_INVALID_SCALE = 0,
+  /**
+   * buffer transform value is invalid
+   */
+  WL_SURFACE_ERROR_INVALID_TRANSFORM = 1,
+  /**
+   * buffer size is invalid
+   */
+  WL_SURFACE_ERROR_INVALID_SIZE = 2,
+  /**
+   * buffer offset is invalid
+   */
+  WL_SURFACE_ERROR_INVALID_OFFSET = 3,
+  /**
+   * surface was destroyed before its role object
+   */
+  WL_SURFACE_ERROR_DEFUNCT_ROLE_OBJECT = 4,
 };
 #endif /* WL_SURFACE_ERROR_ENUM */
 
@@ -3676,78 +3676,78 @@ enum wl_surface_error {
  * @struct wl_surface_listener
  */
 struct wl_surface_listener {
-	/**
-	 * surface enters an output
-	 *
-	 * This is emitted whenever a surface's creation, movement, or
-	 * resizing results in some part of it being within the scanout
-	 * region of an output.
-	 *
-	 * Note that a surface may be overlapping with zero or more
-	 * outputs.
-	 * @param output output entered by the surface
-	 */
-	void (*enter)(void *data,
-		      struct wl_surface *wl_surface,
-		      struct wl_output *output);
-	/**
-	 * surface leaves an output
-	 *
-	 * This is emitted whenever a surface's creation, movement, or
-	 * resizing results in it no longer having any part of it within
-	 * the scanout region of an output.
-	 *
-	 * Clients should not use the number of outputs the surface is on
-	 * for frame throttling purposes. The surface might be hidden even
-	 * if no leave event has been sent, and the compositor might expect
-	 * new surface content updates even if no enter event has been
-	 * sent. The frame event should be used instead.
-	 * @param output output left by the surface
-	 */
-	void (*leave)(void *data,
-		      struct wl_surface *wl_surface,
-		      struct wl_output *output);
-	/**
-	 * preferred buffer scale for the surface
-	 *
-	 * This event indicates the preferred buffer scale for this
-	 * surface. It is sent whenever the compositor's preference
-	 * changes.
-	 *
-	 * Before receiving this event the preferred buffer scale for this
-	 * surface is 1.
-	 *
-	 * It is intended that scaling aware clients use this event to
-	 * scale their content and use wl_surface.set_buffer_scale to
-	 * indicate the scale they have rendered with. This allows clients
-	 * to supply a higher detail buffer.
-	 *
-	 * The compositor shall emit a scale value greater than 0.
-	 * @param factor preferred scaling factor
-	 * @since 6
-	 */
-	void (*preferred_buffer_scale)(void *data,
-				       struct wl_surface *wl_surface,
-				       int32_t factor);
-	/**
-	 * preferred buffer transform for the surface
-	 *
-	 * This event indicates the preferred buffer transform for this
-	 * surface. It is sent whenever the compositor's preference
-	 * changes.
-	 *
-	 * Before receiving this event the preferred buffer transform for
-	 * this surface is normal.
-	 *
-	 * Applying this transformation to the surface buffer contents and
-	 * using wl_surface.set_buffer_transform might allow the compositor
-	 * to use the surface buffer more efficiently.
-	 * @param transform preferred transform
-	 * @since 6
-	 */
-	void (*preferred_buffer_transform)(void *data,
-					   struct wl_surface *wl_surface,
-					   uint32_t transform);
+  /**
+   * surface enters an output
+   *
+   * This is emitted whenever a surface's creation, movement, or
+   * resizing results in some part of it being within the scanout
+   * region of an output.
+   *
+   * Note that a surface may be overlapping with zero or more
+   * outputs.
+   * @param output output entered by the surface
+   */
+  void (*enter)(void *data,
+          struct wl_surface *wl_surface,
+          struct wl_output *output);
+  /**
+   * surface leaves an output
+   *
+   * This is emitted whenever a surface's creation, movement, or
+   * resizing results in it no longer having any part of it within
+   * the scanout region of an output.
+   *
+   * Clients should not use the number of outputs the surface is on
+   * for frame throttling purposes. The surface might be hidden even
+   * if no leave event has been sent, and the compositor might expect
+   * new surface content updates even if no enter event has been
+   * sent. The frame event should be used instead.
+   * @param output output left by the surface
+   */
+  void (*leave)(void *data,
+          struct wl_surface *wl_surface,
+          struct wl_output *output);
+  /**
+   * preferred buffer scale for the surface
+   *
+   * This event indicates the preferred buffer scale for this
+   * surface. It is sent whenever the compositor's preference
+   * changes.
+   *
+   * Before receiving this event the preferred buffer scale for this
+   * surface is 1.
+   *
+   * It is intended that scaling aware clients use this event to
+   * scale their content and use wl_surface.set_buffer_scale to
+   * indicate the scale they have rendered with. This allows clients
+   * to supply a higher detail buffer.
+   *
+   * The compositor shall emit a scale value greater than 0.
+   * @param factor preferred scaling factor
+   * @since 6
+   */
+  void (*preferred_buffer_scale)(void *data,
+               struct wl_surface *wl_surface,
+               int32_t factor);
+  /**
+   * preferred buffer transform for the surface
+   *
+   * This event indicates the preferred buffer transform for this
+   * surface. It is sent whenever the compositor's preference
+   * changes.
+   *
+   * Before receiving this event the preferred buffer transform for
+   * this surface is normal.
+   *
+   * Applying this transformation to the surface buffer contents and
+   * using wl_surface.set_buffer_transform might allow the compositor
+   * to use the surface buffer more efficiently.
+   * @param transform preferred transform
+   * @since 6
+   */
+  void (*preferred_buffer_transform)(void *data,
+             struct wl_surface *wl_surface,
+             uint32_t transform);
 };
 
 /**
@@ -3755,10 +3755,10 @@ struct wl_surface_listener {
  */
 static inline int
 wl_surface_add_listener(struct wl_surface *wl_surface,
-			const struct wl_surface_listener *listener, void *data)
+      const struct wl_surface_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) wl_surface,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) wl_surface,
+             (void (**)(void)) listener, data);
 }
 
 #define WL_SURFACE_DESTROY 0
@@ -3839,20 +3839,20 @@ wl_surface_add_listener(struct wl_surface *wl_surface,
 static inline void
 wl_surface_set_user_data(struct wl_surface *wl_surface, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_surface, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_surface, user_data);
 }
 
 /** @ingroup iface_wl_surface */
 static inline void *
 wl_surface_get_user_data(struct wl_surface *wl_surface)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_surface);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_surface);
 }
 
 static inline uint32_t
 wl_surface_get_version(struct wl_surface *wl_surface)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_surface);
+  return wl_proxy_get_version((struct wl_proxy *) wl_surface);
 }
 
 /**
@@ -3863,8 +3863,8 @@ wl_surface_get_version(struct wl_surface *wl_surface)
 static inline void
 wl_surface_destroy(struct wl_surface *wl_surface)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
-			 WL_SURFACE_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
+       WL_SURFACE_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -3938,8 +3938,8 @@ wl_surface_destroy(struct wl_surface *wl_surface)
 static inline void
 wl_surface_attach(struct wl_surface *wl_surface, struct wl_buffer *buffer, int32_t x, int32_t y)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
-			 WL_SURFACE_ATTACH, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, buffer, x, y);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
+       WL_SURFACE_ATTACH, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, buffer, x, y);
 }
 
 /**
@@ -3970,8 +3970,8 @@ wl_surface_attach(struct wl_surface *wl_surface, struct wl_buffer *buffer, int32
 static inline void
 wl_surface_damage(struct wl_surface *wl_surface, int32_t x, int32_t y, int32_t width, int32_t height)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
-			 WL_SURFACE_DAMAGE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, x, y, width, height);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
+       WL_SURFACE_DAMAGE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, x, y, width, height);
 }
 
 /**
@@ -4013,12 +4013,12 @@ wl_surface_damage(struct wl_surface *wl_surface, int32_t x, int32_t y, int32_t w
 static inline struct wl_callback *
 wl_surface_frame(struct wl_surface *wl_surface)
 {
-	struct wl_proxy *callback;
+  struct wl_proxy *callback;
 
-	callback = wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
-			 WL_SURFACE_FRAME, &wl_callback_interface, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, NULL);
+  callback = wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
+       WL_SURFACE_FRAME, &wl_callback_interface, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, NULL);
 
-	return (struct wl_callback *) callback;
+  return (struct wl_callback *) callback;
 }
 
 /**
@@ -4052,8 +4052,8 @@ wl_surface_frame(struct wl_surface *wl_surface)
 static inline void
 wl_surface_set_opaque_region(struct wl_surface *wl_surface, struct wl_region *region)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
-			 WL_SURFACE_SET_OPAQUE_REGION, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, region);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
+       WL_SURFACE_SET_OPAQUE_REGION, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, region);
 }
 
 /**
@@ -4085,8 +4085,8 @@ wl_surface_set_opaque_region(struct wl_surface *wl_surface, struct wl_region *re
 static inline void
 wl_surface_set_input_region(struct wl_surface *wl_surface, struct wl_region *region)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
-			 WL_SURFACE_SET_INPUT_REGION, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, region);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
+       WL_SURFACE_SET_INPUT_REGION, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, region);
 }
 
 /**
@@ -4115,8 +4115,8 @@ wl_surface_set_input_region(struct wl_surface *wl_surface, struct wl_region *reg
 static inline void
 wl_surface_commit(struct wl_surface *wl_surface)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
-			 WL_SURFACE_COMMIT, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
+       WL_SURFACE_COMMIT, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0);
 }
 
 /**
@@ -4157,8 +4157,8 @@ wl_surface_commit(struct wl_surface *wl_surface)
 static inline void
 wl_surface_set_buffer_transform(struct wl_surface *wl_surface, int32_t transform)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
-			 WL_SURFACE_SET_BUFFER_TRANSFORM, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, transform);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
+       WL_SURFACE_SET_BUFFER_TRANSFORM, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, transform);
 }
 
 /**
@@ -4191,8 +4191,8 @@ wl_surface_set_buffer_transform(struct wl_surface *wl_surface, int32_t transform
 static inline void
 wl_surface_set_buffer_scale(struct wl_surface *wl_surface, int32_t scale)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
-			 WL_SURFACE_SET_BUFFER_SCALE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, scale);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
+       WL_SURFACE_SET_BUFFER_SCALE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, scale);
 }
 
 /**
@@ -4234,8 +4234,8 @@ wl_surface_set_buffer_scale(struct wl_surface *wl_surface, int32_t scale)
 static inline void
 wl_surface_damage_buffer(struct wl_surface *wl_surface, int32_t x, int32_t y, int32_t width, int32_t height)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
-			 WL_SURFACE_DAMAGE_BUFFER, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, x, y, width, height);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
+       WL_SURFACE_DAMAGE_BUFFER, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, x, y, width, height);
 }
 
 /**
@@ -4257,8 +4257,8 @@ wl_surface_damage_buffer(struct wl_surface *wl_surface, int32_t x, int32_t y, in
 static inline void
 wl_surface_offset(struct wl_surface *wl_surface, int32_t x, int32_t y)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
-			 WL_SURFACE_OFFSET, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, x, y);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_surface,
+       WL_SURFACE_OFFSET, NULL, wl_proxy_get_version((struct wl_proxy *) wl_surface), 0, x, y);
 }
 
 #ifndef WL_SEAT_CAPABILITY_ENUM
@@ -4271,18 +4271,18 @@ wl_surface_offset(struct wl_surface *wl_surface, int32_t x, int32_t y)
  * set, then it is present on the seat.
  */
 enum wl_seat_capability {
-	/**
-	 * the seat has pointer devices
-	 */
-	WL_SEAT_CAPABILITY_POINTER = 1,
-	/**
-	 * the seat has one or more keyboards
-	 */
-	WL_SEAT_CAPABILITY_KEYBOARD = 2,
-	/**
-	 * the seat has touch devices
-	 */
-	WL_SEAT_CAPABILITY_TOUCH = 4,
+  /**
+   * the seat has pointer devices
+   */
+  WL_SEAT_CAPABILITY_POINTER = 1,
+  /**
+   * the seat has one or more keyboards
+   */
+  WL_SEAT_CAPABILITY_KEYBOARD = 2,
+  /**
+   * the seat has touch devices
+   */
+  WL_SEAT_CAPABILITY_TOUCH = 4,
 };
 #endif /* WL_SEAT_CAPABILITY_ENUM */
 
@@ -4295,10 +4295,10 @@ enum wl_seat_capability {
  * These errors can be emitted in response to wl_seat requests.
  */
 enum wl_seat_error {
-	/**
-	 * get_pointer, get_keyboard or get_touch called on seat without the matching capability
-	 */
-	WL_SEAT_ERROR_MISSING_CAPABILITY = 0,
+  /**
+   * get_pointer, get_keyboard or get_touch called on seat without the matching capability
+   */
+  WL_SEAT_ERROR_MISSING_CAPABILITY = 0,
 };
 #endif /* WL_SEAT_ERROR_ENUM */
 
@@ -4307,67 +4307,67 @@ enum wl_seat_error {
  * @struct wl_seat_listener
  */
 struct wl_seat_listener {
-	/**
-	 * seat capabilities changed
-	 *
-	 * This is emitted whenever a seat gains or loses the pointer,
-	 * keyboard or touch capabilities. The argument is a capability
-	 * enum containing the complete set of capabilities this seat has.
-	 *
-	 * When the pointer capability is added, a client may create a
-	 * wl_pointer object using the wl_seat.get_pointer request. This
-	 * object will receive pointer events until the capability is
-	 * removed in the future.
-	 *
-	 * When the pointer capability is removed, a client should destroy
-	 * the wl_pointer objects associated with the seat where the
-	 * capability was removed, using the wl_pointer.release request. No
-	 * further pointer events will be received on these objects.
-	 *
-	 * In some compositors, if a seat regains the pointer capability
-	 * and a client has a previously obtained wl_pointer object of
-	 * version 4 or less, that object may start sending pointer events
-	 * again. This behavior is considered a misinterpretation of the
-	 * intended behavior and must not be relied upon by the client.
-	 * wl_pointer objects of version 5 or later must not send events if
-	 * created before the most recent event notifying the client of an
-	 * added pointer capability.
-	 *
-	 * The above behavior also applies to wl_keyboard and wl_touch with
-	 * the keyboard and touch capabilities, respectively.
-	 * @param capabilities capabilities of the seat
-	 */
-	void (*capabilities)(void *data,
-			     struct wl_seat *wl_seat,
-			     uint32_t capabilities);
-	/**
-	 * unique identifier for this seat
-	 *
-	 * In a multi-seat configuration the seat name can be used by
-	 * clients to help identify which physical devices the seat
-	 * represents.
-	 *
-	 * The seat name is a UTF-8 string with no convention defined for
-	 * its contents. Each name is unique among all wl_seat globals. The
-	 * name is only guaranteed to be unique for the current compositor
-	 * instance.
-	 *
-	 * The same seat names are used for all clients. Thus, the name can
-	 * be shared across processes to refer to a specific wl_seat
-	 * global.
-	 *
-	 * The name event is sent after binding to the seat global. This
-	 * event is only sent once per seat object, and the name does not
-	 * change over the lifetime of the wl_seat global.
-	 *
-	 * Compositors may re-use the same seat name if the wl_seat global
-	 * is destroyed and re-created later.
-	 * @param name seat identifier
-	 * @since 2
-	 */
-	void (*name)(void *data,
-		     struct wl_seat *wl_seat,
-		     const char *name);
+  /**
+   * seat capabilities changed
+   *
+   * This is emitted whenever a seat gains or loses the pointer,
+   * keyboard or touch capabilities. The argument is a capability
+   * enum containing the complete set of capabilities this seat has.
+   *
+   * When the pointer capability is added, a client may create a
+   * wl_pointer object using the wl_seat.get_pointer request. This
+   * object will receive pointer events until the capability is
+   * removed in the future.
+   *
+   * When the pointer capability is removed, a client should destroy
+   * the wl_pointer objects associated with the seat where the
+   * capability was removed, using the wl_pointer.release request. No
+   * further pointer events will be received on these objects.
+   *
+   * In some compositors, if a seat regains the pointer capability
+   * and a client has a previously obtained wl_pointer object of
+   * version 4 or less, that object may start sending pointer events
+   * again. This behavior is considered a misinterpretation of the
+   * intended behavior and must not be relied upon by the client.
+   * wl_pointer objects of version 5 or later must not send events if
+   * created before the most recent event notifying the client of an
+   * added pointer capability.
+   *
+   * The above behavior also applies to wl_keyboard and wl_touch with
+   * the keyboard and touch capabilities, respectively.
+   * @param capabilities capabilities of the seat
+   */
+  void (*capabilities)(void *data,
+           struct wl_seat *wl_seat,
+           uint32_t capabilities);
+  /**
+   * unique identifier for this seat
+   *
+   * In a multi-seat configuration the seat name can be used by
+   * clients to help identify which physical devices the seat
+   * represents.
+   *
+   * The seat name is a UTF-8 string with no convention defined for
+   * its contents. Each name is unique among all wl_seat globals. The
+   * name is only guaranteed to be unique for the current compositor
+   * instance.
+   *
+   * The same seat names are used for all clients. Thus, the name can
+   * be shared across processes to refer to a specific wl_seat
+   * global.
+   *
+   * The name event is sent after binding to the seat global. This
+   * event is only sent once per seat object, and the name does not
+   * change over the lifetime of the wl_seat global.
+   *
+   * Compositors may re-use the same seat name if the wl_seat global
+   * is destroyed and re-created later.
+   * @param name seat identifier
+   * @since 2
+   */
+  void (*name)(void *data,
+         struct wl_seat *wl_seat,
+         const char *name);
 };
 
 /**
@@ -4375,10 +4375,10 @@ struct wl_seat_listener {
  */
 static inline int
 wl_seat_add_listener(struct wl_seat *wl_seat,
-		     const struct wl_seat_listener *listener, void *data)
+         const struct wl_seat_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) wl_seat,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) wl_seat,
+             (void (**)(void)) listener, data);
 }
 
 #define WL_SEAT_GET_POINTER 0
@@ -4416,27 +4416,27 @@ wl_seat_add_listener(struct wl_seat *wl_seat,
 static inline void
 wl_seat_set_user_data(struct wl_seat *wl_seat, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_seat, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_seat, user_data);
 }
 
 /** @ingroup iface_wl_seat */
 static inline void *
 wl_seat_get_user_data(struct wl_seat *wl_seat)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_seat);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_seat);
 }
 
 static inline uint32_t
 wl_seat_get_version(struct wl_seat *wl_seat)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_seat);
+  return wl_proxy_get_version((struct wl_proxy *) wl_seat);
 }
 
 /** @ingroup iface_wl_seat */
 static inline void
 wl_seat_destroy(struct wl_seat *wl_seat)
 {
-	wl_proxy_destroy((struct wl_proxy *) wl_seat);
+  wl_proxy_destroy((struct wl_proxy *) wl_seat);
 }
 
 /**
@@ -4454,12 +4454,12 @@ wl_seat_destroy(struct wl_seat *wl_seat)
 static inline struct wl_pointer *
 wl_seat_get_pointer(struct wl_seat *wl_seat)
 {
-	struct wl_proxy *id;
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) wl_seat,
-			 WL_SEAT_GET_POINTER, &wl_pointer_interface, wl_proxy_get_version((struct wl_proxy *) wl_seat), 0, NULL);
+  id = wl_proxy_marshal_flags((struct wl_proxy *) wl_seat,
+       WL_SEAT_GET_POINTER, &wl_pointer_interface, wl_proxy_get_version((struct wl_proxy *) wl_seat), 0, NULL);
 
-	return (struct wl_pointer *) id;
+  return (struct wl_pointer *) id;
 }
 
 /**
@@ -4477,12 +4477,12 @@ wl_seat_get_pointer(struct wl_seat *wl_seat)
 static inline struct wl_keyboard *
 wl_seat_get_keyboard(struct wl_seat *wl_seat)
 {
-	struct wl_proxy *id;
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) wl_seat,
-			 WL_SEAT_GET_KEYBOARD, &wl_keyboard_interface, wl_proxy_get_version((struct wl_proxy *) wl_seat), 0, NULL);
+  id = wl_proxy_marshal_flags((struct wl_proxy *) wl_seat,
+       WL_SEAT_GET_KEYBOARD, &wl_keyboard_interface, wl_proxy_get_version((struct wl_proxy *) wl_seat), 0, NULL);
 
-	return (struct wl_keyboard *) id;
+  return (struct wl_keyboard *) id;
 }
 
 /**
@@ -4500,12 +4500,12 @@ wl_seat_get_keyboard(struct wl_seat *wl_seat)
 static inline struct wl_touch *
 wl_seat_get_touch(struct wl_seat *wl_seat)
 {
-	struct wl_proxy *id;
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) wl_seat,
-			 WL_SEAT_GET_TOUCH, &wl_touch_interface, wl_proxy_get_version((struct wl_proxy *) wl_seat), 0, NULL);
+  id = wl_proxy_marshal_flags((struct wl_proxy *) wl_seat,
+       WL_SEAT_GET_TOUCH, &wl_touch_interface, wl_proxy_get_version((struct wl_proxy *) wl_seat), 0, NULL);
 
-	return (struct wl_touch *) id;
+  return (struct wl_touch *) id;
 }
 
 /**
@@ -4517,17 +4517,17 @@ wl_seat_get_touch(struct wl_seat *wl_seat)
 static inline void
 wl_seat_release(struct wl_seat *wl_seat)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_seat,
-			 WL_SEAT_RELEASE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_seat), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_seat,
+       WL_SEAT_RELEASE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_seat), WL_MARSHAL_FLAG_DESTROY);
 }
 
 #ifndef WL_POINTER_ERROR_ENUM
 #define WL_POINTER_ERROR_ENUM
 enum wl_pointer_error {
-	/**
-	 * given wl_surface has another role
-	 */
-	WL_POINTER_ERROR_ROLE = 0,
+  /**
+   * given wl_surface has another role
+   */
+  WL_POINTER_ERROR_ROLE = 0,
 };
 #endif /* WL_POINTER_ERROR_ENUM */
 
@@ -4541,14 +4541,14 @@ enum wl_pointer_error {
  * event.
  */
 enum wl_pointer_button_state {
-	/**
-	 * the button is not pressed
-	 */
-	WL_POINTER_BUTTON_STATE_RELEASED = 0,
-	/**
-	 * the button is pressed
-	 */
-	WL_POINTER_BUTTON_STATE_PRESSED = 1,
+  /**
+   * the button is not pressed
+   */
+  WL_POINTER_BUTTON_STATE_RELEASED = 0,
+  /**
+   * the button is pressed
+   */
+  WL_POINTER_BUTTON_STATE_PRESSED = 1,
 };
 #endif /* WL_POINTER_BUTTON_STATE_ENUM */
 
@@ -4561,14 +4561,14 @@ enum wl_pointer_button_state {
  * Describes the axis types of scroll events.
  */
 enum wl_pointer_axis {
-	/**
-	 * vertical axis
-	 */
-	WL_POINTER_AXIS_VERTICAL_SCROLL = 0,
-	/**
-	 * horizontal axis
-	 */
-	WL_POINTER_AXIS_HORIZONTAL_SCROLL = 1,
+  /**
+   * vertical axis
+   */
+  WL_POINTER_AXIS_VERTICAL_SCROLL = 0,
+  /**
+   * horizontal axis
+   */
+  WL_POINTER_AXIS_HORIZONTAL_SCROLL = 1,
 };
 #endif /* WL_POINTER_AXIS_ENUM */
 
@@ -4596,23 +4596,23 @@ enum wl_pointer_axis {
  * (usually sideways) tilt of the wheel.
  */
 enum wl_pointer_axis_source {
-	/**
-	 * a physical wheel rotation
-	 */
-	WL_POINTER_AXIS_SOURCE_WHEEL = 0,
-	/**
-	 * finger on a touch surface
-	 */
-	WL_POINTER_AXIS_SOURCE_FINGER = 1,
-	/**
-	 * continuous coordinate space
-	 */
-	WL_POINTER_AXIS_SOURCE_CONTINUOUS = 2,
-	/**
-	 * a physical wheel tilt
-	 * @since 6
-	 */
-	WL_POINTER_AXIS_SOURCE_WHEEL_TILT = 3,
+  /**
+   * a physical wheel rotation
+   */
+  WL_POINTER_AXIS_SOURCE_WHEEL = 0,
+  /**
+   * finger on a touch surface
+   */
+  WL_POINTER_AXIS_SOURCE_FINGER = 1,
+  /**
+   * continuous coordinate space
+   */
+  WL_POINTER_AXIS_SOURCE_CONTINUOUS = 2,
+  /**
+   * a physical wheel tilt
+   * @since 6
+   */
+  WL_POINTER_AXIS_SOURCE_WHEEL_TILT = 3,
 };
 /**
  * @ingroup iface_wl_pointer
@@ -4630,14 +4630,14 @@ enum wl_pointer_axis_source {
  * wl_pointer.axis event, relative to the wl_pointer.axis direction.
  */
 enum wl_pointer_axis_relative_direction {
-	/**
-	 * physical motion matches axis direction
-	 */
-	WL_POINTER_AXIS_RELATIVE_DIRECTION_IDENTICAL = 0,
-	/**
-	 * physical motion is the inverse of the axis direction
-	 */
-	WL_POINTER_AXIS_RELATIVE_DIRECTION_INVERTED = 1,
+  /**
+   * physical motion matches axis direction
+   */
+  WL_POINTER_AXIS_RELATIVE_DIRECTION_IDENTICAL = 0,
+  /**
+   * physical motion is the inverse of the axis direction
+   */
+  WL_POINTER_AXIS_RELATIVE_DIRECTION_INVERTED = 1,
 };
 #endif /* WL_POINTER_AXIS_RELATIVE_DIRECTION_ENUM */
 
@@ -4646,332 +4646,332 @@ enum wl_pointer_axis_relative_direction {
  * @struct wl_pointer_listener
  */
 struct wl_pointer_listener {
-	/**
-	 * enter event
-	 *
-	 * Notification that this seat's pointer is focused on a certain
-	 * surface.
-	 *
-	 * When a seat's focus enters a surface, the pointer image is
-	 * undefined and a client should respond to this event by setting
-	 * an appropriate pointer image with the set_cursor request.
-	 * @param serial serial number of the enter event
-	 * @param surface surface entered by the pointer
-	 * @param surface_x surface-local x coordinate
-	 * @param surface_y surface-local y coordinate
-	 */
-	void (*enter)(void *data,
-		      struct wl_pointer *wl_pointer,
-		      uint32_t serial,
-		      struct wl_surface *surface,
-		      wl_fixed_t surface_x,
-		      wl_fixed_t surface_y);
-	/**
-	 * leave event
-	 *
-	 * Notification that this seat's pointer is no longer focused on
-	 * a certain surface.
-	 *
-	 * The leave notification is sent before the enter notification for
-	 * the new focus.
-	 * @param serial serial number of the leave event
-	 * @param surface surface left by the pointer
-	 */
-	void (*leave)(void *data,
-		      struct wl_pointer *wl_pointer,
-		      uint32_t serial,
-		      struct wl_surface *surface);
-	/**
-	 * pointer motion event
-	 *
-	 * Notification of pointer location change. The arguments
-	 * surface_x and surface_y are the location relative to the focused
-	 * surface.
-	 * @param time timestamp with millisecond granularity
-	 * @param surface_x surface-local x coordinate
-	 * @param surface_y surface-local y coordinate
-	 */
-	void (*motion)(void *data,
-		       struct wl_pointer *wl_pointer,
-		       uint32_t time,
-		       wl_fixed_t surface_x,
-		       wl_fixed_t surface_y);
-	/**
-	 * pointer button event
-	 *
-	 * Mouse button click and release notifications.
-	 *
-	 * The location of the click is given by the last motion or enter
-	 * event. The time argument is a timestamp with millisecond
-	 * granularity, with an undefined base.
-	 *
-	 * The button is a button code as defined in the Linux kernel's
-	 * linux/input-event-codes.h header file, e.g. BTN_LEFT.
-	 *
-	 * Any 16-bit button code value is reserved for future additions to
-	 * the kernel's event code list. All other button codes above
-	 * 0xFFFF are currently undefined but may be used in future
-	 * versions of this protocol.
-	 * @param serial serial number of the button event
-	 * @param time timestamp with millisecond granularity
-	 * @param button button that produced the event
-	 * @param state physical state of the button
-	 */
-	void (*button)(void *data,
-		       struct wl_pointer *wl_pointer,
-		       uint32_t serial,
-		       uint32_t time,
-		       uint32_t button,
-		       uint32_t state);
-	/**
-	 * axis event
-	 *
-	 * Scroll and other axis notifications.
-	 *
-	 * For scroll events (vertical and horizontal scroll axes), the
-	 * value parameter is the length of a vector along the specified
-	 * axis in a coordinate space identical to those of motion events,
-	 * representing a relative movement along the specified axis.
-	 *
-	 * For devices that support movements non-parallel to axes multiple
-	 * axis events will be emitted.
-	 *
-	 * When applicable, for example for touch pads, the server can
-	 * choose to emit scroll events where the motion vector is
-	 * equivalent to a motion event vector.
-	 *
-	 * When applicable, a client can transform its content relative to
-	 * the scroll distance.
-	 * @param time timestamp with millisecond granularity
-	 * @param axis axis type
-	 * @param value length of vector in surface-local coordinate space
-	 */
-	void (*axis)(void *data,
-		     struct wl_pointer *wl_pointer,
-		     uint32_t time,
-		     uint32_t axis,
-		     wl_fixed_t value);
-	/**
-	 * end of a pointer event sequence
-	 *
-	 * Indicates the end of a set of events that logically belong
-	 * together. A client is expected to accumulate the data in all
-	 * events within the frame before proceeding.
-	 *
-	 * All wl_pointer events before a wl_pointer.frame event belong
-	 * logically together. For example, in a diagonal scroll motion the
-	 * compositor will send an optional wl_pointer.axis_source event,
-	 * two wl_pointer.axis events (horizontal and vertical) and finally
-	 * a wl_pointer.frame event. The client may use this information to
-	 * calculate a diagonal vector for scrolling.
-	 *
-	 * When multiple wl_pointer.axis events occur within the same
-	 * frame, the motion vector is the combined motion of all events.
-	 * When a wl_pointer.axis and a wl_pointer.axis_stop event occur
-	 * within the same frame, this indicates that axis movement in one
-	 * axis has stopped but continues in the other axis. When multiple
-	 * wl_pointer.axis_stop events occur within the same frame, this
-	 * indicates that these axes stopped in the same instance.
-	 *
-	 * A wl_pointer.frame event is sent for every logical event group,
-	 * even if the group only contains a single wl_pointer event.
-	 * Specifically, a client may get a sequence: motion, frame,
-	 * button, frame, axis, frame, axis_stop, frame.
-	 *
-	 * The wl_pointer.enter and wl_pointer.leave events are logical
-	 * events generated by the compositor and not the hardware. These
-	 * events are also grouped by a wl_pointer.frame. When a pointer
-	 * moves from one surface to another, a compositor should group the
-	 * wl_pointer.leave event within the same wl_pointer.frame.
-	 * However, a client must not rely on wl_pointer.leave and
-	 * wl_pointer.enter being in the same wl_pointer.frame.
-	 * Compositor-specific policies may require the wl_pointer.leave
-	 * and wl_pointer.enter event being split across multiple
-	 * wl_pointer.frame groups.
-	 * @since 5
-	 */
-	void (*frame)(void *data,
-		      struct wl_pointer *wl_pointer);
-	/**
-	 * axis source event
-	 *
-	 * Source information for scroll and other axes.
-	 *
-	 * This event does not occur on its own. It is sent before a
-	 * wl_pointer.frame event and carries the source information for
-	 * all events within that frame.
-	 *
-	 * The source specifies how this event was generated. If the source
-	 * is wl_pointer.axis_source.finger, a wl_pointer.axis_stop event
-	 * will be sent when the user lifts the finger off the device.
-	 *
-	 * If the source is wl_pointer.axis_source.wheel,
-	 * wl_pointer.axis_source.wheel_tilt or
-	 * wl_pointer.axis_source.continuous, a wl_pointer.axis_stop event
-	 * may or may not be sent. Whether a compositor sends an axis_stop
-	 * event for these sources is hardware-specific and
-	 * implementation-dependent; clients must not rely on receiving an
-	 * axis_stop event for these scroll sources and should treat scroll
-	 * sequences from these scroll sources as unterminated by default.
-	 *
-	 * This event is optional. If the source is unknown for a
-	 * particular axis event sequence, no event is sent. Only one
-	 * wl_pointer.axis_source event is permitted per frame.
-	 *
-	 * The order of wl_pointer.axis_discrete and wl_pointer.axis_source
-	 * is not guaranteed.
-	 * @param axis_source source of the axis event
-	 * @since 5
-	 */
-	void (*axis_source)(void *data,
-			    struct wl_pointer *wl_pointer,
-			    uint32_t axis_source);
-	/**
-	 * axis stop event
-	 *
-	 * Stop notification for scroll and other axes.
-	 *
-	 * For some wl_pointer.axis_source types, a wl_pointer.axis_stop
-	 * event is sent to notify a client that the axis sequence has
-	 * terminated. This enables the client to implement kinetic
-	 * scrolling. See the wl_pointer.axis_source documentation for
-	 * information on when this event may be generated.
-	 *
-	 * Any wl_pointer.axis events with the same axis_source after this
-	 * event should be considered as the start of a new axis motion.
-	 *
-	 * The timestamp is to be interpreted identical to the timestamp in
-	 * the wl_pointer.axis event. The timestamp value may be the same
-	 * as a preceding wl_pointer.axis event.
-	 * @param time timestamp with millisecond granularity
-	 * @param axis the axis stopped with this event
-	 * @since 5
-	 */
-	void (*axis_stop)(void *data,
-			  struct wl_pointer *wl_pointer,
-			  uint32_t time,
-			  uint32_t axis);
-	/**
-	 * axis click event
-	 *
-	 * Discrete step information for scroll and other axes.
-	 *
-	 * This event carries the axis value of the wl_pointer.axis event
-	 * in discrete steps (e.g. mouse wheel clicks).
-	 *
-	 * This event is deprecated with wl_pointer version 8 - this event
-	 * is not sent to clients supporting version 8 or later.
-	 *
-	 * This event does not occur on its own, it is coupled with a
-	 * wl_pointer.axis event that represents this axis value on a
-	 * continuous scale. The protocol guarantees that each
-	 * axis_discrete event is always followed by exactly one axis event
-	 * with the same axis number within the same wl_pointer.frame. Note
-	 * that the protocol allows for other events to occur between the
-	 * axis_discrete and its coupled axis event, including other
-	 * axis_discrete or axis events. A wl_pointer.frame must not
-	 * contain more than one axis_discrete event per axis type.
-	 *
-	 * This event is optional; continuous scrolling devices like
-	 * two-finger scrolling on touchpads do not have discrete steps and
-	 * do not generate this event.
-	 *
-	 * The discrete value carries the directional information. e.g. a
-	 * value of -2 is two steps towards the negative direction of this
-	 * axis.
-	 *
-	 * The axis number is identical to the axis number in the
-	 * associated axis event.
-	 *
-	 * The order of wl_pointer.axis_discrete and wl_pointer.axis_source
-	 * is not guaranteed.
-	 * @param axis axis type
-	 * @param discrete number of steps
-	 * @since 5
-	 * @deprecated Deprecated since version 8
-	 */
-	void (*axis_discrete)(void *data,
-			      struct wl_pointer *wl_pointer,
-			      uint32_t axis,
-			      int32_t discrete);
-	/**
-	 * axis high-resolution scroll event
-	 *
-	 * Discrete high-resolution scroll information.
-	 *
-	 * This event carries high-resolution wheel scroll information,
-	 * with each multiple of 120 representing one logical scroll step
-	 * (a wheel detent). For example, an axis_value120 of 30 is one
-	 * quarter of a logical scroll step in the positive direction, a
-	 * value120 of -240 are two logical scroll steps in the negative
-	 * direction within the same hardware event. Clients that rely on
-	 * discrete scrolling should accumulate the value120 to multiples
-	 * of 120 before processing the event.
-	 *
-	 * The value120 must not be zero.
-	 *
-	 * This event replaces the wl_pointer.axis_discrete event in
-	 * clients supporting wl_pointer version 8 or later.
-	 *
-	 * Where a wl_pointer.axis_source event occurs in the same
-	 * wl_pointer.frame, the axis source applies to this event.
-	 *
-	 * The order of wl_pointer.axis_value120 and wl_pointer.axis_source
-	 * is not guaranteed.
-	 * @param axis axis type
-	 * @param value120 scroll distance as fraction of 120
-	 * @since 8
-	 */
-	void (*axis_value120)(void *data,
-			      struct wl_pointer *wl_pointer,
-			      uint32_t axis,
-			      int32_t value120);
-	/**
-	 * axis relative physical direction event
-	 *
-	 * Relative directional information of the entity causing the
-	 * axis motion.
-	 *
-	 * For a wl_pointer.axis event, the
-	 * wl_pointer.axis_relative_direction event specifies the movement
-	 * direction of the entity causing the wl_pointer.axis event. For
-	 * example: - if a user's fingers on a touchpad move down and this
-	 * causes a wl_pointer.axis vertical_scroll down event, the
-	 * physical direction is 'identical' - if a user's fingers on a
-	 * touchpad move down and this causes a wl_pointer.axis
-	 * vertical_scroll up scroll up event ('natural scrolling'), the
-	 * physical direction is 'inverted'.
-	 *
-	 * A client may use this information to adjust scroll motion of
-	 * components. Specifically, enabling natural scrolling causes the
-	 * content to change direction compared to traditional scrolling.
-	 * Some widgets like volume control sliders should usually match
-	 * the physical direction regardless of whether natural scrolling
-	 * is active. This event enables clients to match the scroll
-	 * direction of a widget to the physical direction.
-	 *
-	 * This event does not occur on its own, it is coupled with a
-	 * wl_pointer.axis event that represents this axis value. The
-	 * protocol guarantees that each axis_relative_direction event is
-	 * always followed by exactly one axis event with the same axis
-	 * number within the same wl_pointer.frame. Note that the protocol
-	 * allows for other events to occur between the
-	 * axis_relative_direction and its coupled axis event.
-	 *
-	 * The axis number is identical to the axis number in the
-	 * associated axis event.
-	 *
-	 * The order of wl_pointer.axis_relative_direction,
-	 * wl_pointer.axis_discrete and wl_pointer.axis_source is not
-	 * guaranteed.
-	 * @param axis axis type
-	 * @param direction physical direction relative to axis motion
-	 * @since 9
-	 */
-	void (*axis_relative_direction)(void *data,
-					struct wl_pointer *wl_pointer,
-					uint32_t axis,
-					uint32_t direction);
+  /**
+   * enter event
+   *
+   * Notification that this seat's pointer is focused on a certain
+   * surface.
+   *
+   * When a seat's focus enters a surface, the pointer image is
+   * undefined and a client should respond to this event by setting
+   * an appropriate pointer image with the set_cursor request.
+   * @param serial serial number of the enter event
+   * @param surface surface entered by the pointer
+   * @param surface_x surface-local x coordinate
+   * @param surface_y surface-local y coordinate
+   */
+  void (*enter)(void *data,
+          struct wl_pointer *wl_pointer,
+          uint32_t serial,
+          struct wl_surface *surface,
+          wl_fixed_t surface_x,
+          wl_fixed_t surface_y);
+  /**
+   * leave event
+   *
+   * Notification that this seat's pointer is no longer focused on
+   * a certain surface.
+   *
+   * The leave notification is sent before the enter notification for
+   * the new focus.
+   * @param serial serial number of the leave event
+   * @param surface surface left by the pointer
+   */
+  void (*leave)(void *data,
+          struct wl_pointer *wl_pointer,
+          uint32_t serial,
+          struct wl_surface *surface);
+  /**
+   * pointer motion event
+   *
+   * Notification of pointer location change. The arguments
+   * surface_x and surface_y are the location relative to the focused
+   * surface.
+   * @param time timestamp with millisecond granularity
+   * @param surface_x surface-local x coordinate
+   * @param surface_y surface-local y coordinate
+   */
+  void (*motion)(void *data,
+           struct wl_pointer *wl_pointer,
+           uint32_t time,
+           wl_fixed_t surface_x,
+           wl_fixed_t surface_y);
+  /**
+   * pointer button event
+   *
+   * Mouse button click and release notifications.
+   *
+   * The location of the click is given by the last motion or enter
+   * event. The time argument is a timestamp with millisecond
+   * granularity, with an undefined base.
+   *
+   * The button is a button code as defined in the Linux kernel's
+   * linux/input-event-codes.h header file, e.g. BTN_LEFT.
+   *
+   * Any 16-bit button code value is reserved for future additions to
+   * the kernel's event code list. All other button codes above
+   * 0xFFFF are currently undefined but may be used in future
+   * versions of this protocol.
+   * @param serial serial number of the button event
+   * @param time timestamp with millisecond granularity
+   * @param button button that produced the event
+   * @param state physical state of the button
+   */
+  void (*button)(void *data,
+           struct wl_pointer *wl_pointer,
+           uint32_t serial,
+           uint32_t time,
+           uint32_t button,
+           uint32_t state);
+  /**
+   * axis event
+   *
+   * Scroll and other axis notifications.
+   *
+   * For scroll events (vertical and horizontal scroll axes), the
+   * value parameter is the length of a vector along the specified
+   * axis in a coordinate space identical to those of motion events,
+   * representing a relative movement along the specified axis.
+   *
+   * For devices that support movements non-parallel to axes multiple
+   * axis events will be emitted.
+   *
+   * When applicable, for example for touch pads, the server can
+   * choose to emit scroll events where the motion vector is
+   * equivalent to a motion event vector.
+   *
+   * When applicable, a client can transform its content relative to
+   * the scroll distance.
+   * @param time timestamp with millisecond granularity
+   * @param axis axis type
+   * @param value length of vector in surface-local coordinate space
+   */
+  void (*axis)(void *data,
+         struct wl_pointer *wl_pointer,
+         uint32_t time,
+         uint32_t axis,
+         wl_fixed_t value);
+  /**
+   * end of a pointer event sequence
+   *
+   * Indicates the end of a set of events that logically belong
+   * together. A client is expected to accumulate the data in all
+   * events within the frame before proceeding.
+   *
+   * All wl_pointer events before a wl_pointer.frame event belong
+   * logically together. For example, in a diagonal scroll motion the
+   * compositor will send an optional wl_pointer.axis_source event,
+   * two wl_pointer.axis events (horizontal and vertical) and finally
+   * a wl_pointer.frame event. The client may use this information to
+   * calculate a diagonal vector for scrolling.
+   *
+   * When multiple wl_pointer.axis events occur within the same
+   * frame, the motion vector is the combined motion of all events.
+   * When a wl_pointer.axis and a wl_pointer.axis_stop event occur
+   * within the same frame, this indicates that axis movement in one
+   * axis has stopped but continues in the other axis. When multiple
+   * wl_pointer.axis_stop events occur within the same frame, this
+   * indicates that these axes stopped in the same instance.
+   *
+   * A wl_pointer.frame event is sent for every logical event group,
+   * even if the group only contains a single wl_pointer event.
+   * Specifically, a client may get a sequence: motion, frame,
+   * button, frame, axis, frame, axis_stop, frame.
+   *
+   * The wl_pointer.enter and wl_pointer.leave events are logical
+   * events generated by the compositor and not the hardware. These
+   * events are also grouped by a wl_pointer.frame. When a pointer
+   * moves from one surface to another, a compositor should group the
+   * wl_pointer.leave event within the same wl_pointer.frame.
+   * However, a client must not rely on wl_pointer.leave and
+   * wl_pointer.enter being in the same wl_pointer.frame.
+   * Compositor-specific policies may require the wl_pointer.leave
+   * and wl_pointer.enter event being split across multiple
+   * wl_pointer.frame groups.
+   * @since 5
+   */
+  void (*frame)(void *data,
+          struct wl_pointer *wl_pointer);
+  /**
+   * axis source event
+   *
+   * Source information for scroll and other axes.
+   *
+   * This event does not occur on its own. It is sent before a
+   * wl_pointer.frame event and carries the source information for
+   * all events within that frame.
+   *
+   * The source specifies how this event was generated. If the source
+   * is wl_pointer.axis_source.finger, a wl_pointer.axis_stop event
+   * will be sent when the user lifts the finger off the device.
+   *
+   * If the source is wl_pointer.axis_source.wheel,
+   * wl_pointer.axis_source.wheel_tilt or
+   * wl_pointer.axis_source.continuous, a wl_pointer.axis_stop event
+   * may or may not be sent. Whether a compositor sends an axis_stop
+   * event for these sources is hardware-specific and
+   * implementation-dependent; clients must not rely on receiving an
+   * axis_stop event for these scroll sources and should treat scroll
+   * sequences from these scroll sources as unterminated by default.
+   *
+   * This event is optional. If the source is unknown for a
+   * particular axis event sequence, no event is sent. Only one
+   * wl_pointer.axis_source event is permitted per frame.
+   *
+   * The order of wl_pointer.axis_discrete and wl_pointer.axis_source
+   * is not guaranteed.
+   * @param axis_source source of the axis event
+   * @since 5
+   */
+  void (*axis_source)(void *data,
+          struct wl_pointer *wl_pointer,
+          uint32_t axis_source);
+  /**
+   * axis stop event
+   *
+   * Stop notification for scroll and other axes.
+   *
+   * For some wl_pointer.axis_source types, a wl_pointer.axis_stop
+   * event is sent to notify a client that the axis sequence has
+   * terminated. This enables the client to implement kinetic
+   * scrolling. See the wl_pointer.axis_source documentation for
+   * information on when this event may be generated.
+   *
+   * Any wl_pointer.axis events with the same axis_source after this
+   * event should be considered as the start of a new axis motion.
+   *
+   * The timestamp is to be interpreted identical to the timestamp in
+   * the wl_pointer.axis event. The timestamp value may be the same
+   * as a preceding wl_pointer.axis event.
+   * @param time timestamp with millisecond granularity
+   * @param axis the axis stopped with this event
+   * @since 5
+   */
+  void (*axis_stop)(void *data,
+        struct wl_pointer *wl_pointer,
+        uint32_t time,
+        uint32_t axis);
+  /**
+   * axis click event
+   *
+   * Discrete step information for scroll and other axes.
+   *
+   * This event carries the axis value of the wl_pointer.axis event
+   * in discrete steps (e.g. mouse wheel clicks).
+   *
+   * This event is deprecated with wl_pointer version 8 - this event
+   * is not sent to clients supporting version 8 or later.
+   *
+   * This event does not occur on its own, it is coupled with a
+   * wl_pointer.axis event that represents this axis value on a
+   * continuous scale. The protocol guarantees that each
+   * axis_discrete event is always followed by exactly one axis event
+   * with the same axis number within the same wl_pointer.frame. Note
+   * that the protocol allows for other events to occur between the
+   * axis_discrete and its coupled axis event, including other
+   * axis_discrete or axis events. A wl_pointer.frame must not
+   * contain more than one axis_discrete event per axis type.
+   *
+   * This event is optional; continuous scrolling devices like
+   * two-finger scrolling on touchpads do not have discrete steps and
+   * do not generate this event.
+   *
+   * The discrete value carries the directional information. e.g. a
+   * value of -2 is two steps towards the negative direction of this
+   * axis.
+   *
+   * The axis number is identical to the axis number in the
+   * associated axis event.
+   *
+   * The order of wl_pointer.axis_discrete and wl_pointer.axis_source
+   * is not guaranteed.
+   * @param axis axis type
+   * @param discrete number of steps
+   * @since 5
+   * @deprecated Deprecated since version 8
+   */
+  void (*axis_discrete)(void *data,
+            struct wl_pointer *wl_pointer,
+            uint32_t axis,
+            int32_t discrete);
+  /**
+   * axis high-resolution scroll event
+   *
+   * Discrete high-resolution scroll information.
+   *
+   * This event carries high-resolution wheel scroll information,
+   * with each multiple of 120 representing one logical scroll step
+   * (a wheel detent). For example, an axis_value120 of 30 is one
+   * quarter of a logical scroll step in the positive direction, a
+   * value120 of -240 are two logical scroll steps in the negative
+   * direction within the same hardware event. Clients that rely on
+   * discrete scrolling should accumulate the value120 to multiples
+   * of 120 before processing the event.
+   *
+   * The value120 must not be zero.
+   *
+   * This event replaces the wl_pointer.axis_discrete event in
+   * clients supporting wl_pointer version 8 or later.
+   *
+   * Where a wl_pointer.axis_source event occurs in the same
+   * wl_pointer.frame, the axis source applies to this event.
+   *
+   * The order of wl_pointer.axis_value120 and wl_pointer.axis_source
+   * is not guaranteed.
+   * @param axis axis type
+   * @param value120 scroll distance as fraction of 120
+   * @since 8
+   */
+  void (*axis_value120)(void *data,
+            struct wl_pointer *wl_pointer,
+            uint32_t axis,
+            int32_t value120);
+  /**
+   * axis relative physical direction event
+   *
+   * Relative directional information of the entity causing the
+   * axis motion.
+   *
+   * For a wl_pointer.axis event, the
+   * wl_pointer.axis_relative_direction event specifies the movement
+   * direction of the entity causing the wl_pointer.axis event. For
+   * example: - if a user's fingers on a touchpad move down and this
+   * causes a wl_pointer.axis vertical_scroll down event, the
+   * physical direction is 'identical' - if a user's fingers on a
+   * touchpad move down and this causes a wl_pointer.axis
+   * vertical_scroll up scroll up event ('natural scrolling'), the
+   * physical direction is 'inverted'.
+   *
+   * A client may use this information to adjust scroll motion of
+   * components. Specifically, enabling natural scrolling causes the
+   * content to change direction compared to traditional scrolling.
+   * Some widgets like volume control sliders should usually match
+   * the physical direction regardless of whether natural scrolling
+   * is active. This event enables clients to match the scroll
+   * direction of a widget to the physical direction.
+   *
+   * This event does not occur on its own, it is coupled with a
+   * wl_pointer.axis event that represents this axis value. The
+   * protocol guarantees that each axis_relative_direction event is
+   * always followed by exactly one axis event with the same axis
+   * number within the same wl_pointer.frame. Note that the protocol
+   * allows for other events to occur between the
+   * axis_relative_direction and its coupled axis event.
+   *
+   * The axis number is identical to the axis number in the
+   * associated axis event.
+   *
+   * The order of wl_pointer.axis_relative_direction,
+   * wl_pointer.axis_discrete and wl_pointer.axis_source is not
+   * guaranteed.
+   * @param axis axis type
+   * @param direction physical direction relative to axis motion
+   * @since 9
+   */
+  void (*axis_relative_direction)(void *data,
+          struct wl_pointer *wl_pointer,
+          uint32_t axis,
+          uint32_t direction);
 };
 
 /**
@@ -4979,10 +4979,10 @@ struct wl_pointer_listener {
  */
 static inline int
 wl_pointer_add_listener(struct wl_pointer *wl_pointer,
-			const struct wl_pointer_listener *listener, void *data)
+      const struct wl_pointer_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) wl_pointer,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) wl_pointer,
+             (void (**)(void)) listener, data);
 }
 
 #define WL_POINTER_SET_CURSOR 0
@@ -5046,27 +5046,27 @@ wl_pointer_add_listener(struct wl_pointer *wl_pointer,
 static inline void
 wl_pointer_set_user_data(struct wl_pointer *wl_pointer, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_pointer, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_pointer, user_data);
 }
 
 /** @ingroup iface_wl_pointer */
 static inline void *
 wl_pointer_get_user_data(struct wl_pointer *wl_pointer)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_pointer);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_pointer);
 }
 
 static inline uint32_t
 wl_pointer_get_version(struct wl_pointer *wl_pointer)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_pointer);
+  return wl_proxy_get_version((struct wl_proxy *) wl_pointer);
 }
 
 /** @ingroup iface_wl_pointer */
 static inline void
 wl_pointer_destroy(struct wl_pointer *wl_pointer)
 {
-	wl_proxy_destroy((struct wl_proxy *) wl_pointer);
+  wl_proxy_destroy((struct wl_proxy *) wl_pointer);
 }
 
 /**
@@ -5109,8 +5109,8 @@ wl_pointer_destroy(struct wl_pointer *wl_pointer)
 static inline void
 wl_pointer_set_cursor(struct wl_pointer *wl_pointer, uint32_t serial, struct wl_surface *surface, int32_t hotspot_x, int32_t hotspot_y)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_pointer,
-			 WL_POINTER_SET_CURSOR, NULL, wl_proxy_get_version((struct wl_proxy *) wl_pointer), 0, serial, surface, hotspot_x, hotspot_y);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_pointer,
+       WL_POINTER_SET_CURSOR, NULL, wl_proxy_get_version((struct wl_proxy *) wl_pointer), 0, serial, surface, hotspot_x, hotspot_y);
 }
 
 /**
@@ -5125,8 +5125,8 @@ wl_pointer_set_cursor(struct wl_pointer *wl_pointer, uint32_t serial, struct wl_
 static inline void
 wl_pointer_release(struct wl_pointer *wl_pointer)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_pointer,
-			 WL_POINTER_RELEASE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_pointer), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_pointer,
+       WL_POINTER_RELEASE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_pointer), WL_MARSHAL_FLAG_DESTROY);
 }
 
 #ifndef WL_KEYBOARD_KEYMAP_FORMAT_ENUM
@@ -5139,14 +5139,14 @@ wl_pointer_release(struct wl_pointer *wl_pointer)
  * client with the wl_keyboard.keymap event.
  */
 enum wl_keyboard_keymap_format {
-	/**
-	 * no keymap; client must understand how to interpret the raw keycode
-	 */
-	WL_KEYBOARD_KEYMAP_FORMAT_NO_KEYMAP = 0,
-	/**
-	 * libxkbcommon compatible, null-terminated string; to determine the xkb keycode, clients must add 8 to the key event keycode
-	 */
-	WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1 = 1,
+  /**
+   * no keymap; client must understand how to interpret the raw keycode
+   */
+  WL_KEYBOARD_KEYMAP_FORMAT_NO_KEYMAP = 0,
+  /**
+   * libxkbcommon compatible, null-terminated string; to determine the xkb keycode, clients must add 8 to the key event keycode
+   */
+  WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1 = 1,
 };
 #endif /* WL_KEYBOARD_KEYMAP_FORMAT_ENUM */
 
@@ -5159,14 +5159,14 @@ enum wl_keyboard_keymap_format {
  * Describes the physical state of a key that produced the key event.
  */
 enum wl_keyboard_key_state {
-	/**
-	 * key is not pressed
-	 */
-	WL_KEYBOARD_KEY_STATE_RELEASED = 0,
-	/**
-	 * key is pressed
-	 */
-	WL_KEYBOARD_KEY_STATE_PRESSED = 1,
+  /**
+   * key is not pressed
+   */
+  WL_KEYBOARD_KEY_STATE_RELEASED = 0,
+  /**
+   * key is pressed
+   */
+  WL_KEYBOARD_KEY_STATE_PRESSED = 1,
 };
 #endif /* WL_KEYBOARD_KEY_STATE_ENUM */
 
@@ -5175,153 +5175,153 @@ enum wl_keyboard_key_state {
  * @struct wl_keyboard_listener
  */
 struct wl_keyboard_listener {
-	/**
-	 * keyboard mapping
-	 *
-	 * This event provides a file descriptor to the client which can
-	 * be memory-mapped in read-only mode to provide a keyboard mapping
-	 * description.
-	 *
-	 * From version 7 onwards, the fd must be mapped with MAP_PRIVATE
-	 * by the recipient, as MAP_SHARED may fail.
-	 * @param format keymap format
-	 * @param fd keymap file descriptor
-	 * @param size keymap size, in bytes
-	 */
-	void (*keymap)(void *data,
-		       struct wl_keyboard *wl_keyboard,
-		       uint32_t format,
-		       int32_t fd,
-		       uint32_t size);
-	/**
-	 * enter event
-	 *
-	 * Notification that this seat's keyboard focus is on a certain
-	 * surface.
-	 *
-	 * The compositor must send the wl_keyboard.modifiers event after
-	 * this event.
-	 *
-	 * In the wl_keyboard logical state, this event sets the active
-	 * surface to the surface argument and the keys currently logically
-	 * down to the keys in the keys argument. The compositor must not
-	 * send this event if the wl_keyboard already had an active surface
-	 * immediately before this event.
-	 * @param serial serial number of the enter event
-	 * @param surface surface gaining keyboard focus
-	 * @param keys the keys currently logically down
-	 */
-	void (*enter)(void *data,
-		      struct wl_keyboard *wl_keyboard,
-		      uint32_t serial,
-		      struct wl_surface *surface,
-		      struct wl_array *keys);
-	/**
-	 * leave event
-	 *
-	 * Notification that this seat's keyboard focus is no longer on a
-	 * certain surface.
-	 *
-	 * The leave notification is sent before the enter notification for
-	 * the new focus.
-	 *
-	 * In the wl_keyboard logical state, this event resets all values
-	 * to their defaults. The compositor must not send this event if
-	 * the active surface of the wl_keyboard was not equal to the
-	 * surface argument immediately before this event.
-	 * @param serial serial number of the leave event
-	 * @param surface surface that lost keyboard focus
-	 */
-	void (*leave)(void *data,
-		      struct wl_keyboard *wl_keyboard,
-		      uint32_t serial,
-		      struct wl_surface *surface);
-	/**
-	 * key event
-	 *
-	 * A key was pressed or released. The time argument is a
-	 * timestamp with millisecond granularity, with an undefined base.
-	 *
-	 * The key is a platform-specific key code that can be interpreted
-	 * by feeding it to the keyboard mapping (see the keymap event).
-	 *
-	 * If this event produces a change in modifiers, then the resulting
-	 * wl_keyboard.modifiers event must be sent after this event.
-	 *
-	 * In the wl_keyboard logical state, this event adds the key to the
-	 * keys currently logically down (if the state argument is pressed)
-	 * or removes the key from the keys currently logically down (if
-	 * the state argument is released). The compositor must not send
-	 * this event if the wl_keyboard did not have an active surface
-	 * immediately before this event. The compositor must not send this
-	 * event if state is pressed (resp. released) and the key was
-	 * already logically down (resp. was not logically down)
-	 * immediately before this event.
-	 * @param serial serial number of the key event
-	 * @param time timestamp with millisecond granularity
-	 * @param key key that produced the event
-	 * @param state physical state of the key
-	 */
-	void (*key)(void *data,
-		    struct wl_keyboard *wl_keyboard,
-		    uint32_t serial,
-		    uint32_t time,
-		    uint32_t key,
-		    uint32_t state);
-	/**
-	 * modifier and group state
-	 *
-	 * Notifies clients that the modifier and/or group state has
-	 * changed, and it should update its local state.
-	 *
-	 * The compositor may send this event without a surface of the
-	 * client having keyboard focus, for example to tie modifier
-	 * information to pointer focus instead. If a modifier event with
-	 * pressed modifiers is sent without a prior enter event, the
-	 * client can assume the modifier state is valid until it receives
-	 * the next wl_keyboard.modifiers event. In order to reset the
-	 * modifier state again, the compositor can send a
-	 * wl_keyboard.modifiers event with no pressed modifiers.
-	 *
-	 * In the wl_keyboard logical state, this event updates the
-	 * modifiers and group.
-	 * @param serial serial number of the modifiers event
-	 * @param mods_depressed depressed modifiers
-	 * @param mods_latched latched modifiers
-	 * @param mods_locked locked modifiers
-	 * @param group keyboard layout
-	 */
-	void (*modifiers)(void *data,
-			  struct wl_keyboard *wl_keyboard,
-			  uint32_t serial,
-			  uint32_t mods_depressed,
-			  uint32_t mods_latched,
-			  uint32_t mods_locked,
-			  uint32_t group);
-	/**
-	 * repeat rate and delay
-	 *
-	 * Informs the client about the keyboard's repeat rate and delay.
-	 *
-	 * This event is sent as soon as the wl_keyboard object has been
-	 * created, and is guaranteed to be received by the client before
-	 * any key press event.
-	 *
-	 * Negative values for either rate or delay are illegal. A rate of
-	 * zero will disable any repeating (regardless of the value of
-	 * delay).
-	 *
-	 * This event can be sent later on as well with a new value if
-	 * necessary, so clients should continue listening for the event
-	 * past the creation of wl_keyboard.
-	 * @param rate the rate of repeating keys in characters per second
-	 * @param delay delay in milliseconds since key down until repeating starts
-	 * @since 4
-	 */
-	void (*repeat_info)(void *data,
-			    struct wl_keyboard *wl_keyboard,
-			    int32_t rate,
-			    int32_t delay);
+  /**
+   * keyboard mapping
+   *
+   * This event provides a file descriptor to the client which can
+   * be memory-mapped in read-only mode to provide a keyboard mapping
+   * description.
+   *
+   * From version 7 onwards, the fd must be mapped with MAP_PRIVATE
+   * by the recipient, as MAP_SHARED may fail.
+   * @param format keymap format
+   * @param fd keymap file descriptor
+   * @param size keymap size, in bytes
+   */
+  void (*keymap)(void *data,
+           struct wl_keyboard *wl_keyboard,
+           uint32_t format,
+           int32_t fd,
+           uint32_t size);
+  /**
+   * enter event
+   *
+   * Notification that this seat's keyboard focus is on a certain
+   * surface.
+   *
+   * The compositor must send the wl_keyboard.modifiers event after
+   * this event.
+   *
+   * In the wl_keyboard logical state, this event sets the active
+   * surface to the surface argument and the keys currently logically
+   * down to the keys in the keys argument. The compositor must not
+   * send this event if the wl_keyboard already had an active surface
+   * immediately before this event.
+   * @param serial serial number of the enter event
+   * @param surface surface gaining keyboard focus
+   * @param keys the keys currently logically down
+   */
+  void (*enter)(void *data,
+          struct wl_keyboard *wl_keyboard,
+          uint32_t serial,
+          struct wl_surface *surface,
+          struct wl_array *keys);
+  /**
+   * leave event
+   *
+   * Notification that this seat's keyboard focus is no longer on a
+   * certain surface.
+   *
+   * The leave notification is sent before the enter notification for
+   * the new focus.
+   *
+   * In the wl_keyboard logical state, this event resets all values
+   * to their defaults. The compositor must not send this event if
+   * the active surface of the wl_keyboard was not equal to the
+   * surface argument immediately before this event.
+   * @param serial serial number of the leave event
+   * @param surface surface that lost keyboard focus
+   */
+  void (*leave)(void *data,
+          struct wl_keyboard *wl_keyboard,
+          uint32_t serial,
+          struct wl_surface *surface);
+  /**
+   * key event
+   *
+   * A key was pressed or released. The time argument is a
+   * timestamp with millisecond granularity, with an undefined base.
+   *
+   * The key is a platform-specific key code that can be interpreted
+   * by feeding it to the keyboard mapping (see the keymap event).
+   *
+   * If this event produces a change in modifiers, then the resulting
+   * wl_keyboard.modifiers event must be sent after this event.
+   *
+   * In the wl_keyboard logical state, this event adds the key to the
+   * keys currently logically down (if the state argument is pressed)
+   * or removes the key from the keys currently logically down (if
+   * the state argument is released). The compositor must not send
+   * this event if the wl_keyboard did not have an active surface
+   * immediately before this event. The compositor must not send this
+   * event if state is pressed (resp. released) and the key was
+   * already logically down (resp. was not logically down)
+   * immediately before this event.
+   * @param serial serial number of the key event
+   * @param time timestamp with millisecond granularity
+   * @param key key that produced the event
+   * @param state physical state of the key
+   */
+  void (*key)(void *data,
+        struct wl_keyboard *wl_keyboard,
+        uint32_t serial,
+        uint32_t time,
+        uint32_t key,
+        uint32_t state);
+  /**
+   * modifier and group state
+   *
+   * Notifies clients that the modifier and/or group state has
+   * changed, and it should update its local state.
+   *
+   * The compositor may send this event without a surface of the
+   * client having keyboard focus, for example to tie modifier
+   * information to pointer focus instead. If a modifier event with
+   * pressed modifiers is sent without a prior enter event, the
+   * client can assume the modifier state is valid until it receives
+   * the next wl_keyboard.modifiers event. In order to reset the
+   * modifier state again, the compositor can send a
+   * wl_keyboard.modifiers event with no pressed modifiers.
+   *
+   * In the wl_keyboard logical state, this event updates the
+   * modifiers and group.
+   * @param serial serial number of the modifiers event
+   * @param mods_depressed depressed modifiers
+   * @param mods_latched latched modifiers
+   * @param mods_locked locked modifiers
+   * @param group keyboard layout
+   */
+  void (*modifiers)(void *data,
+        struct wl_keyboard *wl_keyboard,
+        uint32_t serial,
+        uint32_t mods_depressed,
+        uint32_t mods_latched,
+        uint32_t mods_locked,
+        uint32_t group);
+  /**
+   * repeat rate and delay
+   *
+   * Informs the client about the keyboard's repeat rate and delay.
+   *
+   * This event is sent as soon as the wl_keyboard object has been
+   * created, and is guaranteed to be received by the client before
+   * any key press event.
+   *
+   * Negative values for either rate or delay are illegal. A rate of
+   * zero will disable any repeating (regardless of the value of
+   * delay).
+   *
+   * This event can be sent later on as well with a new value if
+   * necessary, so clients should continue listening for the event
+   * past the creation of wl_keyboard.
+   * @param rate the rate of repeating keys in characters per second
+   * @param delay delay in milliseconds since key down until repeating starts
+   * @since 4
+   */
+  void (*repeat_info)(void *data,
+          struct wl_keyboard *wl_keyboard,
+          int32_t rate,
+          int32_t delay);
 };
 
 /**
@@ -5329,10 +5329,10 @@ struct wl_keyboard_listener {
  */
 static inline int
 wl_keyboard_add_listener(struct wl_keyboard *wl_keyboard,
-			 const struct wl_keyboard_listener *listener, void *data)
+       const struct wl_keyboard_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) wl_keyboard,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) wl_keyboard,
+             (void (**)(void)) listener, data);
 }
 
 #define WL_KEYBOARD_RELEASE 0
@@ -5371,27 +5371,27 @@ wl_keyboard_add_listener(struct wl_keyboard *wl_keyboard,
 static inline void
 wl_keyboard_set_user_data(struct wl_keyboard *wl_keyboard, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_keyboard, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_keyboard, user_data);
 }
 
 /** @ingroup iface_wl_keyboard */
 static inline void *
 wl_keyboard_get_user_data(struct wl_keyboard *wl_keyboard)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_keyboard);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_keyboard);
 }
 
 static inline uint32_t
 wl_keyboard_get_version(struct wl_keyboard *wl_keyboard)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_keyboard);
+  return wl_proxy_get_version((struct wl_proxy *) wl_keyboard);
 }
 
 /** @ingroup iface_wl_keyboard */
 static inline void
 wl_keyboard_destroy(struct wl_keyboard *wl_keyboard)
 {
-	wl_proxy_destroy((struct wl_proxy *) wl_keyboard);
+  wl_proxy_destroy((struct wl_proxy *) wl_keyboard);
 }
 
 /**
@@ -5400,8 +5400,8 @@ wl_keyboard_destroy(struct wl_keyboard *wl_keyboard)
 static inline void
 wl_keyboard_release(struct wl_keyboard *wl_keyboard)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_keyboard,
-			 WL_KEYBOARD_RELEASE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_keyboard), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_keyboard,
+       WL_KEYBOARD_RELEASE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_keyboard), WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -5409,159 +5409,159 @@ wl_keyboard_release(struct wl_keyboard *wl_keyboard)
  * @struct wl_touch_listener
  */
 struct wl_touch_listener {
-	/**
-	 * touch down event and beginning of a touch sequence
-	 *
-	 * A new touch point has appeared on the surface. This touch
-	 * point is assigned a unique ID. Future events from this touch
-	 * point reference this ID. The ID ceases to be valid after a touch
-	 * up event and may be reused in the future.
-	 * @param serial serial number of the touch down event
-	 * @param time timestamp with millisecond granularity
-	 * @param surface surface touched
-	 * @param id the unique ID of this touch point
-	 * @param x surface-local x coordinate
-	 * @param y surface-local y coordinate
-	 */
-	void (*down)(void *data,
-		     struct wl_touch *wl_touch,
-		     uint32_t serial,
-		     uint32_t time,
-		     struct wl_surface *surface,
-		     int32_t id,
-		     wl_fixed_t x,
-		     wl_fixed_t y);
-	/**
-	 * end of a touch event sequence
-	 *
-	 * The touch point has disappeared. No further events will be
-	 * sent for this touch point and the touch point's ID is released
-	 * and may be reused in a future touch down event.
-	 * @param serial serial number of the touch up event
-	 * @param time timestamp with millisecond granularity
-	 * @param id the unique ID of this touch point
-	 */
-	void (*up)(void *data,
-		   struct wl_touch *wl_touch,
-		   uint32_t serial,
-		   uint32_t time,
-		   int32_t id);
-	/**
-	 * update of touch point coordinates
-	 *
-	 * A touch point has changed coordinates.
-	 * @param time timestamp with millisecond granularity
-	 * @param id the unique ID of this touch point
-	 * @param x surface-local x coordinate
-	 * @param y surface-local y coordinate
-	 */
-	void (*motion)(void *data,
-		       struct wl_touch *wl_touch,
-		       uint32_t time,
-		       int32_t id,
-		       wl_fixed_t x,
-		       wl_fixed_t y);
-	/**
-	 * end of touch frame event
-	 *
-	 * Indicates the end of a set of events that logically belong
-	 * together. A client is expected to accumulate the data in all
-	 * events within the frame before proceeding.
-	 *
-	 * A wl_touch.frame terminates at least one event but otherwise no
-	 * guarantee is provided about the set of events within a frame. A
-	 * client must assume that any state not updated in a frame is
-	 * unchanged from the previously known state.
-	 */
-	void (*frame)(void *data,
-		      struct wl_touch *wl_touch);
-	/**
-	 * touch session cancelled
-	 *
-	 * Sent if the compositor decides the touch stream is a global
-	 * gesture. No further events are sent to the clients from that
-	 * particular gesture. Touch cancellation applies to all touch
-	 * points currently active on this client's surface. The client is
-	 * responsible for finalizing the touch points, future touch points
-	 * on this surface may reuse the touch point ID.
-	 *
-	 * No frame event is required after the cancel event.
-	 */
-	void (*cancel)(void *data,
-		       struct wl_touch *wl_touch);
-	/**
-	 * update shape of touch point
-	 *
-	 * Sent when a touchpoint has changed its shape.
-	 *
-	 * This event does not occur on its own. It is sent before a
-	 * wl_touch.frame event and carries the new shape information for
-	 * any previously reported, or new touch points of that frame.
-	 *
-	 * Other events describing the touch point such as wl_touch.down,
-	 * wl_touch.motion or wl_touch.orientation may be sent within the
-	 * same wl_touch.frame. A client should treat these events as a
-	 * single logical touch point update. The order of wl_touch.shape,
-	 * wl_touch.orientation and wl_touch.motion is not guaranteed. A
-	 * wl_touch.down event is guaranteed to occur before the first
-	 * wl_touch.shape event for this touch ID but both events may occur
-	 * within the same wl_touch.frame.
-	 *
-	 * A touchpoint shape is approximated by an ellipse through the
-	 * major and minor axis length. The major axis length describes the
-	 * longer diameter of the ellipse, while the minor axis length
-	 * describes the shorter diameter. Major and minor are orthogonal
-	 * and both are specified in surface-local coordinates. The center
-	 * of the ellipse is always at the touchpoint location as reported
-	 * by wl_touch.down or wl_touch.move.
-	 *
-	 * This event is only sent by the compositor if the touch device
-	 * supports shape reports. The client has to make reasonable
-	 * assumptions about the shape if it did not receive this event.
-	 * @param id the unique ID of this touch point
-	 * @param major length of the major axis in surface-local coordinates
-	 * @param minor length of the minor axis in surface-local coordinates
-	 * @since 6
-	 */
-	void (*shape)(void *data,
-		      struct wl_touch *wl_touch,
-		      int32_t id,
-		      wl_fixed_t major,
-		      wl_fixed_t minor);
-	/**
-	 * update orientation of touch point
-	 *
-	 * Sent when a touchpoint has changed its orientation.
-	 *
-	 * This event does not occur on its own. It is sent before a
-	 * wl_touch.frame event and carries the new shape information for
-	 * any previously reported, or new touch points of that frame.
-	 *
-	 * Other events describing the touch point such as wl_touch.down,
-	 * wl_touch.motion or wl_touch.shape may be sent within the same
-	 * wl_touch.frame. A client should treat these events as a single
-	 * logical touch point update. The order of wl_touch.shape,
-	 * wl_touch.orientation and wl_touch.motion is not guaranteed. A
-	 * wl_touch.down event is guaranteed to occur before the first
-	 * wl_touch.orientation event for this touch ID but both events may
-	 * occur within the same wl_touch.frame.
-	 *
-	 * The orientation describes the clockwise angle of a touchpoint's
-	 * major axis to the positive surface y-axis and is normalized to
-	 * the -180 to +180 degree range. The granularity of orientation
-	 * depends on the touch device, some devices only support binary
-	 * rotation values between 0 and 90 degrees.
-	 *
-	 * This event is only sent by the compositor if the touch device
-	 * supports orientation reports.
-	 * @param id the unique ID of this touch point
-	 * @param orientation angle between major axis and positive surface y-axis in degrees
-	 * @since 6
-	 */
-	void (*orientation)(void *data,
-			    struct wl_touch *wl_touch,
-			    int32_t id,
-			    wl_fixed_t orientation);
+  /**
+   * touch down event and beginning of a touch sequence
+   *
+   * A new touch point has appeared on the surface. This touch
+   * point is assigned a unique ID. Future events from this touch
+   * point reference this ID. The ID ceases to be valid after a touch
+   * up event and may be reused in the future.
+   * @param serial serial number of the touch down event
+   * @param time timestamp with millisecond granularity
+   * @param surface surface touched
+   * @param id the unique ID of this touch point
+   * @param x surface-local x coordinate
+   * @param y surface-local y coordinate
+   */
+  void (*down)(void *data,
+         struct wl_touch *wl_touch,
+         uint32_t serial,
+         uint32_t time,
+         struct wl_surface *surface,
+         int32_t id,
+         wl_fixed_t x,
+         wl_fixed_t y);
+  /**
+   * end of a touch event sequence
+   *
+   * The touch point has disappeared. No further events will be
+   * sent for this touch point and the touch point's ID is released
+   * and may be reused in a future touch down event.
+   * @param serial serial number of the touch up event
+   * @param time timestamp with millisecond granularity
+   * @param id the unique ID of this touch point
+   */
+  void (*up)(void *data,
+       struct wl_touch *wl_touch,
+       uint32_t serial,
+       uint32_t time,
+       int32_t id);
+  /**
+   * update of touch point coordinates
+   *
+   * A touch point has changed coordinates.
+   * @param time timestamp with millisecond granularity
+   * @param id the unique ID of this touch point
+   * @param x surface-local x coordinate
+   * @param y surface-local y coordinate
+   */
+  void (*motion)(void *data,
+           struct wl_touch *wl_touch,
+           uint32_t time,
+           int32_t id,
+           wl_fixed_t x,
+           wl_fixed_t y);
+  /**
+   * end of touch frame event
+   *
+   * Indicates the end of a set of events that logically belong
+   * together. A client is expected to accumulate the data in all
+   * events within the frame before proceeding.
+   *
+   * A wl_touch.frame terminates at least one event but otherwise no
+   * guarantee is provided about the set of events within a frame. A
+   * client must assume that any state not updated in a frame is
+   * unchanged from the previously known state.
+   */
+  void (*frame)(void *data,
+          struct wl_touch *wl_touch);
+  /**
+   * touch session cancelled
+   *
+   * Sent if the compositor decides the touch stream is a global
+   * gesture. No further events are sent to the clients from that
+   * particular gesture. Touch cancellation applies to all touch
+   * points currently active on this client's surface. The client is
+   * responsible for finalizing the touch points, future touch points
+   * on this surface may reuse the touch point ID.
+   *
+   * No frame event is required after the cancel event.
+   */
+  void (*cancel)(void *data,
+           struct wl_touch *wl_touch);
+  /**
+   * update shape of touch point
+   *
+   * Sent when a touchpoint has changed its shape.
+   *
+   * This event does not occur on its own. It is sent before a
+   * wl_touch.frame event and carries the new shape information for
+   * any previously reported, or new touch points of that frame.
+   *
+   * Other events describing the touch point such as wl_touch.down,
+   * wl_touch.motion or wl_touch.orientation may be sent within the
+   * same wl_touch.frame. A client should treat these events as a
+   * single logical touch point update. The order of wl_touch.shape,
+   * wl_touch.orientation and wl_touch.motion is not guaranteed. A
+   * wl_touch.down event is guaranteed to occur before the first
+   * wl_touch.shape event for this touch ID but both events may occur
+   * within the same wl_touch.frame.
+   *
+   * A touchpoint shape is approximated by an ellipse through the
+   * major and minor axis length. The major axis length describes the
+   * longer diameter of the ellipse, while the minor axis length
+   * describes the shorter diameter. Major and minor are orthogonal
+   * and both are specified in surface-local coordinates. The center
+   * of the ellipse is always at the touchpoint location as reported
+   * by wl_touch.down or wl_touch.move.
+   *
+   * This event is only sent by the compositor if the touch device
+   * supports shape reports. The client has to make reasonable
+   * assumptions about the shape if it did not receive this event.
+   * @param id the unique ID of this touch point
+   * @param major length of the major axis in surface-local coordinates
+   * @param minor length of the minor axis in surface-local coordinates
+   * @since 6
+   */
+  void (*shape)(void *data,
+          struct wl_touch *wl_touch,
+          int32_t id,
+          wl_fixed_t major,
+          wl_fixed_t minor);
+  /**
+   * update orientation of touch point
+   *
+   * Sent when a touchpoint has changed its orientation.
+   *
+   * This event does not occur on its own. It is sent before a
+   * wl_touch.frame event and carries the new shape information for
+   * any previously reported, or new touch points of that frame.
+   *
+   * Other events describing the touch point such as wl_touch.down,
+   * wl_touch.motion or wl_touch.shape may be sent within the same
+   * wl_touch.frame. A client should treat these events as a single
+   * logical touch point update. The order of wl_touch.shape,
+   * wl_touch.orientation and wl_touch.motion is not guaranteed. A
+   * wl_touch.down event is guaranteed to occur before the first
+   * wl_touch.orientation event for this touch ID but both events may
+   * occur within the same wl_touch.frame.
+   *
+   * The orientation describes the clockwise angle of a touchpoint's
+   * major axis to the positive surface y-axis and is normalized to
+   * the -180 to +180 degree range. The granularity of orientation
+   * depends on the touch device, some devices only support binary
+   * rotation values between 0 and 90 degrees.
+   *
+   * This event is only sent by the compositor if the touch device
+   * supports orientation reports.
+   * @param id the unique ID of this touch point
+   * @param orientation angle between major axis and positive surface y-axis in degrees
+   * @since 6
+   */
+  void (*orientation)(void *data,
+          struct wl_touch *wl_touch,
+          int32_t id,
+          wl_fixed_t orientation);
 };
 
 /**
@@ -5569,10 +5569,10 @@ struct wl_touch_listener {
  */
 static inline int
 wl_touch_add_listener(struct wl_touch *wl_touch,
-		      const struct wl_touch_listener *listener, void *data)
+          const struct wl_touch_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) wl_touch,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) wl_touch,
+             (void (**)(void)) listener, data);
 }
 
 #define WL_TOUCH_RELEASE 0
@@ -5615,27 +5615,27 @@ wl_touch_add_listener(struct wl_touch *wl_touch,
 static inline void
 wl_touch_set_user_data(struct wl_touch *wl_touch, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_touch, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_touch, user_data);
 }
 
 /** @ingroup iface_wl_touch */
 static inline void *
 wl_touch_get_user_data(struct wl_touch *wl_touch)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_touch);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_touch);
 }
 
 static inline uint32_t
 wl_touch_get_version(struct wl_touch *wl_touch)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_touch);
+  return wl_proxy_get_version((struct wl_proxy *) wl_touch);
 }
 
 /** @ingroup iface_wl_touch */
 static inline void
 wl_touch_destroy(struct wl_touch *wl_touch)
 {
-	wl_proxy_destroy((struct wl_proxy *) wl_touch);
+  wl_proxy_destroy((struct wl_proxy *) wl_touch);
 }
 
 /**
@@ -5644,8 +5644,8 @@ wl_touch_destroy(struct wl_touch *wl_touch)
 static inline void
 wl_touch_release(struct wl_touch *wl_touch)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_touch,
-			 WL_TOUCH_RELEASE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_touch), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_touch,
+       WL_TOUCH_RELEASE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_touch), WL_MARSHAL_FLAG_DESTROY);
 }
 
 #ifndef WL_OUTPUT_SUBPIXEL_ENUM
@@ -5658,30 +5658,30 @@ wl_touch_release(struct wl_touch *wl_touch)
  * pixels on an output are laid out.
  */
 enum wl_output_subpixel {
-	/**
-	 * unknown geometry
-	 */
-	WL_OUTPUT_SUBPIXEL_UNKNOWN = 0,
-	/**
-	 * no geometry
-	 */
-	WL_OUTPUT_SUBPIXEL_NONE = 1,
-	/**
-	 * horizontal RGB
-	 */
-	WL_OUTPUT_SUBPIXEL_HORIZONTAL_RGB = 2,
-	/**
-	 * horizontal BGR
-	 */
-	WL_OUTPUT_SUBPIXEL_HORIZONTAL_BGR = 3,
-	/**
-	 * vertical RGB
-	 */
-	WL_OUTPUT_SUBPIXEL_VERTICAL_RGB = 4,
-	/**
-	 * vertical BGR
-	 */
-	WL_OUTPUT_SUBPIXEL_VERTICAL_BGR = 5,
+  /**
+   * unknown geometry
+   */
+  WL_OUTPUT_SUBPIXEL_UNKNOWN = 0,
+  /**
+   * no geometry
+   */
+  WL_OUTPUT_SUBPIXEL_NONE = 1,
+  /**
+   * horizontal RGB
+   */
+  WL_OUTPUT_SUBPIXEL_HORIZONTAL_RGB = 2,
+  /**
+   * horizontal BGR
+   */
+  WL_OUTPUT_SUBPIXEL_HORIZONTAL_BGR = 3,
+  /**
+   * vertical RGB
+   */
+  WL_OUTPUT_SUBPIXEL_VERTICAL_RGB = 4,
+  /**
+   * vertical BGR
+   */
+  WL_OUTPUT_SUBPIXEL_VERTICAL_BGR = 5,
 };
 #endif /* WL_OUTPUT_SUBPIXEL_ENUM */
 
@@ -5703,38 +5703,38 @@ enum wl_output_subpixel {
  * surfaces.
  */
 enum wl_output_transform {
-	/**
-	 * no transform
-	 */
-	WL_OUTPUT_TRANSFORM_NORMAL = 0,
-	/**
-	 * 90 degrees counter-clockwise
-	 */
-	WL_OUTPUT_TRANSFORM_90 = 1,
-	/**
-	 * 180 degrees counter-clockwise
-	 */
-	WL_OUTPUT_TRANSFORM_180 = 2,
-	/**
-	 * 270 degrees counter-clockwise
-	 */
-	WL_OUTPUT_TRANSFORM_270 = 3,
-	/**
-	 * 180 degree flip around a vertical axis
-	 */
-	WL_OUTPUT_TRANSFORM_FLIPPED = 4,
-	/**
-	 * flip and rotate 90 degrees counter-clockwise
-	 */
-	WL_OUTPUT_TRANSFORM_FLIPPED_90 = 5,
-	/**
-	 * flip and rotate 180 degrees counter-clockwise
-	 */
-	WL_OUTPUT_TRANSFORM_FLIPPED_180 = 6,
-	/**
-	 * flip and rotate 270 degrees counter-clockwise
-	 */
-	WL_OUTPUT_TRANSFORM_FLIPPED_270 = 7,
+  /**
+   * no transform
+   */
+  WL_OUTPUT_TRANSFORM_NORMAL = 0,
+  /**
+   * 90 degrees counter-clockwise
+   */
+  WL_OUTPUT_TRANSFORM_90 = 1,
+  /**
+   * 180 degrees counter-clockwise
+   */
+  WL_OUTPUT_TRANSFORM_180 = 2,
+  /**
+   * 270 degrees counter-clockwise
+   */
+  WL_OUTPUT_TRANSFORM_270 = 3,
+  /**
+   * 180 degree flip around a vertical axis
+   */
+  WL_OUTPUT_TRANSFORM_FLIPPED = 4,
+  /**
+   * flip and rotate 90 degrees counter-clockwise
+   */
+  WL_OUTPUT_TRANSFORM_FLIPPED_90 = 5,
+  /**
+   * flip and rotate 180 degrees counter-clockwise
+   */
+  WL_OUTPUT_TRANSFORM_FLIPPED_180 = 6,
+  /**
+   * flip and rotate 270 degrees counter-clockwise
+   */
+  WL_OUTPUT_TRANSFORM_FLIPPED_270 = 7,
 };
 #endif /* WL_OUTPUT_TRANSFORM_ENUM */
 
@@ -5748,14 +5748,14 @@ enum wl_output_transform {
  * They are used in the flags bitfield of the mode event.
  */
 enum wl_output_mode {
-	/**
-	 * indicates this is the current mode
-	 */
-	WL_OUTPUT_MODE_CURRENT = 0x1,
-	/**
-	 * indicates this is the preferred mode
-	 */
-	WL_OUTPUT_MODE_PREFERRED = 0x2,
+  /**
+   * indicates this is the current mode
+   */
+  WL_OUTPUT_MODE_CURRENT = 0x1,
+  /**
+   * indicates this is the preferred mode
+   */
+  WL_OUTPUT_MODE_PREFERRED = 0x2,
 };
 #endif /* WL_OUTPUT_MODE_ENUM */
 
@@ -5764,197 +5764,197 @@ enum wl_output_mode {
  * @struct wl_output_listener
  */
 struct wl_output_listener {
-	/**
-	 * properties of the output
-	 *
-	 * The geometry event describes geometric properties of the
-	 * output. The event is sent when binding to the output object and
-	 * whenever any of the properties change.
-	 *
-	 * The physical size can be set to zero if it doesn't make sense
-	 * for this output (e.g. for projectors or virtual outputs).
-	 *
-	 * The geometry event will be followed by a done event (starting
-	 * from version 2).
-	 *
-	 * Clients should use wl_surface.preferred_buffer_transform instead
-	 * of the transform advertised by this event to find the preferred
-	 * buffer transform to use for a surface.
-	 *
-	 * Note: wl_output only advertises partial information about the
-	 * output position and identification. Some compositors, for
-	 * instance those not implementing a desktop-style output layout or
-	 * those exposing virtual outputs, might fake this information.
-	 * Instead of using x and y, clients should use
-	 * xdg_output.logical_position. Instead of using make and model,
-	 * clients should use name and description.
-	 * @param x x position within the global compositor space
-	 * @param y y position within the global compositor space
-	 * @param physical_width width in millimeters of the output
-	 * @param physical_height height in millimeters of the output
-	 * @param subpixel subpixel orientation of the output
-	 * @param make textual description of the manufacturer
-	 * @param model textual description of the model
-	 * @param transform additional transformation applied to buffer contents during presentation
-	 */
-	void (*geometry)(void *data,
-			 struct wl_output *wl_output,
-			 int32_t x,
-			 int32_t y,
-			 int32_t physical_width,
-			 int32_t physical_height,
-			 int32_t subpixel,
-			 const char *make,
-			 const char *model,
-			 int32_t transform);
-	/**
-	 * advertise available modes for the output
-	 *
-	 * The mode event describes an available mode for the output.
-	 *
-	 * The event is sent when binding to the output object and there
-	 * will always be one mode, the current mode. The event is sent
-	 * again if an output changes mode, for the mode that is now
-	 * current. In other words, the current mode is always the last
-	 * mode that was received with the current flag set.
-	 *
-	 * Non-current modes are deprecated. A compositor can decide to
-	 * only advertise the current mode and never send other modes.
-	 * Clients should not rely on non-current modes.
-	 *
-	 * The size of a mode is given in physical hardware units of the
-	 * output device. This is not necessarily the same as the output
-	 * size in the global compositor space. For instance, the output
-	 * may be scaled, as described in wl_output.scale, or transformed,
-	 * as described in wl_output.transform. Clients willing to retrieve
-	 * the output size in the global compositor space should use
-	 * xdg_output.logical_size instead.
-	 *
-	 * The vertical refresh rate can be set to zero if it doesn't make
-	 * sense for this output (e.g. for virtual outputs).
-	 *
-	 * The mode event will be followed by a done event (starting from
-	 * version 2).
-	 *
-	 * Clients should not use the refresh rate to schedule frames.
-	 * Instead, they should use the wl_surface.frame event or the
-	 * presentation-time protocol.
-	 *
-	 * Note: this information is not always meaningful for all outputs.
-	 * Some compositors, such as those exposing virtual outputs, might
-	 * fake the refresh rate or the size.
-	 * @param flags bitfield of mode flags
-	 * @param width width of the mode in hardware units
-	 * @param height height of the mode in hardware units
-	 * @param refresh vertical refresh rate in mHz
-	 */
-	void (*mode)(void *data,
-		     struct wl_output *wl_output,
-		     uint32_t flags,
-		     int32_t width,
-		     int32_t height,
-		     int32_t refresh);
-	/**
-	 * sent all information about output
-	 *
-	 * This event is sent after all other properties have been sent
-	 * after binding to the output object and after any other property
-	 * changes done after that. This allows changes to the output
-	 * properties to be seen as atomic, even if they happen via
-	 * multiple events.
-	 * @since 2
-	 */
-	void (*done)(void *data,
-		     struct wl_output *wl_output);
-	/**
-	 * output scaling properties
-	 *
-	 * This event contains scaling geometry information that is not
-	 * in the geometry event. It may be sent after binding the output
-	 * object or if the output scale changes later. The compositor will
-	 * emit a non-zero, positive value for scale. If it is not sent,
-	 * the client should assume a scale of 1.
-	 *
-	 * A scale larger than 1 means that the compositor will
-	 * automatically scale surface buffers by this amount when
-	 * rendering. This is used for very high resolution displays where
-	 * applications rendering at the native resolution would be too
-	 * small to be legible.
-	 *
-	 * Clients should use wl_surface.preferred_buffer_scale instead of
-	 * this event to find the preferred buffer scale to use for a
-	 * surface.
-	 *
-	 * The scale event will be followed by a done event.
-	 * @param factor scaling factor of output
-	 * @since 2
-	 */
-	void (*scale)(void *data,
-		      struct wl_output *wl_output,
-		      int32_t factor);
-	/**
-	 * name of this output
-	 *
-	 * Many compositors will assign user-friendly names to their
-	 * outputs, show them to the user, allow the user to refer to an
-	 * output, etc. The client may wish to know this name as well to
-	 * offer the user similar behaviors.
-	 *
-	 * The name is a UTF-8 string with no convention defined for its
-	 * contents. Each name is unique among all wl_output globals. The
-	 * name is only guaranteed to be unique for the compositor
-	 * instance.
-	 *
-	 * The same output name is used for all clients for a given
-	 * wl_output global. Thus, the name can be shared across processes
-	 * to refer to a specific wl_output global.
-	 *
-	 * The name is not guaranteed to be persistent across sessions,
-	 * thus cannot be used to reliably identify an output in e.g.
-	 * configuration files.
-	 *
-	 * Examples of names include 'HDMI-A-1', 'WL-1', 'X11-1', etc.
-	 * However, do not assume that the name is a reflection of an
-	 * underlying DRM connector, X11 connection, etc.
-	 *
-	 * The name event is sent after binding the output object. This
-	 * event is only sent once per output object, and the name does not
-	 * change over the lifetime of the wl_output global.
-	 *
-	 * Compositors may re-use the same output name if the wl_output
-	 * global is destroyed and re-created later. Compositors should
-	 * avoid re-using the same name if possible.
-	 *
-	 * The name event will be followed by a done event.
-	 * @param name output name
-	 * @since 4
-	 */
-	void (*name)(void *data,
-		     struct wl_output *wl_output,
-		     const char *name);
-	/**
-	 * human-readable description of this output
-	 *
-	 * Many compositors can produce human-readable descriptions of
-	 * their outputs. The client may wish to know this description as
-	 * well, e.g. for output selection purposes.
-	 *
-	 * The description is a UTF-8 string with no convention defined for
-	 * its contents. The description is not guaranteed to be unique
-	 * among all wl_output globals. Examples might include 'Foocorp 11"
-	 * Display' or 'Virtual X11 output via :1'.
-	 *
-	 * The description event is sent after binding the output object
-	 * and whenever the description changes. The description is
-	 * optional, and may not be sent at all.
-	 *
-	 * The description event will be followed by a done event.
-	 * @param description output description
-	 * @since 4
-	 */
-	void (*description)(void *data,
-			    struct wl_output *wl_output,
-			    const char *description);
+  /**
+   * properties of the output
+   *
+   * The geometry event describes geometric properties of the
+   * output. The event is sent when binding to the output object and
+   * whenever any of the properties change.
+   *
+   * The physical size can be set to zero if it doesn't make sense
+   * for this output (e.g. for projectors or virtual outputs).
+   *
+   * The geometry event will be followed by a done event (starting
+   * from version 2).
+   *
+   * Clients should use wl_surface.preferred_buffer_transform instead
+   * of the transform advertised by this event to find the preferred
+   * buffer transform to use for a surface.
+   *
+   * Note: wl_output only advertises partial information about the
+   * output position and identification. Some compositors, for
+   * instance those not implementing a desktop-style output layout or
+   * those exposing virtual outputs, might fake this information.
+   * Instead of using x and y, clients should use
+   * xdg_output.logical_position. Instead of using make and model,
+   * clients should use name and description.
+   * @param x x position within the global compositor space
+   * @param y y position within the global compositor space
+   * @param physical_width width in millimeters of the output
+   * @param physical_height height in millimeters of the output
+   * @param subpixel subpixel orientation of the output
+   * @param make textual description of the manufacturer
+   * @param model textual description of the model
+   * @param transform additional transformation applied to buffer contents during presentation
+   */
+  void (*geometry)(void *data,
+       struct wl_output *wl_output,
+       int32_t x,
+       int32_t y,
+       int32_t physical_width,
+       int32_t physical_height,
+       int32_t subpixel,
+       const char *make,
+       const char *model,
+       int32_t transform);
+  /**
+   * advertise available modes for the output
+   *
+   * The mode event describes an available mode for the output.
+   *
+   * The event is sent when binding to the output object and there
+   * will always be one mode, the current mode. The event is sent
+   * again if an output changes mode, for the mode that is now
+   * current. In other words, the current mode is always the last
+   * mode that was received with the current flag set.
+   *
+   * Non-current modes are deprecated. A compositor can decide to
+   * only advertise the current mode and never send other modes.
+   * Clients should not rely on non-current modes.
+   *
+   * The size of a mode is given in physical hardware units of the
+   * output device. This is not necessarily the same as the output
+   * size in the global compositor space. For instance, the output
+   * may be scaled, as described in wl_output.scale, or transformed,
+   * as described in wl_output.transform. Clients willing to retrieve
+   * the output size in the global compositor space should use
+   * xdg_output.logical_size instead.
+   *
+   * The vertical refresh rate can be set to zero if it doesn't make
+   * sense for this output (e.g. for virtual outputs).
+   *
+   * The mode event will be followed by a done event (starting from
+   * version 2).
+   *
+   * Clients should not use the refresh rate to schedule frames.
+   * Instead, they should use the wl_surface.frame event or the
+   * presentation-time protocol.
+   *
+   * Note: this information is not always meaningful for all outputs.
+   * Some compositors, such as those exposing virtual outputs, might
+   * fake the refresh rate or the size.
+   * @param flags bitfield of mode flags
+   * @param width width of the mode in hardware units
+   * @param height height of the mode in hardware units
+   * @param refresh vertical refresh rate in mHz
+   */
+  void (*mode)(void *data,
+         struct wl_output *wl_output,
+         uint32_t flags,
+         int32_t width,
+         int32_t height,
+         int32_t refresh);
+  /**
+   * sent all information about output
+   *
+   * This event is sent after all other properties have been sent
+   * after binding to the output object and after any other property
+   * changes done after that. This allows changes to the output
+   * properties to be seen as atomic, even if they happen via
+   * multiple events.
+   * @since 2
+   */
+  void (*done)(void *data,
+         struct wl_output *wl_output);
+  /**
+   * output scaling properties
+   *
+   * This event contains scaling geometry information that is not
+   * in the geometry event. It may be sent after binding the output
+   * object or if the output scale changes later. The compositor will
+   * emit a non-zero, positive value for scale. If it is not sent,
+   * the client should assume a scale of 1.
+   *
+   * A scale larger than 1 means that the compositor will
+   * automatically scale surface buffers by this amount when
+   * rendering. This is used for very high resolution displays where
+   * applications rendering at the native resolution would be too
+   * small to be legible.
+   *
+   * Clients should use wl_surface.preferred_buffer_scale instead of
+   * this event to find the preferred buffer scale to use for a
+   * surface.
+   *
+   * The scale event will be followed by a done event.
+   * @param factor scaling factor of output
+   * @since 2
+   */
+  void (*scale)(void *data,
+          struct wl_output *wl_output,
+          int32_t factor);
+  /**
+   * name of this output
+   *
+   * Many compositors will assign user-friendly names to their
+   * outputs, show them to the user, allow the user to refer to an
+   * output, etc. The client may wish to know this name as well to
+   * offer the user similar behaviors.
+   *
+   * The name is a UTF-8 string with no convention defined for its
+   * contents. Each name is unique among all wl_output globals. The
+   * name is only guaranteed to be unique for the compositor
+   * instance.
+   *
+   * The same output name is used for all clients for a given
+   * wl_output global. Thus, the name can be shared across processes
+   * to refer to a specific wl_output global.
+   *
+   * The name is not guaranteed to be persistent across sessions,
+   * thus cannot be used to reliably identify an output in e.g.
+   * configuration files.
+   *
+   * Examples of names include 'HDMI-A-1', 'WL-1', 'X11-1', etc.
+   * However, do not assume that the name is a reflection of an
+   * underlying DRM connector, X11 connection, etc.
+   *
+   * The name event is sent after binding the output object. This
+   * event is only sent once per output object, and the name does not
+   * change over the lifetime of the wl_output global.
+   *
+   * Compositors may re-use the same output name if the wl_output
+   * global is destroyed and re-created later. Compositors should
+   * avoid re-using the same name if possible.
+   *
+   * The name event will be followed by a done event.
+   * @param name output name
+   * @since 4
+   */
+  void (*name)(void *data,
+         struct wl_output *wl_output,
+         const char *name);
+  /**
+   * human-readable description of this output
+   *
+   * Many compositors can produce human-readable descriptions of
+   * their outputs. The client may wish to know this description as
+   * well, e.g. for output selection purposes.
+   *
+   * The description is a UTF-8 string with no convention defined for
+   * its contents. The description is not guaranteed to be unique
+   * among all wl_output globals. Examples might include 'Foocorp 11"
+   * Display' or 'Virtual X11 output via :1'.
+   *
+   * The description event is sent after binding the output object
+   * and whenever the description changes. The description is
+   * optional, and may not be sent at all.
+   *
+   * The description event will be followed by a done event.
+   * @param description output description
+   * @since 4
+   */
+  void (*description)(void *data,
+          struct wl_output *wl_output,
+          const char *description);
 };
 
 /**
@@ -5962,10 +5962,10 @@ struct wl_output_listener {
  */
 static inline int
 wl_output_add_listener(struct wl_output *wl_output,
-		       const struct wl_output_listener *listener, void *data)
+           const struct wl_output_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) wl_output,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) wl_output,
+             (void (**)(void)) listener, data);
 }
 
 #define WL_OUTPUT_RELEASE 0
@@ -6004,27 +6004,27 @@ wl_output_add_listener(struct wl_output *wl_output,
 static inline void
 wl_output_set_user_data(struct wl_output *wl_output, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_output, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_output, user_data);
 }
 
 /** @ingroup iface_wl_output */
 static inline void *
 wl_output_get_user_data(struct wl_output *wl_output)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_output);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_output);
 }
 
 static inline uint32_t
 wl_output_get_version(struct wl_output *wl_output)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_output);
+  return wl_proxy_get_version((struct wl_proxy *) wl_output);
 }
 
 /** @ingroup iface_wl_output */
 static inline void
 wl_output_destroy(struct wl_output *wl_output)
 {
-	wl_proxy_destroy((struct wl_proxy *) wl_output);
+  wl_proxy_destroy((struct wl_proxy *) wl_output);
 }
 
 /**
@@ -6036,8 +6036,8 @@ wl_output_destroy(struct wl_output *wl_output)
 static inline void
 wl_output_release(struct wl_output *wl_output)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_output,
-			 WL_OUTPUT_RELEASE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_output), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_output,
+       WL_OUTPUT_RELEASE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_output), WL_MARSHAL_FLAG_DESTROY);
 }
 
 #define WL_REGION_DESTROY 0
@@ -6062,20 +6062,20 @@ wl_output_release(struct wl_output *wl_output)
 static inline void
 wl_region_set_user_data(struct wl_region *wl_region, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_region, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_region, user_data);
 }
 
 /** @ingroup iface_wl_region */
 static inline void *
 wl_region_get_user_data(struct wl_region *wl_region)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_region);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_region);
 }
 
 static inline uint32_t
 wl_region_get_version(struct wl_region *wl_region)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_region);
+  return wl_proxy_get_version((struct wl_proxy *) wl_region);
 }
 
 /**
@@ -6086,8 +6086,8 @@ wl_region_get_version(struct wl_region *wl_region)
 static inline void
 wl_region_destroy(struct wl_region *wl_region)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_region,
-			 WL_REGION_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wl_region), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_region,
+       WL_REGION_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wl_region), WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -6098,8 +6098,8 @@ wl_region_destroy(struct wl_region *wl_region)
 static inline void
 wl_region_add(struct wl_region *wl_region, int32_t x, int32_t y, int32_t width, int32_t height)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_region,
-			 WL_REGION_ADD, NULL, wl_proxy_get_version((struct wl_proxy *) wl_region), 0, x, y, width, height);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_region,
+       WL_REGION_ADD, NULL, wl_proxy_get_version((struct wl_proxy *) wl_region), 0, x, y, width, height);
 }
 
 /**
@@ -6110,21 +6110,21 @@ wl_region_add(struct wl_region *wl_region, int32_t x, int32_t y, int32_t width, 
 static inline void
 wl_region_subtract(struct wl_region *wl_region, int32_t x, int32_t y, int32_t width, int32_t height)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_region,
-			 WL_REGION_SUBTRACT, NULL, wl_proxy_get_version((struct wl_proxy *) wl_region), 0, x, y, width, height);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_region,
+       WL_REGION_SUBTRACT, NULL, wl_proxy_get_version((struct wl_proxy *) wl_region), 0, x, y, width, height);
 }
 
 #ifndef WL_SUBCOMPOSITOR_ERROR_ENUM
 #define WL_SUBCOMPOSITOR_ERROR_ENUM
 enum wl_subcompositor_error {
-	/**
-	 * the to-be sub-surface is invalid
-	 */
-	WL_SUBCOMPOSITOR_ERROR_BAD_SURFACE = 0,
-	/**
-	 * the to-be sub-surface parent is invalid
-	 */
-	WL_SUBCOMPOSITOR_ERROR_BAD_PARENT = 1,
+  /**
+   * the to-be sub-surface is invalid
+   */
+  WL_SUBCOMPOSITOR_ERROR_BAD_SURFACE = 0,
+  /**
+   * the to-be sub-surface parent is invalid
+   */
+  WL_SUBCOMPOSITOR_ERROR_BAD_PARENT = 1,
 };
 #endif /* WL_SUBCOMPOSITOR_ERROR_ENUM */
 
@@ -6145,20 +6145,20 @@ enum wl_subcompositor_error {
 static inline void
 wl_subcompositor_set_user_data(struct wl_subcompositor *wl_subcompositor, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_subcompositor, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_subcompositor, user_data);
 }
 
 /** @ingroup iface_wl_subcompositor */
 static inline void *
 wl_subcompositor_get_user_data(struct wl_subcompositor *wl_subcompositor)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_subcompositor);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_subcompositor);
 }
 
 static inline uint32_t
 wl_subcompositor_get_version(struct wl_subcompositor *wl_subcompositor)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_subcompositor);
+  return wl_proxy_get_version((struct wl_proxy *) wl_subcompositor);
 }
 
 /**
@@ -6171,8 +6171,8 @@ wl_subcompositor_get_version(struct wl_subcompositor *wl_subcompositor)
 static inline void
 wl_subcompositor_destroy(struct wl_subcompositor *wl_subcompositor)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_subcompositor,
-			 WL_SUBCOMPOSITOR_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wl_subcompositor), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_subcompositor,
+       WL_SUBCOMPOSITOR_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wl_subcompositor), WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -6201,21 +6201,21 @@ wl_subcompositor_destroy(struct wl_subcompositor *wl_subcompositor)
 static inline struct wl_subsurface *
 wl_subcompositor_get_subsurface(struct wl_subcompositor *wl_subcompositor, struct wl_surface *surface, struct wl_surface *parent)
 {
-	struct wl_proxy *id;
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) wl_subcompositor,
-			 WL_SUBCOMPOSITOR_GET_SUBSURFACE, &wl_subsurface_interface, wl_proxy_get_version((struct wl_proxy *) wl_subcompositor), 0, NULL, surface, parent);
+  id = wl_proxy_marshal_flags((struct wl_proxy *) wl_subcompositor,
+       WL_SUBCOMPOSITOR_GET_SUBSURFACE, &wl_subsurface_interface, wl_proxy_get_version((struct wl_proxy *) wl_subcompositor), 0, NULL, surface, parent);
 
-	return (struct wl_subsurface *) id;
+  return (struct wl_subsurface *) id;
 }
 
 #ifndef WL_SUBSURFACE_ERROR_ENUM
 #define WL_SUBSURFACE_ERROR_ENUM
 enum wl_subsurface_error {
-	/**
-	 * wl_surface is not a sibling or the parent
-	 */
-	WL_SUBSURFACE_ERROR_BAD_SURFACE = 0,
+  /**
+   * wl_surface is not a sibling or the parent
+   */
+  WL_SUBSURFACE_ERROR_BAD_SURFACE = 0,
 };
 #endif /* WL_SUBSURFACE_ERROR_ENUM */
 
@@ -6256,20 +6256,20 @@ enum wl_subsurface_error {
 static inline void
 wl_subsurface_set_user_data(struct wl_subsurface *wl_subsurface, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wl_subsurface, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wl_subsurface, user_data);
 }
 
 /** @ingroup iface_wl_subsurface */
 static inline void *
 wl_subsurface_get_user_data(struct wl_subsurface *wl_subsurface)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wl_subsurface);
+  return wl_proxy_get_user_data((struct wl_proxy *) wl_subsurface);
 }
 
 static inline uint32_t
 wl_subsurface_get_version(struct wl_subsurface *wl_subsurface)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wl_subsurface);
+  return wl_proxy_get_version((struct wl_proxy *) wl_subsurface);
 }
 
 /**
@@ -6283,8 +6283,8 @@ wl_subsurface_get_version(struct wl_subsurface *wl_subsurface)
 static inline void
 wl_subsurface_destroy(struct wl_subsurface *wl_subsurface)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_subsurface,
-			 WL_SUBSURFACE_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wl_subsurface), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_subsurface,
+       WL_SUBSURFACE_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wl_subsurface), WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -6308,8 +6308,8 @@ wl_subsurface_destroy(struct wl_subsurface *wl_subsurface)
 static inline void
 wl_subsurface_set_position(struct wl_subsurface *wl_subsurface, int32_t x, int32_t y)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_subsurface,
-			 WL_SUBSURFACE_SET_POSITION, NULL, wl_proxy_get_version((struct wl_proxy *) wl_subsurface), 0, x, y);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_subsurface,
+       WL_SUBSURFACE_SET_POSITION, NULL, wl_proxy_get_version((struct wl_proxy *) wl_subsurface), 0, x, y);
 }
 
 /**
@@ -6332,8 +6332,8 @@ wl_subsurface_set_position(struct wl_subsurface *wl_subsurface, int32_t x, int32
 static inline void
 wl_subsurface_place_above(struct wl_subsurface *wl_subsurface, struct wl_surface *sibling)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_subsurface,
-			 WL_SUBSURFACE_PLACE_ABOVE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_subsurface), 0, sibling);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_subsurface,
+       WL_SUBSURFACE_PLACE_ABOVE, NULL, wl_proxy_get_version((struct wl_proxy *) wl_subsurface), 0, sibling);
 }
 
 /**
@@ -6345,8 +6345,8 @@ wl_subsurface_place_above(struct wl_subsurface *wl_subsurface, struct wl_surface
 static inline void
 wl_subsurface_place_below(struct wl_subsurface *wl_subsurface, struct wl_surface *sibling)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_subsurface,
-			 WL_SUBSURFACE_PLACE_BELOW, NULL, wl_proxy_get_version((struct wl_proxy *) wl_subsurface), 0, sibling);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_subsurface,
+       WL_SUBSURFACE_PLACE_BELOW, NULL, wl_proxy_get_version((struct wl_proxy *) wl_subsurface), 0, sibling);
 }
 
 /**
@@ -6369,8 +6369,8 @@ wl_subsurface_place_below(struct wl_subsurface *wl_subsurface, struct wl_surface
 static inline void
 wl_subsurface_set_sync(struct wl_subsurface *wl_subsurface)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_subsurface,
-			 WL_SUBSURFACE_SET_SYNC, NULL, wl_proxy_get_version((struct wl_proxy *) wl_subsurface), 0);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_subsurface,
+       WL_SUBSURFACE_SET_SYNC, NULL, wl_proxy_get_version((struct wl_proxy *) wl_subsurface), 0);
 }
 
 /**
@@ -6399,8 +6399,8 @@ wl_subsurface_set_sync(struct wl_subsurface *wl_subsurface)
 static inline void
 wl_subsurface_set_desync(struct wl_subsurface *wl_subsurface)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wl_subsurface,
-			 WL_SUBSURFACE_SET_DESYNC, NULL, wl_proxy_get_version((struct wl_proxy *) wl_subsurface), 0);
+  wl_proxy_marshal_flags((struct wl_proxy *) wl_subsurface,
+       WL_SUBSURFACE_SET_DESYNC, NULL, wl_proxy_get_version((struct wl_proxy *) wl_subsurface), 0);
 }
 
 #ifdef  __cplusplus

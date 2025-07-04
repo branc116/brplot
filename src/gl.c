@@ -108,7 +108,6 @@ void brgl_disable_back_face_cull(void) {
   brgl_disable(GL_CULL_FACE);
 }
 
-#define GL_LEQUAL				0x0203
 void brgl_enable_depth_test(void) {
   glDepthFunc(GL_LEQUAL);
   brgl_enable(GL_DEPTH_TEST);

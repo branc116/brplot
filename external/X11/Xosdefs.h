@@ -43,7 +43,7 @@ in this Software without prior written authorization from The Open Group.
 # ifdef __i386__
 #  ifdef SYSV
 #   if !defined(__SCO__) && \
-	!defined(__UNIXWARE__) && !defined(__sun)
+  !defined(__UNIXWARE__) && !defined(__sun)
 #    if !defined(_POSIX_SOURCE)
 #     define X_NOT_POSIX
 #    endif
@@ -98,15 +98,15 @@ in this Software without prior written authorization from The Open Group.
 
 # if defined(__SCO__) || defined(__UNIXWARE__)
 #  ifndef PATH_MAX
-#   define PATH_MAX	1024
+#   define PATH_MAX  1024
 #  endif
 #  ifndef MAXPATHLEN
-#   define MAXPATHLEN	1024
+#   define MAXPATHLEN  1024
 #  endif
 # endif
 
 # if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__) \
-	|| defined(__APPLE__) || defined(__DragonFly__)
+  || defined(__APPLE__) || defined(__DragonFly__)
 #  ifndef CSRG_BASED
 #   define CSRG_BASED
 #  endif

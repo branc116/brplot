@@ -60,7 +60,7 @@ in this Software without prior written authorization from The Open Group.
 #ifdef NARROWPROTO
 #define NeedWidePrototypes 0
 #else
-#define NeedWidePrototypes 1		/* default to make interropt. easier */
+#define NeedWidePrototypes 1    /* default to make interropt. easier */
 #endif
 #endif /* NeedWidePrototypes */
 
@@ -68,7 +68,7 @@ in this Software without prior written authorization from The Open Group.
 
 #ifndef _XFUNCPROTOBEGIN
 #if defined(__cplusplus) || defined(c_plusplus) /* for C++ V2.0 */
-#define _XFUNCPROTOBEGIN extern "C" {	/* do not leave open across includes */
+#define _XFUNCPROTOBEGIN extern "C" {  /* do not leave open across includes */
 #define _XFUNCPROTOEND }
 #else
 #define _XFUNCPROTOBEGIN

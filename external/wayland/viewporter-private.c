@@ -42,34 +42,34 @@ extern const struct wl_interface wl_surface_interface;
 extern const struct wl_interface wp_viewport_interface;
 
 static const struct wl_interface *viewporter_types[] = {
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	&wp_viewport_interface,
-	&wl_surface_interface,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  &wp_viewport_interface,
+  &wl_surface_interface,
 };
 
 static const struct wl_message wp_viewporter_requests[] = {
-	{ "destroy", "", viewporter_types + 0 },
-	{ "get_viewport", "no", viewporter_types + 4 },
+  { "destroy", "", viewporter_types + 0 },
+  { "get_viewport", "no", viewporter_types + 4 },
 };
 
 WL_PRIVATE const struct wl_interface wp_viewporter_interface = {
-	"wp_viewporter", 1,
-	2, wp_viewporter_requests,
-	0, NULL,
+  "wp_viewporter", 1,
+  2, wp_viewporter_requests,
+  0, NULL,
 };
 
 static const struct wl_message wp_viewport_requests[] = {
-	{ "destroy", "", viewporter_types + 0 },
-	{ "set_source", "ffff", viewporter_types + 0 },
-	{ "set_destination", "ii", viewporter_types + 0 },
+  { "destroy", "", viewporter_types + 0 },
+  { "set_source", "ffff", viewporter_types + 0 },
+  { "set_destination", "ii", viewporter_types + 0 },
 };
 
 WL_PRIVATE const struct wl_interface wp_viewport_interface = {
-	"wp_viewport", 1,
-	3, wp_viewport_requests,
-	0, NULL,
+  "wp_viewport", 1,
+  3, wp_viewport_requests,
+  0, NULL,
 };
 

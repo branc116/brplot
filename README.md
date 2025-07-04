@@ -192,12 +192,12 @@ int main(void) {
   brp_label("Circle", circle);
   brp_label("Standing wave", standing_wave);
   for (float radius = 0.0f; true; radius += dr) {
-	  for (float t = -10; t < 10; t += 0.1f) brp_2(radius*sinf(t),                 radius*cosf(t),        circle);
-	  for (float t = -10; t < 10; t += 0.1f) brp_2(         t/2.f, cosf(2*BR_PI*radius)*sinf(t)/t, standing_wave);
-	  brp_flush();
-	  brp_empty(circle);
-	  brp_empty(standing_wave);
-	  if (radius > 1 || radius < 0.0) dr *= -1.f;
+    for (float t = -10; t < 10; t += 0.1f) brp_2(radius*sinf(t),                 radius*cosf(t),        circle);
+    for (float t = -10; t < 10; t += 0.1f) brp_2(         t/2.f, cosf(2*BR_PI*radius)*sinf(t)/t, standing_wave);
+    brp_flush();
+    brp_empty(circle);
+    brp_empty(standing_wave);
+    if (radius > 1 || radius < 0.0) dr *= -1.f;
   }
   brp_focus_all();
   brp_wait();

@@ -59,7 +59,7 @@ SOFTWARE.
 
 #if defined(__SIZEOF_LONG__)
 # if __SIZEOF_LONG__ == 8
-#  define LONG64				/* 32/64-bit architecture */
+#  define LONG64        /* 32/64-bit architecture */
 # endif
 # elif defined (_LP64) || defined(__LP64__) || \
      defined(__alpha) || defined(__alpha__) || \
@@ -69,7 +69,7 @@ SOFTWARE.
      defined(__amd64__) || defined(amd64) || \
      defined(__powerpc64__)
 #  if !defined(__ILP32__) /* amd64-x32 is 32bit */
-#   define LONG64				/* 32/64-bit architecture */
+#   define LONG64        /* 32/64-bit architecture */
 #  endif /* !__ILP32__ */
 # endif
 
@@ -117,11 +117,11 @@ typedef unsigned long CARD32;
 typedef unsigned short CARD16;
 typedef unsigned char  CARD8;
 
-typedef CARD32		BITS32;
-typedef CARD16		BITS16;
+typedef CARD32    BITS32;
+typedef CARD16    BITS16;
 
-typedef CARD8		BYTE;
-typedef CARD8		BOOL;
+typedef CARD8    BYTE;
+typedef CARD8    BOOL;
 
 /*
  * was definitions for sign-extending bitfields on architectures without

@@ -108,10 +108,10 @@ extern const struct wl_interface wp_fractional_scale_v1_interface;
 #ifndef WP_FRACTIONAL_SCALE_MANAGER_V1_ERROR_ENUM
 #define WP_FRACTIONAL_SCALE_MANAGER_V1_ERROR_ENUM
 enum wp_fractional_scale_manager_v1_error {
-	/**
-	 * the surface already has a fractional_scale object associated
-	 */
-	WP_FRACTIONAL_SCALE_MANAGER_V1_ERROR_FRACTIONAL_SCALE_EXISTS = 0,
+  /**
+   * the surface already has a fractional_scale object associated
+   */
+  WP_FRACTIONAL_SCALE_MANAGER_V1_ERROR_FRACTIONAL_SCALE_EXISTS = 0,
 };
 #endif /* WP_FRACTIONAL_SCALE_MANAGER_V1_ERROR_ENUM */
 
@@ -132,20 +132,20 @@ enum wp_fractional_scale_manager_v1_error {
 static inline void
 wp_fractional_scale_manager_v1_set_user_data(struct wp_fractional_scale_manager_v1 *wp_fractional_scale_manager_v1, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wp_fractional_scale_manager_v1, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wp_fractional_scale_manager_v1, user_data);
 }
 
 /** @ingroup iface_wp_fractional_scale_manager_v1 */
 static inline void *
 wp_fractional_scale_manager_v1_get_user_data(struct wp_fractional_scale_manager_v1 *wp_fractional_scale_manager_v1)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wp_fractional_scale_manager_v1);
+  return wl_proxy_get_user_data((struct wl_proxy *) wp_fractional_scale_manager_v1);
 }
 
 static inline uint32_t
 wp_fractional_scale_manager_v1_get_version(struct wp_fractional_scale_manager_v1 *wp_fractional_scale_manager_v1)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wp_fractional_scale_manager_v1);
+  return wl_proxy_get_version((struct wl_proxy *) wp_fractional_scale_manager_v1);
 }
 
 /**
@@ -158,8 +158,8 @@ wp_fractional_scale_manager_v1_get_version(struct wp_fractional_scale_manager_v1
 static inline void
 wp_fractional_scale_manager_v1_destroy(struct wp_fractional_scale_manager_v1 *wp_fractional_scale_manager_v1)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wp_fractional_scale_manager_v1,
-			 WP_FRACTIONAL_SCALE_MANAGER_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wp_fractional_scale_manager_v1), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wp_fractional_scale_manager_v1,
+       WP_FRACTIONAL_SCALE_MANAGER_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wp_fractional_scale_manager_v1), WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -173,12 +173,12 @@ wp_fractional_scale_manager_v1_destroy(struct wp_fractional_scale_manager_v1 *wp
 static inline struct wp_fractional_scale_v1 *
 wp_fractional_scale_manager_v1_get_fractional_scale(struct wp_fractional_scale_manager_v1 *wp_fractional_scale_manager_v1, struct wl_surface *surface)
 {
-	struct wl_proxy *id;
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) wp_fractional_scale_manager_v1,
-			 WP_FRACTIONAL_SCALE_MANAGER_V1_GET_FRACTIONAL_SCALE, &wp_fractional_scale_v1_interface, wl_proxy_get_version((struct wl_proxy *) wp_fractional_scale_manager_v1), 0, NULL, surface);
+  id = wl_proxy_marshal_flags((struct wl_proxy *) wp_fractional_scale_manager_v1,
+       WP_FRACTIONAL_SCALE_MANAGER_V1_GET_FRACTIONAL_SCALE, &wp_fractional_scale_v1_interface, wl_proxy_get_version((struct wl_proxy *) wp_fractional_scale_manager_v1), 0, NULL, surface);
 
-	return (struct wp_fractional_scale_v1 *) id;
+  return (struct wp_fractional_scale_v1 *) id;
 }
 
 /**
@@ -186,19 +186,19 @@ wp_fractional_scale_manager_v1_get_fractional_scale(struct wp_fractional_scale_m
  * @struct wp_fractional_scale_v1_listener
  */
 struct wp_fractional_scale_v1_listener {
-	/**
-	 * notify of new preferred scale
-	 *
-	 * Notification of a new preferred scale for this surface that
-	 * the compositor suggests that the client should use.
-	 *
-	 * The sent scale is the numerator of a fraction with a denominator
-	 * of 120.
-	 * @param scale the new preferred scale
-	 */
-	void (*preferred_scale)(void *data,
-				struct wp_fractional_scale_v1 *wp_fractional_scale_v1,
-				uint32_t scale);
+  /**
+   * notify of new preferred scale
+   *
+   * Notification of a new preferred scale for this surface that
+   * the compositor suggests that the client should use.
+   *
+   * The sent scale is the numerator of a fraction with a denominator
+   * of 120.
+   * @param scale the new preferred scale
+   */
+  void (*preferred_scale)(void *data,
+        struct wp_fractional_scale_v1 *wp_fractional_scale_v1,
+        uint32_t scale);
 };
 
 /**
@@ -206,10 +206,10 @@ struct wp_fractional_scale_v1_listener {
  */
 static inline int
 wp_fractional_scale_v1_add_listener(struct wp_fractional_scale_v1 *wp_fractional_scale_v1,
-				    const struct wp_fractional_scale_v1_listener *listener, void *data)
+            const struct wp_fractional_scale_v1_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) wp_fractional_scale_v1,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) wp_fractional_scale_v1,
+             (void (**)(void)) listener, data);
 }
 
 #define WP_FRACTIONAL_SCALE_V1_DESTROY 0
@@ -228,20 +228,20 @@ wp_fractional_scale_v1_add_listener(struct wp_fractional_scale_v1 *wp_fractional
 static inline void
 wp_fractional_scale_v1_set_user_data(struct wp_fractional_scale_v1 *wp_fractional_scale_v1, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) wp_fractional_scale_v1, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) wp_fractional_scale_v1, user_data);
 }
 
 /** @ingroup iface_wp_fractional_scale_v1 */
 static inline void *
 wp_fractional_scale_v1_get_user_data(struct wp_fractional_scale_v1 *wp_fractional_scale_v1)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) wp_fractional_scale_v1);
+  return wl_proxy_get_user_data((struct wl_proxy *) wp_fractional_scale_v1);
 }
 
 static inline uint32_t
 wp_fractional_scale_v1_get_version(struct wp_fractional_scale_v1 *wp_fractional_scale_v1)
 {
-	return wl_proxy_get_version((struct wl_proxy *) wp_fractional_scale_v1);
+  return wl_proxy_get_version((struct wl_proxy *) wp_fractional_scale_v1);
 }
 
 /**
@@ -253,8 +253,8 @@ wp_fractional_scale_v1_get_version(struct wp_fractional_scale_v1 *wp_fractional_
 static inline void
 wp_fractional_scale_v1_destroy(struct wp_fractional_scale_v1 *wp_fractional_scale_v1)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) wp_fractional_scale_v1,
-			 WP_FRACTIONAL_SCALE_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wp_fractional_scale_v1), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) wp_fractional_scale_v1,
+       WP_FRACTIONAL_SCALE_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) wp_fractional_scale_v1), WL_MARSHAL_FLAG_DESTROY);
 }
 
 #ifdef  __cplusplus

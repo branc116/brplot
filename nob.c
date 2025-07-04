@@ -1130,47 +1130,46 @@ static bool n_dot_do(void) {
 
 static bool n_compile_commands_do(void) {
   const char * cwd = nob_get_current_dir_temp();
-	bool success = true;
-	const char* file_name = "compile_commands.json";
-	FILE* f = fopen(file_name, "wb+");
-	if (NULL == f) goto error;
-	fprintf(f, "[\n");
-	Nob_Cmd compile_command = { 0 };
-	Nob_Cmd link_command = { 0 };
-	g_sike_compile = true;
-	is_rebuild = true;
-	is_pedantic = true;
-	is_debug = true;
-	for (int i = 0; i < ARR_LEN(sources); ++i) {
-		LOGI("Index: %d: %s", i, sources[i]);
-		fprintf(f, "  {\n    ");
-		compile_command.count = link_command.count = 0;
-		if (false == compile_one(&compile_command, nob_sv_from_cstr(sources[i]), &link_command)) goto error;
-		fprintf(f, "\"directory\": \"%s\",\n    ", cwd);
-		fprintf(f, "\"command\": \"");
-		for (int j = 0; j < compile_command.count; ++j) {
-			fprintf(f, "%s ", compile_command.items[j]);
-		}
-		fprintf(f, "\",\n    ");
-		fprintf(f, "\"file\": \"%s\"\n", sources[i]);
-		fprintf(f, "  }");
-		if (i + 1 < ARR_LEN(sources)) fprintf(f, ",\n");
-		else fprintf(f, "\n");
-	}
-	fprintf(f, "]");
-	goto done;
+  bool success = true;
+  const char* file_name = "compile_commands.json";
+  FILE* f = fopen(file_name, "wb+");
+  if (NULL == f) goto error;
+  fprintf(f, "[\n");
+  Nob_Cmd compile_command = { 0 };
+  Nob_Cmd link_command = { 0 };
+  g_sike_compile = true;
+  is_rebuild = true;
+  is_pedantic = true;
+  is_debug = true;
+  for (int i = 0; i < ARR_LEN(sources); ++i) {
+    LOGI("Index: %d: %s", i, sources[i]);
+    fprintf(f, "  {\n    ");
+    compile_command.count = link_command.count = 0;
+    if (false == compile_one(&compile_command, nob_sv_from_cstr(sources[i]), &link_command)) goto error;
+    fprintf(f, "\"directory\": \"%s\",\n    ", cwd);
+    fprintf(f, "\"command\": \"");
+    for (int j = 0; j < compile_command.count; ++j) {
+      fprintf(f, "%s ", compile_command.items[j]);
+    }
+    fprintf(f, "\",\n    ");
+    fprintf(f, "\"file\": \"%s\"\n", sources[i]);
+    fprintf(f, "  }");
+    if (i + 1 < ARR_LEN(sources)) fprintf(f, ",\n");
+    else fprintf(f, "\n");
+  }
+  fprintf(f, "]");
+  goto done;
 
 error:
-	if (NULL != f) LOGE("Failed to write to file %s: %s", file_name, strerror(errno));
-	else           LOGE("Failed to open file %s: %s", file_name, strerror(errno));
-	success = false;
+  if (NULL != f) LOGE("Failed to write to file %s: %s", file_name, strerror(errno));
+  else           LOGE("Failed to open file %s: %s", file_name, strerror(errno));
+  success = false;
 
 done:
-	if (NULL != f) fclose(f);
-	if (compile_command.items) nob_cmd_free(compile_command);
-	if (link_command.items) nob_cmd_free(link_command);
-	return success;
-
+  if (NULL != f) fclose(f);
+  if (compile_command.items) nob_cmd_free(compile_command);
+  if (link_command.items) nob_cmd_free(link_command);
+  return success;
 }
 
 void br_go_rebuild_yourself(int argc, char** argv) {

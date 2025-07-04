@@ -189,7 +189,7 @@ int brfl_push_internal_get_handle(void** const arrp, int** const free_arrp, int*
   } else if (free_next != -1) {
     int ret = free_next;
     BR_ASSERTF(ret < len, "[%s:%d] Free list is corupet, next free should be %d, but array only has %d elements.", file, line, ret, len);
-	BR_ASSERTF(ret >= 0, "[%s:%d] Free list is corupet, ret is %d", file, line, ret);
+    BR_ASSERTF(ret >= 0, "[%s:%d] Free list is corupet, ret is %d", file, line, ret);
     free_next = free_arr[ret];
     free_arr[ret] = -1;
     *free_nextp = free_next == -2 ? -1 : free_next;

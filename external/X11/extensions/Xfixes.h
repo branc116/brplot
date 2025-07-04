@@ -55,11 +55,11 @@
  * This revision number also appears in configure.ac, they have
  * to be manually synchronized
  */
-#define XFIXES_REVISION	1
-#define XFIXES_VERSION	((XFIXES_MAJOR * 10000) + (XFIXES_MINOR * 100) + (XFIXES_REVISION))
+#define XFIXES_REVISION  1
+#define XFIXES_VERSION  ((XFIXES_MAJOR * 10000) + (XFIXES_MINOR * 100) + (XFIXES_REVISION))
 
 typedef struct {
-    int type;			/* event base */
+    int type;      /* event base */
     unsigned long serial;
     Bool send_event;
     Display *display;
@@ -72,7 +72,7 @@ typedef struct {
 } XFixesSelectionNotifyEvent;
 
 typedef struct {
-    int type;			/* event base */
+    int type;      /* event base */
     unsigned long serial;
     Bool send_event;
     Display *display;
@@ -84,14 +84,14 @@ typedef struct {
 } XFixesCursorNotifyEvent;
 
 typedef struct {
-    short	    x, y;
+    short      x, y;
     unsigned short  width, height;
     unsigned short  xhot, yhot;
     unsigned long   cursor_serial;
     unsigned long   *pixels;
 #if XFIXES_MAJOR >= 2
-    Atom	    atom;		    /* Version >= 2 only */
-    const char	    *name;		    /* Version >= 2 only */
+    Atom      atom;        /* Version >= 2 only */
+    const char      *name;        /* Version >= 2 only */
 #endif
 } XFixesCursorImage;
 
@@ -101,13 +101,13 @@ typedef struct {
 typedef XID XserverRegion;
 
 typedef struct {
-    short	    x, y;
+    short      x, y;
     unsigned short  width, height;
     unsigned short  xhot, yhot;
     unsigned long   cursor_serial;
     unsigned long   *pixels;
-    Atom	    atom;
-    const char	    *name;
+    Atom      atom;
+    const char      *name;
 } XFixesCursorImageAndName;
 
 #endif
@@ -115,31 +115,31 @@ typedef struct {
 _XFUNCPROTOBEGIN
 
 Bool XFixesQueryExtension (Display *dpy,
-			    int *event_base_return,
-			    int *error_base_return);
+          int *event_base_return,
+          int *error_base_return);
 Status XFixesQueryVersion (Display *dpy,
-			    int     *major_version_return,
-			    int     *minor_version_return);
+          int     *major_version_return,
+          int     *minor_version_return);
 
 int XFixesVersion (void);
 
 void
-XFixesChangeSaveSet (Display	*dpy,
-		     Window	win,
-		     int	mode,
-		     int	target,
-		     int	map);
+XFixesChangeSaveSet (Display  *dpy,
+         Window  win,
+         int  mode,
+         int  target,
+         int  map);
 
 void
-XFixesSelectSelectionInput (Display	    *dpy,
-			    Window	    win,
-			    Atom	    selection,
-			    unsigned long   eventMask);
+XFixesSelectSelectionInput (Display      *dpy,
+          Window      win,
+          Atom      selection,
+          unsigned long   eventMask);
 
 void
-XFixesSelectCursorInput (Display	*dpy,
-			 Window		win,
-			 unsigned long	eventMask);
+XFixesSelectCursorInput (Display  *dpy,
+       Window    win,
+       unsigned long  eventMask);
 
 XFixesCursorImage *
 XFixesGetCursorImage (Display *dpy);
@@ -167,26 +167,26 @@ XFixesDestroyRegion (Display *dpy, XserverRegion region);
 
 void
 XFixesSetRegion (Display *dpy, XserverRegion region,
-		 XRectangle *rectangles, int nrectangles);
+     XRectangle *rectangles, int nrectangles);
 
 void
 XFixesCopyRegion (Display *dpy, XserverRegion dst, XserverRegion src);
 
 void
 XFixesUnionRegion (Display *dpy, XserverRegion dst,
-		   XserverRegion src1, XserverRegion src2);
+       XserverRegion src1, XserverRegion src2);
 
 void
 XFixesIntersectRegion (Display *dpy, XserverRegion dst,
-		       XserverRegion src1, XserverRegion src2);
+           XserverRegion src1, XserverRegion src2);
 
 void
 XFixesSubtractRegion (Display *dpy, XserverRegion dst,
-		      XserverRegion src1, XserverRegion src2);
+          XserverRegion src1, XserverRegion src2);
 
 void
 XFixesInvertRegion (Display *dpy, XserverRegion dst,
-		    XRectangle *rect, XserverRegion src);
+        XRectangle *rect, XserverRegion src);
 
 void
 XFixesTranslateRegion (Display *dpy, XserverRegion region, int dx, int dy);
@@ -199,22 +199,22 @@ XFixesFetchRegion (Display *dpy, XserverRegion region, int *nrectanglesRet);
 
 XRectangle *
 XFixesFetchRegionAndBounds (Display *dpy, XserverRegion region,
-			    int *nrectanglesRet,
-			    XRectangle *bounds);
+          int *nrectanglesRet,
+          XRectangle *bounds);
 
 void
 XFixesSetGCClipRegion (Display *dpy, GC gc,
-		       int clip_x_origin, int clip_y_origin,
-		       XserverRegion region);
+           int clip_x_origin, int clip_y_origin,
+           XserverRegion region);
 
 void
 XFixesSetWindowShapeRegion (Display *dpy, Window win, int shape_kind,
-			    int x_off, int y_off, XserverRegion region);
+          int x_off, int y_off, XserverRegion region);
 
 void
 XFixesSetPictureClipRegion (Display *dpy, XID picture,
-			    int clip_x_origin, int clip_y_origin,
-			    XserverRegion region);
+          int clip_x_origin, int clip_y_origin,
+          XserverRegion region);
 
 void
 XFixesSetCursorName (Display *dpy, Cursor cursor, const char *name);
@@ -228,16 +228,16 @@ XFixesChangeCursor (Display *dpy, Cursor source, Cursor destination);
 void
 XFixesChangeCursorByName (Display *dpy, Cursor source, const char *name);
 
-#endif	/* XFIXES_MAJOR >= 2 */
+#endif  /* XFIXES_MAJOR >= 2 */
 
 #if XFIXES_MAJOR >= 3
 
 void
 XFixesExpandRegion (Display *dpy, XserverRegion dst, XserverRegion src,
-		    unsigned left, unsigned right,
-		    unsigned top, unsigned bottom);
+        unsigned left, unsigned right,
+        unsigned top, unsigned bottom);
 
-#endif	/* XFIXES_MAJOR >= 3 */
+#endif  /* XFIXES_MAJOR >= 3 */
 
 #if XFIXES_MAJOR >= 4
 /* Version 4.0 externs */
@@ -256,8 +256,8 @@ typedef XID PointerBarrier;
 
 PointerBarrier
 XFixesCreatePointerBarrier(Display *dpy, Window w, int x1, int y1,
-			   int x2, int y2, int directions,
-			   int num_devices, int *devices);
+         int x2, int y2, int directions,
+         int num_devices, int *devices);
 
 void
 XFixesDestroyPointerBarrier(Display *dpy, PointerBarrier b);

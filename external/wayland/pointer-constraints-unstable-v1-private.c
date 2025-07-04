@@ -46,64 +46,64 @@ extern const struct wl_interface zwp_confined_pointer_v1_interface;
 extern const struct wl_interface zwp_locked_pointer_v1_interface;
 
 static const struct wl_interface *pointer_constraints_unstable_v1_types[] = {
-	NULL,
-	NULL,
-	&zwp_locked_pointer_v1_interface,
-	&wl_surface_interface,
-	&wl_pointer_interface,
-	&wl_region_interface,
-	NULL,
-	&zwp_confined_pointer_v1_interface,
-	&wl_surface_interface,
-	&wl_pointer_interface,
-	&wl_region_interface,
-	NULL,
-	&wl_region_interface,
-	&wl_region_interface,
+  NULL,
+  NULL,
+  &zwp_locked_pointer_v1_interface,
+  &wl_surface_interface,
+  &wl_pointer_interface,
+  &wl_region_interface,
+  NULL,
+  &zwp_confined_pointer_v1_interface,
+  &wl_surface_interface,
+  &wl_pointer_interface,
+  &wl_region_interface,
+  NULL,
+  &wl_region_interface,
+  &wl_region_interface,
 };
 
 static const struct wl_message zwp_pointer_constraints_v1_requests[] = {
-	{ "destroy", "", pointer_constraints_unstable_v1_types + 0 },
-	{ "lock_pointer", "noo?ou", pointer_constraints_unstable_v1_types + 2 },
-	{ "confine_pointer", "noo?ou", pointer_constraints_unstable_v1_types + 7 },
+  { "destroy", "", pointer_constraints_unstable_v1_types + 0 },
+  { "lock_pointer", "noo?ou", pointer_constraints_unstable_v1_types + 2 },
+  { "confine_pointer", "noo?ou", pointer_constraints_unstable_v1_types + 7 },
 };
 
 WL_PRIVATE const struct wl_interface zwp_pointer_constraints_v1_interface = {
-	"zwp_pointer_constraints_v1", 1,
-	3, zwp_pointer_constraints_v1_requests,
-	0, NULL,
+  "zwp_pointer_constraints_v1", 1,
+  3, zwp_pointer_constraints_v1_requests,
+  0, NULL,
 };
 
 static const struct wl_message zwp_locked_pointer_v1_requests[] = {
-	{ "destroy", "", pointer_constraints_unstable_v1_types + 0 },
-	{ "set_cursor_position_hint", "ff", pointer_constraints_unstable_v1_types + 0 },
-	{ "set_region", "?o", pointer_constraints_unstable_v1_types + 12 },
+  { "destroy", "", pointer_constraints_unstable_v1_types + 0 },
+  { "set_cursor_position_hint", "ff", pointer_constraints_unstable_v1_types + 0 },
+  { "set_region", "?o", pointer_constraints_unstable_v1_types + 12 },
 };
 
 static const struct wl_message zwp_locked_pointer_v1_events[] = {
-	{ "locked", "", pointer_constraints_unstable_v1_types + 0 },
-	{ "unlocked", "", pointer_constraints_unstable_v1_types + 0 },
+  { "locked", "", pointer_constraints_unstable_v1_types + 0 },
+  { "unlocked", "", pointer_constraints_unstable_v1_types + 0 },
 };
 
 WL_PRIVATE const struct wl_interface zwp_locked_pointer_v1_interface = {
-	"zwp_locked_pointer_v1", 1,
-	3, zwp_locked_pointer_v1_requests,
-	2, zwp_locked_pointer_v1_events,
+  "zwp_locked_pointer_v1", 1,
+  3, zwp_locked_pointer_v1_requests,
+  2, zwp_locked_pointer_v1_events,
 };
 
 static const struct wl_message zwp_confined_pointer_v1_requests[] = {
-	{ "destroy", "", pointer_constraints_unstable_v1_types + 0 },
-	{ "set_region", "?o", pointer_constraints_unstable_v1_types + 13 },
+  { "destroy", "", pointer_constraints_unstable_v1_types + 0 },
+  { "set_region", "?o", pointer_constraints_unstable_v1_types + 13 },
 };
 
 static const struct wl_message zwp_confined_pointer_v1_events[] = {
-	{ "confined", "", pointer_constraints_unstable_v1_types + 0 },
-	{ "unconfined", "", pointer_constraints_unstable_v1_types + 0 },
+  { "confined", "", pointer_constraints_unstable_v1_types + 0 },
+  { "unconfined", "", pointer_constraints_unstable_v1_types + 0 },
 };
 
 WL_PRIVATE const struct wl_interface zwp_confined_pointer_v1_interface = {
-	"zwp_confined_pointer_v1", 1,
-	2, zwp_confined_pointer_v1_requests,
-	2, zwp_confined_pointer_v1_events,
+  "zwp_confined_pointer_v1", 1,
+  2, zwp_confined_pointer_v1_requests,
+  2, zwp_confined_pointer_v1_events,
 };
 

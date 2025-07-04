@@ -44,42 +44,42 @@ extern const struct wl_interface wl_surface_interface;
 extern const struct wl_interface xdg_activation_token_v1_interface;
 
 static const struct wl_interface *xdg_activation_v1_types[] = {
-	NULL,
-	&xdg_activation_token_v1_interface,
-	NULL,
-	&wl_surface_interface,
-	NULL,
-	&wl_seat_interface,
-	&wl_surface_interface,
+  NULL,
+  &xdg_activation_token_v1_interface,
+  NULL,
+  &wl_surface_interface,
+  NULL,
+  &wl_seat_interface,
+  &wl_surface_interface,
 };
 
 static const struct wl_message xdg_activation_v1_requests[] = {
-	{ "destroy", "", xdg_activation_v1_types + 0 },
-	{ "get_activation_token", "n", xdg_activation_v1_types + 1 },
-	{ "activate", "so", xdg_activation_v1_types + 2 },
+  { "destroy", "", xdg_activation_v1_types + 0 },
+  { "get_activation_token", "n", xdg_activation_v1_types + 1 },
+  { "activate", "so", xdg_activation_v1_types + 2 },
 };
 
 WL_PRIVATE const struct wl_interface xdg_activation_v1_interface = {
-	"xdg_activation_v1", 1,
-	3, xdg_activation_v1_requests,
-	0, NULL,
+  "xdg_activation_v1", 1,
+  3, xdg_activation_v1_requests,
+  0, NULL,
 };
 
 static const struct wl_message xdg_activation_token_v1_requests[] = {
-	{ "set_serial", "uo", xdg_activation_v1_types + 4 },
-	{ "set_app_id", "s", xdg_activation_v1_types + 0 },
-	{ "set_surface", "o", xdg_activation_v1_types + 6 },
-	{ "commit", "", xdg_activation_v1_types + 0 },
-	{ "destroy", "", xdg_activation_v1_types + 0 },
+  { "set_serial", "uo", xdg_activation_v1_types + 4 },
+  { "set_app_id", "s", xdg_activation_v1_types + 0 },
+  { "set_surface", "o", xdg_activation_v1_types + 6 },
+  { "commit", "", xdg_activation_v1_types + 0 },
+  { "destroy", "", xdg_activation_v1_types + 0 },
 };
 
 static const struct wl_message xdg_activation_token_v1_events[] = {
-	{ "done", "s", xdg_activation_v1_types + 0 },
+  { "done", "s", xdg_activation_v1_types + 0 },
 };
 
 WL_PRIVATE const struct wl_interface xdg_activation_token_v1_interface = {
-	"xdg_activation_token_v1", 1,
-	5, xdg_activation_token_v1_requests,
-	1, xdg_activation_token_v1_events,
+  "xdg_activation_token_v1", 1,
+  5, xdg_activation_token_v1_requests,
+  1, xdg_activation_token_v1_events,
 };
 

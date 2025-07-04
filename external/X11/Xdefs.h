@@ -83,7 +83,7 @@ typedef struct _Font *FontPtr; /* also in fonts/include/font.h */
 
 #ifndef _XTYPEDEF_FONT
 #  define _XTYPEDEF_FONT
-typedef XID	Font;
+typedef XID  Font;
 #endif
 
 #ifndef _XTYPEDEF_FSID
@@ -102,7 +102,7 @@ typedef struct timeval **OSTimePtr;
 
 
 typedef void (* BlockHandlerProcPtr)(void * /* blockData */,
-				     OSTimePtr /* pTimeout */,
-				     void * /* pReadmask */);
+             OSTimePtr /* pTimeout */,
+             void * /* pReadmask */);
 
 #endif

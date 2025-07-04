@@ -167,12 +167,12 @@ struct wl_object;
  * \sa <a href="https://wayland.freedesktop.org/docs/html/ch04.html#sect-Protocol-Wire-Format">Wire Format</a>
  */
 struct wl_message {
-	/** Message name */
-	const char *name;
-	/** Message signature */
-	const char *signature;
-	/** Object argument interfaces */
-	const struct wl_interface **types;
+  /** Message name */
+  const char *name;
+  /** Message signature */
+  const char *signature;
+  /** Object argument interfaces */
+  const struct wl_interface **types;
 };
 
 /**
@@ -222,18 +222,18 @@ struct wl_message {
  * \sa <a href="https://wayland.freedesktop.org/docs/html/ch04.html#sect-Protocol-Versioning">Versioning</a>
  */
 struct wl_interface {
-	/** Interface name */
-	const char *name;
-	/** Interface version */
-	int version;
-	/** Number of methods (requests) */
-	int method_count;
-	/** Method (request) signatures */
-	const struct wl_message *methods;
-	/** Number of events */
-	int event_count;
-	/** Event signatures */
-	const struct wl_message *events;
+  /** Interface name */
+  const char *name;
+  /** Interface version */
+  int version;
+  /** Number of methods (requests) */
+  int method_count;
+  /** Method (request) signatures */
+  const struct wl_message *methods;
+  /** Number of events */
+  int event_count;
+  /** Event signatures */
+  const struct wl_message *events;
 };
 
 /** \class wl_list
@@ -294,10 +294,10 @@ struct wl_interface {
  * \sa http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/include/linux/list.h
  */
 struct wl_list {
-	/** Previous list element */
-	struct wl_list *prev;
-	/** Next list element */
-	struct wl_list *next;
+  /** Previous list element */
+  struct wl_list *prev;
+  /** Next list element */
+  struct wl_list *next;
 };
 
 /**
@@ -413,9 +413,9 @@ wl_list_insert_list(struct wl_list *list, struct wl_list *other);
  *
  * \return The container for the specified pointer
  */
-#define wl_container_of(ptr, sample, member)				\
-	(WL_TYPEOF(sample))((char *)(ptr) -				\
-			     offsetof(WL_TYPEOF(*sample), member))
+#define wl_container_of(ptr, sample, member)        \
+  (WL_TYPEOF(sample))((char *)(ptr) -        \
+           offsetof(WL_TYPEOF(*sample), member))
 
 /**
  * Iterates over a list.
@@ -447,10 +447,10 @@ wl_list_insert_list(struct wl_list *list, struct wl_list *other);
  *
  * \relates wl_list
  */
-#define wl_list_for_each(pos, head, member)				\
-	for (pos = wl_container_of((head)->next, pos, member);	\
-	     &pos->member != (head);					\
-	     pos = wl_container_of(pos->member.next, pos, member))
+#define wl_list_for_each(pos, head, member)        \
+  for (pos = wl_container_of((head)->next, pos, member);  \
+       &pos->member != (head);          \
+       pos = wl_container_of(pos->member.next, pos, member))
 
 /**
  * Iterates over a list, safe against removal of the list element.
@@ -467,12 +467,12 @@ wl_list_insert_list(struct wl_list *list, struct wl_list *other);
  *
  * \relates wl_list
  */
-#define wl_list_for_each_safe(pos, tmp, head, member)			\
-	for (pos = wl_container_of((head)->next, pos, member),		\
-	     tmp = wl_container_of((pos)->member.next, tmp, member);	\
-	     &pos->member != (head);					\
-	     pos = tmp,							\
-	     tmp = wl_container_of(pos->member.next, tmp, member))
+#define wl_list_for_each_safe(pos, tmp, head, member)      \
+  for (pos = wl_container_of((head)->next, pos, member),    \
+       tmp = wl_container_of((pos)->member.next, tmp, member);  \
+       &pos->member != (head);          \
+       pos = tmp,              \
+       tmp = wl_container_of(pos->member.next, tmp, member))
 
 /**
  * Iterates backwards over a list.
@@ -485,10 +485,10 @@ wl_list_insert_list(struct wl_list *list, struct wl_list *other);
  *
  * \relates wl_list
  */
-#define wl_list_for_each_reverse(pos, head, member)			\
-	for (pos = wl_container_of((head)->prev, pos, member);	\
-	     &pos->member != (head);					\
-	     pos = wl_container_of(pos->member.prev, pos, member))
+#define wl_list_for_each_reverse(pos, head, member)      \
+  for (pos = wl_container_of((head)->prev, pos, member);  \
+       &pos->member != (head);          \
+       pos = wl_container_of(pos->member.prev, pos, member))
 
 /**
  * Iterates backwards over a list, safe against removal of the list element.
@@ -505,12 +505,12 @@ wl_list_insert_list(struct wl_list *list, struct wl_list *other);
  *
  * \relates wl_list
  */
-#define wl_list_for_each_reverse_safe(pos, tmp, head, member)		\
-	for (pos = wl_container_of((head)->prev, pos, member),	\
-	     tmp = wl_container_of((pos)->member.prev, tmp, member);	\
-	     &pos->member != (head);					\
-	     pos = tmp,							\
-	     tmp = wl_container_of(pos->member.prev, tmp, member))
+#define wl_list_for_each_reverse_safe(pos, tmp, head, member)    \
+  for (pos = wl_container_of((head)->prev, pos, member),  \
+       tmp = wl_container_of((pos)->member.prev, tmp, member);  \
+       &pos->member != (head);          \
+       pos = tmp,              \
+       tmp = wl_container_of(pos->member.prev, tmp, member))
 
 /**
  * \class wl_array
@@ -525,12 +525,12 @@ wl_list_insert_list(struct wl_list *list, struct wl_list *other);
  *
  */
 struct wl_array {
-	/** Array size */
-	size_t size;
-	/** Allocated space */
-	size_t alloc;
-	/** Array data */
-	void *data;
+  /** Array size */
+  size_t size;
+  /** Allocated space */
+  size_t alloc;
+  /** Array data */
+  void *data;
 };
 
 /**
@@ -596,11 +596,11 @@ wl_array_copy(struct wl_array *array, struct wl_array *source);
  * \relates wl_array
  * \sa wl_list_for_each()
  */
-#define wl_array_for_each(pos, array)					\
-	for (pos = (array)->data;					\
-	     (array)->size != 0 &&					\
-	     (const char *) pos < ((const char *) (array)->data + (array)->size); \
-	     (pos)++)
+#define wl_array_for_each(pos, array)          \
+  for (pos = (array)->data;          \
+       (array)->size != 0 &&          \
+       (const char *) pos < ((const char *) (array)->data + (array)->size); \
+       (pos)++)
 
 /**
  * Fixed-point number
@@ -622,7 +622,7 @@ typedef int32_t wl_fixed_t;
 static inline double
 wl_fixed_to_double(wl_fixed_t f)
 {
-	return f / 256.0;
+  return f / 256.0;
 }
 
 /**
@@ -635,7 +635,7 @@ wl_fixed_to_double(wl_fixed_t f)
 static inline wl_fixed_t
 wl_fixed_from_double(double d)
 {
-	return (wl_fixed_t) (d * 256.0);
+  return (wl_fixed_t) (d * 256.0);
 }
 
 /**
@@ -648,7 +648,7 @@ wl_fixed_from_double(double d)
 static inline int
 wl_fixed_to_int(wl_fixed_t f)
 {
-	return f / 256;
+  return f / 256;
 }
 
 /**
@@ -661,7 +661,7 @@ wl_fixed_to_int(wl_fixed_t f)
 static inline wl_fixed_t
 wl_fixed_from_int(int i)
 {
-	return i * 256;
+  return i * 256;
 }
 
 /**
@@ -676,14 +676,14 @@ wl_fixed_from_int(int i)
  * \sa <a href="https://wayland.freedesktop.org/docs/html/ch04.html#sect-Protocol-wire-Format">Wire Format</a>
  */
 union wl_argument {
-	int32_t i;           /**< `int`    */
-	uint32_t u;          /**< `uint`   */
-	wl_fixed_t f;        /**< `fixed`  */
-	const char *s;       /**< `string` */
-	struct wl_object *o; /**< `object` */
-	uint32_t n;          /**< `new_id` */
-	struct wl_array *a;  /**< `array`  */
-	int32_t h;           /**< `fd`     */
+  int32_t i;           /**< `int`    */
+  uint32_t u;          /**< `uint`   */
+  wl_fixed_t f;        /**< `fixed`  */
+  const char *s;       /**< `string` */
+  struct wl_object *o; /**< `object` */
+  uint32_t n;          /**< `new_id` */
+  struct wl_array *a;  /**< `array`  */
+  int32_t h;           /**< `fd`     */
 };
 
 /**
@@ -711,8 +711,8 @@ union wl_argument {
  * \return 0 on success, or -1 on failure
  */
 typedef int (*wl_dispatcher_func_t)(const void *user_data, void *target,
-				    uint32_t opcode, const struct wl_message *msg,
-				    union wl_argument *args);
+            uint32_t opcode, const struct wl_message *msg,
+            union wl_argument *args);
 
 /**
  * Log function type alias
@@ -747,10 +747,10 @@ typedef void (*wl_log_func_t)(const char *fmt, va_list args) WL_PRINTF(1, 0);
  * \sa wl_client_for_each_resource
  */
 enum wl_iterator_result {
-	/** Stop the iteration */
-	WL_ITERATOR_STOP,
-	/** Continue the iteration */
-	WL_ITERATOR_CONTINUE
+  /** Stop the iteration */
+  WL_ITERATOR_STOP,
+  /** Continue the iteration */
+  WL_ITERATOR_CONTINUE
 };
 
 #ifdef  __cplusplus

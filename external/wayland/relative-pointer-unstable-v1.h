@@ -133,20 +133,20 @@ extern const struct wl_interface zwp_relative_pointer_v1_interface;
 static inline void
 zwp_relative_pointer_manager_v1_set_user_data(struct zwp_relative_pointer_manager_v1 *zwp_relative_pointer_manager_v1, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) zwp_relative_pointer_manager_v1, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) zwp_relative_pointer_manager_v1, user_data);
 }
 
 /** @ingroup iface_zwp_relative_pointer_manager_v1 */
 static inline void *
 zwp_relative_pointer_manager_v1_get_user_data(struct zwp_relative_pointer_manager_v1 *zwp_relative_pointer_manager_v1)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) zwp_relative_pointer_manager_v1);
+  return wl_proxy_get_user_data((struct wl_proxy *) zwp_relative_pointer_manager_v1);
 }
 
 static inline uint32_t
 zwp_relative_pointer_manager_v1_get_version(struct zwp_relative_pointer_manager_v1 *zwp_relative_pointer_manager_v1)
 {
-	return wl_proxy_get_version((struct wl_proxy *) zwp_relative_pointer_manager_v1);
+  return wl_proxy_get_version((struct wl_proxy *) zwp_relative_pointer_manager_v1);
 }
 
 /**
@@ -158,8 +158,8 @@ zwp_relative_pointer_manager_v1_get_version(struct zwp_relative_pointer_manager_
 static inline void
 zwp_relative_pointer_manager_v1_destroy(struct zwp_relative_pointer_manager_v1 *zwp_relative_pointer_manager_v1)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) zwp_relative_pointer_manager_v1,
-			 ZWP_RELATIVE_POINTER_MANAGER_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_relative_pointer_manager_v1), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) zwp_relative_pointer_manager_v1,
+       ZWP_RELATIVE_POINTER_MANAGER_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_relative_pointer_manager_v1), WL_MARSHAL_FLAG_DESTROY);
 }
 
 /**
@@ -171,12 +171,12 @@ zwp_relative_pointer_manager_v1_destroy(struct zwp_relative_pointer_manager_v1 *
 static inline struct zwp_relative_pointer_v1 *
 zwp_relative_pointer_manager_v1_get_relative_pointer(struct zwp_relative_pointer_manager_v1 *zwp_relative_pointer_manager_v1, struct wl_pointer *pointer)
 {
-	struct wl_proxy *id;
+  struct wl_proxy *id;
 
-	id = wl_proxy_marshal_flags((struct wl_proxy *) zwp_relative_pointer_manager_v1,
-			 ZWP_RELATIVE_POINTER_MANAGER_V1_GET_RELATIVE_POINTER, &zwp_relative_pointer_v1_interface, wl_proxy_get_version((struct wl_proxy *) zwp_relative_pointer_manager_v1), 0, NULL, pointer);
+  id = wl_proxy_marshal_flags((struct wl_proxy *) zwp_relative_pointer_manager_v1,
+       ZWP_RELATIVE_POINTER_MANAGER_V1_GET_RELATIVE_POINTER, &zwp_relative_pointer_v1_interface, wl_proxy_get_version((struct wl_proxy *) zwp_relative_pointer_manager_v1), 0, NULL, pointer);
 
-	return (struct zwp_relative_pointer_v1 *) id;
+  return (struct zwp_relative_pointer_v1 *) id;
 }
 
 /**
@@ -184,57 +184,57 @@ zwp_relative_pointer_manager_v1_get_relative_pointer(struct zwp_relative_pointer
  * @struct zwp_relative_pointer_v1_listener
  */
 struct zwp_relative_pointer_v1_listener {
-	/**
-	 * relative pointer motion
-	 *
-	 * Relative x/y pointer motion from the pointer of the seat
-	 * associated with this object.
-	 *
-	 * A relative motion is in the same dimension as regular wl_pointer
-	 * motion events, except they do not represent an absolute
-	 * position. For example, moving a pointer from (x, y) to (x', y')
-	 * would have the equivalent relative motion (x' - x, y' - y). If a
-	 * pointer motion caused the absolute pointer position to be
-	 * clipped by for example the edge of the monitor, the relative
-	 * motion is unaffected by the clipping and will represent the
-	 * unclipped motion.
-	 *
-	 * This event also contains non-accelerated motion deltas. The
-	 * non-accelerated delta is, when applicable, the regular pointer
-	 * motion delta as it was before having applied motion acceleration
-	 * and other transformations such as normalization.
-	 *
-	 * Note that the non-accelerated delta does not represent 'raw'
-	 * events as they were read from some device. Pointer motion
-	 * acceleration is device- and configuration-specific and
-	 * non-accelerated deltas and accelerated deltas may have the same
-	 * value on some devices.
-	 *
-	 * Relative motions are not coupled to wl_pointer.motion events,
-	 * and can be sent in combination with such events, but also
-	 * independently. There may also be scenarios where
-	 * wl_pointer.motion is sent, but there is no relative motion. The
-	 * order of an absolute and relative motion event originating from
-	 * the same physical motion is not guaranteed.
-	 *
-	 * If the client needs button events or focus state, it can receive
-	 * them from a wl_pointer object of the same seat that the
-	 * wp_relative_pointer object is associated with.
-	 * @param utime_hi high 32 bits of a 64 bit timestamp with microsecond granularity
-	 * @param utime_lo low 32 bits of a 64 bit timestamp with microsecond granularity
-	 * @param dx the x component of the motion vector
-	 * @param dy the y component of the motion vector
-	 * @param dx_unaccel the x component of the unaccelerated motion vector
-	 * @param dy_unaccel the y component of the unaccelerated motion vector
-	 */
-	void (*relative_motion)(void *data,
-				struct zwp_relative_pointer_v1 *zwp_relative_pointer_v1,
-				uint32_t utime_hi,
-				uint32_t utime_lo,
-				wl_fixed_t dx,
-				wl_fixed_t dy,
-				wl_fixed_t dx_unaccel,
-				wl_fixed_t dy_unaccel);
+  /**
+   * relative pointer motion
+   *
+   * Relative x/y pointer motion from the pointer of the seat
+   * associated with this object.
+   *
+   * A relative motion is in the same dimension as regular wl_pointer
+   * motion events, except they do not represent an absolute
+   * position. For example, moving a pointer from (x, y) to (x', y')
+   * would have the equivalent relative motion (x' - x, y' - y). If a
+   * pointer motion caused the absolute pointer position to be
+   * clipped by for example the edge of the monitor, the relative
+   * motion is unaffected by the clipping and will represent the
+   * unclipped motion.
+   *
+   * This event also contains non-accelerated motion deltas. The
+   * non-accelerated delta is, when applicable, the regular pointer
+   * motion delta as it was before having applied motion acceleration
+   * and other transformations such as normalization.
+   *
+   * Note that the non-accelerated delta does not represent 'raw'
+   * events as they were read from some device. Pointer motion
+   * acceleration is device- and configuration-specific and
+   * non-accelerated deltas and accelerated deltas may have the same
+   * value on some devices.
+   *
+   * Relative motions are not coupled to wl_pointer.motion events,
+   * and can be sent in combination with such events, but also
+   * independently. There may also be scenarios where
+   * wl_pointer.motion is sent, but there is no relative motion. The
+   * order of an absolute and relative motion event originating from
+   * the same physical motion is not guaranteed.
+   *
+   * If the client needs button events or focus state, it can receive
+   * them from a wl_pointer object of the same seat that the
+   * wp_relative_pointer object is associated with.
+   * @param utime_hi high 32 bits of a 64 bit timestamp with microsecond granularity
+   * @param utime_lo low 32 bits of a 64 bit timestamp with microsecond granularity
+   * @param dx the x component of the motion vector
+   * @param dy the y component of the motion vector
+   * @param dx_unaccel the x component of the unaccelerated motion vector
+   * @param dy_unaccel the y component of the unaccelerated motion vector
+   */
+  void (*relative_motion)(void *data,
+        struct zwp_relative_pointer_v1 *zwp_relative_pointer_v1,
+        uint32_t utime_hi,
+        uint32_t utime_lo,
+        wl_fixed_t dx,
+        wl_fixed_t dy,
+        wl_fixed_t dx_unaccel,
+        wl_fixed_t dy_unaccel);
 };
 
 /**
@@ -242,10 +242,10 @@ struct zwp_relative_pointer_v1_listener {
  */
 static inline int
 zwp_relative_pointer_v1_add_listener(struct zwp_relative_pointer_v1 *zwp_relative_pointer_v1,
-				     const struct zwp_relative_pointer_v1_listener *listener, void *data)
+             const struct zwp_relative_pointer_v1_listener *listener, void *data)
 {
-	return wl_proxy_add_listener((struct wl_proxy *) zwp_relative_pointer_v1,
-				     (void (**)(void)) listener, data);
+  return wl_proxy_add_listener((struct wl_proxy *) zwp_relative_pointer_v1,
+             (void (**)(void)) listener, data);
 }
 
 #define ZWP_RELATIVE_POINTER_V1_DESTROY 0
@@ -264,20 +264,20 @@ zwp_relative_pointer_v1_add_listener(struct zwp_relative_pointer_v1 *zwp_relativ
 static inline void
 zwp_relative_pointer_v1_set_user_data(struct zwp_relative_pointer_v1 *zwp_relative_pointer_v1, void *user_data)
 {
-	wl_proxy_set_user_data((struct wl_proxy *) zwp_relative_pointer_v1, user_data);
+  wl_proxy_set_user_data((struct wl_proxy *) zwp_relative_pointer_v1, user_data);
 }
 
 /** @ingroup iface_zwp_relative_pointer_v1 */
 static inline void *
 zwp_relative_pointer_v1_get_user_data(struct zwp_relative_pointer_v1 *zwp_relative_pointer_v1)
 {
-	return wl_proxy_get_user_data((struct wl_proxy *) zwp_relative_pointer_v1);
+  return wl_proxy_get_user_data((struct wl_proxy *) zwp_relative_pointer_v1);
 }
 
 static inline uint32_t
 zwp_relative_pointer_v1_get_version(struct zwp_relative_pointer_v1 *zwp_relative_pointer_v1)
 {
-	return wl_proxy_get_version((struct wl_proxy *) zwp_relative_pointer_v1);
+  return wl_proxy_get_version((struct wl_proxy *) zwp_relative_pointer_v1);
 }
 
 /**
@@ -286,8 +286,8 @@ zwp_relative_pointer_v1_get_version(struct zwp_relative_pointer_v1 *zwp_relative
 static inline void
 zwp_relative_pointer_v1_destroy(struct zwp_relative_pointer_v1 *zwp_relative_pointer_v1)
 {
-	wl_proxy_marshal_flags((struct wl_proxy *) zwp_relative_pointer_v1,
-			 ZWP_RELATIVE_POINTER_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_relative_pointer_v1), WL_MARSHAL_FLAG_DESTROY);
+  wl_proxy_marshal_flags((struct wl_proxy *) zwp_relative_pointer_v1,
+       ZWP_RELATIVE_POINTER_V1_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) zwp_relative_pointer_v1), WL_MARSHAL_FLAG_DESTROY);
 }
 
 #ifdef  __cplusplus
