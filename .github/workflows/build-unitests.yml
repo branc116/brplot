@@ -9,6 +9,7 @@ on:
       - '.github/workflows/build-unitests.yml'
       - 'external/**'
       - 'nob.c'
+      - 'tests/**'
 
 permissions:
   contents: read
