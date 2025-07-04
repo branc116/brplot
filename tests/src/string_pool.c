@@ -109,5 +109,29 @@ TEST_CASE(string_pool_resize2) {
   br_str_free(s2);
 }
 
+TEST_CASE(string_pool_read_write) {
+  brsp_t sp = { 0 };
+  brsp_id_t t = brsp_new(&sp);
+  br_str_t s = { 0 };
+  for (int i = 0; i < 129; ++i) {
+    br_str_push_char(&s, 'c');
+    brsp_set(&sp, t, br_str_as_view(s));
+  }
+  brsp_write(NULL, &sp);
+
+  brsp_remove(&sp, t);
+  brsp_free(&sp);
+  br_str_free(s);
+
+  brsp_t sp2 = { 0 };
+  brsp_read(NULL, &sp2);
+  br_strv_t news = brsp_get(sp2, t);
+  TEST_EQUAL(news.len, 129);
+  for (int i = 0; i < 129; ++i) {
+    TEST_EQUAL(news.str[i], 'c');
+  }
+  brsp_free(&sp);
+}
+
 int main(void) {}
 // clang -fsanitize=address -ggdb -I. tests/src/string_pool.c -o bin/string_pool_tests && bin/string_pool_tests --unittest
