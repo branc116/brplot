@@ -1,11 +1,9 @@
 #include "src/br_pp.h"
 
-#if defined(BR_UNIT_TEST)
-#  include "src/br_math.h"
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-#  include "external/tests.h"
-#  pragma GCC diagnostic pop
+#include "src/br_math.h"
+#define BR_UNIT_TEST
+#define BR_UNIT_TEST_IMPLEMENTATION
+#include "external/tests.h"
 
 TEST_CASE(vec2s) {
   br_vec2_t a = BR_VEC2(1.f, 2.f), b = BR_VEC2(3.f, 5.f);
@@ -60,4 +58,5 @@ TEST_CASE(vec3s) {
   res = br_vec3_perpendicular(BR_VEC3(1,0,0));
   TEST_EQUALF(br_vec3_dot(res, BR_VEC3(1,0,0)), 0.f);
 }
-#endif
+
+int main(void) {}

@@ -1092,6 +1092,26 @@ static bool n_unittests_do(void) {
   nob_cmd_append(&cmd, "./bin/brplot" EXE_EXT, "--unittest");
 
   if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
+
+  static struct { char const *test_file, *out_bin; } test_programs[] = {
+    { .test_file = "./tests/src/str.c", .out_bin  = "bin/test_str" EXE_EXT },
+    { .test_file = "./tests/src/free_list.c", .out_bin  = "bin/test_fl" EXE_EXT },
+    { .test_file = "./tests/src/math.c", .out_bin  = "bin/test_math" EXE_EXT },
+    { .test_file = "./tests/src/string_pool.c", .out_bin  = "bin/string_pool" EXE_EXT },
+  };
+
+  for (size_t i = 0; i < ARR_LEN(test_programs); ++i) {
+    LOGI("-------------- START TESTS ------------------");
+    LOGI("------------- %15s -> %15s ------------------", test_programs[i].test_file, test_programs[i].out_bin);
+    cmd.count = 0;
+    nob_cmd_append(&cmd, compiler, "-I.", "-o", test_programs[i].out_bin, test_programs[i].test_file);
+    nob_cmd_append(&cmd, "-ggdb", "-DBR_DEBUG");
+    if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
+    nob_cmd_append(&cmd, test_programs[i].out_bin, "--unittest");
+    if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
+    LOGI("-------------- END TESTS ------------------");
+  }
+
   LOGI("Unit tests ok");
   return true;
 }

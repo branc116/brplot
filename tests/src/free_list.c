@@ -1,4 +1,3 @@
-#define BR_DEBUG
 #include "src/br_pp.h"
 #define BR_FREAD test_read
 #define BR_FWRITE test_write
