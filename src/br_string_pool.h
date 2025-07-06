@@ -24,6 +24,10 @@
 #  define BR_FREAD fread
 #endif
 
+#if !defined(BR_FILE_T)
+#  define BR_FILE_T FILE
+#endif
+
 #if !defined(BR_FWRITE)
 #  define BR_FWRITE fwrite
 #endif
@@ -68,8 +72,8 @@ brsp_id_t brsp_copy(brsp_t* sp, brsp_id_t id);
 bool brsp_compress(brsp_t* sp, float factor, int slack);
 void brsp_free(brsp_t* sp);
 
-bool brsp_write(FILE* file, brsp_t* sp);
-bool brsp_read(FILE* file, brsp_t* sp);
+bool brsp_write(BR_FILE_T* file, brsp_t* sp);
+bool brsp_read(BR_FILE_T* file, brsp_t* sp);
 
 
 #if defined(BRSP_IMPLEMENTATION)
@@ -88,12 +92,13 @@ brsp_id_t brsp_new1(brsp_t* sp, int size) {
   } else {
     brfl_foreach_free(i, *sp) {
       brsp_node_t node = br_da_get(*sp, i);
+      LOGI("i = %d, fllen = %d", i, sp->len);
       if (node.cap >= size) {
         if (prev == -1) sp->free_next      = sp->free_arr[i];
         else            sp->free_arr[prev] = sp->free_arr[i];
         sp->free_arr[i] = -1;
         ++sp->free_len;
-        return i;
+        return i + 1;
       } else if (node.cap == -1) {
         if (prev == -1) sp->free_next      = sp->free_arr[i];
         else            sp->free_arr[prev] = sp->free_arr[i];
@@ -103,7 +108,7 @@ brsp_id_t brsp_new1(brsp_t* sp, int size) {
         node.cap = size;
         node.len = 0;
         br_str_push_uninitialized(&sp->pool, (uint32_t)size);
-        return i;
+        return i + 1;
       }
       prev = i;
     }
@@ -197,6 +202,7 @@ void brsp_insert_char_at_end(brsp_t* sp, brsp_id_t id, char c) {
 
 void brsp_insert_strv_at_end(brsp_t* sp, brsp_id_t id, br_strv_t sv) {
   brsp_node_t* node = br_da_getp(*sp, id - 1);
+  LOGI("node start_index: %d len: %d", node->start_index, node->len);
   int old_loc = node->start_index;
   if (brsp_resize(sp, id, node->len + (int)sv.len)) {
     node = br_da_getp(*sp, id - 1);
@@ -297,7 +303,7 @@ void brsp_free(brsp_t* sp) {
   brfl_free(*sp);
 }
 
-bool brsp_write(FILE* file, brsp_t* sp) {
+bool brsp_write(BR_FILE_T* file, brsp_t* sp) {
   brsp_compress(sp, 1.f, 0);
 
   int error = false;
@@ -309,7 +315,7 @@ bool brsp_write(FILE* file, brsp_t* sp) {
   return true;
 }
 
-bool brsp_read(FILE* file, brsp_t* sp) {
+bool brsp_read(BR_FILE_T* file, brsp_t* sp) {
   int error = 0;
   bool success = true;
   int i = 0;
@@ -318,9 +324,21 @@ bool brsp_read(FILE* file, brsp_t* sp) {
   memset(sp, 0, sizeof(*sp));
   brfl_read(file, (*sp), error); if (error != 0)                         BR_ERROR("Failed to read free list");
   sp->pool.str = NULL;
+  if (sp->pool.cap == 0) {
+    brsp_free(sp);
+    memset(sp, 0, sizeof(*sp));
+    return true;
+  }
   if (sp->len < 0)                                                       BR_ERROR("string pool length %d < 0", sp->len);
+  if (sp->pool.len > sp->pool.cap)                                       BR_ERROR("string pool length %d is bigger than cap %d.", sp->pool.len, sp->pool.cap); 
+  if (sp->pool.cap > 0xFFFFF)                                            BR_ERROR("string pool len must be less than 0xFFFFF, it's %d", sp->pool.cap);
   for (i = 0; i < sp->len; ++i) {
     n = br_da_get(*sp, i);
+    if (n.start_index < -1)                                              BR_ERROR("Start index is: %d", n.start_index);
+    if (n.len < -1)                                                      BR_ERROR("Len is: %d", n.len);
+    if (n.start_index > (int)sp->pool.len)                               BR_ERROR("Start index is: %d, pool len: %u", n.start_index, sp->pool.len);
+    if ((uint32_t)n.cap > (int)sp->pool.len)                             BR_ERROR("Start cap is: %d, pool len: %u", n.cap, sp->pool.len);
+    if ((uint32_t)n.cap < (int)n.len)                                    BR_ERROR("Node cap: %d, Node len: %u", n.cap, n.len);
     if (n.start_index >= 0 && n.start_index + n.cap > (int)sp->pool.len) BR_ERROR("i=%d, start_index = %d < 0, start_index + cap = %d > pool.len = %d", i, n.start_index, n.start_index + n.cap, sp->pool.len);
   }
   sp->pool.str = BR_MALLOC(sp->pool.cap);
@@ -333,6 +351,7 @@ error:
   success = false;
 
 done:
+  LOGI("sp->poll.cap: %d, sp->pool.len: %d, sp->len: %d, sp->cap: %d, sp->free_len: %d", sp->pool.cap, sp->pool.len, sp->len, sp->cap, sp->free_len);
   return success;
 }
 

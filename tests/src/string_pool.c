@@ -1,8 +1,19 @@
+typedef struct {
+  unsigned char* arr;
+  int len, cap;
+  int read_index;
+} br_test_file_t;
+
+#if defined(FUZZ)
+//#  define BR_DISABLE_LOG
+#endif
+
 #define BR_FREAD test_read
 #define BR_FWRITE test_write
+#define BR_FILE_T br_test_file_t
 #include "src/br_pp.h"
-static size_t test_read(void* dest, size_t el_size, size_t n, void* null);
-static size_t test_write(void* src, size_t el_size, size_t n, void* null);
+static size_t test_read(void* dest, size_t el_size, size_t n, br_test_file_t* null);
+static size_t test_write(void* src, size_t el_size, size_t n, br_test_file_t* null);
 
 #include <errno.h>
 
@@ -16,26 +27,33 @@ static size_t test_write(void* src, size_t el_size, size_t n, void* null);
 #define BRSP_IMPLEMENTATION
 #include "src/br_string_pool.h"
 
+
 #define MEM_FILE_CAP 4096
 static BR_THREAD_LOCAL unsigned char mem_file[MEM_FILE_CAP];
 static BR_THREAD_LOCAL int mem_file_pointer_read;
 static BR_THREAD_LOCAL int mem_file_pointer_write;
 
-static size_t test_read(void* dest, size_t el_size, size_t n, void* null) {
-  (void)null;
+static size_t test_read(void* dest, size_t el_size, size_t n, br_test_file_t* d) {
   size_t size = n * el_size;
-  memcpy(dest, mem_file + mem_file_pointer_read, size);
-  mem_file_pointer_read += size;
-  BR_ASSERT(mem_file_pointer_read <= mem_file_pointer_write);
+  if (size + d->read_index > d->len) {
+    errno = 1;
+    return 0;
+  }
+  memcpy(dest, d->arr + d->read_index, size);
+  d->read_index += size;
+  BR_ASSERT(d->read_index <= d->len);
   return n;
 }
 
-static size_t test_write(void* src, size_t el_size, size_t n, void* null) {
-  (void)null;
+static size_t test_write(void* src, size_t el_size, size_t n, br_test_file_t* d) {
   size_t size = n * el_size;
-  memcpy(mem_file + mem_file_pointer_write, src, size);
-  mem_file_pointer_write += size;
-  BR_ASSERT(mem_file_pointer_write <= MEM_FILE_CAP);
+  if (d->cap < d->len + size) {
+    errno = 2;
+    return 0;
+  }
+  memcpy(d->arr + d->len, src, size);
+  d->len += size;
+  BR_ASSERT(d->len <= d->cap);
   return n;
 }
 
@@ -119,15 +137,16 @@ TEST_CASE(string_pool_read_write) {
     br_str_push_char(&s, 'c');
     brsp_set(&sp, t, br_str_as_view(s));
   }
+  br_test_file_t tf = { .arr = mem_file, .len = 0, .cap = sizeof(mem_file), .read_index = 0 };
   TEST_EQUAL(sp.free_len, 1);
-  brsp_write(NULL, &sp);
+  brsp_write(&tf, &sp);
 
   brsp_remove(&sp, t);
   brsp_free(&sp);
   br_str_free(s);
 
   brsp_t sp2 = { 0 };
-  brsp_read(NULL, &sp2);
+  brsp_read(&tf, &sp2);
   br_strv_t news = brsp_get(sp2, t);
   TEST_EQUAL(news.len, 129);
   TEST_EQUAL(sp2.free_len, 1);
@@ -138,6 +157,7 @@ TEST_CASE(string_pool_read_write) {
 }
 
 TEST_CASE(string_pool_read_remove_write) {
+  br_test_file_t tf = { .arr = mem_file, .len = 0, .cap = sizeof(mem_file), .read_index = 0 };
   brsp_t sp = { 0 };
   brsp_id_t t  = brsp_new(&sp);
   brsp_id_t t2 = brsp_new(&sp);
@@ -151,13 +171,13 @@ TEST_CASE(string_pool_read_remove_write) {
   TEST_EQUAL(5, sp.free_len);
   brsp_remove(&sp, t);
   TEST_EQUAL(4, sp.free_len);
-  brsp_write(NULL, &sp);
+  brsp_write(&tf, &sp);
 
   brsp_free(&sp);
   br_str_free(s);
 
   brsp_t sp2 = { 0 };
-  brsp_read(NULL, &sp2);
+  brsp_read(&tf, &sp2);
   TEST_EQUAL(4, sp2.free_len);
   br_strv_t news = brsp_get(sp2, t2);
   TEST_EQUAL(news.str[0], 'd');
@@ -210,5 +230,32 @@ TEST_CASE(string_pool_compress) {
   brsp_free(&sp);
 }
 
+#if defined(FUZZ)
+const char* __asan_default_options(void) {
+  return "verbosity=0:"
+    "sleep_before_dying=120:"
+    "print_scariness=true:"
+    "allocator_may_return_null=1:"
+    "soft_rss_limit_mb=1512222"
+    ;
+}
+int LLVMFuzzerTestOneInput(unsigned char *str, size_t str_len) {
+  mem_file_pointer_write = str_len;
+  br_test_file_t tf = { .arr = str, .cap = str_len, .len = str_len, .read_index = 0 };
+  brsp_t sp = { 0 };
+  brsp_read(&tf, &sp);
+  brsp_id_t id = brsp_new(&sp);
+  brsp_insert_strv_at_end(&sp, id, BR_STRL("Hello"));
+  br_strv_t s = brsp_get(sp, id);
+  BR_ASSERT(s.str[0] == 'H');
+  BR_ASSERT(s.str[1] == 'e');
+  BR_ASSERT(s.str[2] == 'l');
+  BR_ASSERT(s.str[3] == 'l');
+  BR_ASSERT(s.str[4] == '0');
+  brsp_free(&sp);
+  return 0;
+}
+#else
 int main(void) {}
+#endif
 // clang -fsanitize=address -ggdb -I. tests/src/string_pool.c -o bin/string_pool_tests && bin/string_pool_tests --unittest

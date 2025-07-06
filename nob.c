@@ -48,6 +48,7 @@
   X(dist, "Create distribution zip") \
   X(pip, "Create pip egg") \
   X(unittests, "Run unit tests") \
+  X(fuzztests, "Run fuzz tests") \
   X(dot, "Create Dot file with file dependencies") \
   X(compile_commands, "Create compile_commands.json file") \
   X(help, "Print help") \
@@ -452,6 +453,41 @@ static bool gl_gen(void) {
   return do_gl_gen() == 0;
 }
 
+static bool compile_standard_flags(Nob_Cmd* cmd) {
+  nob_cmd_append(cmd, "-I.");
+  if (is_headless) {
+    nob_cmd_append(cmd, "-DBR_NO_X11", "-DBR_NO_WAYLAND", "-DHEADLESS");
+  }
+  if (is_wasm) nob_cmd_append(cmd, "-DGRAPHICS_API_OPENGL_ES3=1");
+  if (is_tracy) nob_cmd_append(cmd, "-DTRACY_ENABLE=1");
+  if (enable_asan) nob_cmd_append(cmd, SANITIZER_FLAGS);
+  if (is_debug) {
+    nob_cmd_append(cmd, "-ggdb", "-DBR_DEBUG");
+    if (has_hotreload) nob_cmd_append(cmd, "-fpic", "-fpie");
+    else nob_cmd_append(cmd, "-DBR_HAS_HOTRELOAD=0");
+  } else {
+    nob_cmd_append(cmd, "-O3", "-ggdb");
+  }
+  if (disable_logs) nob_cmd_append(cmd, "-DBR_DISABLE_LOG");
+  if (is_pedantic) {
+#if defined(__clang__)
+    nob_cmd_append(cmd, "-Wall", "-Wextra", "-Wpedantic", "-Wconversion", "-Wshadow");
+    nob_cmd_append(cmd, "-Wno-gnu-binary-literal");
+#elif defined(_MSC_VER)
+    LOGF("Pedantic flags for msvc are not known");
+#else
+    nob_cmd_append(cmd, "-Wall", "-Wextra", "-Wpedantic", "-Wconversion", "-Wshadow");
+#endif
+  }
+
+  if (is_lib) {
+    nob_cmd_append(cmd, "-DBR_LIB");
+#if !defined(_WIN32)
+    nob_cmd_append(cmd, "-fPIC");
+#endif
+  }
+}
+
 bool g_sike_compile = false;
 static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd) {
   static file_names_t names = { 0 };
@@ -489,42 +525,12 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
       }
     }
   }
-  nob_cmd_append(cmd, compiler, "-I.", "-o", build_dir.str, "-c", source.data);
+  nob_cmd_append(cmd, compiler, "-o", build_dir.str, "-c", source.data);
+  compile_standard_flags(cmd);
   if (is_macos) {
     if (0 == strcmp(source.data, "src/platform.c")) {
       nob_cmd_append(cmd, "-ObjC");
     }
-  }
-  if (is_headless) {
-    nob_cmd_append(cmd, "-DBR_NO_X11", "-DBR_NO_WAYLAND", "-DHEADLESS");
-  }
-  if (is_wasm) nob_cmd_append(cmd, "-DGRAPHICS_API_OPENGL_ES3=1");
-  if (is_tracy) nob_cmd_append(cmd, "-DTRACY_ENABLE=1");
-  if (enable_asan) nob_cmd_append(cmd, SANITIZER_FLAGS);
-  if (is_debug) {
-    nob_cmd_append(cmd, "-ggdb", "-DBR_DEBUG");
-    if (has_hotreload) nob_cmd_append(cmd, "-fpic", "-fpie");
-    else nob_cmd_append(cmd, "-DBR_HAS_HOTRELOAD=0");
-  } else {
-    nob_cmd_append(cmd, "-O3");
-  }
-  if (disable_logs) nob_cmd_append(cmd, "-DBR_DISABLE_LOG");
-  if (is_pedantic) {
-#if defined(__clang__)
-    nob_cmd_append(cmd, "-Wall", "-Wextra", "-Wpedantic", "-Wconversion", "-Wshadow");
-    nob_cmd_append(cmd, "-Wno-gnu-binary-literal");
-#elif defined(_MSC_VER)
-    LOGF("Pedantic flags for msvc are not known");
-#else
-    nob_cmd_append(cmd, "-Wall", "-Wextra", "-Wpedantic", "-Wconversion", "-Wshadow");
-#endif
-  }
-
-  if (is_lib) {
-    nob_cmd_append(cmd, "-DBR_LIB");
-#if !defined(_WIN32)
-    nob_cmd_append(cmd, "-fPIC");
-#endif
   }
   return g_sike_compile || nob_cmd_run_sync_and_reset(cmd);
 }
@@ -1098,14 +1104,15 @@ static bool n_unittests_do(void) {
     { .test_file = "./tests/src/free_list.c", .out_bin  = "bin/test_fl" EXE_EXT },
     { .test_file = "./tests/src/math.c", .out_bin  = "bin/test_math" EXE_EXT },
     { .test_file = "./tests/src/string_pool.c", .out_bin  = "bin/string_pool" EXE_EXT },
+    { .test_file = "./tests/src/da.c", .out_bin  = "bin/da" EXE_EXT },
   };
 
   for (size_t i = 0; i < ARR_LEN(test_programs); ++i) {
     LOGI("-------------- START TESTS ------------------");
     LOGI("------------- %15s -> %15s ------------------", test_programs[i].test_file, test_programs[i].out_bin);
     cmd.count = 0;
-    nob_cmd_append(&cmd, compiler, "-I.", "-o", test_programs[i].out_bin, test_programs[i].test_file);
-    nob_cmd_append(&cmd, "-ggdb", "-DBR_DEBUG");
+    nob_cmd_append(&cmd, compiler, "-o", test_programs[i].out_bin, test_programs[i].test_file);
+    compile_standard_flags(&cmd);
     if (tp_linux == g_platform) {
       nob_cmd_append(&cmd, "-lm", "-pthread");
     }
@@ -1118,6 +1125,17 @@ static bool n_unittests_do(void) {
   LOGI("Unit tests ok");
   return true;
 }
+
+static bool n_fuzztests_do(void) {
+  Nob_Cmd cmd = { 0 };
+  nob_cmd_append(&cmd, compiler, "-fsanitize=fuzzer,address,leak,undefined", "-DFUZZ", "-o", "bin/fuzz_sp", "./tests/src/string_pool.c");
+  compile_standard_flags(&cmd);
+  if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
+  nob_cmd_append(&cmd, "./bin/fuzz_sp", "-print_full_coverage=1", "-print_final_stats=1", "-print_coverage=1", "-workers=16", "-timeout=1", "-max_total_time=200", "-create_missing_dirs=1", ".generated/corpus_sp");
+  return nob_cmd_run_sync_and_reset(&cmd);
+}
+// ./bin/fuzz_sp -mutation_graph_file=1 -print_full_coverage=1 -print_final_stats=1 -print_coverage=1 -max_total_time=10 -create_missing_dirs=1 .generated/corpus_sp
+//
 
 static bool n_dot_do(void) {
   printf("digraph {\n");

@@ -64,7 +64,7 @@
 } while (0)
 
 #define brfl_foreach(INDEX, FL) for (int INDEX = brfl_next_taken((FL).free_arr, (FL).len, -1); INDEX < (FL).len; INDEX = brfl_next_taken((FL).free_arr, (FL).len, INDEX))
-#define brfl_foreach_free(INDEX, FL) for (int INDEX = (FL).free_next; INDEX > -1 && INDEX < (FL).len; INDEX = (FL).free_arr[INDEX])
+#define brfl_foreach_free(INDEX, FL) for (int INDEX = (FL).free_next, n = 0; n < (FL).len && INDEX > -1 && INDEX < (FL).len; ++n, INDEX = (FL).free_arr[INDEX])
 
 #define brfl_write(FILE, FL, ERROR) do {                                                                              \
   ERROR = 0;                                                                                                          \
@@ -107,12 +107,31 @@
     memset(&(FL), 0, sizeof(FL));                                                                                    \
     break;                                                                                                           \
   }                                                                                                                  \
+  if (0xFFFF < (FL).len) {                                                                                           \
+    ERROR = 1;                                                                                                       \
+    BR_LOGE("Upgrade to premium version of list to support lists bigger that 0xFFFF. Requesting %d", (FL).len);      \
+    memset(&(FL), 0, sizeof(FL));                                                                                    \
+    break;                                                                                                           \
+  }                                                                                                                  \
   if ((FL).len == 0) {                                                                                               \
+    memset(&(FL), 0, sizeof(FL));                                                                                    \
+    break;                                                                                                           \
+  }                                                                                                                  \
+  if ((FL).len < 0) {                                                                                                \
+    ERROR = 1;                                                                                                       \
+    BR_LOGE("Free list len ( %d ) is negative...", (FL).len);                                                        \
+    memset(&(FL), 0, sizeof(FL));                                                                                    \
+    break;                                                                                                           \
+  }                                                                                                                  \
+  if ((FL).free_len < 0) {                                                                                           \
+    ERROR = 1;                                                                                                       \
+    BR_LOGE("Free list free_len ( %d ) is negative...", (FL).free_len);                                              \
     memset(&(FL), 0, sizeof(FL));                                                                                    \
     break;                                                                                                           \
   }                                                                                                                  \
   (FL).cap = (FL).len;                                                                                               \
   {                                                                                                                  \
+    LOGI("cap = %d, len = %d", (FL).cap, (FL).len); \
     size_t size = sizeof((FL).arr[0]) * (size_t)(FL).cap;                                                            \
     (FL).arr = BR_MALLOC(size);                                                                                      \
     if (NULL == (FL).arr) {                                                                                          \
@@ -149,6 +168,16 @@
     memset(&(FL), 0, sizeof(FL));                                                                                    \
     break;                                                                                                           \
   }                                                                                                                  \
+  for (int i = 0; i < (FL).len; ++i) { \
+    if ((FL).free_arr[i] == i) { \
+      ERROR = 1;                                                                                                     \
+      LOGE("Free arr element can't have itself as an value, something bad %d.", i);                                  \
+      BR_FREE((FL).arr);                                                                                             \
+      BR_FREE((FL).free_arr);                                                                                        \
+      memset(&(FL), 0, sizeof(FL));                                                                                  \
+      break;                                                                                                         \
+    } \
+  } \
 } while(0)
 
 #define brfl_is_free(FL, i) ((FL).free_arr[i] != -1)
