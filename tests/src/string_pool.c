@@ -68,6 +68,7 @@ TEST_CASE(string_pool_init) {
   brsp_id_t t = brsp_new(&sp);
   br_strv_t str = brsp_get(sp, t);
   TEST_EQUAL(str.len, 0);
+  TEST_EQUAL(sp.free_len, 1);
   brsp_set(&sp, t, BR_STRL("HEllo"));
   brsp_remove(&sp, t);
   brsp_free(&sp);
@@ -102,6 +103,7 @@ TEST_CASE(string_pool_resize2) {
     brsp_set(&sp, t2, br_str_as_view(s2));
   }
   TEST_STRNEQUAL(s.str, brsp_get(sp, t).str, s.len);
+  TEST_EQUAL(sp.free_len, 2);
   brsp_remove(&sp, t);
   brsp_remove(&sp, t2);
   brsp_free(&sp);
@@ -117,6 +119,7 @@ TEST_CASE(string_pool_read_write) {
     br_str_push_char(&s, 'c');
     brsp_set(&sp, t, br_str_as_view(s));
   }
+  TEST_EQUAL(sp.free_len, 1);
   brsp_write(NULL, &sp);
 
   brsp_remove(&sp, t);
@@ -127,9 +130,83 @@ TEST_CASE(string_pool_read_write) {
   brsp_read(NULL, &sp2);
   br_strv_t news = brsp_get(sp2, t);
   TEST_EQUAL(news.len, 129);
+  TEST_EQUAL(sp2.free_len, 1);
   for (int i = 0; i < 129; ++i) {
     TEST_EQUAL(news.str[i], 'c');
   }
+  brsp_free(&sp);
+}
+
+TEST_CASE(string_pool_read_remove_write) {
+  brsp_t sp = { 0 };
+  brsp_id_t t  = brsp_new(&sp);
+  brsp_id_t t2 = brsp_new(&sp);
+  brsp_id_t trest[] = { brsp_new(&sp), brsp_new(&sp), brsp_new(&sp) };
+  br_str_t s = { 0 };
+  for (int i = 0; i < 129; ++i) {
+    br_str_push_char(&s, 'c');
+    brsp_set(&sp, t, br_str_as_view(s));
+  }
+  brsp_insert_char_at_end(&sp, t2, 'd');
+  TEST_EQUAL(5, sp.free_len);
+  brsp_remove(&sp, t);
+  TEST_EQUAL(4, sp.free_len);
+  brsp_write(NULL, &sp);
+
+  brsp_free(&sp);
+  br_str_free(s);
+
+  brsp_t sp2 = { 0 };
+  brsp_read(NULL, &sp2);
+  TEST_EQUAL(4, sp2.free_len);
+  br_strv_t news = brsp_get(sp2, t2);
+  TEST_EQUAL(news.str[0], 'd');
+  TEST_EQUAL(news.len, 1);
+  brsp_free(&sp);
+}
+
+TEST_CASE(string_pool_is_in) {
+  brsp_t sp = { 0 };
+  brsp_id_t t  = brsp_new(&sp);
+  TEST_EQUAL(1, brsp_is_in(sp, t));
+  TEST_EQUAL(0, brsp_is_in(sp, t + 1));
+  TEST_EQUAL(0, brsp_is_in(sp, t - 1));
+  TEST_EQUAL(0, brsp_is_in(sp, 0));
+  TEST_EQUAL(0, brsp_is_in(sp, sp.len + 1));
+  TEST_EQUAL(0, brsp_is_in(sp, 0xfffffff));
+  brsp_free(&sp);
+}
+
+TEST_CASE(string_pool_copy) {
+  brsp_t sp = { 0 };
+  brsp_id_t t  = brsp_new(&sp);
+  brsp_insert_strv_at_end(&sp, t, BR_STRL("Hello"));
+  brsp_id_t t2  = brsp_copy(&sp, t);
+  TEST_NEQUAL(t, t2);
+  br_strv_t s = brsp_get(sp, t);
+  br_strv_t s2 = brsp_get(sp, t2);
+  TEST_STRNEQUAL(s.str, s2.str, s.len); 
+  brsp_free(&sp);
+}
+
+TEST_CASE(string_pool_compress) {
+  brsp_t sp = { 0 };
+  brsp_id_t t  = brsp_new(&sp);
+  brsp_insert_strv_at_end(&sp, t, BR_STRL("Hello"));
+  brsp_insert_strv_at_end(&sp, t, BR_STRL("Hello"));
+  brsp_id_t t2  = brsp_copy(&sp, t);
+  brsp_id_t t3  = brsp_copy(&sp, t);
+  brsp_id_t t4  = brsp_copy(&sp, t);
+  brsp_compress(&sp, 1.0f, 0);
+  TEST_NEQUAL(t, t2);
+  TEST_STRNEQUAL(brsp_get(sp, t).str, brsp_get(sp, t2).str, 5);
+  TEST_STRNEQUAL(brsp_get(sp, t).str, brsp_get(sp, t3).str, 5);
+  TEST_STRNEQUAL(brsp_get(sp, t).str, brsp_get(sp, t4).str, 5);
+  brsp_remove(&sp, t3);
+  brsp_remove(&sp, t2);
+  brsp_compress(&sp, 2.0f, 16);
+  TEST_STRNEQUAL(brsp_get(sp, t).str, brsp_get(sp, t4).str, 5);
+  TEST_EQUAL(sp.free_len, 2);
   brsp_free(&sp);
 }
 

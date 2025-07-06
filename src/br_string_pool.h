@@ -116,39 +116,39 @@ brsp_id_t brsp_new1(brsp_t* sp, int size) {
   int index = sp->len;
   index = brfl_push_end(*sp, new_node);
   br_str_push_uninitialized(&sp->pool, (unsigned int)size);
-  return index;
+  return index + 1;
 }
 
 br_strv_t brsp_get(brsp_t sp, brsp_id_t t) {
-  brsp_node_t ti = br_da_get(sp, t);
+  brsp_node_t ti = br_da_get(sp, t - 1);
   return BR_STRV(sp.pool.str + ti.start_index, (uint32_t)ti.len);
 }
 
 br_strv_t brsp_try_get(brsp_t sp, brsp_id_t t) {
-  if (t <= 0 || t >= sp.len || brfl_is_free(sp, t)) return BR_STRV(NULL, 0);
+  if (t <= 0 || t > sp.len || brfl_is_free(sp, t - 1)) return BR_STRV(NULL, 0);
   return brsp_get(sp, t);
 }
 
 bool brsp_is_in(brsp_t sp, brsp_id_t t) {
-  if (t < 0) return false;
-  if (sp.len <= t) return false;
-  if (brfl_is_free(sp, t)) return false;
+  if (t <= 0) return false;
+  if (sp.len < t) return false;
+  if (brfl_is_free(sp, t - 1)) return false;
   return true;
 }
 
 void brsp_set(brsp_t* sp, brsp_id_t t, br_strv_t str) {
   brsp_resize(sp, t, (int)str.len);
-  brsp_node_t* tn = br_da_getp(*sp, t);
+  brsp_node_t* tn = br_da_getp(*sp, t - 1);
   BR_ASSERTF(tn->start_index >= 0, "Start index is %d", tn->start_index);
   memmove(&sp->pool.str[tn->start_index], str.str, str.len);
   tn->len = (int)str.len;
 }
 
 void brsp_insert_char(brsp_t* sp, brsp_id_t t, int at, unsigned char c) {
-  brsp_node_t* node = br_da_getp(*sp, t);
+  brsp_node_t* node = br_da_getp(*sp, t - 1);
   int old_loc = node->start_index;
   if (brsp_resize(sp, t, node->len + 2)) {
-    node = br_da_getp(*sp, t);
+    node = br_da_getp(*sp, t - 1);
     memmove(sp->pool.str + node->start_index, sp->pool.str + old_loc, (size_t)node->len);
   }
   for (int i = node->len; i >= at; --i) sp->pool.str[node->start_index + i + 1] = sp->pool.str[node->start_index + i];
@@ -186,48 +186,48 @@ int brsp_insert_unicode(brsp_t* sp, brsp_id_t t, int at, uint32_t u) {
 }
 
 void brsp_insert_char_at_end(brsp_t* sp, brsp_id_t id, char c) {
-  brsp_node_t* node = br_da_getp(*sp, id);
+  brsp_node_t* node = br_da_getp(*sp, id - 1);
   int old_loc = node->start_index;
   if (brsp_resize(sp, id, node->len + 2)) {
-    node = br_da_getp(*sp, id);
+    node = br_da_getp(*sp, id - 1);
     memmove(sp->pool.str + node->start_index, sp->pool.str + old_loc, (size_t)node->len);
   }
   sp->pool.str[node->start_index + node->len++] = c;
 }
 
 void brsp_insert_strv_at_end(brsp_t* sp, brsp_id_t id, br_strv_t sv) {
-  brsp_node_t* node = br_da_getp(*sp, id);
+  brsp_node_t* node = br_da_getp(*sp, id - 1);
   int old_loc = node->start_index;
   if (brsp_resize(sp, id, node->len + (int)sv.len)) {
-    node = br_da_getp(*sp, id);
+    node = br_da_getp(*sp, id - 1);
     memmove(sp->pool.str + node->start_index, sp->pool.str + old_loc, (size_t)node->len);
   }
   for (uint32_t i = 0; i < sv.len; ++i) sp->pool.str[node->start_index + node->len++] = sv.str[i];
 }
 
 void brsp_zero(brsp_t* sp, brsp_id_t id) {
-  brsp_node_t* node = br_da_getp(*sp, id);
+  brsp_node_t* node = br_da_getp(*sp, id - 1);
   int old_loc = node->start_index;
   if (brsp_resize(sp, id, node->len + 2)) {
-    node = br_da_getp(*sp, id);
+    node = br_da_getp(*sp, id - 1);
     memmove(sp->pool.str + node->start_index, sp->pool.str + old_loc, (size_t)node->len);
   }
   sp->pool.str[node->start_index + node->len] = '\0';
 }
 
 void brsp_clear(brsp_t* sp, brsp_id_t id) {
-  brsp_node_t* node = br_da_getp(*sp, id);
+  brsp_node_t* node = br_da_getp(*sp, id - 1);
   node->len = 0;
 }
 
 char brsp_remove_char_end(brsp_t* sp, brsp_id_t id) {
-  brsp_node_t* node = br_da_getp(*sp, id);
+  brsp_node_t* node = br_da_getp(*sp, id - 1);
   if (node->len > 0) --node->len;
   return sp->pool.str[node->start_index + node->len];
 }
 
 int brsp_remove_utf8_after(brsp_t* sp, brsp_id_t id, int position) {
-  brsp_node_t* node = br_da_getp(*sp, id);
+  brsp_node_t* node = br_da_getp(*sp, id - 1);
   if (node->len == 0) return 0;
   if (position >= node->len) return 0;
   int to_remove = 0;
@@ -244,13 +244,13 @@ int brsp_remove_utf8_after(brsp_t* sp, brsp_id_t id, int position) {
 
 void brsp_remove(brsp_t* sp, brsp_id_t t) {
   if (t <= 0) return;
-  brfl_remove(*sp, t);
+  brfl_remove(*sp, t - 1);
 }
 
 brsp_id_t brsp_copy(brsp_t* sp, brsp_id_t id) {
-  brsp_node_t node = br_da_get(*sp, id);
+  brsp_node_t node = br_da_get(*sp, id - 1);
   brsp_id_t ret_id = brsp_new1(sp, node.len + /* Give a bit of slack, just in case... */ 16);
-  brsp_node_t* ret_node = br_da_getp(*sp, ret_id);
+  brsp_node_t* ret_node = br_da_getp(*sp, ret_id - 1);
   memcpy(&sp->pool.str[ret_node->start_index], &sp->pool.str[node.start_index], (size_t)node.len);
   ret_node->len = node.len;
   return ret_id;
@@ -312,17 +312,20 @@ bool brsp_write(FILE* file, brsp_t* sp) {
 bool brsp_read(FILE* file, brsp_t* sp) {
   int error = 0;
   bool success = true;
+  int i = 0;
+  brsp_node_t n = { 0 };
+
   memset(sp, 0, sizeof(*sp));
-  brfl_read(file, (*sp), error); if (error != 0) BR_ERROR("Failed to read free list");
+  brfl_read(file, (*sp), error); if (error != 0)                         BR_ERROR("Failed to read free list");
   sp->pool.str = NULL;
-  if (sp->len < 0) BR_ERROR("string pool length %d < 0", sp->len);
-  for (int i = 0; i < sp->len; ++i) {
-    brsp_node_t n = br_da_get(*sp, i);
+  if (sp->len < 0)                                                       BR_ERROR("string pool length %d < 0", sp->len);
+  for (i = 0; i < sp->len; ++i) {
+    n = br_da_get(*sp, i);
     if (n.start_index >= 0 && n.start_index + n.cap > (int)sp->pool.len) BR_ERROR("i=%d, start_index = %d < 0, start_index + cap = %d > pool.len = %d", i, n.start_index, n.start_index + n.cap, sp->pool.len);
   }
   sp->pool.str = BR_MALLOC(sp->pool.cap);
-  if (NULL == sp->pool.str) BR_ERROR("Failed to allocated the pool");
-  if (sp->pool.len != BR_FREAD(sp->pool.str, 1, sp->pool.len, file)) BR_ERROR("Failed to read the pool");
+  if (NULL == sp->pool.str)                                              BR_ERROR("Failed to allocated the pool");
+  if (sp->pool.len != BR_FREAD(sp->pool.str, 1, sp->pool.len, file))     BR_ERROR("Failed to read the pool");
   goto done;
 
 error:
@@ -336,7 +339,7 @@ done:
 // STATICS
 
 static bool brsp_resize(brsp_t* sp, brsp_id_t t, int new_size) {
-  brsp_node_t tn = br_da_get(*sp, t);
+  brsp_node_t tn = br_da_get(*sp, t - 1);
   if (tn.cap >= new_size) return false;
   brfl_foreach_free(i, *sp) {
     brsp_node_t* node = br_da_getp(*sp, i);
@@ -346,7 +349,7 @@ static bool brsp_resize(brsp_t* sp, brsp_id_t t, int new_size) {
     *node = tn;
     tmp.cap = taken_cap;
     tmp.len = new_size;
-    br_da_set(*sp, t, tmp);
+    br_da_set(*sp, t - 1, tmp);
     return true;
   }
   brsp_node_t new_node = tn;
@@ -354,6 +357,7 @@ static bool brsp_resize(brsp_t* sp, brsp_id_t t, int new_size) {
   int new_id = brfl_push_end(*sp, new_node);
   sp->free_arr[new_id] = sp->free_next == -1 ? -2 : sp->free_next;
   sp->free_next = new_id;
+  --sp->free_len;
 
   int ex_size = new_size * 2;
   tn = (brsp_node_t) {
@@ -361,7 +365,7 @@ static bool brsp_resize(brsp_t* sp, brsp_id_t t, int new_size) {
     .len = tn.len,
     .cap = (int)ex_size,
   };
-  br_da_set(*sp, t, tn);
+  br_da_set(*sp, t - 1, tn);
   br_str_push_uninitialized(&sp->pool, (unsigned int)(ex_size));
   return true;
 }

@@ -57,6 +57,16 @@ static struct test_file_metadata __test_h_file;
     .present = true, .owned = _owned,                        \
   }
 
+#define TEST_NEQUAL(a, b)                                    \
+  do {                                                       \
+    if ((a) == (b)) {                                        \
+      SET_FAILURE(#a " == " #b, false);                      \
+      int aa = (int)a, bb = (int)b;                          \
+      fprintf(stderr, "%d != %d\n", aa, bb);                 \
+      return;                                                \
+    }                                                        \
+  } while (0)
+
 #define TEST_EQUAL(a, b)                                     \
   do {                                                       \
     if ((a) != (b)) {                                        \
@@ -225,6 +235,9 @@ struct test_file_metadata * test_file_head;
 
 #define TEST_CASE(name) static void __attribute__((unused)) __test_h_##name(void)
 
+#define TEST_NEQUAL(a, b)         \
+  (void)(a),                      \
+  (void)(b)
 #define TEST_EQUAL(a, b)          \
   (void)(a),                      \
   (void)(b)
