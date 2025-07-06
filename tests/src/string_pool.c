@@ -5,7 +5,7 @@ typedef struct {
 } br_test_file_t;
 
 #if defined(FUZZ)
-//#  define BR_DISABLE_LOG
+#  define BR_DISABLE_LOG
 #endif
 
 #define BR_FREAD test_read

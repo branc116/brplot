@@ -49,6 +49,9 @@ jobs:
           ./nob unittests -dpa
 
       - run: |
+          ./nob fuzztests -dpa
+
+      - run: |
           ./nob amalgam
           clang tests/hello_world.c -lm
           clang tests/animations.c -lm
