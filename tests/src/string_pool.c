@@ -5,7 +5,7 @@ typedef struct {
 } br_test_file_t;
 
 #if defined(FUZZ)
-/#  define BR_DISABLE_LOG
+//#  define BR_DISABLE_LOG
 #endif
 
 #define BR_FREAD test_read
@@ -239,7 +239,6 @@ const char* __asan_default_options(void) {
     ;
 }
 int LLVMFuzzerTestOneInput(unsigned char *str, size_t str_len) {
-  mem_file_pointer_write = str_len;
   br_test_file_t tf = { .arr = str, .cap = str_len, .len = str_len, .read_index = 0 };
   brsp_t sp = { 0 };
   brsp_read(&tf, &sp);

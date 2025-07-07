@@ -486,6 +486,7 @@ static bool compile_standard_flags(Nob_Cmd* cmd) {
     nob_cmd_append(cmd, "-fPIC");
 #endif
   }
+  return true;
 }
 
 bool g_sike_compile = false;
@@ -1250,6 +1251,10 @@ int main(int argc, char** argv) {
   }
   LOGI("Nob finsihed ok");
   return 0;
+}
+
+void br_on_fatal_error() {
+  LOGE("Fatal");
 }
 // On linux, mac, bsds
 // cc -o nob -I. nob.c -lm

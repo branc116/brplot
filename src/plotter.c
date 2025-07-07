@@ -366,3 +366,19 @@ void br_plotter_datas_deinit(br_plotter_t* br) {
   br_dagens_free(&br->dagens);
 }
 
+void br_on_fatal_error(void) {
+  br_str_t config_file = { 0 };
+  br_str_t config_file_old = { 0 };
+  br_fs_get_config_dir(&config_file);
+  br_fs_cd(&config_file, BR_STRL("plotter.br"));
+  br_str_copy2(&config_file_old, config_file);
+  br_str_push_strv(&config_file_old, BR_STRL(".old."));
+  br_str_push_float(&config_file_old, (float)brtl_time());
+  br_str_push_zero(&config_file);
+  br_str_push_zero(&config_file_old);
+
+  br_fs_move(config_file.str, config_file_old.str);
+
+  br_str_free(config_file);
+  br_str_free(config_file_old);
+}

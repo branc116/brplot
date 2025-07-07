@@ -488,4 +488,3 @@ float* brtl_cull_min(void) {
 float* brtl_min_sampling(void) {
   return &stl_br->ui.theme.ui.min_sampling;
 }
-

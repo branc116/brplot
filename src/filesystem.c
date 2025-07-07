@@ -102,6 +102,12 @@ uint32_t br_fs_crc(const void* data_p, size_t data_size, uint32_t seed) // Stole
     return ~crc;
 }
 
+bool br_fs_move(const char* from, const char* to) {
+  if (0 == rename(from, to)) return true;
+  LOGE("Failed to move file %s to %s: %s", from, to, strerror(errno));
+  return false;
+}
+
 bool br_fs_read(const char* path, br_str_t* out_content) {
   FILE* file        = NULL;
   long size         = 0;

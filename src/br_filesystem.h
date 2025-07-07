@@ -34,9 +34,11 @@ uint32_t br_fs_crc(const void* data, size_t len, uint32_t seed);
 bool br_fs_up_dir(br_str_t* cwd);
 bool br_fs_cd(br_str_t* cwd, br_strv_t path);
 
+bool br_fs_move(const char* from, const char* to);
 bool br_fs_read(const char* path, br_str_t* out_content);
 br_str_t br_fs_read1(const char* path);
 bool br_fs_list_dir(br_strv_t path, br_fs_files_t* out_files);
+
 
 #ifdef __cplusplus
 }
