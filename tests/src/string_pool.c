@@ -5,7 +5,7 @@ typedef struct {
 } br_test_file_t;
 
 #if defined(FUZZ)
-//#  define BR_DISABLE_LOG
+#  define BR_DISABLE_LOG
 #endif
 
 #define BR_FREAD test_read
@@ -59,22 +59,22 @@ static size_t test_write(void* src, size_t el_size, size_t n, br_test_file_t* d)
 static void brsp_debug(brsp_t sp) {
   int len_sum = 0;
   int cap_sum = 0;
-  LOGI("\n");
-  LOGI("sp = { .len = %d, .cap = %d, .free_len = %d, .free_next = %d .pool = { .len = %u, .cap = %u } }", sp.len, sp.cap, sp.free_len, sp.free_next, sp.pool.len, sp.pool.cap);
+  printf("\n");
+  printf("sp = { .len = %d, .cap = %d, .free_len = %d, .free_next = %d .pool = { .len = %u, .cap = %u } }\n", sp.len, sp.cap, sp.free_len, sp.free_next, sp.pool.len, sp.pool.cap);
   brfl_foreach(i, sp) {
-    LOGI("sp[%d] = { .next_free = %d, .start_index = %d, .len = %d, .cap = %d }", i, sp.free_arr[i], sp.arr[i].start_index, sp.arr[i].len, sp.arr[i].cap);
+    printf("sp[%d] = { .next_free = %d, .start_index = %d, .len = %d, .cap = %d }\n", i, sp.free_arr[i], sp.arr[i].start_index, sp.arr[i].len, sp.arr[i].cap);
     len_sum += sp.arr[i].len;
     cap_sum += sp.arr[i].cap;
   }
-  LOGI("F");
+  printf("F");
   brfl_foreach_free(i, sp) {
-    LOGI("sp[%d] = { .next_free = %d, .start_index = %d, .len = %d, .cap = %d }", i, sp.free_arr[i], sp.arr[i].start_index, sp.arr[i].len, sp.arr[i].cap);
+    printf("sp[%d] = { .next_free = %d, .start_index = %d, .len = %d, .cap = %d }\n", i, sp.free_arr[i], sp.arr[i].start_index, sp.arr[i].len, sp.arr[i].cap);
   }
-  LOGI("efficiency len/cap: %f", (float)len_sum / (float)sp.pool.cap);
-  LOGI("efficiency len/len: %f", (float)len_sum / (float)sp.pool.len);
-  LOGI("efficiency cap/len: %f", (float)cap_sum / (float)sp.pool.len);
-  LOGI("efficiency cap/cap: %f", (float)cap_sum / (float)sp.pool.cap);
-  LOGI("\n");
+  printf("efficiency len/cap: %f\n", (float)len_sum / (float)sp.pool.cap);
+  printf("efficiency len/len: %f\n", (float)len_sum / (float)sp.pool.len);
+  printf("efficiency cap/len: %f\n", (float)cap_sum / (float)sp.pool.len);
+  printf("efficiency cap/cap: %f\n", (float)cap_sum / (float)sp.pool.cap);
+  printf("\n");
 }
 
 
@@ -204,7 +204,7 @@ TEST_CASE(string_pool_copy) {
   TEST_NEQUAL(t, t2);
   br_strv_t s = brsp_get(sp, t);
   br_strv_t s2 = brsp_get(sp, t2);
-  TEST_STRNEQUAL(s.str, s2.str, s.len); 
+  TEST_STRNEQUAL(s.str, s2.str, s.len);
   brsp_free(&sp);
 }
 
@@ -242,9 +242,19 @@ int LLVMFuzzerTestOneInput(unsigned char *str, size_t str_len) {
   br_test_file_t tf = { .arr = str, .cap = str_len, .len = str_len, .read_index = 0 };
   brsp_t sp = { 0 };
   brsp_read(&tf, &sp);
+  //printf("------------");
+  //brsp_debug(sp);
   brsp_id_t id = brsp_new(&sp);
-  brsp_insert_strv_at_end(&sp, id, BR_STRL("Hello"));
+  BR_ASSERT(id > 0);
   br_strv_t s = brsp_get(sp, id);
+  brsp_node_t node = br_da_get(sp, id - 1);
+  if (s.len < 0 || node.start_index < 0 || node.len < 0 || node.cap < 0) {
+    brsp_debug(sp);
+    BR_ASSERT(0);
+    *(volatile int*)0;
+  }
+  brsp_insert_strv_at_end(&sp, id, BR_STRL("Hello"));
+  s = brsp_get(sp, id);
   BR_ASSERT(s.str[0] == 'H');
   BR_ASSERT(s.str[1] == 'e');
   BR_ASSERT(s.str[2] == 'l');
@@ -255,5 +265,6 @@ int LLVMFuzzerTestOneInput(unsigned char *str, size_t str_len) {
 }
 #else
 int main(void) {}
+void br_on_fatal_error(void) {}
 #endif
 // clang -fsanitize=address -ggdb -I. tests/src/string_pool.c -o bin/string_pool_tests && bin/string_pool_tests --unittest

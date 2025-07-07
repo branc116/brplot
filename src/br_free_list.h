@@ -1,6 +1,8 @@
 #pragma once
+#include "src/br_da.h"
 /* for size_t */
 #include <stdlib.h>
+#include <stdbool.h>
 
 #if !defined(BR_ASSERT)
 #  define BR_ASSERT(EXPR)
@@ -175,8 +177,16 @@
       BR_FREE((FL).free_arr);                                                                                        \
       memset(&(FL), 0, sizeof(FL));                                                                                  \
       break;                                                                                                         \
-    } \
-  } \
+    }                                                                                                                \
+  }                                                                                                                  \
+  if (false == brfl_is_valid((FL).free_arr, (FL).len, (FL).free_next, (FL).free_len)) {                              \
+      ERROR = 1;                                                                                                     \
+      BR_LOGE("Free arr is not valid");                                                                              \
+      BR_FREE((FL).arr);                                                                                             \
+      BR_FREE((FL).free_arr);                                                                                        \
+      memset(&(FL), 0, sizeof(FL));                                                                                  \
+      break;                                                                                                         \
+  }                                                                                                                  \
 } while(0)
 
 #define brfl_is_free(FL, i) ((FL).free_arr[i] != -1)
@@ -185,6 +195,7 @@ BR_THREAD_LOCAL extern int brfl__ret_handle;
 int brfl_push_internal_get_handle(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, const char* file, int line);
 int brfl_push_end_internal_get_handle(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, const char* file, int line);
 int brfl_next_taken(int const* free_arr, int len, int index);
+bool brfl_is_valid(int const* free_arr, int len, int free_next, int free_len);
 
 #if defined(BRFL_IMPLEMENTATION)
 #include <stdio.h>
@@ -326,6 +337,47 @@ int brfl_push_end_internal_get_handle(void** const arrp, int** const free_arrp, 
 int brfl_next_taken(int const* free_arr, int len, int index) {
   for (++index; index < len; ++index) if (free_arr[index] == -1) return index;
   return index;
+}
+
+bool brfl_is_valid(int const* free_arr, int len, int free_next, int free_len) {
+  struct { int* arr; size_t len, cap; } visited = { 0 };
+  bool success = true;
+  int i = 0;
+  bool contains = false;
+
+  if (free_next == -1)  {
+    for (i = 0; i < len; ++i) if (free_arr[i] != -1) BR_ERROR("Invalid");
+    if (len == free_len) goto done;
+    else BR_ERROR("Invalid len: %d, free_len: %d", len, free_len);
+  }
+  if (free_next < 0)    BR_ERROR("invalid free_next: %d", free_next);
+  if (free_next >= len) BR_ERROR("invalid free_next: %d", free_next);
+  br_da_push(visited, free_next);
+  for (i = 0; i < len; ++i) {
+    int nf = free_arr[i];
+    if (nf >= 0) {
+      if (nf >= len) BR_ERROR("bad nf: %d", nf);
+      br_da_contains(visited, nf, contains);
+      if (contains) BR_ERROR("%d is freed twice", nf);
+      br_da_push(visited, nf);
+    } else if (nf < -2) {
+      BR_ERROR("%d is not valid", nf);
+    } else if (nf == -1) {
+      --free_len;
+    }
+  }
+  if (free_len != 0) BR_ERROR("free_len: %d", free_len);
+  goto done;
+
+error:
+  success = false;
+
+done:
+//printf("len: %d, free_next: %d, free_len: %d, arr: ", len, free_next, free_len);
+//for (int i = 0; i < len; ++i) printf("%d ", free_arr[i]);
+//printf("\n");
+  br_da_free(visited);
+  return success;
 }
 
 #endif

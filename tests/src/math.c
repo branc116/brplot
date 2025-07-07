@@ -60,3 +60,4 @@ TEST_CASE(vec3s) {
 }
 
 int main(void) {}
+void br_on_fatal_error(void) {}
