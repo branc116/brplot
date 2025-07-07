@@ -639,4 +639,5 @@ int main(int argc, char const * const* argv) {
   }
   return 0;
 }
+void br_on_fatal_error(void) {}
 #endif
