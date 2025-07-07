@@ -538,7 +538,8 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
 
 static bool compile_and_link(Nob_Cmd* cmd) {
   Nob_Cmd link_command = { 0 };
-  nob_cmd_append(&link_command, compiler, "-ggdb");
+  if (is_slib) nob_cmd_append(&link_command, "ar", "rcs", "bin/brplot" SLIB_EXT);
+  else nob_cmd_append(&link_command, compiler, "-ggdb");
 
   for (size_t i = 0; i < NOB_ARRAY_LEN(sources); ++i) {
     if (false == compile_one(cmd, nob_sv_from_cstr(sources[i]), &link_command)) return false;
@@ -563,20 +564,20 @@ static bool compile_and_link(Nob_Cmd* cmd) {
     }
   } else {
     if (is_tracy) nob_cmd_append(&link_command, "-l:libTracyClient.a", "-lstdc++");
-    if (is_slib) nob_cmd_append(&link_command, "-o", "bin/brplot" SLIB_EXT);
+    if (is_slib);
     else if (is_lib) nob_cmd_append(&link_command, "-shared", "-fPIC", "-o", "bin/brplot" LIB_EXT);
     else {
       if (has_hotreload) {
         nob_cmd_append(&link_command, "-fpic", "-fpie", "-rdynamic", "-ldl");
       }
       nob_cmd_append(&link_command, "-o", "bin/brplot" EXE_EXT);
-    }
-    if (tp_linux == g_platform) {
-      nob_cmd_append(&link_command, "-lm", "-pthread");
+      if (tp_linux == g_platform) {
+        nob_cmd_append(&link_command, "-lm", "-pthread");
+      }
     }
   }
 
-  if (enable_asan) nob_cmd_append(&link_command, SANITIZER_FLAGS);
+  if (false == is_slib && enable_asan) nob_cmd_append(&link_command, SANITIZER_FLAGS);
   bool ret = nob_cmd_run_sync_and_reset(&link_command);
   BR_ASSERT(ret);
   nob_cmd_free(link_command);
@@ -1022,9 +1023,10 @@ static bool n_dist_do(void) {
   if (false == nob_copy_file("include/brplot.h", PINC "/brplot.h")) return false;
   if (false == n_amalgam_do()) return false;
   if (false == nob_copy_file(".generated/brplot.c", PINC "/brplot.c")) return false;
+  if (false == nob_copy_file(".generated/FULL_LICENSE", PSHARE "/licenses/brplot/LICENSE")) return false;
 
   Nob_Cmd cmd = { 0 };
-  nob_cmd_append(&cmd, "tar", "-C", DIST, "czf", "brplot-" BR_VERSION_STR ".tar.gz", "brplot-" BR_VERSION_STR);
+  nob_cmd_append(&cmd, "tar", "czf", "brplot-" BR_VERSION_STR ".tar.gz", "-C", DIST, "brplot-" BR_VERSION_STR);
   if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
   nob_cmd_free(cmd);
     
@@ -1066,7 +1068,7 @@ static bool n_pip_do(void) {
     if (false == nob_mkdir_if_not_exists("packages/pip/src")) return false;
     if (false == nob_mkdir_if_not_exists("packages/pip/src/brplot")) return false;
     Nob_String_Builder pytoml = { 0 };
-    if (false == nob_copy_file("dist/brplot/share/licenses/brplot/LICENSE", "packages/pip/LICENSE")) return false;
+    if (false == nob_copy_file(PSHARE "/licenses/brplot/LICENSE", "packages/pip/LICENSE")) return false;
     if (false == nob_copy_file("README.md", "packages/pip/README.md")) return false;
     if (false == nob_copy_file(".generated/brplot.c", "packages/pip/src/brplot/brplot.c")) return false;
     if (false == nob_read_entire_file("packages/pip/pyproject.toml.in", &pytoml)) return false;

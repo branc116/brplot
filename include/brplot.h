@@ -81,37 +81,14 @@ extern "C" {
  * For more  details what each parameter means jump to *PARAMETER_DEFINITIONS*
  * */
 typedef int br_data_id;
-BR_EXPORT br_data_id brp_1   (double x,                                            br_data_id data_id);
-BR_EXPORT br_data_id brp_1n  (double const* points, int n,                         br_data_id data_id);
-BR_EXPORT br_data_id brp_1ns (double const* points, int n, int stride, int offset, br_data_id data_id);
+BR_EXPORT br_data_id brp_1 (double x,                     br_data_id data_id);
+BR_EXPORT br_data_id brp_f1(float x,                      br_data_id data_id);
 
-BR_EXPORT br_data_id brp_2   (double x, double y,                                                                br_data_id data_id);
-BR_EXPORT br_data_id brp_2n  (double const* v,                    int n,                                         br_data_id data_id);
-BR_EXPORT br_data_id brp_2ns (double const* v,                    int n, int stride, int offset_x, int offset_y, br_data_id data_id);
-BR_EXPORT br_data_id brp_2nd (double const* xs, double const* ys, int n,                                         br_data_id data_id);
-BR_EXPORT br_data_id brp_2nds(double const* xs, double const* ys, int n, int stride, int offset_x, int offset_y, br_data_id data_id);
+BR_EXPORT br_data_id brp_2 (double x, double y,           br_data_id data_id);
+BR_EXPORT br_data_id brp_f2(float x,   float y,           br_data_id data_id);
 
-BR_EXPORT br_data_id brp_3   (double x, double y, double z,                                                                                      br_data_id data_id);
-BR_EXPORT br_data_id brp_3n  (double const* v,                                      int n,                                                       br_data_id data_id);
-BR_EXPORT br_data_id brp_3ns (double const* v,                                      int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
-BR_EXPORT br_data_id brp_3nd (double const* xs, double const* ys, double const* zs, int n,                                                       br_data_id data_id);
-BR_EXPORT br_data_id brp_3nds(double const* xs, double const* ys, double const* zs, int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
-
-BR_EXPORT br_data_id brp_f1   (float x,                                            br_data_id data_id);
-BR_EXPORT br_data_id brp_f1n  (float const* points, int n,                         br_data_id data_id);
-BR_EXPORT br_data_id brp_f1ns (float const* points, int n, int stride, int offset, br_data_id data_id);
-
-BR_EXPORT br_data_id brp_f2   (float x, float y,                                                                br_data_id data_id);
-BR_EXPORT br_data_id brp_f2n  (float const* v,                   int n,                                         br_data_id data_id);
-BR_EXPORT br_data_id brp_f2ns (float const* v,                   int n, int stride, int offset_x, int offset_y, br_data_id data_id);
-BR_EXPORT br_data_id brp_f2nd (float const* xs, float const* ys, int n,                                         br_data_id data_id);
-BR_EXPORT br_data_id brp_f2nds(float const* xs, float const* ys, int n, int stride, int offset_x, int offset_y, br_data_id data_id);
-
-BR_EXPORT br_data_id brp_f3   (float x, float y, float z,                                                                                      br_data_id data_id);
-BR_EXPORT br_data_id brp_f3n  (float const* v,                                    int n,                                                       br_data_id data_id);
-BR_EXPORT br_data_id brp_f3ns (float const* v,                                    int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
-BR_EXPORT br_data_id brp_f3nd (float const* xs, float const* ys, float const* zs, int n,                                                       br_data_id data_id);
-BR_EXPORT br_data_id brp_f3nds(float const* xs, float const* ys, float const* zs, int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
+BR_EXPORT br_data_id brp_3 (double x, double y, double z, br_data_id data_id);
+BR_EXPORT br_data_id brp_f3(float x,   float y,  float z, br_data_id data_id);
 
 // Change data label
 BR_EXPORT void brp_label(const char* label, br_data_id data_id);

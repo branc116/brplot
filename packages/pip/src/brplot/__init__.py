@@ -38,7 +38,7 @@ def Private__bad_arguments(a, b = None, c = None):
     raise Exception(f"Bad argument types: ({type(a)}){a}, ({type(b)}){b}, ({type(c)}){c}")
 
 def plot(a, b = None, c = None):
-    if Private__is_number(a): 
+    if Private__is_number(a):
         if b is None and c is None:
             brplot.brp_1(ctypes.c_double(a), ctypes.c_int32(BrId.value))
         elif isinstance(b, int) and c is None:
@@ -64,6 +64,21 @@ def plot(a, b = None, c = None):
             for (x, y) in zip(a, b):
                 brplot.brp_2(ctypes.c_double(x), ctypes.c_double(y), ctypes.c_int32(c))
             BrId.value = c
+        else:
+            Private__bad_arguments(a, b, c)
+    else:
+        Private__bad_arguments(a, b, c)
+
+def plot3d(a, b = None, c = None, d = None):
+    if Private__is_number(a):
+        if Private__is_number(b):
+            if Private__is_number(c):
+                if Private__is_number(d):
+                    brplot.brp_3(ctypes.c_double(a), ctypes.c_double(b), ctypes.c_double(c), ctypes.c_int32(d))
+                else:
+                    Private__bad_arguments(a, b, c)
+            else:
+                Private__bad_arguments(a, b, c)
         else:
             Private__bad_arguments(a, b, c)
     else:

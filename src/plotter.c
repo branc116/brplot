@@ -258,9 +258,28 @@ void br_plotter_data_remove(br_plotter_t* br, int group_id) {
 void br_plotter_frame_end(br_plotter_t* br) {
   for (size_t i = 0; i < br->groups.len; ++i) {
     if (br->groups.arr[i].is_new == false) continue;
+    bool any_added = false;
     for (int j = 0; j < br->plots.len; ++j) {
-      if (br->plots.arr[j].kind == br_plot_kind_2d && br->groups.arr[i].kind == br_data_kind_3d) continue;
-      br_da_push_t(int, br->plots.arr[j].data_info, BR_PLOT_DATA(br->groups.arr[i].group_id));
+      if (br->plots.arr[j].kind == br_plot_kind_2d && br->groups.arr[i].kind == br_data_kind_2d) {
+        br_da_push_t(int, br->plots.arr[j].data_info, BR_PLOT_DATA(br->groups.arr[i].group_id));
+        any_added = true;
+      } else if (br->plots.arr[j].kind == br_plot_kind_3d) {
+        br_da_push_t(int, br->plots.arr[j].data_info, BR_PLOT_DATA(br->groups.arr[i].group_id));
+        any_added = true;
+      }
+    }
+    if (false == any_added) {
+      switch (br->groups.arr[i].kind) {
+        case br_data_kind_2d: {
+          int id = br_plotter_add_plot_2d(br);
+          br_da_push_t(int, br->plots.arr[id].data_info, BR_PLOT_DATA(br->groups.arr[i].group_id));
+        } break;
+        case br_data_kind_3d: {
+          int id = br_plotter_add_plot_3d(br);
+          br_da_push_t(int, br->plots.arr[id].data_info, BR_PLOT_DATA(br->groups.arr[i].group_id));
+        } break;
+        default: BR_UNREACHABLE("Kind: %d", br->groups.arr[i].kind);
+      }
     }
     br->groups.arr[i].is_new = false;
   }
