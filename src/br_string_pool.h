@@ -337,8 +337,8 @@ bool brsp_read(BR_FILE_T* file, brsp_t* sp) {
     if (n.start_index < -1)                                              BR_ERROR("Start index is: %d", n.start_index);
     if (n.len < -1)                                                      BR_ERROR("Len is: %d", n.len);
     if (n.start_index > (int)sp->pool.len)                               BR_ERROR("Start index is: %d, pool len: %u", n.start_index, sp->pool.len);
-    if ((uint32_t)n.cap > (int)sp->pool.len)                             BR_ERROR("Start cap is: %d, pool len: %u", n.cap, sp->pool.len);
-    if ((uint32_t)n.cap < (int)n.len)                                    BR_ERROR("Node cap: %d, Node len: %u", n.cap, n.len);
+    if (n.cap > 0 && n.cap > (int)sp->pool.len)                          BR_ERROR("Start cap is: %d, pool len: %u", n.cap, sp->pool.len);
+    if (n.cap > 0 && n.cap < (int)n.len)                                 BR_ERROR("Node cap: %d, Node len: %u", n.cap, n.len);
     if (n.start_index >= 0 && n.start_index + n.cap > (int)sp->pool.len) BR_ERROR("i=%d, start_index = %d < 0, start_index + cap = %d > pool.len = %d", i, n.start_index, n.start_index + n.cap, sp->pool.len);
   }
   sp->pool.str = BR_MALLOC(sp->pool.cap);

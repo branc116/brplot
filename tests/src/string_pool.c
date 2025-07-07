@@ -5,7 +5,7 @@ typedef struct {
 } br_test_file_t;
 
 #if defined(FUZZ)
-#  define BR_DISABLE_LOG
+/#  define BR_DISABLE_LOG
 #endif
 
 #define BR_FREAD test_read
@@ -30,12 +30,10 @@ static size_t test_write(void* src, size_t el_size, size_t n, br_test_file_t* nu
 
 #define MEM_FILE_CAP 4096
 static BR_THREAD_LOCAL unsigned char mem_file[MEM_FILE_CAP];
-static BR_THREAD_LOCAL int mem_file_pointer_read;
-static BR_THREAD_LOCAL int mem_file_pointer_write;
 
 static size_t test_read(void* dest, size_t el_size, size_t n, br_test_file_t* d) {
   size_t size = n * el_size;
-  if (size + d->read_index > d->len) {
+  if ((int)size + d->read_index > d->len) {
     errno = 1;
     return 0;
   }
@@ -153,7 +151,7 @@ TEST_CASE(string_pool_read_write) {
   for (int i = 0; i < 129; ++i) {
     TEST_EQUAL(news.str[i], 'c');
   }
-  brsp_free(&sp);
+  brsp_free(&sp2);
 }
 
 TEST_CASE(string_pool_read_remove_write) {
@@ -162,6 +160,7 @@ TEST_CASE(string_pool_read_remove_write) {
   brsp_id_t t  = brsp_new(&sp);
   brsp_id_t t2 = brsp_new(&sp);
   brsp_id_t trest[] = { brsp_new(&sp), brsp_new(&sp), brsp_new(&sp) };
+  (void)trest;
   br_str_t s = { 0 };
   for (int i = 0; i < 129; ++i) {
     br_str_push_char(&s, 'c');
@@ -182,7 +181,7 @@ TEST_CASE(string_pool_read_remove_write) {
   br_strv_t news = brsp_get(sp2, t2);
   TEST_EQUAL(news.str[0], 'd');
   TEST_EQUAL(news.len, 1);
-  brsp_free(&sp);
+  brsp_free(&sp2);
 }
 
 TEST_CASE(string_pool_is_in) {
