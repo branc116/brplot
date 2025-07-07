@@ -1128,12 +1128,22 @@ static bool n_unittests_do(void) {
 }
 
 static bool n_fuzztests_do(void) {
+#define FUZZ_FLAGS "-print_final_stats=1", "-timeout=1", "-max_total_time=200", "-create_missing_dirs=1", ".generated/corpus_sp"
   Nob_Cmd cmd = { 0 };
+  is_headless = true;
+
+//  nob_cmd_append(&cmd, "clang", "-fsanitize=fuzzer,address,leak,undefined", "-DBR_DISABLE_LOG", "-DFUZZ", "-o", "bin/fuzz_read_input", "tools/unity/brplot.c");
+//  compile_standard_flags(&cmd);
+//  if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
+//  nob_cmd_append(&cmd, "./bin/fuzz_read_input", FUZZ_FLAGS);
+//  if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
+
   nob_cmd_append(&cmd, compiler, "-fsanitize=fuzzer,address,leak,undefined", "-DFUZZ", "-o", "bin/fuzz_sp", "./tests/src/string_pool.c");
   compile_standard_flags(&cmd);
   if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
-  nob_cmd_append(&cmd, "./bin/fuzz_sp", "-print_full_coverage=1", "-print_final_stats=1", "-print_coverage=1", "-workers=16", "-timeout=1", "-max_total_time=200", "-create_missing_dirs=1", ".generated/corpus_sp");
-  return nob_cmd_run_sync_and_reset(&cmd);
+  nob_cmd_append(&cmd, "./bin/fuzz_sp", FUZZ_FLAGS);
+  if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
+  return true;
 }
 // ./bin/fuzz_sp -mutation_graph_file=1 -print_full_coverage=1 -print_final_stats=1 -print_coverage=1 -max_total_time=10 -create_missing_dirs=1 .generated/corpus_sp
 //

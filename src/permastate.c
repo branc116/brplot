@@ -201,6 +201,9 @@ void br_permastate_save(br_plotter_t* br) {
   bool success                    = true;
   (void)success;
 
+#if defined(FUZZ)
+  goto error;
+#endif
   if (false == br_fs_get_config_dir(&path))                                          BR_ERROR("Failed get config path");
   br_str_to_c_str1(path, buff);
   if (false == br_fs_mkdir(br_str_sub1(path, 0)))                                    BR_ERROR("Failed to create directory");
@@ -324,6 +327,10 @@ br_permastate_status_t br_permastate_load(br_plotter_t* br_initial) {
   br_data_descs_t descs           = {0};
   bool success                    = true;
   br_plotter_t loaded_br          = *br_initial;
+
+#if defined(FUZZ)
+  goto error;
+#endif
 
   if (false == br_fs_get_config_dir(&path))                           BR_ERROR("Failed to get a config dir.");
   if (false == br_fs_cd(&path, BR_STRL("plotter.br")))                BR_ERROR("Failed to navigate to brplotter.br file.");

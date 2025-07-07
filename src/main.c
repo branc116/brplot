@@ -27,6 +27,7 @@ static void* main_gui(void* plotter) {
 }
 
 
+#if !defined(FUZZ)
 int main(void) {
   br_plotter_t* br = br_plotter_malloc();
   if (NULL == br) {
@@ -41,6 +42,7 @@ int main(void) {
 
   return 0;
 }
+#endif
 
 #if defined(__linux__) && defined(BR_DEBUG)
 const char* __asan_default_options(void) {

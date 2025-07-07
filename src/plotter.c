@@ -142,6 +142,7 @@ void br_plotter_deinit(br_plotter_t* br) {
   br_plotter_deinit_specifics_platform(br);
   BR_FREE(br->plots.arr);
   br_dagens_free(&br->dagens);
+  brsp_free(brtl_brsp());
   LOGI("Plotter deinited");
 }
 
