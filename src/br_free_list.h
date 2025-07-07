@@ -167,7 +167,7 @@
     memset(&(FL), 0, sizeof(FL));                                                                                    \
     break;                                                                                                           \
   }                                                                                                                  \
-  for (int __i = 0; __i < (FL).len; + __i) {                                                                         \
+  for (int __i = 0; __i < (FL).len; ++__i) {                                                                         \
     if ((FL).free_arr[__i] == __i) {                                                                                 \
       ERROR = 1;                                                                                                     \
       BR_LOGE("Free arr element can't have itself as an value, something bad %d.", __i);                             \
