@@ -75,7 +75,6 @@
 #define PBIN PREFIX "/bin"
 #define PINC PREFIX "/include"
 #define PSHARE PREFIX "/share"
-#define PSHARE PREFIX "/share"
 
 typedef enum target_platform_t {
   tp_linux,
