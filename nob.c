@@ -484,6 +484,8 @@ static bool compile_standard_flags(Nob_Cmd* cmd) {
 #if !defined(_WIN32)
     nob_cmd_append(cmd, "-fPIC");
 #endif
+  } else if (is_slib) {
+    nob_cmd_append(cmd, "-DBR_LIB");
   }
   return true;
 }
