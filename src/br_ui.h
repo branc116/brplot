@@ -49,6 +49,7 @@ typedef struct brui_action_t {
     struct {
       brsp_id_t id;
       int cursor_pos;
+      float offset_x, offset_x_target;
     } text;
   } args;
 } brui_action_t;

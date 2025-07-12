@@ -198,10 +198,13 @@ bool brui_text_input(brsp_id_t str_id) {
   bool changed = false;
   BRUI_LOG("Text: %.*s", strv.len, strv.str);
   br_text_renderer_t* tr = brtl_text_renderer();
+  bool is_active = brui_action_typing == ACTION && str_id == ACPARM.text.id;
+
   br_vec2_t loc = TOP.cur;
+  if (is_active) loc.x -= ACPARM.text.offset_x;
   float out_top /* neg or 0 */ = fminf(TOP.cur.y - TOP.limit.min_y, 0.f);
   float opt_height = (float)TOP.font_size + TOP.padding.y;
-  br_size_t space_left = BR_SIZE(BR_BBW(TOP.limit) - 2 * TOP.psum.x - (TOP.cur.x - (TOP.limit.min_x + TOP.psum.x)), TOP.limit.max_y - TOP.cur.y + out_top);
+  br_size_t space_left = BR_SIZE(TOP.limit.max_x - loc.x, TOP.limit.max_y - TOP.cur.y + out_top);
   br_strv_t fit = br_text_renderer_fit(tr, space_left, TOP.font_size, strv);
   br_extent_t ex = BR_EXTENT(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.cur.x, (float)TOP.font_size);
   br_bb_t text_limit = TOP.limit;
@@ -217,7 +220,7 @@ bool brui_text_input(brsp_id_t str_id) {
   TOP.cur.x = TOP.limit.min_x + TOP.psum.x;
   TOP.cur.y += opt_height;
   TOP.content_height += opt_height;
-  if (brui_action_typing == ACTION && str_id == ACPARM.text.id) {
+  if (is_active) {
     int cp = ACPARM.text.cursor_pos;
     float half_thick = 1.0f;
     br_pressed_chars_t pressed = brtl_pressed_chars();
@@ -265,6 +268,8 @@ bool brui_text_input(brsp_id_t str_id) {
     loc.x += size.width - 1.0f;
     text_limit.min_x -= 1.f;
     brui_rectangle(BR_BB(loc.x - half_thick, loc.y, loc.x + half_thick, loc.y + (float)text_height), text_limit, TOP.font_color, TOP.z + 2);
+    if (loc.x - (ACPARM.text.offset_x_target - ACPARM.text.offset_x) > TOP.limit.max_x - 20.f) ACPARM.text.offset_x_target += 20.f;
+    if (loc.x + (ACPARM.text.offset_x - ACPARM.text.offset_x_target) < TOP.limit.min_x + 20.f) ACPARM.text.offset_x_target = br_float_clamp(ACPARM.text.offset_x_target-20.f, 0.f, ACPARM.text.offset_x_target);
   } else {
     if (TOP.is_active) {
       if (brtl_mousel_pressed()) {
@@ -934,6 +939,9 @@ void brui_resizable_update(void) {
   rs->arr[0].current.cur_extent = rs->arr[0].target.cur_extent;
   float lerp_speed = brtl_frame_time() * brtl_theme()->ui.animation_speed;
   lerp_speed = br_float_clamp(lerp_speed, brtl_frame_time(), 1.f);
+
+  if (brui_action_typing == ACTION) ACPARM.text.offset_x = br_float_lerp(ACPARM.text.offset_x, ACPARM.text.offset_x_target, lerp_speed);
+
   brfl_foreach(i, *rs) {
     brui_resizable_t* res = br_da_getp(*rs, i);
 
