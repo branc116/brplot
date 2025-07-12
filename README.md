@@ -173,7 +173,7 @@ of brplot which is a singe header library and just include it into your program.
 
 ```c
 #define BRPLOT_IMPLEMENTATION
-#include "brplot.c"
+#include "brplot.h"
 
 int main(void) {
  for (int i = -10; i < 10; ++i) brp_1(i, /* group_id */ 0);

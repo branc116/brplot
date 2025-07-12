@@ -29,6 +29,7 @@ static void brgui_draw_license(br_plotter_t* br);
 static void brgui_draw_about(br_plotter_t* br);
 static void brgui_draw_add_expression(br_plotter_t* br);
 static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas);
+static void brgui_draw_help(br_plotter_t* br);
 
 void br_plotter_draw(br_plotter_t* br) {
   brsp_t* sp = brtl_brsp();
@@ -113,6 +114,7 @@ void br_plotter_draw(br_plotter_t* br) {
         brgui_draw_csv_manager(&br->ui.csv_state, &br->csv_parser);
         brgui_draw_add_expression(br);
         brgui_draw_show_data(&br->ui.show_data, br->groups);
+        brgui_draw_help(br);
         brui_resizable_update();
       brui_end();
     }
@@ -541,6 +543,68 @@ static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas) {
   if (brui_resizable_temp_pop()) d->show = false;
 }
 
+static void brgui_draw_help(br_plotter_t* br) {
+  if (brtl_key_pressed('h')) br->ui.help.show = !br->ui.help.show;
+  if (false == br->ui.help.show) return;
+
+  brui_resizable_temp_push_t tmp = brui_resizable_temp_push(BR_STRL("Help"));
+    if (tmp.just_created) {
+      tmp.res->target.cur_extent = BR_EXTENTI_TOF(brtl_viewport());
+      tmp.res->target.cur_extent.width -= 100;
+      tmp.res->target.cur_extent.height -= 100;
+      tmp.res->target.cur_extent.x += 50;
+      tmp.res->target.cur_extent.y += 50;
+    }
+    if (brui_collapsable(BR_STRL("Key bindings"), &br->ui.help.key_bindings)) {
+      brui_text(BR_STRL("Right mouse button + Mouse move - Change plot offset"));
+      brui_text(BR_STRL("Mouse wheel- Change plot zoom"));
+      brui_text(BR_STRL("X + Mouse whele - Change zoom only in X axis"));
+      brui_text(BR_STRL("Y + Mouse whele - Change zoom only in Y axis"));
+      brui_text(BR_STRL("X|Y + SHIFT|CTRL - Zoom In|Out in X|Y axis"));
+      brui_text(BR_STRL("F - Follow the line"));
+      brui_text(BR_STRL("CTRL F - Focus on last points"));
+      brui_text(BR_STRL("T - Add test points"));
+      brui_text(BR_STRL("SHIFT + C - Clear all datas"));
+      brui_text(BR_STRL("C - Empty all datas"));
+      brui_text(BR_STRL("R - Reset camera to default values"));
+      brui_text(BR_STRL("SHIFT + R - Reset camera zoom to default values"));
+      brui_text(BR_STRL("CTRL + R - Reset camera offset to default values"));
+      brui_text(BR_STRL("D - Toggle debug view"));
+      brui_text(BR_STRL(""));
+      brui_text(BR_STRL("LCTRL + Mouse - Mouse subwindows around the window"));
+      brui_text(BR_STRL("LCTRL + Mouse on edge of the window - Resize subwindows"));
+      brui_collapsable_end();
+    }
+    if (brui_collapsable(BR_STRL("CLI examples"), &br->ui.help.cli_help)) {
+      brui_text(BR_STRL("Plot numbers from 1 to 100:"));
+      brui_text(BR_STRL("   seq 100 | brplot"));
+      brui_text(BR_STRL("Plot squeres of numbers from 1 to 100"));
+      brui_text(BR_STRL("   python -c \"[print(x*x) for x in range(100)]\" | brplot;"));
+      brui_text(BR_STRL(""));
+      brui_text(BR_STRL("10      - Insert point (new_x, 10) to line group 0"));
+      brui_text(BR_STRL("10,12   - Insert point (10, 12) to line group 0"));
+      brui_text(BR_STRL("10;1    - Insert point (new_x, 10) to line group 1"));
+      brui_text(BR_STRL("10,12;2 - Insert point (10, 12) to line group 2"));
+      brui_collapsable_end();
+    }
+    if (brui_collapsable(BR_STRL("C example"), &br->ui.help.c_help)) {
+      brui_text(BR_STRL("#define BRPLOT_IMPLEMENTATION"));
+      brui_text(BR_STRL("#include \"brplot.h\""));
+      brui_text(BR_STRL(""));
+      brui_text(BR_STRL("int main(void) {"));
+      brui_text(BR_STRL(" for (int i = -10; i < 10; ++i) brp_1(i, /* group_id */ 0);"));
+      brui_text(BR_STRL(" brp_wait(); // Wait until plot window is closed"));
+      brui_text(BR_STRL("}"));
+      brui_collapsable_end();
+    }
+    if (brui_collapsable(BR_STRL("Python example"), &br->ui.help.python_help)) {
+      brui_text(BR_STRL("import brplot"));
+      brui_text(BR_STRL("brplot.plot(range(100))"));
+      brui_collapsable_end();
+    }
+  if (brui_resizable_temp_pop()) br->ui.help.show = false;
+}
+
 void brgui_draw_add_expression(br_plotter_t* br) {
   brgui_add_expression_t* e = &br->ui.add_expression;
   if (false == e->show) return;
@@ -741,6 +805,9 @@ static void draw_left_panel(br_plotter_t* br) {
       }
       if (brui_button(BR_STRL("License"))) {
         br->ui.show_license = true;
+      }
+      if (brui_button(BR_STRL("Help"))) {
+        br->ui.help.show = true;
       }
       brui_collapsable_end();
     }
