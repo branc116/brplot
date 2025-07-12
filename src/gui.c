@@ -544,7 +544,8 @@ static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas) {
 }
 
 static void brgui_draw_help(br_plotter_t* br) {
-  if (brtl_key_pressed('h')) br->ui.help.show = !br->ui.help.show;
+  brui_action_t* action = brui_action();
+  if (action->kind == brui_action_none && brtl_key_pressed('h')) br->ui.help.show = !br->ui.help.show;
   if (false == br->ui.help.show) return;
 
   brui_resizable_temp_push_t tmp = brui_resizable_temp_push(BR_STRL("Help"));
