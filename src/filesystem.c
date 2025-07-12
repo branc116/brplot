@@ -143,3 +143,51 @@ br_str_t br_fs_read1(const char* path) {
   return str;
 }
 
+bool br_fs_list_dir(br_strv_t path, br_fs_files_t* out_files) {
+  DIR* dir = NULL;
+  bool success = true;
+  struct dirent *de = NULL;
+  size_t i = 0;
+  br_fs_file_t* s = NULL;
+
+  out_files->cur_dir.len = 0;
+  br_str_push_strv(&out_files->cur_dir, path);
+  br_str_push_zero(&out_files->cur_dir);
+  if (NULL == (dir = opendir(out_files->cur_dir.str))) goto error;
+  br_str_copy2(&out_files->last_good_dir, out_files->cur_dir);
+  while (NULL != (de = readdir(dir))) {
+    if (strcmp(".", de->d_name) == 0) continue;
+    if (strcmp("..", de->d_name) == 0) continue;
+    if (out_files->len <= i) br_da_push(*out_files, ((br_fs_file_t) {0}));
+    s = br_da_getp(*out_files, i);
+    s->name.len = 0;
+    br_str_push_c_str(&s->name, de->d_name);
+#if defined(_DIRENT_HAVE_D_TYPE)
+    switch (de->d_type) {
+      case DT_DIR: s->kind = br_fs_file_kind_dir; break;
+      case DT_REG: s->kind = br_fs_file_kind_file; break;
+      default: s->kind = br_fs_file_kind_unknown; break;
+    };
+#else
+    struct stat st = { 0 };
+    stat(de->d_name, &st);
+    switch (st.st_mode & S_IFMT) {
+      case S_IFDIR: s->kind = br_fs_file_kind_dir; break;
+      case S_IFREG: s->kind = br_fs_file_kind_file; break;
+      default: s->kind = br_fs_file_kind_unknown; break;
+    }
+#endif
+    ++i;
+  }
+  out_files->real_len = i;
+  qsort(out_files->arr, out_files->real_len, sizeof(out_files->arr[0]), br_fs_files_sort);
+  goto done;
+
+error:
+  success = false;
+
+done:
+  if (NULL != dir) closedir(dir);
+  return success;
+}
+

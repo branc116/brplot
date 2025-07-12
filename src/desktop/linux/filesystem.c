@@ -76,54 +76,6 @@ static int br_fs_files_sort(void const* a, void const* b) {
   return strncmp(af->name.str, bf->name.str, af->name.len < bf->name.len ? af->name.len : bf->name.len);
 }
 
-
-#if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
-bool br_fs_list_dir(br_strv_t path, br_fs_files_t* out_files) {
-  DIR* dir = NULL;
-  bool success = true;
-  struct dirent *de = NULL;
-  size_t i = 0;
-  br_fs_file_t* s = NULL;
-
-  out_files->cur_dir.len = 0;
-  br_str_push_strv(&out_files->cur_dir, path);
-  br_str_push_zero(&out_files->cur_dir);
-  if (NULL == (dir = opendir(out_files->cur_dir.str))) goto error;
-  br_str_copy2(&out_files->last_good_dir, out_files->cur_dir);
-  while (NULL != (de = readdir(dir))) {
-    if (strcmp(".", de->d_name) == 0) continue;
-    if (strcmp("..", de->d_name) == 0) continue;
-    if (out_files->len <= i) br_da_push(*out_files, ((br_fs_file_t) {0}));
-    s = br_da_getp(*out_files, i);
-    s->name.len = 0;
-    br_str_push_c_str(&s->name, de->d_name);
-    switch (de->d_type) {
-      case DT_DIR: s->kind = br_fs_file_kind_dir; break;
-      case DT_REG: s->kind = br_fs_file_kind_file; break;
-      default: s->kind = br_fs_file_kind_unknown; break;
-    };
-    ++i;
-  }
-  out_files->real_len = i;
-  qsort(out_files->arr, out_files->real_len, sizeof(out_files->arr[0]), br_fs_files_sort);
-  goto done;
-
-error:
-  success = false;
-
-done:
-  if (NULL != dir) closedir(dir);
-  return success;
-}
-#else
-bool br_fs_list_dir(br_strv_t path, br_fs_files_t* out_files) {
-  (void)path; (void)out_files;
-  (void)br_fs_files_sort;
-  LOGI("List dirs not implemented on windows");
-  return false;
-}
-#endif
-
 #if defined(BR_UNIT_TEST)
 TEST_CASE(paths) {
   char c[128];

@@ -85,8 +85,3 @@ bool br_fs_exists(br_strv_t path) {
   return exists;
 }
 
-bool br_fs_list_dir(br_strv_t path, br_fs_files_t* out_files) {
-  (void)path; (void)out_files;
-  LOGI("List dirs not implemented on windows");
-  return false;
-}
