@@ -221,6 +221,7 @@ bool brui_text_input(brsp_id_t str_id) {
     int cp = ACPARM.text.cursor_pos;
     float half_thick = 1.0f;
     br_pressed_chars_t pressed = brtl_pressed_chars();
+    brtl_pressed_clear();
     for (size_t i = 0; i < pressed.len; ++i) {
       brtl_pressed_char_t p = br_da_get(pressed, i);
       if (brtl_key_ctrl()) {
