@@ -69,13 +69,6 @@ bool br_fs_cd(br_str_t* cwd, br_strv_t path) {
   return true;
 }
 
-static int br_fs_files_sort(void const* a, void const* b) {
-  br_fs_file_t const * af = a, *bf = b;
-  if (af->kind > bf->kind) return -1;
-  if (af->kind < bf->kind) return 1;
-  return strncmp(af->name.str, bf->name.str, af->name.len < bf->name.len ? af->name.len : bf->name.len);
-}
-
 #if defined(BR_UNIT_TEST)
 TEST_CASE(paths) {
   char c[128];

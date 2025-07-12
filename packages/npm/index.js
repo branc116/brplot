@@ -14,6 +14,10 @@ export class Brplot {
     this.height = this.canvas.height;
   }
 
+  empty(group) {
+      this.module._br_empty(this.plotter, group); 
+  }
+
   pushPoint(x, y, group) {
     if (group === undefined) group = 0;
     if (y === undefined && x !== undefined && typeof x === "number") {
@@ -40,7 +44,7 @@ export class Brplot {
     this.startedDrawing = true;
     requestAnimationFrame(this._loopRedraw);
   }
-  
+
   stopDrawing() {
     this.startedDrawing = false;
   }

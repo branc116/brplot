@@ -195,6 +195,10 @@ int br_data_add_v2nds(br_plotter_t* plotter, double const* xs, double const* ys,
   return ret;
 }
 
+void br_empty(br_plotter_t* plotter, br_data_id data_id) {
+  q_push(plotter->commands, (q_command){ .type = q_command_empty, .clear = { .group = data_id } } );
+}
+
 #define BR_PLOTTERS_CAP 4
 BR_THREAD_LOCAL static int g_brplot_br_plotter_id = 0;
 

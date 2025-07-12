@@ -1,12 +1,14 @@
 #include "src/br_filesystem.h"
 #include "src/br_pp.h"
 #include "src/br_str.h"
+#include "src/br_da.h"
 
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #include <sys/types.h>
 
 
@@ -141,6 +143,13 @@ br_str_t br_fs_read1(const char* path) {
   br_str_t str = { 0 };
   br_fs_read(path, &str);
   return str;
+}
+
+static int br_fs_files_sort(void const* a, void const* b) {
+  br_fs_file_t const * af = a, *bf = b;
+  if (af->kind > bf->kind) return -1;
+  if (af->kind < bf->kind) return 1;
+  return strncmp(af->name.str, bf->name.str, af->name.len < bf->name.len ? af->name.len : bf->name.len);
 }
 
 bool br_fs_list_dir(br_strv_t path, br_fs_files_t* out_files) {

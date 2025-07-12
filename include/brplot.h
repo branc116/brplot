@@ -43,7 +43,7 @@ int main(void) {
 #pragma once
 #define BR_MAJOR_VERSION 0
 #define BR_MINOR_VERSION 0
-#define BR_PATCH_VERSION 1
+#define BR_PATCH_VERSION 2
 
 #if defined(__EMSCRIPTEN__)
 #  include <emscripten.h>
@@ -257,6 +257,8 @@ BR_EXPORT void br_data_free(br_data_id data);
 
 BR_EXPORT void br_plot_show_data(br_plotter_t* plotter, br_plot_id plot, br_data_id data);
 BR_EXPORT void br_plot_hide_data(br_plotter_t* plotter, br_plot_id plot, br_data_id data);
+
+BR_EXPORT void br_empty(br_plotter_t* plotter, br_data_id data);
 
 #if defined(__cplusplus)
 }
