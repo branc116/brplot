@@ -932,6 +932,7 @@ void brui_resizable_update(void) {
   bruirs_t* rs = brtl_bruirs();
   rs->arr[0].current.cur_extent = rs->arr[0].target.cur_extent;
   float lerp_speed = brtl_frame_time() * brtl_theme()->ui.animation_speed;
+  lerp_speed = br_float_clamp(lerp_speed, brtl_frame_time(), 1.f);
   brfl_foreach(i, *rs) {
     brui_resizable_t* res = br_da_getp(*rs, i);
 
