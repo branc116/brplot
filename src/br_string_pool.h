@@ -92,7 +92,6 @@ brsp_id_t brsp_new1(brsp_t* sp, int size) {
   } else {
     brfl_foreach_free(i, *sp) {
       brsp_node_t node = br_da_get(*sp, i);
-      LOGI("i = %d, fllen = %d", i, sp->len);
       if (node.cap >= size) {
         if (prev == -1) sp->free_next      = sp->free_arr[i];
         else            sp->free_arr[prev] = sp->free_arr[i];
