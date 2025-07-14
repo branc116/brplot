@@ -156,6 +156,83 @@ static int br_fs_files_sort(void const* a, void const* b) {
   return strncmp(af->name.str, bf->name.str, af->name.len < bf->name.len ? af->name.len : bf->name.len);
 }
 
+#if defined(_WIN32)
+#if !defined(BR_DIRENT_DEFINED)
+#  define BR_DIRENT_DEFINED
+
+struct dirent {
+    char d_name[MAX_PATH+1];
+};
+#endif
+
+typedef struct DIR {
+    HANDLE hFind;
+    WIN32_FIND_DATA data;
+    struct dirent *dirent;
+} DIR;
+
+DIR *opendir(const char *dirpath) {
+  static BR_THREAD_LOCAL char buffer[MAX_PATH];
+
+  DIR* dir = NULL;
+  bool success = true;
+
+  snprintf(buffer, MAX_PATH, "%s\\*", dirpath);
+
+  dir = (DIR*)BR_MALLOC(sizeof(DIR));
+  memset(dir, 0, sizeof(DIR));
+
+  dir->hFind = FindFirstFileA(buffer, &dir->data);
+  if (dir->hFind == INVALID_HANDLE_VALUE) BR_ERROR("Failed to file firt file");
+  goto done;
+
+error:
+    errno = ENOSYS;
+    if (dir) BR_FREE(dir);
+    dir = NULL;
+
+done:
+    return dir;
+}
+
+struct dirent *readdir(DIR *dirp) {
+    if (dirp->dirent == NULL) {
+        dirp->dirent = (struct dirent*)BR_MALLOC(sizeof(struct dirent));
+        memset(dirp->dirent, 0, sizeof(struct dirent));
+    } else {
+        if(!FindNextFileA(dirp->hFind, &dirp->data)) {
+            if (GetLastError() != ERROR_NO_MORE_FILES) errno = ENOSYS;
+            return NULL;
+        }
+    }
+
+    memset(dirp->dirent->d_name, 0, sizeof(dirp->dirent->d_name));
+
+    strncpy(
+        dirp->dirent->d_name,
+        dirp->data.cFileName,
+        sizeof(dirp->dirent->d_name) - 1);
+
+    return dirp->dirent;
+}
+
+int closedir(DIR *dirp) {
+  bool success = true;
+  if(!FindClose(dirp->hFind)) BR_ERROR("Failed to close the dir");
+  goto done;
+
+error:
+    errno = ENOSYS;
+
+done:
+  if (dirp) {
+    if (dirp->dirent) BR_FREE(dirp->dirent);
+    BR_FREE(dirp);
+  }
+  return success ? 0 : -1;
+}
+#endif // _WIN32
+
 bool br_fs_list_dir(br_strv_t path, br_fs_files_t* out_files) {
   DIR* dir = NULL;
   bool success = true;

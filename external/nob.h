@@ -580,16 +580,19 @@ Nob_String_View nob_sv_from_parts(const char *data, size_t count);
 #define WIN32_LEAN_AND_MEAN
 #include "windows.h"
 
+#if !defined(BR_DIRENT_DEFINED)
+#  define BR_DIRENT_DEFINED
 struct dirent
 {
     char d_name[MAX_PATH+1];
 };
 
 typedef struct DIR DIR;
+#endif
 
-static DIR *opendir(const char *dirpath);
-static struct dirent *readdir(DIR *dirp);
-static int closedir(DIR *dirp);
+DIR *opendir(const char *dirpath);
+struct dirent *readdir(DIR *dirp);
+int closedir(DIR *dirp);
 
 #endif // _WIN32
 // minirent.h HEADER END ////////////////////////////////////////
@@ -1685,93 +1688,6 @@ bool nob_set_current_dir(const char *path)
     return true;
 #endif // _WIN32
 }
-
-// minirent.h SOURCE BEGIN ////////////////////////////////////////
-#ifdef _WIN32
-struct DIR
-{
-    HANDLE hFind;
-    WIN32_FIND_DATA data;
-    struct dirent *dirent;
-};
-
-DIR *opendir(const char *dirpath)
-{
-    NOB_ASSERT(dirpath);
-
-    char buffer[MAX_PATH];
-    snprintf(buffer, MAX_PATH, "%s\\*", dirpath);
-
-    DIR *dir = (DIR*)NOB_REALLOC(NULL, sizeof(DIR));
-    memset(dir, 0, sizeof(DIR));
-
-    dir->hFind = FindFirstFile(buffer, &dir->data);
-    if (dir->hFind == INVALID_HANDLE_VALUE) {
-        // TODO: opendir should set errno accordingly on FindFirstFile fail
-        // https://docs.microsoft.com/en-us/windows/win32/api/errhandlingapi/nf-errhandlingapi-getlasterror
-        errno = ENOSYS;
-        goto fail;
-    }
-
-    return dir;
-
-fail:
-    if (dir) {
-        NOB_FREE(dir);
-    }
-
-    return NULL;
-}
-
-struct dirent *readdir(DIR *dirp)
-{
-    NOB_ASSERT(dirp);
-
-    if (dirp->dirent == NULL) {
-        dirp->dirent = (struct dirent*)NOB_REALLOC(NULL, sizeof(struct dirent));
-        memset(dirp->dirent, 0, sizeof(struct dirent));
-    } else {
-        if(!FindNextFile(dirp->hFind, &dirp->data)) {
-            if (GetLastError() != ERROR_NO_MORE_FILES) {
-                // TODO: readdir should set errno accordingly on FindNextFile fail
-                // https://docs.microsoft.com/en-us/windows/win32/api/errhandlingapi/nf-errhandlingapi-getlasterror
-                errno = ENOSYS;
-            }
-
-            return NULL;
-        }
-    }
-
-    memset(dirp->dirent->d_name, 0, sizeof(dirp->dirent->d_name));
-
-    strncpy(
-        dirp->dirent->d_name,
-        dirp->data.cFileName,
-        sizeof(dirp->dirent->d_name) - 1);
-
-    return dirp->dirent;
-}
-
-int closedir(DIR *dirp)
-{
-    NOB_ASSERT(dirp);
-
-    if(!FindClose(dirp->hFind)) {
-        // TODO: closedir should set errno accordingly on FindClose fail
-        // https://docs.microsoft.com/en-us/windows/win32/api/errhandlingapi/nf-errhandlingapi-getlasterror
-        errno = ENOSYS;
-        return -1;
-    }
-
-    if (dirp->dirent) {
-        NOB_FREE(dirp->dirent);
-    }
-    NOB_FREE(dirp);
-
-    return 0;
-}
-#endif // _WIN32
-// minirent.h SOURCE END ////////////////////////////////////////
 
 #endif // NOB_IMPLEMENTATION
 
