@@ -49,7 +49,7 @@ jobs:
           ./nob unittests -dpa
 
       - run: |
-          ./nob fuzztests
+          ./nob fuzztests || ((cat crash-* | base64) && exit 128)
 
       - run: |
           ./nob amalgam
