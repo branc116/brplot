@@ -193,7 +193,11 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
     .mouse_inside_graph = false,
     .kind = br_plot_kind_2d,
     .dd =  {
+#if defined(__EMSCRIPTEN__)
+      .zoom = BR_VEC2D(10.f, 10.f),
+#else
       .zoom = BR_VEC2D(1.f, 1.f),
+#endif
       .offset = BR_VEC2D(0.f, 0.f),
       .grid_line_thickness =  brtl_theme()->ui.default_grid_line_thickenss,
       .grid_major_line_thickness = 2.f,
@@ -202,6 +206,9 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
   };
   br_plot_create_texture(&plot);
   plot.extent_handle = brui_resizable_new2(BR_EXTENT((float)x, 50, (float)br->win.size.width - (float)x - 60.f, (float)br->win.size.height - 110), 0, (brui_resizable_t) { .tag = 100, .title_enabled = true });
+#if defined(__EMSCRIPTEN__)
+  brui_resizable_maximize(plot.extent_handle, true);
+#endif
   plot.menu_extent_handle = brui_resizable_new2(BR_EXTENT(0, 0, 300, (float)plot.cur_extent.height), plot.extent_handle, (brui_resizable_t) { .current.tag = 101, .target.hidden_factor = 1.f });
   plot.legend_extent_handle = brui_resizable_new2(BR_EXTENT((float)plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle, (brui_resizable_t) { .current.tag = 102 });
   br_da_push_t(int, (br->plots), plot);

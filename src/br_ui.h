@@ -244,6 +244,7 @@ brui_resizable_t* brui_resizable_push(int id);
 void              brui_resizable_pop(void);
 int               brui_resizable_active(void);
 void              brui_resizable_show(int resizable_handle, bool show);
+void              brui_resizable_maximize(int resizable_handle, bool maximize);
 bool              brui_resizable_is_hidden(int resizable_handle);
 br_vec2_t         brui_resizable_to_global(int resizable_handle, br_vec2_t pos);
 int               brui_resizable_sibling_max_z(int id);

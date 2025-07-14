@@ -1311,6 +1311,10 @@ void brui_resizable_show(int resizable_handle, bool show) {
   br_da_getp(*brtl_bruirs(), resizable_handle)->target.hidden_factor = show ? 0.f : 1.f;
 }
 
+void brui_resizable_maximize(int resizable_handle, bool maximize) {
+  br_da_getp(*brtl_bruirs(), resizable_handle)->ancor = maximize ? brui_ancor_all : brui_ancor_none;
+}
+
 bool brui_resizable_is_hidden(int resizable_handle) {
   return br_da_get(*brtl_bruirs(), resizable_handle).hidden_factor > 0.99f;
 }
