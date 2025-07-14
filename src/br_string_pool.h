@@ -321,6 +321,7 @@ bool brsp_read(BR_FILE_T* file, brsp_t* sp) {
   int i = 0;
   brsp_node_t n = { 0 };
   int sum = 0;
+  bool is_free = false;
 
   memset(sp, 0, sizeof(*sp));
   brfl_read(file, (*sp), error); if (error != 0)                         BR_ERROR("Failed to read free list");
@@ -339,12 +340,19 @@ bool brsp_read(BR_FILE_T* file, brsp_t* sp) {
     if (n.len < -1)                                                      BR_ERROR("Len is: %d", n.len);
     if (n.len == -1 ^ n.cap == -1)                                       BR_ERROR("Len is: %d, cap is: %d", n.len, n.cap);
     if (n.len == -1 ^ n.start_index == -1)                               BR_ERROR("Len is: %d, start_index is: %d", n.len, n.start_index);
+    if (n.cap < -1)                                                      BR_ERROR("Cap is: %d", n.cap);
     if (n.len > (int)sp->pool.len)                                       BR_ERROR("Len is: %d", n.len);
     if (n.start_index > (int)sp->pool.len)                               BR_ERROR("Start index is: %d, pool len: %u", n.start_index, sp->pool.len);
     if (n.cap > 0 && n.cap > (int)sp->pool.len)                          BR_ERROR("Start cap is: %d, pool len: %u", n.cap, sp->pool.len);
     if (n.cap > 0 && n.cap < (int)n.len)                                 BR_ERROR("Node cap: %d, Node len: %u", n.cap, n.len);
     if (n.start_index >= 0 && n.start_index + n.cap > (int)sp->pool.len) BR_ERROR("i=%d, start_index = %d < 0, start_index + cap = %d > pool.len = %d", i, n.start_index, n.start_index + n.cap, sp->pool.len);
     if (n.cap > 0) sum += n.cap;
+    is_free = brfl_is_free(*sp, i);
+    if (false == is_free) {
+      if (n.cap < 0)                                                     BR_ERROR("Cap is: %d", n.cap);
+      if (n.len < 0)                                                     BR_ERROR("Len is: %d", n.len);
+      if (n.start_index < 0)                                             BR_ERROR("Start index is: %d", n.start_index);
+    }
   }
   if (sum + 1 != (int)sp->pool.len)                                      BR_ERROR("Cap len don't match. sum=%d, len=%u, cap=%u", sum, sp->pool.len, sp->pool.cap);
   sp->pool.str = BR_MALLOC(sp->pool.cap);
@@ -354,6 +362,7 @@ bool brsp_read(BR_FILE_T* file, brsp_t* sp) {
 
 error:
   brsp_free(sp);
+  memset(sp, 0, sizeof(*sp));
   success = false;
 
 done:
