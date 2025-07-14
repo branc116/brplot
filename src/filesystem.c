@@ -156,7 +156,7 @@ static int br_fs_files_sort(void const* a, void const* b) {
   return strncmp(af->name.str, bf->name.str, af->name.len < bf->name.len ? af->name.len : bf->name.len);
 }
 
-#if defined(_WIN32)
+#if defined(_MSC_VER)
 #if !defined(BR_DIRENT_DEFINED)
 #  define BR_DIRENT_DEFINED
 
