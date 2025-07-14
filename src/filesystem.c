@@ -8,8 +8,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <dirent.h>
+
 #include <sys/types.h>
+
+#if BR_HAS_INCLUDE(<dirent.h>)
+#  include <dirent.h>
+#endif
 
 
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(__MINGW32__)
