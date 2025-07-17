@@ -84,7 +84,6 @@ typedef struct q_commands {
   volatile size_t capacity;
   q_command* commands;
   size_t write_wait;
-  LOCK(push_mutex)
 } q_commands;
 
 q_commands* q_malloc(void);
