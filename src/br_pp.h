@@ -123,26 +123,6 @@ void __sanitizer_print_stack_trace(void);
 #  undef UNIT_TEST
 #endif
 
-#if defined(BR_MUSL)
-#elif defined(__linux__)
-#  define LOCK_T pthread_mutex_t
-#endif
-
-#if defined(LOCK_T)
-#  define LOCK(x) LOCK_T x;
-#else
-#  define LOCK(x)
-#endif
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-
 #if defined(BR_DEBUG)
 #  if defined(_MSC_VER)
 #    define BR_BREAKPOINT() __debugbreak()

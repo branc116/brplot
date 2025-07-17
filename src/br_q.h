@@ -90,10 +90,6 @@ typedef struct q_commands {
 q_commands* q_malloc(void);
 void q_free(q_commands* q);
 
-#ifdef LOCK_T
-// If you know that only one thread writes to q use q_push, else use this.
-bool q_push_safe(q_commands* q, q_command command);
-#endif
 // If you know that only one thread writes to q us this, else use q_push_safe.
 bool q_push(q_commands* q, q_command command);
 q_command q_pop(q_commands* q);

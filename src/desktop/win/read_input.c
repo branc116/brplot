@@ -8,12 +8,12 @@ typedef struct br_plotter_t br_plotter_t;
 static void* thandle;
 
 void read_input_main_worker(br_plotter_t* br);
-DWORD read_input_indirect(LPVOID lpThreadParameter) {
+DWORD WINAPI read_input_indirect(LPVOID lpThreadParameter) {
   read_input_main_worker((br_plotter_t*)lpThreadParameter);
   return 0;
 }
 
-int  read_input_read_next(void) {
+int read_input_read_next(void) {
   return getchar();
 }
 
