@@ -63,16 +63,16 @@ typedef enum {
 #define X(name) name,
   TOKEN_KINDS(X)
 #undef X
-} token_kind_t;
+} br_dagen_token_kind;
 
 typedef struct {
-  token_kind_t kind;
+  br_dagen_token_kind kind;
   br_strv_t str;
   size_t position;
-} token_t;
+} br_dagen_token_t;
 
 typedef struct {
-  token_t* arr;
+  br_dagen_token_t* arr;
   size_t len, cap;
   size_t pos;
 } tokens_t;
@@ -99,7 +99,7 @@ static void pop_batch(void);
 
 // PARSER
 static bool tokens_get(tokens_t* tokens, br_strv_t str);
-static const char* token_to_str(token_kind_t kind);
+static const char* token_to_str(br_dagen_token_kind kind);
 static bool expr_parse(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out);
 static bool expr_parse_ref(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out);
 static void expr_to_str(br_str_t* out, br_dagen_exprs_t* arena, uint32_t index);
@@ -641,27 +641,27 @@ static void pop_batch(void) {
 }
 
 static bool tokens_get(tokens_t* tokens, br_strv_t str) {
-  token_t t;
+  br_dagen_token_t t;
 
   for (uint32_t i = 0; i < str.len; ++i) {
     uint32_t n = 0;
     while (str.str[i + n] >= 'a' && str.str[i + n] <= 'z') ++n;
     if (n > 0) {
-      t = (token_t){ .kind = token_kind_ident, .str = br_str_sub(str, i, n), .position = i };
+      t = (br_dagen_token_t){ .kind = token_kind_ident, .str = br_str_sub(str, i, n), .position = i };
       i += n - 1;
       goto push_token;
     }
     if (str.str[i] >= '0' && str.str[i] <= '9') {
       while ((str.str[i + n] >= '0' && str.str[i + n] <= '9') || str.str[i + n] == 'e' || str.str[i + n] == '.') ++n; 
       if (str.str[i + n - 1] == '.') --n;
-      t = (token_t) { .kind = token_kind_number, .str = br_str_sub(str, i, n), .position = i };
+      t = (br_dagen_token_t) { .kind = token_kind_number, .str = br_str_sub(str, i, n), .position = i };
       i += n - 1;
       goto push_token;
     }
     switch (str.str[i]) {
 #define X(KIND, CHAR) \
       case CHAR: \
-        t = (token_t){ .kind = KIND, .str = br_str_sub(str, i, 1), .position = i }; \
+        t = (br_dagen_token_t){ .kind = KIND, .str = br_str_sub(str, i, 1), .position = i }; \
         goto push_token;
       SINGLE(X)
 #undef X
@@ -677,7 +677,7 @@ push_token:
   return true;
 }
 
-static const char* token_to_str(token_kind_t kind) {
+static const char* token_to_str(br_dagen_token_kind kind) {
   switch (kind) {
 #define X(name) case name: return #name;
     TOKEN_KINDS(X)
@@ -686,13 +686,13 @@ static const char* token_to_str(token_kind_t kind) {
   }
 }
 
-static token_t expr_peek(tokens_t tokens) {
-  return tokens.pos >= tokens.len ? (token_t){0} : tokens.arr[tokens.pos];
+static br_dagen_token_t expr_peek(tokens_t tokens) {
+  return tokens.pos >= tokens.len ? (br_dagen_token_t){0} : tokens.arr[tokens.pos];
 }
 
 static bool expr_parse_primary(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out);
 static bool expr_parse(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out) {
-  token_t t;
+  br_dagen_token_t t;
   uint32_t ref1;
   if (false == expr_parse_primary(arena, tokens, &ref1)) return false;
   if (tokens->pos < tokens->len) {
@@ -707,7 +707,7 @@ static bool expr_parse(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out)
 }
 
 static bool expr_parse_ref(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out) {
-  token_t t;
+  br_dagen_token_t t;
   t = expr_peek(*tokens);
   if (t.kind == token_kind_number) {
     GET_TOKEN(t, tokens, token_kind_number);
@@ -750,13 +750,13 @@ static bool expr_parse_ref(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* 
 
 
 static bool expr_parse_add(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out) {
-  token_t t;
+  br_dagen_token_t t;
   GET_TOKEN(t, tokens, token_kind_plus);
   return expr_parse_primary(arena, tokens, out);
 }
 
 static bool expr_parse_mul(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out) {
-  token_t t;
+  br_dagen_token_t t;
   uint32_t ref;
   GET_TOKEN(t, tokens, token_kind_star);
   if (false == expr_parse_ref(arena, tokens, &ref)) return false;
@@ -771,7 +771,7 @@ static bool expr_parse_mul(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* 
 
 static bool expr_parse_primary(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out) {
   if (false == expr_parse_ref(arena, tokens, out)) return false;
-  token_t t;
+  br_dagen_token_t t;
   uint32_t ref;
 start:
   t = expr_peek(*tokens);
@@ -1011,7 +1011,7 @@ TEST_CASE(dagen_add_mul) {
 #define TEST_TOKENIZER_PASS(STR, ...) do { \
   tokens_t ts = {0}; \
   br_strv_t s = br_strv_from_literal(STR); \
-  token_kind_t tokens[] = {__VA_ARGS__}; \
+  br_dagen_token_kind tokens[] = {__VA_ARGS__}; \
   size_t len = sizeof(tokens)/sizeof(tokens[0]); \
   TEST_TRUE(tokens_get(&ts, s)); \
   TEST_EQUAL(ts.len, len); \
