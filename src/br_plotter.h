@@ -95,6 +95,13 @@ typedef struct br_plotter_t {
     brsp_id_t font_path_id;
     brgui_add_expression_t add_expression;
     brgui_show_data_t show_data;
+    struct {
+      bool show;
+      bool key_bindings;
+      bool cli_help;
+      bool c_help;
+      bool python_help;
+    } help;
     bool dark_theme;
     bool expand_file;
     bool expand_plots;

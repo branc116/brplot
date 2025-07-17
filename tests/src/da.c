@@ -27,3 +27,4 @@ TEST_CASE(da) {
 }
 
 int main(void) {}
+void br_on_fatal_error(void) {}

@@ -71,7 +71,10 @@ void handle_all_commands(br_plotter_t* br, q_commands* commands) {
       case q_command_push_point_xy: br_data_push_xy(&br->groups, comm.push_point_xy.x, comm.push_point_xy.y, comm.push_point_xy.group); break;
       case q_command_push_point_xyz:br_data_push_xyz(&br->groups, comm.push_point_xyz.x, comm.push_point_xyz.y, comm.push_point_xyz.z, comm.push_point_xyz.group); break;
       case q_command_pop:           break; //TODO
-      case q_command_empty:         br_data_empty(br_data_get(&br->groups, comm.clear.group)); break;
+      case q_command_empty: {
+        br_data_t* d = br_data_get1(br->groups, comm.clear.group);
+        if (NULL != d) br_data_empty(d);
+      } break;
       case q_command_clear:         br_plotter_data_remove(br, comm.clear.group); break;
       case q_command_clear_all:     br_plotter_datas_deinit(br); break;
       case q_command_screenshot:    br_plot_screenshot(br->text, &br->plots.arr[0], &br->shaders, br->groups, comm.path_arg.path); free(comm.path_arg.path); break;

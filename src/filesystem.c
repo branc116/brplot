@@ -1,13 +1,19 @@
 #include "src/br_filesystem.h"
 #include "src/br_pp.h"
 #include "src/br_str.h"
+#include "src/br_da.h"
 
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+
 #include <sys/types.h>
+
+#if BR_HAS_INCLUDE(<dirent.h>)
+#  include <dirent.h>
+#endif
 
 
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(__MINGW32__)
@@ -102,6 +108,12 @@ uint32_t br_fs_crc(const void* data_p, size_t data_size, uint32_t seed) // Stole
     return ~crc;
 }
 
+bool br_fs_move(const char* from, const char* to) {
+  if (0 == rename(from, to)) return true;
+  LOGE("Failed to move file %s to %s: %s", from, to, strerror(errno));
+  return false;
+}
+
 bool br_fs_read(const char* path, br_str_t* out_content) {
   FILE* file        = NULL;
   long size         = 0;
@@ -135,5 +147,141 @@ br_str_t br_fs_read1(const char* path) {
   br_str_t str = { 0 };
   br_fs_read(path, &str);
   return str;
+}
+
+static int br_fs_files_sort(void const* a, void const* b) {
+  br_fs_file_t const * af = a, *bf = b;
+  if (af->kind > bf->kind) return -1;
+  if (af->kind < bf->kind) return 1;
+  return strncmp(af->name.str, bf->name.str, af->name.len < bf->name.len ? af->name.len : bf->name.len);
+}
+
+#if defined(_MSC_VER)
+#if !defined(BR_DIRENT_DEFINED)
+#  define BR_DIRENT_DEFINED
+
+struct dirent {
+    char d_name[MAX_PATH+1];
+};
+#endif
+
+typedef struct DIR {
+    HANDLE hFind;
+    WIN32_FIND_DATA data;
+    struct dirent *dirent;
+} DIR;
+
+DIR *opendir(const char *dirpath) {
+  static BR_THREAD_LOCAL char buffer[MAX_PATH];
+
+  DIR* dir = NULL;
+  bool success = true;
+
+  snprintf(buffer, MAX_PATH, "%s\\*", dirpath);
+
+  dir = (DIR*)BR_MALLOC(sizeof(DIR));
+  memset(dir, 0, sizeof(DIR));
+
+  dir->hFind = FindFirstFileA(buffer, &dir->data);
+  if (dir->hFind == INVALID_HANDLE_VALUE) BR_ERROR("Failed to find first file");
+  goto done;
+
+error:
+    errno = ENOSYS;
+    if (dir) BR_FREE(dir);
+    dir = NULL;
+
+done:
+    return dir;
+}
+
+struct dirent *readdir(DIR *dirp) {
+    if (dirp->dirent == NULL) {
+        dirp->dirent = (struct dirent*)BR_MALLOC(sizeof(struct dirent));
+        memset(dirp->dirent, 0, sizeof(struct dirent));
+    } else {
+        if(!FindNextFileA(dirp->hFind, &dirp->data)) {
+            if (GetLastError() != ERROR_NO_MORE_FILES) errno = ENOSYS;
+            return NULL;
+        }
+    }
+
+    memset(dirp->dirent->d_name, 0, sizeof(dirp->dirent->d_name));
+
+    strncpy(
+        dirp->dirent->d_name,
+        dirp->data.cFileName,
+        sizeof(dirp->dirent->d_name) - 1);
+
+    return dirp->dirent;
+}
+
+int closedir(DIR *dirp) {
+  bool success = true;
+  if(!FindClose(dirp->hFind)) BR_ERROR("Failed to close the dir");
+  goto done;
+
+error:
+    errno = ENOSYS;
+
+done:
+  if (dirp) {
+    if (dirp->dirent) BR_FREE(dirp->dirent);
+    BR_FREE(dirp);
+  }
+  return success ? 0 : -1;
+}
+#endif // _WIN32
+
+bool br_fs_list_dir(br_strv_t path, br_fs_files_t* out_files) {
+  DIR* dir = NULL;
+  bool success = true;
+  struct dirent *de = NULL;
+  size_t i = 0;
+  br_fs_file_t* s = NULL;
+
+  out_files->cur_dir.len = 0;
+  br_str_push_strv(&out_files->cur_dir, path);
+  br_str_push_zero(&out_files->cur_dir);
+  if (NULL == (dir = opendir(out_files->cur_dir.str))) goto error;
+  br_str_copy2(&out_files->last_good_dir, out_files->cur_dir);
+  br_str_copy2(&out_files->tmp_path, out_files->cur_dir);
+  while (NULL != (de = readdir(dir))) {
+    if (strcmp(".", de->d_name) == 0) continue;
+    if (strcmp("..", de->d_name) == 0) continue;
+    if (out_files->len <= i) br_da_push(*out_files, ((br_fs_file_t) {0}));
+    s = br_da_getp(*out_files, i);
+    s->name.len = 0;
+    br_str_push_c_str(&s->name, de->d_name);
+#if defined(_DIRENT_HAVE_D_TYPE)
+    switch (de->d_type) {
+      case DT_DIR: s->kind = br_fs_file_kind_dir; break;
+      case DT_REG: s->kind = br_fs_file_kind_file; break;
+      default: s->kind = br_fs_file_kind_unknown; break;
+    };
+#else
+    struct stat st = { 0 };
+    br_fs_cd(&out_files->tmp_path, br_str_as_view(s->name));
+    br_str_push_zero(&out_files->tmp_path);
+    stat(out_files->tmp_path.str, &st);
+    switch (st.st_mode & S_IFMT) {
+      case S_IFDIR: s->kind = br_fs_file_kind_dir; break;
+      case S_IFREG: s->kind = br_fs_file_kind_file; break;
+      default: s->kind = br_fs_file_kind_unknown; break;
+    }
+    br_fs_up_dir(&out_files->tmp_path);
+#endif
+    ++i;
+  }
+  out_files->real_len = i;
+  qsort(out_files->arr, out_files->real_len, sizeof(out_files->arr[0]), br_fs_files_sort);
+  goto done;
+
+error:
+  success = false;
+
+done:
+  if (NULL != dir) closedir(dir);
+  return success;
 }
 

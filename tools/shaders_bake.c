@@ -16,7 +16,7 @@
 #define IS_ALPHA_TOKEN(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
 #define FATAL(shader, line, offset, msg, ...) do { \
   fprintf(stderr, "|" __FILE__ ":%d||%s:%d:%d|ERROR: "msg"\n", __LINE__, br_str_to_c_str(shader->path), line, offset, __VA_ARGS__); \
-  BR_UNREACHABLE(); \
+  BR_UNREACHABLE("Unreachable"); \
 } while(0)
 
 #define TOKENS(X) \
@@ -639,4 +639,5 @@ int main(int argc, char const * const* argv) {
   }
   return 0;
 }
+void br_on_fatal_error(void) {}
 #endif

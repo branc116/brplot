@@ -405,6 +405,10 @@ br_pressed_chars_t brtl_pressed_chars(void) {
   return stl_br->pressed_chars;
 }
 
+void brtl_pressed_clear(void) {
+  stl_br->pressed_chars.len = 0;
+}
+
 bool brtl_key_ctrl(void) {
   bool is_down = (stl_br->key.mod & GLFW_MOD_CONTROL) == GLFW_MOD_CONTROL;
   return is_down;
@@ -488,4 +492,3 @@ float* brtl_cull_min(void) {
 float* brtl_min_sampling(void) {
   return &stl_br->ui.theme.ui.min_sampling;
 }
-

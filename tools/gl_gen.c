@@ -385,6 +385,7 @@ int do_gl_gen(void) {
 int main(void) {
   do_gl_gen();
 }
+void br_on_fatal_error(void) {}
 #endif
 
 // gcc -fsanitize=address -Wall -Wextra -Wpedantic -ggdb -I. -o bin/gl_gen tools/gl_gen.c src/str.c && ./bin/gl_gen

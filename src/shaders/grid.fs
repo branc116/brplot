@@ -37,7 +37,6 @@ float map(vec2 cPos, vec2 zoom_level, vec2 offset) {
   vec2 to = divs / (1.0 + (1.0 - log10f(s))-fr);
   vec2 d = 1. - smoothstep(abs(mcPosd), vec2(-0.000), thick*to);
   vec2 dM = 1. - smoothstep(abs(mcPosdM), vec2(-0.000), thick*to*major_line_thickness);
-  //return (d.x) + (d.y) + (dM.x) + (dM.y);
   return max(max(d.x, d.y), max(dM.x, dM.y));
 }
 
@@ -46,14 +45,8 @@ float map_outer(vec2 fragCoord) {
 }
 
 void main(void) {
-  float aa = 0.;
-  vec2 d = vec2(dFdx(fragTexCoord.x), dFdy(fragTexCoord.y)) * 1.;
-  float c = aa*2.+1.;
   float res = 0.;
-  for( float x = -aa ; x <= aa ; ++x)
-    for( float y = -aa ; y <= aa ; ++y)
-      res += map_outer(fragTexCoord+vec2(x*d.x, y*d.y)/(aa+1.))/(c*c);
-
+  res = map_outer(fragTexCoord);
   float s = smoothstep(-0.0002, 0.001, res);
   out_color = mix(bg_color, lines_color, s > 0.4 ? s : 0.0);
 }

@@ -195,16 +195,20 @@ br_size_t brui_text(br_strv_t strv) {
 bool brui_text_input(brsp_id_t str_id) {
   brsp_t* sp = brtl_brsp();
   br_strv_t strv = brsp_get(*sp, str_id);
-  bool changed = false;
   BRUI_LOG("Text: %.*s", strv.len, strv.str);
   br_text_renderer_t* tr = brtl_text_renderer();
-  br_vec2_t loc = TOP.cur;
+  bool is_active = brui_action_typing == ACTION && str_id == ACPARM.text.id;
+
+  br_vec2_t loc                = TOP.cur;
+  if (is_active) loc.x         -= ACPARM.text.offset_x;
   float out_top /* neg or 0 */ = fminf(TOP.cur.y - TOP.limit.min_y, 0.f);
-  float opt_height = (float)TOP.font_size + TOP.padding.y;
-  br_size_t space_left = BR_SIZE(BR_BBW(TOP.limit) - 2 * TOP.psum.x - (TOP.cur.x - (TOP.limit.min_x + TOP.psum.x)), TOP.limit.max_y - TOP.cur.y + out_top);
-  br_strv_t fit = br_text_renderer_fit(tr, space_left, TOP.font_size, strv);
-  br_extent_t ex = BR_EXTENT(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.cur.x, (float)TOP.font_size);
-  br_bb_t text_limit = TOP.limit;
+  float opt_height             = (float)TOP.font_size + TOP.padding.y;
+  br_size_t space_left         = BR_SIZE(TOP.limit.max_x - loc.x, TOP.limit.max_y - TOP.cur.y + out_top);
+  br_strv_t fit                = br_text_renderer_fit(tr, space_left, TOP.font_size, strv);
+  br_extent_t ex               = BR_EXTENT(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.cur.x, (float)TOP.font_size);
+  br_bb_t text_limit           = TOP.limit;
+  float half_thick             = 1.0f;
+
   float text_height = (float)TOP.font_size;
   if (fit.len != 0) {
     if (TOP.text_ancor & br_text_renderer_ancor_y_mid) loc.y += BR_BBH(TOP.limit) * 0.5f;
@@ -217,58 +221,17 @@ bool brui_text_input(brsp_id_t str_id) {
   TOP.cur.x = TOP.limit.min_x + TOP.psum.x;
   TOP.cur.y += opt_height;
   TOP.content_height += opt_height;
-  if (brui_action_typing == ACTION && str_id == ACPARM.text.id) {
-    int cp = ACPARM.text.cursor_pos;
-    float half_thick = 1.0f;
-    br_pressed_chars_t pressed = brtl_pressed_chars();
-    for (size_t i = 0; i < pressed.len; ++i) {
-      brtl_pressed_char_t p = br_da_get(pressed, i);
-      if (brtl_key_ctrl()) {
-        if (p.key == 'v') {
-          br_strv_t content = brtl_clipboard();
-          for (uint32_t j = 0; j < content.len; ++j) {
-            brsp_insert_char(brtl_brsp(), str_id, cp, (uint8_t)content.str[j]);
-            cp = ++ACPARM.text.cursor_pos;
-          }
-          changed = true;
-        }
-      } else {
-        uint32_t lp = p.key;
-        if (p.is_special) {
-          if (lp == BR_KEY_LEFT) while (ACPARM.text.cursor_pos > 0 && (strv.str[--ACPARM.text.cursor_pos] & 0b11000000) == 0b10000000);
-          else if (lp == BR_KEY_RIGHT) while (ACPARM.text.cursor_pos < (int)strv.len && (strv.str[++ACPARM.text.cursor_pos] & 0b11000000) == 0b10000000);
-          else if (lp == BR_KEY_ESCAPE) ACTION = brui_action_none;
-          else if (lp == BR_KEY_DELETE) {
-            changed = brsp_remove_utf8_after(sp, str_id, ACPARM.text.cursor_pos) > 0;
-          } else if (lp == BR_KEY_BACKSPACE) {
-            while (ACPARM.text.cursor_pos > 0 && ((strv.str[--ACPARM.text.cursor_pos] & 0b11000000) == 0b10000000));
-            changed = brsp_remove_utf8_after(sp, str_id, ACPARM.text.cursor_pos) > 0;
-          } else if (lp == BR_KEY_HOME) {
-            ACPARM.text.cursor_pos = 0;
-            changed = true;
-          }
-          else if (lp == BR_KEY_END) {
-            ACPARM.text.cursor_pos = (int)brsp_get(*sp, str_id).len;
-            changed = true;
-          }
-        } else if (p.key >= 32 && p.key != 127) {
-          int inserted = brsp_insert_unicode(brtl_brsp(), str_id, cp, p.key);
-          ACPARM.text.cursor_pos += inserted;
-          changed = true;
-        }
-      }
-      strv = brsp_get(*brtl_brsp(), str_id);
-    }
-    if ((uint32_t)ACPARM.text.cursor_pos > strv.len) ACPARM.text.cursor_pos = (int)strv.len;
+  if (is_active) {
     br_size_t size = br_text_renderer_measure(tr, TOP.font_size, br_str_sub(strv, 0, (uint32_t)ACPARM.text.cursor_pos));
     loc.x += size.width - 1.0f;
     text_limit.min_x -= 1.f;
     brui_rectangle(BR_BB(loc.x - half_thick, loc.y, loc.x + half_thick, loc.y + (float)text_height), text_limit, TOP.font_color, TOP.z + 2);
+    if (loc.x - (ACPARM.text.offset_x_target - ACPARM.text.offset_x) > TOP.limit.max_x - 20.f) ACPARM.text.offset_x_target += 20.f;
+    if (loc.x + (ACPARM.text.offset_x - ACPARM.text.offset_x_target) < TOP.limit.min_x + 20.f) ACPARM.text.offset_x_target = br_float_clamp(ACPARM.text.offset_x_target-20.f, 0.f, ACPARM.text.offset_x_target);
   } else {
     if (TOP.is_active) {
       if (brtl_mousel_pressed()) {
-        br_bb_t bb = BR_EXTENT_TOBB(ex);
-        if (br_col_vec2_bb(bb, brtl_mouse_pos())) {
+        if (br_col_vec2_bb(BR_EXTENT_TOBB(ex), brtl_mouse_pos())) {
           ACTION = brui_action_typing;
           ACPARM.text.cursor_pos = 0;
           ACPARM.text.id = str_id;
@@ -276,7 +239,7 @@ bool brui_text_input(brsp_id_t str_id) {
       }
     }
   }
-  return changed;
+  return ACPARM.text.changed;
 }
 
 void brui_new_lines(int n) {
@@ -365,7 +328,8 @@ bool brui_button(br_strv_t text) {
   float button_max_x = TOP.limit.max_x - TOP.psum.x;
   float button_max_y = fminf(TOP.cur.y + opt_height, TOP.limit.max_y);
   br_bb_t button_limit = BR_BB(TOP.cur.x, TOP.cur.y, button_max_x, button_max_y);
-  bool hovers = brui__stack.select_next || (br_col_vec2_bb(button_limit, brtl_mouse_pos()) && TOP.is_active);
+  bool hovers = (br_col_vec2_bb(button_limit, brtl_mouse_pos()) && TOP.is_active);
+  bool is_selected = hovers || brui__stack.select_next;
   brui__stack.select_next = false;
   BRUI_LOG("button_limit: %.2f %.2f %.2f %.2f", BR_BB_(button_limit));
   brui_push_simple();
@@ -376,11 +340,11 @@ bool brui_button(br_strv_t text) {
     TOP.psum.x = 0;
     TOP.padding.y *= 0.5f;
     brui_text_align_set(br_text_renderer_ancor_mid_mid);
-    brui_text_color_set(hovers ? BR_THEME.colors.btn_txt_hovered : BR_THEME.colors.btn_txt_inactive);
+    brui_text_color_set(is_selected ? BR_THEME.colors.btn_txt_hovered : BR_THEME.colors.btn_txt_inactive);
     brui_background(BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_height),
-      hovers ? BR_THEME.colors.btn_hovered : BR_THEME.colors.btn_inactive
+      is_selected ? BR_THEME.colors.btn_hovered : BR_THEME.colors.btn_inactive
     );
-    brui_border2(BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_height), hovers);
+    brui_border2(BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_height), is_selected);
     brui_text(text);
   brui_pop_simple();
   TOP.content_height += opt_height + TOP.padding.y;
@@ -932,6 +896,57 @@ void brui_resizable_update(void) {
   bruirs_t* rs = brtl_bruirs();
   rs->arr[0].current.cur_extent = rs->arr[0].target.cur_extent;
   float lerp_speed = brtl_frame_time() * brtl_theme()->ui.animation_speed;
+  lerp_speed = br_float_clamp(lerp_speed, brtl_frame_time(), 1.f);
+
+  if (brui_action_typing == ACTION) {
+    brsp_t* sp = brtl_brsp();
+    brsp_id_t str_id = ACPARM.text.id;
+    br_strv_t strv = brsp_get(*sp, str_id);
+    int cp = ACPARM.text.cursor_pos;
+    ACPARM.text.changed = false;
+    br_pressed_chars_t pressed = brtl_pressed_chars();
+    for (size_t i = 0; i < pressed.len; ++i) {
+      brtl_pressed_char_t p = br_da_get(pressed, i);
+      if (brtl_key_ctrl()) {
+        if (p.key == 'v') {
+          br_strv_t content = brtl_clipboard();
+          for (uint32_t j = 0; j < content.len; ++j) {
+            brsp_insert_char(sp, str_id, cp, (uint8_t)content.str[j]);
+            cp = ++ACPARM.text.cursor_pos;
+          }
+          ACPARM.text.changed = true;
+        }
+      } else {
+        uint32_t lp = p.key;
+        if (p.is_special) {
+          if (lp == BR_KEY_LEFT) while (ACPARM.text.cursor_pos > 0 && (strv.str[--ACPARM.text.cursor_pos] & 0b11000000) == 0b10000000);
+          else if (lp == BR_KEY_RIGHT) while (ACPARM.text.cursor_pos < (int)strv.len && (strv.str[++ACPARM.text.cursor_pos] & 0b11000000) == 0b10000000);
+          else if (lp == BR_KEY_ESCAPE) ACTION = brui_action_none;
+          else if (lp == BR_KEY_DELETE) {
+            ACPARM.text.changed = brsp_remove_utf8_after(sp, str_id, ACPARM.text.cursor_pos) > 0;
+          } else if (lp == BR_KEY_BACKSPACE) {
+            while (ACPARM.text.cursor_pos > 0 && ((strv.str[--ACPARM.text.cursor_pos] & 0b11000000) == 0b10000000));
+            ACPARM.text.changed = brsp_remove_utf8_after(sp, str_id, ACPARM.text.cursor_pos) > 0;
+          } else if (lp == BR_KEY_HOME) {
+            ACPARM.text.cursor_pos = 0;
+            ACPARM.text.changed = true;
+          }
+          else if (lp == BR_KEY_END) {
+            ACPARM.text.cursor_pos = (int)brsp_get(*sp, str_id).len;
+            ACPARM.text.changed = true;
+          }
+        } else if (p.key >= 32 && p.key != 127) {
+          int inserted = brsp_insert_unicode(sp, str_id, cp, p.key);
+          ACPARM.text.cursor_pos += inserted;
+          ACPARM.text.changed = true;
+        }
+      }
+      strv = brsp_get(*sp, str_id);
+    }
+    if ((uint32_t)ACPARM.text.cursor_pos > strv.len) ACPARM.text.cursor_pos = (int)strv.len;
+    ACPARM.text.offset_x = br_float_lerp(ACPARM.text.offset_x, ACPARM.text.offset_x_target, lerp_speed);
+  }
+
   brfl_foreach(i, *rs) {
     brui_resizable_t* res = br_da_getp(*rs, i);
 
@@ -1299,6 +1314,10 @@ int brui_resizable_active(void) {
 
 void brui_resizable_show(int resizable_handle, bool show) {
   br_da_getp(*brtl_bruirs(), resizable_handle)->target.hidden_factor = show ? 0.f : 1.f;
+}
+
+void brui_resizable_maximize(int resizable_handle, bool maximize) {
+  br_da_getp(*brtl_bruirs(), resizable_handle)->ancor = maximize ? brui_ancor_all : brui_ancor_none;
 }
 
 bool brui_resizable_is_hidden(int resizable_handle) {

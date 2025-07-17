@@ -51,12 +51,12 @@ bool br_fs_cd(br_str_t* cwd, br_strv_t path) {
 
   while (path.len != 0) {
     br_strv_t next_name = { path.str, 0 };
-    for (; next_name.len < path.len && path.str[next_name.len] != '/'; ++next_name.len);
+    for (; next_name.len < path.len && !IS_SEP(path.str[next_name.len]); ++next_name.len);
     if (next_name.len == 0) /* DO NOTHING */;
     else if (br_strv_eq(next_name, br_strv_from_c_str(".."))) br_fs_up_dir(cwd);
     else if (br_strv_eq(next_name, br_strv_from_c_str("."))) /* DO NOTHING */;
     else if (cwd->len == 0) br_str_push_strv(cwd, next_name);
-    else if (cwd->str[cwd->len - 1] == '/') br_str_push_strv(cwd, next_name);
+    else if (IS_SEP(cwd->str[cwd->len - 1])) br_str_push_strv(cwd, next_name);
     else {
       br_str_push_char(cwd, '/');
       br_str_push_strv(cwd, next_name);
@@ -85,8 +85,3 @@ bool br_fs_exists(br_strv_t path) {
   return exists;
 }
 
-bool br_fs_list_dir(br_strv_t path, br_fs_files_t* out_files) {
-  (void)path; (void)out_files;
-  LOGI("List dirs not implemented on windows");
-  return false;
-}

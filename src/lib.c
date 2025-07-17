@@ -165,6 +165,11 @@ int br_data_add_v2(br_plotter_t* plotter, double x, double y, br_data_id data) {
   return 1;
 }
 
+int br_data_add_v3(br_plotter_t* plotter, double x, double y, double z, br_data_id data) {
+  q_push(plotter->commands, (q_command){ .type = q_command_push_point_xyz, .push_point_xyz = { .x = x, .y = y, .z = z, .group = data } } );
+  return 1;
+}
+
 int br_data_add_v2n(br_plotter_t* plotter, double const* v, int n, br_data_id data) {
   int ret = 0;
   for (int i = 0; i < n; i += 2, ++ret) br_data_add_v2(plotter, v[i], v[i + 1], data);
@@ -190,6 +195,10 @@ int br_data_add_v2nds(br_plotter_t* plotter, double const* xs, double const* ys,
   return ret;
 }
 
+void br_empty(br_plotter_t* plotter, br_data_id data_id) {
+  q_push(plotter->commands, (q_command){ .type = q_command_empty, .clear = { .group = data_id } } );
+}
+
 #define BR_PLOTTERS_CAP 4
 BR_THREAD_LOCAL static int g_brplot_br_plotter_id = 0;
 
@@ -213,15 +222,33 @@ br_data_id brp_1(double x, br_data_id data_id) {
   return data_id;
 }
 
-br_data_id brp_1n(const double *points, int n, br_data_id data_id) {
+br_data_id brp_f1(float x, br_data_id data_id) {
   brp_simp_create_plotter_if_no_exist();
-  br_data_add_v1n(TOP_PLOTTER, points, n, data_id);
+  br_data_add_v1(TOP_PLOTTER, (double)x, data_id);
   return data_id;
 }
 
 br_data_id brp_2(double x, double y, br_data_id data_id) {
   brp_simp_create_plotter_if_no_exist();
   br_data_add_v2(TOP_PLOTTER, x, y, data_id);
+  return data_id;
+}
+
+br_data_id brp_f2(float x, float y, br_data_id data_id) {
+  brp_simp_create_plotter_if_no_exist();
+  br_data_add_v2(TOP_PLOTTER, (double)x, (double)y, data_id);
+  return data_id;
+}
+
+br_data_id brp_3(double x, double y, double z, br_data_id data_id) {
+  brp_simp_create_plotter_if_no_exist();
+  br_data_add_v3(TOP_PLOTTER, x, y, z, data_id);
+  return data_id;
+}
+
+br_data_id brp_f3(float x, float y, float z, br_data_id data_id) {
+  brp_simp_create_plotter_if_no_exist();
+  br_data_add_v3(TOP_PLOTTER, (double)x, (double)y, (double)z, data_id);
   return data_id;
 }
 

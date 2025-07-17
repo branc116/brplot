@@ -129,3 +129,6 @@ TEST_CASE(str_replace1) {
 }
 
 int main(void) {}
+void br_on_fatal_error(void) {
+  LOGI("Failed");
+}

@@ -774,15 +774,13 @@ void read_input_main_worker(br_plotter_t* gv) {
   lex(gv);
 }
 
-#if defined(BR_UNIT_TEST)
-#include "external/tests.h"
-
 #if defined(FUZZ)
-#include "src/br_data_generator.h"
-#include "src/br_plotter.h"
-#include "src/br_gui.h"
-#include "src/br_icons.h"
-#include "src/br_tl.h"
+#  include "src/br_data_generator.h"
+#  include "src/br_plotter.h"
+#  include "src/br_gui.h"
+#  include "src/br_icons.h"
+#  include "src/br_tl.h"
+
 int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
   lex_state_t s = { 0 };
   lex_state_init(&s);
@@ -804,10 +802,17 @@ int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
     br_plotter_draw(br);
     br_dagens_handle(&br->groups, &br->dagens, &br->plots, brtl_time() + 0.010);
   }
+  br_plotter_deinit(br);
   br_plotter_free(br);
+  BR_FREE(br);
+  printf("DONE\n");
   return 0;  // Values other than 0 and -1 are reserved for future use.
 }
 #endif
+
+
+#if defined(BR_UNIT_TEST)
+#include "external/tests.h"
 
 #define TEST_COMMAND_SET_ZOOM(q, AXIS, VALUE) do { \
   q_command c = q_pop(q); \

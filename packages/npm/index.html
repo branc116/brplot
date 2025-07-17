@@ -1,5 +1,6 @@
 <html>
   <body>
+    <button id="clearB">Clear</button>
     <canvas width="800" height="600" id="canv"></canvas>
   </body>
   <script type="module">
@@ -7,8 +8,12 @@
     const br = new Brplot("canv");
     await br.initializeAsync();
     let i = 0;
+    canv.onclick = () => {
+      br.empty(1);
+      br.empty(2);
+    }
     br.setOnNewFrame(() => {
-      for (let j = 0 ; j < 100; ++j) {
+      for (let j = 0 ; j < 10; ++j) {
         br.pushPoint(i/1000, Math.sin(i/1000));
         br.pushPoint(Math.sin(i/1000), i/1000, 1);
         br.pushPoint(Math.cos(i/1000), -i/1000, 2);

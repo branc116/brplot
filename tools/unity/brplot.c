@@ -4,7 +4,6 @@
 #include "src/free_list.c"
 #include "src/string_pool.c"
 #include "src/platform.c"
-#include "src/da.c"
 #include "src/data.c"
 #include "src/data_generator.c"
 #include "src/filesystem.c"

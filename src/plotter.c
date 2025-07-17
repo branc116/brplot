@@ -142,6 +142,7 @@ void br_plotter_deinit(br_plotter_t* br) {
   br_plotter_deinit_specifics_platform(br);
   BR_FREE(br->plots.arr);
   br_dagens_free(&br->dagens);
+  brsp_free(brtl_brsp());
   LOGI("Plotter deinited");
 }
 
@@ -192,7 +193,11 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
     .mouse_inside_graph = false,
     .kind = br_plot_kind_2d,
     .dd =  {
+#if defined(__EMSCRIPTEN__)
+      .zoom = BR_VEC2D(10.f, 10.f),
+#else
       .zoom = BR_VEC2D(1.f, 1.f),
+#endif
       .offset = BR_VEC2D(0.f, 0.f),
       .grid_line_thickness =  brtl_theme()->ui.default_grid_line_thickenss,
       .grid_major_line_thickness = 2.f,
@@ -201,6 +206,9 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
   };
   br_plot_create_texture(&plot);
   plot.extent_handle = brui_resizable_new2(BR_EXTENT((float)x, 50, (float)br->win.size.width - (float)x - 60.f, (float)br->win.size.height - 110), 0, (brui_resizable_t) { .tag = 100, .title_enabled = true });
+#if defined(__EMSCRIPTEN__)
+  brui_resizable_maximize(plot.extent_handle, true);
+#endif
   plot.menu_extent_handle = brui_resizable_new2(BR_EXTENT(0, 0, 300, (float)plot.cur_extent.height), plot.extent_handle, (brui_resizable_t) { .current.tag = 101, .target.hidden_factor = 1.f });
   plot.legend_extent_handle = brui_resizable_new2(BR_EXTENT((float)plot.cur_extent.width - 110, 10, 100, 60), plot.extent_handle, (brui_resizable_t) { .current.tag = 102 });
   br_da_push_t(int, (br->plots), plot);
@@ -257,9 +265,28 @@ void br_plotter_data_remove(br_plotter_t* br, int group_id) {
 void br_plotter_frame_end(br_plotter_t* br) {
   for (size_t i = 0; i < br->groups.len; ++i) {
     if (br->groups.arr[i].is_new == false) continue;
+    bool any_added = false;
     for (int j = 0; j < br->plots.len; ++j) {
-      if (br->plots.arr[j].kind == br_plot_kind_2d && br->groups.arr[i].kind == br_data_kind_3d) continue;
-      br_da_push_t(int, br->plots.arr[j].data_info, BR_PLOT_DATA(br->groups.arr[i].group_id));
+      if (br->plots.arr[j].kind == br_plot_kind_2d && br->groups.arr[i].kind == br_data_kind_2d) {
+        br_da_push_t(int, br->plots.arr[j].data_info, BR_PLOT_DATA(br->groups.arr[i].group_id));
+        any_added = true;
+      } else if (br->plots.arr[j].kind == br_plot_kind_3d) {
+        br_da_push_t(int, br->plots.arr[j].data_info, BR_PLOT_DATA(br->groups.arr[i].group_id));
+        any_added = true;
+      }
+    }
+    if (false == any_added) {
+      switch (br->groups.arr[i].kind) {
+        case br_data_kind_2d: {
+          int id = br_plotter_add_plot_2d(br);
+          br_da_push_t(int, br->plots.arr[id].data_info, BR_PLOT_DATA(br->groups.arr[i].group_id));
+        } break;
+        case br_data_kind_3d: {
+          int id = br_plotter_add_plot_3d(br);
+          br_da_push_t(int, br->plots.arr[id].data_info, BR_PLOT_DATA(br->groups.arr[i].group_id));
+        } break;
+        default: BR_UNREACHABLE("Kind: %d", br->groups.arr[i].kind);
+      }
     }
     br->groups.arr[i].is_new = false;
   }
@@ -366,3 +393,19 @@ void br_plotter_datas_deinit(br_plotter_t* br) {
   br_dagens_free(&br->dagens);
 }
 
+void br_on_fatal_error(void) {
+  br_str_t config_file = { 0 };
+  br_str_t config_file_old = { 0 };
+  br_fs_get_config_dir(&config_file);
+  br_fs_cd(&config_file, BR_STRL("plotter.br"));
+  br_str_copy2(&config_file_old, config_file);
+  br_str_push_strv(&config_file_old, BR_STRL(".old."));
+  br_str_push_float(&config_file_old, (float)brtl_time());
+  br_str_push_zero(&config_file);
+  br_str_push_zero(&config_file_old);
+
+  br_fs_move(config_file.str, config_file_old.str);
+
+  br_str_free(config_file);
+  br_str_free(config_file_old);
+}

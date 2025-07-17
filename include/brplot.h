@@ -25,39 +25,25 @@
  *
  * Example of simple API:
  * ```main.c
-      #define BRPLOT_IMPLEMENTATION
-      #include "brplot.c"
 
-      int main(void) {
-         for (int i = -10; i < 10; ++i)           brp_1(y_valuei*i,               0); //          y-value, group_id
-         for (double i = -10.f; i < 10.0; i+=0.1) brp_2(0.1f*sin(i), 0.1f*cos(i), 2); // x-value, y-value, group_id
-         brp_wait(); // Wait until plot window is closed
-      }
+#define BRPLOT_IMPLEMENTATION
+#include <brplot.h>
+
+int main(void) {
+  //                                                1st axis,    2nd axis, data_id
+  for (int    i =   -10; i <   10;    ++i) brp_1(          i,                    0);
+  for (double i = -10.f; i < 10.0; i+=0.1) brp_2(0.1f*sin(i), 0.1f*cos(i),       2);
+  brp_wait(); // Wait until plot window is closed
+}
+
  * ```
  * Compile as: cc main.c
  * Functions that are part of simple api can be found by following a tag *SIMPLEAPI*
- *
- * Example of a bit more compilcate API
- * ``` main.c
-       #define BRPLOT_IMPLEMENTATION
-       #include "brplot.h"
-
-       int main(void) {
-         br_plotter_t* plotter = br_plotter_new(br_plotter_default_ctor());
-         br_plot_id plot = br_plot_new(plotter, br_plot_default_ctor());
-         br_data_id data = br_data_new(plotter, br_data_default_ctor());
-         for (int i = -10; i < 10; ++i) br_data_add_v1(plotter, data, 10.f);
-         br_plotter_wait(plotter);
-       }
- * ```
- * Compile as: cc main.c
- * Functions that are part of a bit more complicated API can be found by following a tag *ABITMORECOMPILCATED*
- *
  * */
 #pragma once
 #define BR_MAJOR_VERSION 0
 #define BR_MINOR_VERSION 0
-#define BR_PATCH_VERSION 1
+#define BR_PATCH_VERSION 2
 
 #if defined(__EMSCRIPTEN__)
 #  include <emscripten.h>
@@ -81,37 +67,14 @@ extern "C" {
  * For more  details what each parameter means jump to *PARAMETER_DEFINITIONS*
  * */
 typedef int br_data_id;
-BR_EXPORT br_data_id brp_1   (double x,                                            br_data_id data_id);
-BR_EXPORT br_data_id brp_1n  (double const* points, int n,                         br_data_id data_id);
-BR_EXPORT br_data_id brp_1ns (double const* points, int n, int stride, int offset, br_data_id data_id);
+BR_EXPORT br_data_id brp_1 (double x,                     br_data_id data_id);
+BR_EXPORT br_data_id brp_f1(float x,                      br_data_id data_id);
 
-BR_EXPORT br_data_id brp_2   (double x, double y,                                                                br_data_id data_id);
-BR_EXPORT br_data_id brp_2n  (double const* v,                    int n,                                         br_data_id data_id);
-BR_EXPORT br_data_id brp_2ns (double const* v,                    int n, int stride, int offset_x, int offset_y, br_data_id data_id);
-BR_EXPORT br_data_id brp_2nd (double const* xs, double const* ys, int n,                                         br_data_id data_id);
-BR_EXPORT br_data_id brp_2nds(double const* xs, double const* ys, int n, int stride, int offset_x, int offset_y, br_data_id data_id);
+BR_EXPORT br_data_id brp_2 (double x, double y,           br_data_id data_id);
+BR_EXPORT br_data_id brp_f2(float x,   float y,           br_data_id data_id);
 
-BR_EXPORT br_data_id brp_3   (double x, double y, double z,                                                                                      br_data_id data_id);
-BR_EXPORT br_data_id brp_3n  (double const* v,                                      int n,                                                       br_data_id data_id);
-BR_EXPORT br_data_id brp_3ns (double const* v,                                      int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
-BR_EXPORT br_data_id brp_3nd (double const* xs, double const* ys, double const* zs, int n,                                                       br_data_id data_id);
-BR_EXPORT br_data_id brp_3nds(double const* xs, double const* ys, double const* zs, int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
-
-BR_EXPORT br_data_id brp_f1   (float x,                                            br_data_id data_id);
-BR_EXPORT br_data_id brp_f1n  (float const* points, int n,                         br_data_id data_id);
-BR_EXPORT br_data_id brp_f1ns (float const* points, int n, int stride, int offset, br_data_id data_id);
-
-BR_EXPORT br_data_id brp_f2   (float x, float y,                                                                br_data_id data_id);
-BR_EXPORT br_data_id brp_f2n  (float const* v,                   int n,                                         br_data_id data_id);
-BR_EXPORT br_data_id brp_f2ns (float const* v,                   int n, int stride, int offset_x, int offset_y, br_data_id data_id);
-BR_EXPORT br_data_id brp_f2nd (float const* xs, float const* ys, int n,                                         br_data_id data_id);
-BR_EXPORT br_data_id brp_f2nds(float const* xs, float const* ys, int n, int stride, int offset_x, int offset_y, br_data_id data_id);
-
-BR_EXPORT br_data_id brp_f3   (float x, float y, float z,                                                                                      br_data_id data_id);
-BR_EXPORT br_data_id brp_f3n  (float const* v,                                    int n,                                                       br_data_id data_id);
-BR_EXPORT br_data_id brp_f3ns (float const* v,                                    int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
-BR_EXPORT br_data_id brp_f3nd (float const* xs, float const* ys, float const* zs, int n,                                                       br_data_id data_id);
-BR_EXPORT br_data_id brp_f3nds(float const* xs, float const* ys, float const* zs, int n, int stride, int offset_x, int offset_y, int offset_z, br_data_id data_id);
+BR_EXPORT br_data_id brp_3 (double x, double y, double z, br_data_id data_id);
+BR_EXPORT br_data_id brp_f3(float x,   float y,  float z, br_data_id data_id);
 
 // Change data label
 BR_EXPORT void brp_label(const char* label, br_data_id data_id);
@@ -294,6 +257,8 @@ BR_EXPORT void br_data_free(br_data_id data);
 
 BR_EXPORT void br_plot_show_data(br_plotter_t* plotter, br_plot_id plot, br_data_id data);
 BR_EXPORT void br_plot_hide_data(br_plotter_t* plotter, br_plot_id plot, br_data_id data);
+
+BR_EXPORT void br_empty(br_plotter_t* plotter, br_data_id data);
 
 #if defined(__cplusplus)
 }
