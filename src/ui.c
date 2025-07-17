@@ -81,7 +81,7 @@ brui_stack_el_t brui_stack_el(void) {
 }
 
 #if TRACY_ENABLE
-BR_THREAD_LOCAL static struct ___tracy_source_location_data brui_begin_end_bench = { "UI Begin End", "Static",  __FILE__, (uint32_t)__LINE__, 0 };
+static BR_THREAD_LOCAL struct ___tracy_source_location_data brui_begin_end_bench = { "UI Begin End", "Static",  __FILE__, (uint32_t)__LINE__, 0 };
 TracyCZoneCtx brui_begin_end_ctx;
 #endif
 
@@ -1199,7 +1199,7 @@ int brui_resizable_sibling_max_z(int id) {
 }
 
 bruir_children_t brui_resizable_children_temp(int resizable_handle) {
-  BR_THREAD_LOCAL static bruir_children_t temp = { 0 };
+  static BR_THREAD_LOCAL bruir_children_t temp = { 0 };
   temp.len = 0;
   brfl_foreach(i, *brtl_bruirs()) {
     if (resizable_handle == br_da_get(*brtl_bruirs(), i).parent) {

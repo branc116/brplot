@@ -200,9 +200,9 @@ void br_empty(br_plotter_t* plotter, br_data_id data_id) {
 }
 
 #define BR_PLOTTERS_CAP 4
-BR_THREAD_LOCAL static int g_brplot_br_plotter_id = 0;
+static BR_THREAD_LOCAL int g_brplot_br_plotter_id = 0;
 
-BR_THREAD_LOCAL static br_plotter_t* g_brplot_br_plotter[BR_PLOTTERS_CAP] = { 0 };
+static BR_THREAD_LOCAL br_plotter_t* g_brplot_br_plotter[BR_PLOTTERS_CAP] = { 0 };
 #define TOP_PLOTTER g_brplot_br_plotter[g_brplot_br_plotter_id]
 
 static void brp_simp_create_plotter_if_no_exist(void) {

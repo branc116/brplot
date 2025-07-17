@@ -133,7 +133,7 @@ void brgl_disable_clip_distance(void) {
 
 #define BR_FRAMEBUFFERS 16
 #define BR_FRAMEBUFFER_STACK 16
-BR_THREAD_LOCAL static struct {
+static BR_THREAD_LOCAL struct {
   GLuint fb_id, tx_id, rb_id;
   int width, height;
 } br_framebuffers[BR_FRAMEBUFFERS] = { 0 };

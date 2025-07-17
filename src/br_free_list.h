@@ -191,7 +191,7 @@
 
 #define brfl_is_free(FL, i) ((FL).free_arr[i] != -1)
 
-BR_THREAD_LOCAL extern int brfl__ret_handle;
+extern BR_THREAD_LOCAL int brfl__ret_handle;
 int brfl_push_internal_get_handle(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, const char* file, int line);
 int brfl_push_end_internal_get_handle(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, const char* file, int line);
 int brfl_next_taken(int const* free_arr, int len, int index);
