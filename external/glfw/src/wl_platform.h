@@ -33,6 +33,8 @@
 #include "external/glfw/src/xkb_unicode.h"
 #include "external/glfw/src/posix_poll.h"
 
+struct wl_surface;
+
 typedef int (* PFN_wl_display_flush)(struct wl_display* display);
 typedef void (* PFN_wl_display_cancel_read)(struct wl_display* display);
 typedef int (* PFN_wl_display_dispatch_pending)(struct wl_display* display);
