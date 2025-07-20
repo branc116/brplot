@@ -314,6 +314,7 @@ static void fill_command_flag_data(void) {
   command_flag_t dist_flag           = (command_flag_t) {.name = BR_STRL("dist"),       .alias = 'D',  .description = BR_STRL("Also create dist ( Needed for pip package but maybe you wanna disable this because it's slow )"), .is_set = &do_dist};
   command_flag_t pip_skip_build_flag = (command_flag_t) {.name = BR_STRL("skip-build"), .alias = '\0', .description = BR_STRL("Don't do anything except call pip to create a package"),                                          .is_set = &pip_skip_build};
   command_flag_t unittest_no_gen     = (command_flag_t) {.name = BR_STRL("no-gen"),     .alias = 'n',  .description = BR_STRL("Don't generate files when running unittests"),                                                    .is_set = &no_gen};
+  command_flag_t build_no_gen        = (command_flag_t) {.name = BR_STRL("no-gen"),     .alias = '\0', .description = BR_STRL("Don't generate files whild building"),                                                            .is_set = &no_gen};
   br_da_push(command_flags[n_compile], debug_flag);
   br_da_push(command_flags[n_compile], has_hotreload_flag);
   br_da_push(command_flags[n_compile], pedantic_flag);
@@ -329,6 +330,7 @@ static void fill_command_flag_data(void) {
   br_da_push(command_flags[n_pip], dist_flag);
   br_da_push(command_flags[n_pip], pip_skip_build_flag);
   br_da_push(command_flags[n_unittests], unittest_no_gen);
+  br_da_push(command_flags[n_build], build_no_gen);
 
   br_da_push(command_deps[n_debug], n_build);
   br_da_push(command_deps[n_cdebug], n_compile);
@@ -908,7 +910,8 @@ static bool n_compile_do(void) {
 }
 
 static bool n_build_do(void) {
-  return n_generate_do() && n_compile_do();
+  if (false == no_gen && false == n_generate_do()) return false;
+  return n_compile_do();
 }
 
 static bool n_run_do(void) {
