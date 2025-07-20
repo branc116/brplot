@@ -18,3 +18,5 @@ dist/usr
 packages/aur/brplot
 packages/aur/src/brplot
 dist
+crash-*
+*.tar.gz
