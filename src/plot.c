@@ -198,6 +198,7 @@ void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
       br_mat_t look = br_mat_look_at(plot->ddd.eye, plot->ddd.target, plot->ddd.up);
       shaders->grid_3d->uvs.m_mvp_uv = br_mat_mul(look_grid, per);
       shaders->grid_3d->uvs.eye_uv = eye_final;
+      shaders->grid_3d->uvs.target_uv = plot->ddd.target;
       shaders->grid_3d->uvs.look_dir_uv = br_vec3_normalize(br_vec3_sub(plot->ddd.target, plot->ddd.eye));
 
       shaders->line_3d_simple->uvs.m_mvp_uv = shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);

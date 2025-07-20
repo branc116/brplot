@@ -29,7 +29,7 @@
 #define NOP2(N, M)
 
 #define BR_ALL_SHADERS(X, X_VEC, X_BUF) \
-  X(grid, 2,                            \
+  X(grid, 6,                            \
       X_VEC(zoom, 2)                    \
       X_VEC(offset, 2)                  \
       X_VEC(bg_color, 4)                \
@@ -40,8 +40,9 @@
                                         \
       X_BUF(vertexPosition, 2)          \
     )                                   \
-  X(grid_3d, 8,                         \
+  X(grid_3d, 12,                        \
       X_VEC(eye, 3)                     \
+      X_VEC(target, 3)                  \
       X_VEC(look_dir, 3)                \
       X_VEC(m_mvp, 16),                 \
                                         \
