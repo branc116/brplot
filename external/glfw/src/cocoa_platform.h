@@ -78,28 +78,6 @@ typedef void* id;
  #define NSPasteboardTypeURL NSURLPboardType
 #endif
 
-typedef VkFlags VkMacOSSurfaceCreateFlagsMVK;
-typedef VkFlags VkMetalSurfaceCreateFlagsEXT;
-
-typedef struct VkMacOSSurfaceCreateInfoMVK
-{
-    VkStructureType                 sType;
-    const void*                     pNext;
-    VkMacOSSurfaceCreateFlagsMVK    flags;
-    const void*                     pView;
-} VkMacOSSurfaceCreateInfoMVK;
-
-typedef struct VkMetalSurfaceCreateInfoEXT
-{
-    VkStructureType                 sType;
-    const void*                     pNext;
-    VkMetalSurfaceCreateFlagsEXT    flags;
-    const void*                     pLayer;
-} VkMetalSurfaceCreateInfoEXT;
-
-typedef VkResult (APIENTRY *PFN_vkCreateMacOSSurfaceMVK)(VkInstance,const VkMacOSSurfaceCreateInfoMVK*,const VkAllocationCallbacks*,VkSurfaceKHR*);
-typedef VkResult (APIENTRY *PFN_vkCreateMetalSurfaceEXT)(VkInstance,const VkMetalSurfaceCreateInfoEXT*,const VkAllocationCallbacks*,VkSurfaceKHR*);
-
 #define GLFW_COCOA_WINDOW_STATE         _GLFWwindowNS  ns;
 #define GLFW_COCOA_LIBRARY_WINDOW_STATE _GLFWlibraryNS ns;
 #define GLFW_COCOA_MONITOR_STATE        _GLFWmonitorNS ns;
@@ -272,9 +250,6 @@ EGLenum _glfwGetEGLPlatformCocoa(EGLint** attribs);
 EGLNativeDisplayType _glfwGetEGLNativeDisplayCocoa(void);
 EGLNativeWindowType _glfwGetEGLNativeWindowCocoa(_GLFWwindow* window);
 
-void _glfwGetRequiredInstanceExtensionsCocoa(char** extensions);
-GLFWbool _glfwGetPhysicalDevicePresentationSupportCocoa(VkInstance instance, VkPhysicalDevice device, uint32_t queuefamily);
-
 void _glfwFreeMonitorCocoa(_GLFWmonitor* monitor);
 void _glfwGetMonitorPosCocoa(_GLFWmonitor* monitor, int* xpos, int* ypos);
 void _glfwGetMonitorContentScaleCocoa(_GLFWmonitor* monitor, float* xscale, float* yscale);
@@ -289,8 +264,6 @@ void _glfwSetVideoModeCocoa(_GLFWmonitor* monitor, const GLFWvidmode* desired);
 void _glfwRestoreVideoModeCocoa(_GLFWmonitor* monitor);
 
 float _glfwTransformYCocoa(float y);
-
-void* _glfwLoadLocalVulkanLoaderCocoa(void);
 
 GLFWbool _glfwInitNSGL(void);
 void _glfwTerminateNSGL(void);

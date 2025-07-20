@@ -462,9 +462,6 @@ GLFWbool _glfwConnectWayland(int platformID, _GLFWplatform* platform)
         .getEGLPlatform = _glfwGetEGLPlatformWayland,
         .getEGLNativeDisplay = _glfwGetEGLNativeDisplayWayland,
         .getEGLNativeWindow = _glfwGetEGLNativeWindowWayland,
-        .getRequiredInstanceExtensions = _glfwGetRequiredInstanceExtensionsWayland,
-        .getPhysicalDevicePresentationSupport = _glfwGetPhysicalDevicePresentationSupportWayland,
-        .createWindowSurface = NULL
     };
 
     void* module = _glfwPlatformLoadModule("libwayland-client.so.0");

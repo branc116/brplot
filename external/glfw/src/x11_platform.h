@@ -426,32 +426,6 @@ typedef GLXContext (*PFNGLXCREATECONTEXTATTRIBSARBPROC)(Display*,GLXFBConfig,GLX
 #define glXCreateWindow _glfw.glx.CreateWindow
 #define glXDestroyWindow _glfw.glx.DestroyWindow
 
-typedef VkFlags VkXlibSurfaceCreateFlagsKHR;
-typedef VkFlags VkXcbSurfaceCreateFlagsKHR;
-
-typedef struct VkXlibSurfaceCreateInfoKHR
-{
-    VkStructureType             sType;
-    const void*                 pNext;
-    VkXlibSurfaceCreateFlagsKHR flags;
-    Display*                    dpy;
-    Window                      window;
-} VkXlibSurfaceCreateInfoKHR;
-
-typedef struct VkXcbSurfaceCreateInfoKHR
-{
-    VkStructureType             sType;
-    const void*                 pNext;
-    VkXcbSurfaceCreateFlagsKHR  flags;
-    xcb_connection_t*           connection;
-    xcb_window_t                window;
-} VkXcbSurfaceCreateInfoKHR;
-
-typedef VkResult (APIENTRY *PFN_vkCreateXlibSurfaceKHR)(VkInstance,const VkXlibSurfaceCreateInfoKHR*,const VkAllocationCallbacks*,VkSurfaceKHR*);
-typedef VkBool32 (APIENTRY *PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR)(VkPhysicalDevice,uint32_t,Display*,VisualID);
-typedef VkResult (APIENTRY *PFN_vkCreateXcbSurfaceKHR)(VkInstance,const VkXcbSurfaceCreateInfoKHR*,const VkAllocationCallbacks*,VkSurfaceKHR*);
-typedef VkBool32 (APIENTRY *PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR)(VkPhysicalDevice,uint32_t,xcb_connection_t*,xcb_visualid_t);
-
 #include "external/glfw/src/xkb_unicode.h"
 #include "external/glfw/src/posix_poll.h"
 
@@ -958,10 +932,6 @@ const char* _glfwGetClipboardStringX11(void);
 EGLenum _glfwGetEGLPlatformX11(EGLint** attribs);
 EGLNativeDisplayType _glfwGetEGLNativeDisplayX11(void);
 EGLNativeWindowType _glfwGetEGLNativeWindowX11(_GLFWwindow* window);
-
-void _glfwGetRequiredInstanceExtensionsX11(char** extensions);
-GLFWbool _glfwGetPhysicalDevicePresentationSupportX11(VkInstance instance, VkPhysicalDevice device, uint32_t queuefamily);
-VkResult _glfwCreateWindowSurfaceX11(VkInstance instance, _GLFWwindow* window, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface);
 
 void _glfwFreeMonitorX11(_GLFWmonitor* monitor);
 void _glfwGetMonitorPosX11(_GLFWmonitor* monitor, int* xpos, int* ypos);

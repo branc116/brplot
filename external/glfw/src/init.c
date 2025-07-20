@@ -51,15 +51,10 @@ static BR_THREAD_LOCAL _GLFWinitconfig _glfwInitHints =
 {
     .angleType = GLFW_ANGLE_PLATFORM_TYPE_NONE,
     .platformID = GLFW_ANY_PLATFORM,
-    .vulkanLoader = NULL,
     .ns =
     {
         .menubar = GLFW_TRUE,
         .chdir = GLFW_TRUE
-    },
-    .x11 =
-    {
-        .xcbVulkanSurface = GLFW_TRUE,
     },
     .wl =
     {
@@ -448,9 +443,6 @@ GLFWAPI void glfwInitHint(int hint, int value)
         case GLFW_COCOA_MENUBAR:
             _glfwInitHints.ns.menubar = value;
             return;
-        case GLFW_X11_XCB_VULKAN_SURFACE:
-            _glfwInitHints.x11.xcbVulkanSurface = value;
-            return;
         case GLFW_WAYLAND_LIBDECOR:
             _glfwInitHints.wl.libdecorMode = value;
             return;
@@ -471,11 +463,6 @@ GLFWAPI void glfwInitAllocator(const GLFWallocator* allocator)
     }
     else
         memset(&_glfwInitAllocator, 0, sizeof(GLFWallocator));
-}
-
-GLFWAPI void glfwInitVulkanLoader(PFN_vkGetInstanceProcAddr loader)
-{
-    _glfwInitHints.vulkanLoader = loader;
 }
 
 GLFWAPI void glfwGetVersion(int* major, int* minor, int* rev)

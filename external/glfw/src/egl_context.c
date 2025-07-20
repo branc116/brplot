@@ -461,8 +461,6 @@ GLFWbool _glfwInitEGL(void)
             _glfwStringInExtensionString("EGL_ANGLE_platform_angle_opengl", extensions);
         _glfw.egl.ANGLE_platform_angle_d3d =
             _glfwStringInExtensionString("EGL_ANGLE_platform_angle_d3d", extensions);
-        _glfw.egl.ANGLE_platform_angle_vulkan =
-            _glfwStringInExtensionString("EGL_ANGLE_platform_angle_vulkan", extensions);
         _glfw.egl.ANGLE_platform_angle_metal =
             _glfwStringInExtensionString("EGL_ANGLE_platform_angle_metal", extensions);
     }

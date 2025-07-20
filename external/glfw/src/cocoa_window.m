@@ -1921,28 +1921,6 @@ EGLNativeWindowType _glfwGetEGLNativeWindowCocoa(_GLFWwindow* window)
     return window->ns.layer;
 }
 
-void _glfwGetRequiredInstanceExtensionsCocoa(char** extensions)
-{
-    if (_glfw.vk.KHR_surface && _glfw.vk.EXT_metal_surface)
-    {
-        extensions[0] = "VK_KHR_surface";
-        extensions[1] = "VK_EXT_metal_surface";
-    }
-    else if (_glfw.vk.KHR_surface && _glfw.vk.MVK_macos_surface)
-    {
-        extensions[0] = "VK_KHR_surface";
-        extensions[1] = "VK_MVK_macos_surface";
-    }
-}
-
-GLFWbool _glfwGetPhysicalDevicePresentationSupportCocoa(VkInstance instance,
-                                                        VkPhysicalDevice device,
-                                                        uint32_t queuefamily)
-{
-    return GLFW_TRUE;
-}
-
-
 //////////////////////////////////////////////////////////////////////////
 //////                        GLFW native API                       //////
 //////////////////////////////////////////////////////////////////////////

@@ -2398,12 +2398,6 @@ EGLenum _glfwGetEGLPlatformWin32(EGLint** attribs)
                 type = EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE;
         }
 
-        if (_glfw.egl.ANGLE_platform_angle_vulkan)
-        {
-            if (_glfw.hints.init.angleType == GLFW_ANGLE_PLATFORM_TYPE_VULKAN)
-                type = EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE;
-        }
-
         if (type)
         {
             *attribs = _glfw_calloc(3, sizeof(EGLint));

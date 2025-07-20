@@ -30,20 +30,6 @@
 
 #include <stdbool.h>
 
-typedef VkFlags VkWaylandSurfaceCreateFlagsKHR;
-
-typedef struct VkWaylandSurfaceCreateInfoKHR
-{
-    VkStructureType                 sType;
-    const void*                     pNext;
-    VkWaylandSurfaceCreateFlagsKHR  flags;
-    struct wl_display*              display;
-    struct wl_surface*              surface;
-} VkWaylandSurfaceCreateInfoKHR;
-
-typedef VkResult (APIENTRY *PFN_vkCreateWaylandSurfaceKHR)(VkInstance,const VkWaylandSurfaceCreateInfoKHR*,const VkAllocationCallbacks*,VkSurfaceKHR*);
-typedef VkBool32 (APIENTRY *PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR)(VkPhysicalDevice,uint32_t,struct wl_display*);
-
 #include "external/glfw/src/xkb_unicode.h"
 #include "external/glfw/src/posix_poll.h"
 
@@ -669,9 +655,6 @@ const char* _glfwGetClipboardStringWayland(void);
 EGLenum _glfwGetEGLPlatformWayland(EGLint** attribs);
 EGLNativeDisplayType _glfwGetEGLNativeDisplayWayland(void);
 EGLNativeWindowType _glfwGetEGLNativeWindowWayland(_GLFWwindow* window);
-
-void _glfwGetRequiredInstanceExtensionsWayland(char** extensions);
-GLFWbool _glfwGetPhysicalDevicePresentationSupportWayland(VkInstance instance, VkPhysicalDevice device, uint32_t queuefamily);
 
 void _glfwFreeMonitorWayland(_GLFWmonitor* monitor);
 void _glfwGetMonitorPosWayland(_GLFWmonitor* monitor, int* xpos, int* ypos);

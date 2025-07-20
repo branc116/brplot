@@ -3087,12 +3087,6 @@ EGLenum _glfwGetEGLPlatformX11(EGLint** attribs)
                 type = EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE;
         }
 
-        if (_glfw.egl.ANGLE_platform_angle_vulkan)
-        {
-            if (_glfw.hints.init.angleType == GLFW_ANGLE_PLATFORM_TYPE_VULKAN)
-                type = EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE;
-        }
-
         if (type)
         {
             *attribs = _glfw_calloc(5, sizeof(EGLint));
@@ -3123,81 +3117,6 @@ EGLNativeWindowType _glfwGetEGLNativeWindowX11(_GLFWwindow* window)
     else
         return (EGLNativeWindowType) window->x11.handle;
 }
-
-void _glfwGetRequiredInstanceExtensionsX11(char** extensions)
-{
-    if (!_glfw.vk.KHR_surface)
-        return;
-
-    if (!_glfw.vk.KHR_xcb_surface || !_glfw.x11.x11xcb.handle)
-    {
-        if (!_glfw.vk.KHR_xlib_surface)
-            return;
-    }
-
-    extensions[0] = "VK_KHR_surface";
-
-    // NOTE: VK_KHR_xcb_surface is preferred due to some early ICDs exposing but
-    //       not correctly implementing VK_KHR_xlib_surface
-    if (_glfw.vk.KHR_xcb_surface && _glfw.x11.x11xcb.handle)
-        extensions[1] = "VK_KHR_xcb_surface";
-    else
-        extensions[1] = "VK_KHR_xlib_surface";
-}
-
-GLFWbool _glfwGetPhysicalDevicePresentationSupportX11(VkInstance instance,
-                                                      VkPhysicalDevice device,
-                                                      uint32_t queuefamily)
-{
-    VisualID visualID = XVisualIDFromVisual(DefaultVisual(_glfw.x11.display,
-                                                          _glfw.x11.screen));
-
-    if (_glfw.vk.KHR_xcb_surface && _glfw.x11.x11xcb.handle)
-    {
-        PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR
-            vkGetPhysicalDeviceXcbPresentationSupportKHR =
-            (PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR)
-            vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceXcbPresentationSupportKHR");
-        if (!vkGetPhysicalDeviceXcbPresentationSupportKHR)
-        {
-            _glfwInputError(GLFW_API_UNAVAILABLE,
-                            "X11: Vulkan instance missing VK_KHR_xcb_surface extension");
-            return GLFW_FALSE;
-        }
-
-        xcb_connection_t* connection = XGetXCBConnection(_glfw.x11.display);
-        if (!connection)
-        {
-            _glfwInputError(GLFW_PLATFORM_ERROR,
-                            "X11: Failed to retrieve XCB connection");
-            return GLFW_FALSE;
-        }
-
-        return vkGetPhysicalDeviceXcbPresentationSupportKHR(device,
-                                                            queuefamily,
-                                                            connection,
-                                                            visualID);
-    }
-    else
-    {
-        PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR
-            vkGetPhysicalDeviceXlibPresentationSupportKHR =
-            (PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR)
-            vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceXlibPresentationSupportKHR");
-        if (!vkGetPhysicalDeviceXlibPresentationSupportKHR)
-        {
-            _glfwInputError(GLFW_API_UNAVAILABLE,
-                            "X11: Vulkan instance missing VK_KHR_xlib_surface extension");
-            return GLFW_FALSE;
-        }
-
-        return vkGetPhysicalDeviceXlibPresentationSupportKHR(device,
-                                                             queuefamily,
-                                                             _glfw.x11.display,
-                                                             visualID);
-    }
-}
-
 
 //////////////////////////////////////////////////////////////////////////
 //////                        GLFW native API                       //////

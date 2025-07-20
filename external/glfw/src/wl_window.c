@@ -3199,36 +3199,6 @@ EGLNativeWindowType _glfwGetEGLNativeWindowWayland(_GLFWwindow* window)
     return window->wl.egl.window;
 }
 
-void _glfwGetRequiredInstanceExtensionsWayland(char** extensions)
-{
-    if (!_glfw.vk.KHR_surface || !_glfw.vk.KHR_wayland_surface)
-        return;
-
-    extensions[0] = "VK_KHR_surface";
-    extensions[1] = "VK_KHR_wayland_surface";
-}
-
-GLFWbool _glfwGetPhysicalDevicePresentationSupportWayland(VkInstance instance,
-                                                          VkPhysicalDevice device,
-                                                          uint32_t queuefamily)
-{
-    PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR
-        vkGetPhysicalDeviceWaylandPresentationSupportKHR =
-        (PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR)
-        vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceWaylandPresentationSupportKHR");
-    if (!vkGetPhysicalDeviceWaylandPresentationSupportKHR)
-    {
-        _glfwInputError(GLFW_API_UNAVAILABLE,
-                        "Wayland: Vulkan instance missing VK_KHR_wayland_surface extension");
-        return VK_NULL_HANDLE;
-    }
-
-    return vkGetPhysicalDeviceWaylandPresentationSupportKHR(device,
-                                                            queuefamily,
-                                                            _glfw.wl.display);
-}
-
-
 //////////////////////////////////////////////////////////////////////////
 //////                        GLFW native API                       //////
 //////////////////////////////////////////////////////////////////////////

@@ -263,9 +263,5 @@ EGLenum _glfwGetEGLPlatformNull(EGLint** attribs);
 EGLNativeDisplayType _glfwGetEGLNativeDisplayNull(void);
 EGLNativeWindowType _glfwGetEGLNativeWindowNull(_GLFWwindow* window);
 
-void _glfwGetRequiredInstanceExtensionsNull(char** extensions);
-GLFWbool _glfwGetPhysicalDevicePresentationSupportNull(VkInstance instance, VkPhysicalDevice device, uint32_t queuefamily);
-VkResult _glfwCreateWindowSurfaceNull(VkInstance instance, _GLFWwindow* window, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface);
-
 void _glfwPollMonitorsNull(void);
 

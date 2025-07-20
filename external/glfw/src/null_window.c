@@ -679,23 +679,3 @@ int _glfwGetKeyScancodeNull(int key)
     return _glfw.null.scancodes[key];
 }
 
-void _glfwGetRequiredInstanceExtensionsNull(char** extensions)
-{
-}
-
-GLFWbool _glfwGetPhysicalDevicePresentationSupportNull(VkInstance instance,
-                                                       VkPhysicalDevice device,
-                                                       uint32_t queuefamily)
-{
-    return GLFW_FALSE;
-}
-
-VkResult _glfwCreateWindowSurfaceNull(VkInstance instance,
-                                      _GLFWwindow* window,
-                                      const VkAllocationCallbacks* allocator,
-                                      VkSurfaceKHR* surface)
-{
-    // This seems like the most appropriate error to return here
-    return VK_ERROR_EXTENSION_NOT_PRESENT;
-}
-
