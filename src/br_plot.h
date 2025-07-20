@@ -51,7 +51,7 @@ typedef struct br_plot_data_t {
   float thickness_multiplyer_target;
 } br_plot_data_t;
 #define BR_PLOT_DATA(GROUP_ID) ((br_plot_data_t) { .group_id = (GROUP_ID), .thickness_multiplyer = 0.f, .thickness_multiplyer_target = 1.f })
-#define BR_PLOT_DATA_IS_VISIBLE(PD) ((PD).thickness_multiplyer > 0.1f)
+#define BR_PLOT_DATA_IS_VISIBLE(PD) ((PD).thickness_multiplyer_target > 0.1f)
 
 
 typedef struct br_plot_t {

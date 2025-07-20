@@ -58,9 +58,10 @@ br_plotter_t* br_plotter_malloc(void) {
 
 static br_plot_t br_plot_2d(void) {
   br_sizei_t ws = brtl_window_size();
+  float padding = 4;
   br_plot_t plot = {
     .data_info = { 0 },
-    .cur_extent = BR_EXTENTI( 20, 20, ws.width - 40, ws.height - 40 ),
+    .cur_extent = BR_EXTENTI( padding, padding, ws.width - padding*2, ws.height - padding*2 ),
     .follow = false,
     .jump_around = false,
     .mouse_inside_graph = false,
@@ -104,7 +105,6 @@ void br_plotter_init(br_plotter_t* br) {
         brfl_foreach(i, br->resizables) {
           if (br_da_get(br->resizables, i).parent != plot.extent_handle) continue;
           int tag = br_da_get(br->resizables, i).tag;
-          LOGI("Tag: %d", tag);
           if (tag == 101) {
             found_menu_ex = true;
             plot.menu_extent_handle = i;
@@ -115,7 +115,6 @@ void br_plotter_init(br_plotter_t* br) {
           }
         }
       }
-      LOGI("Found menu: %d, legend: %d, ex: %d", found_menu_ex, found_legend_ex, found_resizable);
       if (false == found_menu_ex) {
         plot.menu_extent_handle = brui_resizable_new2(BR_EXTENT(0, 0, 300, (float)plot.cur_extent.height), plot.extent_handle, (brui_resizable_t) { .current.tag = 101, .target = { .hidden_factor = 1.f } });
       }

@@ -34,7 +34,6 @@ void br_plots_focus_visible(br_plots_t plots, br_datas_t const groups) {
   for (int i = 0; i < plots.len; ++i) {
     if (plots.arr[i].kind != br_plot_kind_2d) continue;
     br_plot_focus_visible(&plots.arr[i], groups);
-    br_plot_focus_visible(&plots.arr[i], groups);
   }
 }
 
@@ -45,7 +44,7 @@ void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups) {
 
   br_bb_t bb = { 0 };
   int n = 0;
-  for (int i = 1; i < plot->data_info.len; ++i) {
+  for (int i = 0; i < plot->data_info.len; ++i) {
     br_plot_data_t di = plot->data_info.arr[i];
     if (false == BR_PLOT_DATA_IS_VISIBLE(di)) continue;
     br_data_t* d = br_data_get1(groups, di.group_id);
