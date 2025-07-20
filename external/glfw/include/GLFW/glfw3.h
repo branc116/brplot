@@ -102,11 +102,6 @@ extern "C" {
  */
 #include <stddef.h>
 
-/* Include because it is needed by Vulkan and related functions.
- * Include it unconditionally to avoid surprising side-effects.
- */
-#include <stdint.h>
-
 /* It is customary to use APIENTRY for OpenGL function pointer declarations on
  * all platforms.  Additionally, the Windows OpenGL header needs APIENTRY.
  */
@@ -134,6 +129,7 @@ extern "C" {
 #endif /* CALLBACK */
 
 /* Include the chosen OpenGL or OpenGL ES headers.
+ * TODO: Remove
  */
 #if defined(GLFW_INCLUDE_ES1)
 
@@ -1076,7 +1072,6 @@ extern "C" {
 #define GLFW_ANGLE_PLATFORM_TYPE_OPENGLES 0x00037003
 #define GLFW_ANGLE_PLATFORM_TYPE_D3D9    0x00037004
 #define GLFW_ANGLE_PLATFORM_TYPE_D3D11   0x00037005
-#define GLFW_ANGLE_PLATFORM_TYPE_VULKAN  0x00037007
 #define GLFW_ANGLE_PLATFORM_TYPE_METAL   0x00037008
 
 #define GLFW_WAYLAND_PREFER_LIBDECOR    0x00038001
@@ -1213,11 +1208,6 @@ extern "C" {
  *  macOS specific [init hint](@ref GLFW_COCOA_MENUBAR_hint).
  */
 #define GLFW_COCOA_MENUBAR          0x00051002
-/*! @brief X11 specific init hint.
- *
- *  X11 specific [init hint](@ref GLFW_X11_XCB_VULKAN_SURFACE_hint).
- */
-#define GLFW_X11_XCB_VULKAN_SURFACE 0x00052001
 /*! @brief Wayland specific init hint.
  *
  *  Wayland specific [init hint](@ref GLFW_WAYLAND_LIBDECOR_hint).
@@ -1259,20 +1249,6 @@ extern "C" {
  *  @ingroup context
  */
 typedef void (*GLFWglproc)(void);
-
-/*! @brief Vulkan API function pointer type.
- *
- *  Generic function pointer used for returning Vulkan API function pointers
- *  without forcing a cast from a regular pointer.
- *
- *  @sa @ref vulkan_proc
- *  @sa @ref glfwGetInstanceProcAddress
- *
- *  @since Added in version 3.2.
- *
- *  @ingroup vulkan
- */
-typedef void (*GLFWvkproc)(void);
 
 /*! @brief Opaque monitor object.
  *
