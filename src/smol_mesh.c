@@ -159,7 +159,8 @@ void smol_mesh_3d_gen_line(br_smol_mesh_line_3d_t args, br_vec3_t p1, br_vec3_t 
   br_vec3_t norm = br_vec3_perpendicular(diff);
   float dist1 = 0.1f * br_vec3_dist(ls->uvs.eye_uv, p1);
   float dist2 = 0.1f * br_vec3_dist(ls->uvs.eye_uv, p2);
-  int n = (int)(6.f/fminf(dist1, dist2)) + 6;
+  int n = 4; //(int)(6.f/br_float_clamp(fminf(dist1, dist2), 1.f, 6.f)) + 1;
+  if (false == br_vec3_ccv(p1, norm, p2)) norm = br_vec3_scale(norm, -1.f);
   for (int k = 0; k <= n; ++k) {
     br_vec3_t next = br_vec3_normalize(br_vec3_rot(norm, diff, BR_PI * 2 / (float)n));
     br_shader_line_3d_push_quad(ls, (br_shader_line_3d_el_t[4]) {

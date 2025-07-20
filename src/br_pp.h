@@ -200,6 +200,8 @@ void __sanitizer_print_stack_trace(void);
 #  define BR_IS_SIZE_T_32_BIT
 #endif
 
+#define BR_ARR_LEN(ARR) (sizeof((ARR)) / sizeof((ARR)[0]))
+
 #include "external/Tracy/tracy/TracyC.h"
 
 #include <stdio.h>

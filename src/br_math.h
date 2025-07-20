@@ -18,6 +18,7 @@
 #define BR_VEC2I_SCALE(V, B) ((br_vec2i_t) { .x = (V).x * (B), .y = (V).y * (B) })
 #define BR_VEC2D_TOF(V) ((br_vec2_t) { .x = (float)(V).x, .y = (float)(V).y })
 #define BR_VEC2_(V) (V).x, (V).y
+#define BR_VEC3_(V) (V).x, (V).y, (V).z
 #define BR_VEC3D(X, Y, Z) ((br_vec3d_t) { .x = (X), .y = (Y), .z = (Z) })
 #define BR_VEC3_TOC(V, A) ((br_color_t) { .r = (unsigned char)((V).x * 255.f), .g = (unsigned char)((V).y * 255.f), .b = (unsigned char)((V).z * 255.f), .a = (A) })
 #define BR_SIZE(WIDTH, HEIGHT) ((br_size_t) { .width = (WIDTH), .height = (HEIGHT) })
@@ -473,6 +474,10 @@ static inline br_vec3_t br_vec3_sub(br_vec3_t a, br_vec3_t b) {
   return BR_VEC3(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
+static inline br_vec3_t br_vec3_max(br_vec3_t a, br_vec3_t b) {
+  return BR_VEC3(fmaxf(a.x, b.x), fmaxf(a.y, b.y), fmaxf(a.z, b.z));
+}
+
 static inline br_vec3_t br_vec3_scale(br_vec3_t a, float s) {
   return BR_VEC3(a.x * s, a.y * s, a.z * s);
 }
@@ -485,6 +490,10 @@ static inline float br_vec3_len2(br_vec3_t a) {
   float sum = 0.f;
   for (size_t i = 0; i < BR_VEC_ELS(a); ++i) sum += a.arr[i] * a.arr[i];
   return sum;
+}
+
+static inline br_vec3_t br_vec3_abs(br_vec3_t a) {
+  return BR_VEC3(fabsf(a.x), fabsf(a.y), fabsf(a.z));
 }
 
 static inline float br_vec3_len(br_vec3_t a) {
@@ -515,6 +524,12 @@ static inline br_vec3_t br_vec3_cross(br_vec3_t a, br_vec3_t b) {
     a.x*b.y - a.y*b.x);
 }
 
+static inline bool br_vec3_ccv(br_vec3_t a, br_vec3_t b, br_vec3_t c) {
+  br_vec3_t ab = br_vec3_sub(b, a);
+  br_vec3_t cb = br_vec3_sub(b, c);
+  return br_vec3_cross(ab, cb).z > 0;
+}
+
 static inline br_vec3_t br_vec3_normalize(br_vec3_t a) {
   float len2 = br_vec3_len2(a);
   if (fabsf(len2) > FLT_EPSILON) {
@@ -534,11 +549,12 @@ static inline br_vec3_t br_vec3_transform_scale(br_vec3_t v, br_mat_t mat) {
   result.x = mat.m0*x + mat.m4*y + mat.m8*z + mat.m12;
   result.y = mat.m1*x + mat.m5*y + mat.m9*z + mat.m13;
   result.z = mat.m2*x + mat.m6*y + mat.m10*z + mat.m14;
-  //float w =  mat.m3*x + mat.m7*y + mat.m11*z + mat.m15;
+  float w =  mat.m3*x + mat.m7*y + mat.m11*z + mat.m15;
 
-  if (fabsf(result.z) > 0.00001f) {
-    result.x /= fabsf(result.z);
-    result.y /= fabsf(result.z);
+  if (fabsf(w) > 0.00001f) {
+    result.x /= w;
+    result.y /= w;
+    result.z /= w;
   }
 
   return result;
@@ -551,19 +567,16 @@ static inline float br_vec3_angle(br_vec3_t v1, br_vec3_t v2) {
 }
 
 static inline br_vec3_t br_vec3_rot(br_vec3_t v, br_vec3_t axis, float angle) { 
-  angle *= .5f;
-  br_vec3_t w = br_vec3_scale(axis, sinf(angle));
-  br_vec3_t wv = br_vec3_cross(w, v);
-  br_vec3_t wwv = br_vec3_cross(w, wv);
-  wv = br_vec3_scale(wv, cosf(angle) * 2.f);
-  v = br_vec3_add(v, wv);
-  v = br_vec3_add(v, br_vec3_scale(wwv, 2.f));
-  return v;
+  float as = sinf(angle);
+  // v + sin(angle)*axis x v + (1 - cos(angle))*axis x ( axis x v )
+   br_vec3_t a = br_vec3_cross(br_vec3_scale(axis, as), v);
+   br_vec3_t b = br_vec3_cross(br_vec3_scale(axis, (1 - cosf(angle))), br_vec3_cross(axis, v));
+   return br_vec3_add(v, br_vec3_add(a, b));
 }
 
 static inline br_vec3_t br_vec3_perpendicular(br_vec3_t v) {
   size_t min = 0;
-  float min_val = v.arr[0];
+  float min_val = fabsf(v.arr[0]);
   br_vec3_t ord = { 0 };
 
   for (size_t i = 1; i < 3; ++i) {

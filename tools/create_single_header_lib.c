@@ -8,8 +8,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define ARR_LEN(ARR) (sizeof((ARR)) / sizeof((ARR)[0]))
-
 typedef enum {
   cshl_token_kind_not_include,
   cshl_token_kind_comment,
@@ -235,7 +233,7 @@ bool cshl_get_tokens(br_strv_t file_name, files_t* all_visited, cshl_tokens_t* t
 }
 
 void fill_to_visit(files_t* to_visit) {
-  for (size_t i = 0; i < ARR_LEN(source_files); ++i) {
+  for (size_t i = 0; i < BR_ARR_LEN(source_files); ++i) {
     br_da_push(*to_visit, br_strv_from_c_str(source_files[i]));
   }
 }

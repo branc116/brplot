@@ -252,7 +252,7 @@ static bool inc_find(inc_graph_t* inc_graph, br_strv_t name, int* out_index) {
 }
 
 static void create_include_graph(void) {
-  for (size_t i = 0; i < ARR_LEN(sources); ++i) {
+  for (size_t i = 0; i < BR_ARR_LEN(sources); ++i) {
     inc_push(&g_inc_graph, br_strv_from_c_str(sources[i]));
   }
 
@@ -421,7 +421,7 @@ static bool generate_shaders(void) {
   get_program_variables(programs);
   check_programs(programs);
 
-  for (int i = 0; i < ARR_LEN(outs); ++i) {
+  for (int i = 0; i < BR_ARR_LEN(outs); ++i) {
     out_kind = outs[i].kind;
     const char* out_name = outs[i].fn;
     if (NULL == (f = fopen(out_name, "wb+"))) BR_ERROR("Failed to open %s: %s", out_name, strerror(errno));
@@ -513,6 +513,8 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd)
   if (has_hotreload) br_str_push_literal(&build_dir, ".hot");
   if (is_wasm)       br_str_push_literal(&build_dir, ".wasm");
   if (is_tracy)      br_str_push_literal(&build_dir, ".tracy");
+                     br_str_push_literal(&build_dir, ".");
+                     br_str_push_c_str  (&build_dir, compiler);
                      br_str_push_literal(&build_dir, ".o");
   br_str_push_zero(&build_dir);
   nob_cmd_append(link_cmd, build_dir.str);
@@ -1114,7 +1116,7 @@ static bool n_unittests_do(void) {
     { .test_file = "./tests/src/da.c", .out_bin  = "bin/da" EXE_EXT },
   };
 
-  for (size_t i = 0; i < ARR_LEN(test_programs); ++i) {
+  for (size_t i = 0; i < BR_ARR_LEN(test_programs); ++i) {
     LOGI("-------------- START TESTS ------------------");
     LOGI("------------- %15s -> %15s ------------------", test_programs[i].test_file, test_programs[i].out_bin);
     cmd.count = 0;
@@ -1180,7 +1182,7 @@ static bool n_compile_commands_do(void) {
   is_rebuild = true;
   is_pedantic = true;
   is_debug = true;
-  for (int i = 0; i < ARR_LEN(sources); ++i) {
+  for (int i = 0; i < BR_ARR_LEN(sources); ++i) {
     LOGI("Index: %d: %s", i, sources[i]);
     fprintf(f, "  {\n    ");
     compile_command.count = link_command.count = 0;
@@ -1193,7 +1195,7 @@ static bool n_compile_commands_do(void) {
     fprintf(f, "\",\n    ");
     fprintf(f, "\"file\": \"%s\"\n", sources[i]);
     fprintf(f, "  }");
-    if (i + 1 < ARR_LEN(sources)) fprintf(f, ",\n");
+    if (i + 1 < BR_ARR_LEN(sources)) fprintf(f, ",\n");
     else fprintf(f, "\n");
   }
   fprintf(f, "]");

@@ -9,8 +9,7 @@ out vec3 normal;
 
 uniform mat4 m_mvp;
 
-void main(void)
-{
+void main(void) {
   normal = vertexNormal;
   gl_Position = m_mvp * vec4(vertexPosition, 1.0);
 }

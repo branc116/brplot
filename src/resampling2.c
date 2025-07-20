@@ -68,6 +68,10 @@ static inline float min6(float a, float b, float c, float d, float e, float f) {
   return fminf(min4(a, b, c, d), fminf(e, f));
 }
 
+static inline float max3(float a, float b, float c) {
+  return fmaxf(fmaxf(a, b), c);
+}
+
 static inline float max4(float a, float b, float c, float d) {
   return fmaxf(fmaxf(a, b), fmaxf(c, d));
 }
@@ -104,7 +108,7 @@ br_vec2_t resampling2_nodes_2d_get_ratios(resampling2_nodes_2d_t const* res, flo
   return BR_VEC2(xr / screen_width, yr / screen_height);
 }
 
-br_vec2_t resampling2_nodes_2d_get_ratios_3d(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mvp) {
+static br_vec2_t resampling2_nodes_2d_get_ratios_3d(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mvp) {
   br_vec3_t minx = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_x], ys[res->base.min_index_x]), mvp),
             miny = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_y], ys[res->base.min_index_y]), mvp),
             maxx = br_vec2_transform_scale(BR_VEC2(xs[res->base.max_index_x], ys[res->base.max_index_x]), mvp),
@@ -120,7 +124,7 @@ br_vec3_t br_data_3d_get_v3(br_data_3d_t const* data, uint32_t index) {
   return BR_VEC3(data->xs[index], data->ys[index], data->zs[index]);
 }
 
-bool resampling2_nodes_3d_is_inside(resampling2_nodes_3d_t const* res, br_data_3d_t const* data, br_mat_t mvp) {
+static bool resampling2_nodes_3d_is_inside(resampling2_nodes_3d_t const* res, br_data_3d_t const* data, br_mat_t mvp) {
   br_vec3_t minx = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.min_index_x), mvp),
           miny = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.min_index_y), mvp),
           minz = br_vec3_transform_scale(br_data_3d_get_v3(data, res->min_index_z), mvp),
@@ -138,29 +142,55 @@ bool resampling2_nodes_3d_is_inside(resampling2_nodes_3d_t const* res, br_data_3
   return Mz > 0.f && br_col_extents(rect, BR_EXTENT(mx, my, Mx - mx, My - my));
 }
 
+void resampling2_debug_3d(resampling2_t const* r, resampling2_nodes_3d_t const* res, br_data_3d_t const* data) {
+  br_vec3_t minx = br_data_3d_get_v3(data, res->base.min_index_x),
+    miny = br_data_3d_get_v3(data, res->base.min_index_y),
+    minz = br_data_3d_get_v3(data, res->min_index_z),
+    maxx = br_data_3d_get_v3(data, res->base.max_index_x),
+    maxy = br_data_3d_get_v3(data, res->base.max_index_y),
+    maxz = br_data_3d_get_v3(data, res->max_index_z);
+
+  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(maxx.x, miny.y, minz.z));
+  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(minx.x, maxy.y, minz.z));
+  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(minx.x, miny.y, maxz.z));
+
+  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(minx.x, maxy.y, minz.z));
+  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(maxx.x, miny.y, minz.z));
+  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
+
+
+  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
+  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(minx.x, miny.y, maxz.z));
+  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(minx.x, maxy.y, minz.z));
+
+  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(minx.x, miny.y, maxz.z));
+  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
+  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(maxx.x, miny.y, minz.z));
+}
+
 br_vec2_t resampling2_nodes_3d_get_ratios(resampling2_nodes_3d_t const* res, br_data_3d_t const* data, br_vec3_t eye, br_vec3_t look_dir) {
   br_vec3_t minx = br_data_3d_get_v3(data, res->base.min_index_x),
-          miny = br_data_3d_get_v3(data, res->base.min_index_y),
-          minz = br_data_3d_get_v3(data, res->min_index_z),
-          maxx = br_data_3d_get_v3(data, res->base.max_index_x),
-          maxy = br_data_3d_get_v3(data, res->base.max_index_y),
-          maxz = br_data_3d_get_v3(data, res->max_index_z);
-  br_vec3_t M = BR_VEC3(maxx.x, maxy.y, maxz.z);
+    miny         = br_data_3d_get_v3(data, res->base.min_index_y),
+    minz         = br_data_3d_get_v3(data, res->min_index_z),
+    maxx         = br_data_3d_get_v3(data, res->base.max_index_x),
+    maxy         = br_data_3d_get_v3(data, res->base.max_index_y),
+    maxz         = br_data_3d_get_v3(data, res->max_index_z);
   br_vec3_t m = BR_VEC3(minx.x, miny.y, minz.z);
-  float dist = br_vec3_dist2(minx, eye);
-  float pot_dist = br_vec3_dist2(miny, eye); if (pot_dist < dist) dist = pot_dist;
-        pot_dist = br_vec3_dist2(minz, eye); if (pot_dist < dist) dist = pot_dist;
-        pot_dist = br_vec3_dist2(maxx, eye); if (pot_dist < dist) dist = pot_dist;
-        pot_dist = br_vec3_dist2(maxy, eye); if (pot_dist < dist) dist = pot_dist;
-        pot_dist = br_vec3_dist2(maxz, eye); if (pot_dist < dist) dist = pot_dist;
-  //dist = sqrtf(dist);
+  br_vec3_t M = BR_VEC3(maxx.x, maxy.y, maxz.z);
+  br_vec3_t diff = br_vec3_sub(M, m);
 
   br_vec3_t rot_axis = br_vec3_normalize(br_vec3_cross(BR_VEC3(0, 0, 1.f), look_dir));
   float angle = br_vec3_angle(BR_VEC3(0, 0, 1.f), look_dir);
-  br_vec3_t nA = br_vec3_rot(br_vec3_sub(M, m), rot_axis, angle);
-  br_vec3_t nC = br_vec3_rot(res->curvature, rot_axis, angle);
-  br_vec3_t out = br_vec3_scale(br_vec3_pow(br_vec3_mul(nA, nC), 1.0f), 1/dist);
-  return BR_VEC2(fabsf(out.x), fabsf(out.y));
+  br_vec3_t nA1 = br_vec3_abs(br_vec3_rot(BR_VEC3(diff.x, 0, 0), rot_axis, angle));
+  br_vec3_t nA2 = br_vec3_abs(br_vec3_rot(BR_VEC3(0, diff.y, 0), rot_axis, angle));
+  br_vec3_t nA3 = br_vec3_abs(br_vec3_rot(BR_VEC3(0, 0, diff.z), rot_axis, angle));
+  br_vec3_t nA = BR_VEC3(max3(nA1.x, nA2.x, nA3.x), max3(nA1.y, nA2.y, nA3.y), 0);
+  br_vec3_t curv = br_vec3_scale(res->curvature, 1.f/(float)res->base.len);
+  br_vec3_t nC1 = br_vec3_abs(br_vec3_rot(BR_VEC3(curv.x, 0, 0), rot_axis, angle));
+  br_vec3_t nC2 = br_vec3_abs(br_vec3_rot(BR_VEC3(0, curv.y, 0), rot_axis, angle));
+  br_vec3_t nC3 = br_vec3_abs(br_vec3_rot(BR_VEC3(0, 0, curv.z), rot_axis, angle));
+  br_vec3_t nC = br_vec3_add(nC1, br_vec3_add(nC2, nC3));
+  return br_vec3_abs(br_vec3_mul(nC, nA)).xy;
 }
 
 static uint32_t powers[32] = {0};
@@ -208,7 +238,7 @@ void resampling2_add_point(resampling2_t* r, const br_data_t *pg, uint32_t index
   switch (r->kind) {
     case br_data_kind_2d: { resampling2_nodes_2d_push_point(&r->dd, 0, index, pg->dd.xs, pg->dd.ys); break; }
     case br_data_kind_3d: { resampling2_nodes_3d_push_point(&r->ddd, 0, index, pg->ddd.xs, pg->ddd.ys, pg->ddd.zs); break; }
-    default: BR_ASSERT(false);
+    default: BR_UNREACHABLE("kind %d", r->kind);
   }
 }
 
@@ -353,7 +383,6 @@ static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nod
     };
     br_line_culler_push_line_strip(pss, 6, &pg->resampling->culler, plot_size);
   } else {
-
     resampling2_draw22(nodes, node.base.child1, pg, plot_extent);
     resampling2_draw22(nodes, node.base.child2, pg, plot_extent);
   }
@@ -545,6 +574,8 @@ void resampling2_change_something(br_datas_t pg) {
     pg.arr[i].resampling->something *= (float)mul;
     pg.arr[i].resampling->something2 *= (float)mul;
     float mins = *brtl_min_sampling();
+  //pg.arr[i].resampling->something = mins;
+  //pg.arr[i].resampling->something2 = mins;
     if (pg.arr[i].resampling->something < mins) pg.arr[i].resampling->something = mins;
     if (pg.arr[i].resampling->something2 < mins) pg.arr[i].resampling->something2 = mins;
     pg.arr[i].resampling->draw_count = 0;
