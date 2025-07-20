@@ -1,0 +1,10 @@
+name = "Brplot"
+uuid = "9d06bcee-f023-4333-bf7d-1bc09a2726a6"
+authors = ["Branimir Ri\\v{c}ko <rickobranimir@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+Brplot_jll = "044af1db-f879-5e77-80f5-1f9b6f0c9c45"
+
+[compat]
+Brplot_jll = "0.0.5"
