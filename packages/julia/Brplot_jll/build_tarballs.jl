@@ -58,7 +58,9 @@ platforms = [
     Platform("x86_64", "macos"; ),
     Platform("x86_64", "freebsd"; ),
     Platform("x86_64", "linux"; libc = "glibc"),
-    Platform("x86_64", "windows"; )
+    Platform("i686", "linux"; libc = "glibc"),
+    Platform("x86_64", "windows"; ),
+    Platform("i686", "windows"; )
 ]
 
 
