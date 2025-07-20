@@ -49,18 +49,19 @@ cp brplot-0.0.4/share/licenses/brplot/LICENSE $prefix/share/licenses/Brplot/LICE
 # These are the platforms we will build for by default, unless further
 # platforms are passed in on the command line
 platforms = [
-    Platform("armv7l", "linux"; call_abi = "eabihf", libc = "glibc"),
-    Platform("aarch64", "freebsd"; ),
-    Platform("powerpc64le", "linux"; libc = "glibc"),
-    Platform("aarch64", "macos"; ),
-    Platform("aarch64", "linux"; libc = "glibc"),
-    Platform("armv6l", "linux"; call_abi = "eabihf", libc = "glibc"),
-    Platform("x86_64", "macos"; ),
-    Platform("x86_64", "freebsd"; ),
-    Platform("x86_64", "linux"; libc = "glibc"),
-    Platform("i686", "linux"; libc = "glibc"),
-    Platform("x86_64", "windows"; ),
-    Platform("i686", "windows"; )
+  Platform("armv7l", "linux"; call_abi = "eabihf", libc = "glibc"),
+  Platform("aarch64", "freebsd"; ),
+  Platform("powerpc64le", "linux"; libc = "glibc"),
+  Platform("aarch64", "macos"; ),
+  Platform("aarch64", "linux"; libc = "glibc"),
+  Platform("armv6l", "linux"; call_abi = "eabihf", libc = "glibc"),
+  Platform("x86_64", "macos"; ),
+  Platform("x86_64", "freebsd"; ),
+  Platform("x86_64", "linux"; libc = "glibc"),
+  Platform("i686", "linux"; libc = "glibc"),
+  Platform("riscv64", "linux"; libc = "glibc"),
+  Platform("x86_64", "windows"; )
+  # Platform("i686", "windows"; )
 ]
 
 
@@ -70,8 +71,7 @@ products = [
 ]
 
 # Dependencies that must be installed before this package can be built
-dependencies = Dependency[
-]
+dependencies = Dependency[]
 
 # Build the tarballs, and possibly a `build.jl` as well.
 build_tarballs(ARGS, name, version, sources, script, platforms, products, dependencies; julia_compat="1.6", preferred_gcc_version = v"14.2.0")
