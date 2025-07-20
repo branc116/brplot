@@ -58,7 +58,7 @@ br_plotter_t* br_plotter_malloc(void) {
 
 static br_plot_t br_plot_2d(void) {
   br_sizei_t ws = brtl_window_size();
-  float padding = 4;
+  int padding = 4;
   br_plot_t plot = {
     .data_info = { 0 },
     .cur_extent = BR_EXTENTI( padding, padding, ws.width - padding*2, ws.height - padding*2 ),
@@ -89,7 +89,6 @@ void br_plotter_init(br_plotter_t* br) {
     br_datas_deinit(&br->groups);
     br->plots.len = 0;
     if (br_permastate_status_ui_loaded == br->loaded_status) {
-      int x = 400;
       br_plot_t plot = br_plot_2d();
       br_plot_create_texture(&plot);
       bool found_resizable = false, found_menu_ex = false, found_legend_ex = false;

@@ -338,8 +338,8 @@ bool brsp_read(BR_FILE_T* file, brsp_t* sp) {
     n = br_da_get(*sp, i);
     if (n.start_index < -1)                                              BR_ERROR("Start index is: %d", n.start_index);
     if (n.len < -1)                                                      BR_ERROR("Len is: %d", n.len);
-    if (n.len == -1 ^ n.cap == -1)                                       BR_ERROR("Len is: %d, cap is: %d", n.len, n.cap);
-    if (n.len == -1 ^ n.start_index == -1)                               BR_ERROR("Len is: %d, start_index is: %d", n.len, n.start_index);
+    if ((n.len == -1) ^ (n.cap == -1))                                   BR_ERROR("Len is: %d, cap is: %d", n.len, n.cap);
+    if ((n.len == -1) ^ (n.start_index == -1))                           BR_ERROR("Len is: %d, start_index is: %d", n.len, n.start_index);
     if (n.cap < -1)                                                      BR_ERROR("Cap is: %d", n.cap);
     if (n.len > (int)sp->pool.len)                                       BR_ERROR("Len is: %d", n.len);
     if (n.start_index > (int)sp->pool.len)                               BR_ERROR("Start index is: %d, pool len: %u", n.start_index, sp->pool.len);

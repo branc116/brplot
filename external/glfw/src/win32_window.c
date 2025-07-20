@@ -2421,15 +2421,6 @@ EGLNativeWindowType _glfwGetEGLNativeWindowWin32(_GLFWwindow* window)
     return window->win32.handle;
 }
 
-void _glfwGetRequiredInstanceExtensionsWin32(char** extensions)
-{
-    if (!_glfw.vk.KHR_surface || !_glfw.vk.KHR_win32_surface)
-        return;
-
-    extensions[0] = "VK_KHR_surface";
-    extensions[1] = "VK_KHR_win32_surface";
-}
-
 GLFWAPI HWND glfwGetWin32Window(GLFWwindow* handle)
 {
     _GLFWwindow* window = (_GLFWwindow*) handle;
