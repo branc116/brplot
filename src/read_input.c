@@ -641,6 +641,7 @@ static void lex_step(br_plotter_t* br, lex_state_t* s) {
         s->decimall = 0;
         s->state = input_lex_state_number_exp;
       } else {
+        if (s->is_neg_whole) s->value_l *= -1;
         s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_number, .value_d = (double)s->value_l, .value_l = s->value_l };
         s->state = input_lex_state_number_reset;
         s->read_next = false;
@@ -836,6 +837,15 @@ int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
   TEST_EQUAL(c.push_point_xy.group, GROUP); \
 } while(false)
 
+#define TEST_COMMAND_PUSH_POINT_XYZ(q, X, Y, Z, GROUP) do { \
+  q_command c = q_pop(q); \
+  TEST_EQUAL(c.type, q_command_push_point_xyz); \
+  TEST_EQUALF(c.push_point_xyz.x, X); \
+  TEST_EQUALF(c.push_point_xyz.y, Y); \
+  TEST_EQUALF(c.push_point_xyz.z, Z); \
+  TEST_EQUAL(c.push_point_xyz.group, GROUP); \
+} while(false)
+
 #define TEST_COMMAND_END(q) do { \
   q_command c = q_pop(q); \
   TEST_EQUAL(c.type, q_command_none); \
@@ -876,6 +886,13 @@ TEST_CASE(InputTestsExp) {
   br_plotter_t br;
   test_input(&br, "10e10");
   TEST_COMMAND_PUSH_POINT_Y(br.commands, 10e10f, 0);
+  TEST_COMMAND_END(br.commands);
+}
+
+TEST_CASE(InputTestsNeg) {
+  br_plotter_t br;
+  test_input(&br, "-2,-2.0,-2.");
+  TEST_COMMAND_PUSH_POINT_XYZ(br.commands, -2.f, -2.f, -2.f, 0);
   TEST_COMMAND_END(br.commands);
 }
 
