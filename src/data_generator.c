@@ -492,7 +492,6 @@ static double br_dagen_rebase(br_data_t const* data, br_dagen_expr_kind_t kind) 
 }
 
 static void expr_apply_function(float* data, size_t offset, size_t n, br_strv_t func_name) {
-  LOGI("func: %.*s", func_name.len, func_name.str);
   if (br_strv_eq(func_name, BR_STRL("sin"))) {
     for (size_t i = 0; i < n; ++i) data[i] = sinf(data[i]);
   } else if (br_strv_eq(func_name, BR_STRL("cos"))) {
@@ -506,7 +505,6 @@ static void expr_apply_function(float* data, size_t offset, size_t n, br_strv_t 
   } else if (br_strv_eq(func_name, BR_STRL("fft"))) {
     br_dagen_expr_context_t im_part = br_dagen_expr_push_batch();
     br_dagen_expr_context_t re_part = br_dagen_expr_push_batch();
-    LOGI("%zu", batches.last_referenced_group_len);
     if (batches.last_referenced_group_len > 0) {
       for (size_t k = 0; k < n; ++k) {
         im_part.data[k] = 0;
