@@ -452,6 +452,9 @@ static void input_reduce_command(br_plotter_t* gv, lex_state_t* s) {
       extractors_push(&s->extractors, (extractor_t) { .ex =  str, .group = (int)s->tokens[2].value_l });
       s->should_push_eagre = false;
     }
+  } else if (0 == strcmp("expr", s->tokens[1].name)) {
+    br_str_t str = br_str_copy(s->tokens[3].br_str);
+    q_push(gv->commands, (q_command) { .type = q_command_add_expr, .add_expr = { .group = (int)s->tokens[2].value_l, .expr = str } });
   } else if (s->tokens[3].kind == input_token_quoted_string && 0 == strcmp("setname", s->tokens[1].name)) {
     q_command cmd = {
       .type = q_command_set_name,

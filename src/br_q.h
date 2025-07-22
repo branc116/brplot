@@ -29,6 +29,7 @@ typedef enum {
   q_command_hide,
   q_command_show,
   q_command_set_name,
+  q_command_add_expr,
   q_command_focus,
   q_command_flush,
   q_command_new_data
@@ -72,6 +73,11 @@ typedef struct q_command {
       // Should be freed by UI thread
       br_str_t str;
     } set_quoted_str;
+    struct {
+      int group;
+      // Should be freed by UI thread
+      br_str_t expr;
+    } add_expr;
     struct {
       int data_id;
       br_data_kind_t kind;

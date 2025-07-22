@@ -37,7 +37,7 @@ typedef struct br_dagen_expr_t {
   br_dagen_expr_kind_t kind;
   union {
     struct {
-      br_strv_t func_name;
+      br_str_t func_name;
       uint32_t arg;
     } function;
     struct {
