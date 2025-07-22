@@ -350,7 +350,7 @@ bool brfl_is_valid(int const* free_arr, int len, int free_next, int free_len) {
     if (len == free_len) goto done;
     else BR_ERROR("Invalid len: %d, free_len: %d", len, free_len);
   }
-  if (free_next < 0)    BR_ERROR("invalid free_next: %d", free_next);
+  if (free_next < -1)   BR_ERROR("invalid free_next: %d", free_next);
   if (free_next >= len) BR_ERROR("invalid free_next: %d", free_next);
   br_da_push(visited, free_next);
   for (i = 0; i < len; ++i) {

@@ -210,9 +210,10 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
 }
 
 int br_plotter_add_plot_3d(br_plotter_t* br) {
+  int padding = 4;
   br_plot_t plot = {
     .data_info = { 0 },
-    .cur_extent = BR_EXTENTI(500, 50, br->win.size.width - 500 - 60, br->win.size.height - 110),
+    .cur_extent = BR_EXTENTI(padding, padding, br->win.size.width - 2 * padding, br->win.size.height - 2 * padding),
     .follow = false,
     .jump_around = false,
     .mouse_inside_graph = false,

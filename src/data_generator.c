@@ -77,8 +77,13 @@ typedef struct {
   size_t pos;
 } tokens_t;
 
+typedef struct br_dagen_expr_context_t {
+	float* data;
+	int last_referenced_group;
+} br_dagen_expr_context_t;
+
 typedef struct {
-  float** arr;
+  br_dagen_expr_context_t* arr;
   size_t len, cap;
   size_t max_len;
 } batches_t;
@@ -94,7 +99,7 @@ static size_t expr_len(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_i
 static size_t expr_read_n(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index, size_t offset, size_t n, float* data);
 static size_t expr_add_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index, size_t offset, size_t n, float* data);
 static size_t expr_mul_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index, size_t offset, size_t n, float* data);
-static float* push_batch(void);
+static br_dagen_expr_context_t push_batch(void);
 static void pop_batch(void);
 
 // PARSER
@@ -287,7 +292,7 @@ void br_dagens_free(br_dagens_t* dagens) {
     else if (dagens->arr[i].kind == br_dagen_kind_expr) br_da_free(dagens->arr[i].expr_2d.arena);
   br_da_free(*dagens);
   for (size_t i = 0; i < batches.max_len; ++i) {
-    BR_FREE(batches.arr[i]);
+    BR_FREE(batches.arr[i].data);
   }
   br_da_free(batches);
   batches.max_len = 0;
@@ -454,8 +459,8 @@ static void expr_apply_function(float* data, size_t n, br_strv_t func_name) {
   } else if (br_strv_eq(func_name, BR_STRL("abs"))) {
     for (size_t i = 0; i < n; ++i) data[i] = fabsf(data[i]);
   } else if (br_strv_eq(func_name, BR_STRL("fft"))) {
-    float* im_part = push_batch();
-    float* re_part = push_batch();
+    br_dagen_expr_context_t im_part = push_batch();
+    br_dagen_expr_context_t re_part = push_batch();
     for (size_t k = 0; k < n; ++k) im_part[k] = 0.f;
     for (size_t k = 0; k < n; ++k) re_part[k] = 0.f;
     for (size_t k = 0; k < n; ++k) {
@@ -628,12 +633,29 @@ static size_t expr_mul_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
   return 0;
 }
 
-static float* push_batch(void) {
-  if (batches.len < batches.max_len) return batches.arr[batches.len++];
+
+static br_dagen_expr_context_t br_dagen_expr_push_batch(void) {
+  int last_group_id = -1;
+  if (batches.len > 0) {
+    br_dagen_expr_context_t c = br_da_get(batches, batches.len - 1);
+    last_group_id = c.last_referenced_group;
+  }
+  if (batches.len < batches.max_len) {
+    br_dagen_expr_context_t* ret = &batches.arr[batches.len++];
+    ret->last_referenced_group = last_group_id;
+    return *ret;
+  }
   float* batch = BR_MALLOC(sizeof(float) * MAX_BATCH_LEN);
-  br_da_push(batches, batch);
+  br_dagen_expr_context_t new = { batch, last_group_id };
+  br_da_push(batches, new);
   batches.max_len = batches.len;
-  return batch;
+  return new;
+}
+
+static br_dagen_expr_context_t br_dagen_expr_set_last_group(int group) {
+  if (batches.len > 0) {
+    br_da_getp(batches, batches.len - 1)->last_referenced_group = group;
+  }
 }
 
 static void pop_batch(void) {
