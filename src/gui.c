@@ -536,6 +536,16 @@ static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas) {
             for (j = 0; j < max_n && j + i < lines; ++j) v2 = br_data_el_xy1(*data, i + j), brui_textf("%f", v2.y);
           brui_vsplit_end();
         } break;
+        case br_data_kind_3d: {
+          br_vec3d_t v2;
+          brui_vsplit(3);
+            for (j = 0; j < max_n && j + i < lines; ++j) v2 = br_data_el_xyz1(*data, i + j), brui_textf("%f", v2.x);
+          brui_vsplit_pop();
+            for (j = 0; j < max_n && j + i < lines; ++j) v2 = br_data_el_xyz1(*data, i + j), brui_textf("%f", v2.y);
+          brui_vsplit_pop();
+            for (j = 0; j < max_n && j + i < lines; ++j) v2 = br_data_el_xyz1(*data, i + j), brui_textf("%f", v2.z);
+          brui_vsplit_end();
+        } break;
         default: BR_UNREACHABLE("Kind %d not handled", data->kind);
       }
       brui_new_lines(lines - i - j);
