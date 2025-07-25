@@ -2,6 +2,12 @@
 
 This is wrapper/binding of [brplot](https://github.com/branc116/brplot) for julia.
 
+## Install
+
+```julia
+] add https://github.com/brplot/Brplot.jl
+```
+
 ## Example
 
 ```julia
