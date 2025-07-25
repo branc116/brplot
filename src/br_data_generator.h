@@ -44,9 +44,11 @@ typedef struct br_dagen_expr_t {
       uint32_t op1;
       uint32_t op2;
     } operands;
-    int group_id;
-    int iota_state;
-    float value;
+    struct {
+      int group_id;
+      int iota_state;
+      float value;
+    };
   };
 } br_dagen_expr_t;
 

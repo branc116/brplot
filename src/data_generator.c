@@ -176,7 +176,7 @@ bool br_dagens_add_expr_str(br_dagens_t* dagens, br_datas_t* datas, br_strv_t st
     } break;
     default: BR_UNREACHABLE("Unreachable toke kind: %d", t.kind);
   }
-  
+
   br_da_free(tokens);
   return true;
 
@@ -435,7 +435,25 @@ static size_t expr_len(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_i
     case br_dagen_expr_kind_iota: return 0xFFFFFFFF;
     case br_dagen_expr_kind_constant: return 0xFFFFFFFF;
     case br_dagen_expr_kind_function_call: {
-       return expr_len(datas, arena, expr.function.arg);
+       if (br_strv_eq(br_str_as_view(expr.function.func_name), BR_STRL("range"))) {
+         br_dagen_expr_t arg = br_da_get(arena, expr.function.arg);
+         if (arg.kind == br_dagen_expr_kind_constant) {
+           return arg.value;
+         } else if (arg.kind == br_dagen_expr_kind_pair) {
+           br_dagen_expr_t arg1 = br_da_get(arena, arg.operands.op1);
+           br_dagen_expr_t arg2 = br_da_get(arena, arg.operands.op2);
+           if (arg1.kind == br_dagen_expr_kind_constant && arg2.kind == br_dagen_expr_kind_constant) {
+             return arg2.value - arg1.value;
+           } else {
+             LOGE("Bad arguments: %d & %d", arg1.kind, arg2.kind);
+             return 0;
+           }
+         } else {
+           LOGE("Bad argument: %d", arg.kind);
+         }
+       } else {
+         return expr_len(datas, arena, expr.function.arg);
+       }
     }
   }
   BR_UNREACHABLE("expr.kind: %d", expr.kind);
@@ -491,18 +509,49 @@ static double br_dagen_rebase(br_data_t const* data, br_dagen_expr_kind_t kind) 
   return 0.0;
 }
 
-static void expr_apply_function(float* data, size_t offset, size_t n, br_strv_t func_name) {
+static size_t expr_apply_function(float* data, br_dagen_exprs_t arena, br_datas_t datas, size_t offset, size_t n, br_strv_t func_name, size_t arg_index) {
   if (br_strv_eq(func_name, BR_STRL("sin"))) {
+    n = expr_read_n(datas, arena, arg_index, offset, n, data);
     for (size_t i = 0; i < n; ++i) data[i] = sinf(data[i]);
   } else if (br_strv_eq(func_name, BR_STRL("cos"))) {
+    n = expr_read_n(datas, arena, arg_index, offset, n, data);
     for (size_t i = 0; i < n; ++i) data[i] = cosf(data[i]);
   } else if (br_strv_eq(func_name, BR_STRL("tg"))) {
+    n = expr_read_n(datas, arena, arg_index, offset, n, data);
     for (size_t i = 0; i < n; ++i) data[i] = tanf(data[i]);
   } else if (br_strv_eq(func_name, BR_STRL("log"))) {
+    n = expr_read_n(datas, arena, arg_index, offset, n, data);
     for (size_t i = 0; i < n; ++i) data[i] = logf(data[i]);
   } else if (br_strv_eq(func_name, BR_STRL("abs"))) {
+    n = expr_read_n(datas, arena, arg_index, offset, n, data);
     for (size_t i = 0; i < n; ++i) data[i] = fabsf(data[i]);
+  } else if (br_strv_eq(func_name, BR_STRL("range"))) {
+    br_dagen_expr_t arg = br_da_get(arena, arg_index);
+    if (arg.kind == br_dagen_expr_kind_constant) {
+      size_t i = 0;
+      for (i = 0; i < n && arg.iota_state < (int)arg.value; ++i) {
+        data[i] = arg.iota_state++;
+      }
+      return i;
+    } else if (arg.kind == br_dagen_expr_kind_pair) {
+      br_dagen_expr_t arg1 = br_da_get(arena, arg.operands.op1);
+      br_dagen_expr_t arg2 = br_da_get(arena, arg.operands.op2);
+      if (arg1.kind == br_dagen_expr_kind_constant && arg1.kind == br_dagen_expr_kind_constant) {
+        size_t i = 0;
+        for (i = 0; i < n && arg1.iota_state + arg1.value < (int)arg2.value; ++i) {
+          data[i] = arg1.value + arg1.iota_state++;
+        }
+        return i;
+      } else {
+        LOGE("Bad kind: %d", arg.kind);
+        return 0;
+      }
+    } else {
+      LOGE("Bad kind: %d", arg.kind);
+      return 0;
+    }
   } else if (br_strv_eq(func_name, BR_STRL("fft"))) {
+    n = expr_read_n(datas, arena, arg_index, offset, n, data);
     br_dagen_expr_context_t im_part = br_dagen_expr_push_batch();
     br_dagen_expr_context_t re_part = br_dagen_expr_push_batch();
     if (batches.last_referenced_group_len > 0) {
@@ -525,6 +574,7 @@ static void expr_apply_function(float* data, size_t offset, size_t n, br_strv_t 
   } else {
     LOGE("Unknown function name `%.*s`", func_name.len, func_name.str);
   }
+  return n;
 }
 
 static size_t expr_read_n(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index, size_t offset, size_t n, float* data) {
@@ -540,8 +590,8 @@ static size_t expr_read_n(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
       size_t added = expr_mul_to(datas, arena, expr.operands.op2, offset, read, data);
       return added;
     } break;
-    case br_dagen_expr_kind_reference_x: 
-    case br_dagen_expr_kind_reference_y: 
+    case br_dagen_expr_kind_reference_x:
+    case br_dagen_expr_kind_reference_y:
     case br_dagen_expr_kind_reference_z: {
       br_data_t* data_in = br_data_get1(datas, expr.group_id);
       if (NULL == data_in) return 0;
@@ -572,8 +622,7 @@ static size_t expr_read_n(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
       return n;
     } break;
     case br_dagen_expr_kind_function_call: {
-      size_t real_n = expr_read_n(datas, arena, expr.function.arg, offset, n, data);
-      expr_apply_function(data, offset, real_n, br_str_as_view(expr.function.func_name));
+      n = expr_apply_function(data, arena, datas, offset, n, br_str_as_view(expr.function.func_name), expr.function.arg);
       return n;
     } break;
     default: BR_UNREACHABLE("Expr kind unknown: %d", expr.kind);
@@ -627,8 +676,7 @@ static size_t expr_add_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
     } break;
     case br_dagen_expr_kind_function_call: {
       br_dagen_expr_context_t batch = br_dagen_expr_push_batch();
-      size_t read = expr_read_n(datas, arena, expr.function.arg, offset, n, batch.data);
-      expr_apply_function(batch.data, offset, read, br_str_as_view(expr.function.func_name));
+      n = expr_apply_function(batch.data, arena, datas, offset, n, br_str_as_view(expr.function.func_name), expr.function.arg);
       for (size_t i = 0; i < n; ++i) data[i] += batch.data[i];
       pop_batch();
       return n;
@@ -681,8 +729,7 @@ static size_t expr_mul_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
     } break;
     case br_dagen_expr_kind_function_call: {
       br_dagen_expr_context_t batch = br_dagen_expr_push_batch();
-      size_t read = expr_read_n(datas, arena, expr.function.arg, offset, n, batch.data);
-      expr_apply_function(batch.data, offset, read, br_str_as_view(expr.function.func_name));
+      n = expr_apply_function(batch.data, arena, datas, offset, n, br_str_as_view(expr.function.func_name), expr.function.arg);
       for (size_t i = 0; i < n; ++i) data[i] *= batch.data[i];
       pop_batch();
       return n;
@@ -726,8 +773,8 @@ static bool tokens_get(tokens_t* tokens, br_strv_t str) {
       goto push_token;
     }
     if (str.str[i] >= '0' && str.str[i] <= '9') {
-      while ((str.str[i + n] >= '0' && str.str[i + n] <= '9') || str.str[i + n] == 'e' || str.str[i + n] == '.') ++n; 
-      if (str.str[i + n - 1] == '.') --n;
+      while (i + n < str.len && ((str.str[i + n] >= '0' && str.str[i + n] <= '9') || str.str[i + n] == 'e' || str.str[i + n] == '.')) ++n;
+      if (i + n < str.len && str.str[i + n - 1] == '.') --n;
       t = (br_dagen_token_t) { .kind = token_kind_number, .str = br_str_sub(str, i, n), .position = i };
       i += n - 1;
       goto push_token;
@@ -769,7 +816,8 @@ static bool expr_parse(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out)
   br_dagen_token_t t;
   uint32_t ref1;
   if (false == expr_parse_primary(arena, tokens, &ref1)) return false;
-  if (tokens->pos < tokens->len) {
+  t = expr_peek(*tokens);
+  if (t.kind == token_kind_comma) {
     uint32_t ref2;
     GET_TOKEN(t, tokens, token_kind_comma);
     if (false == expr_parse(arena, tokens, &ref2)) return false;
@@ -812,7 +860,7 @@ static bool expr_parse_ref(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* 
     br_str_t func_name = br_str_malloc(t.str.len + 1);
     br_str_push_strv(&func_name, t.str);
     GET_TOKEN(t, tokens, token_kind_open_paren);
-    expr_parse_primary(arena, tokens, &arg_ref);
+    if (false == expr_parse(arena, tokens, &arg_ref)) return false;
     GET_TOKEN(t, tokens, token_kind_close_paren);
     br_dagen_expr_t expr = { .kind = br_dagen_expr_kind_function_call, .function = { .func_name = func_name, .arg = arg_ref } };
     *out = (uint32_t)arena->len;
@@ -1300,6 +1348,42 @@ TEST_CASE(dagen_parser_fft) {
   TEST_EQUAL(res->kind, br_data_kind_2d);
   br_vec2d_t val = br_data_el_xy(datas, 2, 0);
   TEST_EQUALF((float)val.y, 60.f);
+  FREE
+}
+
+TEST_CASE(dagen_parser_range) {
+  INIT
+  br_strv_t s = br_strv_from_literal("range(10)");
+  TEST_TRUE(br_dagens_add_expr_str(&dagens, &datas, s, 2));
+
+  br_expr_debug(dagens);
+
+  br_dagens_handle_once(&datas, &dagens, &plots);
+  br_data_t* res = br_data_get1(datas, 2);
+
+  TEST_EQUAL(res->kind, br_data_kind_2d);
+  for (int i = 0; i < 10; ++i) {
+    br_vec2d_t val = br_data_el_xy(datas, 2, i);
+    TEST_EQUALF((float)val.y, (float)i);
+  }
+  FREE
+}
+
+TEST_CASE(dagen_parser_range2) {
+  INIT
+  br_strv_t s = br_strv_from_literal("range(10, 20)");
+  TEST_TRUE(br_dagens_add_expr_str(&dagens, &datas, s, 2));
+
+  br_expr_debug(dagens);
+
+  br_dagens_handle_once(&datas, &dagens, &plots);
+  br_data_t* res = br_data_get1(datas, 2);
+
+  TEST_EQUAL(res->kind, br_data_kind_2d);
+  for (int i = 0; i < 10; ++i) {
+    br_vec2d_t val = br_data_el_xy(datas, 2, i);
+    TEST_EQUALF((float)val.y, (float)(i + 10));
+  }
   FREE
 }
 
