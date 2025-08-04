@@ -259,7 +259,6 @@ typedef GLFWglproc (GLAPIENTRY * PFN_OSMesaGetProcAddress)(const char*);
 
 #include "external/glfw/src/platform.h"
 
-#define GLFW_NATIVE_INCLUDE_NONE
 #include "external/glfw/include/GLFW/glfw3native.h"
 
 // Checks for whether the library has been initialized
