@@ -1,45 +1,44 @@
 # Maintainer: Branimir Ricko <rickobranimir at gmail dot com>
 
 pkgname=brplot-git
-pkgver=v420.69.1.r615.ga98131b
+_pkgver=0.0.5
+pkgver=v0.0.5.r0.gb02ef20
 pkgrel=1
-epoch=1
-pkgdesc='better plot - plotting lines that are sent to stdin'
+pkgdesc='Better real time plot - plotting lines that are sent to stdin'
 url="https://github.com/branc116/brplot"
 arch=('x86_64')
 license=('MIT')
-depends=('glfw')
+depends=('glibc')
 optdepends=()
-makedependens=('git' 'cmake')
+makedepends=('gcc' 'git')
 provides=('brplot')
 options=()
 
-source=('brplot-git::git+https://github.com/branc116/brplot.git#branch=master')
+source=("git+https://github.com/branc116/brplot.git#tag=v${_pkgver}")
+sha256sums=('SKIP') # from VCS you don't need checksums
 
 pkgver() { # Correct handling of VCS packages versions
-  cd "$pkgname"
+  cd brplot
   git describe --tags --long --abbrev=7 | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
 }
 
-sha256sums=('SKIP') # from VCS you don't need checksums
-
-
 build() {
-   cmake \
-     -B "${pkgname}/build" \
-     -S "${pkgname}" \
-     -DCMAKE_BUILD_TYPE:STRING='Release' \
-     -DCMAKE_INSTALL_PREFIX:PATH='/usr' \
-     -Wno-dev
-   cmake --build "${pkgname}/build"
+  cd brplot
+  gcc -O2 -I. -o nob nob.c -lm
+  ./nob amalgam
+  gcc               -O3 -fvisibility=hidden -mtune=native -march=native -DBRPLOT_APP            -o brplot.final       .generated/brplot.c -lm
+  gcc -shared -fPIC -O3 -fvisibility=hidden -mtune=native -march=native -DBRPLOT_IMPLEMENTATION -o libbrplot.final.so .generated/brplot.c -lm
 }
 
 check() {
- true #noop, but how to run tests? 
+  cd brplot
+  ./nob unittests || (echo "" && echo "" && echo "Unittests failed!" && echo "Please Report everything below this to `${url}`" && echo "" && echo "" && ./nob -ap unittests && exit 1)
 }
 
 package() {
-    #DESTDIR="${pkgdir}" cmake --install "${pkgname}/build" #cmake installation is broken
-    install -D -m755 "${pkgname}/build/brplot" "${pkgdir}/usr/bin/brplot"
-    install -D -m644 "${pkgname}/LICENSE" -t "${pkgdir}/usr/share/licenses/${pkgname}"
+  cd brplot
+  install -D -m755 "brplot.final" "${pkgdir}/usr/bin/brplot"
+  install -D -m755 "libbrplot.final.so" "${pkgdir}/usr/lib/libbrplot.so"
+  install -D -m644 ".generated/brplot.c" "${pkgdir}/usr/include/brplot.h"
+  install -D -m644 ".generated/FULL_LICENSE" "${pkgdir}/usr/share/licenses/brplot-git/LICENSE"
 }
