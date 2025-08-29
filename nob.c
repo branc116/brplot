@@ -3,20 +3,12 @@
 #define BR_STR_IMPLMENTATION
 #include "src/br_str.h"
 
-#define BR_SHADER_BAKE_NO_MAIN
-#include "tools/shaders_bake.c"
-
-#define BR_PACK_ICONS_NO_MAIN
-#include "tools/pack_icons.c"
-
-#define BR_GL_GEN_NO_MAIN
-#include "tools/gl_gen.c"
-
 #define BR_CREATE_SINGLE_HEADER_LIB_NO_MAIN
 #include "tools/create_single_header_lib.c"
 
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #if _WIN32
 #  if defined(__GNUC__)
@@ -33,8 +25,6 @@
 #endif
 #define NOB_IMPLEMENTATION
 #include "external/nob.h"
-
-#include "include/brplot.h"
 
 #define COMMANDS(X) \
   X(build, "(default) Generate and build everything that is needed") \
@@ -75,6 +65,8 @@
 #define PBIN PREFIX "/bin"
 #define PINC PREFIX "/include"
 #define PSHARE PREFIX "/share"
+
+#define nob_cmd_run_cache(cmd) nob_cmd_run(cmd, .strace_cache = &cache)
 
 typedef enum target_platform_t {
   tp_linux,
@@ -228,6 +220,9 @@ typedef struct {
 
 inc_graph_t g_inc_graph;
 
+
+static Nob_Strace_Cache cache;
+
 static void inc_push(inc_graph_t* inc_graph, br_strv_t name) {
   inc_graph_el new_el = { .file_name = name, .file_name_c = br_strv_to_c_str(name), .includes = { 0 } };
   br_da_push(*inc_graph, new_el);
@@ -376,82 +371,61 @@ static bool create_all_dirs(void) {
 static bool bake_font(void) {
   const char* file_in = "content/font.ttf";
   const char* file_out = ".generated/default_font.h";
-  Nob_String_Builder content = { 0 };
+  const char* font_bake_bin = "bin/font_bake"EXE_EXT;
+  Nob_Cmd cmd = { 0 };
+  nob_cmd_append(&cmd, NOB_REBUILD_URSELF(font_bake_bin, "tools/font_bake.c"));
+  if (false == nob_cmd_run_cache(&cmd)) return false;
 
-  LOGI("Generate: %s -> %s", file_in, file_out);
-  if (false == nob_read_entire_file(file_in, &content)) return false;
-  FILE* out = fopen(file_out, "wb");
+  nob_cmd_append(&cmd, font_bake_bin, "./content/font.ttf", ".generated/default_font.h");
+  if (false == nob_cmd_run_cache(&cmd)) return false;
 
-  if (out == NULL) {
-    fprintf(stderr, "[ERROR] Failed to open a file %s: %s\n", file_out, strerror(errno));
-    return false;
-  }
-  fprintf(out, "const unsigned char br_font_data[] = {");
-  for (size_t i = 0; i < content.count; ++i) {
-    if (i % 30 == 0) fprintf(out, "\n  ");
-    unsigned int tmp = (unsigned int)(unsigned char)content.items[i];
-    fprintf(out, "0x%x, ", tmp);
-  }
-  fprintf(out, "\n};\n");
-  fprintf(out, "const long long br_font_data_size = %zu;\n", content.count);
-  fclose(out);
+  nob_cmd_free(cmd);
   return true;
 }
 
 static bool generate_shaders(void) {
-  static struct {
-    const char* fn;
-    shader_output_kind_t kind;
-  } outs[] = {
-    { ".generated/shaders.h", shader_output_kind_desktop },
-    { ".generated/shaders_web.h", shader_output_kind_web }
-  };
+  const char* shaders_bake_bin = "bin/shaders_bake"EXE_EXT;
+  const char* shaders_header = is_wasm ? ".generated/shaders_web.h" : ".generated/shaders.h";
+  const char* shaders_bake_source = "tools/shaders_bake.c";
 
-  FILE* f = NULL;
-  const char* out_name = NULL;
-  shader_output_kind_t out_kind = 0;
-  programs_t programs = { 0 };
-  bool success = true;
+  Nob_Cmd cmd = { 0 };
+  nob_cmd_append(&cmd, NOB_REBUILD_URSELF(shaders_bake_bin, shaders_bake_source));
+  nob_cmd_append(&cmd, "src/filesystem.c");
+  if (false == nob_cmd_run_cache(&cmd)) return false;
 
-  programs = get_programs();
-  for (size_t i = 0; i < programs.len; ++i) {
-    get_tokens(&programs.arr[i].vertex);
-    get_tokens(&programs.arr[i].fragment);
-  }
-  get_program_variables(programs);
-  check_programs(programs);
+  nob_cmd_append(&cmd, shaders_bake_bin, is_wasm ? "WEB" : "LINUX", shaders_header);
+  if (false == nob_cmd_run_cache(&cmd)) return false;
 
-  for (int i = 0; i < BR_ARR_LEN(outs); ++i) {
-    out_kind = outs[i].kind;
-    const char* out_name = outs[i].fn;
-    if (NULL == (f = fopen(out_name, "wb+"))) BR_ERROR("Failed to open %s: %s", out_name, strerror(errno));
-    LOGI("Generate: src/shaders/*.[vs|fs] -> %s", out_name);
-    for (size_t i = 0; i < programs.len; ++i) {
-      embed_tokens(f, programs.arr[i].name, br_str_from_c_str("fs"), programs.arr[i].fragment.tokens, out_kind);
-      embed_tokens(f, programs.arr[i].name, br_str_from_c_str("vs"), programs.arr[i].vertex.tokens, out_kind);
-    }
-    fclose(f);
-    f = NULL;
-  }
-  goto done;
-
-error:
-  success = false;
-
-done:
-  if (f != NULL) fclose(f);
-  return success;
+  nob_cmd_free(cmd);
+  return true;
 }
 
 static bool pack_icons(void) {
-  LOGI("Generate: content/*.png -> .generated/icons.h, .genereated/icons.c");
-  if (0 == do_pack(false)) return true;
-  return false;
+  const char* pack_icons_bin = "bin/pack_icons";
+  const char* pack_icons_src = "tools/pack_icons.c";
+  Nob_Cmd cmd = { 0 };
+  nob_cmd_append(&cmd, NOB_REBUILD_URSELF(pack_icons_bin, pack_icons_src));
+  if (false == nob_cmd_run_cache(&cmd)) return false;
+
+  nob_cmd_append(&cmd, pack_icons_bin);
+  if (false == nob_cmd_run_cache(&cmd)) return false;
+
+  nob_cmd_free(cmd);
+  return true;
 }
 
 static bool gl_gen(void) {
-  LOGI("Generate: null -> .generated/gl.c");
-  return do_gl_gen() == 0;
+  const char* gl_gen_bin = "bin/gl_gen";
+  const char* gl_gen_src = "tools/gl_gen.c";
+  Nob_Cmd cmd = { 0 };
+  nob_cmd_append(&cmd, NOB_REBUILD_URSELF(gl_gen_bin, gl_gen_src));
+  if (false == nob_cmd_run_cache(&cmd)) return false;
+
+  nob_cmd_append(&cmd, gl_gen_bin);
+  if (false == nob_cmd_run_cache(&cmd)) return false;
+
+  nob_cmd_free(cmd);
+  return true;
 }
 
 static bool compile_standard_flags(Nob_Cmd* cmd) {
@@ -493,52 +467,52 @@ static bool compile_standard_flags(Nob_Cmd* cmd) {
 }
 
 bool g_sike_compile = false;
-static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd) {
+static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd, br_str_t* build_dir) {
   static file_names_t names = { 0 };
   static indexies_t indexies = { 0 };
   names.len = 0;
   indexies.len = 0;
+  build_dir->len = 0;
 
   Nob_String_View file_name = source;
   nob_sv_chop_by_delim(&file_name, '/');
-  br_str_t build_dir = { 0 };
-  br_str_push_literal(&build_dir, "build");
-  br_fs_cd(&build_dir, is_debug ? BR_STRL("debug") : BR_STRL("release"));
-  if (is_slib)     br_fs_cd(&build_dir, BR_STRL("slib"));
-  else if (is_lib) br_fs_cd(&build_dir, BR_STRL("lib"));
-  else             br_fs_cd(&build_dir, BR_STRL("exe"));
-  br_fs_cd(&build_dir, BR_STRV(file_name.data, (uint32_t)file_name.count));
-  if (is_headless)   br_str_push_literal(&build_dir, ".headless");
-  if (enable_asan)   br_str_push_literal(&build_dir, ".asan");
-  if (has_hotreload) br_str_push_literal(&build_dir, ".hot");
-  if (is_wasm)       br_str_push_literal(&build_dir, ".wasm");
-  if (is_tracy)      br_str_push_literal(&build_dir, ".tracy");
-                     br_str_push_literal(&build_dir, ".");
-                     br_str_push_c_str  (&build_dir, compiler);
-                     br_str_push_literal(&build_dir, ".o");
-  br_str_push_zero(&build_dir);
-  nob_cmd_append(link_cmd, build_dir.str);
+  br_str_push_literal(build_dir, "build");
+  br_fs_cd(build_dir, is_debug ? BR_STRL("debug") : BR_STRL("release"));
+  if (is_slib)     br_fs_cd(build_dir, BR_STRL("slib"));
+  else if (is_lib) br_fs_cd(build_dir, BR_STRL("lib"));
+  else             br_fs_cd(build_dir, BR_STRL("exe"));
+  br_fs_cd(build_dir, BR_STRV(file_name.data, (uint32_t)file_name.count));
+  if (is_headless)   br_str_push_literal(build_dir, ".headless");
+  if (enable_asan)   br_str_push_literal(build_dir, ".asan");
+  if (has_hotreload) br_str_push_literal(build_dir, ".hot");
+  if (is_wasm)       br_str_push_literal(build_dir, ".wasm");
+  if (is_tracy)      br_str_push_literal(build_dir, ".tracy");
+                     br_str_push_literal(build_dir, ".");
+                     br_str_push_c_str  (build_dir, compiler);
+                     br_str_push_literal(build_dir, ".o");
+  br_str_push_zero(build_dir);
+  nob_cmd_append(link_cmd, build_dir->str);
 
   if (false == is_rebuild) {
     int found_index = 0;
     bool found = inc_find(&g_inc_graph, BR_STRV(source.data, (uint32_t)source.count), &found_index);
     if (found) {
       all_deps(found_index, &names, &indexies);
-      int rebuild_is_needed = nob_needs_rebuild(build_dir.str, (const char**)names.arr, names.len);
+      int rebuild_is_needed = nob_needs_rebuild(build_dir->str, (const char**)names.arr, names.len);
       if (false == rebuild_is_needed) {
         LOGI("Skipping rebuild for %.*s", (int)source.count, source.data);
         return true;
       }
     }
   }
-  nob_cmd_append(cmd, compiler, "-o", build_dir.str, "-c", source.data);
+  nob_cmd_append(cmd, compiler, "-o", build_dir->str, "-c", source.data);
   compile_standard_flags(cmd);
   if (is_macos) {
     if (0 == strcmp(source.data, "src/platform.c")) {
       nob_cmd_append(cmd, "-ObjC");
     }
   }
-  return g_sike_compile || nob_cmd_run_sync_and_reset(cmd);
+  return g_sike_compile || nob_cmd_run_cache(cmd);
 }
 
 static bool compile_and_link(Nob_Cmd* cmd) {
@@ -547,7 +521,8 @@ static bool compile_and_link(Nob_Cmd* cmd) {
   else nob_cmd_append(&link_command, compiler, "-ggdb");
 
   for (size_t i = 0; i < NOB_ARRAY_LEN(sources); ++i) {
-    if (false == compile_one(cmd, nob_sv_from_cstr(sources[i]), &link_command)) return false;
+    br_str_t build_dir = { 0 };
+    if (false == compile_one(cmd, nob_sv_from_cstr(sources[i]), &link_command, &build_dir)) return false;
   }
 
   if (is_macos) {
@@ -583,8 +558,7 @@ static bool compile_and_link(Nob_Cmd* cmd) {
   }
 
   if (false == is_slib && enable_asan) nob_cmd_append(&link_command, SANITIZER_FLAGS);
-  bool ret = nob_cmd_run_sync_and_reset(&link_command);
-  BR_ASSERT(ret);
+  bool ret = nob_cmd_run_cache(&link_command);
   nob_cmd_free(link_command);
   return ret;
 }
@@ -708,6 +682,7 @@ static bool cat_files(const char* in_paths[], int n, const char* out_path) {
   static BR_THREAD_LOCAL br_str_t msg = {0};
   FILE* in_file = NULL;
   FILE* out_file = NULL;
+
   int i = 0;
   unsigned long read_len = 0;
   unsigned long write_len = 0;
@@ -854,33 +829,51 @@ bool nob_cmd_run_sync_str_and_reset(Nob_Cmd* cmd, br_str_t* str) {
   bool success = true;
   br_strv_t temp_file = BR_STRL(".generated/temp_file");
 
-  Nob_Fd fdout = nob_fd_open_for_write(temp_file.str);
-  if (fdout == NOB_INVALID_FD) BR_ERROR("Invalid file");
-  if (false == nob_cmd_run_sync_redirect_and_reset(cmd, (Nob_Cmd_Redirect) { .fdout = &fdout })) BR_ERROR("Failed to run git branch command");
+  Nob_Cmd tmp_cmd = { 0 };
+  const char* run_cmd_bin = "bin/redirect_output";
+  const char* run_cmd_src = "tools/redirect_output.c";
+
+  nob_cmd_append(&tmp_cmd, NOB_REBUILD_URSELF(run_cmd_bin, run_cmd_src));
+  if (false == nob_cmd_run_cache(&tmp_cmd)) return false;
+
+  nob_cmd_append(&tmp_cmd, run_cmd_bin, temp_file.str);
+  for (size_t i = 0; i < cmd->count; ++i) {
+    nob_cmd_append(&tmp_cmd, cmd->items[i]);
+  }
+  if (false == nob_cmd_run_cache(&tmp_cmd)) BR_ERROR("Failed to run the command");
+
   if (false == br_fs_read(temp_file.str, str)) BR_ERROR("Failed to read temp file");
 
-error:
 
-done:
-  nob_fd_close(fdout);
+error:
+  nob_cmd_free(tmp_cmd);
+  cmd->count = 0;
+
   return success;
 }
 
 static bool generate_version_file(void) {
   bool success = true;
   Nob_Cmd cmd = { 0 };
-  br_str_t value = { 0 };
+  br_str_t value1 = { 0 };
+  br_str_t value2 = { 0 };
   FILE* out_file = NULL;
-
-  if (NULL == (out_file = fopen(".generated/br_version.h", "wb"))) BR_ERROR("Failed to open file: %s", strerror(errno));
+  bool rebuild = false;
 
   nob_cmd_append(&cmd, "git", "branch", "--show-current");
-  if (false == nob_cmd_run_sync_str_and_reset(&cmd, &value)) BR_ERROR("Failed to run a command");
-  fprintf(out_file, "#define BR_GIT_BRANCH \"%.*s\"\n", value.len - 1, value.str);
+  if (false == nob_cmd_run_sync_str_and_reset(&cmd, &value1)) BR_ERROR("Failed to run a command");
+  if (false == cache.was_last_cached) rebuild = true;
 
   nob_cmd_append(&cmd, "git", "rev-parse", "HEAD");
-  if (false == nob_cmd_run_sync_str_and_reset(&cmd, &value)) BR_ERROR("Failed to run a command");
-  fprintf(out_file, "#define BR_GIT_HASH \"%.*s\"\n", value.len - 1, value.str);
+  if (false == nob_cmd_run_sync_str_and_reset(&cmd, &value2)) BR_ERROR("Failed to run a command");
+  if (false == cache.was_last_cached) rebuild = true;
+
+  if (rebuild) {
+    LOGI("Rebuilding git version");
+    if (NULL == (out_file = fopen(".generated/br_version.h", "wb"))) BR_ERROR("Failed to open file: %s", strerror(errno));
+    fprintf(out_file, "#define BR_GIT_BRANCH \"%.*s\"\n", value1.len - 1, value1.str);
+    fprintf(out_file, "#define BR_GIT_HASH \"%.*s\"\n", value2.len - 1, value2.str);
+  }
 
   goto done;
 
@@ -890,6 +883,8 @@ error:
 done:
   if (NULL != out_file) fclose(out_file);
   nob_cmd_free(cmd);
+  br_str_free(value1);
+  br_str_free(value2);
   return success;
 }
 
@@ -908,7 +903,9 @@ static bool n_generate_do(void) {
 
 static bool n_compile_do(void) {
   Nob_Cmd cmd = { 0 };
-  return compile_and_link(&cmd);
+  bool ret = compile_and_link(&cmd);
+  nob_cmd_free(cmd);
+  return ret;
 }
 
 static bool n_build_do(void) {
@@ -920,7 +917,7 @@ static bool n_run_do(void) {
   if (false == n_build_do()) return false;
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "bin/brplot" EXE_EXT);
-  nob_cmd_run_sync(cmd);
+  nob_cmd_run(&cmd);
   return true;
 }
 
@@ -928,14 +925,14 @@ static bool n_crun_do(void) {
   if (false == n_compile_do()) return false;
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "bin/brplot" EXE_EXT);
-  nob_cmd_run_sync(cmd);
+  nob_cmd_run(&cmd);
   return true;
 }
 
 static void just_debug(void) {
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "gdb", "bin/brplot" EXE_EXT);
-  nob_cmd_run_sync(cmd);
+  nob_cmd_run(&cmd);
 }
 
 static bool n_cdebug_do(void) {
@@ -1033,9 +1030,9 @@ static bool n_dist_do(void) {
 
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "tar", "czf", "brplot-" BR_VERSION_STR ".tar.gz", "-C", DIST, "brplot-" BR_VERSION_STR);
-  if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
+  if (false == nob_cmd_run_cache(&cmd)) return false;
   nob_cmd_free(cmd);
-    
+
 
   return true;
 }
@@ -1092,7 +1089,7 @@ static bool n_pip_do(void) {
   }
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "python", "-m", "build", "-s", "packages/pip");
-  return nob_cmd_run_sync_and_reset(&cmd);
+  return nob_cmd_run_cache(&cmd);
 }
 
 static bool n_unittests_do(void) {
@@ -1106,7 +1103,7 @@ static bool n_unittests_do(void) {
   }
   nob_cmd_append(&cmd, "./bin/brplot" EXE_EXT, "--unittest");
 
-  if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
+  if (false == nob_cmd_run(&cmd)) return false;
 
   static struct { char const *test_file, *out_bin; } test_programs[] = {
     { .test_file = "./tests/src/str.c", .out_bin  = "bin/test_str" EXE_EXT },
@@ -1125,9 +1122,9 @@ static bool n_unittests_do(void) {
     if (tp_linux == g_platform) {
       nob_cmd_append(&cmd, "-lm", "-pthread");
     }
-    if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
+    if (false == nob_cmd_run(&cmd)) return false;
     nob_cmd_append(&cmd, test_programs[i].out_bin, "--unittest");
-    if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
+    if (false == nob_cmd_run(&cmd)) return false;
     LOGI("-------------- END TESTS ------------------");
   }
 
@@ -1149,9 +1146,9 @@ static bool n_fuzztests_do(void) {
 
   nob_cmd_append(&cmd, compiler, "-fsanitize=fuzzer,address,leak,undefined", "-DFUZZ", "-o", "bin/fuzz_sp", "./tests/src/string_pool.c");
   compile_standard_flags(&cmd);
-  if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
+  if (false == nob_cmd_run(&cmd)) return false;
   nob_cmd_append(&cmd, "./bin/fuzz_sp", FUZZ_FLAGS);
-  if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
+  if (false == nob_cmd_run(&cmd)) return false;
   return true;
 }
 // ./bin/fuzz_sp -mutation_graph_file=1 -print_full_coverage=1 -print_final_stats=1 -print_coverage=1 -max_total_time=10 -create_missing_dirs=1 .generated/corpus_sp
@@ -1183,10 +1180,11 @@ static bool n_compile_commands_do(void) {
   is_pedantic = true;
   is_debug = true;
   for (int i = 0; i < BR_ARR_LEN(sources); ++i) {
+    br_str_t build_dir = { 0 };
     LOGI("Index: %d: %s", i, sources[i]);
     fprintf(f, "  {\n    ");
     compile_command.count = link_command.count = 0;
-    if (false == compile_one(&compile_command, nob_sv_from_cstr(sources[i]), &link_command)) goto error;
+    if (false == compile_one(&compile_command, nob_sv_from_cstr(sources[i]), &link_command, &build_dir)) goto error;
     fprintf(f, "\"directory\": \"%s\",\n    ", cwd);
     fprintf(f, "\"command\": \"");
     for (int j = 0; j < compile_command.count; ++j) {
@@ -1213,22 +1211,14 @@ done:
   return success;
 }
 
-void br_go_rebuild_yourself(int argc, char** argv) {
-  inc_push(&g_inc_graph, BR_STRL(__FILE__));
-#if !defined(__TINYC__)
-  create_include_graph();
-#endif
-  file_names_t names = { 0 };
-  indexies_t indexies = { 0 };
-  all_deps(0, &names, &indexies);
-  nob__go_rebuild_urself2(argc, argv, (const char**)names.arr, (int)names.len);
-  br_da_free(names);
-  br_da_free(indexies);
-}
-
-
 int main(int argc, char** argv) {
-  br_go_rebuild_yourself(argc, argv);
+  NOB_GO_REBUILD_URSELF(argc, argv);
+
+  bool success = true;
+
+  cache.file_path = "nob.cache";
+  nob_strace_cache_read(&cache);
+
   fill_command_flag_data();
   program_name = argv[0];
   if (argc == 1) {
@@ -1237,7 +1227,7 @@ int main(int argc, char** argv) {
     bool command_found = false;
     for (int i = 1; i < argc; ++i) {
       const char* command = argv[i];
-      if (command[0] == '-') continue; // Skip flags for now
+      if (command[0] == '-') continue; // Skip flags
       if (command_found == true) {
         LOGE("Unknown command: `%s`", command);
         print_usage();
@@ -1260,7 +1250,7 @@ int main(int argc, char** argv) {
     return 0;
   }
   if (is_wasm) compiler = "emcc";
-#define X(name, desc) if (do_command == n_ ## name) { return n_ ## name ## _do() ? 0 : 1; } else
+#define X(name, desc) if (do_command == n_ ## name) { success = n_ ## name ## _do();  } else
   COMMANDS(X)
 #undef X
   /*else*/ {
@@ -1268,8 +1258,9 @@ int main(int argc, char** argv) {
     print_usage();
     LOGF("Bad usage... Exiting");
   }
-  LOGI("Nob finsihed ok");
-  return 0;
+
+  if (success) nob_strace_cache_finish(cache);
+  return success ? 0 : 1;
 }
 
 void br_on_fatal_error() {

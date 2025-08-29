@@ -139,7 +139,7 @@ bool br_str_realloc(br_str_t* s, size_t new_cap) {
     return true;
   }
   if (s->cap < new_cap) {
-    char * newS = BR_REALLOC(s->str, new_cap);
+    char* newS = BR_REALLOC(s->str, new_cap);
     if (newS != NULL) {
       s->str = newS;
       s->cap = (unsigned int)new_cap;

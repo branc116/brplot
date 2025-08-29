@@ -7,7 +7,6 @@ extern "C" {
 
 typedef struct br_shader_icon_t br_shader_icon_t;
 
-
 extern struct br_extra_icons_t {
   struct {
     br_extent_t size_8;

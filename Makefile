@@ -277,7 +277,7 @@ $(SHADERS_HEADER): ./src/shaders/* bin/shaders_bake
 	bin/shaders_bake $(PLATFORM) > $(SHADERS_HEADER)
 
 .generated/icons.h .generated/icons.c: bin/pack_icons content/*.png
-	@bin/pack_icons > /dev/null
+	bin/pack_icons > /dev/null
 
 bin/pack_icons: tools/pack_icons.c $(NOBS)
 	$(NATIVE_CC) -I. -O0 -o bin/pack_icons tools/pack_icons.c -lm
