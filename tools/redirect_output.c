@@ -15,5 +15,6 @@ int main(int argc, char** argv) {
     nob_cmd_append(&cmd, argv[i]);
   }
   if (false == nob_cmd_run(&cmd, .stdout_path = out_file_path)) return 1;
+  nob_cmd_free(cmd);
   return 0;
 }
