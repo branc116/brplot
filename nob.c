@@ -292,7 +292,7 @@ static bool generate_shaders(void) {
 }
 
 static bool pack_icons(void) {
-  const char* pack_icons_bin = "bin/pack_icons";
+  const char* pack_icons_bin = "bin/pack_icons"EXE_EXT;
   const char* pack_icons_src = "tools/pack_icons.c";
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, NOB_REBUILD_URSELF(pack_icons_bin, pack_icons_src));
@@ -306,7 +306,7 @@ static bool pack_icons(void) {
 }
 
 static bool gl_gen(void) {
-  const char* gl_gen_bin = "bin/gl_gen";
+  const char* gl_gen_bin = "bin/gl_gen"EXE_EXT;
   const char* gl_gen_src = "tools/gl_gen.c";
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, NOB_REBUILD_URSELF(gl_gen_bin, gl_gen_src));
