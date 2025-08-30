@@ -2,9 +2,7 @@
 #define BR_NO_UNIT_TEST
 #define BR_STR_IMPLMENTATION
 #include "src/br_str.h"
-
-#define BR_CREATE_SINGLE_HEADER_LIB_NO_MAIN
-#include "tools/create_single_header_lib.c"
+#include "src/br_da.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -39,7 +37,6 @@
   X(pip, "Create pip egg") \
   X(unittests, "Run unit tests") \
   X(fuzztests, "Run fuzz tests") \
-  X(dot, "Create Dot file with file dependencies") \
   X(compile_commands, "Create compile_commands.json file") \
   X(help, "Print help") \
 
@@ -67,7 +64,6 @@
 #define PSHARE PREFIX "/share"
 
 #define nob_cmd_run_cache(cmd) nob_cmd_run(cmd, .strace_cache = &cache)
-//#define nob_cmd_run_cache(cmd) nob_cmd_run(cmd)
 
 typedef enum target_platform_t {
   tp_linux,
@@ -205,94 +201,7 @@ COMMANDS(X)
 COMMANDS(X)
 #undef X
 
-typedef struct {
-  br_strv_t file_name;
-  char* file_name_c;
-  struct {
-    int* arr;
-    size_t len, cap;
-  } includes;
-} inc_graph_el;
-
-typedef struct {
-  inc_graph_el* arr;
-  size_t len, cap;
-} inc_graph_t;
-
-inc_graph_t g_inc_graph;
-
-
 static Nob_Strace_Cache cache;
-
-static void inc_push(inc_graph_t* inc_graph, br_strv_t name) {
-  inc_graph_el new_el = { .file_name = name, .file_name_c = br_strv_to_c_str(name), .includes = { 0 } };
-  br_da_push(*inc_graph, new_el);
-}
-
-static size_t find_or_add_el(inc_graph_t* inc_graph, br_strv_t name) {
-  for (size_t i = 0; i < inc_graph->len; ++i) {
-    if (br_strv_eq(inc_graph->arr[i].file_name, name) == true) return i;
-  }
-  inc_push(inc_graph, name);
-  return inc_graph->len - 1;
-}
-
-static bool inc_find(inc_graph_t* inc_graph, br_strv_t name, int* out_index) {
-  for (size_t i = 0; i < inc_graph->len; ++i) {
-    if (br_strv_eq(inc_graph->arr[i].file_name, name) == true) {
-      *out_index = (int)i;
-      return true;
-    }
-  }
-  return false;
-}
-
-static void create_include_graph(void) {
-  for (size_t i = 0; i < BR_ARR_LEN(sources); ++i) {
-    inc_push(&g_inc_graph, br_strv_from_c_str(sources[i]));
-  }
-
-  files_t includes = { 0 };
-  for (size_t i = 0; i < g_inc_graph.len; ++i) {
-    includes.len = 0;
-    cshl_get_includes(g_inc_graph.arr[i].file_name, &includes);
-    for (size_t j = 0; j < includes.len; ++j) {
-      int index = (int)find_or_add_el(&g_inc_graph, includes.arr[j]);
-      br_da_push(g_inc_graph.arr[i].includes, index);
-    }
-  }
-}
-
-typedef struct {
-  char** arr;
-  size_t len, cap;
-} file_names_t;
-
-typedef struct {
-  int* arr;
-  size_t len, cap;
-} indexies_t;
-
-static void all_deps(int index, file_names_t* file_names, indexies_t* indexies) {
-  bool contains = false;
-  br_da_contains(*indexies, index, contains);
-  if (contains) return;
-  br_da_push(*indexies, index);
-  br_da_push(*file_names, g_inc_graph.arr[index].file_name_c);
-  for (size_t i = 0; i < g_inc_graph.arr[index].includes.len; ++i) {
-    all_deps(g_inc_graph.arr[index].includes.arr[i], file_names, indexies);
-  }
-}
-
-static bool needs_rebuilding(br_strv_t input, br_strv_t output) {
-  int index = 0;
-  if (false == inc_find(&g_inc_graph, input, &index)) return true;
-  file_names_t file_names = { 0 };
-  indexies_t indexies = { 0 };
-  all_deps(index, &file_names, &indexies);
-  if (nob_needs_rebuild(br_strv_to_c_str(output), (const char**)file_names.arr, file_names.len) > 0) return true;
-  return false;
-}
 
 static void fill_command_flag_data(void) {
   command_flag_t debug_flag          = (command_flag_t) {.name = BR_STRL("debug"),      .alias = 'd',  .description = BR_STRL("Build debug version"),                                                                            .is_set = &is_debug};
@@ -343,29 +252,10 @@ static void fill_command_flag_data(void) {
   }
 }
 
-static bool create_dirs(Nob_String_View sv) {
-  Nob_String_View cur = sv;
-  cur.count = 1;
-  for (cur.count = 1; cur.count < sv.count; ++cur.count) {
-    if (cur.data[cur.count] == '\\' || cur.data[cur.count] == '/') {
-      if (false == nob_mkdir_if_not_exists(nob_temp_sv_to_cstr(cur))) return false;
-    }
-  }
-  return true;
-}
-
 static bool create_all_dirs(void) {
-  if (false == nob_mkdir_if_not_exists("build"))              return false;
-  if (false == nob_mkdir_if_not_exists("build/debug"))        return false;
-  if (false == nob_mkdir_if_not_exists("build/debug/exe"))    return false;
-  if (false == nob_mkdir_if_not_exists("build/debug/slib"))   return false;
-  if (false == nob_mkdir_if_not_exists("build/debug/lib"))    return false;
-  if (false == nob_mkdir_if_not_exists("build/release"))      return false;
-  if (false == nob_mkdir_if_not_exists("build/release/exe"))  return false;
-  if (false == nob_mkdir_if_not_exists("build/release/slib")) return false;
-  if (false == nob_mkdir_if_not_exists("build/release/lib"))  return false;
-  if (false == nob_mkdir_if_not_exists("bin"))                return false;
-  if (false == nob_mkdir_if_not_exists(".generated"))         return false;
+  if (false == nob_mkdir_if_not_exists("build"))      return false;
+  if (false == nob_mkdir_if_not_exists("bin"))        return false;
+  if (false == nob_mkdir_if_not_exists(".generated")) return false;
   return true;
 }
 
@@ -469,20 +359,16 @@ static bool compile_standard_flags(Nob_Cmd* cmd) {
 
 bool g_sike_compile = false;
 static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd, br_str_t* build_dir) {
-  static file_names_t names = { 0 };
-  static indexies_t indexies = { 0 };
-  names.len = 0;
-  indexies.len = 0;
   build_dir->len = 0;
 
   Nob_String_View file_name = source;
   nob_sv_chop_by_delim(&file_name, '/');
-  br_str_push_literal(build_dir, "build");
-  br_fs_cd(build_dir, is_debug ? BR_STRL("debug") : BR_STRL("release"));
-  if (is_slib)     br_fs_cd(build_dir, BR_STRL("slib"));
-  else if (is_lib) br_fs_cd(build_dir, BR_STRL("lib"));
-  else             br_fs_cd(build_dir, BR_STRL("exe"));
-  br_fs_cd(build_dir, BR_STRV(file_name.data, (uint32_t)file_name.count));
+                     br_str_push_literal(build_dir, "build/");
+                     br_str_push_strv   (build_dir, BR_STRV(file_name.data, (uint32_t)file_name.count));
+  if (is_debug)      br_str_push_literal(build_dir, ".debug");
+  if (is_slib)       br_str_push_literal(build_dir, ".slib");
+  else if (is_lib)   br_str_push_literal(build_dir, ".lib");
+  else               br_str_push_literal(build_dir, ".exe");
   if (is_headless)   br_str_push_literal(build_dir, ".headless");
   if (enable_asan)   br_str_push_literal(build_dir, ".asan");
   if (has_hotreload) br_str_push_literal(build_dir, ".hot");
@@ -494,18 +380,6 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd,
   br_str_push_zero(build_dir);
   nob_cmd_append(link_cmd, build_dir->str);
 
-  if (false == is_rebuild) {
-    int found_index = 0;
-    bool found = inc_find(&g_inc_graph, BR_STRV(source.data, (uint32_t)source.count), &found_index);
-    if (found) {
-      all_deps(found_index, &names, &indexies);
-      int rebuild_is_needed = nob_needs_rebuild(build_dir->str, (const char**)names.arr, names.len);
-      if (false == rebuild_is_needed) {
-        LOGI("Skipping rebuild for %.*s", (int)source.count, source.data);
-        return true;
-      }
-    }
-  }
   nob_cmd_append(cmd, compiler, "-o", build_dir->str, "-c", source.data);
   compile_standard_flags(cmd);
   if (is_macos) {
@@ -826,9 +700,13 @@ done:
   return success;
 }
 
+#define BR_STR_TO_SB(STR) (Nob_String_Builder) { .items = (STR).str, .count = (STR).len, .capacity = (STR).cap }
+#define BR_SB_TO_STR(STR) (br_str_t) { .str = (STR).items, .len = (STR).count, .cap = (STR).capacity }
+
 bool nob_cmd_run_sync_str_and_reset(Nob_Cmd* cmd, br_str_t* str) {
   bool success = true;
   br_strv_t temp_file = BR_STRL(".generated/temp_file");
+  Nob_String_Builder sb = BR_STR_TO_SB(*str);
 
   Nob_Cmd tmp_cmd = { 0 };
   const char* run_cmd_bin = "bin/redirect_output";
@@ -843,11 +721,11 @@ bool nob_cmd_run_sync_str_and_reset(Nob_Cmd* cmd, br_str_t* str) {
   }
   if (false == nob_cmd_run_cache(&tmp_cmd)) BR_ERROR("Failed to run the command");
 
-  if (false == br_fs_read(temp_file.str, str)) BR_ERROR("Failed to read temp file");
-
+  if (false == nob_read_entire_file(temp_file.str, &sb)) BR_ERROR("Failed to read temp file");
 
 error:
   nob_cmd_free(tmp_cmd);
+  *str = BR_SB_TO_STR(sb);
   cmd->count = 0;
 
   return success;
@@ -951,42 +829,23 @@ static bool n_debug_do(void) {
 }
 
 static bool n_amalgam_do(void) {
+  Nob_Cmd cmd = { 0 };
   if (false == n_generate_do()) return false;
-  return do_create_single_header_lib() == 0;
+
+  const char* run_cmd_bin = "build/cshl" EXE_EXT;
+  const char* run_cmd_src = "tools/create_single_header_lib.c";
+  nob_cmd_append(&cmd, NOB_REBUILD_URSELF(run_cmd_bin, run_cmd_src));
+  if (false == nob_cmd_run_cache(&cmd)) return false;
+
+  nob_cmd_append(&cmd, run_cmd_bin);
+  if (false == nob_cmd_run_cache(&cmd)) return false;
+
+  nob_cmd_free(cmd);
+  return true;
 }
 
 static bool n_help_do(void) {
   print_usage();
-  return true;
-}
-
-static bool replace_in_file(const char* file_name, br_strv_t to_replace, br_strv_t replace_with) {
-  Nob_String_Builder nob_content = { 0 };
-  if (false == nob_read_entire_file(file_name, &nob_content)) return false;
-  FILE* sink = fopen(file_name, "wb+");
-  br_strv_t content = BR_STRV(nob_content.items, (uint32_t)nob_content.count);
-
-  for (uint32_t i = 0; i < content.len; ++i) {
-    bool is_match = true;
-    if (to_replace.len + i <= content.len) {
-      for (uint32_t j = 0; j < to_replace.len; ++j) {
-        if (content.str[i + j] != to_replace.str[j]) {
-          is_match = false;
-          break;
-        }
-      }
-    } else is_match = false;
-    if (is_match) {
-      fprintf(sink, "%.*s", replace_with.len, replace_with.str);
-      br_strv_t rest = br_str_sub1(content, i + to_replace.len);
-      fprintf(sink, "%.*s", rest.len, rest.str);
-      break;
-    } else {
-      fprintf(sink, "%c", content.str[i]);
-    }
-  }
-
-  fclose(sink);
   return true;
 }
 
@@ -1154,18 +1013,6 @@ static bool n_fuzztests_do(void) {
 }
 // ./bin/fuzz_sp -mutation_graph_file=1 -print_full_coverage=1 -print_final_stats=1 -print_coverage=1 -max_total_time=10 -create_missing_dirs=1 .generated/corpus_sp
 //
-
-static bool n_dot_do(void) {
-  printf("digraph {\n");
-  for (uint32_t i = 0; i < g_inc_graph.len; ++i) {
-    for (uint32_t j = 0; j < g_inc_graph.arr[i].includes.len; ++j) {
-      int in = g_inc_graph.arr[i].includes.arr[j];
-      printf("  \"%s\" -> \"%s\";\n", g_inc_graph.arr[i].file_name_c, g_inc_graph.arr[in].file_name_c);
-    }
-  }
-  printf("}\n");
-  return true;
-}
 
 static bool n_compile_commands_do(void) {
   const char * cwd = nob_get_current_dir_temp();
