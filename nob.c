@@ -67,6 +67,7 @@
 #define PSHARE PREFIX "/share"
 
 #define nob_cmd_run_cache(cmd) nob_cmd_run(cmd, .strace_cache = &cache)
+//#define nob_cmd_run_cache(cmd) nob_cmd_run(cmd)
 
 typedef enum target_platform_t {
   tp_linux,
@@ -125,7 +126,7 @@ const char* sources[] = {
  "src/resampling2.c",
  "src/graph_utils.c",
  "src/shaders.c",
- "src/plotter.c", \
+ "src/plotter.c",
  "src/plot.c",
  "src/permastate.c",
  "src/filesystem.c",
@@ -1211,13 +1212,29 @@ done:
   return success;
 }
 
+void print_nodes(Nob_Strace_Cache* cache, Nob_Strace_Cache_Node node, br_str_t* str) {
+  int old_len = str->len;
+  br_str_push_c_str(str, node.argv);
+  br_str_push_char(str, ' ');
+
+  if (node.children.count == 0) {
+    nob_sb_appendf(&cache->temp_sb, "%.*s\n", str->len, str->str);
+  } else {
+    for (size_t i = 0; i < node.children.count; ++i) {
+      print_nodes(cache, cache->nodes.items[node.children.items[i]], str);
+    }
+  }
+  str->len = old_len;
+}
+
 int main(int argc, char** argv) {
-  NOB_GO_REBUILD_URSELF(argc, argv);
+  NOB_GO_REBUILD_URSELF_PLUS(argc, argv, "external/nob.h");
 
   bool success = true;
 
   cache.file_path = "nob.cache";
   nob_strace_cache_read(&cache);
+
 
   fill_command_flag_data();
   program_name = argv[0];
