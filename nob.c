@@ -276,7 +276,6 @@ static bool bake_font(void) {
 
 static bool generate_shaders(void) {
   const char* shaders_bake_bin = "bin/shaders_bake"EXE_EXT;
-  const char* shaders_header = is_wasm ? ".generated/shaders_web.h" : ".generated/shaders.h";
   const char* shaders_bake_source = "tools/shaders_bake.c";
 
   Nob_Cmd cmd = { 0 };
@@ -284,7 +283,10 @@ static bool generate_shaders(void) {
   nob_cmd_append(&cmd, "src/filesystem.c");
   if (false == nob_cmd_run_cache(&cmd)) return false;
 
-  nob_cmd_append(&cmd, shaders_bake_bin, is_wasm ? "WEB" : "LINUX", shaders_header);
+  nob_cmd_append(&cmd, shaders_bake_bin, "WEB", ".generated/shaders_web.h");
+  if (false == nob_cmd_run_cache(&cmd)) return false;
+
+  nob_cmd_append(&cmd, shaders_bake_bin, "LINUX", ".generated/shaders.h");
   if (false == nob_cmd_run_cache(&cmd)) return false;
 
   nob_cmd_free(cmd);
@@ -709,7 +711,7 @@ bool nob_cmd_run_sync_str_and_reset(Nob_Cmd* cmd, br_str_t* str) {
   Nob_String_Builder sb = BR_STR_TO_SB(*str);
 
   Nob_Cmd tmp_cmd = { 0 };
-  const char* run_cmd_bin = "bin/redirect_output";
+  const char* run_cmd_bin = "bin/redirect_output"EXE_EXT;
   const char* run_cmd_src = "tools/redirect_output.c";
 
   nob_cmd_append(&tmp_cmd, NOB_REBUILD_URSELF(run_cmd_bin, run_cmd_src));
@@ -1080,6 +1082,7 @@ int main(int argc, char** argv) {
   bool success = true;
 
   cache.file_path = "nob.cache";
+  cache.no_absolute = true;
   nob_strace_cache_read(&cache);
 
 
