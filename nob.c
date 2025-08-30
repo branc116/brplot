@@ -705,9 +705,8 @@ done:
 #define BR_STR_TO_SB(STR) (Nob_String_Builder) { .items = (STR).str, .count = (STR).len, .capacity = (STR).cap }
 #define BR_SB_TO_STR(STR) (br_str_t) { .str = (STR).items, .len = (STR).count, .cap = (STR).capacity }
 
-bool nob_cmd_run_sync_str_and_reset(Nob_Cmd* cmd, br_str_t* str) {
+bool nob_cmd_run_sync_str_and_reset(const char* temp_file_path, Nob_Cmd* cmd, br_str_t* str) {
   bool success = true;
-  br_strv_t temp_file = BR_STRL(".generated/temp_file");
   Nob_String_Builder sb = BR_STR_TO_SB(*str);
 
   Nob_Cmd tmp_cmd = { 0 };
@@ -717,13 +716,13 @@ bool nob_cmd_run_sync_str_and_reset(Nob_Cmd* cmd, br_str_t* str) {
   nob_cmd_append(&tmp_cmd, NOB_REBUILD_URSELF(run_cmd_bin, run_cmd_src));
   if (false == nob_cmd_run_cache(&tmp_cmd)) return false;
 
-  nob_cmd_append(&tmp_cmd, run_cmd_bin, temp_file.str);
+  nob_cmd_append(&tmp_cmd, run_cmd_bin, temp_file_path);
   for (size_t i = 0; i < cmd->count; ++i) {
     nob_cmd_append(&tmp_cmd, cmd->items[i]);
   }
   if (false == nob_cmd_run_cache(&tmp_cmd)) BR_ERROR("Failed to run the command");
 
-  if (false == nob_read_entire_file(temp_file.str, &sb)) BR_ERROR("Failed to read temp file");
+  if (false == nob_read_entire_file(temp_file_path, &sb)) BR_ERROR("Failed to read temp file");
 
 error:
   nob_cmd_free(tmp_cmd);
@@ -742,11 +741,11 @@ static bool generate_version_file(void) {
   bool rebuild = false;
 
   nob_cmd_append(&cmd, "git", "branch", "--show-current");
-  if (false == nob_cmd_run_sync_str_and_reset(&cmd, &value1)) BR_ERROR("Failed to run a command");
+  if (false == nob_cmd_run_sync_str_and_reset(".generated/temp1", &cmd, &value1)) BR_ERROR("Failed to run a command");
   if (false == cache.was_last_cached) rebuild = true;
 
   nob_cmd_append(&cmd, "git", "rev-parse", "HEAD");
-  if (false == nob_cmd_run_sync_str_and_reset(&cmd, &value2)) BR_ERROR("Failed to run a command");
+  if (false == nob_cmd_run_sync_str_and_reset(".generated/temp2", &cmd, &value2)) BR_ERROR("Failed to run a command");
   if (false == cache.was_last_cached) rebuild = true;
 
   if (rebuild) {

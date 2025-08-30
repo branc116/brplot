@@ -261,8 +261,8 @@ int do_pack(bool gen_png) {
 }
 
 #if !defined(BR_PACK_ICONS_NO_MAIN)
-int main(void) {
-  return do_pack(true);
+int main(int argc, char** argv) {
+  return do_pack(argc > 1 && strcmp(argv[1], "atlas") == 0);
 }
 #endif
 // gcc -I. -o bin/pack_icons tools/pack_icons.c -lm
