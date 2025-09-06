@@ -167,16 +167,8 @@
 #    include <fcntl.h>
 #endif
 
-#if defined(__has_include)
-#  define NOB__HAS_INCLUDE(path) __has_include(path)
-#else
-#  define NOB__HAS_INCLUDE(path)
-#endif
-
-#if !defined(NOB_HAS_PTRACE_CACHE)
-#    if NOB__HAS_INCLUDE(<sys/ptrace.h>)
-#        define NOB_HAS_PTRACE_CACHE 1
-#    endif
+#if !defined(NOB_HAS_PTRACE_CACHE) && defined(__linux__)
+#    define NOB_HAS_PTRACE_CACHE 1
 #endif
 
 #if NOB_HAS_PTRACE_CACHE
