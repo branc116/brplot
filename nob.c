@@ -389,7 +389,7 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd,
   br_str_push_zero(build_dir);
   nob_cmd_append(link_cmd, build_dir->str);
 
-  if (is_msvc) nob_cmd_append(cmd, compiler, "/Fo" build_dir->str, "/c", source.data);
+  if (is_msvc) nob_cmd_append(cmd, compiler, "/Fo", build_dir->str, "/c", source.data);
   else nob_cmd_append(cmd, compiler, "-o", build_dir->str, "-c", source.data);
   compile_standard_flags(cmd);
   if (is_macos) {
