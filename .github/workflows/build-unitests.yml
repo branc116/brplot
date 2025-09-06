@@ -72,6 +72,10 @@ jobs:
           platform: x64
 
       - run: |
+          cl.exe /I. /Fe:nobcl.exe nob.c
+          nobcl.exe
+
+      - run: |
           clang -I. -o nob.exe nob.c
           ./nob.exe
 
