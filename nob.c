@@ -63,7 +63,7 @@
 #define PINC PREFIX "/include"
 #define PSHARE PREFIX "/share"
 
-#define nob_cmd_run_cache(cmd) nob_cmd_run(cmd, .strace_cache = &cache)
+#define nob_cmd_run_cache(cmd) nob_cmd_run(cmd, .ptrace_cache = &cache)
 
 typedef enum target_platform_t {
   tp_linux,
@@ -201,7 +201,7 @@ COMMANDS(X)
 COMMANDS(X)
 #undef X
 
-static Nob_Strace_Cache cache;
+static Nob_Ptrace_Cache cache;
 
 static void fill_command_flag_data(void) {
   command_flag_t debug_flag          = (command_flag_t) {.name = BR_STRL("debug"),      .alias = 'd',  .description = BR_STRL("Build debug version"),                                                                            .is_set = &is_debug};
@@ -251,6 +251,62 @@ static void fill_command_flag_data(void) {
     br_da_push(command_deps[i], n_help);
   }
 }
+
+#if NOB_HAS_PTRACE_CACHE
+static void nob__ptrace_cache_print_makefile_rec(Nob_Ptrace_Cache cache, Nob_String_Builder* cur_command, int parent)
+{
+    size_t old_count = cur_command->count;
+    for (size_t i = 0; i < cache.nodes.count; ++i) {
+        Nob__Ptrace_Cache_Node node = cache.nodes.items[i];
+        if (node.parent != parent) continue;
+        if (node.kind == Nob__Ptrace_Cache_Node_Arg) nob_sb_append_cstr(cur_command, " ");
+        if (node.kind == Nob__Ptrace_Cache_Node_Stdin) nob_sb_append_cstr(cur_command, " < ");
+        if (node.kind == Nob__Ptrace_Cache_Node_Stdout) nob_sb_append_cstr(cur_command, " > ");
+        if (node.kind == Nob__Ptrace_Cache_Node_Stderr) nob_sb_append_cstr(cur_command, " 2> ");
+        nob_sb_append_cstr(cur_command, &cache.arena.items[node.arg_index]);
+        if (node.input_paths.count != 0 || node.output_paths.count != 0) {
+            for (size_t j = 0; j < node.output_paths.count;) {
+                printf("%s", &cache.arena.items[node.output_paths.items[j]]);
+                if (++j < node.output_paths.count) printf(" "); 
+            }
+            printf(": ");
+            for (size_t j = 0; j < node.input_paths.count; ++j) printf("%s ", &cache.arena.items[node.input_paths.items[j]]);
+            printf("\n\t");
+            printf("%.*s\n\n", (int)cur_command->count, cur_command->items);
+        }
+        nob__ptrace_cache_print_makefile_rec(cache, cur_command, (int)i);
+        cur_command->count = old_count;
+    }
+}
+
+static void nob__ptrace_cache_print_makefile(Nob_Ptrace_Cache cache)
+{
+    Nob_String_Builder cur_command = { 0 };
+    nob__ptrace_cache_print_makefile_rec(cache, &cur_command, -1);
+    nob_sb_free(cur_command);
+}
+
+static void nob__ptrace_cache_print_debug(Nob_Ptrace_Cache cache)
+{
+    printf("-----\n");
+    for (size_t i = 0; i < cache.nodes.count; ++i) {
+        Nob__Ptrace_Cache_Node node = cache.nodes.items[i];
+        printf("[%zu]%s(parent=%d, kind=%d, in_c=%zu, out_c=%zu)\n", i, &cache.arena.items[node.arg_index], node.parent, node.kind, node.input_paths.count, node.output_paths.count);
+    }
+    printf("-----\n");
+}
+
+#else
+static void nob__ptrace_cache_print_makefile(Nob_Ptrace_Cache cache)
+{
+    printf("Ptrace not implmented on this platform\n");
+}
+
+static void nob__ptrace_cache_print_debug(Nob_Ptrace_Cache cache)
+{
+    printf("Ptrace not implmented on this platform\n");
+}
+#endif // NOB_HAS_PTRACE_CACHE
 
 static bool create_all_dirs(void) {
   if (false == nob_mkdir_if_not_exists("build"))      return false;
@@ -1060,21 +1116,6 @@ done:
   return success;
 }
 
-void print_nodes(Nob_Strace_Cache* cache, Nob_Strace_Cache_Node node, br_str_t* str) {
-  int old_len = str->len;
-  br_str_push_c_str(str, node.argv);
-  br_str_push_char(str, ' ');
-
-  if (node.children.count == 0) {
-    nob_sb_appendf(&cache->temp_sb, "%.*s\n", str->len, str->str);
-  } else {
-    for (size_t i = 0; i < node.children.count; ++i) {
-      print_nodes(cache, cache->nodes.items[node.children.items[i]], str);
-    }
-  }
-  str->len = old_len;
-}
-
 int main(int argc, char** argv) {
   NOB_GO_REBUILD_URSELF_PLUS(argc, argv, "external/nob.h");
 
@@ -1082,8 +1123,6 @@ int main(int argc, char** argv) {
 
   cache.file_path = "nob.cache";
   cache.no_absolute = true;
-  nob_strace_cache_read(&cache);
-
 
   fill_command_flag_data();
   program_name = argv[0];
@@ -1125,7 +1164,9 @@ int main(int argc, char** argv) {
     LOGF("Bad usage... Exiting");
   }
 
-  if (success) nob_strace_cache_finish(cache);
+  //nob__ptrace_cache_print_makefile(cache);
+  //nob__ptrace_cache_print_debug(cache);
+  if (success) nob_ptrace_cache_finish(cache);
   return success ? 0 : 1;
 }
 
