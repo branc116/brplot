@@ -403,8 +403,9 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd,
 
 static bool compile_and_link(Nob_Cmd* cmd) {
   Nob_Cmd link_command = { 0 };
-  if (is_slib) nob_cmd_append(&link_command, "ar", "rcs", "bin/brplot" SLIB_EXT);
-  else if (!is_msvc) nob_cmd_append(&link_command, compiler, "-ggdb");
+  if (is_slib)      nob_cmd_append(&link_command, "ar", "rcs", "bin/brplot" SLIB_EXT);
+  else if (is_msvc) nob_cmd_append(&link_command, compiler);
+  else              nob_cmd_append(&link_command, compiler, "-ggdb");
 
   for (size_t i = 0; i < NOB_ARRAY_LEN(sources); ++i) {
     br_str_t build_dir = { 0 };
