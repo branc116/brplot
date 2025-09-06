@@ -340,8 +340,8 @@ static bool compile_standard_flags(Nob_Cmd* cmd) {
     if (has_hotreload) nob_cmd_append(cmd, "-fpic", "-fpie");
     else nob_cmd_append(cmd, "-DBR_HAS_HOTRELOAD=0");
   } else {
-    if (is_msvc) nob_cmd_append(cmd, "-O3", "-ggdb");
-    else nob_cmd_append(cmd, "/O2");
+    if (is_msvc) nob_cmd_append(cmd, "/O2");
+    else nob_cmd_append(cmd, "-O3", "-ggdb");
   }
   if (disable_logs) nob_cmd_append(cmd, "-DBR_DISABLE_LOG");
   if (is_pedantic) {
