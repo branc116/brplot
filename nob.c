@@ -385,11 +385,12 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd,
   if (is_tracy)      br_str_push_literal(build_dir, ".tracy");
                      br_str_push_literal(build_dir, ".");
                      br_str_push_c_str  (build_dir, compiler);
-                     br_str_push_literal(build_dir, ".o");
+  if (is_msvc)       br_str_push_literal(build_dir, ".obj");
+  else               br_str_push_literal(build_dir, ".o");
   br_str_push_zero(build_dir);
   nob_cmd_append(link_cmd, build_dir->str);
 
-  if (is_msvc) nob_cmd_append(cmd, compiler, "/Fo", build_dir->str, "/c", source.data);
+  if (is_msvc) nob_cmd_append(cmd, compiler, nob_temp_sprintf("/Fo:%s", build_dir->str), "/c", source.data);
   else nob_cmd_append(cmd, compiler, "-o", build_dir->str, "-c", source.data);
   compile_standard_flags(cmd);
   if (is_macos) {
