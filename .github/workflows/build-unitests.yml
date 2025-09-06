@@ -85,5 +85,8 @@ jobs:
           cl.exe /I. /Fe:nobcl.exe nob.c
           nobcl.exe
 
-      - run: |
+      - shell: cmd
+        run: |
+          call "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
           ./nobcl.exe amalgam
+          cl.exe /DBRPLOT_APP /Fe:brplot.exe build/brplot.c
