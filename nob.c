@@ -14,7 +14,7 @@
 #  elif defined(__clang__)
 #     define NOB_REBUILD_URSELF(binary_path, source_path) "clang", "-I.", "-ggdb", "-o", binary_path, source_path
 #  elif defined(_MSC_VER)
-#     define NOB_REBUILD_URSELF(binary_path, source_path) "cl.exe", "-I.", "-Zi", nob_temp_sprintf("/Fe:%s", (binary_path)), source_path
+#     define NOB_REBUILD_URSELF(binary_path, source_path) "cl.exe", "/I.", "-Zi", nob_temp_sprintf("/Fe:%s", (binary_path)), source_path
 #  endif
 #elif defined(__TINYC__)
 #  define NOB_REBUILD_URSELF(binary_path, source_path) "tcc", "-I.", "-ggdb", "-o", binary_path, source_path, "-lm"
@@ -153,15 +153,20 @@ static const target_platform_t g_platform =
 
 #if _WIN32
 #  if defined(__GNUC__)
+static const bool is_msvc = false;
 static const char* compiler = "gcc";
 #  elif defined(__clang__)
+static const bool is_msvc = false;
 static const char* compiler = "clang";
 #  elif defined(_MSC_VER)
+static const bool is_msvc = true;
 static const char* compiler = "cl.exe";
 #  endif
 #elif defined(__TINYC__)
+static const bool is_msvc = false;
 static const char* compiler = "tcc";
 #else
+static const bool is_msvc = false;
 static const char* compiler = "cc";
 #endif
 static const char* program_name;
@@ -182,6 +187,7 @@ static bool disable_logs = false;
 static bool is_pedantic = false;
 static bool is_tracy = false;
 static bool is_help_subcommands = false;
+
 #if !defined(__APPLE__)
 static bool is_macos = false;
 #else
@@ -251,62 +257,6 @@ static void fill_command_flag_data(void) {
     br_da_push(command_deps[i], n_help);
   }
 }
-
-#if NOB_HAS_PTRACE_CACHE
-static void nob__ptrace_cache_print_makefile_rec(Nob_Ptrace_Cache cache, Nob_String_Builder* cur_command, int parent)
-{
-    size_t old_count = cur_command->count;
-    for (size_t i = 0; i < cache.nodes.count; ++i) {
-        Nob__Ptrace_Cache_Node node = cache.nodes.items[i];
-        if (node.parent != parent) continue;
-        if (node.kind == Nob__Ptrace_Cache_Node_Arg) nob_sb_append_cstr(cur_command, " ");
-        if (node.kind == Nob__Ptrace_Cache_Node_Stdin) nob_sb_append_cstr(cur_command, " < ");
-        if (node.kind == Nob__Ptrace_Cache_Node_Stdout) nob_sb_append_cstr(cur_command, " > ");
-        if (node.kind == Nob__Ptrace_Cache_Node_Stderr) nob_sb_append_cstr(cur_command, " 2> ");
-        nob_sb_append_cstr(cur_command, &cache.arena.items[node.arg_index]);
-        if (node.input_paths.count != 0 || node.output_paths.count != 0) {
-            for (size_t j = 0; j < node.output_paths.count;) {
-                printf("%s", &cache.arena.items[node.output_paths.items[j]]);
-                if (++j < node.output_paths.count) printf(" "); 
-            }
-            printf(": ");
-            for (size_t j = 0; j < node.input_paths.count; ++j) printf("%s ", &cache.arena.items[node.input_paths.items[j]]);
-            printf("\n\t");
-            printf("%.*s\n\n", (int)cur_command->count, cur_command->items);
-        }
-        nob__ptrace_cache_print_makefile_rec(cache, cur_command, (int)i);
-        cur_command->count = old_count;
-    }
-}
-
-static void nob__ptrace_cache_print_makefile(Nob_Ptrace_Cache cache)
-{
-    Nob_String_Builder cur_command = { 0 };
-    nob__ptrace_cache_print_makefile_rec(cache, &cur_command, -1);
-    nob_sb_free(cur_command);
-}
-
-static void nob__ptrace_cache_print_debug(Nob_Ptrace_Cache cache)
-{
-    printf("-----\n");
-    for (size_t i = 0; i < cache.nodes.count; ++i) {
-        Nob__Ptrace_Cache_Node node = cache.nodes.items[i];
-        printf("[%zu]%s(parent=%d, kind=%d, in_c=%zu, out_c=%zu)\n", i, &cache.arena.items[node.arg_index], node.parent, node.kind, node.input_paths.count, node.output_paths.count);
-    }
-    printf("-----\n");
-}
-
-#else
-static void nob__ptrace_cache_print_makefile(Nob_Ptrace_Cache cache)
-{
-    printf("Ptrace not implmented on this platform\n");
-}
-
-static void nob__ptrace_cache_print_debug(Nob_Ptrace_Cache cache)
-{
-    printf("Ptrace not implmented on this platform\n");
-}
-#endif // NOB_HAS_PTRACE_CACHE
 
 static bool create_all_dirs(void) {
   if (false == nob_mkdir_if_not_exists("build"))      return false;
@@ -390,7 +340,8 @@ static bool compile_standard_flags(Nob_Cmd* cmd) {
     if (has_hotreload) nob_cmd_append(cmd, "-fpic", "-fpie");
     else nob_cmd_append(cmd, "-DBR_HAS_HOTRELOAD=0");
   } else {
-    nob_cmd_append(cmd, "-O3", "-ggdb");
+    if (is_msvc) nob_cmd_append(cmd, "-O3", "-ggdb");
+    else nob_cmd_append(cmd, "/O2");
   }
   if (disable_logs) nob_cmd_append(cmd, "-DBR_DISABLE_LOG");
   if (is_pedantic) {
@@ -438,7 +389,8 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd,
   br_str_push_zero(build_dir);
   nob_cmd_append(link_cmd, build_dir->str);
 
-  nob_cmd_append(cmd, compiler, "-o", build_dir->str, "-c", source.data);
+  if (is_msvc) nob_cmd_append(cmd, compiler, "/Fo" build_dir->str, "/c", source.data);
+  else nob_cmd_append(cmd, compiler, "-o", build_dir->str, "-c", source.data);
   compile_standard_flags(cmd);
   if (is_macos) {
     if (0 == strcmp(source.data, "src/platform.c")) {
@@ -451,7 +403,7 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd,
 static bool compile_and_link(Nob_Cmd* cmd) {
   Nob_Cmd link_command = { 0 };
   if (is_slib) nob_cmd_append(&link_command, "ar", "rcs", "bin/brplot" SLIB_EXT);
-  else nob_cmd_append(&link_command, compiler, "-ggdb");
+  else if (!is_msvc) nob_cmd_append(&link_command, compiler, "-ggdb");
 
   for (size_t i = 0; i < NOB_ARRAY_LEN(sources); ++i) {
     br_str_t build_dir = { 0 };
@@ -480,13 +432,12 @@ static bool compile_and_link(Nob_Cmd* cmd) {
     if (is_slib);
     else if (is_lib) nob_cmd_append(&link_command, "-shared", "-fPIC", "-o", "bin/brplot" LIB_EXT);
     else {
-      if (has_hotreload) {
-        nob_cmd_append(&link_command, "-fpic", "-fpie", "-rdynamic", "-ldl");
-      }
-      nob_cmd_append(&link_command, "-o", "bin/brplot" EXE_EXT);
-      if (tp_linux == g_platform) {
-        nob_cmd_append(&link_command, "-lm", "-pthread");
-      }
+      if (has_hotreload) nob_cmd_append(&link_command, "-fpic", "-fpie", "-rdynamic", "-ldl");
+
+      if (is_msvc) nob_cmd_append(&link_command, "/Fe:bin\\brplot.exe");
+      else nob_cmd_append(&link_command, "-o", "bin/brplot" EXE_EXT);
+
+      if (tp_linux == g_platform) nob_cmd_append(&link_command, "-lm", "-pthread", "-ldl");
     }
   }
 
