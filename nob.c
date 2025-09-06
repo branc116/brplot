@@ -63,7 +63,7 @@
 #define PINC PREFIX "/include"
 #define PSHARE PREFIX "/share"
 
-#define nob_cmd_run_cache(cmd) nob_cmd_run(cmd, .ptrace_cache = &cache)
+#define nob_cmd_run_cache(cmd, ...) nob_cmd_run(cmd, .ptrace_cache = &cache, ##__VA_ARGS__)
 
 typedef enum target_platform_t {
   tp_linux,
@@ -765,23 +765,11 @@ bool nob_cmd_run_sync_str_and_reset(const char* temp_file_path, Nob_Cmd* cmd, br
   bool success = true;
   Nob_String_Builder sb = BR_STR_TO_SB(*str);
 
-  Nob_Cmd tmp_cmd = { 0 };
-  const char* run_cmd_bin = "bin/redirect_output"EXE_EXT;
-  const char* run_cmd_src = "tools/redirect_output.c";
-
-  nob_cmd_append(&tmp_cmd, NOB_REBUILD_URSELF(run_cmd_bin, run_cmd_src));
-  if (false == nob_cmd_run_cache(&tmp_cmd)) return false;
-
-  nob_cmd_append(&tmp_cmd, run_cmd_bin, temp_file_path);
-  for (size_t i = 0; i < cmd->count; ++i) {
-    nob_cmd_append(&tmp_cmd, cmd->items[i]);
-  }
-  if (false == nob_cmd_run_cache(&tmp_cmd)) BR_ERROR("Failed to run the command");
+  if (false == nob_cmd_run_cache(cmd, .stdout_path = temp_file_path)) BR_ERROR("Failed to run the command");
 
   if (false == nob_read_entire_file(temp_file_path, &sb)) BR_ERROR("Failed to read temp file");
 
 error:
-  nob_cmd_free(tmp_cmd);
   *str = BR_SB_TO_STR(sb);
   cmd->count = 0;
 
