@@ -59,10 +59,7 @@ jobs:
           bin/free_list_tests --unittest
 
   windows:
-    runs-on: ${{matrix.os}}
-    strategy:
-      matrix:
-        os: [ windows-2022 ]
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4.1.7
       - name: Set up Clang
@@ -72,13 +69,21 @@ jobs:
           platform: x64
 
       - run: |
-          call "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
-          cl.exe /I. /Fe:nobcl.exe nob.c
-          nobcl.exe
-
-      - run: |
           clang -I. -o nob.exe nob.c
           ./nob.exe
 
       - run: |
           ./nob.exe amalgam
+
+  windows-cl:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - shell: cmd
+        run: |
+          call "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
+          cl.exe /I. /Fe:nobcl.exe nob.c
+          nobcl.exe
+
+      - run: |
+          ./nobcl.exe amalgam
