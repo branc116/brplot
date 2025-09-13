@@ -724,32 +724,32 @@ typedef struct Nob__Ints {
 } Nob__Ints;
 
 typedef struct Nob__Ptrace_Cache_Node {
-  int arg_index;
-  int parent;
-  Nob__Ptrace_Cache_Node_Kind kind;
-  // Indexies into Nob_Ptrace_Cache.arena;
-  Nob__Ints input_paths;
-  Nob__Ints output_paths;
+    int arg_index;
+    int parent;
+    Nob__Ptrace_Cache_Node_Kind kind;
+    // Indexies into Nob_Ptrace_Cache.arena;
+    Nob__Ints input_paths;
+    Nob__Ints output_paths;
 } Nob__Ptrace_Cache_Node;
 
 typedef struct Nob__Ptrace_Cache_Nodes {
-  Nob__Ptrace_Cache_Node *items;
-  size_t count;
-  size_t capacity;
+    Nob__Ptrace_Cache_Node *items;
+    size_t count;
+    size_t capacity;
 } Nob__Ptrace_Cache_Nodes;
 
 struct Nob_Ptrace_Cache {
-  Nob__Ptrace_Cache_Nodes nodes;
-  Nob_Cmd temp_cmd; // Don't worry about it...
-  Nob_String_Builder temp_sb; // Don't worry about it...
-  Nob_String_Builder arena;
+    Nob__Ptrace_Cache_Nodes nodes;
+    Nob_Cmd temp_cmd; // Don't worry about it...
+    Nob_String_Builder temp_sb; // Don't worry about it...
+    Nob_String_Builder arena;
 
-  const char *file_path; // File that will be used to read and write collected information for caching
-  bool is_loaded;
-  bool is_disabled;
-  bool no_absolute;
+    const char *file_path; // File that will be used to read and write collected information for caching
+    bool is_loaded;
+    bool is_disabled;
+    bool no_absolute;
 
-  bool was_last_cached;
+    bool was_last_cached;
 };
 
 static void nob__ptrace_append_file(Nob_Ptrace_Cache* cache, Nob__Ptrace_Cache_Node* node, Nob_String_View file_path, int mode, bool exists, bool absolute_paths);
@@ -772,15 +772,16 @@ static bool nob__ptrace_cache_write(Nob_Ptrace_Cache *cache);
 //   * realpath expands symlinks and that means that if the symlink changes, cache will not be invalidated. Do something about this..
 //   * Include files that erred while opening into the .cache file
 //   * Ignore files that erred out.
+//   * Remove node if compile has failed..
 
 #else
 struct Nob_Ptrace_Cache {
-  const char *file_path; // File that will be used to read and write collected information for caching
-  bool is_loaded;
-  bool is_disabled;
-  bool no_absolute;
+    const char *file_path; // File that will be used to read and write collected information for caching
+    bool is_loaded;
+    bool is_disabled;
+    bool no_absolute;
 
-  bool was_last_cached;
+    bool was_last_cached;
 };
 #endif
 
@@ -2611,8 +2612,14 @@ Nob__Ptrace_Cache_Run_Status nob__cmd_run_ptrace(Nob_Cmd *cmd, Nob_Cmd_Opt opt)
             }
         }
         nob_sb_free(file_path);
-        if (WEXITSTATUS(status) == 0) return Nob__Ptrace_Cache_Run_True;
-        else return Nob__Ptrace_Cache_Run_False;
+        if (WEXITSTATUS(status) == 0) {
+          nob__ptrace_cache_write(cache);
+          return Nob__Ptrace_Cache_Run_True;
+        } else {
+          node->input_paths.count = 0;
+          node->output_paths.count = 0;
+          return Nob__Ptrace_Cache_Run_False;
+        }
     }
 #else
     return Nob__Ptrace_Cache_Run_Ptrace_Error;
