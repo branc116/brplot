@@ -869,7 +869,7 @@ void _glfwTerminateWayland(void)
     for (unsigned int i = 0; i < _glfw.wl.offerCount; i++)
         wl_data_offer_destroy(_glfw.wl.offers[i].offer);
 
-    _glfw_free(_glfw.wl.offers);
+    BR_FREE(_glfw.wl.offers);
 
     if (_glfw.wl.cursorSurface)
         wl_surface_destroy(_glfw.wl.cursorSurface);
@@ -924,7 +924,7 @@ void _glfwTerminateWayland(void)
     if (_glfw.wl.cursorTimerfd >= 0)
         close(_glfw.wl.cursorTimerfd);
 
-    _glfw_free(_glfw.wl.clipboardString);
+    BR_FREE(_glfw.wl.clipboardString);
 }
 
 #endif // _GLFW_WAYLAND

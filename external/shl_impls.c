@@ -1,5 +1,8 @@
 #include "src/br_pp.h"
 
+#define BR_MEMORY_TRACER_IMPLEMENTATION
+#include "src/br_memory.h"
+
 #if defined(__GNUC__) || defined(__clang__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsign-conversion"

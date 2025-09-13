@@ -907,8 +907,8 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
             GetRawInputData(ri, RID_INPUT, NULL, &size, sizeof(RAWINPUTHEADER));
             if (size > (UINT) _glfw.win32.rawInputSize)
             {
-                _glfw_free(_glfw.win32.rawInput);
-                _glfw.win32.rawInput = _glfw_calloc(size, 1);
+                BR_FREE(_glfw.win32.rawInput);
+                _glfw.win32.rawInput = BR_CALLOC(size, 1);
                 _glfw.win32.rawInputSize = size;
             }
 
@@ -1235,7 +1235,7 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
             int i;
 
             const int count = DragQueryFile(drop, 0xffffffff, NULL, 0);
-            char** paths = _glfw_calloc(count, sizeof(char*));
+            char** paths = BR_CALLOC(count, sizeof(char*));
 
             // Move the mouse to the position of the drop
             DragQueryPoint(drop, &pt);
@@ -1244,7 +1244,7 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
             for (i = 0;  i < count;  i++)
             {
                 const UINT length = DragQueryFile(drop, i, NULL, 0);
-                paths[i] = _glfw_calloc((size_t) length + 1, sizeof(char));
+                paths[i] = BR_CALLOC((size_t) length + 1, sizeof(char));
 
                 DragQueryFile(drop, i, paths[i], length + 1);
             }
@@ -1252,8 +1252,8 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
             _glfwInputDrop(window, count, (const char**) paths);
 
             for (i = 0;  i < count;  i++)
-                _glfw_free(paths[i]);
-            _glfw_free(paths);
+                BR_FREE(paths[i]);
+            BR_FREE(paths);
 
             DragFinish(drop);
             return 0;
@@ -1316,7 +1316,7 @@ static int createNativeWindow_win32(_GLFWwindow* window,
             const int cursorWidth = GetSystemMetrics(SM_CXCURSOR);
             const int cursorHeight = GetSystemMetrics(SM_CYCURSOR);
 
-            unsigned char* cursorPixels = _glfw_calloc(cursorWidth * cursorHeight, 4);
+            unsigned char* cursorPixels = BR_CALLOC(cursorWidth * cursorHeight, 4);
             if (!cursorPixels)
                 return GLFW_FALSE;
 
@@ -1327,7 +1327,7 @@ static int createNativeWindow_win32(_GLFWwindow* window,
 
             const GLFWimage cursorImage = { cursorWidth, cursorHeight, cursorPixels };
             _glfw.win32.blankCursor = createIcon(&cursorImage, 0, 0, FALSE);
-            _glfw_free(cursorPixels);
+            BR_FREE(cursorPixels);
 
             if (!_glfw.win32.blankCursor)
                 return GLFW_FALSE;
@@ -2400,7 +2400,7 @@ EGLenum _glfwGetEGLPlatformWin32(EGLint** attribs)
 
         if (type)
         {
-            *attribs = _glfw_calloc(3, sizeof(EGLint));
+            *attribs = BR_CALLOC(3, sizeof(EGLint));
             (*attribs)[0] = EGL_PLATFORM_ANGLE_TYPE_ANGLE;
             (*attribs)[1] = type;
             (*attribs)[2] = EGL_NONE;

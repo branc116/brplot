@@ -48,11 +48,6 @@ void br_on_fatal_error(void);
   } \
 } while(0)
 
-#define BR_MALLOC(size) malloc(size)
-#define BR_CALLOC calloc
-#define BR_REALLOC realloc
-#define BR_FREE free
-
 #define BR_TODO(fmt, ...) do { \
    BR_UNREACHABLE("TODO: " fmt, ##__VA_ARGS__); \
    LOGF("Exiting"); \
@@ -84,6 +79,19 @@ void __sanitizer_print_stack_trace(void);
 #if !defined(BR_DEBUG)
 #  define BR_RELEASE
 #endif
+
+#if defined(BR_DEBUG)
+#  define BR_MALLOC(SIZE) br_malloc_trace(false, SIZE, __FILE__, __LINE__)
+#  define BR_CALLOC(N, SIZE) br_malloc_trace(true, ((N) * (SIZE)), __FILE__, __LINE__)
+#  define BR_REALLOC(PTR, NEW_SIZE) br_realloc_trace(PTR, NEW_SIZE, __FILE__, __LINE__)
+#  define BR_FREE(PTR) br_free_trace(PTR, __FILE__, __LINE__)
+#else
+#  define BR_MALLOC malloc
+#  define BR_CALLOC calloc
+#  define BR_REALLOC realloc
+#  define BR_FREE free
+#endif
+
 
 #if defined(BR_RELEASE)
 #  define BR_ASSERT(...)

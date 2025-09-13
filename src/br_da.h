@@ -69,10 +69,10 @@ extern "C" {
 
 #define br_da_push(ARR, VALUE) br_da_push_t(size_t, ARR, VALUE)
 
-#define br_da_free(ARR) do { \
-  BR_FREE((ARR).arr);        \
-  (ARR).arr = NULL;          \
-  (ARR).len = (ARR).cap = 0; \
+#define br_da_free(ARR) do {                 \
+  if ((ARR).arr != NULL) BR_FREE((ARR).arr); \
+  (ARR).arr = NULL;                          \
+  (ARR).len = (ARR).cap = 0;                 \
 } while(0)
 
 #define br_da_remove_n_at_t(T, ARR, N, I) do {                                    \
@@ -81,7 +81,7 @@ extern "C" {
   for (; (_i + N) < (T)((ARR).len); ++_i) {                                       \
     (ARR).arr[_i] = (ARR).arr[_i + 1];                                            \
   }                                                                               \
-  --(ARR).len;                                                                    \
+  (ARR).len-=(N);                                                                 \
 } while(0)
 
 #define br_da_remove_n_at(ARR, N, I) br_da_remove_n_at_t(size_t, ARR, N, I)
@@ -136,6 +136,8 @@ extern "C" {
   } \
   memcpy(&(DES).arr[0], &(SRC).arr[0], sizeof((SRC).arr[0]) * (size_t)(SRC).len); \
 } while (0)
+
+#define br_da_top(ARR) br_da_get(ARR, (ARR).len - 1)
 
 
 #define br_da_contains(ARR, V, CONTAINS) br_da_contains_t(size_t, ARR, V, CONTAINS)

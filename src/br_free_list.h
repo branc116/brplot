@@ -59,7 +59,7 @@
 
 #define brfl_free(FL) do { \
   br_da_free(FL); \
-  BR_FREE((FL).free_arr); \
+  if ((FL).free_arr) BR_FREE((FL).free_arr); \
   (FL).free_arr = NULL; \
   (FL).free_len = 0; \
   (FL).free_next = -1; \

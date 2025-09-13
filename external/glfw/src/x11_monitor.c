@@ -116,7 +116,7 @@ void _glfwPollMonitorsX11(void)
         disconnectedCount = _glfw.monitorCount;
         if (disconnectedCount)
         {
-            disconnected = _glfw_calloc(_glfw.monitorCount, sizeof(_GLFWmonitor*));
+            disconnected = BR_CALLOC(_glfw.monitorCount, sizeof(_GLFWmonitor*));
             memcpy(disconnected,
                    _glfw.monitors,
                    _glfw.monitorCount * sizeof(_GLFWmonitor*));
@@ -209,7 +209,7 @@ void _glfwPollMonitorsX11(void)
                 _glfwInputMonitor(disconnected[i], GLFW_DISCONNECTED, 0);
         }
 
-        _glfw_free(disconnected);
+        if (disconnected) BR_FREE(disconnected);
     }
     else
     {
@@ -452,7 +452,7 @@ GLFWvidmode* _glfwGetVideoModesX11(_GLFWmonitor* monitor, int* count)
         XRRCrtcInfo* ci = XRRGetCrtcInfo(_glfw.x11.display, sr, monitor->x11.crtc);
         XRROutputInfo* oi = XRRGetOutputInfo(_glfw.x11.display, sr, monitor->x11.output);
 
-        result = _glfw_calloc(oi->nmode, sizeof(GLFWvidmode));
+        result = BR_CALLOC(oi->nmode, sizeof(GLFWvidmode));
 
         for (int i = 0;  i < oi->nmode;  i++)
         {
@@ -484,7 +484,7 @@ GLFWvidmode* _glfwGetVideoModesX11(_GLFWmonitor* monitor, int* count)
     else
     {
         *count = 1;
-        result = _glfw_calloc(1, sizeof(GLFWvidmode));
+        result = BR_CALLOC(1, sizeof(GLFWvidmode));
         _glfwGetVideoModeX11(monitor, result);
     }
 

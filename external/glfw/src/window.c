@@ -214,7 +214,7 @@ GLFWAPI GLFWwindow* glfwCreateWindow(int width, int height,
     if (!_glfwIsValidContextConfig(&ctxconfig))
         return NULL;
 
-    window = _glfw_calloc(1, sizeof(_GLFWwindow));
+    window = BR_CALLOC(1, sizeof(_GLFWwindow));
     window->next = _glfw.windowListHead;
     _glfw.windowListHead = window;
 
@@ -495,8 +495,8 @@ GLFWAPI void glfwDestroyWindow(GLFWwindow* handle)
         *prev = window->next;
     }
 
-    _glfw_free(window->title);
-    _glfw_free(window);
+    BR_FREE(window->title);
+    BR_FREE(window);
 }
 
 GLFWAPI int glfwWindowShouldClose(GLFWwindow* handle)
@@ -539,7 +539,7 @@ GLFWAPI void glfwSetWindowTitle(GLFWwindow* handle, const char* title)
     window->title = _glfw_strdup(title);
 
     _glfw.platform.setWindowTitle(window, title);
-    _glfw_free(prev);
+    BR_FREE(prev);
 }
 
 GLFWAPI void glfwSetWindowIcon(GLFWwindow* handle,

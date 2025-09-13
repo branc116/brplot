@@ -634,7 +634,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
     const NSUInteger count = [urls count];
     if (count)
     {
-        char** paths = _glfw_calloc(count, sizeof(char*));
+        char** paths = BR_CALLOC(count, sizeof(char*));
 
         for (NSUInteger i = 0;  i < count;  i++)
             paths[i] = _glfw_strdup([urls[i] fileSystemRepresentation]);
@@ -642,8 +642,8 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
         _glfwInputDrop(window, (int) count, (const char**) paths);
 
         for (NSUInteger i = 0;  i < count;  i++)
-            _glfw_free(paths[i]);
-        _glfw_free(paths);
+            BR_FREE(paths[i]);
+        BR_FREE(paths);
     }
 
     return YES;
@@ -1872,7 +1872,7 @@ const char* _glfwGetClipboardStringCocoa(void)
         return NULL;
     }
 
-    _glfw_free(_glfw.ns.clipboardString);
+    BR_FREE(_glfw.ns.clipboardString);
     _glfw.ns.clipboardString = _glfw_strdup([object UTF8String]);
 
     return _glfw.ns.clipboardString;
@@ -1900,7 +1900,7 @@ EGLenum _glfwGetEGLPlatformCocoa(EGLint** attribs)
 
         if (type)
         {
-            *attribs = _glfw_calloc(3, sizeof(EGLint));
+            *attribs = BR_CALLOC(3, sizeof(EGLint));
             (*attribs)[0] = EGL_PLATFORM_ANGLE_TYPE_ANGLE;
             (*attribs)[1] = type;
             (*attribs)[2] = EGL_NONE;

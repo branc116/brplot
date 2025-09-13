@@ -1,4 +1,5 @@
 #include "src/br_pp.h"
+#include "src/br_memory.h"
 #if !defined(BR_LOGE)
 #  define BR_LOGE LOGE
 #endif

@@ -523,7 +523,7 @@ void _glfwSetCursorNull(_GLFWwindow* window, _GLFWcursor* cursor)
 void _glfwSetClipboardStringNull(const char* string)
 {
     char* copy = _glfw_strdup(string);
-    _glfw_free(_glfw.null.clipboardString);
+    BR_FREE(_glfw.null.clipboardString);
     _glfw.null.clipboardString = copy;
 }
 

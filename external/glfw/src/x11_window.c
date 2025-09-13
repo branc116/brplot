@@ -438,7 +438,7 @@ static char* convertLatin1toUTF8(const char* source)
     for (sp = source;  *sp;  sp++)
         size += (*sp & 0x80) ? 2 : 1;
 
-    char* target = _glfw_calloc(size, 1);
+    char* target = BR_CALLOC(size, 1);
     char* tp = target;
 
     for (sp = source;  *sp;  sp++)
@@ -950,7 +950,7 @@ static const char* getSelectionString(Atom selection)
         return *selectionString;
     }
 
-    _glfw_free(*selectionString);
+    BR_FREE(*selectionString);
     *selectionString = NULL;
 
     for (size_t i = 0;  i < targetCount;  i++)
@@ -1029,7 +1029,7 @@ static const char* getSelectionString(Atom selection)
                 if (itemCount)
                 {
                     size += itemCount;
-                    string = _glfw_realloc(string, size);
+                    string = BR_REALLOC(string, size);
                     string[size - itemCount - 1] = '\0';
                     strcat(string, data);
                 }
@@ -1041,7 +1041,7 @@ static const char* getSelectionString(Atom selection)
                         if (targets[i] == XA_STRING)
                         {
                             *selectionString = convertLatin1toUTF8(string);
-                            _glfw_free(string);
+                            BR_FREE(string);
                         }
                         else
                             *selectionString = string;
@@ -1273,7 +1273,7 @@ static void processEvent(XEvent *event)
 
                     if (status == XBufferOverflow)
                     {
-                        chars = _glfw_calloc(count + 1, 1);
+                        chars = BR_CALLOC(count + 1, 1);
                         count = Xutf8LookupString(window->x11.ic,
                                                   &event->xkey,
                                                   chars, count,
@@ -1289,7 +1289,7 @@ static void processEvent(XEvent *event)
                     }
 
                     if (chars != buffer)
-                        _glfw_free(chars);
+                        BR_FREE(chars);
                 }
             }
             else
@@ -1705,8 +1705,8 @@ static void processEvent(XEvent *event)
                     _glfwInputDrop(window, count, (const char**) paths);
 
                     for (int i = 0;  i < count;  i++)
-                        _glfw_free(paths[i]);
-                    _glfw_free(paths);
+                        BR_FREE(paths[i]);
+                    BR_FREE(paths);
                 }
 
                 if (data)
@@ -2106,7 +2106,7 @@ void _glfwSetWindowIconX11(_GLFWwindow* window, int count, const GLFWimage* imag
         for (int i = 0;  i < count;  i++)
             longCount += 2 + images[i].width * images[i].height;
 
-        unsigned long* icon = _glfw_calloc(longCount, sizeof(unsigned long));
+        unsigned long* icon = BR_CALLOC(longCount, sizeof(unsigned long));
         unsigned long* target = icon;
 
         for (int i = 0;  i < count;  i++)
@@ -2136,7 +2136,7 @@ void _glfwSetWindowIconX11(_GLFWwindow* window, int count, const GLFWimage* imag
                         (unsigned char*) icon,
                         longCount);
 
-        _glfw_free(icon);
+        BR_FREE(icon);
     }
     else
     {
@@ -3054,7 +3054,7 @@ void _glfwSetCursorX11(_GLFWwindow* window, _GLFWcursor* cursor)
 void _glfwSetClipboardStringX11(const char* string)
 {
     char* copy = _glfw_strdup(string);
-    _glfw_free(_glfw.x11.clipboardString);
+    BR_FREE(_glfw.x11.clipboardString);
     _glfw.x11.clipboardString = copy;
 
     XSetSelectionOwner(_glfw.x11.display,
@@ -3089,7 +3089,7 @@ EGLenum _glfwGetEGLPlatformX11(EGLint** attribs)
 
         if (type)
         {
-            *attribs = _glfw_calloc(5, sizeof(EGLint));
+            *attribs = BR_CALLOC(5, sizeof(EGLint));
             (*attribs)[0] = EGL_PLATFORM_ANGLE_TYPE_ANGLE;
             (*attribs)[1] = type;
             (*attribs)[2] = EGL_PLATFORM_ANGLE_NATIVE_PLATFORM_TYPE_ANGLE;
@@ -3159,7 +3159,7 @@ GLFWAPI void glfwSetX11SelectionString(const char* string)
         return;
     }
 
-    _glfw_free(_glfw.x11.primarySelectionString);
+    BR_FREE(_glfw.x11.primarySelectionString);
     _glfw.x11.primarySelectionString = _glfw_strdup(string);
 
     XSetSelectionOwner(_glfw.x11.display,

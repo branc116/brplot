@@ -78,7 +78,7 @@ static GLFWbool refreshVideoModes(_GLFWmonitor* monitor)
 
     qsort(modes, modeCount, sizeof(GLFWvidmode), compareVideoModes);
 
-    _glfw_free(monitor->modes);
+    BR_FREE(monitor->modes);
     monitor->modes = modes;
     monitor->modeCount = modeCount;
 
@@ -101,9 +101,8 @@ void _glfwInputMonitor(_GLFWmonitor* monitor, int action, int placement)
     if (action == GLFW_CONNECTED)
     {
         _glfw.monitorCount++;
-        _glfw.monitors =
-            _glfw_realloc(_glfw.monitors,
-                          sizeof(_GLFWmonitor*) * _glfw.monitorCount);
+        if (_glfw.monitors) _glfw.monitors = BR_REALLOC(_glfw.monitors, sizeof(_GLFWmonitor*) * _glfw.monitorCount);
+        else _glfw.monitors = BR_MALLOC(sizeof(_GLFWmonitor*) * _glfw.monitorCount);
 
         if (placement == _GLFW_INSERT_FIRST)
         {
@@ -170,7 +169,7 @@ void _glfwInputMonitorWindow(_GLFWmonitor* monitor, _GLFWwindow* window)
 //
 _GLFWmonitor* _glfwAllocMonitor(const char* name, int widthMM, int heightMM)
 {
-    _GLFWmonitor* monitor = _glfw_calloc(1, sizeof(_GLFWmonitor));
+    _GLFWmonitor* monitor = BR_CALLOC(1, sizeof(_GLFWmonitor));
     monitor->widthMM = widthMM;
     monitor->heightMM = heightMM;
 
@@ -191,17 +190,17 @@ void _glfwFreeMonitor(_GLFWmonitor* monitor)
     _glfwFreeGammaArrays(&monitor->originalRamp);
     _glfwFreeGammaArrays(&monitor->currentRamp);
 
-    _glfw_free(monitor->modes);
-    _glfw_free(monitor);
+    if (monitor->modes) BR_FREE(monitor->modes);
+    BR_FREE(monitor);
 }
 
 // Allocates red, green and blue value arrays of the specified size
 //
 void _glfwAllocGammaArrays(GLFWgammaramp* ramp, unsigned int size)
 {
-    ramp->red = _glfw_calloc(size, sizeof(unsigned short));
-    ramp->green = _glfw_calloc(size, sizeof(unsigned short));
-    ramp->blue = _glfw_calloc(size, sizeof(unsigned short));
+    ramp->red = BR_CALLOC(size, sizeof(unsigned short));
+    ramp->green = BR_CALLOC(size, sizeof(unsigned short));
+    ramp->blue = BR_CALLOC(size, sizeof(unsigned short));
     ramp->size = size;
 }
 
@@ -209,9 +208,9 @@ void _glfwAllocGammaArrays(GLFWgammaramp* ramp, unsigned int size)
 //
 void _glfwFreeGammaArrays(GLFWgammaramp* ramp)
 {
-    _glfw_free(ramp->red);
-    _glfw_free(ramp->green);
-    _glfw_free(ramp->blue);
+    if (ramp->red) BR_FREE(ramp->red);
+    if (ramp->red) BR_FREE(ramp->green);
+    if (ramp->red) BR_FREE(ramp->blue);
 
     memset(ramp, 0, sizeof(GLFWgammaramp));
 }
@@ -478,7 +477,7 @@ GLFWAPI void glfwSetGamma(GLFWmonitor* handle, float gamma)
     if (!original)
         return;
 
-    values = _glfw_calloc(original->size, sizeof(unsigned short));
+    values = BR_CALLOC(original->size, sizeof(unsigned short));
 
     for (i = 0;  i < original->size;  i++)
     {
@@ -500,7 +499,7 @@ GLFWAPI void glfwSetGamma(GLFWmonitor* handle, float gamma)
     ramp.size = original->size;
 
     glfwSetGammaRamp(handle, &ramp);
-    _glfw_free(values);
+    BR_FREE(values);
 }
 
 GLFWAPI const GLFWgammaramp* glfwGetGammaRamp(GLFWmonitor* handle)

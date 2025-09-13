@@ -635,7 +635,6 @@ struct _GLFWplatform
 struct _GLFWlibrary
 {
     GLFWbool            initialized;
-    GLFWallocator       allocator;
 
     _GLFWplatform       platform;
 
@@ -847,8 +846,4 @@ char** _glfwParseUriList(char* text, int* count);
 char* _glfw_strdup(const char* source);
 int _glfw_min(int a, int b);
 int _glfw_max(int a, int b);
-
-void* _glfw_calloc(size_t count, size_t size);
-void* _glfw_realloc(void* pointer, size_t size);
-void _glfw_free(void* pointer);
 

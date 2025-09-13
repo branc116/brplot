@@ -133,7 +133,7 @@ void _glfwPollMonitorsWin32(void)
     disconnectedCount = _glfw.monitorCount;
     if (disconnectedCount)
     {
-        disconnected = _glfw_calloc(_glfw.monitorCount, sizeof(_GLFWmonitor*));
+        disconnected = BR_CALLOC(_glfw.monitorCount, sizeof(_GLFWmonitor*));
         memcpy(disconnected,
                _glfw.monitors,
                _glfw.monitorCount * sizeof(_GLFWmonitor*));
@@ -185,7 +185,7 @@ void _glfwPollMonitorsWin32(void)
             monitor = createMonitor(&adapter, &display);
             if (!monitor)
             {
-                _glfw_free(disconnected);
+                BR_FREE(disconnected);
                 return;
             }
 
@@ -215,7 +215,7 @@ void _glfwPollMonitorsWin32(void)
             monitor = createMonitor(&adapter, NULL);
             if (!monitor)
             {
-                _glfw_free(disconnected);
+                BR_FREE(disconnected);
                 return;
             }
 
@@ -229,7 +229,7 @@ void _glfwPollMonitorsWin32(void)
             _glfwInputMonitor(disconnected[i], GLFW_DISCONNECTED, 0);
     }
 
-    _glfw_free(disconnected);
+    BR_FREE(disconnected);
 }
 
 // Change the current video mode
@@ -441,7 +441,7 @@ GLFWvidmode* _glfwGetVideoModesWin32(_GLFWmonitor* monitor, int* count)
         if (*count == size)
         {
             size += 128;
-            result = (GLFWvidmode*) _glfw_realloc(result, size * sizeof(GLFWvidmode));
+            result = (GLFWvidmode*) BR_REALLOC(result, size * sizeof(GLFWvidmode));
         }
 
         (*count)++;
@@ -451,7 +451,7 @@ GLFWvidmode* _glfwGetVideoModesWin32(_GLFWmonitor* monitor, int* count)
     if (!*count)
     {
         // HACK: Report the current mode if no valid modes were found
-        result = _glfw_calloc(1, sizeof(GLFWvidmode));
+        result = BR_CALLOC(1, sizeof(GLFWvidmode));
         _glfwGetVideoModeWin32(monitor, result);
         *count = 1;
     }

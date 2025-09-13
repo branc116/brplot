@@ -102,6 +102,11 @@ typedef struct br_plotter_t {
       bool c_help;
       bool python_help;
     } help;
+    struct {
+      int selected_frame;
+      int selected_nid;
+      bool show;
+    } malloc;
     bool dark_theme;
     bool expand_file;
     bool expand_plots;

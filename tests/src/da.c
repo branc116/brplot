@@ -1,7 +1,12 @@
 #include "src/br_pp.h"
+
+#define BR_MEMORY_TRACER_IMPLEMENTATION
+#include "src/br_memory.h"
+
 #define BR_UNIT_TEST
 #define BR_UNIT_TEST_IMPLEMENTATION
 #include "external/tests.h"
+
 #include "src/br_da.h"
 
 TEST_CASE(da) {
@@ -21,7 +26,8 @@ TEST_CASE(da) {
   TEST_EQUAL(a.len, 2);
   br_da_remove_at(a, 1);
   TEST_EQUAL(a.len, 1);
-  br_da_remove_n_at(a, 1, 0);
+  br_da_push(a, 10);
+  br_da_remove_n_at(a, 2, 0);
   TEST_EQUAL(a.len, 0);
   br_da_free(a);
 }

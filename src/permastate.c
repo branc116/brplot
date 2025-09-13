@@ -283,7 +283,7 @@ bool br_permastate_load_plots(FILE* file, br_plotter_t* br) {
     if (NULL == (plots = BR_MALLOC(sizeof(*plots) * plots_len)))                   goto error;
     if (plots_len != (read_plots = fread(plots, sizeof(*plots), plots_len, file))) goto error;
   }
-  BR_FREE(br->plots.arr);
+  if (br->plots.arr) BR_FREE(br->plots.arr);
   br->plots.arr = plots;
   br->plots.len = br->plots.cap = (int)plots_len;
   if (plots_len != 0) calculated_crc = br_fs_crc(plots, sizeof(*plots) * (size_t)plots_len, 0);

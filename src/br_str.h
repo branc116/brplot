@@ -1,5 +1,6 @@
 #pragma once
 #include "src/br_pp.h"
+#include "src/br_memory.h"
 
 #include <stdint.h>
 #include <stdbool.h>

@@ -557,8 +557,8 @@ void _glfwTerminateWin32(void)
     if (_glfw.win32.mainWindowClass)
         UnregisterClass(MAKEINTATOM(_glfw.win32.mainWindowClass), _glfw.win32.instance);
 
-    _glfw_free(_glfw.win32.clipboardString);
-    _glfw_free(_glfw.win32.rawInput);
+    BR_FREE(_glfw.win32.clipboardString);
+    BR_FREE(_glfw.win32.rawInput);
 
     _glfwTerminateWGL();
     _glfwTerminateEGL();

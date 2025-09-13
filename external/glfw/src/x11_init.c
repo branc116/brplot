@@ -1543,8 +1543,8 @@ void _glfwTerminateX11(void)
         _glfw.x11.hiddenCursorHandle = (Cursor) 0;
     }
 
-    _glfw_free(_glfw.x11.primarySelectionString);
-    _glfw_free(_glfw.x11.clipboardString);
+    if (_glfw.x11.primarySelectionString) BR_FREE(_glfw.x11.primarySelectionString);
+    if (_glfw.x11.clipboardString) BR_FREE(_glfw.x11.clipboardString);
 
     XUnregisterIMInstantiateCallback(_glfw.x11.display,
                                      NULL, NULL, NULL,

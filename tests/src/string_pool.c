@@ -17,13 +17,19 @@ static size_t test_write(void* src, size_t el_size, size_t n, br_test_file_t* nu
 
 #include <errno.h>
 
+#define BR_MEMORY_TRACER_IMPLEMENTATION
+#include "src/br_memory.h"
+
 #define BRFL_IMPLEMENTATION
 #include "src/br_free_list.h"
+
 #define BR_UNIT_TEST
 #define BR_UNIT_TEST_IMPLEMENTATION
 #include "external/tests.h"
+
 #define BR_STR_IMPLMENTATION
 #include "src/br_str.h"
+
 #define BRSP_IMPLEMENTATION
 #include "src/br_string_pool.h"
 

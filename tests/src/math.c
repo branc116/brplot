@@ -1,5 +1,8 @@
 #include "src/br_pp.h"
 
+#define BR_MEMORY_TRACER_IMPLEMENTATION
+#include "src/br_memory.h"
+
 #include "src/br_math.h"
 #define BR_UNIT_TEST
 #define BR_UNIT_TEST_IMPLEMENTATION

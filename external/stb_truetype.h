@@ -468,8 +468,8 @@ int main(int arg, char **argv)
    // #define your own functions "STBTT_malloc" / "STBTT_free" to avoid malloc.h
    #ifndef STBTT_malloc
    #include <stdlib.h>
-   #define STBTT_malloc(x,u)  ((void)(u),malloc(x))
-   #define STBTT_free(x,u)    ((void)(u),free(x))
+   #define STBTT_malloc(x,u)  ((void)(u),BR_MALLOC(x))
+   #define STBTT_free(x,u)    ((void)(u),BR_FREE(x))
    #endif
 
    #ifndef STBTT_assert
@@ -3770,7 +3770,7 @@ STBTT_DEF void stbtt_MakeGlyphBitmapSubpixel(const stbtt_fontinfo *info, unsigne
    if (gbm.w && gbm.h)
       stbtt_Rasterize(&gbm, 0.35f, vertices, num_verts, scale_x, scale_y, shift_x, shift_y, ix0,iy0, 1, info->userdata);
 
-   STBTT_free(vertices, info->userdata);
+   if (vertices) STBTT_free(vertices, info->userdata);
 }
 
 STBTT_DEF void stbtt_MakeGlyphBitmap(const stbtt_fontinfo *info, unsigned char *output, int out_w, int out_h, int out_stride, float scale_x, float scale_y, int glyph)

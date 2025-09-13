@@ -1,4 +1,6 @@
 #include "src/br_pp.h"
+#define BR_MEMORY_TRACER_IMPLEMENTATION
+#include "src/br_memory.h"
 #define BR_FREAD test_read
 #define BR_FWRITE test_write
 #define BRFL_IMPLEMENTATION

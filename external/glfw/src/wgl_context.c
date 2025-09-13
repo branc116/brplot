@@ -133,7 +133,7 @@ static int choosePixelFormatWGL(_GLFWwindow* window,
         nativeCount = _glfw_min(nativeCount, extensionCount);
     }
 
-    usableConfigs = _glfw_calloc(nativeCount, sizeof(_GLFWfbconfig));
+    usableConfigs = BR_CALLOC(nativeCount, sizeof(_GLFWfbconfig));
 
     for (i = 0;  i < nativeCount;  i++)
     {
@@ -152,7 +152,7 @@ static int choosePixelFormatWGL(_GLFWwindow* window,
                 _glfwInputErrorWin32(GLFW_PLATFORM_ERROR,
                                     "WGL: Failed to retrieve pixel format attributes");
 
-                _glfw_free(usableConfigs);
+                BR_FREE(usableConfigs);
                 return 0;
             }
 
@@ -224,7 +224,7 @@ static int choosePixelFormatWGL(_GLFWwindow* window,
                 _glfwInputErrorWin32(GLFW_PLATFORM_ERROR,
                                     "WGL: Failed to describe pixel format");
 
-                _glfw_free(usableConfigs);
+                BR_FREE(usableConfigs);
                 return 0;
             }
 
@@ -274,7 +274,7 @@ static int choosePixelFormatWGL(_GLFWwindow* window,
         _glfwInputError(GLFW_API_UNAVAILABLE,
                         "WGL: The driver does not appear to support OpenGL");
 
-        _glfw_free(usableConfigs);
+        BR_FREE(usableConfigs);
         return 0;
     }
 
@@ -284,12 +284,12 @@ static int choosePixelFormatWGL(_GLFWwindow* window,
         _glfwInputError(GLFW_FORMAT_UNAVAILABLE,
                         "WGL: Failed to find a suitable pixel format");
 
-        _glfw_free(usableConfigs);
+        BR_FREE(usableConfigs);
         return 0;
     }
 
     pixelFormat = (int) closest->handle;
-    _glfw_free(usableConfigs);
+    BR_FREE(usableConfigs);
 
     return pixelFormat;
 }

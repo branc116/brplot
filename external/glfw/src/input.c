@@ -473,7 +473,7 @@ GLFWAPI GLFWcursor* glfwCreateCursor(const GLFWimage* image, int xhot, int yhot)
         return NULL;
     }
 
-    cursor = _glfw_calloc(1, sizeof(_GLFWcursor));
+    cursor = BR_CALLOC(1, sizeof(_GLFWcursor));
     cursor->next = _glfw.cursorListHead;
     _glfw.cursorListHead = cursor;
 
@@ -507,7 +507,7 @@ GLFWAPI GLFWcursor* glfwCreateStandardCursor(int shape)
         return NULL;
     }
 
-    cursor = _glfw_calloc(1, sizeof(_GLFWcursor));
+    cursor = BR_CALLOC(1, sizeof(_GLFWcursor));
     cursor->next = _glfw.cursorListHead;
     _glfw.cursorListHead = cursor;
 
@@ -552,7 +552,7 @@ GLFWAPI void glfwDestroyCursor(GLFWcursor* handle)
         *prev = cursor->next;
     }
 
-    _glfw_free(cursor);
+    BR_FREE(cursor);
 }
 
 GLFWAPI void glfwSetCursor(GLFWwindow* windowHandle, GLFWcursor* cursorHandle)

@@ -185,7 +185,8 @@ static inline void __attribute__((constructor(1002))) run_tests(void) {
       break;
     }
   }
-  BR_FREE(arg);
+  // Use std free because it's malloced by fscanf...
+  free(arg);
 #endif
 
   if (!should_run) {

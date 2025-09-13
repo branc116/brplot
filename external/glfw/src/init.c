@@ -46,7 +46,6 @@ BR_THREAD_LOCAL _GLFWlibrary _glfw = { GLFW_FALSE };
 //
 static BR_THREAD_LOCAL _GLFWerror _glfwMainThreadError;
 static BR_THREAD_LOCAL GLFWerrorfun _glfwErrorCallback;
-static BR_THREAD_LOCAL GLFWallocator _glfwInitAllocator;
 static BR_THREAD_LOCAL _GLFWinitconfig _glfwInitHints =
 {
     .angleType = GLFW_ANGLE_PLATFORM_TYPE_NONE,
@@ -105,11 +104,11 @@ static void terminate(void)
         _glfwFreeMonitor(monitor);
     }
 
-    _glfw_free(_glfw.monitors);
+    BR_FREE(_glfw.monitors);
     _glfw.monitors = NULL;
     _glfw.monitorCount = 0;
 
-    _glfw_free(_glfw.mappings);
+    if (_glfw.mappings) BR_FREE(_glfw.mappings);
     _glfw.mappings = NULL;
     _glfw.mappingCount = 0;
 
@@ -121,7 +120,7 @@ static void terminate(void)
     {
         _GLFWerror* error = _glfw.errorListHead;
         _glfw.errorListHead = error->next;
-        _glfw_free(error);
+        BR_FREE(error);
     }
 
     _glfwPlatformDestroyTls(&_glfw.contextSlot);
@@ -197,8 +196,8 @@ char** _glfwParseUriList(char* text, int* count)
 
         (*count)++;
 
-        path = _glfw_calloc(strlen(line) + 1, 1);
-        paths = _glfw_realloc(paths, *count * sizeof(char*));
+        path = BR_CALLOC(strlen(line) + 1, 1);
+        paths = BR_REALLOC(paths, *count * sizeof(char*));
         paths[*count - 1] = path;
 
         while (*line)
@@ -223,7 +222,7 @@ char** _glfwParseUriList(char* text, int* count)
 char* _glfw_strdup(const char* source)
 {
     const size_t length = strlen(source);
-    char* result = _glfw_calloc(length + 1, 1);
+    char* result = BR_CALLOC(length + 1, 1);
     strcpy(result, source);
     return result;
 }
@@ -237,60 +236,6 @@ int _glfw_max(int a, int b)
 {
     return a > b ? a : b;
 }
-
-void* _glfw_calloc(size_t count, size_t size)
-{
-    if (count && size)
-    {
-        void* block;
-
-        if (count > SIZE_MAX / size)
-        {
-            _glfwInputError(GLFW_INVALID_VALUE, "Allocation size overflow");
-            return NULL;
-        }
-
-        block = _glfw.allocator.allocate(count * size, _glfw.allocator.user);
-        if (block)
-            return memset(block, 0, count * size);
-        else
-        {
-            _glfwInputError(GLFW_OUT_OF_MEMORY, NULL);
-            return NULL;
-        }
-    }
-    else
-        return NULL;
-}
-
-void* _glfw_realloc(void* block, size_t size)
-{
-    if (block && size)
-    {
-        void* resized = _glfw.allocator.reallocate(block, size, _glfw.allocator.user);
-        if (resized)
-            return resized;
-        else
-        {
-            _glfwInputError(GLFW_OUT_OF_MEMORY, NULL);
-            return NULL;
-        }
-    }
-    else if (block)
-    {
-        _glfw_free(block);
-        return NULL;
-    }
-    else
-        return _glfw_calloc(1, size);
-}
-
-void _glfw_free(void* block)
-{
-    if (block)
-        _glfw.allocator.deallocate(block, _glfw.allocator.user);
-}
-
 
 //////////////////////////////////////////////////////////////////////////
 //////                         GLFW event API                       //////
@@ -352,7 +297,7 @@ void _glfwInputError(int code, const char* format, ...)
         error = _glfwPlatformGetTls(&_glfw.errorSlot);
         if (!error)
         {
-            error = _glfw_calloc(1, sizeof(_GLFWerror));
+            error = BR_CALLOC(1, sizeof(_GLFWerror));
             _glfwPlatformSetTls(&_glfw.errorSlot, error);
             _glfwPlatformLockMutex(&_glfw.errorLock);
             error->next = _glfw.errorListHead;
@@ -382,14 +327,6 @@ GLFWAPI int glfwInit(void)
 
     memset(&_glfw, 0, sizeof(_glfw));
     _glfw.hints.init = _glfwInitHints;
-
-    _glfw.allocator = _glfwInitAllocator;
-    if (!_glfw.allocator.allocate)
-    {
-        _glfw.allocator.allocate   = defaultAllocate;
-        _glfw.allocator.reallocate = defaultReallocate;
-        _glfw.allocator.deallocate = defaultDeallocate;
-    }
 
     if (!_glfwSelectPlatform(_glfw.hints.init.platformID, &_glfw.platform))
         return GLFW_FALSE;
@@ -450,19 +387,6 @@ GLFWAPI void glfwInitHint(int hint, int value)
 
     _glfwInputError(GLFW_INVALID_ENUM,
                     "Invalid init hint 0x%08X", hint);
-}
-
-GLFWAPI void glfwInitAllocator(const GLFWallocator* allocator)
-{
-    if (allocator)
-    {
-        if (allocator->allocate && allocator->reallocate && allocator->deallocate)
-            _glfwInitAllocator = *allocator;
-        else
-            _glfwInputError(GLFW_INVALID_VALUE, "Missing function in allocator");
-    }
-    else
-        memset(&_glfwInitAllocator, 0, sizeof(GLFWallocator));
 }
 
 GLFWAPI void glfwGetVersion(int* major, int* minor, int* rev)

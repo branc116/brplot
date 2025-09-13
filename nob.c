@@ -954,16 +954,9 @@ static bool n_unittests_do(void) {
   Nob_Cmd cmd = { 0 };
   is_debug = true;
   is_headless = true;
-  if (no_gen) {
-    if (false == n_compile_do()) return false;
-  } else {
-    if (false == n_build_do()) return false;
-  }
-  nob_cmd_append(&cmd, "./bin/brplot" EXE_EXT, "--unittest");
-
-  if (false == nob_cmd_run(&cmd)) return false;
 
   static struct { char const *test_file, *out_bin; } test_programs[] = {
+    { .test_file = "./tests/src/memory.c", .out_bin  = "bin/memory" EXE_EXT },
     { .test_file = "./tests/src/str.c", .out_bin  = "bin/test_str" EXE_EXT },
     { .test_file = "./tests/src/free_list.c", .out_bin  = "bin/test_fl" EXE_EXT },
     { .test_file = "./tests/src/math.c", .out_bin  = "bin/test_math" EXE_EXT },
@@ -985,6 +978,15 @@ static bool n_unittests_do(void) {
     if (false == nob_cmd_run(&cmd)) return false;
     LOGI("-------------- END TESTS ------------------");
   }
+
+  if (no_gen) {
+    if (false == n_compile_do()) return false;
+  } else {
+    if (false == n_build_do()) return false;
+  }
+  nob_cmd_append(&cmd, "./bin/brplot" EXE_EXT, "--unittest");
+  if (false == nob_cmd_run(&cmd)) return false;
+
 
   LOGI("Unit tests ok");
   return true;

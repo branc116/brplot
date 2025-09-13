@@ -118,10 +118,10 @@ static GLFWbool chooseEGLConfig(const _GLFWctxconfig* ctxconfig,
         return GLFW_FALSE;
     }
 
-    nativeConfigs = _glfw_calloc(nativeCount, sizeof(EGLConfig));
+    nativeConfigs = BR_CALLOC(nativeCount, sizeof(EGLConfig));
     eglGetConfigs(_glfw.egl.display, nativeConfigs, nativeCount, &nativeCount);
 
-    usableConfigs = _glfw_calloc(nativeCount, sizeof(_GLFWfbconfig));
+    usableConfigs = BR_CALLOC(nativeCount, sizeof(_GLFWfbconfig));
     usableCount = 0;
 
     for (i = 0;  i < nativeCount;  i++)
@@ -230,8 +230,8 @@ static GLFWbool chooseEGLConfig(const _GLFWctxconfig* ctxconfig,
         }
     }
 
-    _glfw_free(nativeConfigs);
-    _glfw_free(usableConfigs);
+    BR_FREE(nativeConfigs);
+    BR_FREE(usableConfigs);
 
     return closest != NULL;
 }
@@ -484,7 +484,7 @@ GLFWbool _glfwInitEGL(void)
     else
         _glfw.egl.display = eglGetDisplay(_glfw.platform.getEGLNativeDisplay());
 
-    _glfw_free(attribs);
+    BR_FREE(attribs);
 
     if (_glfw.egl.display == EGL_NO_DISPLAY)
     {

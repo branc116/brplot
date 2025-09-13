@@ -43,10 +43,10 @@ static void makeContextCurrentOSMesa(_GLFWwindow* window)
             (width != window->context.osmesa.width) ||
             (height != window->context.osmesa.height))
         {
-            _glfw_free(window->context.osmesa.buffer);
+            BR_FREE(window->context.osmesa.buffer);
 
             // Allocate the new buffer (width * height * 8-bit RGBA)
-            window->context.osmesa.buffer = _glfw_calloc(4, (size_t) width * height);
+            window->context.osmesa.buffer = BR_CALLOC(4, (size_t) width * height);
             window->context.osmesa.width  = width;
             window->context.osmesa.height = height;
         }
@@ -80,7 +80,7 @@ static void destroyContextOSMesa(_GLFWwindow* window)
 
     if (window->context.osmesa.buffer)
     {
-        _glfw_free(window->context.osmesa.buffer);
+        BR_FREE(window->context.osmesa.buffer);
         window->context.osmesa.width = 0;
         window->context.osmesa.height = 0;
     }

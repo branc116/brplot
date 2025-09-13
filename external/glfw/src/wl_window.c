@@ -115,12 +115,12 @@ static int createAnonymousFile(off_t size)
             return -1;
         }
 
-        name = _glfw_calloc(strlen(path) + sizeof(template), 1);
+        name = BR_CALLOC(strlen(path) + sizeof(template), 1);
         strcpy(name, path);
         strcat(name, template);
 
         fd = createTmpfileCloexec(name);
-        _glfw_free(name);
+        BR_FREE(name);
         if (fd < 0)
             return -1;
     }
@@ -435,7 +435,7 @@ static void surfaceHandleEnter(void* userData,
     {
         window->wl.outputScaleSize++;
         window->wl.outputScales =
-            _glfw_realloc(window->wl.outputScales,
+            BR_REALLOC(window->wl.outputScales,
                           window->wl.outputScaleSize * sizeof(_GLFWscaleWayland));
     }
 
@@ -1317,7 +1317,7 @@ static char* readDataOfferAsString(struct wl_data_offer* offer, const char* mime
         const size_t requiredSize = length + readSize + 1;
         if (requiredSize > size)
         {
-            char* longer = _glfw_realloc(string, requiredSize);
+            char* longer = BR_REALLOC(string, requiredSize);
             if (!longer)
             {
                 _glfwInputError(GLFW_OUT_OF_MEMORY, NULL);
@@ -1936,7 +1936,7 @@ static void dataDeviceHandleDataOffer(void* userData,
                                       struct wl_data_offer* offer)
 {
     _GLFWofferWayland* offers =
-        _glfw_realloc(_glfw.wl.offers,
+        BR_REALLOC(_glfw.wl.offers,
                       sizeof(_GLFWofferWayland) * (_glfw.wl.offerCount + 1));
     if (!offers)
     {
@@ -2037,12 +2037,12 @@ static void dataDeviceHandleDrop(void* userData,
             _glfwInputDrop(_glfw.wl.dragFocus, count, (const char**) paths);
 
         for (int i = 0; i < count; i++)
-            _glfw_free(paths[i]);
+            BR_FREE(paths[i]);
 
-        _glfw_free(paths);
+        BR_FREE(paths);
     }
 
-    _glfw_free(string);
+    BR_FREE(string);
 }
 
 static void dataDeviceHandleSelection(void* userData,
@@ -2204,8 +2204,8 @@ void _glfwDestroyWindowWayland(_GLFWwindow* window)
     if (window->wl.surface)
         wl_surface_destroy(window->wl.surface);
 
-    _glfw_free(window->wl.appId);
-    _glfw_free(window->wl.outputScales);
+    BR_FREE(window->wl.appId);
+    BR_FREE(window->wl.outputScales);
 }
 
 void _glfwSetWindowTitleWayland(_GLFWwindow* window, const char* title)
@@ -3143,7 +3143,7 @@ void _glfwSetClipboardStringWayland(const char* string)
         return;
     }
 
-    _glfw_free(_glfw.wl.clipboardString);
+    BR_FREE(_glfw.wl.clipboardString);
     _glfw.wl.clipboardString = copy;
 
     _glfw.wl.selectionSource =
@@ -3175,7 +3175,7 @@ const char* _glfwGetClipboardStringWayland(void)
     if (_glfw.wl.selectionSource)
         return _glfw.wl.clipboardString;
 
-    _glfw_free(_glfw.wl.clipboardString);
+    BR_FREE(_glfw.wl.clipboardString);
     _glfw.wl.clipboardString =
         readDataOfferAsString(_glfw.wl.selectionOffer, "text/plain;charset=utf-8");
     return _glfw.wl.clipboardString;

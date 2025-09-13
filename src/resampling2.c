@@ -248,7 +248,7 @@ void resampling2_reset(resampling2_t* res) {
 
 static void resampling2_nodes_deinit(resampling2_t* nodes) {
   if (nodes == NULL) return;
-  BR_FREE(nodes->common.arr);
+  if (nodes->common.arr) BR_FREE(nodes->common.arr);
   nodes->common.len = 0;
   nodes->common.cap = 0;
   nodes->common.arr = NULL;

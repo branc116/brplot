@@ -30,6 +30,7 @@ static void brgui_draw_about(br_plotter_t* br);
 static void brgui_draw_add_expression(br_plotter_t* br);
 static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas);
 static void brgui_draw_help(br_plotter_t* br);
+static void brgui_draw_malloc(br_plotter_t* br);
 
 void br_plotter_draw(br_plotter_t* br) {
   brsp_t* sp = brtl_brsp();
@@ -115,6 +116,7 @@ void br_plotter_draw(br_plotter_t* br) {
         brgui_draw_add_expression(br);
         brgui_draw_show_data(&br->ui.show_data, br->groups);
         brgui_draw_help(br);
+        brgui_draw_malloc(br);
         brui_resizable_update();
       brui_end();
     }
@@ -616,6 +618,136 @@ static void brgui_draw_help(br_plotter_t* br) {
   if (brui_resizable_temp_pop()) br->ui.help.show = false;
 }
 
+static void br_size_to_human_readable(size_t size, float* out_num, const char** out_unit) {
+  if (size >> 10 == 0) {
+    *out_num = size;
+    *out_unit = "B";
+  } else if (size >> 20 == 0) {
+    *out_num = size >> 10;
+    *out_num += (float)(size - ((size_t)*out_num << 10)) / (float)(1<<10);
+    *out_unit = "kB";
+  } else if (size >> 30 == 0) {
+    *out_num = size >> 20;
+    *out_num += (float)(size - ((size_t)*out_num << 20)) / (float)(1<<20);
+    *out_unit = "MB";
+  } else if (size >> 40 == 0) {
+    *out_num = size >> 30;
+    *out_num += (float)(size - ((size_t)*out_num << 30)) / (float)(1<<30);
+    *out_unit = "GB";
+  } else {
+    *out_num = size >> 40LLU;
+    *out_num += (float)(size - ((size_t)*out_num << 40LLU)) / (float)(1LLU<<40LLU);
+    *out_unit = "TB";
+  }
+}
+
+static void brgui_draw_malloc(br_plotter_t* br) {
+  brui_action_t* action = brui_action();
+  if (false == br->ui.malloc.show) return;
+
+  brui_resizable_temp_push_t tmp = brui_resizable_temp_push(BR_STRL("Malloc"));
+    if (tmp.just_created) {
+      tmp.res->target.cur_extent = BR_EXTENTI_TOF(brtl_viewport());
+      tmp.res->target.cur_extent.width -= 100;
+      tmp.res->target.cur_extent.height -= 100;
+      tmp.res->target.cur_extent.x += 50;
+      tmp.res->target.cur_extent.y += 50;
+      br->ui.malloc.selected_frame = -1;
+      br->ui.malloc.selected_nid = -1;
+    }
+    br_malloc_tracker_t tr = br_malloc_tracker_get();
+    float human = 0;
+    const char* unit = NULL;
+    br_size_to_human_readable(tr.total_alloced, &human, &unit);
+    brui_textf("Total alloced: %f%s", human, unit);
+    br_size_to_human_readable(tr.cur_alloced, &human, &unit);
+    brui_textf("Current alloced: %f%s", human, unit);
+    br_size_to_human_readable(tr.max_alloced, &human, &unit);
+    brui_textf("Max alloced: %f%s", human, unit);
+    brui_text(BR_STRL(""));
+    brui_textf("Current frame: %zu", tr.current_frame);
+    br_size_to_human_readable(tr.cur_frame_alloced, &human, &unit);
+    brui_textf("Current frame alloced: %f%s", human, unit);
+    br_size_to_human_readable(tr.cur_frame_freed, &human, &unit);
+    brui_textf("Current frame freed: %f%s", human, unit);
+    brui_text(BR_STRL(""));
+    br_malloc_tracker_frame_t last = br_da_top(tr.frames);
+    brui_textf("Last frame with some action: %d", last.frame_num);
+    brui_text(BR_STRL(""));
+    brui_textf("Events Len: %zu", tr.len);
+
+    int sel_frame = br->ui.malloc.selected_frame;
+    int sel_nid = br->ui.malloc.selected_nid;
+    brui_push();
+      char* scrach = br_scrach_get(1024);
+      if (sel_frame == -1) {
+      } else {
+        if (sel_nid == -1) {
+          brui_vsplitvp(2, BRUI_SPLITR(1), BRUI_SPLITR(3));
+        } else {
+          brui_vsplitvp(3, BRUI_SPLITR(1), BRUI_SPLITR(3), BRUI_SPLITR(4));
+        }
+      }
+
+      for (int i = 0; i < tr.frames.len; ++i) {
+        brui_vsplitvp(2, BRUI_SPLITA(1 * brui_text_size()), BRUI_SPLITR(1));
+          brui_textf("%d", i);
+        brui_vsplit_pop();
+          int n = sprintf(scrach, "Frame %d len=%d", tr.frames.arr[i].frame_num, tr.frames.arr[i].len);
+          if (brui_button(BR_STRV(scrach, n))) br->ui.malloc.selected_frame = i;
+        brui_vsplit_end();
+      }
+
+      if (sel_frame == -1) {
+      } else {
+        brui_vsplit_pop();
+          br_malloc_tracker_frame_t frame = tr.frames.arr[sel_frame];
+          for (int i = 0; i < frame.len; ++i) {
+            br_malloc_tracker_node_t node = tr.arr[frame.start_nid + i];
+            int n;
+            const char* word = "Unknown";
+            switch (node.kind) {
+              case br_malloc_tracker_event_freed: word = "Freed"; break;
+              case br_malloc_tracker_event_realloc: word = "Realloced"; break;
+              case br_malloc_tracker_event_alloc: word = "Alloeced"; break;
+              default: break;
+            }
+            n = sprintf(scrach, "[%s:%d] %s %zu bytes", node.at_file_name, node.at_line_num, word, node.size);
+            if (brui_button(BR_STRV(scrach, n))) {
+              br->ui.malloc.selected_nid = frame.start_nid + i;
+            }
+          }
+          if (sel_nid != -1) {
+            brui_vsplit_pop();
+            int cur_nid = sel_nid;
+            br_malloc_tracker_node_t node = br_da_get(tr, sel_nid);
+            while (node.next_nid != -1) {
+              cur_nid = node.next_nid;
+              node = br_da_get(tr, node.next_nid);
+            }
+            while (cur_nid != -1) {
+              int n;
+              br_malloc_tracker_node_t node = br_da_get(tr, cur_nid);
+              const char* word = "Unknown";
+              switch (node.kind) {
+                case br_malloc_tracker_event_freed: word = "Freed"; break;
+                case br_malloc_tracker_event_realloc: word = "Realloced"; break;
+                case br_malloc_tracker_event_alloc: word = "Alloeced"; break;
+                default: break;
+              }
+              n = sprintf(scrach, "[%s:%d Frame %d] %s %zu bytes", node.at_file_name, node.at_line_num, node.frame_num, word, node.size);
+              brui_text(BR_STRV(scrach, n));
+              cur_nid = node.prev_nid;
+            }
+          }
+        brui_vsplit_end();
+      }
+
+      br_scrach_free();
+    brui_pop();
+  if (brui_resizable_temp_pop()) br->ui.malloc.show = false;
+}
+
 void brgui_draw_add_expression(br_plotter_t* br) {
   brgui_add_expression_t* e = &br->ui.add_expression;
   if (false == e->show) return;
@@ -819,6 +951,9 @@ static void draw_left_panel(br_plotter_t* br) {
       }
       if (brui_button(BR_STRL("Help"))) {
         br->ui.help.show = true;
+      }
+      if (brui_button(BR_STRL("Memory"))) {
+        br->ui.malloc.show = true;
       }
       brui_collapsable_end();
     }

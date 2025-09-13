@@ -24,10 +24,10 @@
 
 // Allow custom memory allocators
 #ifndef DIRENT_MALLOC
-    #define DIRENT_MALLOC(sz)   malloc(sz)
+    #define DIRENT_MALLOC(sz)   BR_MALLOC(sz)
 #endif
 #ifndef DIRENT_FREE
-    #define DIRENT_FREE(p)      free(p)
+    #define DIRENT_FREE(p)      BR_FREE(p)
 #endif
 
 //----------------------------------------------------------------------------------

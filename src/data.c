@@ -357,10 +357,10 @@ static br_data_t* br_data_init(br_data_t* g, int group_id, br_data_kind_t kind) 
     .name = brsp_new(brtl_brsp()),
     .is_new = true,
   };
-  if (NULL == g->resampling)                                                                   goto error;
-  if (NULL == (g->dd.xs = BR_MALLOC(sizeof(float) * DEF_CAP)))                                 goto error;
-  if (NULL == (g->dd.ys = BR_MALLOC(sizeof(float) * DEF_CAP)))                                 goto error;
-  if (kind == br_data_kind_3d) if (NULL == (g->ddd.zs = BR_MALLOC(sizeof(br_vec3_t) * DEF_CAP))) goto error;
+  if (NULL == g->resampling)                                                                 goto error;
+  if (NULL == (g->dd.xs = BR_MALLOC(sizeof(float) * DEF_CAP)))                               goto error;
+  if (NULL == (g->dd.ys = BR_MALLOC(sizeof(float) * DEF_CAP)))                               goto error;
+  if (kind == br_data_kind_3d) if (NULL == (g->ddd.zs = BR_MALLOC(sizeof(float) * DEF_CAP))) goto error;
   char* scrach = br_scrach_get(64);
     int n = sprintf(scrach, "Data #%d", group_id);
     brsp_set(brtl_brsp(), g->name, BR_STRV(scrach, (uint32_t)n));
