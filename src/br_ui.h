@@ -177,6 +177,9 @@ extern BR_THREAD_LOCAL char brui__scrach[2048];
 void brui_begin(void);
 void brui_end(void);
 
+/* Call this to clear all temp memory */
+void brui_finish(void);
+
 br_size_t brui_text(br_strv_t strv);
 bool brui_text_input(brsp_id_t str_id);
 void brui_new_lines(int n);

@@ -1,6 +1,5 @@
 #pragma once
 #include "src/br_pp.h"
-#include "src/br_memory.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -103,6 +102,7 @@ bool br_scrach_check_is_taken(void);
 } while(0)
 
 #endif
+void br_scrach_finish(void);
 
 #ifdef __cplusplus
 }
@@ -628,6 +628,12 @@ char* SCRACH_GET_NAME(size_t size) {
 void SCRACH_FREE_NAME(void) {
   BR_ASSERT(br_scrach_is_taken == true);
   br_scrach_is_taken = false;
+}
+
+void br_scrach_finish(void) {
+  br_scrach_is_taken = false;
+  BR_FREE(br_scrach);
+  br_scrach_cur_cap = 0;
 }
 
 #endif // defined(BR_STR_IMPLMENTATION)

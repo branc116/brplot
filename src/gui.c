@@ -20,6 +20,7 @@
 #include "src/br_theme.h"
 #include "src/br_tl.h"
 #include "src/br_ui.h"
+#include "src/br_memory.h"
 
 static void draw_left_panel(br_plotter_t* br);
 static bool brgui_draw_plot_menu(br_plot_t* plot, br_datas_t datas);
@@ -655,7 +656,7 @@ static void brgui_draw_malloc(br_plotter_t* br) {
       br->ui.malloc.selected_frame = -1;
       br->ui.malloc.selected_nid = -1;
     }
-    br_malloc_tracker_t tr = br_malloc_tracker_get();
+    br_memory_t tr = br_memory_get();
     float human = 0;
     const char* unit = NULL;
     br_size_to_human_readable(tr.total_alloced, &human, &unit);
@@ -671,7 +672,7 @@ static void brgui_draw_malloc(br_plotter_t* br) {
     br_size_to_human_readable(tr.cur_frame_freed, &human, &unit);
     brui_textf("Current frame freed: %f%s", human, unit);
     brui_text(BR_STRL(""));
-    br_malloc_tracker_frame_t last = br_da_top(tr.frames);
+    br_memory_frame_t last = br_da_top(tr.frames);
     brui_textf("Last frame with some action: %d", last.frame_num);
     brui_text(BR_STRL(""));
     brui_textf("Events Len: %zu", tr.len);
@@ -701,15 +702,15 @@ static void brgui_draw_malloc(br_plotter_t* br) {
       if (sel_frame == -1) {
       } else {
         brui_vsplit_pop();
-          br_malloc_tracker_frame_t frame = tr.frames.arr[sel_frame];
+          br_memory_frame_t frame = tr.frames.arr[sel_frame];
           for (int i = 0; i < frame.len; ++i) {
-            br_malloc_tracker_node_t node = tr.arr[frame.start_nid + i];
+            br_memory_node_t node = tr.arr[frame.start_nid + i];
             int n;
             const char* word = "Unknown";
             switch (node.kind) {
-              case br_malloc_tracker_event_freed: word = "Freed"; break;
-              case br_malloc_tracker_event_realloc: word = "Realloced"; break;
-              case br_malloc_tracker_event_alloc: word = "Alloeced"; break;
+              case br_memory_event_free:    word = "Free"; break;
+              case br_memory_event_realloc: word = "Realloced"; break;
+              case br_memory_event_alloc:   word = "Alloeced"; break;
               default: break;
             }
             n = sprintf(scrach, "[%s:%d] %s %zu bytes", node.at_file_name, node.at_line_num, word, node.size);
@@ -720,19 +721,19 @@ static void brgui_draw_malloc(br_plotter_t* br) {
           if (sel_nid != -1) {
             brui_vsplit_pop();
             int cur_nid = sel_nid;
-            br_malloc_tracker_node_t node = br_da_get(tr, sel_nid);
+            br_memory_node_t node = br_da_get(tr, sel_nid);
             while (node.next_nid != -1) {
               cur_nid = node.next_nid;
               node = br_da_get(tr, node.next_nid);
             }
             while (cur_nid != -1) {
               int n;
-              br_malloc_tracker_node_t node = br_da_get(tr, cur_nid);
+              br_memory_node_t node = br_da_get(tr, cur_nid);
               const char* word = "Unknown";
               switch (node.kind) {
-                case br_malloc_tracker_event_freed: word = "Freed"; break;
-                case br_malloc_tracker_event_realloc: word = "Realloced"; break;
-                case br_malloc_tracker_event_alloc: word = "Alloeced"; break;
+                case br_memory_event_free:    word = "Free"; break;
+                case br_memory_event_realloc: word = "Realloced"; break;
+                case br_memory_event_alloc:   word = "Alloeced"; break;
                 default: break;
               }
               n = sprintf(scrach, "[%s:%d Frame %d] %s %zu bytes", node.at_file_name, node.at_line_num, node.frame_num, word, node.size);

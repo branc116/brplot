@@ -2,6 +2,7 @@
 #include "src/br_data.h"
 #include "src/br_plotter.h"
 #include "src/br_pp.h"
+#include "src/br_memory.h"
 
 #include <stdbool.h>
 #include <stdlib.h>

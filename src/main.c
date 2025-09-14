@@ -14,7 +14,7 @@ static void* main_gui(void* plotter) {
   br_plotter_t* br = (br_plotter_t*)plotter;
   br_plotter_init(br);
   while(br->should_close == false) {
-    br_malloc_frame();
+    br_memory_frame();
     TracyCFrameMark;
     br_plotter_draw(br);
     br_dagens_handle(&br->groups, &br->dagens, &br->plots, brtl_time() + 0.010);
@@ -25,6 +25,7 @@ static void* main_gui(void* plotter) {
   // CLEAN UP
   br_plotter_deinit(br);
   br_plotter_free(br);
+  br_memory_finish();
   return 0;
 }
 

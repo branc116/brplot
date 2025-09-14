@@ -8,6 +8,7 @@
 #include "src/br_ui.h"
 #include "src/br_text_renderer.h"
 #include "src/br_da.h"
+#include "src/br_memory.h"
 
 #include <string.h>
 

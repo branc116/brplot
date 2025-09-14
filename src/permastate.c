@@ -12,6 +12,7 @@
 #include "src/br_string_pool.h"
 #include "src/br_ui.h"
 #include "src/br_tl.h"
+#include "src/br_memory.h"
 
 #include <stdint.h>
 #include <stdlib.h>

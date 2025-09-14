@@ -7,6 +7,7 @@
 #include "src/br_resampling2.h"
 #include "src/br_str.h"
 #include "src/br_tl.h"
+#include "src/br_memory.h"
 
 #include <stdio.h>
 #include <errno.h>

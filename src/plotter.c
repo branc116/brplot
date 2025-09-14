@@ -13,6 +13,7 @@
 #include "src/br_icons.h"
 #include "src/br_gl.h"
 #include "src/br_free_list.h"
+#include "src/br_memory.h"
 
 #include <math.h>
 #include <string.h>
@@ -167,6 +168,9 @@ void br_plotter_free(br_plotter_t* br) {
   br_str_free(br->ui.fm_state.cur_dir.last_good_dir);
   br_da_free(br->ui.fm_state.cur_dir);
   q_free(br->commands);
+  br_da_free(br->pressed_chars);
+  br_scrach_finish();
+  brui_finish();
   //BR_FREE(br);
   LOGI("Plotter freed");
 }

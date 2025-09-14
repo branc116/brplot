@@ -2,6 +2,7 @@
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
 #include "src/br_q.h"
+#include "src/br_memory.h"
 
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
 #  include "src/desktop/linux/read_input.c"

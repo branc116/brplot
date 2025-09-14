@@ -7,6 +7,7 @@
 #include "src/br_da.h"
 #include "src/br_shaders.h"
 #include "src/br_tl.h"
+#include "src/br_memory.h"
 
 #include <stdint.h>
 #include <math.h>

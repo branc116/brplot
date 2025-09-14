@@ -7,6 +7,7 @@
 #include "src/br_text_renderer.h"
 #include "src/br_tl.h"
 #include "src/br_filesystem.h"
+#include "src/br_memory.h"
 
 #include "external/stb_rect_pack.h"
 #include "external/stb_truetype.h"

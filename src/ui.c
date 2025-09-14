@@ -12,6 +12,7 @@
 #include "src/br_gl.h"
 #include "src/br_shaders.h"
 #include "src/br_free_list.h"
+#include "src/br_memory.h"
 
 #include "external/stb_ds.h"
 
@@ -27,6 +28,8 @@ static BR_THREAD_LOCAL int brui_max_z = 0;
 BR_THREAD_LOCAL int brui__n__;
 
 BR_THREAD_LOCAL char brui__scrach[2048];
+static BR_THREAD_LOCAL bruir_children_t brui__temp_children = { 0 };
+
 #define TOP (brui__stack.arr[brui__stack.len ? brui__stack.len - 1 : 0])
 #define ACTION (brui__stack.action.kind)
 #define ACPARM (brui__stack.action.args)
@@ -103,6 +106,12 @@ void brui_end(void) {
 #if TRACY_ENABLE
   ___tracy_emit_zone_end(brui_begin_end_ctx);
 #endif
+}
+
+void brui_finish(void) {
+  BR_ASSERT(brui__stack.len == 0);
+  br_da_free(brui__stack);
+  br_da_free(brui__temp_children);
 }
 
 void brui_push(void) {
@@ -1199,14 +1208,13 @@ int brui_resizable_sibling_max_z(int id) {
 }
 
 bruir_children_t brui_resizable_children_temp(int resizable_handle) {
-  static BR_THREAD_LOCAL bruir_children_t temp = { 0 };
-  temp.len = 0;
+  brui__temp_children.len = 0;
   brfl_foreach(i, *brtl_bruirs()) {
     if (resizable_handle == br_da_get(*brtl_bruirs(), i).parent) {
-      br_da_push_t(int, temp, i);
+      br_da_push_t(int, brui__temp_children, i);
     }
   }
-  return temp;
+  return brui__temp_children;
 }
 
 int brui_resizable_children_count(int resizable_handle) {

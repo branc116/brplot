@@ -9,6 +9,7 @@
 #include "src/br_math.h"
 #include "src/br_string_pool.h"
 #include "src/br_tl.h"
+#include "src/br_memory.h"
 
 #include <stdio.h>
 #include <stdlib.h>

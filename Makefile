@@ -38,7 +38,7 @@ SOURCE             = src/main.c           src/ui.c         src/data.c        src
 										 src/keybindings.c    src/free_list.c  src/resampling2.c src/graph_utils.c src/shaders.c src/plotter.c    \
 										 src/plot.c           src/permastate.c src/filesystem.c  src/gui.c         src/text_renderer.c \
 										 src/data_generator.c src/platform.c   src/threads.c     src/gl.c          src/icons.c   src/theme.c \
-										 src/string_pool.c    external/shl_impls.c
+										 external/shl_impls.c
 COMMONFLAGS        = -I. -MMD -MP -fvisibility=hidden -std=gnu11
 WARNING_FLAGS      = -Wconversion -Wall -Wextra -Wshadow -D_GNU_SOURCE -Wno-gnu-folding-constant
 LD_FLAGS           =
