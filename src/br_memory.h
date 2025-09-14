@@ -306,10 +306,10 @@ void br_memory_free(void* old, const char* file_name, int line) {
 
   new_nid = br_memory.len;
   node->next_nid = new_nid;
-  br_memory_da_push(br_memory, new_node);
-
   br_memory.cur_alloced -= node->size;
   br_memory.cur_frame_freed += node->size;
+
+  br_memory_da_push(br_memory, new_node);
 
   /* Resize old memory to just fit the index of the tracker node */
   /* But don't actually do it, because it could invalidate the memory or something.. */

@@ -106,7 +106,7 @@ typedef struct br_plotter_t {
       int selected_frame;
       int selected_nid;
       bool show;
-    } malloc;
+    } memory;
     bool dark_theme;
     bool expand_file;
     bool expand_plots;

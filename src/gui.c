@@ -31,7 +31,10 @@ static void brgui_draw_about(br_plotter_t* br);
 static void brgui_draw_add_expression(br_plotter_t* br);
 static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas);
 static void brgui_draw_help(br_plotter_t* br);
-static void brgui_draw_malloc(br_plotter_t* br);
+
+#if defined(BR_HAS_MEMORY)
+static void brgui_draw_memory(br_plotter_t* br);
+#endif
 
 void br_plotter_draw(br_plotter_t* br) {
   brsp_t* sp = brtl_brsp();
@@ -117,7 +120,9 @@ void br_plotter_draw(br_plotter_t* br) {
         brgui_draw_add_expression(br);
         brgui_draw_show_data(&br->ui.show_data, br->groups);
         brgui_draw_help(br);
-        brgui_draw_malloc(br);
+#if defined(BR_HAS_MEMORY)
+        brgui_draw_memory(br);
+#endif
         brui_resizable_update();
       brui_end();
     }
@@ -642,9 +647,10 @@ static void br_size_to_human_readable(size_t size, float* out_num, const char** 
   }
 }
 
-static void brgui_draw_malloc(br_plotter_t* br) {
+#if defined(BR_HAS_MEMORY)
+static void brgui_draw_memory(br_plotter_t* br) {
   brui_action_t* action = brui_action();
-  if (false == br->ui.malloc.show) return;
+  if (false == br->ui.memory.show) return;
 
   brui_resizable_temp_push_t tmp = brui_resizable_temp_push(BR_STRL("Malloc"));
     if (tmp.just_created) {
@@ -653,8 +659,8 @@ static void brgui_draw_malloc(br_plotter_t* br) {
       tmp.res->target.cur_extent.height -= 100;
       tmp.res->target.cur_extent.x += 50;
       tmp.res->target.cur_extent.y += 50;
-      br->ui.malloc.selected_frame = -1;
-      br->ui.malloc.selected_nid = -1;
+      br->ui.memory.selected_frame = -1;
+      br->ui.memory.selected_nid = -1;
     }
     br_memory_t tr = br_memory_get();
     float human = 0;
@@ -677,8 +683,8 @@ static void brgui_draw_malloc(br_plotter_t* br) {
     brui_text(BR_STRL(""));
     brui_textf("Events Len: %zu", tr.len);
 
-    int sel_frame = br->ui.malloc.selected_frame;
-    int sel_nid = br->ui.malloc.selected_nid;
+    int sel_frame = br->ui.memory.selected_frame;
+    int sel_nid = br->ui.memory.selected_nid;
     brui_push();
       char* scrach = br_scrach_get(1024);
       if (sel_frame == -1) {
@@ -695,7 +701,7 @@ static void brgui_draw_malloc(br_plotter_t* br) {
           brui_textf("%d", i);
         brui_vsplit_pop();
           int n = sprintf(scrach, "Frame %d len=%d", tr.frames.arr[i].frame_num, tr.frames.arr[i].len);
-          if (brui_button(BR_STRV(scrach, n))) br->ui.malloc.selected_frame = i;
+          if (brui_button(BR_STRV(scrach, n))) br->ui.memory.selected_frame = i;
         brui_vsplit_end();
       }
 
@@ -715,7 +721,7 @@ static void brgui_draw_malloc(br_plotter_t* br) {
             }
             n = sprintf(scrach, "[%s:%d] %s %zu bytes", node.at_file_name, node.at_line_num, word, node.size);
             if (brui_button(BR_STRV(scrach, n))) {
-              br->ui.malloc.selected_nid = frame.start_nid + i;
+              br->ui.memory.selected_nid = frame.start_nid + i;
             }
           }
           if (sel_nid != -1) {
@@ -746,8 +752,9 @@ static void brgui_draw_malloc(br_plotter_t* br) {
 
       br_scrach_free();
     brui_pop();
-  if (brui_resizable_temp_pop()) br->ui.malloc.show = false;
+  if (brui_resizable_temp_pop()) br->ui.memory.show = false;
 }
+#endif
 
 void brgui_draw_add_expression(br_plotter_t* br) {
   brgui_add_expression_t* e = &br->ui.add_expression;
@@ -953,9 +960,11 @@ static void draw_left_panel(br_plotter_t* br) {
       if (brui_button(BR_STRL("Help"))) {
         br->ui.help.show = true;
       }
+#if defined(BR_HAS_MEMORY)
       if (brui_button(BR_STRL("Memory"))) {
-        br->ui.malloc.show = true;
+        br->ui.memory.show = true;
       }
+#endif
       brui_collapsable_end();
     }
 

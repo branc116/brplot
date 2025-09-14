@@ -80,7 +80,13 @@ void __sanitizer_print_stack_trace(void);
 #  define BR_RELEASE
 #endif
 
-#if defined(BR_DEBUG)
+#if !defined(BR_HAS_MEMORY)
+#  if defined(BR_DEBUG)
+#    define BR_HAS_MEMORY
+#  endif
+#endif
+
+#if defined(BR_HAS_MEMORY)
 #  define BR_MALLOC(SIZE) br_memory_malloc(false, SIZE, __FILE__, __LINE__)
 #  define BR_CALLOC(N, SIZE) br_memory_malloc(true, ((N) * (SIZE)), __FILE__, __LINE__)
 #  define BR_REALLOC(PTR, NEW_SIZE) br_memory_realloc(PTR, NEW_SIZE, __FILE__, __LINE__)
