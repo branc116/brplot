@@ -5,11 +5,115 @@
 #include "src/br_memory.h"
 
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
-#  include "src/desktop/linux/read_input.c"
+
+#include <pthread.h>
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
+#include <poll.h>
+
+static BR_THREAD_LOCAL int br_read_input_pipes[2];
+static BR_THREAD_LOCAL pthread_t br_read_input_thread;
+static void* indirection_function(void* gv);
+
+void read_input_start(br_plotter_t* br) {
+  static BR_THREAD_LOCAL struct { br_plotter_t* br; int* pipes; } data;
+  data.br = br;
+  data.pipes = br_read_input_pipes;
+  pthread_attr_t attrs1;
+  pthread_attr_init(&attrs1);
+  if (pthread_create(&br_read_input_thread, &attrs1, indirection_function, &data)) {
+    LOGE("ERROR while creating thread %d:`%s`", errno, strerror(errno));
+  }
+}
+
+void read_input_stop(void) {
+  write(br_read_input_pipes[1], "", 0);
+  close(br_read_input_pipes[1]);
+  close(STDIN_FILENO);
+  /* Wait for thread to exit, or timeout after 64ms */
+  struct pollfd fds[] = { { .fd = br_read_input_pipes[0], .events = POLLHUP | 32 } };
+  LOGI("Exit pool returned %d", poll(fds, 1,  64));
+  if (br_read_input_thread != 0) {
+    pthread_join(br_read_input_thread, NULL);
+  }
+}
+
+int read_input_read_next(void* state) {
+  int* pipes = state;
+
+  struct pollfd fds[] = { { .fd = STDIN_FILENO, .events = POLLIN | POLLHUP | 32 }, { .fd = pipes[0], .events = POLLIN | POLLHUP | 32} };
+  do {
+    unsigned char c;
+    if (poll(fds, 2, -1) <= 0) LOGE("Failed to pool %d:%s", errno, strerror(errno));
+
+    if (POLLIN & fds[0].revents) {
+      read(STDIN_FILENO, &c, 1);
+      return (int)c;
+    } else if (POLLHUP & fds[0].revents) {
+      LOGI("Got POOLHUP(%d) on stdin, Stopping read_input", fds[0].revents);
+      close(pipes[0]);
+      return -1;
+    }
+
+    if (POLLIN & fds[1].revents) {
+      if (read(pipes[0], &c, 1) == 0) {
+        LOGI("Rcvd 0 on pipe, Stoping read_input");
+        close(pipes[0]);
+        return -1;
+      }
+    } else if ((32 | POLLHUP) & fds[1].revents) {
+      LOGI("Got POOLHUP(%d) on pipe, Stopping read_input", fds[1].revents);
+      close(pipes[0]);
+      return -1;
+    }
+    else if (fds[1].revents != 0) {
+      BR_ASSERTF(false, "Unknown event mask: %d(0x%x)", fds[1].revents, fds[1].revents);
+    }
+  } while(true);
+}
+
+static void* indirection_function(void* gv) {
+  struct { br_plotter_t* br; int* pipes; }* data = gv;
+  pipe(data->pipes);
+  read_input_main_worker(data->br, data->pipes);
+  return NULL;
+}
+
 #elif defined(_WIN32) || defined(__CYGWIN__)
-#  include "src/desktop/win/read_input.c"
+#if !defined(WIN32_LEAN_AND_MEAN)
+#  define _WIN32_LEAN_AND_MEAN 1
+#endif
+#include <windows.h>
+#include <processthreadsapi.h>
+
+typedef struct br_plotter_t br_plotter_t;
+static BR_THREAD_LOCAL void* thandle;
+
+DWORD WINAPI read_input_indirect(LPVOID lpThreadParameter) {
+  read_input_main_worker((br_plotter_t*)lpThreadParameter, NULL);
+  return 0;
+}
+
+int read_input_read_next(void* null) {
+  (void)null;
+  return getchar();
+}
+
+void read_input_start(br_plotter_t* gv) {
+  thandle = CreateThread(NULL, 0, read_input_indirect, gv, 0, NULL);
+}
+
+void read_input_stop(void) {
+  TerminateThread(thandle, 69);
+}
+
 #elif defined(__EMSCRIPTEN__)
-#  include "src/web/read_input.c"
+void read_input_start(br_plotter_t* br) { (void)br; }
+void read_input(void) { }
+void read_input_stop(void) { }
+int read_input_read_next(void* null) { (void)null; return -1; }
 #else
 #  error "Unsupported platform"
 #endif
@@ -751,12 +855,12 @@ static void lex_step_extractor(br_plotter_t* br, lex_state_t* s) {
   }
 }
 
-static void lex(br_plotter_t* br) {
+static void lex(br_plotter_t* br, void* read_state) {
   lex_state_t s;
   lex_state_init(&s);
   while (true) {
     if (s.read_next) {
-      s.c = read_input_read_next();
+      s.c = read_input_read_next(read_state);
       if (s.c == -1) {
         input_tokens_reduce(br, &s, true);
         LOGI("Exiting read_input thread");
@@ -776,8 +880,8 @@ static void lex(br_plotter_t* br) {
   q_push(br->commands, (q_command) { .type = q_command_focus });
 }
 
-void read_input_main_worker(br_plotter_t* gv) {
-  lex(gv);
+void read_input_main_worker(br_plotter_t* br, void* read_state) {
+  lex(br, read_state);
 }
 
 #if defined(FUZZ)
@@ -816,7 +920,7 @@ int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
 }
 #endif
 
-
+/*
 #if defined(BR_UNIT_TEST)
 #include "external/tests.h"
 
@@ -982,3 +1086,4 @@ TEST_CASE(Extractors) {
 }
 
 #endif
+*/

@@ -99,8 +99,8 @@ void br_plot_screenshot(br_text_renderer_t* tr, br_plot_t* br, br_shaders_t* sha
 void br_keybinding_handle_keys(br_plotter_t* br, br_plot_t* plot);
 
 void read_input_start(br_plotter_t* br);
-void read_input_main_worker(br_plotter_t* br);
-int  read_input_read_next(void);
+void read_input_main_worker(br_plotter_t* br, void* read_input_state);
+int  read_input_read_next(void* read_input_state);
 void read_input_stop(void);
 
 min_distances_t min_distances_get(br_vec2_t const* points, size_t points_len, br_vec2_t to);
