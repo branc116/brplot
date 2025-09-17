@@ -2,7 +2,6 @@
 #include "include/brplot.h"
 #include "external/shl_impls.c"
 #include "src/free_list.c"
-#include "src/string_pool.c"
 #include "src/platform.c"
 #include "src/data.c"
 #include "src/data_generator.c"
