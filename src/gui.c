@@ -626,22 +626,22 @@ static void brgui_draw_help(br_plotter_t* br) {
 
 static void br_size_to_human_readable(size_t size, float* out_num, const char** out_unit) {
   if (size >> 10 == 0) {
-    *out_num = size;
+    *out_num = (float)size;
     *out_unit = "B";
   } else if (size >> 20 == 0) {
-    *out_num = size >> 10;
+    *out_num = (float)(size >> 10);
     *out_num += (float)(size - ((size_t)*out_num << 10)) / (float)(1<<10);
     *out_unit = "kB";
   } else if (size >> 30 == 0) {
-    *out_num = size >> 20;
+    *out_num = (float)(size >> 20);
     *out_num += (float)(size - ((size_t)*out_num << 20)) / (float)(1<<20);
     *out_unit = "MB";
   } else if (size >> 40 == 0) {
-    *out_num = size >> 30;
+    *out_num = (float)(size >> 30);
     *out_num += (float)(size - ((size_t)*out_num << 30)) / (float)(1<<30);
     *out_unit = "GB";
   } else {
-    *out_num = size >> 40LLU;
+    *out_num = (float)(size >> 40LLU);
     *out_num += (float)(size - ((size_t)*out_num << 40LLU)) / (float)(1LLU<<40LLU);
     *out_unit = "TB";
   }

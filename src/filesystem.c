@@ -88,7 +88,11 @@ bool br_fs_mkdir(br_strv_t path) {
 #    define ACCESSPERMS (S_IRWXU|S_IRWXG|S_IRWXO) /* 0777 */
 #  endif
 
+#if defined(__MINGW32__)
+  int ret = mkdir(scrach);
+#else
   int ret = mkdir(scrach, ACCESSPERMS);
+#endif
   if (ret == -1) LOGE("Failed to create directory `%s`: %s", scrach, strerror(errno));
   br_scrach_free();
   return ret == 0;
@@ -263,6 +267,8 @@ done:
 #endif // _WIN32
 
 #elif defined(__EMSCRIPTEN__)
+bool br_fs_mkdir(br_strv_t path) { (void)path; return false; }
+bool br_fs_exists(br_strv_t path) { (void)path; return false; }
 bool br_fs_up_dir(br_str_t* cwd) {
   (void)cwd;
   return false;
@@ -298,16 +304,6 @@ bool br_fs_get_config_dir(br_str_t* path) {
   return false;
 #endif
 }
-
-#if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
-#elif defined(__MINGW32__)
-bool br_fs_mkdir(br_strv_t path) { (void)path; return false; }
-bool br_fs_exists(br_strv_t path) { (void)path; return false; }
-#elif defined(_WIN32) || defined(__CYGWIN__)
-#elif defined(__EMSCRIPTEN__)
-bool br_fs_mkdir(br_strv_t path) { (void)path; return false; }
-bool br_fs_exists(br_strv_t path) { (void)path; return false; }
-#endif
 
 static const uint32_t GCrc32LookupTable[256] =
 {
