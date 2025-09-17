@@ -955,6 +955,7 @@ static bool n_unittests_do(void) {
   is_headless = true;
 
   static struct { char const *test_file, *out_bin; } test_programs[] = {
+    { .test_file = "./tests/src/filesystem.c", .out_bin  = "bin/memory" EXE_EXT },
     { .test_file = "./tests/src/memory.c", .out_bin  = "bin/memory" EXE_EXT },
     { .test_file = "./tests/src/str.c", .out_bin  = "bin/test_str" EXE_EXT },
     { .test_file = "./tests/src/free_list.c", .out_bin  = "bin/test_fl" EXE_EXT },

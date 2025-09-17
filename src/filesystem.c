@@ -18,11 +18,260 @@
 
 
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(__MINGW32__)
-#  include "src/desktop/linux/filesystem.c"
+
+bool br_fs_up_dir(br_str_t* cwd) {
+start:
+  if (cwd->len == 0) return br_str_push_c_str(cwd, "..");
+  if (cwd->len == 1) {
+    if (cwd->str[0] == '.') return br_str_push_c_str(cwd, ".");
+    else {
+      cwd->len = 0;
+      return true;
+    }
+  }
+  while (cwd->len > 1 && cwd->str[cwd->len - 1] == '/') --cwd->len;
+  if (cwd->len >= 2 &&
+      cwd->str[cwd->len - 1] == '.' &&
+      cwd->str[cwd->len - 2] == '.') return br_str_push_c_str(cwd, "/..");
+  else if (cwd->len >= 2 &&
+      cwd->str[cwd->len - 1] == '.' &&
+      cwd->str[cwd->len - 2] == '/') {
+    cwd->len -= 2;
+    goto start;
+  }
+  while (cwd->len != 0 && cwd->str[cwd->len - 1] != '/') --cwd->len;
+  if (cwd->len == 0) {
+    return true;
+  }
+  if (cwd->len == 1) {
+    if (cwd->str[0] == '.') return br_str_push_c_str(cwd, ".");
+    else {
+      cwd->len = 0;
+      return true;
+    }
+  }
+  --cwd->len;
+  return true;
+}
+
+bool br_fs_cd(br_str_t* cwd, br_strv_t path) {
+  if (path.str[0] == '/') {
+    cwd->len = 0;
+    br_str_push_strv(cwd, path);
+    return true;
+  }
+
+  while (path.len != 0) {
+    br_strv_t next_name = { path.str, 0 };
+    for (; next_name.len < path.len && path.str[next_name.len] != '/'; ++next_name.len);
+    if (next_name.len == 0) /* DO NOTHING */;
+    else if (br_strv_eq(next_name, br_strv_from_c_str(".."))) br_fs_up_dir(cwd);
+    else if (br_strv_eq(next_name, br_strv_from_c_str("."))) /* DO NOTHING */;
+    else if (cwd->len == 0) br_str_push_strv(cwd, next_name);
+    else if (cwd->str[cwd->len - 1] == '/') br_str_push_strv(cwd, next_name);
+    else {
+      br_str_push_char(cwd, '/');
+      br_str_push_strv(cwd, next_name);
+    }
+    if (next_name.len + 1 <= path.len) {
+      path.str += next_name.len + 1;
+      path.len -= next_name.len + 1;
+    } else return true;
+  }
+  return true;
+}
+
+bool br_fs_mkdir(br_strv_t path) {
+  if (br_fs_exists(path)) return true;
+  char* scrach = br_strv_to_scrach(path);
+#  if !defined(ACCESSPERMS)
+#    define ACCESSPERMS (S_IRWXU|S_IRWXG|S_IRWXO) /* 0777 */
+#  endif
+
+  int ret = mkdir(scrach, ACCESSPERMS);
+  if (ret == -1) LOGE("Failed to create directory `%s`: %s", scrach, strerror(errno));
+  br_scrach_free();
+  return ret == 0;
+}
+
+bool br_fs_exists(br_strv_t path) {
+  struct stat s = { 0 };
+  char* scrach = br_strv_to_scrach(path);
+  stat(scrach, &s);
+  br_scrach_free();
+  return 0 != ((s.st_mode & S_IFMT) & (S_IFDIR | S_IFCHR | S_IFBLK | S_IFREG));
+}
 #elif defined(_WIN32) || defined(__CYGWIN__)
-#  include "src/desktop/win/filesystem.c"
+#include <windows.h>
+
+#define BR_IS_SEP(X) (((X) == '/') || ((X) == '\\'))
+
+// TODO: This will brake for some cases when path contains C: os something like that.... But fuck it for now...
+bool br_fs_up_dir(br_str_t* cwd) {
+start:
+  if (cwd->len == 0) return br_str_push_c_str(cwd, "..");
+  if (cwd->len == 1) {
+    if (cwd->str[0] == '.') return br_str_push_c_str(cwd, ".");
+    else {
+      cwd->len = 0;
+      return true;
+    }
+  }
+  while (cwd->len > 1 && BR_IS_SEP(cwd->str[cwd->len - 1])) --cwd->len;
+  if (cwd->len >= 2 &&
+      cwd->str[cwd->len - 1] == '.' &&
+      cwd->str[cwd->len - 2] == '.') return br_str_push_c_str(cwd, "/..");
+  else if (cwd->len >= 2 &&
+      cwd->str[cwd->len - 1] == '.' &&
+      cwd->str[cwd->len - 2] == '/') {
+    cwd->len -= 2;
+    goto start;
+  }
+  while (cwd->len != 0 && !BR_IS_SEP(cwd->str[cwd->len - 1])) --cwd->len;
+  if (cwd->len == 0) {
+    return true;
+  }
+  if (cwd->len == 1) {
+    if (cwd->str[0] == '.') return br_str_push_c_str(cwd, ".");
+    else {
+      cwd->len = 0;
+      return true;
+    }
+  }
+  --cwd->len;
+  return true;
+}
+
+bool br_fs_cd(br_str_t* cwd, br_strv_t path) {
+  if (BR_IS_SEP(path.str[0])) {
+    cwd->len = 0;
+    br_str_push_strv(cwd, path);
+    return true;
+  }
+
+  while (path.len != 0) {
+    br_strv_t next_name = { path.str, 0 };
+    for (; next_name.len < path.len && !BR_IS_SEP(path.str[next_name.len]); ++next_name.len);
+    if (next_name.len == 0) /* DO NOTHING */;
+    else if (br_strv_eq(next_name, br_strv_from_c_str(".."))) br_fs_up_dir(cwd);
+    else if (br_strv_eq(next_name, br_strv_from_c_str("."))) /* DO NOTHING */;
+    else if (cwd->len == 0) br_str_push_strv(cwd, next_name);
+    else if (BR_IS_SEP(cwd->str[cwd->len - 1])) br_str_push_strv(cwd, next_name);
+    else {
+      br_str_push_char(cwd, '/');
+      br_str_push_strv(cwd, next_name);
+    }
+    if (next_name.len + 1 <= path.len) {
+      path.str += next_name.len + 1;
+      path.len -= next_name.len + 1;
+    } else return true;
+  }
+  return true;
+}
+
+bool br_fs_mkdir(br_strv_t path) {
+  if (br_fs_exists(path)) return true;
+  char* buff = br_strv_to_scrach(path);
+  bool ok = CreateDirectory(buff, NULL);
+  br_scrach_free();
+  return ok;
+}
+
+bool br_fs_exists(br_strv_t path) {
+  char* buff = br_strv_to_scrach(path);
+  DWORD dwAttrib = GetFileAttributesA(buff);
+  bool exists = dwAttrib != INVALID_FILE_ATTRIBUTES;
+  br_scrach_free();
+  return exists;
+}
+
+#if defined(_MSC_VER)
+#if !defined(BR_DIRENT_DEFINED)
+#  define BR_DIRENT_DEFINED
+
+struct dirent {
+    char d_name[MAX_PATH+1];
+};
+#endif
+
+typedef struct DIR {
+    HANDLE hFind;
+    WIN32_FIND_DATA data;
+    struct dirent *dirent;
+} DIR;
+
+DIR *opendir(const char *dirpath) {
+  static BR_THREAD_LOCAL char buffer[MAX_PATH];
+
+  DIR* dir = NULL;
+  bool success = true;
+
+  snprintf(buffer, MAX_PATH, "%s\\*", dirpath);
+
+  dir = (DIR*)BR_MALLOC(sizeof(DIR));
+  memset(dir, 0, sizeof(DIR));
+
+  dir->hFind = FindFirstFileA(buffer, &dir->data);
+  if (dir->hFind == INVALID_HANDLE_VALUE) BR_ERROR("Failed to find first file");
+  goto done;
+
+error:
+    errno = ENOSYS;
+    if (dir) BR_FREE(dir);
+    dir = NULL;
+
+done:
+    return dir;
+}
+
+struct dirent *readdir(DIR *dirp) {
+    if (dirp->dirent == NULL) {
+        dirp->dirent = (struct dirent*)BR_MALLOC(sizeof(struct dirent));
+        memset(dirp->dirent, 0, sizeof(struct dirent));
+    } else {
+        if(!FindNextFileA(dirp->hFind, &dirp->data)) {
+            if (GetLastError() != ERROR_NO_MORE_FILES) errno = ENOSYS;
+            return NULL;
+        }
+    }
+
+    memset(dirp->dirent->d_name, 0, sizeof(dirp->dirent->d_name));
+
+    strncpy(
+        dirp->dirent->d_name,
+        dirp->data.cFileName,
+        sizeof(dirp->dirent->d_name) - 1);
+
+    return dirp->dirent;
+}
+
+int closedir(DIR *dirp) {
+  bool success = true;
+  if(!FindClose(dirp->hFind)) BR_ERROR("Failed to close the dir");
+  goto done;
+
+error:
+    errno = ENOSYS;
+
+done:
+  if (dirp) {
+    if (dirp->dirent) BR_FREE(dirp->dirent);
+    BR_FREE(dirp);
+  }
+  return success ? 0 : -1;
+}
+#endif // _WIN32
+
 #elif defined(__EMSCRIPTEN__)
-#  include "src/web/filesystem.c"
+bool br_fs_up_dir(br_str_t* cwd) {
+  (void)cwd;
+  return false;
+}
+
+bool br_fs_cd(br_str_t* cwd, br_strv_t path) {
+  (void)cwd, (void)path;
+  return false;
+}
 #else
 #  error "Unsupported Platform"
 #endif
@@ -51,26 +300,6 @@ bool br_fs_get_config_dir(br_str_t* path) {
 }
 
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
-bool br_fs_mkdir(br_strv_t path) {
-  if (br_fs_exists(path)) return true;
-  char* scrach = br_strv_to_scrach(path);
-#  if !defined(ACCESSPERMS)
-#    define ACCESSPERMS (S_IRWXU|S_IRWXG|S_IRWXO) /* 0777 */
-#  endif
-
-  int ret = mkdir(scrach, ACCESSPERMS);
-  if (ret == -1) LOGE("Failed to create directory `%s`: %s", scrach, strerror(errno));
-  br_scrach_free();
-  return ret == 0;
-}
-
-bool br_fs_exists(br_strv_t path) {
-  struct stat s = { 0 };
-  char* scrach = br_strv_to_scrach(path);
-  stat(scrach, &s);
-  br_scrach_free();
-  return 0 != ((s.st_mode & S_IFMT) & (S_IFDIR | S_IFCHR | S_IFBLK | S_IFREG));
-}
 #elif defined(__MINGW32__)
 bool br_fs_mkdir(br_strv_t path) { (void)path; return false; }
 bool br_fs_exists(br_strv_t path) { (void)path; return false; }
@@ -156,83 +385,6 @@ static int br_fs_files_sort(void const* a, void const* b) {
   if (af->kind < bf->kind) return 1;
   return strncmp(af->name.str, bf->name.str, af->name.len < bf->name.len ? af->name.len : bf->name.len);
 }
-
-#if defined(_MSC_VER)
-#if !defined(BR_DIRENT_DEFINED)
-#  define BR_DIRENT_DEFINED
-
-struct dirent {
-    char d_name[MAX_PATH+1];
-};
-#endif
-
-typedef struct DIR {
-    HANDLE hFind;
-    WIN32_FIND_DATA data;
-    struct dirent *dirent;
-} DIR;
-
-DIR *opendir(const char *dirpath) {
-  static BR_THREAD_LOCAL char buffer[MAX_PATH];
-
-  DIR* dir = NULL;
-  bool success = true;
-
-  snprintf(buffer, MAX_PATH, "%s\\*", dirpath);
-
-  dir = (DIR*)BR_MALLOC(sizeof(DIR));
-  memset(dir, 0, sizeof(DIR));
-
-  dir->hFind = FindFirstFileA(buffer, &dir->data);
-  if (dir->hFind == INVALID_HANDLE_VALUE) BR_ERROR("Failed to find first file");
-  goto done;
-
-error:
-    errno = ENOSYS;
-    if (dir) BR_FREE(dir);
-    dir = NULL;
-
-done:
-    return dir;
-}
-
-struct dirent *readdir(DIR *dirp) {
-    if (dirp->dirent == NULL) {
-        dirp->dirent = (struct dirent*)BR_MALLOC(sizeof(struct dirent));
-        memset(dirp->dirent, 0, sizeof(struct dirent));
-    } else {
-        if(!FindNextFileA(dirp->hFind, &dirp->data)) {
-            if (GetLastError() != ERROR_NO_MORE_FILES) errno = ENOSYS;
-            return NULL;
-        }
-    }
-
-    memset(dirp->dirent->d_name, 0, sizeof(dirp->dirent->d_name));
-
-    strncpy(
-        dirp->dirent->d_name,
-        dirp->data.cFileName,
-        sizeof(dirp->dirent->d_name) - 1);
-
-    return dirp->dirent;
-}
-
-int closedir(DIR *dirp) {
-  bool success = true;
-  if(!FindClose(dirp->hFind)) BR_ERROR("Failed to close the dir");
-  goto done;
-
-error:
-    errno = ENOSYS;
-
-done:
-  if (dirp) {
-    if (dirp->dirent) BR_FREE(dirp->dirent);
-    BR_FREE(dirp);
-  }
-  return success ? 0 : -1;
-}
-#endif // _WIN32
 
 bool br_fs_list_dir(br_strv_t path, br_fs_files_t* out_files) {
   DIR* dir = NULL;

@@ -127,6 +127,7 @@ void br_memory_finish(void);
 /*            IMPLEMENTATION             */
 /*=======================================*/
 #if defined(BR_MEMORY_TRACER_IMPLEMENTATION)
+#undef BR_MEMORY_TRACER_IMPLEMENTATION
 
 /* TODO: ISO C90 does not support ‘_Thread_local’ */
 #if !defined(BR_THREAD_LOCAL)
