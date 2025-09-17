@@ -38,7 +38,7 @@ int main(void) {
     exit(1);
   }
 #if BR_HAS_SHADER_RELOAD
-  start_refreshing_shaders(br);
+  br_start_refreshing_shaders(&br->shaders_dirty, &br->should_close);
 #endif
   read_input_start(br);
   main_gui(br);

@@ -211,11 +211,55 @@ BR_ALL_SHADERS(X, NOP2, NOP2)
 
 #if BR_HAS_SHADER_RELOAD
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
-#  include "src/desktop/linux/refresh_shaders.c"
+#include <errno.h>
+#include <pthread.h>
+#include <string.h>
+#include <sys/inotify.h>
+#include <unistd.h>
+
+static void* watch_shader_change(void* data) {
+  struct { bool* is_dirty; bool const* should_close; }* args = data;
+  uint32_t buff[128];
+  int fd = inotify_init();
+  const char* path = "src/shaders";
+  if (-1 == inotify_add_watch(fd, path, IN_MODIFY | IN_CLOSE_WRITE)) {
+    LOGE("Failed to start watching shader chages on path %s/%s: %s", getenv("PWD"), path, strerror(errno));
+    return NULL;
+  }
+  LOGI("Sarting to watch shaders on path %s/%s", getenv("PWD"), path);
+  while(!*args->should_close) {
+    read(fd, buff, sizeof(buff));
+    printf("DIRTY SHADERS\n");
+    *args->is_dirty = true;
+  }
+  fprintf(stderr, "Stopping refresh shader thread\n");
+  return NULL;
+}
+
+void br_start_refreshing_shaders(bool* is_dirty, bool const* should_close) {
+  static BR_THREAD_LOCAL struct { bool* is_dirty; bool const* should_close; } args;
+  args.is_dirty = is_dirty;
+  args.should_close = should_close;
+  pthread_t thread2;
+  pthread_attr_t attrs2;
+  pthread_attr_init(&attrs2);
+  if (pthread_create(&thread2, &attrs2, watch_shader_change, &args)) {
+    fprintf(stderr, "ERROR while creating thread %d:`%s`\n", errno, strerror(errno));
+  }
+}
+
 #elif defined(_WIN32) || defined(__CYGWIN__)
-#  include "src/desktop/nob/refresh_shaders.c"
+#include <stdio.h>
+
+typedef struct br_plotter_t br_plotter_t;
+
+void br_start_refreshing_shaders(bool* is_dirty, bool const* should_close) {
+  (void)is_dirty; (void)should_close;
+  LOGE("TODO: Refreshing shaders is not implemented on Windows....\n");
+}
 #elif defined(__EMSCRIPTEN__)
-#  include "src/web/refresh_shaders.c"
+typedef struct br_plotter_t br_plotter_t;
+void br_start_refreshing_shaders(bool* is_dirty, bool const* should_close) { (void)is_dirty; (void)should_close; }
 #else
 #  error "Unsupported Platform"
 #endif

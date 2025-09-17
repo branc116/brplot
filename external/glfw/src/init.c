@@ -61,27 +61,6 @@ static BR_THREAD_LOCAL _GLFWinitconfig _glfwInitHints =
     },
 };
 
-// The allocation function used when no custom allocator is set
-//
-static void* defaultAllocate(size_t size, void* user)
-{
-    return malloc(size);
-}
-
-// The deallocation function used when no custom allocator is set
-//
-static void defaultDeallocate(void* block, void* user)
-{
-    free(block);
-}
-
-// The reallocation function used when no custom allocator is set
-//
-static void* defaultReallocate(void* block, size_t size, void* user)
-{
-    return realloc(block, size);
-}
-
 // Terminate the library
 //
 static void terminate(void)

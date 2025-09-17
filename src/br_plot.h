@@ -110,7 +110,7 @@ void            min_distances_get1(min_distances_t* m, br_vec2_t const* points, 
 #if BR_HAS_SHADER_RELOAD
 // Start watching shaders folder for changes and
 // mark gv->shader_dirty flag to true if there were any change to shaders.
-void start_refreshing_shaders(br_plotter_t* br);
+void br_start_refreshing_shaders(bool* is_dirty, bool const* should_close);
 #endif
 #if BR_HAS_HOTRELOAD
 void br_hotreload_start(br_hotreload_state_t* s);
