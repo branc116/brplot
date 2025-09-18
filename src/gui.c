@@ -657,7 +657,6 @@ void br_size_to_human_readable(size_t size, float* out_num, const char** out_uni
 
 #if defined(BR_HAS_MEMORY)
 static void brgui_draw_memory(br_plotter_t* br) {
-  brui_action_t* action = brui_action();
   if (false == br->ui.memory.show) return;
 
   brui_resizable_temp_push_t tmp = brui_resizable_temp_push(BR_STRL("Malloc"));
@@ -706,10 +705,10 @@ static void brgui_draw_memory(br_plotter_t* br) {
 
       for (size_t i = 0; i < tr.frames.len; ++i) {
         brui_vsplitvp(2, BRUI_SPLITA(1.f * (float)brui_text_size()), BRUI_SPLITR(1.f));
-          brui_textf("%d", i);
+          brui_textf("%zu", i);
         brui_vsplit_pop();
           int n = sprintf(scrach, "Frame %d len=%d", tr.frames.arr[i].frame_num, tr.frames.arr[i].len);
-          if (brui_button(BR_STRV(scrach, (uint32_t)n))) br->ui.memory.selected_frame = i;
+          if (brui_button(BR_STRV(scrach, (uint32_t)n))) br->ui.memory.selected_frame = (int)i;
         brui_vsplit_end();
       }
 
@@ -718,16 +717,16 @@ static void brgui_draw_memory(br_plotter_t* br) {
         brui_vsplit_pop();
           br_memory_frame_t frame = tr.frames.arr[sel_frame];
           for (int i = 0; i < frame.len; ++i) {
-            br_memory_node_t node = tr.arr[frame.start_nid + i];
+            br_memory_node_t mem_node = tr.arr[frame.start_nid + i];
             int n;
             const char* word = "Unknown";
-            switch (node.kind) {
+            switch (mem_node.kind) {
               case br_memory_event_free:    word = "Free"; break;
               case br_memory_event_realloc: word = "Realloced"; break;
               case br_memory_event_alloc:   word = "Alloeced"; break;
               default: break;
             }
-            n = sprintf(scrach, "[%s:%d] %s %zu bytes", node.at_file_name, node.at_line_num, word, node.size);
+            n = sprintf(scrach, "[%s:%d] %s %zu bytes", mem_node.at_file_name, mem_node.at_line_num, word, mem_node.size);
             if (brui_button(BR_STRV(scrach, (uint32_t)n))) {
               br->ui.memory.selected_nid = frame.start_nid + i;
             }
@@ -735,24 +734,24 @@ static void brgui_draw_memory(br_plotter_t* br) {
           if (sel_nid != -1) {
             brui_vsplit_pop();
             int cur_nid = sel_nid;
-            br_memory_node_t node = br_da_get(tr, sel_nid);
-            while (node.next_nid != -1) {
-              cur_nid = node.next_nid;
-              node = br_da_get(tr, node.next_nid);
+            br_memory_node_t mem_node = br_da_get(tr, sel_nid);
+            while (mem_node.next_nid != -1) {
+              cur_nid = mem_node.next_nid;
+              mem_node = br_da_get(tr, mem_node.next_nid);
             }
             while (cur_nid != -1) {
               int n;
-              br_memory_node_t node = br_da_get(tr, cur_nid);
+              mem_node = br_da_get(tr, cur_nid);
               const char* word = "Unknown";
-              switch (node.kind) {
+              switch (mem_node.kind) {
                 case br_memory_event_free:    word = "Free"; break;
                 case br_memory_event_realloc: word = "Realloced"; break;
                 case br_memory_event_alloc:   word = "Alloeced"; break;
                 default: break;
               }
-              n = sprintf(scrach, "[%s:%d Frame %d] %s %zu bytes", node.at_file_name, node.at_line_num, node.frame_num, word, node.size);
-              brui_text(BR_STRV(scrach, n));
-              cur_nid = node.prev_nid;
+              n = sprintf(scrach, "[%s:%d Frame %d] %s %zu bytes", mem_node.at_file_name, mem_node.at_line_num, mem_node.frame_num, word, mem_node.size);
+              brui_text(BR_STRV(scrach, (uint32_t)n));
+              cur_nid = mem_node.prev_nid;
             }
           }
         brui_vsplit_end();

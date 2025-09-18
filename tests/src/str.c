@@ -6,11 +6,9 @@
 #include "src/br_memory.h"
 #define BR_STR_IMPLMENTATION
 #include "src/br_str.h"
-#define BR_UNIT_TEST
-#define BR_UNIT_TEST_IMPLEMENTATION
-#include "external/tests.h"
+#include "src/br_test.h"
 
-TEST_CASE(str_tests) {
+void str_tests(void) {
   char c[128];
   br_str_t br = br_str_malloc(2);
   br_str_push_char(&br, 'a'); br_str_to_c_str1(br, c);
@@ -34,7 +32,7 @@ TEST_CASE(str_tests) {
   br_str_free(br);
 }
 
-TEST_CASE(str_trim) {
+void str_trim(void) {
   br_strv_t z = br_strv_from_literal("00");
   z = br_strv_trim_zeros(z);
   TEST_EQUAL(z.len, 1);
@@ -61,7 +59,7 @@ TEST_CASE(str_trim) {
   TEST_EQUAL(z.str[0], '1');
 }
 
-TEST_CASE(str_replace) {
+void str_replace(void) {
   br_str_t out = { 0 };
 
   br_strv_t in = BR_STRL("fooo");
@@ -95,7 +93,7 @@ TEST_CASE(str_replace) {
   br_str_free(out);
 }
 
-TEST_CASE(str_replace1) {
+void str_replace1(void) {
   br_str_t inout = { 0 };
   br_str_push_c_str(&inout, "foo");
 
@@ -130,7 +128,13 @@ TEST_CASE(str_replace1) {
   br_str_free(inout);
 }
 
-int main(void) {}
+int main(void) {
+  str_tests();
+  str_trim();
+  str_replace();
+  str_replace1();
+}
+
 void br_on_fatal_error(void) {
   LOGI("Failed");
 }

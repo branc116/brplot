@@ -8,10 +8,12 @@ typedef struct {
 #  define BR_DISABLE_LOG
 #endif
 
+
 #define BR_FREAD test_read
 #define BR_FWRITE test_write
 #define BR_FILE_T br_test_file_t
 #include "src/br_pp.h"
+#include "src/br_test.h"
 static size_t test_read(void* dest, size_t el_size, size_t n, br_test_file_t* null);
 static size_t test_write(void* src, size_t el_size, size_t n, br_test_file_t* null);
 
@@ -22,10 +24,6 @@ static size_t test_write(void* src, size_t el_size, size_t n, br_test_file_t* nu
 
 #define BRFL_IMPLEMENTATION
 #include "src/br_free_list.h"
-
-#define BR_UNIT_TEST
-#define BR_UNIT_TEST_IMPLEMENTATION
-#include "external/tests.h"
 
 #define BR_STR_IMPLMENTATION
 #include "src/br_str.h"
@@ -84,7 +82,7 @@ static void brsp_debug(brsp_t sp) {
 }
 
 
-TEST_CASE(string_pool_init) {
+void string_pool_init(void) {
   (void)brsp_debug;
   brsp_t sp = { 0 };
   brsp_id_t t = brsp_new(&sp);
@@ -96,7 +94,7 @@ TEST_CASE(string_pool_init) {
   brsp_free(&sp);
 }
 
-TEST_CASE(string_pool_resize) {
+void string_pool_resize(void) {
   brsp_t sp = { 0 };
   brsp_id_t t = brsp_new(&sp);
   br_str_t s = { 0 };
@@ -109,7 +107,7 @@ TEST_CASE(string_pool_resize) {
   br_str_free(s);
 }
 
-TEST_CASE(string_pool_resize2) {
+void string_pool_resize2(void) {
   brsp_t sp = { 0 };
   brsp_id_t t = brsp_new(&sp);
   brsp_id_t t2 = brsp_new(&sp);
@@ -133,7 +131,7 @@ TEST_CASE(string_pool_resize2) {
   br_str_free(s2);
 }
 
-TEST_CASE(string_pool_read_write) {
+void string_pool_read_write(void) {
   brsp_t sp = { 0 };
   brsp_id_t t = brsp_new(&sp);
   br_str_t s = { 0 };
@@ -160,7 +158,7 @@ TEST_CASE(string_pool_read_write) {
   brsp_free(&sp2);
 }
 
-TEST_CASE(string_pool_read_remove_write) {
+void string_pool_read_remove_write(void) {
   br_test_file_t tf = { .arr = mem_file, .len = 0, .cap = sizeof(mem_file), .read_index = 0 };
   brsp_t sp = { 0 };
   brsp_id_t t  = brsp_new(&sp);
@@ -190,7 +188,7 @@ TEST_CASE(string_pool_read_remove_write) {
   brsp_free(&sp2);
 }
 
-TEST_CASE(string_pool_is_in) {
+void string_pool_is_in(void) {
   brsp_t sp = { 0 };
   brsp_id_t t  = brsp_new(&sp);
   TEST_EQUAL(1, brsp_is_in(sp, t));
@@ -202,7 +200,7 @@ TEST_CASE(string_pool_is_in) {
   brsp_free(&sp);
 }
 
-TEST_CASE(string_pool_copy) {
+void string_pool_copy(void) {
   brsp_t sp = { 0 };
   brsp_id_t t  = brsp_new(&sp);
   brsp_insert_strv_at_end(&sp, t, BR_STRL("Hello"));
@@ -214,7 +212,7 @@ TEST_CASE(string_pool_copy) {
   brsp_free(&sp);
 }
 
-TEST_CASE(string_pool_compress) {
+void string_pool_compress(void) {
   brsp_t sp = { 0 };
   brsp_id_t t  = brsp_new(&sp);
   brsp_insert_strv_at_end(&sp, t, BR_STRL("Hello"));
@@ -244,6 +242,7 @@ const char* __asan_default_options(void) {
     "soft_rss_limit_mb=1512222"
     ;
 }
+
 int LLVMFuzzerTestOneInput(unsigned char *str, size_t str_len) {
   br_test_file_t tf = { .arr = str, .cap = str_len, .len = str_len, .read_index = 0 };
   brsp_t sp = { 0 };
@@ -270,7 +269,16 @@ int LLVMFuzzerTestOneInput(unsigned char *str, size_t str_len) {
   return 0;
 }
 #else
-int main(void) {}
+int main(void) {
+  string_pool_init();
+  string_pool_resize();
+  string_pool_resize2();
+  string_pool_read_write();
+  string_pool_read_remove_write();
+  string_pool_is_in();
+  string_pool_copy();
+  string_pool_compress();
+}
 void br_on_fatal_error(void) {}
 #endif
 // clang -fsanitize=address -ggdb -I. tests/src/string_pool.c -o bin/string_pool_tests && bin/string_pool_tests --unittest

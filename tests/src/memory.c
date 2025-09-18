@@ -10,7 +10,6 @@ int main(void) {
   br_memory_frame();
   BR_FREE(ints);
   printf("OK\n");
-/*
   br_memory_t tracker = br_memory_get();
   BR_ASSERT(tracker.len == 3);
 
@@ -32,7 +31,7 @@ int main(void) {
 
   br_memory_node_t free_node = tracker.arr[2];
   BR_ASSERT(free_node.frame_num == 3);
-  BR_ASSERT(free_node.kind == br_memory_event_freed);
+  BR_ASSERT(free_node.kind == br_memory_event_free);
   BR_ASSERT(free_node.prev_nid == 1);
   BR_ASSERT(free_node.realloc_count == 1);
   br_memory_stack_print(2);
@@ -59,7 +58,6 @@ int main(void) {
   BR_ASSERT(frames.arr[2].len == 1);
   BR_ASSERT(frames.arr[2].frame_num == 3);
   return 0;
-  */
 }
 
 void br_on_fatal_error(void) {}
