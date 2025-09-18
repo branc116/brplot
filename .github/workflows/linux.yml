@@ -28,9 +28,6 @@ jobs:
     - run: make -j8 PLATFORM=LINUX CONFIG=DEBUG COMPILER=CLANG -B
     - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE COMPILER=CLANG LTO=YES -B
     - run: make -j8 PLATFORM=WINDOWS CONFIG=RELEASE -B
-    - run: |
-        ./bin/brplot_linux_debug_wx_gcc --unittest
-        ./bin/brplot_linux_debug_wx_clang --unittest
 
     - run: |
         git clone https://github.com/emscripten-core/emsdk.git

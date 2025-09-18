@@ -26,6 +26,9 @@ jobs:
           ./nob
 
       - run: |
+          ./nob unittests -dpa
+
+      - run: |
           ./nob amalgam
 
   linux:
@@ -56,7 +59,7 @@ jobs:
           clang tests/hello_world.c -lm
           clang tests/animations.c -lm
           clang -ggdb -I. tests/src/free_list.c -o bin/free_list_tests
-          bin/free_list_tests --unittest
+          bin/free_list_tests
 
   windows:
     runs-on: windows-latest
@@ -71,6 +74,9 @@ jobs:
       - run: |
           clang -I. -o nob.exe nob.c
           ./nob.exe
+
+      - run: |
+          ./nob unittests -dpa
 
       - run: |
           ./nob.exe amalgam
