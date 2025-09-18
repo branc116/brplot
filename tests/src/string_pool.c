@@ -44,19 +44,19 @@ static size_t test_read(void* dest, size_t el_size, size_t n, br_test_file_t* d)
     return 0;
   }
   memcpy(dest, d->arr + d->read_index, size);
-  d->read_index += size;
+  d->read_index += (int)size;
   BR_ASSERT(d->read_index <= d->len);
   return n;
 }
 
 static size_t test_write(void* src, size_t el_size, size_t n, br_test_file_t* d) {
   size_t size = n * el_size;
-  if (d->cap < d->len + size) {
+  if ((size_t)d->cap < (size_t)d->len + size) {
     errno = 2;
     return 0;
   }
   memcpy(d->arr + d->len, src, size);
-  d->len += size;
+  d->len += (int)size;
   BR_ASSERT(d->len <= d->cap);
   return n;
 }

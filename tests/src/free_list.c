@@ -15,10 +15,11 @@
 
 #define MEM_FILE_CAP 4096
 static BR_THREAD_LOCAL unsigned char mem_file[MEM_FILE_CAP];
-static BR_THREAD_LOCAL int mem_file_pointer_read;
-static BR_THREAD_LOCAL int mem_file_pointer_write;
+static BR_THREAD_LOCAL size_t mem_file_pointer_read;
+static BR_THREAD_LOCAL size_t mem_file_pointer_write;
 
 size_t test_read(void* dest, size_t el_size, size_t n, void* null) {
+  (void)null;
   size_t size = n * el_size;
   memcpy(dest, mem_file + mem_file_pointer_read, size);
   mem_file_pointer_read += size;
@@ -27,6 +28,7 @@ size_t test_read(void* dest, size_t el_size, size_t n, void* null) {
 }
 
 size_t test_write(void* src, size_t el_size, size_t n, void* null) {
+  (void)null;
   size_t size = n * el_size;
   memcpy(mem_file + mem_file_pointer_write, src, size);
   mem_file_pointer_write += size;

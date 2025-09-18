@@ -624,7 +624,7 @@ static void brgui_draw_help(br_plotter_t* br) {
   if (brui_resizable_temp_pop()) br->ui.help.show = false;
 }
 
-static void br_size_to_human_readable(size_t size, float* out_num, const char** out_unit) {
+void br_size_to_human_readable(size_t size, float* out_num, const char** out_unit) {
   if (size >> 10 == 0) {
     *out_num = (float)size;
     *out_unit = "B";
@@ -636,15 +636,23 @@ static void br_size_to_human_readable(size_t size, float* out_num, const char** 
     *out_num = (float)(size >> 20);
     *out_num += (float)(size - ((size_t)*out_num << 20)) / (float)(1<<20);
     *out_unit = "MB";
+#if defined(BR_IS_SIZE_T_32_BIT)
+  } else {
+#else
   } else if (size >> 40 == 0) {
+#endif
     *out_num = (float)(size >> 30);
     *out_num += (float)(size - ((size_t)*out_num << 30)) / (float)(1<<30);
     *out_unit = "GB";
+#if defined(BR_IS_SIZE_T_32_BIT)
+  }
+#else
   } else {
     *out_num = (float)(size >> 40LLU);
     *out_num += (float)(size - ((size_t)*out_num << 40LLU)) / (float)(1LLU<<40LLU);
     *out_unit = "TB";
   }
+#endif
 }
 
 #if defined(BR_HAS_MEMORY)

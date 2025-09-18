@@ -47,3 +47,4 @@ TEST_CASE(paths) {
 #endif
 
 int main(void) {}
+void br_on_fatal_error(void) {}

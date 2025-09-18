@@ -439,12 +439,14 @@ static size_t expr_len(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_i
        if (br_strv_eq(br_str_as_view(expr.function.func_name), BR_STRL("range"))) {
          br_dagen_expr_t arg = br_da_get(arena, expr.function.arg);
          if (arg.kind == br_dagen_expr_kind_constant) {
-           return arg.value;
+           if (false == isfinite(arg.value)) return 0;
+           if (arg.value <= 0) return 0;
+           return (size_t)arg.value;
          } else if (arg.kind == br_dagen_expr_kind_pair) {
            br_dagen_expr_t arg1 = br_da_get(arena, arg.operands.op1);
            br_dagen_expr_t arg2 = br_da_get(arena, arg.operands.op2);
            if (arg1.kind == br_dagen_expr_kind_constant && arg2.kind == br_dagen_expr_kind_constant) {
-             return arg2.value - arg1.value;
+             return (size_t)(arg2.value - arg1.value);
            } else {
              LOGE("Bad arguments: %d & %d", arg1.kind, arg2.kind);
              return 0;
@@ -512,26 +514,26 @@ static double br_dagen_rebase(br_data_t const* data, br_dagen_expr_kind_t kind) 
 
 static size_t expr_apply_function(float* data, br_dagen_exprs_t arena, br_datas_t datas, size_t offset, size_t n, br_strv_t func_name, size_t arg_index) {
   if (br_strv_eq(func_name, BR_STRL("sin"))) {
-    n = expr_read_n(datas, arena, arg_index, offset, n, data);
+    n = expr_read_n(datas, arena, (uint32_t)arg_index, offset, n, data);
     for (size_t i = 0; i < n; ++i) data[i] = sinf(data[i]);
   } else if (br_strv_eq(func_name, BR_STRL("cos"))) {
-    n = expr_read_n(datas, arena, arg_index, offset, n, data);
+    n = expr_read_n(datas, arena, (uint32_t)arg_index, offset, n, data);
     for (size_t i = 0; i < n; ++i) data[i] = cosf(data[i]);
   } else if (br_strv_eq(func_name, BR_STRL("tg"))) {
-    n = expr_read_n(datas, arena, arg_index, offset, n, data);
+    n = expr_read_n(datas, arena, (uint32_t)arg_index, offset, n, data);
     for (size_t i = 0; i < n; ++i) data[i] = tanf(data[i]);
   } else if (br_strv_eq(func_name, BR_STRL("log"))) {
-    n = expr_read_n(datas, arena, arg_index, offset, n, data);
+    n = expr_read_n(datas, arena, (uint32_t)arg_index, offset, n, data);
     for (size_t i = 0; i < n; ++i) data[i] = logf(data[i]);
   } else if (br_strv_eq(func_name, BR_STRL("abs"))) {
-    n = expr_read_n(datas, arena, arg_index, offset, n, data);
+    n = expr_read_n(datas, arena, (uint32_t)arg_index, offset, n, data);
     for (size_t i = 0; i < n; ++i) data[i] = fabsf(data[i]);
   } else if (br_strv_eq(func_name, BR_STRL("range"))) {
     br_dagen_expr_t arg = br_da_get(arena, arg_index);
     if (arg.kind == br_dagen_expr_kind_constant) {
       size_t i = 0;
       for (i = 0; i < n && arg.iota_state < (int)arg.value; ++i) {
-        data[i] = arg.iota_state++;
+        data[i] = (float)arg.iota_state++;
       }
       return i;
     } else if (arg.kind == br_dagen_expr_kind_pair) {
@@ -539,8 +541,8 @@ static size_t expr_apply_function(float* data, br_dagen_exprs_t arena, br_datas_
       br_dagen_expr_t arg2 = br_da_get(arena, arg.operands.op2);
       if (arg1.kind == br_dagen_expr_kind_constant && arg1.kind == br_dagen_expr_kind_constant) {
         size_t i = 0;
-        for (i = 0; i < n && arg1.iota_state + arg1.value < (int)arg2.value; ++i) {
-          data[i] = arg1.value + arg1.iota_state++;
+        for (i = 0; i < n && arg1.iota_state + (int)arg1.value < (int)arg2.value; ++i) {
+          data[i] = (arg1.value + (float)arg1.iota_state++);
         }
         return i;
       } else {
@@ -552,7 +554,7 @@ static size_t expr_apply_function(float* data, br_dagen_exprs_t arena, br_datas_
       return 0;
     }
   } else if (br_strv_eq(func_name, BR_STRL("fft"))) {
-    n = expr_read_n(datas, arena, arg_index, offset, n, data);
+    n = expr_read_n(datas, arena, (uint32_t)arg_index, offset, n, data);
     br_dagen_expr_context_t im_part = br_dagen_expr_push_batch();
     br_dagen_expr_context_t re_part = br_dagen_expr_push_batch();
     if (batches.last_referenced_group_len > 0) {

@@ -406,7 +406,7 @@ float br_strv_to_float(br_strv_t str) {
   static BR_THREAD_LOCAL char buff[32];
   int len = sprintf(buff, "%.*s", str.len, str.str);
   buff[len] = '\0';
-  return atof(buff);
+  return (float)atof(buff);
 }
 
 br_strv_t br_strv_trim_zeros(const br_strv_t buff) {

@@ -9,6 +9,7 @@ int main(void) {
   br_memory_frame();
   br_memory_frame();
   BR_FREE(ints);
+  printf("OK\n");
 /*
   br_memory_t tracker = br_memory_get();
   BR_ASSERT(tracker.len == 3);

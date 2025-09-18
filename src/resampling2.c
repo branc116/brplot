@@ -169,7 +169,7 @@ void resampling2_debug_3d(resampling2_t const* r, resampling2_nodes_3d_t const* 
   smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(maxx.x, miny.y, minz.z));
 }
 
-br_vec2_t resampling2_nodes_3d_get_ratios(resampling2_nodes_3d_t const* res, br_data_3d_t const* data, br_vec3_t eye, br_vec3_t look_dir) {
+static br_vec2_t resampling2_nodes_3d_get_ratios(resampling2_nodes_3d_t const* res, br_data_3d_t const* data, br_vec3_t look_dir) {
   br_vec3_t minx = br_data_3d_get_v3(data, res->base.min_index_x),
     miny         = br_data_3d_get_v3(data, res->base.min_index_y),
     minz         = br_data_3d_get_v3(data, res->min_index_z),
@@ -445,7 +445,7 @@ static void resampling2_draw33(resampling2_t const* const res, size_t index, br_
     smol_mesh_3d_gen_line_strip1(res->args_3d, &xs[st], &ys[st], &zs[st], node.base.len + (is_end ? 0 : 1));
     return;
   }
-  br_vec2_t ratios = resampling2_nodes_3d_get_ratios(&node, &pg->ddd, eye, br_vec3_sub(target, eye));
+  br_vec2_t ratios = resampling2_nodes_3d_get_ratios(&node, &pg->ddd, br_vec3_sub(target, eye));
   BR_ASSERT(ratios.x > 0);
   BR_ASSERT(ratios.y > 0);
   float rmin = fmaxf(ratios.x, ratios.y);

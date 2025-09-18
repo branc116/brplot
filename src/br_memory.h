@@ -100,7 +100,7 @@ typedef struct br_memory_t {
   size_t len, cap;
 
   int current_frame;
-  int cur_frame_nodes_len;
+  size_t cur_frame_nodes_len;
 
   size_t total_alloced;
   size_t cur_alloced;
@@ -227,23 +227,23 @@ void* br_memory_realloc(void* old, size_t new_size, const char* file_name, int l
   if (index >= br_memory.len) BR_LOGF("Trying to realloc something that was not mallocked at: %s:%d", file_name, line);
   node = &br_memory.arr[index];
   diff = (long)new_size - (long)node->size;
-  new_nid = br_memory.len;
+  new_nid = (long)br_memory.len;
   switch (node->kind) {
     case br_memory_event_alloc:
     case br_memory_event_realloc: {
       if (new_size <= node->size) {
-        br_memory_stack_print(index);
+        br_memory_stack_print((int)index);
         BR_LOGW("SUS realloc: old size: %ld, new size: %ld at: %s:%d", (long)node->size, (long)new_size, file_name, line);
-        br_memory.cur_alloced -= -diff;
-        br_memory.cur_frame_freed += -diff;
+        br_memory.cur_alloced = (size_t)((long)br_memory.cur_alloced + diff);
+        br_memory.cur_frame_freed = (size_t)((long)br_memory.cur_frame_freed  - diff);
       } else if (node->next_nid != -1) {
-        br_memory_stack_print(index);
+        br_memory_stack_print((int)index);
         BR_LOGF("Double realloc at %s:%d", file_name, line);
       } else {
-        br_memory.total_alloced += diff;
-        br_memory.cur_alloced += diff;
+        br_memory.total_alloced = (size_t)((long)br_memory.total_alloced + diff);
+        br_memory.cur_alloced = (size_t)((long)br_memory.cur_alloced + diff);
         if (br_memory.cur_alloced > br_memory.max_alloced) br_memory.max_alloced = br_memory.cur_alloced;
-        br_memory.cur_frame_alloced += diff;
+        br_memory.cur_frame_alloced = (size_t)((long)br_memory.cur_frame_alloced + diff);
       }
 
       memset(&new_node, 0, sizeof(new_node));
@@ -252,12 +252,12 @@ void* br_memory_realloc(void* old, size_t new_size, const char* file_name, int l
       new_node.at_line_num = line;
       new_node.frame_num = br_memory.current_frame;
       new_node.next_nid = -1;
-      new_node.prev_nid = index;
+      new_node.prev_nid = (int)index;
       new_node.realloc_count = node->realloc_count + 1;
       new_node.kind = br_memory_event_realloc;
     } break;
     case br_memory_event_free: {
-      br_memory_stack_print(index);
+      br_memory_stack_print((int)index);
       BR_LOGF("Trying to realloc freed memory at: %s:%d", file_name, line);
     } break;
     default: BR_LOGF("Unknown node kind: %d", node->kind);
@@ -265,9 +265,9 @@ void* br_memory_realloc(void* old, size_t new_size, const char* file_name, int l
 
   new_memory = malloc(new_size + sizeof(size_t));
   memcpy(new_memory + 1, old, node->size);
-  *new_memory = new_nid;
+  *new_memory = (size_t)new_nid;
   new_node.addr = new_memory;
-  node->next_nid = new_nid;
+  node->next_nid = (int)new_nid;
   br_memory_da_push(br_memory, new_node);
 
   /* Resize old memory to just fit the index of the tracker node */
@@ -286,11 +286,11 @@ void br_memory_free(void* old, const char* file_name, int line) {
   if (*index >= br_memory.len) BR_LOGF("Trying to free something that was not mallocked at: %s:%d", file_name, line);
   node = &br_memory.arr[*index];
   if (node->kind == br_memory_event_free) {
-    br_memory_stack_print(*index);
+    br_memory_stack_print((int)*index);
     BR_LOGF("%s:%d -> Double free!", file_name, line);
   }
   if (node->next_nid != -1) {
-    br_memory_stack_print(*index);
+    br_memory_stack_print((int)*index);
     BR_LOGF("%s:%d -> Freeing realloced memory!", file_name, line);
   }
 
@@ -301,11 +301,11 @@ void br_memory_free(void* old, const char* file_name, int line) {
   new_node.at_line_num = line;
   new_node.frame_num = br_memory.current_frame;
   new_node.next_nid = -1;
-  new_node.prev_nid = *index;
+  new_node.prev_nid = (int)*index;
   new_node.realloc_count = node->realloc_count;
   new_node.kind = br_memory_event_free;
 
-  new_nid = br_memory.len;
+  new_nid = (int)br_memory.len;
   node->next_nid = new_nid;
   br_memory.cur_alloced -= node->size;
   br_memory.cur_frame_freed += node->size;
@@ -315,7 +315,7 @@ void br_memory_free(void* old, const char* file_name, int line) {
   /* Resize old memory to just fit the index of the tracker node */
   /* But don't actually do it, because it could invalidate the memory or something.. */
   /* realloc(((size_t*)old - 1), new_size); */
-  *index = new_nid;
+  *index = (size_t)new_nid;
 }
 
 br_memory_t br_memory_get(void) {
@@ -323,10 +323,10 @@ br_memory_t br_memory_get(void) {
 }
 
 void br_memory_frame(void) {
-  if (br_memory.cur_frame_nodes_len != (int)br_memory.len) {
+  if (br_memory.cur_frame_nodes_len != br_memory.len) {
     br_memory_frame_t new_frame;
-    new_frame.start_nid = br_memory.cur_frame_nodes_len;
-    new_frame.len = br_memory.len - br_memory.cur_frame_nodes_len;
+    new_frame.start_nid = (int)br_memory.cur_frame_nodes_len;
+    new_frame.len = (int)(br_memory.len - br_memory.cur_frame_nodes_len);
     new_frame.frame_num = br_memory.current_frame;
     br_memory_da_push(br_memory.frames, new_frame);
   }
@@ -389,7 +389,7 @@ void br_memory_finish(void) {
     }
     if (br_memory.arr[cur].kind != br_memory_event_free) {
       printf("====Memory leak!=====\n");
-      br_memory_stack_print(i);
+      br_memory_stack_print((int)i);
       printf("====End of Memory leak!=====\n\n");
     }
   }
