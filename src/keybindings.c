@@ -53,6 +53,7 @@ static inline void br_keybinding_clear(br_plotter_t* br, br_plot_t* plot, br_key
 }
 
 static inline void br_keybinding_test_points(br_plotter_t* br, br_plot_t* plot, br_keybinding_ctrl_shift_t cs) {
+  (void)cs;
   (void)plot;
   br_datas_add_test_points(&br->groups);
 }

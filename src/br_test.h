@@ -17,7 +17,7 @@
       long long la = (long long)(a);                         \
       long long lb = (long long)(b);                         \
       LOGE("%s", #a " != " #b);                              \
-      LOGF("%s", "%lld != %lld", la, lb);                    \
+      LOGF("%lld != %lld", la, lb);                          \
       BR_UNREACHABLE();                                      \
     }                                                        \
   } while (0)
