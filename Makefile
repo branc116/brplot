@@ -238,11 +238,6 @@ clean:
 	test -f src/misc/shaders_web.h && rm src/misc/shaders_web.h || echo "done"
 	test -f src/misc/default_font.h && rm src/misc/default_font.h || echo "done"
 
-.PHONY: fuzz
-fuzz:
-	make CONFIG=DEBUG HEADLESS=YES && \
-	cat /dev/random | ./bin/brplot_headless_linux_debug_gcc > /dev/null && echo "Fuzz test OK"
-
 .generated/default_font.h: bin/font_bake content/font.ttf
 	bin/font_bake  content/font.ttf > .generated/default_font.h
 
@@ -286,29 +281,6 @@ OBJS_BENCH= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(SOURCE_BENCH))
 
 bin/bench: $(OBJS_BENCH) $(NOBS)
 	$(CC) $(LD_FLAGS) -o bin/bench $(COMMONFLAGS) $(LIBS) $(OBJS_BENCH)
-
-COMPILE_FLAGS_JSON= $(patsubst %.c, $(PREFIX_BUILD)/%.json, $(SOURCE))
-
-PWD= $(shell pwd)
-
-compile_commands.json: $(COMPILE_FLAGS_JSON)
-	echo "[" > compile_commands.json
-	cat $(COMPILE_FLAGS_JSON) >> compile_commands.json
-	echo "]" >> compile_commands.json
-
-$(PREFIX_BUILD)/src/%.json:src/%.c
-	echo '{' > $@ && \
-  echo '"directory": "$(PWD)",' >> $@ && \
-  echo '"command": "$(CC) $(CCFLAGS) $(WARNING_FLAGS) -c $<",' >> $@ && \
-  echo '"file": "$<"' >> $@ && \
-	echo '},' >> $@
-
-$(PREFIX_BUILD)/%.json:%.c
-	echo '{' > $@ && \
-  echo '"directory": "$(PWD)",' >> $@ && \
-  echo '"command": "$(CC) $(CCFLAGS) -c $<",' >> $@ && \
-  echo '"file": "$<"' >> $@ && \
-	echo '},' >> $@
 
 -include $(MAKE_INCLUDES)
 
