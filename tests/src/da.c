@@ -3,13 +3,10 @@
 #define BR_MEMORY_TRACER_IMPLEMENTATION
 #include "src/br_memory.h"
 
-#define BR_UNIT_TEST
-#define BR_UNIT_TEST_IMPLEMENTATION
-#include "external/tests.h"
-
 #include "src/br_da.h"
+#include "src/br_test.h"
 
-TEST_CASE(da) {
+int main(void) {
   typedef struct {
     int* arr;
     size_t len, cap;
@@ -32,5 +29,4 @@ TEST_CASE(da) {
   br_da_free(a);
 }
 
-int main(void) {}
 void br_on_fatal_error(void) {}

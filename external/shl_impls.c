@@ -43,6 +43,8 @@
 #define BR_LICENSE_IMPLEMENTATION
 #include "src/br_license.h"
 
+#define BRFL_IMPLEMENTATION
+#include "src/br_free_list.h"
+
 #define BRSP_IMPLEMENTATION
 #include "src/br_string_pool.h"
-

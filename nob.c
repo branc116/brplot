@@ -134,7 +134,6 @@ const char* sources[] = {
  "src/gl.c",
  "src/icons.c",
  "src/theme.c",
- "src/free_list.c"
 };
 
 static const target_platform_t g_platform =

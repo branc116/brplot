@@ -680,7 +680,7 @@ static void brgui_draw_memory(br_plotter_t* br) {
     br_size_to_human_readable(tr.max_alloced, &human, &unit);
     brui_textf("Max alloced: %f%s", human, unit);
     brui_text(BR_STRL(""));
-    brui_textf("Current frame: %zu", tr.current_frame);
+    brui_textf("Current frame: %d", tr.current_frame);
     br_size_to_human_readable(tr.cur_frame_alloced, &human, &unit);
     brui_textf("Current frame alloced: %f%s", human, unit);
     br_size_to_human_readable(tr.cur_frame_freed, &human, &unit);
@@ -704,12 +704,12 @@ static void brgui_draw_memory(br_plotter_t* br) {
         }
       }
 
-      for (int i = 0; i < tr.frames.len; ++i) {
-        brui_vsplitvp(2, BRUI_SPLITA(1 * brui_text_size()), BRUI_SPLITR(1));
+      for (size_t i = 0; i < tr.frames.len; ++i) {
+        brui_vsplitvp(2, BRUI_SPLITA(1.f * (float)brui_text_size()), BRUI_SPLITR(1.f));
           brui_textf("%d", i);
         brui_vsplit_pop();
           int n = sprintf(scrach, "Frame %d len=%d", tr.frames.arr[i].frame_num, tr.frames.arr[i].len);
-          if (brui_button(BR_STRV(scrach, n))) br->ui.memory.selected_frame = i;
+          if (brui_button(BR_STRV(scrach, (uint32_t)n))) br->ui.memory.selected_frame = i;
         brui_vsplit_end();
       }
 
@@ -728,7 +728,7 @@ static void brgui_draw_memory(br_plotter_t* br) {
               default: break;
             }
             n = sprintf(scrach, "[%s:%d] %s %zu bytes", node.at_file_name, node.at_line_num, word, node.size);
-            if (brui_button(BR_STRV(scrach, n))) {
+            if (brui_button(BR_STRV(scrach, (uint32_t)n))) {
               br->ui.memory.selected_nid = frame.start_nid + i;
             }
           }
