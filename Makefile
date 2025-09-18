@@ -243,26 +243,6 @@ fuzz:
 	make CONFIG=DEBUG HEADLESS=YES && \
 	cat /dev/random | ./bin/brplot_headless_linux_debug_gcc > /dev/null && echo "Fuzz test OK"
 
-.PHONY: test
-test:
-	make HEADLESS=YES CONFIG=DEBUG && \
-	./brplot --unittest
-
-.PHONY: test-gdb
-test-gdb:
-	make HEADLESS=YES CONFIG=DEBUG && \
-	gdb -ex "r --unittest" ./bin/brplot_headless_linux_debug_gcc --tui
-
-.PHONY: npm-imgui
-npm-imgui:
-	echo "TODO"
-	exit 1
-	make CONFIG=RELEASE TYPE=LIB PLATFORM=WEB && \
-	cp ./www/brplot_imgui_release_lib.js packages/npm/brplot.js && \
-	cp ./www/brplot_imgui_release_lib.wasm packages/npm && \
-	  ((cd packages/npm && \
-	   npm publish || cd ../..) && cd ../..)
-
 .generated/default_font.h: bin/font_bake content/font.ttf
 	bin/font_bake  content/font.ttf > .generated/default_font.h
 

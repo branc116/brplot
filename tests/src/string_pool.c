@@ -281,4 +281,4 @@ int main(void) {
 }
 void br_on_fatal_error(void) {}
 #endif
-// clang -fsanitize=address -ggdb -I. tests/src/string_pool.c -o bin/string_pool_tests && bin/string_pool_tests --unittest
+// clang -fsanitize=address -ggdb -I. tests/src/string_pool.c -o bin/string_pool_tests && bin/string_pool_tests

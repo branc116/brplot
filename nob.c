@@ -976,7 +976,7 @@ static bool n_unittests_do(void) {
       nob_cmd_append(&cmd, "-lm", "-pthread");
     }
     if (false == nob_cmd_run_cache(&cmd)) return false;
-    nob_cmd_append(&cmd, test_programs[i].out_bin, "--unittest");
+    nob_cmd_append(&cmd, test_programs[i].out_bin);
     if (false == nob_cmd_run(&cmd)) return false;
     LOGI("-------------- END TESTS ------------------");
   }
