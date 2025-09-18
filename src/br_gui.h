@@ -82,9 +82,6 @@ typedef struct brgui_csv_reader_t {
 } brgui_csv_reader_t;
 
 void draw_grid_numbers(br_text_renderer_t* r, br_plot_t* br);
-void br_plot_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos);
-bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos);
-bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos);
 void br_plot_update_context(br_plot_t* plot, br_vec2_t mouse_pos);
 void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders);
 brgui_fm_result_t brgui_draw_file_manager(brgui_file_manager_t* state);

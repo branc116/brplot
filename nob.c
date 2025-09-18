@@ -954,6 +954,8 @@ static bool n_unittests_do(void) {
   is_headless = true;
 
   static struct { char const *test_file, *out_bin; } test_programs[] = {
+    { .test_file = "./tests/src/data_generator.c", .out_bin  = "bin/data_generator" EXE_EXT },
+    { .test_file = "./tests/src/resampling.c", .out_bin  = "bin/resampling" EXE_EXT },
     { .test_file = "./tests/src/read_input.c", .out_bin  = "bin/read_input" EXE_EXT },
     { .test_file = "./tests/src/filesystem.c", .out_bin  = "bin/memory" EXE_EXT },
     { .test_file = "./tests/src/memory.c", .out_bin  = "bin/memory" EXE_EXT },
@@ -973,20 +975,11 @@ static bool n_unittests_do(void) {
     if (tp_linux == g_platform) {
       nob_cmd_append(&cmd, "-lm", "-pthread");
     }
-    if (false == nob_cmd_run(&cmd)) return false;
+    if (false == nob_cmd_run_cache(&cmd)) return false;
     nob_cmd_append(&cmd, test_programs[i].out_bin, "--unittest");
     if (false == nob_cmd_run(&cmd)) return false;
     LOGI("-------------- END TESTS ------------------");
   }
-
-  if (no_gen) {
-    if (false == n_compile_do()) return false;
-  } else {
-    if (false == n_build_do()) return false;
-  }
-  nob_cmd_append(&cmd, "./bin/brplot" EXE_EXT, "--unittest");
-  if (false == nob_cmd_run(&cmd)) return false;
-
 
   LOGI("Unit tests ok");
   return true;

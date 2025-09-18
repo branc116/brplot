@@ -21,6 +21,8 @@
 #if BR_HAS_HOTRELOAD
 #  include <pthread.h>
 #endif
+static bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos);
+static bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos);
 
 br_plotter_t* br_plotter_malloc(void) {
   br_resampling2_construct();
@@ -199,6 +201,149 @@ void br_plotter_switch_3d(br_plotter_t* br) {
   }
   br_plotter_add_plot_3d(br);
 }
+
+void br_plots_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t groups, br_vec2_t mouse_pos) {
+  for (int i = 0; i < plot->data_info.len; ++i) {
+    plot->data_info.arr[i].thickness_multiplyer = br_float_lerp(plot->data_info.arr[i].thickness_multiplyer, plot->data_info.arr[i].thickness_multiplyer_target, brtl_frame_time()*5);
+  }
+  bool apply_kb = true;
+  switch (plot->kind) {
+    case br_plot_kind_2d: {
+      apply_kb = br_plot_update_variables_2d(plot, groups, mouse_pos);
+    } break;
+    case br_plot_kind_3d: {
+      apply_kb = br_plot_update_variables_3d(plot, groups, mouse_pos);
+    } break;
+    default: BR_UNREACHABLE("Plot kind %d is not handled", plot->kind);
+  }
+  apply_kb &= brui_action()->kind == brui_action_none;
+  if (apply_kb) br_keybinding_handle_keys(br, plot);
+}
+
+static bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos) {
+  BR_ASSERT(plot->kind == br_plot_kind_2d);
+  if (plot->follow) {
+    br_vec2d_t maxy = BR_VEC2D(-DBL_MAX, -DBL_MAX);
+    br_vec2d_t mini = BR_VEC2D(DBL_MAX, DBL_MAX);
+    int n = 0;
+    for (int i = 0; i < plot->data_info.len; ++i) {
+      br_plot_data_t di = plot->data_info.arr[i];
+      if (false == BR_PLOT_DATA_IS_VISIBLE(di)) continue;
+      br_data_t* pg = br_data_get1(groups, di.group_id);
+      if (pg->len == 0) continue;
+
+      for (size_t j = 0; j < 50 && j < pg->len; ++j) {
+        double cx = ((double)pg->dd.xs[pg->len - 1 - j] + pg->dd.rebase_x);
+        double cy = ((double)pg->dd.ys[pg->len - 1 - j] + pg->dd.rebase_y);
+        if (cx > maxy.x) maxy.x = cx;
+        if (cx < mini.x) mini.x = cx;
+        if (cy > maxy.y) maxy.y = cy;
+        if (cy < mini.y) mini.y = cy;
+        ++n;
+      }
+    }
+    if (n > 3) {
+      br_vec2d_t wanted_zoom = br_vec2d_scale(br_vec2d_sub(maxy, mini), 2.8);
+      if (maxy.y == mini.y) wanted_zoom.y = (double)plot->dd.zoom.y;
+      if (maxy.x == mini.x) wanted_zoom.x = (double)plot->dd.zoom.x;
+      br_vec2d_t wanted_offset = br_vec2d_add(br_vec2d_scale(maxy, 0.5), br_vec2d_scale(mini, 0.5));
+      plot->dd.zoom = br_vec2d_lerp(plot->dd.zoom, wanted_zoom, 1.f*brtl_frame_time());
+      plot->dd.offset = br_vec2d_lerp(plot->dd.offset, wanted_offset, 0.05f);
+    }
+  }
+  if (plot->mouse_inside_graph) {
+    // TODO: Move this to br_keybindings.c
+    // Stuff related to zoom
+    {
+      float mw = -brtl_mouse_scroll().y;
+      br_vec2d_t old = plot->dd.mouse_pos;
+      bool any = false;
+      if (false == br_float_near_zero(mw)) {
+        float mw_scale = (1 + mw/10);
+        if (brtl_key_down('x')) {
+          plot->dd.zoom.x *= mw_scale;
+        } else if (brtl_key_down('y')) {
+          plot->dd.zoom.y *= mw_scale;
+        } else {
+          plot->dd.zoom.x *= mw_scale;
+          plot->dd.zoom.y *= mw_scale;
+        }
+        any = true;
+      }
+      if (brtl_key_down('x') && brtl_key_shift()) any = true, plot->dd.zoom.x *= 1.1f;
+      if (brtl_key_down('y') && brtl_key_shift()) any = true, plot->dd.zoom.y *= 1.1f;
+      if (brtl_key_down('x') && brtl_key_ctrl())  any = true, plot->dd.zoom.x *= .9f;
+      if (brtl_key_down('y') && brtl_key_ctrl())  any = true, plot->dd.zoom.y *= .9f;
+      if (any) {
+        br_plot_update_context(plot, mouse_pos);
+        br_vec2d_t now = plot->dd.mouse_pos;
+        plot->dd.offset.x -= now.x - old.x;
+        plot->dd.offset.y -= now.y - old.y;
+        brui_action_stop();
+      }
+    }
+    if (false && plot->jump_around) {
+      double t = brtl_time();
+      plot->cur_extent.x += (int)(100.f * (float)sin(t));
+      plot->cur_extent.y += (int)(77.f * (float)cos(t));
+      plot->cur_extent.width += (int)(130.f * (float)sin(t));
+      plot->cur_extent.height += (int)(177.f * (float)cos(t));
+    }
+    if (brtl_mouser_down()) {
+      br_vec2_t delt = brtl_mouse_delta();
+      float height = (float)plot->cur_extent.height;
+      plot->dd.offset.x -= plot->dd.zoom.x*delt.x/height;
+      plot->dd.offset.y += plot->dd.zoom.y*delt.y/height;
+      brui_action_stop();
+      return false;
+    } else return true;
+  }
+  return false;
+}
+
+static bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos) {
+  (void)groups; (void)mouse_pos;
+  BR_ASSERT(plot->kind == br_plot_kind_3d);
+  if (!plot->mouse_inside_graph) return false;
+  if (brtl_mouser_down()) {
+    float speed = 10.f;
+    if (brtl_key_ctrl()) speed *= 0.1f;
+    if (brtl_key_shift()) speed *= 10.f;
+    br_vec3_t zeroed = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
+    br_vec3_t zero_dir = br_vec3_normalize(zeroed);
+    br_vec3_t right = br_vec3_normalize(br_vec3_cross(plot->ddd.up, zero_dir));
+    br_vec3_t delta = {0};
+    if (brtl_key_down('w')) delta = br_vec3_scale(zero_dir, -brtl_frame_time()*speed);
+    if (brtl_key_down('s')) delta = br_vec3_add(delta, br_vec3_scale(zero_dir, brtl_frame_time()*speed));
+    if (brtl_key_down('a')) delta = br_vec3_add(delta, br_vec3_scale(right, -brtl_frame_time()*speed));
+    if (brtl_key_down('d')) delta = br_vec3_add(delta, br_vec3_scale(right, brtl_frame_time()*speed));
+    if (brtl_key_down('q')) delta = br_vec3_add(delta, br_vec3_scale(plot->ddd.up, -brtl_frame_time()*speed));
+    if (brtl_key_down('e')) delta = br_vec3_add(delta, br_vec3_scale(plot->ddd.up, brtl_frame_time()*speed));
+
+    plot->ddd.target = br_vec3_add(plot->ddd.target, delta);
+    plot->ddd.eye = br_vec3_add(plot->ddd.eye, delta);
+
+    br_vec2_t m = brtl_mouse_delta();
+    br_vec2_t md = br_vec2_scale(BR_VEC2(m.x, m.y), -0.003f);
+    br_vec3_t rotated_up = br_vec3_rot(zeroed, plot->ddd.up, md.x);
+    br_vec3_t rotated_right = br_vec3_rot(rotated_up, right, md.y);
+    if (fabsf(br_vec3_dot(rotated_right, plot->ddd.up)) > 0.94f) plot->ddd.eye = br_vec3_add(rotated_up,    plot->ddd.target);
+    else                                                         plot->ddd.eye = br_vec3_add(rotated_right, plot->ddd.target);
+    plot->ddd.eye = br_vec3_add(rotated_right, plot->ddd.target);
+    return false;
+  }
+  {
+    float mw = brtl_mouse_scroll().y;
+    float mw_scale = (1 + mw/10);
+    br_vec3_t zeroed = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
+    float len = br_vec3_len(zeroed);
+    len *= mw_scale;
+    plot->ddd.eye = br_vec3_add(br_vec3_scale(br_vec3_normalize(zeroed), len), plot->ddd.target);
+  }
+  return true;
+}
+
+
 
 int br_plotter_add_plot_2d(br_plotter_t* br) {
   br_plot_t plot = br_plot_2d();

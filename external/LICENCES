@@ -337,10 +337,6 @@ you should blame me.
  THE SOFTWARE.
 
 ===================================quick_benchmark============================
-===================================tests======================================
- SPDX-License-Identifier: MIT
- BR: Stolen from: https://github.com/yshui/test.h
-===================================tests======================================
 ===================================nob======================================
  ------------------------------------------------------------------------------
  This software is available under 2 licenses -- choose whichever you prefer.

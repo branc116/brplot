@@ -47,7 +47,7 @@ void br_plotter_draw(br_plotter_t* br) {
         if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
         PLOT->cur_extent = BR_EXTENT_TOI(r->cur_extent);
         PLOT->mouse_inside_graph = PLOT->extent_handle == brui_resizable_active();
-        br_plot_update_variables(br, PLOT, br->groups, brtl_mouse_pos());
+        br_plots_update_variables(br, PLOT, br->groups, brtl_mouse_pos());
         br_plot_update_context(PLOT, brtl_mouse_pos());
         br_plot_update_shader_values(PLOT, &br->shaders);
 

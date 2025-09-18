@@ -9,11 +9,6 @@
 #  pragma GCC diagnostic ignored "-Wconversion"
 #endif
 
-#ifdef BR_UNIT_TEST
-#  define BR_UNIT_TEST_IMPLEMENTATION
-#endif
-#include "external/tests.h"
-
 #define STBRP_ASSERT BR_ASSERT
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "external/stb_rect_pack.h"

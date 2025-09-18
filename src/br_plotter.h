@@ -131,6 +131,7 @@ void        br_plotter_switch_2d(br_plotter_t* br);
 void        br_plotter_switch_3d(br_plotter_t* br);
 void        br_plotter_set_bottom_left(br_plot_t* plot, float left, float bottom);
 void        br_plotter_set_top_right(br_plot_t* plot, float right, float top);
+void        br_plots_update_variables(br_plotter_t* br, br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos);
 void        br_plots_focus_visible(br_plots_t plot, br_datas_t groups);
 void        br_plot_focus_visible(br_plot_t* plot, br_datas_t groups);
 int         br_plotter_add_plot_2d(br_plotter_t* br);
