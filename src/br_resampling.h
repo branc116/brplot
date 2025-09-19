@@ -32,7 +32,7 @@ typedef struct {
   bool has_old;
   br_vec2_t old;
   br_vec2_t mid;
-  br_smol_mesh_line_t args;
+  br_mesh_line_t args;
 } br_line_culler_t;
 
 typedef struct br_resampling_nodes_t {
@@ -81,7 +81,7 @@ typedef struct br_resampling_t {
   float something2;
   uint32_t draw_count;
   br_line_culler_t culler;
-  br_smol_mesh_line_3d_t args_3d;
+  br_mesh_line_3d_t args_3d;
 } br_resampling_t;
 
 #ifdef __cplusplus
