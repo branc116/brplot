@@ -48,3 +48,5 @@ int main(void) {
   resampling();
   resampling2();
 }
+
+void br_on_fatal_error(void) {}

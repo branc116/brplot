@@ -135,6 +135,4 @@ int main(void) {
   str_replace1();
 }
 
-void br_on_fatal_error(void) {
-  LOGI("Failed");
-}
+void br_on_fatal_error(void) { }

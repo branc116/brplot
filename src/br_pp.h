@@ -27,7 +27,7 @@
 #define BR_LOGW LOGW
 #define BR_LOGE LOGE
 
-void br_on_fatal_error(void);
+extern void br_on_fatal_error(void);
 #define LOGF(format, ...) do { \
   fprintf(stderr, "[FATAL][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__); \
   br_on_fatal_error(); \

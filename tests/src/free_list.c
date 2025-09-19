@@ -136,4 +136,3 @@ int main(void) {
 
 }
 void br_on_fatal_error(void) {}
-// cc -fsanitize=address -ggdb -I. tests/src/free_list.c -o bin/free_list_tests && bin/free_list_tests

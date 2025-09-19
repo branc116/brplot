@@ -56,10 +56,12 @@ jobs:
 
       - run: |
           ./nob amalgam
-          clang tests/hello_world.c -lm
-          clang tests/animations.c -lm
-          clang -ggdb -I. tests/src/free_list.c -o bin/free_list_tests
-          bin/free_list_tests
+          clang -shared -DBRPLOT_IMPLEMENTATION .generated/brplot.c -o libbrplot.so
+          clang -I.generated tests/hello_world.c -lm -L. -lbrplot
+          clang -I.generated tests/animations.c -lm
+
+      - run: |
+          ./nob amalgam
 
   windows:
     runs-on: windows-latest
