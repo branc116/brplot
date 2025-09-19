@@ -1,5 +1,4 @@
-#define BRPLOT_IMPLEMENTATION
-#include "../.generated/brplot.c"
+#include <brplot.c>
 
 int main() {
   for (float i = -10; i < 10; i+=0.1f) brp_1(i*i, 1);

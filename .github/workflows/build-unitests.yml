@@ -30,6 +30,12 @@ jobs:
 
       - run: |
           ./nob amalgam
+          clang -ObjC -fPIC -shared -DBRPLOT_IMPLEMENTATION .generated/brplot.c -o libbrplot.dylib
+          clang -I.generated tests/hello_world.c -lm -L. -lbrplot
+          clang -I.generated tests/animations.c -lm -L. -lbrplot
+
+      - run: |
+          ./nob amalgam
 
   linux:
     runs-on: ${{matrix.os}}
@@ -56,12 +62,9 @@ jobs:
 
       - run: |
           ./nob amalgam
-          clang -shared -DBRPLOT_IMPLEMENTATION .generated/brplot.c -o libbrplot.so
+          clang -fPIC -shared -DBRPLOT_IMPLEMENTATION .generated/brplot.c -o libbrplot.so
           clang -I.generated tests/hello_world.c -lm -L. -lbrplot
-          clang -I.generated tests/animations.c -lm
-
-      - run: |
-          ./nob amalgam
+          clang -I.generated tests/animations.c -lm -L. -lbrplot
 
   windows:
     runs-on: windows-latest
@@ -79,6 +82,12 @@ jobs:
 
       - run: |
           ./nob unittests -dpa
+
+      - run: |
+          ./nob amalgam
+          clang -fPIC -shared -DBRPLOT_IMPLEMENTATION .generated/brplot.c -o libbrplot.dll
+          clang -I.generated tests/hello_world.c -lm -L. -lbrplot
+          clang -I.generated tests/animations.c -lm -L. -lbrplot
 
       - run: |
           ./nob.exe amalgam

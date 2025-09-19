@@ -1,14 +1,14 @@
-#define BRPLOT_IMPLEMENTATION
-#include "../.generated/brplot.c"
+#include <brplot.h>
+#include <math.h>
 
 int main(void) {
   br_data_id circle = 2, standing_wave = 3;
   float dr = 0.01f;
   brp_label("circle", circle);
   brp_label("standing wave", standing_wave);
-  for (float radius = 0.0f; true; radius += dr) {
+  for (float radius = 0.0f; 1; radius += dr) {
     for (float t = -10; t < 10; t += 0.1f) brp_2(radius*sinf(t),                 radius*cosf(t),        circle);
-    for (float t = -10; t < 10; t += 0.1f) brp_2(         t/2.f, cosf(2*BR_PI*radius)*sinf(t)/t, standing_wave);
+    for (float t = -10; t < 10; t += 0.1f) brp_2(         t/2.f, cosf(2*3.1415f*radius)*sinf(t)/t, standing_wave);
     brp_flush();
     brp_empty(circle);
     brp_empty(standing_wave);
