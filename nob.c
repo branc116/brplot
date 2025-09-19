@@ -116,7 +116,7 @@ const char* sources[] = {
  "src/main.c",
  "src/ui.c",
  "src/data.c",
- "src/smol_mesh.c",
+ "src/mesh.c",
  "src/q.c",
  "src/read_input.c",
  "src/keybindings.c",

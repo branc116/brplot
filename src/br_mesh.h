@@ -18,9 +18,6 @@ typedef struct br_mesh_line_3d_t {
   br_mat_t mvp;
 } br_mesh_line_3d_t;
 
-//void br_mesh_gen_quad(smol_mesh_t* mesh, Rectangle rect, br_vec2_t mid_point, br_vec2_t tangent, br_color_t color);
-//void br_mesh_gen_quad_simple(smol_mesh_t* mesh, Rectangle rect, br_color_t color);
-
 void br_mesh_gen_bb(br_mesh_line_t args, br_bb_t bb);
 void br_mesh_gen_point(br_mesh_line_t args, br_vec2_t point);
 void br_mesh_gen_point1(br_mesh_line_t args, br_vec2_t point, br_vec2_t size);
