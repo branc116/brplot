@@ -64,6 +64,7 @@
 #define PSHARE PREFIX "/share"
 
 #define nob_cmd_run_cache(cmd, ...) nob_cmd_run(cmd, .ptrace_cache = &cache, ##__VA_ARGS__)
+#define br_cmd_run(cmd, ...) nob_cmd_run(cmd, .ptrace_cache = NULL)
 
 typedef enum target_platform_t {
   tp_linux,
@@ -794,7 +795,7 @@ static bool n_run_do(void) {
   if (false == n_build_do()) return false;
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "bin/brplot" EXE_EXT);
-  nob_cmd_run(&cmd);
+  br_cmd_run(&cmd);
   return true;
 }
 
@@ -802,14 +803,14 @@ static bool n_crun_do(void) {
   if (false == n_compile_do()) return false;
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "bin/brplot" EXE_EXT);
-  nob_cmd_run(&cmd);
+  br_cmd_run(&cmd);
   return true;
 }
 
 static void just_debug(void) {
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "gdb", "bin/brplot" EXE_EXT);
-  nob_cmd_run(&cmd);
+  br_cmd_run(&cmd);
 }
 
 static bool n_cdebug_do(void) {
@@ -982,7 +983,7 @@ static bool n_unittests_do(void) {
     }
     if (false == nob_cmd_run_cache(&cmd)) return false;
     nob_cmd_append(&cmd, test_programs[i].out_bin);
-    if (false == nob_cmd_run(&cmd)) return false;
+    if (false == br_cmd_run(&cmd)) return false;
     LOGI("-------------- END TESTS ------------------");
   }
 
@@ -1004,9 +1005,9 @@ static bool n_fuzztests_do(void) {
 
   nob_cmd_append(&cmd, compiler, "-fsanitize=fuzzer,address,leak,undefined", "-DFUZZ", "-o", "bin/fuzz_sp", "./tests/src/string_pool.c");
   compile_standard_flags(&cmd);
-  if (false == nob_cmd_run(&cmd)) return false;
+  if (false == br_cmd_run(&cmd)) return false;
   nob_cmd_append(&cmd, "./bin/fuzz_sp", FUZZ_FLAGS);
-  if (false == nob_cmd_run(&cmd)) return false;
+  if (false == br_cmd_run(&cmd)) return false;
   return true;
 }
 // ./bin/fuzz_sp -mutation_graph_file=1 -print_full_coverage=1 -print_final_stats=1 -print_coverage=1 -max_total_time=10 -create_missing_dirs=1 .generated/corpus_sp

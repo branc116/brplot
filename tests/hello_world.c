@@ -1,4 +1,5 @@
 #include <brplot.c>
+#include <math.h>
 
 int main() {
   for (float i = -10; i < 10; i+=0.1f) brp_1(i*i, 1);
