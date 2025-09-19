@@ -30,7 +30,8 @@ jobs:
 
       - run: |
           ./nob amalgam
-          clang -ObjC -fPIC -shared -DBRPLOT_IMPLEMENTATION .generated/brplot.c -o libbrplot.dylib
+
+          clang -framework CoreServices -framework CoreGraphics -framework AppKit -framework IOKit -framework Foundation -ObjC -fPIC -shared -DBRPLOT_IMPLEMENTATION .generated/brplot.c -o libbrplot.dylib
           clang -I.generated tests/hello_world.c -lm -L. -lbrplot
           clang -I.generated tests/animations.c -lm -L. -lbrplot
 
@@ -81,7 +82,7 @@ jobs:
           ./nob.exe
 
       - run: |
-          ./nob unittests -dpa
+          ./nob unittests -dp
 
       - run: |
           ./nob amalgam

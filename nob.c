@@ -334,7 +334,9 @@ static bool compile_standard_flags(Nob_Cmd* cmd) {
   if (is_tracy) nob_cmd_append(cmd, "-DTRACY_ENABLE=1");
   if (enable_asan) nob_cmd_append(cmd, SANITIZER_FLAGS);
   if (is_debug) {
-    nob_cmd_append(cmd, "-ggdb", "-DBR_DEBUG");
+    if (is_msvc) nob_cmd_append(cmd, "/Zi");
+    else nob_cmd_append(cmd, "-ggdb");
+    nob_cmd_append(cmd, "-DBR_DEBUG");
     if (has_hotreload) nob_cmd_append(cmd, "-fpic", "-fpie");
     else nob_cmd_append(cmd, "-DBR_HAS_HOTRELOAD=0");
   } else {
@@ -970,7 +972,10 @@ static bool n_unittests_do(void) {
     LOGI("-------------- START TESTS ------------------");
     LOGI("------------- %15s -> %15s ------------------", test_programs[i].test_file, test_programs[i].out_bin);
     cmd.count = 0;
-    nob_cmd_append(&cmd, compiler, "-o", test_programs[i].out_bin, test_programs[i].test_file);
+    nob_cmd_append(&cmd, compiler);
+    if (is_msvc) nob_cmd_append(&cmd, nob_temp_sprintf("/Fe:%s", test_programs[i].out_bin));
+    else nob_cmd_append(&cmd, "-o", test_programs[i].out_bin);
+    nob_cmd_append(&cmd, test_programs[i].test_file);
     compile_standard_flags(&cmd);
     if (tp_linux == g_platform) {
       nob_cmd_append(&cmd, "-lm", "-pthread");
