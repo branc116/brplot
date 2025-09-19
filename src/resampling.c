@@ -1,5 +1,5 @@
 #include "src/br_math.h"
-#include "src/br_resampling2.h"
+#include "src/br_resampling.h"
 #include "src/br_pp.h"
 #include "src/br_data.h"
 #include "src/br_plot.h"
@@ -81,13 +81,13 @@ static inline float max6(float a, float b, float c, float d, float e, float f) {
   return fmaxf(max4(a, b, c, d), fmaxf(e, f));
 }
 
-bool resampling2_nodes_2d_is_inside(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, br_extent_t rect) {
+bool br_resampling_nodes_2d_is_inside(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, br_extent_t rect) {
   if (res->base.len == 0) return false;
   float minx = xs[res->base.min_index_x], miny = ys[res->base.min_index_y], maxx = xs[res->base.max_index_x], maxy = ys[res->base.max_index_y];
   return !((miny > rect.y) || (maxy < rect.y - rect.height) || (minx > rect.x + rect.width) || (maxx < rect.x));
 }
 
-bool resampling2_nodes_2d_is_inside_3d(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mat) {
+bool br_resampling_nodes_2d_is_inside_3d(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mat) {
   if (res->base.len == 0) return false;
   br_vec3_t minx = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_x], ys[res->base.min_index_x]), mat),
             miny = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_y], ys[res->base.min_index_y]), mat),
@@ -104,12 +104,12 @@ bool resampling2_nodes_2d_is_inside_3d(resampling2_nodes_2d_t const* res, float 
   return Mz > 0.f && br_col_extents(rect, BR_EXTENT(mx, my, Mx - mx, My - my));
 }
 
-br_vec2_t resampling2_nodes_2d_get_ratios(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, float screen_width, float screen_height) {
+br_vec2_t br_resampling_nodes_2d_get_ratios(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, float screen_width, float screen_height) {
   float xr = xs[res->base.max_index_x] - xs[res->base.min_index_x], yr = ys[res->base.max_index_y] - ys[res->base.min_index_y];
   return BR_VEC2(xr / screen_width, yr / screen_height);
 }
 
-static br_vec2_t resampling2_nodes_2d_get_ratios_3d(resampling2_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mvp) {
+static br_vec2_t br_resampling_nodes_2d_get_ratios_3d(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mvp) {
   br_vec3_t minx = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_x], ys[res->base.min_index_x]), mvp),
             miny = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_y], ys[res->base.min_index_y]), mvp),
             maxx = br_vec2_transform_scale(BR_VEC2(xs[res->base.max_index_x], ys[res->base.max_index_x]), mvp),
@@ -125,7 +125,7 @@ br_vec3_t br_data_3d_get_v3(br_data_3d_t const* data, uint32_t index) {
   return BR_VEC3(data->xs[index], data->ys[index], data->zs[index]);
 }
 
-static bool resampling2_nodes_3d_is_inside(resampling2_nodes_3d_t const* res, br_data_3d_t const* data, br_mat_t mvp) {
+static bool br_resampling_nodes_3d_is_inside(br_resampling_nodes_3d_t const* res, br_data_3d_t const* data, br_mat_t mvp) {
   br_vec3_t minx = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.min_index_x), mvp),
           miny = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.min_index_y), mvp),
           minz = br_vec3_transform_scale(br_data_3d_get_v3(data, res->min_index_z), mvp),
@@ -143,7 +143,7 @@ static bool resampling2_nodes_3d_is_inside(resampling2_nodes_3d_t const* res, br
   return Mz > 0.f && br_col_extents(rect, BR_EXTENT(mx, my, Mx - mx, My - my));
 }
 
-void resampling2_debug_3d(resampling2_t const* r, resampling2_nodes_3d_t const* res, br_data_3d_t const* data) {
+void br_resampling_debug_3d(br_resampling_t const* r, br_resampling_nodes_3d_t const* res, br_data_3d_t const* data) {
   br_vec3_t minx = br_data_3d_get_v3(data, res->base.min_index_x),
     miny = br_data_3d_get_v3(data, res->base.min_index_y),
     minz = br_data_3d_get_v3(data, res->min_index_z),
@@ -169,7 +169,7 @@ void resampling2_debug_3d(resampling2_t const* r, resampling2_nodes_3d_t const* 
   smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(maxx.x, miny.y, minz.z));
 }
 
-static br_vec2_t resampling2_nodes_3d_get_ratios(resampling2_nodes_3d_t const* res, br_data_3d_t const* data, br_vec3_t look_dir) {
+static br_vec2_t br_resampling_nodes_3d_get_ratios(br_resampling_nodes_3d_t const* res, br_data_3d_t const* data, br_vec3_t look_dir) {
   br_vec3_t minx = br_data_3d_get_v3(data, res->base.min_index_x),
     miny         = br_data_3d_get_v3(data, res->base.min_index_y),
     minz         = br_data_3d_get_v3(data, res->min_index_z),
@@ -196,7 +196,7 @@ static br_vec2_t resampling2_nodes_3d_get_ratios(resampling2_nodes_3d_t const* r
 
 static uint32_t powers[32] = {0};
 static uint32_t powers_base = 2;
-void br_resampling2_construct(void) {
+void br_resampling_construct(void) {
   powers[0] = 1;
   powers[1] = powers_base;
   for (int i = 2; i < 32; ++i) {
@@ -204,12 +204,12 @@ void br_resampling2_construct(void) {
   }
 }
 
-static void resampling2_nodes_deinit(resampling2_t* nodes);
-static bool resampling2_nodes_2d_push_point(resampling2_nodes_2d_allocator_t* nodes, size_t node_index, uint32_t index, float const* xs, float const* ys);
-static bool resampling2_nodes_3d_push_point(resampling2_nodes_3d_allocator_t* nodes, size_t node_index, uint32_t index, float const* xs, float const* ys, float const* zs);
+static void br_resampling_nodes_deinit(br_resampling_t* nodes);
+static bool br_resampling_nodes_2d_push_point(br_resampling_nodes_2d_allocator_t* nodes, size_t node_index, uint32_t index, float const* xs, float const* ys);
+static bool br_resampling_nodes_3d_push_point(br_resampling_nodes_3d_allocator_t* nodes, size_t node_index, uint32_t index, float const* xs, float const* ys, float const* zs);
 
-resampling2_t* resampling2_malloc(br_data_kind_t kind) {
-  resampling2_t* r = (resampling2_t*)BR_CALLOC(1, sizeof(*r));
+br_resampling_t* br_resampling_malloc(br_data_kind_t kind) {
+  br_resampling_t* r = (br_resampling_t*)BR_CALLOC(1, sizeof(*r));
   if (r == NULL) return NULL;
   r->kind = kind;
   r->something = 0.02f;
@@ -217,37 +217,37 @@ resampling2_t* resampling2_malloc(br_data_kind_t kind) {
   return r;
 }
 
-void resampling2_empty(resampling2_t* res) {
+void br_resampling_empty(br_resampling_t* res) {
   if (NULL == res) return;
-  resampling2_nodes_deinit(res);
+  br_resampling_nodes_deinit(res);
 }
 
-void resampling2_free(resampling2_t* r) {
+void br_resampling_free(br_resampling_t* r) {
   if (NULL == r) return;
-  resampling2_nodes_deinit(r);
+  br_resampling_nodes_deinit(r);
   BR_FREE(r);
 }
 
-void resampling2_add_point(resampling2_t* r, const br_data_t *pg, uint32_t index) {
+void br_resampling_add_point(br_resampling_t* r, const br_data_t *pg, uint32_t index) {
   if (r->dd.len == 0) {
     switch (r->kind) {
-      case br_data_kind_2d: { br_da_push((r->dd), (resampling2_nodes_2d_t){0}); break; }
-      case br_data_kind_3d: { br_da_push((r->ddd), (resampling2_nodes_3d_t){0}); break; }
+      case br_data_kind_2d: { br_da_push((r->dd), (br_resampling_nodes_2d_t){0}); break; }
+      case br_data_kind_3d: { br_da_push((r->ddd), (br_resampling_nodes_3d_t){0}); break; }
       default: BR_ASSERT(false);
     }
   }
   switch (r->kind) {
-    case br_data_kind_2d: { resampling2_nodes_2d_push_point(&r->dd, 0, index, pg->dd.xs, pg->dd.ys); break; }
-    case br_data_kind_3d: { resampling2_nodes_3d_push_point(&r->ddd, 0, index, pg->ddd.xs, pg->ddd.ys, pg->ddd.zs); break; }
+    case br_data_kind_2d: { br_resampling_nodes_2d_push_point(&r->dd, 0, index, pg->dd.xs, pg->dd.ys); break; }
+    case br_data_kind_3d: { br_resampling_nodes_3d_push_point(&r->ddd, 0, index, pg->ddd.xs, pg->ddd.ys, pg->ddd.zs); break; }
     default: BR_UNREACHABLE("kind %d", r->kind);
   }
 }
 
-void resampling2_reset(resampling2_t* res) {
+void br_resampling_reset(br_resampling_t* res) {
   res->common.len = 0;
 }
 
-static void resampling2_nodes_deinit(resampling2_t* nodes) {
+static void br_resampling_nodes_deinit(br_resampling_t* nodes) {
   if (nodes == NULL) return;
   if (nodes->common.arr) BR_FREE(nodes->common.arr);
   nodes->common.len = 0;
@@ -255,8 +255,8 @@ static void resampling2_nodes_deinit(resampling2_t* nodes) {
   nodes->common.arr = NULL;
 }
 
-static bool resampling2_nodes_2d_push_point(resampling2_nodes_2d_allocator_t* nodes, size_t node_index, uint32_t index, float const* xs, float const* ys) {
-  resampling2_nodes_2d_t node = nodes->arr[node_index];
+static bool br_resampling_nodes_2d_push_point(br_resampling_nodes_2d_allocator_t* nodes, size_t node_index, uint32_t index, float const* xs, float const* ys) {
+  br_resampling_nodes_2d_t node = nodes->arr[node_index];
   ++node.base.len;
   if (node.base.len == 1) {
     node.base.index_start = 
@@ -270,15 +270,15 @@ static bool resampling2_nodes_2d_push_point(resampling2_nodes_2d_allocator_t* no
     if (xs[index] < xs[node.base.min_index_x]) node.base.min_index_x = index;
     if (xs[index] > xs[node.base.max_index_x]) node.base.max_index_x = index;
     if (node.base.depth > 0) {
-      if (false == resampling2_nodes_2d_push_point(nodes, node.base.child2, index, xs, ys)) {
+      if (false == br_resampling_nodes_2d_push_point(nodes, node.base.child2, index, xs, ys)) {
         return false;
       }
     }
     bool split = (node_index == 0 && node.base.len == RESAMPLING_NODE_MAX_LEN * powers[node.base.depth]) ||
       (node_index != 0 && node.base.len > RESAMPLING_NODE_MAX_LEN * powers[node.base.depth]);
     if (split) {
-      resampling2_nodes_2d_t left = node;
-      resampling2_nodes_2d_t right = {0};
+      br_resampling_nodes_2d_t left = node;
+      br_resampling_nodes_2d_t right = {0};
       br_da_push(*nodes, left);
       node.base.child1 = nodes->len - 1;
       br_da_push(*nodes, right);
@@ -290,9 +290,9 @@ static bool resampling2_nodes_2d_push_point(resampling2_nodes_2d_allocator_t* no
   return true;
 }
 
-static bool resampling2_nodes_3d_push_point(resampling2_nodes_3d_allocator_t* nodes, size_t node_index, uint32_t index,
+static bool br_resampling_nodes_3d_push_point(br_resampling_nodes_3d_allocator_t* nodes, size_t node_index, uint32_t index,
     float const* xs, float const* ys, float const* zs) {
-  resampling2_nodes_3d_t node = nodes->arr[node_index];
+  br_resampling_nodes_3d_t node = nodes->arr[node_index];
   ++node.base.len;
   if (node.base.len == 1) {
     node.base.index_start = 
@@ -324,15 +324,15 @@ static bool resampling2_nodes_3d_push_point(resampling2_nodes_3d_allocator_t* no
       node.curvature = br_vec3_add(node.curvature, cur);
     }
     if (node.base.depth > 0) {
-      if (false == resampling2_nodes_3d_push_point(nodes, node.base.child2, index, xs, ys, zs)) {
+      if (false == br_resampling_nodes_3d_push_point(nodes, node.base.child2, index, xs, ys, zs)) {
         return false;
       }
     }
     bool split = (node_index == 0 && node.base.len == RESAMPLING_NODE_MAX_LEN * powers[node.base.depth]) ||
       (node_index != 0 && node.base.len > RESAMPLING_NODE_MAX_LEN * powers[node.base.depth]);
     if (split) {
-      resampling2_nodes_3d_t left = node;
-      resampling2_nodes_3d_t right = {0};
+      br_resampling_nodes_3d_t left = node;
+      br_resampling_nodes_3d_t right = {0};
       br_da_push(*nodes, left);
       node.base.child1 = nodes->len - 1;
       br_da_push(*nodes, right);
@@ -349,13 +349,13 @@ static int size_t_cmp(void const* a, void const* b) {
   return (int)(*ap - *bp);
 }
 
-static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_extent_t plot_extent) {
+static void br_resampling_draw22(br_resampling_nodes_2d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_extent_t plot_extent) {
   BR_ASSERT(pg->kind == br_data_kind_2d);
   float const* xs = pg->dd.xs;
   float const* ys = pg->dd.ys;
   br_vec2_t plot_size = plot_extent.size.vec;
-  resampling2_nodes_2d_t node = nodes->arr[index];
-  if (false == resampling2_nodes_2d_is_inside(&node, xs, ys, plot_extent)) {
+  br_resampling_nodes_2d_t node = nodes->arr[index];
+  if (false == br_resampling_nodes_2d_is_inside(&node, xs, ys, plot_extent)) {
     br_line_culler_end(&pg->resampling->culler);
     return;
   }
@@ -365,7 +365,7 @@ static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nod
     br_line_culler_push_line_strip2(&xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1), &pg->resampling->culler, plot_size);
     return;
   }
-  br_vec2_t ratios = resampling2_nodes_2d_get_ratios(&node, xs, ys, plot_extent.width, plot_extent.height);
+  br_vec2_t ratios = br_resampling_nodes_2d_get_ratios(&node, xs, ys, plot_extent.width, plot_extent.height);
   float rmin = fminf(ratios.x, ratios.y);
   if (rmin < (node.base.depth == 1 ? pg->resampling->something : pg->resampling->something2)) {
     size_t indexies[] = {
@@ -384,26 +384,26 @@ static void resampling2_draw22(resampling2_nodes_2d_allocator_t const* const nod
     };
     br_line_culler_push_line_strip(pss, 6, &pg->resampling->culler, plot_size);
   } else {
-    resampling2_draw22(nodes, node.base.child1, pg, plot_extent);
-    resampling2_draw22(nodes, node.base.child2, pg, plot_extent);
+    br_resampling_draw22(nodes, node.base.child1, pg, plot_extent);
+    br_resampling_draw22(nodes, node.base.child2, pg, plot_extent);
   }
 }
 
-static void resampling2_draw32(resampling2_t const* const res, size_t index, br_data_t const* const pg, br_plot_t* const plot) {
+static void br_resampling_draw32(br_resampling_t const* const res, size_t index, br_data_t const* const pg, br_plot_t* const plot) {
   BR_ASSERTF(plot->kind == br_plot_kind_3d, "Kind is %d", plot->kind);
   BR_ASSERTF(pg->kind == br_data_kind_2d, "Kind is %d", pg->kind);
-  //ZoneScopedN("resampling2_3d");
+  //ZoneScopedN("br_resampling_3d");
   float const* xs = pg->dd.xs;
   float const* ys = pg->dd.ys;
-  resampling2_nodes_2d_t node = res->dd.arr[index];
+  br_resampling_nodes_2d_t node = res->dd.arr[index];
   br_mat_t mvp = res->args_3d.mvp;
-  if (false == resampling2_nodes_2d_is_inside_3d(&node, xs, ys, mvp)) return;
+  if (false == br_resampling_nodes_2d_is_inside_3d(&node, xs, ys, mvp)) return;
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
     smol_mesh_3d_gen_line_strip3(res->args_3d, &xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1));
     return;
   }
-  br_vec2_t ratios = resampling2_nodes_2d_get_ratios_3d(&node, xs, ys, mvp);
+  br_vec2_t ratios = br_resampling_nodes_2d_get_ratios_3d(&node, xs, ys, mvp);
   float rmin = fminf(ratios.x, ratios.y);
   if (rmin < (node.base.depth == 1 ? res->something : res->something2 )) {
     size_t indexies[] = {
@@ -422,30 +422,30 @@ static void resampling2_draw32(resampling2_t const* const res, size_t index, br_
     };
     smol_mesh_3d_gen_line_strip2(res->args_3d, pss, 6);
   } else {
-    resampling2_draw32(res, node.base.child1, pg, plot);
-    resampling2_draw32(res, node.base.child2, pg, plot);
+    br_resampling_draw32(res, node.base.child1, pg, plot);
+    br_resampling_draw32(res, node.base.child2, pg, plot);
   }
 }
 
-static void resampling2_draw33(resampling2_t const* const res, size_t index, br_data_t const* const pg, br_plot_t* const plot) {
+static void br_resampling_draw33(br_resampling_t const* const res, size_t index, br_data_t const* const pg, br_plot_t* const plot) {
   BR_ASSERTF(plot->kind == br_plot_kind_3d, "Kind is %d", plot->kind);
   BR_ASSERTF(pg->kind == br_data_kind_3d, "Kind is %d", pg->kind);
-  //ZoneScopedN("resampling2_3d");
+  //ZoneScopedN("br_resampling_3d");
   float const* xs = pg->ddd.xs;
   float const* ys = pg->ddd.ys;
   float const* zs = pg->ddd.zs;
-  resampling2_nodes_3d_t node = res->ddd.arr[index];
+  br_resampling_nodes_3d_t node = res->ddd.arr[index];
   br_mat_t mvp = res->args_3d.mvp;
   br_vec3_t eye = plot->ddd.eye;
   br_vec3_t target = plot->ddd.target;
-  if (false == resampling2_nodes_3d_is_inside(&node, &pg->ddd, mvp)) return;
+  if (false == br_resampling_nodes_3d_is_inside(&node, &pg->ddd, mvp)) return;
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
     size_t st = node.base.index_start;
     smol_mesh_3d_gen_line_strip1(res->args_3d, &xs[st], &ys[st], &zs[st], node.base.len + (is_end ? 0 : 1));
     return;
   }
-  br_vec2_t ratios = resampling2_nodes_3d_get_ratios(&node, &pg->ddd, br_vec3_sub(target, eye));
+  br_vec2_t ratios = br_resampling_nodes_3d_get_ratios(&node, &pg->ddd, br_vec3_sub(target, eye));
   BR_ASSERT(ratios.x > 0);
   BR_ASSERT(ratios.y > 0);
   float rmin = fmaxf(ratios.x, ratios.y);
@@ -469,12 +469,12 @@ static void resampling2_draw33(resampling2_t const* const res, size_t index, br_
       cur = indexies[i];
     }
   } else {
-    resampling2_draw33(res, node.base.child1, pg, plot);
-    resampling2_draw33(res, node.base.child2, pg, plot);
+    br_resampling_draw33(res, node.base.child1, pg, plot);
+    br_resampling_draw33(res, node.base.child2, pg, plot);
   }
 }
 
-void br_resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plot, br_plot_data_t const* pd) {
+void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* plot, br_plot_data_t const* pd) {
   //ZoneScopedN("resampline2_draw0");
 
   double start = brtl_time();
@@ -501,7 +501,7 @@ void br_resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plo
             aspect*plot->dd.zoom.x,
             plot->dd.zoom.y);
 
-          resampling2_draw22(&res->dd, 0, pg, BR_EXTENTD_TOF(plot_rect));
+          br_resampling_draw22(&res->dd, 0, pg, BR_EXTENTD_TOF(plot_rect));
           br_line_culler_end(&res->culler);
           br_shader_line_draw(brtl_shaders()->line);
         } break;
@@ -522,7 +522,7 @@ void br_resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plo
           res->args_3d.line_thickness = 0.03f * pd->thickness_multiplyer;
           res->args_3d.mvp = brtl_shaders()->line_3d_simple->uvs.m_mvp_uv;
 
-          resampling2_draw32(res, 0, pg, plot);
+          br_resampling_draw32(res, 0, pg, plot);
           br_shader_line_3d_draw(brtl_shaders()->line_3d);
         } break;
       }
@@ -550,7 +550,7 @@ void br_resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plo
           res->args_3d.line_thickness = 0.03f * pd->thickness_multiplyer;
           res->args_3d.mvp = brtl_shaders()->line_3d_simple->uvs.m_mvp_uv;
 
-          resampling2_draw33(res, 0, pg, plot); break;
+          br_resampling_draw33(res, 0, pg, plot); break;
           br_shader_line_3d_draw(brtl_shaders()->line_3d);
         }
       }
@@ -562,7 +562,7 @@ void br_resampling2_draw(resampling2_t* res, br_data_t const* pg, br_plot_t* plo
   ++res->draw_count;
 }
 
-void resampling2_change_something(br_datas_t pg) {
+void br_resampling_change_something(br_datas_t pg) {
   uint32_t draw_count = 0;
   for (size_t i = 0; i < pg.len; ++i) draw_count += pg.arr[i].resampling->draw_count;
   if (draw_count == 0) return;
@@ -583,14 +583,14 @@ void resampling2_change_something(br_datas_t pg) {
   }
 }
 
-double br_resampling2_get_draw_time(resampling2_t* res) {
+double br_resampling_get_draw_time(br_resampling_t* res) {
   return res->render_time;
 }
 
-float br_resampling2_get_something(resampling2_t* res) {
+float br_resampling_get_something(br_resampling_t* res) {
   return res->something;
 }
 
-float br_resampling2_get_something2(resampling2_t* res) {
+float br_resampling_get_something2(br_resampling_t* res) {
   return res->something2;
 }

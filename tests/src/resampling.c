@@ -2,7 +2,7 @@
 #define BR_MEMORY_TRACER_IMPLEMENTATION
 #include "src/br_memory.h"
 #include "src/br_test.h"
-#include "src/resampling2.c"
+#include "src/resampling.c"
 #include "tests/src/mock_tl.c"
 #include "tests/src/mock_smol_mesh.c"
 
@@ -16,11 +16,11 @@ void resampling(void) {
   pg.dd.xs = xs;
   pg.dd.ys = ys;
   pg.resampling = NULL;
-  resampling2_t* r = resampling2_malloc(br_data_kind_2d);
-  for (int i = 0; i < 2*1024; ++i) resampling2_add_point(r, &pg, 3);
-  resampling2_add_point(r, &pg, 3);
-  for (int i = 0; i < 64*1024; ++i) resampling2_add_point(r, &pg, 3);
-  resampling2_free(r);
+  br_resampling_t* r = br_resampling_malloc(br_data_kind_2d);
+  for (int i = 0; i < 2*1024; ++i) br_resampling_add_point(r, &pg, 3);
+  br_resampling_add_point(r, &pg, 3);
+  for (int i = 0; i < 64*1024; ++i) br_resampling_add_point(r, &pg, 3);
+  br_resampling_free(r);
 }
 
 #define N 2048
@@ -38,10 +38,10 @@ void resampling2(void) {
   pg.dd.xs = xs;
   pg.dd.ys = ys;
   pg.resampling = NULL;
-  resampling2_t* r = resampling2_malloc(br_data_kind_2d);
-  for (int i = 0; i < N; ++i) resampling2_add_point(r, &pg, (uint32_t)i);
-  resampling2_add_point(r, &pg, 3);
-  resampling2_free(r);
+  br_resampling_t* r = br_resampling_malloc(br_data_kind_2d);
+  for (int i = 0; i < N; ++i) br_resampling_add_point(r, &pg, (uint32_t)i);
+  br_resampling_add_point(r, &pg, 3);
+  br_resampling_free(r);
 }
 
 int main(void) {

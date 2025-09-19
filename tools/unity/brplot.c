@@ -19,7 +19,7 @@
 #include "src/main.c"
 #include "src/gl.c"
 #include "src/text_renderer.c"
-#include "src/resampling2.c"
+#include "src/resampling.c"
 #include "src/theme.c"
 #include "src/ui.c"
 #include "src/threads.c"

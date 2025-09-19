@@ -12,7 +12,7 @@
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
 #include "src/br_pp.h"
-#include "src/br_resampling2.h"
+#include "src/br_resampling.h"
 #include "src/br_shaders.h"
 #include "src/br_smol_mesh.h"
 #include "src/br_str.h"
@@ -937,7 +937,7 @@ static void draw_left_panel(br_plotter_t* br) {
           br_strv_t name = brsp_get(*brtl_brsp(), data.name);
           brui_text_input(data.name);
           brui_textf("%.*s (%d) (%zu points)", name.len, name.str, data.group_id, data.len);
-          brui_textf("%.2fms (%.3f %.3f)", br_resampling2_get_draw_time(data.resampling)*1000.0f, br_resampling2_get_something(data.resampling), br_resampling2_get_something2(data.resampling));
+          brui_textf("%.2fms (%.3f %.3f)", br_resampling_get_draw_time(data.resampling)*1000.0f, br_resampling_get_something(data.resampling), br_resampling_get_something2(data.resampling));
           brui_textf("name id: %d", data.name);
           switch (data.kind) {
             case br_data_kind_2d: {

@@ -119,7 +119,7 @@ const char* sources[] = {
  "src/q.c",
  "src/read_input.c",
  "src/keybindings.c",
- "src/resampling2.c",
+ "src/resampling.c",
  "src/graph_utils.c",
  "src/shaders.c",
  "src/plotter.c",

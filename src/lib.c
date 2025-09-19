@@ -3,7 +3,7 @@
 #include "src/br_data.h"
 #include "src/br_plotter.h"
 #include "src/br_gui.h"
-#include "src/br_resampling2.h"
+#include "src/br_resampling.h"
 #include "src/br_threads.h"
 #include "src/br_q.h"
 #include "src/br_tl.h"
@@ -48,7 +48,7 @@ static int br_ctors_len = 0;
 br_plotter_ctor_t* br_plotter_default_ctor(void) {
   // TODO: Only run this once...
   br_data_construct();
-  br_resampling2_construct();
+  br_resampling_construct();
   int id = br_ctors_len;
   br_ctors[id].plotter = (br_plotter_ctor_t) {
     .version = BR_VERSION,

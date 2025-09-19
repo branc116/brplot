@@ -1,5 +1,5 @@
 #include "src/br_data.h"
-#include "src/br_resampling2.h"
+#include "src/br_resampling.h"
 #include "quick_benchmark.h"
 
 #include "stdio.h"
@@ -123,7 +123,7 @@
 //  BR_FREE(data_sin);
 //}
 
-br_data_t bench_get_data(resampling2_t* r, size_t n) {
+br_data_t bench_get_data(br_resampling_t* r, size_t n) {
   float* xs = malloc(n * sizeof(float)), *ys = malloc(n * sizeof(float)), *zs = malloc(n * sizeof(float));
   for (size_t i = 0; i < n; ++i) {
     xs[i] = (float)rand() / (float)RAND_MAX;
@@ -154,14 +154,14 @@ void bench_free_data(br_data_t* data) {
 #define N 1024
 void bench_inset_n(br_data_t* data) {
   srand(42069);
-  resampling2_reset(data->resampling);
+  br_resampling_reset(data->resampling);
   for (uint32_t i = 0; i < data->len; ++i) {
-    resampling2_add_point(data->resampling, data, i);
+    br_resampling_add_point(data->resampling, data, i);
   }
 }
 
 void bench_resampling_insert(FILE* file) {
-  resampling2_t* r = resampling2_malloc(br_data_kind_3d);
+  br_resampling_t* r = br_resampling_malloc(br_data_kind_3d);
   br_data_t data;
   //fprintf(file, "nodes, #balanc, goodnes, depth, max_bad, max_els, min_els\n");
   QB_BENCH_BEGIN(stdout, 1, 50);
@@ -184,8 +184,8 @@ void bench_resampling_insert(FILE* file) {
     QB_BENCH_ADD(bench_inset_n, &data);
     bench_free_data(&data);
   QB_BENCH_END();
-  resampling2_reset(r);
-  resampling2_free(r);
+  br_resampling_reset(r);
+  br_resampling_free(r);
 }
 
 typedef void (*bench)(FILE*);

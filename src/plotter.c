@@ -3,7 +3,7 @@
 #include "src/br_plotter.h"
 #include "src/br_gui.h"
 #include "src/br_da.h"
-#include "src/br_resampling2.h"
+#include "src/br_resampling.h"
 #include "src/br_q.h"
 #include "src/br_permastate.h"
 #include "src/br_text_renderer.h"
@@ -25,7 +25,7 @@ static bool br_plot_update_variables_2d(br_plot_t* plot, br_datas_t const groups
 static bool br_plot_update_variables_3d(br_plot_t* plot, br_datas_t const groups, br_vec2_t mouse_pos);
 
 br_plotter_t* br_plotter_malloc(void) {
-  br_resampling2_construct();
+  br_resampling_construct();
   br_data_construct();
   br_plotter_t* br = BR_MALLOC(sizeof(br_plotter_t));
   *br = (br_plotter_t){

@@ -4,7 +4,7 @@
 #include "src/br_gui.h"
 #include "src/br_math.h"
 #include "src/br_plot.h"
-#include "src/br_resampling2.h"
+#include "src/br_resampling.h"
 #include "src/br_tl.h"
 #include "src/br_ui.h"
 #include "src/br_memory.h"
@@ -111,7 +111,7 @@ static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas) {
     br_data_t const* g = br_data_get1(datas, di.group_id);
     if (g->len == 0) continue;
     g->resampling->culler.args.screen_size = BR_VEC2I_TOD(plot->cur_extent.size.vec);
-    br_resampling2_draw(g->resampling, g, plot, &di);
+    br_resampling_draw(g->resampling, g, plot, &di);
   }
 }
 
@@ -122,7 +122,7 @@ static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas) {
     if (false == BR_PLOT_DATA_IS_VISIBLE(di)) continue;
     br_data_t const* g = br_data_get1(datas, di.group_id);
     if (g->len == 0) continue;
-    br_resampling2_draw(g->resampling, g, plot, &di);
+    br_resampling_draw(g->resampling, g, plot, &di);
   }
   TracyCFrameMarkEnd("br_datas_draw_3d");
 }

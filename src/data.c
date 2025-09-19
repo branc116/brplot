@@ -4,7 +4,7 @@
 #include "src/br_gui.h"
 #include "src/br_plot.h"
 #include "src/br_pp.h"
-#include "src/br_resampling2.h"
+#include "src/br_resampling.h"
 #include "src/br_str.h"
 #include "src/br_math.h"
 #include "src/br_string_pool.h"
@@ -62,7 +62,7 @@ br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind
 
   cap = cap < DEF_CAP ? DEF_CAP : cap;
   br_data_t d = {
-    .resampling = resampling2_malloc(kind),
+    .resampling = br_resampling_malloc(kind),
     .cap = cap, .len = 0, .kind = kind,
     .group_id = group_id,
     .color = color,
@@ -156,7 +156,7 @@ br_vec3d_t br_data_el_xyz1(br_data_t data, int index) {
 
 void br_data_empty(br_data_t* pg) {
   pg->len = 0;
-  resampling2_empty(pg->resampling);
+  br_resampling_empty(pg->resampling);
 }
 
 static int br_data_compare(const void* data1, const void* data2) {
@@ -234,7 +234,7 @@ void br_data_deinit(br_data_t* g) {
   BR_FREE(g->dd.xs); g->dd.xs = NULL;
   BR_FREE(g->dd.ys); g->dd.ys = NULL;
   if (br_data_kind_3d == g->kind) BR_FREE(g->ddd.zs), g->ddd.zs = NULL;
-  resampling2_free(g->resampling);
+  br_resampling_free(g->resampling);
   brsp_remove(brtl_brsp(), g->name);
   g->len = g->cap = 0;
 }
@@ -331,7 +331,7 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot) {
       br_plot_data_t di = plot->data_info.arr[j];
       br_data_t const* g = br_data_get1(pg, di.group_id);
       if (g->len == 0) continue;
-      br_resampling2_draw(g->resampling, g, plot, &di);
+      br_resampling_draw(g->resampling, g, plot, &di);
     }
     TracyCFrameMarkEnd("br_datas_draw_2d");
   } else {
@@ -340,18 +340,18 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot) {
       br_plot_data_t di = plot->data_info.arr[j];
       br_data_t const* g = br_data_get1(pg, di.group_id);
       if (g->len == 0) continue;
-      br_resampling2_draw(g->resampling, g, plot, &di);
+      br_resampling_draw(g->resampling, g, plot, &di);
     }
     TracyCFrameMarkEnd("br_datas_draw_3d");
   }
-  resampling2_change_something(pg);
+  br_resampling_change_something(pg);
 }
 
 static br_data_t* br_data_init(br_data_t* g, int group_id, br_data_kind_t kind) {
   BR_ASSERT(kind == br_data_kind_2d || kind == br_data_kind_3d);
 
   *g = (br_data_t) {
-    .resampling = resampling2_malloc(kind),
+    .resampling = br_resampling_malloc(kind),
     .cap = DEF_CAP, .len = 0, .kind = kind,
     .group_id = group_id,
     .color = br_data_get_default_color(group_id),
@@ -481,7 +481,7 @@ static void br_data_push_point2(br_data_t* g, br_vec2_t v) {
   else             g->dd.bounding_box = br_bb_expand_with_point(g->dd.bounding_box, v);
   g->dd.xs[g->len] = v.x;
   g->dd.ys[g->len] = v.y;
-  resampling2_add_point(g->resampling, g, (uint32_t)g->len);
+  br_resampling_add_point(g->resampling, g, (uint32_t)g->len);
   ++g->len;
 }
 
@@ -492,7 +492,7 @@ static void br_data_push_point3(br_data_t* g, br_vec3_t v) {
   g->ddd.xs[g->len] = v.x;
   g->ddd.ys[g->len] = v.y;
   g->ddd.zs[g->len] = v.z;
-  resampling2_add_point(g->resampling, g, (uint32_t)g->len);
+  br_resampling_add_point(g->resampling, g, (uint32_t)g->len);
   ++g->len;
 }
 

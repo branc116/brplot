@@ -16,7 +16,7 @@
 
 #include "src/data_generator.c"
 #include "src/data.c"
-#include "src/resampling2.c"
+#include "src/resampling.c"
 #include "tests/src/mock_tl.c"
 #include "tests/src/mock_smol_mesh.c"
 #include "tests/src/mock_gl.c"

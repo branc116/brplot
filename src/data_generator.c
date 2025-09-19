@@ -4,7 +4,7 @@
 #include "src/br_permastate.h"
 #include "src/br_plot.h"
 #include "src/br_pp.h"
-#include "src/br_resampling2.h"
+#include "src/br_resampling.h"
 #include "src/br_str.h"
 #include "src/br_tl.h"
 #include "src/br_memory.h"
@@ -364,7 +364,7 @@ static void br_dagen_handle(br_dagen_t* dagen, br_data_t* data, br_datas_t datas
       if ((data->kind == br_data_kind_2d && d == data->dd.ys) || (data->kind == br_data_kind_3d && d == data->ddd.zs)) {
         data->len += read_n;
         for (size_t i = data->len - read_n; i < data->len; ++i) {
-          resampling2_add_point(data->resampling, data, (uint32_t)i);
+          br_resampling_add_point(data->resampling, data, (uint32_t)i);
         }
         if (*left == 0) {
           dagen->state = br_dagen_state_finished;
@@ -408,7 +408,7 @@ error:
           expr_read_n(datas, arena, dagen->expr_2d.y_expr_index, read_index, read_per_batch, out_ys);
           for (size_t i = 0; i < read_per_batch; ++i) {
             ++data->len;
-            resampling2_add_point(data->resampling, data, (uint32_t)(read_index + i));
+            br_resampling_add_point(data->resampling, data, (uint32_t)(read_index + i));
           }
         } break;
         default: BR_UNREACHABLE("Unsupported data kind: %d", data->kind);

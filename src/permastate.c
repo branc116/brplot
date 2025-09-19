@@ -3,7 +3,7 @@
 #include "src/br_str.h"
 #include "src/br_plot.h"
 #include "src/br_filesystem.h"
-#include "src/br_resampling2.h"
+#include "src/br_resampling.h"
 #include "src/br_permastate.h"
 #include "src/br_data.h"
 #include "src/br_data_generator.h"

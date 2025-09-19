@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-typedef struct resampling2_t resampling2_t;
+typedef struct br_resampling_t br_resampling_t;
 typedef struct br_plot_t br_plot_t;
 typedef struct br_plots_t br_plots_t;
 typedef struct br_dagens_t br_dagens_t;
@@ -50,7 +50,7 @@ typedef struct br_data_3d_t {
 } br_data_3d_t;
 
 typedef struct br_data_t {
-  resampling2_t* resampling;
+  br_resampling_t* resampling;
   size_t cap, len;
   br_data_kind_t kind;
   int group_id;
