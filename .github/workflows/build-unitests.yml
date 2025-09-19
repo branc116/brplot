@@ -85,7 +85,7 @@ jobs:
 
       - run: |
           ./nob amalgam
-          clang -fPIC -shared -DBRPLOT_IMPLEMENTATION .generated/brplot.c -o libbrplot.dll
+          clang -shared -DBRPLOT_IMPLEMENTATION .generated/brplot.c -o libbrplot.dll
           clang -I.generated tests/hello_world.c -L. -lbrplot
           clang -I.generated tests/animations.c -L. -lbrplot
 
