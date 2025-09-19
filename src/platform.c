@@ -271,6 +271,7 @@ static void br_glfw_on_mouse_button(struct GLFWwindow* window, int button, int a
 
 static void br_glfw_on_key(struct GLFWwindow* window, int key, int scancode, int action, int mods) {
   (void)window; (void) mods;
+  LOGI("key: %d, scancode: %d, action: %d, mods: %d", key, scancode, action, mods);
   if (key == GLFW_KEY_LEFT_ALT) return;
   if (key == GLFW_KEY_LEFT_ALT) {
     if (action == GLFW_PRESS) {
@@ -312,6 +313,7 @@ static void br_glfw_on_key(struct GLFWwindow* window, int key, int scancode, int
 
 void br_glfw_on_char(GLFWwindow* window, uint32_t codepoint) {
   (void)window;
+  LOGI("Char: %d", codepoint);
   brtl_pressed_char_t c = { .key = codepoint, .is_special = false };
   br_da_push(stl_br->pressed_chars, c);
 }
@@ -476,11 +478,6 @@ brsp_t* brtl_brsp(void) {
 bruirs_t* brtl_bruirs(void) {
   return &stl_br->resizables;
 }
-
-bruir_children_t brtl_bruirs_childern(int handle) {
-  return brui_resizable_children_temp(handle);
-}
-
 
 bool* brtl_debug(void) {
   return &stl_br->ui.theme.ui.debug;

@@ -4,7 +4,7 @@
 #include "src/br_test.h"
 #include "src/resampling.c"
 #include "tests/src/mock_tl.c"
-#include "tests/src/mock_smol_mesh.c"
+#include "tests/src/mock_mesh.c"
 
 void resampling(void) {
   float xs[] = { 0, 1, 2, 3 };

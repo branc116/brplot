@@ -14,7 +14,7 @@
 #include "src/br_pp.h"
 #include "src/br_resampling.h"
 #include "src/br_shaders.h"
-#include "src/br_smol_mesh.h"
+#include "src/br_mesh.h"
 #include "src/br_str.h"
 #include "src/br_string_pool.h"
 #include "src/br_theme.h"

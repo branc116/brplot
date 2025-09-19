@@ -1,4 +1,4 @@
-#include "src/br_smol_mesh.h"
+#include "src/br_mesh.h"
 
 void br_mesh_gen_point(br_mesh_line_t args, br_vec2_t point);
 void br_mesh_gen_point1(br_mesh_line_t args, br_vec2_t point, br_vec2_t size);

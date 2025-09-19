@@ -1,6 +1,6 @@
 #pragma once
 #include "src/br_data.h"
-#include "src/br_smol_mesh.h"
+#include "src/br_mesh.h"
 
 #include <stdint.h>
 
