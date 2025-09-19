@@ -34,9 +34,6 @@ jobs:
           clang -I.generated tests/hello_world.c -lm -L. -lbrplot
           clang -I.generated tests/animations.c -lm -L. -lbrplot
 
-      - run: |
-          ./nob amalgam
-
   linux:
     runs-on: ${{matrix.os}}
     strategy:
@@ -85,7 +82,7 @@ jobs:
 
       - run: |
           ./nob amalgam
-          clang -shared -DBRPLOT_IMPLEMENTATION .generated/brplot.c -o libbrplot.dll
+          clang -DBRPLOT_IMPLEMENTATION .generated/brplot.c -o brplot.lib -c
           clang -I.generated tests/hello_world.c -L. -lbrplot
           clang -I.generated tests/animations.c -L. -lbrplot
 
