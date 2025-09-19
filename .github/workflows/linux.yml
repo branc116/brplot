@@ -41,12 +41,7 @@ jobs:
         make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE -B
 
     - run: |
-        make -j8 PLATFORM=WINDOWS CONFIG=RELEASE 
         make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE 
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE COMPILER=GCC LTO=YES
-        make -j8 PLATFORM=LINUX CONFIG=DEBUG COMPILER=GCC
-        make -j8 PLATFORM=LINUX CONFIG=RELEASE COMPILER=CLANG LTO=YES
-        make -j8 PLATFORM=LINUX CONFIG=DEBUG COMPILER=CLANG
 
     - run: |
         test -f www/index.wasm && ls -alFh www

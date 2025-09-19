@@ -279,6 +279,7 @@ int main(void) {
   string_pool_copy();
   string_pool_compress();
 }
-void br_on_fatal_error(void) {}
 #endif
+void br_on_fatal_error(void) {}
+
 // clang -fsanitize=address -ggdb -I. tests/src/string_pool.c -o bin/string_pool_tests && bin/string_pool_tests
