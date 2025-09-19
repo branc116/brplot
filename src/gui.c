@@ -54,7 +54,7 @@ void br_plotter_draw(br_plotter_t* br) {
         brgl_enable_framebuffer(PLOT->texture_id, PLOT->cur_extent.width, PLOT->cur_extent.height);
         brgl_clear(BR_COLOR_COMPF(BR_THEME.colors.plot_bg));
         if (PLOT->kind == br_plot_kind_2d) {
-          smol_mesh_grid_draw(PLOT, &br->shaders);
+          br_smol_mesh_grid_draw(PLOT, &br->shaders);
           br_shaders_draw_all(br->shaders); // TODO: This should be called whenever a other shader are being drawn.
           br_datas_draw(br->groups, PLOT);
           br_shaders_draw_all(br->shaders);
@@ -62,7 +62,7 @@ void br_plotter_draw(br_plotter_t* br) {
         } else if (PLOT->kind == br_plot_kind_3d) {
           br_datas_draw(br->groups, PLOT);
           br_shaders_draw_all(br->shaders);
-          smol_mesh_grid_draw(PLOT, &br->shaders);
+          br_smol_mesh_grid_draw(PLOT, &br->shaders);
           br_shaders_draw_all(br->shaders);
           draw_grid_numbers(br->text, PLOT);
         }
@@ -1088,7 +1088,7 @@ void br_plot_screenshot(br_text_renderer_t* tr, br_plot_t* plot, br_shaders_t* s
 //  br_plot_update_context(plot, brtl_mouse_get_pos());
 //  br_plot_update_shader_values(plot, shaders);
 //  BeginTextureMode(target);
-//    smol_mesh_grid_draw(plot, shaders);
+//    br_smol_mesh_grid_draw(plot, shaders);
 //    br_datas_draw(groups, plot, shaders);
 //    draw_grid_numbers(tr, plot);
 //  EndTextureMode();

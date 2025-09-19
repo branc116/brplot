@@ -36,7 +36,7 @@ static void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_vec2
     return;
   }
 
-  smol_mesh_gen_line(&lc->args, lc->old, p);
+  br_smol_mesh_gen_line(&lc->args, lc->old, p);
   lc->mid = lc->old = p;
 }
 
@@ -48,7 +48,7 @@ void br_line_culler_push_line_strip(br_vec2_t const* points, size_t n, br_line_c
 
 void br_line_culler_end(br_line_culler_t* lc) {
   if (false == br_vec2_eq(lc->old, lc->mid)) {
-    smol_mesh_gen_line(&lc->args, lc->old, lc->mid);
+    br_smol_mesh_gen_line(&lc->args, lc->old, lc->mid);
   }
   lc->has_old = false;
   lc->args.prev[0] = (br_vec2_t){ 0 };
@@ -151,22 +151,22 @@ void br_resampling_debug_3d(br_resampling_t const* r, br_resampling_nodes_3d_t c
     maxy = br_data_3d_get_v3(data, res->base.max_index_y),
     maxz = br_data_3d_get_v3(data, res->max_index_z);
 
-  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(maxx.x, miny.y, minz.z));
-  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(minx.x, maxy.y, minz.z));
-  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(minx.x, miny.y, maxz.z));
+  br_smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(maxx.x, miny.y, minz.z));
+  br_smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(minx.x, maxy.y, minz.z));
+  br_smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(minx.x, miny.y, maxz.z));
 
-  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(minx.x, maxy.y, minz.z));
-  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(maxx.x, miny.y, minz.z));
-  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
+  br_smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(minx.x, maxy.y, minz.z));
+  br_smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(maxx.x, miny.y, minz.z));
+  br_smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
 
 
-  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
-  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(minx.x, miny.y, maxz.z));
-  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(minx.x, maxy.y, minz.z));
+  br_smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
+  br_smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(minx.x, miny.y, maxz.z));
+  br_smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(minx.x, maxy.y, minz.z));
 
-  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(minx.x, miny.y, maxz.z));
-  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
-  smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(maxx.x, miny.y, minz.z));
+  br_smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(minx.x, miny.y, maxz.z));
+  br_smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
+  br_smol_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(maxx.x, miny.y, minz.z));
 }
 
 static br_vec2_t br_resampling_nodes_3d_get_ratios(br_resampling_nodes_3d_t const* res, br_data_3d_t const* data, br_vec3_t look_dir) {
@@ -400,7 +400,7 @@ static void br_resampling_draw32(br_resampling_t const* const res, size_t index,
   if (false == br_resampling_nodes_2d_is_inside_3d(&node, xs, ys, mvp)) return;
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
-    smol_mesh_3d_gen_line_strip3(res->args_3d, &xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1));
+    br_smol_mesh_3d_gen_line_strip3(res->args_3d, &xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1));
     return;
   }
   br_vec2_t ratios = br_resampling_nodes_2d_get_ratios_3d(&node, xs, ys, mvp);
@@ -420,7 +420,7 @@ static void br_resampling_draw32(br_resampling_t const* const res, size_t index,
       BR_VEC2(xs[indexies[2]], ys[indexies[2]]), BR_VEC2(xs[indexies[3]], ys[indexies[3]]),
       BR_VEC2(xs[indexies[4]], ys[indexies[4]]), BR_VEC2(xs[indexies[5]], ys[indexies[5]]),
     };
-    smol_mesh_3d_gen_line_strip2(res->args_3d, pss, 6);
+    br_smol_mesh_3d_gen_line_strip2(res->args_3d, pss, 6);
   } else {
     br_resampling_draw32(res, node.base.child1, pg, plot);
     br_resampling_draw32(res, node.base.child2, pg, plot);
@@ -442,7 +442,7 @@ static void br_resampling_draw33(br_resampling_t const* const res, size_t index,
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
     size_t st = node.base.index_start;
-    smol_mesh_3d_gen_line_strip1(res->args_3d, &xs[st], &ys[st], &zs[st], node.base.len + (is_end ? 0 : 1));
+    br_smol_mesh_3d_gen_line_strip1(res->args_3d, &xs[st], &ys[st], &zs[st], node.base.len + (is_end ? 0 : 1));
     return;
   }
   br_vec2_t ratios = br_resampling_nodes_3d_get_ratios(&node, &pg->ddd, br_vec3_sub(target, eye));
@@ -465,7 +465,7 @@ static void br_resampling_draw33(br_resampling_t const* const res, size_t index,
     size_t cur = indexies[0];
     for (size_t i = 1; i < 8; ++i) {
       if (cur == indexies[i]) continue;
-      smol_mesh_3d_gen_line(res->args_3d, BR_VEC3(xs[cur], ys[cur], zs[cur]),  BR_VEC3(xs[indexies[i]], ys[indexies[i]], zs[indexies[i]]));
+      br_smol_mesh_3d_gen_line(res->args_3d, BR_VEC3(xs[cur], ys[cur], zs[cur]),  BR_VEC3(xs[indexies[i]], ys[indexies[i]], zs[indexies[i]]));
       cur = indexies[i];
     }
   } else {
