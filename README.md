@@ -463,6 +463,9 @@ sudo rm /usr/bin/brplot
     * For that we need multithreaded queue implmenetation
 * ~~Remove dependency on assert.h~~
 * Make collapasables animated.
+* Fork a process child continues, parent execvc it's self into gdb that attaches onto a child.
+* Make event history array and print it like you do with memory so that you can debug events.
+* 3d plot wasd is broken because of something to do with rebasing
 
 ## Screenshots
 Here is a history of how brplot looked over time:

@@ -66,6 +66,9 @@
 } while (0)
 
 #define brfl_foreach(INDEX, FL) for (int INDEX = brfl_next_taken((FL).free_arr, (FL).len, -1); INDEX < (FL).len; INDEX = brfl_next_taken((FL).free_arr, (FL).len, INDEX))
+#define brfl_foreachv(VALUE, FL) for (int _i = brfl_next_taken((FL).free_arr, (FL).len, -1); \
+    (_i < (FL).len ? (VALUE = (FL).arr[_i], _i < (FL).len) : false); \
+    _i = brfl_next_taken((FL).free_arr, (FL).len, _i))
 #define brfl_foreach_free(INDEX, FL) for (int INDEX = (FL).free_next, n = 0; n < (FL).len && INDEX > -1 && INDEX < (FL).len; ++n, INDEX = (FL).free_arr[INDEX])
 
 #define brfl_write(FILE, FL, ERROR) do {                                                                              \

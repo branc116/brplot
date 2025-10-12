@@ -15,20 +15,21 @@
 
 static BR_THREAD_LOCAL int br_read_input_pipes[2];
 static BR_THREAD_LOCAL pthread_t br_read_input_thread;
-static void* indirection_function(void* gv);
+static void* br_indirection_function(void* gv);
+static void br_read_input_main_worker(br_plotter_t* br, void* read_state);
 
-void read_input_start(br_plotter_t* br) {
+void br_read_input_start(br_plotter_t* br) {
   static BR_THREAD_LOCAL struct { br_plotter_t* br; int* pipes; } data;
   data.br = br;
   data.pipes = br_read_input_pipes;
   pthread_attr_t attrs1;
   pthread_attr_init(&attrs1);
-  if (pthread_create(&br_read_input_thread, &attrs1, indirection_function, &data)) {
+  if (pthread_create(&br_read_input_thread, &attrs1, br_indirection_function, &data)) {
     LOGE("ERROR while creating thread %d:`%s`", errno, strerror(errno));
   }
 }
 
-void read_input_stop(void) {
+void br_read_input_stop(void) {
   write(br_read_input_pipes[1], "", 0);
   close(br_read_input_pipes[1]);
   close(STDIN_FILENO);
@@ -40,7 +41,7 @@ void read_input_stop(void) {
   }
 }
 
-int read_input_read_next(void* state) {
+static int br_read_input_read_next(void* state) {
   int* pipes = state;
 
   struct pollfd fds[] = { { .fd = STDIN_FILENO, .events = POLLIN | POLLHUP | 32 }, { .fd = pipes[0], .events = POLLIN | POLLHUP | 32} };
@@ -74,10 +75,10 @@ int read_input_read_next(void* state) {
   } while(true);
 }
 
-static void* indirection_function(void* gv) {
+static void* br_indirection_function(void* gv) {
   struct { br_plotter_t* br; int* pipes; }* data = gv;
   pipe(data->pipes);
-  read_input_main_worker(data->br, data->pipes);
+  br_read_input_main_worker(data->br, data->pipes);
   return NULL;
 }
 
@@ -91,29 +92,29 @@ static void* indirection_function(void* gv) {
 typedef struct br_plotter_t br_plotter_t;
 static BR_THREAD_LOCAL void* thandle;
 
-DWORD WINAPI read_input_indirect(LPVOID lpThreadParameter) {
-  read_input_main_worker((br_plotter_t*)lpThreadParameter, NULL);
+DWORD WINAPI br_read_input_indirect(LPVOID lpThreadParameter) {
+  br_read_input_main_worker((br_plotter_t*)lpThreadParameter, NULL);
   return 0;
 }
 
-int read_input_read_next(void* null) {
+static int br_read_input_read_next(void* null) {
   (void)null;
   return getchar();
 }
 
-void read_input_start(br_plotter_t* gv) {
-  thandle = CreateThread(NULL, 0, read_input_indirect, gv, 0, NULL);
+void br_read_input_start(br_plotter_t* gv) {
+  thandle = CreateThread(NULL, 0, br_read_input_indirect, gv, 0, NULL);
 }
 
-void read_input_stop(void) {
+void br_read_input_stop(void) {
   TerminateThread(thandle, 69);
 }
 
 #elif defined(__EMSCRIPTEN__)
-void read_input_start(br_plotter_t* br) { (void)br; }
-void read_input(void) { }
-void read_input_stop(void) { }
-int read_input_read_next(void* null) { (void)null; return -1; }
+void br_read_input_start(br_plotter_t* br) { (void)br; }
+void br_read_input(void) { }
+void br_read_input_stop(void) { }
+static int br_read_input_read_next(void* null) { (void)null; return -1; }
 #else
 #  error "Unsupported platform"
 #endif
@@ -523,7 +524,6 @@ static extractor_res_state_t extractor_extract(br_strv_t ex, br_strv_t view, flo
 }
 
 static void input_reduce_command(br_plotter_t* gv, lex_state_t* s) {
-  (void)gv;
   if (0 == strcmp("zoomx", s->tokens[1].name)) {
     q_push(gv->commands, (q_command) { .type = q_command_set_zoom_x, .value = s->tokens[2].value_d});
   } else if (0 == strcmp("focus", s->tokens[1].name)) {
@@ -860,7 +860,7 @@ static void lex(br_plotter_t* br, void* read_state) {
   lex_state_init(&s);
   while (true) {
     if (s.read_next) {
-      s.c = read_input_read_next(read_state);
+      s.c = br_read_input_read_next(read_state);
       if (s.c == -1) {
         input_tokens_reduce(br, &s, true);
         LOGI("Exiting read_input thread");
@@ -880,6 +880,6 @@ static void lex(br_plotter_t* br, void* read_state) {
   q_push(br->commands, (q_command) { .type = q_command_focus });
 }
 
-void read_input_main_worker(br_plotter_t* br, void* read_state) {
+static void br_read_input_main_worker(br_plotter_t* br, void* read_state) {
   lex(br, read_state);
 }

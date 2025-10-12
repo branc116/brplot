@@ -5,70 +5,155 @@
 
 #include <stdio.h>
 
-#define FUNCTIONS \
-"void glActiveTexture(GLenum texture)" \
-"void glAttachShader(GLuint program, GLuint shader)" \
-"void glBindBuffer(GLenum target, GLuint buffer)" \
-"void glBindFramebuffer(GLenum target, GLuint framebuffer)" \
-"void glBindRenderbuffer(GLenum target, GLuint renderbuffer)" \
-"void glBindTexture(GLenum target, GLuint texture)" \
-"void glBindVertexArray(GLuint array)" \
-"void glBlendEquation(GLenum mode)" \
-"void glBlendFunc(GLenum sfactor, GLenum dfactor)" \
-"void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)" \
-"void glBufferData(GLenum target, GLsizeiptr size, void const* data, GLenum usage)" \
-"void glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, void const* data)" \
-"void glClear(GLbitfield en)" \
-"void glClearColor(GLfloat r, GLfloat g, GLfloat b, GLfloat a)" \
-"void glCompileShader(GLuint shader)" \
-"GLuint glCreateProgram(void)" \
-"GLuint glCreateShader(GLenum type)" \
-"void glDebugMessageCallback(glDebugProc callback, const void* userParam)" \
-"void glDeleteBuffers(GLsizei n, GLuint const* buffers)" \
-"void glDeleteFramebuffers(GLsizei n, GLuint* framebuffers)" \
-"void glDeleteProgram(GLuint program)" \
-"void glDeleteRenderbuffers(GLsizei n, GLuint* renderbuffers)" \
-"void glDeleteShader(GLuint shader)" \
-"void glDeleteTextures(GLsizei n, const GLuint* textures)" \
-"void glDeleteVertexArrays(GLsizei n, GLuint const* arrays)" \
-"void glDepthFunc(GLenum func)" \
-"void glDisable(GLenum cap)" \
-"void glDrawArrays(GLenum mode, GLint first, GLsizei count)" \
-"void glDrawBuffers(GLsizei n, GLenum const* bufs)" \
-"void glEnable(GLenum cap)" \
-"void glEnableVertexAttribArray(GLuint index)" \
-"void glFramebufferParameteri(GLenum target, GLenum pname, GLint param)" \
-"void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer)" \
-"void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level)" \
-"void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)" \
-"void glGenBuffers(GLsizei n, GLuint* buffers)" \
-"void glGenFramebuffers(GLsizei n, GLuint* framebuffers)" \
-"void glGenRenderbuffers(GLsizei n, GLuint* renderbuffers)" \
-"void glGenTextures(GLsizei n, GLuint* textures)" \
-"void glGenVertexArrays(GLsizei n, GLuint* arrays)" \
-"GLint glGetAttribLocation(GLuint program, GLchar const* name)" \
-"GLenum glGetError(void)" \
-"void glGetProgramInfoLog(GLuint program, GLsizei bufSize, GLsizei* length, GLchar* infoLog)" \
-"void glGetProgramiv(GLuint program, GLenum pname, GLint* params)" \
-"void glGetShaderInfoLog(GLuint shader, GLsizei bufSize, GLsizei* length, GLchar* infoLog)" \
-"void glGetShaderiv(GLuint shader, GLenum pname, GLint* params)" \
-"GLint glGetUniformLocation(GLuint program, GLchar const* name)" \
-"void glLinkProgram(GLuint program)" \
-"void glPixelStorei(GLenum pname, GLint param)" \
-"void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height)" \
-"void glShaderSource(GLuint shader, GLsizei count, const GLchar* const* string, const GLint* length)" \
-"void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* pixels)" \
-"void glTexParameteri(GLenum target, GLenum pname, GLint param)" \
-"void glTexParameteriv(GLenum target, GLenum pname, const GLint* params)" \
-"void glUniform1fv(GLint location, GLsizei count, GLfloat const* value)" \
-"void glUniform1i(GLint location, GLint v0)" \
-"void glUniform2fv(GLint location, GLsizei count, GLfloat const* value)" \
-"void glUniform3fv(GLint location, GLsizei count, GLfloat const* value)" \
-"void glUniform4fv(GLint location, GLsizei count, GLfloat const* value)" \
-"void glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, GLfloat const* value)" \
-"void glUseProgram(GLuint program)" \
-"void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* pointer)" \
-"void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)" \
+struct {
+  const char* name;
+  const char* name_upper;
+  const char* load_func;
+  const char* functions;
+} modules[] = {
+  {
+    .name = "gl",
+    .name_upper = "GL",
+	  .load_func = "brpl_load_gl",
+    .functions = 
+      "void glBegin(GLenum mode)"
+      "void glColor3f(GLfloat r, GLfloat g, GLfloat b)"
+      "void glVertex3f(GLfloat x, GLfloat y, GLfloat z)"
+      "void glEnd(void)"
+      "void glFlush(void)"
+      "void glActiveTexture(GLenum texture)"
+      "void glAttachShader(GLuint program, GLuint shader)"
+      "void glBindBuffer(GLenum target, GLuint buffer)"
+      "void glBindFramebuffer(GLenum target, GLuint framebuffer)"
+      "void glBindRenderbuffer(GLenum target, GLuint renderbuffer)"
+      "void glBindTexture(GLenum target, GLuint texture)"
+      "void glBindVertexArray(GLuint array)"
+      "void glBlendEquation(GLenum mode)"
+      "void glBlendFunc(GLenum sfactor, GLenum dfactor)"
+      "void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)"
+      "void glBufferData(GLenum target, GLsizeiptr size, void const* data, GLenum usage)"
+      "void glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, void const* data)"
+      "void glClear(GLbitfield en)"
+      "void glFinish(void)"
+      "void glClearColor(GLfloat r, GLfloat g, GLfloat b, GLfloat a)"
+      "void glCompileShader(GLuint shader)"
+      "GLuint glCreateProgram(void)"
+      "GLuint glCreateShader(GLenum type)"
+      "void glDeleteBuffers(GLsizei n, GLuint const* buffers)"
+      "void glDeleteFramebuffers(GLsizei n, GLuint* framebuffers)"
+      "void glDeleteProgram(GLuint program)"
+      "void glDeleteRenderbuffers(GLsizei n, GLuint* renderbuffers)"
+      "void glDeleteShader(GLuint shader)"
+      "void glDeleteTextures(GLsizei n, const GLuint* textures)"
+      "void glDeleteVertexArrays(GLsizei n, GLuint const* arrays)"
+      "void glDepthFunc(GLenum func)"
+      "void glDisable(GLenum cap)"
+      "void glDrawArrays(GLenum mode, GLint first, GLsizei count)"
+      "void glDrawBuffers(GLsizei n, GLenum const* bufs)"
+      "void glEnable(GLenum cap)"
+      "void glEnableVertexAttribArray(GLuint index)"
+      "void glFramebufferParameteri(GLenum target, GLenum pname, GLint param)"
+      "void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer)"
+      "void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level)"
+      "void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)"
+      "void glGenBuffers(GLsizei n, GLuint* buffers)"
+      "void glGenFramebuffers(GLsizei n, GLuint* framebuffers)"
+      "void glGenRenderbuffers(GLsizei n, GLuint* renderbuffers)"
+      "void glGenTextures(GLsizei n, GLuint* textures)"
+      "void glGenVertexArrays(GLsizei n, GLuint* arrays)"
+      "GLint glGetAttribLocation(GLuint program, GLchar const* name)"
+      "GLenum glGetError(void)"
+      "void glGetProgramInfoLog(GLuint program, GLsizei bufSize, GLsizei* length, GLchar* infoLog)"
+      "void glGetProgramiv(GLuint program, GLenum pname, GLint* params)"
+      "void glGetShaderInfoLog(GLuint shader, GLsizei bufSize, GLsizei* length, GLchar* infoLog)"
+      "void glGetShaderiv(GLuint shader, GLenum pname, GLint* params)"
+      "GLint glGetUniformLocation(GLuint program, GLchar const* name)"
+      "void glLinkProgram(GLuint program)"
+      "void glPixelStorei(GLenum pname, GLint param)"
+      "void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height)"
+      "void glShaderSource(GLuint shader, GLsizei count, const GLchar* const* string, const GLint* length)"
+      "void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* pixels)"
+      "void glTexParameteri(GLenum target, GLenum pname, GLint param)"
+      "void glTexParameteriv(GLenum target, GLenum pname, const GLint* params)"
+      "void glUniform1fv(GLint location, GLsizei count, GLfloat const* value)"
+      "void glUniform1i(GLint location, GLint v0)"
+      "void glUniform2fv(GLint location, GLsizei count, GLfloat const* value)"
+      "void glUniform3fv(GLint location, GLsizei count, GLfloat const* value)"
+      "void glUniform4fv(GLint location, GLsizei count, GLfloat const* value)"
+      "void glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, GLfloat const* value)"
+      "void glUseProgram(GLuint program)"
+      "void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* pointer)"
+      "void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)"
+  },
+  {
+    .name = "glx",
+    .name_upper = "GLX",
+    .functions =
+      "ccharp_t glXGetClientString(Display* dpy, int name)"
+      "Bool glXQueryExtension(Display* dpy, int* errorb, int* event)"
+      "Bool glXQueryVersion(Display* display, int* major, int* minor)"
+      "void glXDestroyContext(Display* dpy, GLXContext ctx)"
+      "ccharp_t glXQueryExtensionsString(Display* dpy, int screen)"
+      "void glXDestroyWindow(Display* dpy, GLXWindow window)"
+      "XVisualInfop glXGetVisualFromFBConfig(Display* dpy, GLXFBConfig config)"
+      "GLXContext glXCreateNewContext(Display* dpy, GLXFBConfig config, int renderType, void* shareList, Bool direct)"
+      "GLXFBConfigs glXGetFBConfigs(Display* dpy, int screen, int* nitems)"
+      "int glXGetFBConfigAttrib(Display* display, GLXFBConfig config, int attriib, int* value)"
+      "void glXSwapBuffers(Display* display, GLXWindow w)"
+      "GLXWindow glXCreateWindow(Display* display, GLXFBConfig native_config, Window x11_window_handle, const int* attribList)"
+      "GLXWindow glXMakeCurrent(Display* display, GLXWindow glx_window, void* glx_ctx)"
+      "?funcptr_t glXGetProcAddressARB(ccharp_t vp)"
+      "?funcptr_t glXGetProcAddress(ccharp_t procName)"
+  },
+  {
+    .name = "x11",
+    .name_upper = "X11",
+    .functions =
+      "Status XInitThreads(void)"
+      "void XrmInitialize(void)"
+      "Displayp XOpenDisplay(const char* name)"
+      "XrmQuark XrmUniqueQuark(void)"
+      "Window XCreateWindow(Display* display, Window parent, int x, int y, unsigned int width, unsigned int height, unsigned int border_width, int depth, unsigned int class, Visual* visual, unsigned long valuemask, XSetWindowAttributes* attributes)"
+      "Atom XInternAtom(Display* display, _Xconst char* atom_name, Bool only_if_exists)"
+      "void Xutf8SetWMProperties(Display* display, Window w, _Xconst char* window_name, _Xconst char* icon_name, char** argv, int argc, XSizeHints* normal_hints, XWMHints* wm_hints, XClassHint* class_hints)"
+      "int XChangeProperty(Display* display, Window w, Atom property, Atom type, int format, int mode, _Xconst unsigned char* data, int nelements)"
+      "int XMapWindow(Display* display, Window w)"
+      "int XPending(Display* display)"
+      "int XQLength(Display* display)"
+      "int XNextEvent(Display* display, XEvent* ev)"
+      "int XFlush(Display* display)"
+      "int XFree(void* data)"
+      "int XLookupString(XKeyEvent* event_struct, char* buffer_return, int bytes_buffer, KeySym* keysym_return, XComposeStatus* status_in_out)"
+      "XIM XOpenIM(Display* display, void* rdb, char* res_name, char* res_class)"
+      "XIC XCreateIC(XIM im, ...)"
+      "int Xutf8LookupString(XIC ic, XKeyPressedEvent* event, char* buffer_return, int bytes_buffer , KeySym* keysym_return, Status* status_return)"
+      "int XKeycodeToKeysym(Display* display, uint32_t keycode, int index)"
+      "int XLookupKeysym(XKeyEvent* key_event, int index)"
+  }, {
+    .name = "glfw",
+    .name_upper = "GLFW",
+    .functions =
+      "int glfwInit(void)"
+      "void glfwInitHint(int hint, int value)"
+      "int glfwDefaultWindowHints(void)"
+      "void glfwSwapBuffers(GLFWwindowp win)"
+      "GLFWwindowp glfwCreateWindow(int width, int height, const char* title, void* bs1, void* bs2)"
+      "GLFWerrorfun glfwSetErrorCallback(GLFWerrorfun callback)"
+      "void glfwMakeContextCurrent(GLFWwindowp window)"
+      "void glfwPollEvents(void)"
+      "GLFWwindowsizefun glfwSetWindowSizeCallback(GLFWwindow* window, GLFWwindowsizefun callback)"
+      "GLFWwindowclosefun glfwSetWindowCloseCallback(GLFWwindow* window, GLFWwindowclosefun callback)"
+      "GLFWwindowfocusfun glfwSetWindowFocusCallback(GLFWwindow* window, GLFWwindowfocusfun callback)"
+      "GLFWwindowcontentscalefun glfwSetWindowContentScaleCallback(GLFWwindow* window, GLFWwindowcontentscalefun callback)"
+      "GLFWmousebuttonfun glfwSetMouseButtonCallback(GLFWwindow* window, GLFWmousebuttonfun callback)"
+      "GLFWcursorposfun glfwSetCursorPosCallback(GLFWwindow* window, GLFWcursorposfun callback)"
+      "GLFWscrollfun glfwSetScrollCallback(GLFWwindow* window, GLFWscrollfun callback)"
+      "GLFWkeyfun glfwSetKeyCallback(GLFWwindow* window, GLFWkeyfun callback)"
+      "GLFWcharfun glfwSetCharCallback(GLFWwindow* window, GLFWcharfun callback)"
+      "voidp glfwGetWindowUserPointer(GLFWwindow* window)"
+      "void glfwSetWindowUserPointer(GLFWwindow* window, void* pointer)"
+  }
+};
 
 typedef struct {
   br_strv_t type;
@@ -79,6 +164,7 @@ typedef struct {
   br_strv_t ret_type;
   br_strv_t name;
   struct { fparam_t* arr; size_t len, cap; } params;
+  bool is_optional;
 } func_t;
 
 typedef enum {
@@ -87,7 +173,7 @@ typedef enum {
   s_param
 } s_states;
 
-#define IS_ANUM(C) (((C) >= 'a' && (C) <= 'z') || ((C) >= 'A' && (C) <= 'Z') || ((C) >= '0' && (C) <= '9'))
+#define IS_ANUM(C) (((C) >= 'a' && (C) <= 'z') || ((C) >= 'A' && (C) <= 'Z') || ((C) >= '0' && (C) <= '9') || ((C) == '_'))
 
 void extract_param(br_strv_t* segs, int len, fparam_t* param) {
   param->type.str = segs[0].str;
@@ -96,9 +182,9 @@ void extract_param(br_strv_t* segs, int len, fparam_t* param) {
   param->name.len = segs[len - 1].len;
 }
 
-static void print_declarations(FILE* file, func_t* funcs, size_t len, const char* postfix);
+static void print_declarations(FILE* file, func_t* funcs, size_t len, const char* postfix, const char* modifier);
 
-static void print_headless_impl(FILE* file, func_t* funcs, size_t len) {
+static void print_headless_impl(FILE* file, const char* module_name, func_t* funcs, size_t len) {
   for (uint32_t i = 0; i < len; ++i) {
     func_t f = funcs[i];
     fprintf(file, "%.*s %.*s(", f.ret_type.len, f.ret_type.str, f.name.len, f.name.str);
@@ -124,11 +210,11 @@ static void print_headless_impl(FILE* file, func_t* funcs, size_t len) {
     }
     fprintf(file, "}\n");
   }
-  fprintf(file, "void brgl_load(void) {}\n");
+  fprintf(file, "void br_%s_load(void) {}\n", module_name);
 }
 
 static void print_tracy_impl(FILE* file, func_t* funcs, size_t len) {
-  print_declarations(file, funcs, len, "internal");
+  print_declarations(file, funcs, len, "internal", "static");
   fprintf(file, "\n\n");
   for (uint32_t i = 0; i < len; ++i) {
     func_t f = funcs[i];
@@ -164,7 +250,6 @@ static void print_tracy_impl(FILE* file, func_t* funcs, size_t len) {
     }
     fprintf(file, ");\n");
     fprintf(file, "  TracyCZoneEnd(%.*s);\n", f.name.len, f.name.str);
-    fprintf(file, "  BR_LOG_GL_ERROR(glGetError_internal());\n");
     if (is_void == false) {
       fprintf(file, "  return ret;\n");
     }
@@ -172,8 +257,7 @@ static void print_tracy_impl(FILE* file, func_t* funcs, size_t len) {
   }
 }
 
-static void print_wasm_declarations(FILE* file, func_t* funcs, size_t len) {
-  fprintf(file, "\n// Declarations wasm\n\n");
+static void print_static_declarations(FILE* file, func_t* funcs, size_t len) {
   for (int i = 0; i <  len; ++i) {
     func_t f = funcs[i];
     fprintf(file, "%.*s %.*s(", f.ret_type.len, f.ret_type.str, f.name.len, f.name.str);
@@ -193,14 +277,12 @@ static void print_wasm_declarations(FILE* file, func_t* funcs, size_t len) {
   }
 }
 
-static void print_declarations(FILE* file, func_t* funcs, size_t len, const char* postfix) {
+static void print_declarations(FILE* file, func_t* funcs, size_t len, const char* postfix, const char* modifier) {
   fprintf(file, "\n// Declarations ( %s )\n\n", postfix == NULL ? "null" : postfix);
   for (int i = 0; i <  len; ++i) {
     func_t f = funcs[i];
-    if (postfix == NULL)
-      fprintf(file, "static %.*s (*%.*s)(", f.ret_type.len, f.ret_type.str, f.name.len, f.name.str);
-    else
-      fprintf(file, "static %.*s (*%.*s_%s)(", f.ret_type.len, f.ret_type.str, f.name.len, f.name.str, postfix);
+    if (postfix == NULL) fprintf(file, "%s %.*s (*%.*s)(", modifier, f.ret_type.len, f.ret_type.str, f.name.len, f.name.str);
+    else                 fprintf(file, "%s %.*s (*%.*s_%s)(", modifier, f.ret_type.len, f.ret_type.str, f.name.len, f.name.str, postfix);
 
     if (f.params.len == 0) {
       fprintf(file, "void");
@@ -217,9 +299,13 @@ static void print_declarations(FILE* file, func_t* funcs, size_t len, const char
   }
 }
 
-void print_loader(FILE* file, func_t* funcs, size_t len, const char* postfix) {
+void print_loader(FILE* file, const char* module_name, func_t* funcs, size_t len, const char* load_func, const char* postfix) {
+  if (NULL == load_func) load_func = "brpl_load_symbol";
   fprintf(file, "\n// Loader ( %s )\n", postfix == NULL ? "null" : postfix);
-  fprintf(file, "void brgl_load(void) {\n");
+  fprintf(file, "bool br_%s_load(void) {\n", module_name);
+  fprintf(file, "  void* module = NULL;\n");
+  fprintf(file, "  for (size_t i = 0; module == NULL && i < BR_ARR_LEN(br_%s_library_names); ++i) module = brpl_load_library(br_%s_library_names[i]);\n", module_name, module_name);
+  fprintf(file, "  if (module == NULL) return false;\n");
   for (int i = 0; i <  len; ++i) {
     func_t f = funcs[i];
     if (postfix == NULL)
@@ -237,24 +323,32 @@ void print_loader(FILE* file, func_t* funcs, size_t len, const char* postfix) {
         }
       }
     }
-    fprintf(file, "))glfwGetProcAddress(\"%.*s\");\n", f.name.len, f.name.str);
+    fprintf(file, "))%s(module, \"%.*s\");\n", load_func, f.name.len, f.name.str);
     if (postfix) {
-      fprintf(file, "  BR_ASSERT(%.*s_%s);\n", f.name.len, f.name.str, postfix);
+      fprintf(file, "  if (NULL == %.*s_%s) {\n", f.name.len, f.name.str, postfix);
     } else {
-      fprintf(file, "  BR_ASSERT(%.*s);\n", f.name.len, f.name.str);
+      fprintf(file, "  if (NULL == %.*s) {\n", f.name.len, f.name.str);
     }
+    if (f.is_optional) {
+      fprintf(file, "    LOGW(\"Failed to load optional %.*s from shared library %s.\");\n", f.name.len, f.name.str, module_name);
+    } else {
+      fprintf(file, "    LOGW(\"Failed to load %.*s from shared library %s.\");\n", f.name.len, f.name.str, module_name);
+    }
+    fprintf(file, "  }\n");
   }
+  fprintf(file, "  return true;\n");
   fprintf(file, "}\n\n");
 }
 
-int do_gl_gen(void) {
+int do_gl_gen(const char* module, const char* module_upper, const char* load_func, const char* functions, FILE* file_impl, FILE* file_header) {
   struct { func_t* arr; size_t len, cap; } funcs = { 0 };
-  br_strv_t all_funcs = br_strv_from_c_str(FUNCTIONS);
+  br_strv_t all_funcs = br_strv_from_c_str(functions);
   br_strv_t cur = { .str = all_funcs.str, 0 };
   func_t cur_f = { 0 };
   int line = 1;
   s_states state = s_ftype;
   int func_len = 0;
+  bool cur_is_optional = false;
   struct { br_strv_t* arr; size_t len, cap; } param_segs = { 0 };
 
   for (int i = 0; i < all_funcs.len; ++i) {
@@ -268,7 +362,8 @@ int do_gl_gen(void) {
           cur.len = 0;
           state = s_fname;
         } else if (IS_ANUM(c)) ++cur.len;
-        else LOGF("Unexpected character in function return type: `%c`(%d) in line: %d", c, (int)c, line);
+        else if (cur.len == 0 && c == '?') { cur_is_optional = true; cur.str += 1; }
+        else LOGF("[%s] Unexpected character in function return type: `%c`(%d) in line: %d", module, c, (int)c, line);
       } break;
       case s_fname: {
         if (all_funcs.str[i] == '(') {
@@ -277,7 +372,7 @@ int do_gl_gen(void) {
           cur.len = 0;
           cur.str = &all_funcs.str[i + 1];
         } else if (IS_ANUM(c)) ++cur.len;
-        else LOGF("Unexpected character in function name: `%c`(%d) in line: %d", c, (int)c, line);
+        else LOGF("[%s] Unexpected character in function name: `%c`(%d) in line: %d", module, c, (int)c, line);
       } break;
       case s_param: {
         if (all_funcs.str[i] == ')') {
@@ -286,12 +381,12 @@ int do_gl_gen(void) {
           }
           if (param_segs.len < 2) {
             if (param_segs.len == 0) {
-              LOGF("Unexpected paramter construct. Expected 2 or more tokens ( or keyword void ). Got 0 tokens. On line: %d\n"
-                   "  `%.*s`", line, func_len - 1, cur_f.ret_type.str);
+              LOGF("[%s] Unexpected paramter construct. Expected 2 or more tokens ( or keyword void ). Got 0 tokens. On line: %d\n"
+                   "  `%.*s`", module, line, func_len - 1, cur_f.ret_type.str);
             }
             else if (br_strv_eq(param_segs.arr[0], br_strv_from_literal("void")) == false)
-              LOGF("Unexpected paramter construct. Expected 2 or more tokens ( or keyword void ). Got a single token `%.*s`: on line: %d\n`%.*s`",
-                   param_segs.arr[0].len, param_segs.arr[0].str, line, func_len - 1, cur_f.ret_type.str);
+              LOGF("[%s] Unexpected paramter construct. Expected 2 or more tokens ( or keyword void ). Got a single token `%.*s`: on line: %d\n`%.*s`",
+                   module, param_segs.arr[0].len, param_segs.arr[0].str, line, func_len - 1, cur_f.ret_type.str);
           } else {
             fparam_t param = { 0 };
             extract_param(param_segs.arr, param_segs.len, &param);
@@ -302,8 +397,10 @@ int do_gl_gen(void) {
           ++line;
           cur.len = 0;
           cur.str = &all_funcs.str[i + 1];
+          cur_f.is_optional = cur_is_optional;
           br_da_push(funcs, cur_f);
           cur_f = (func_t) { 0 };
+          cur_is_optional = false;
           func_len = 0;
           param_segs.len = 0;
         } else if (IS_ANUM(c) || c == '*') {
@@ -319,8 +416,8 @@ int do_gl_gen(void) {
             br_da_push(param_segs, cur);
           }
           if (param_segs.len < 2) {
-            LOGF("Unexpected paramter construct. Expected 2 or more tokens. Got %zu: in line: %d\n"
-                  "  `%.*s??%.5s...`", param_segs.len, line, func_len - 1, cur_f.ret_type.str, &all_funcs.str[i + 1]);
+            LOGF("[%s] Unexpected paramter construct. Expected 2 or more tokens. Got %zu: in line: %d\n"
+                  "  `%.*s??%.5s...`", module, param_segs.len, line, func_len - 1, cur_f.ret_type.str, &all_funcs.str[i + 1]);
           }
           fparam_t param = { 0 };
           extract_param(param_segs.arr, param_segs.len, &param);
@@ -328,50 +425,74 @@ int do_gl_gen(void) {
           param_segs.len = 0;
           cur.len = 0;
           cur.str = &all_funcs.str[i + 1];
+        } else if (c == '.') {
+          char c1 = all_funcs.str[i + 1];
+          char c2 = all_funcs.str[i + 2];
+          if (c1 == '.' && c2 == '.') {
+            fparam_t param = {
+              .type = BR_STRL("..."),
+              .name = BR_STRL("")
+            };
+            br_da_push(cur_f.params, param);
+          }
+          i += 3;
+          char c3 = all_funcs.str[i + 1];
+          BR_ASSERTF(c3 == ')', "Expect end of function declaration after '...', but got %c(%d)", c3, c3);
+          state = s_ftype;
+          ++line;
+          cur.len = 0;
+          cur.str = &all_funcs.str[i + 1];
+          cur_f.is_optional = cur_is_optional;
+          br_da_push(funcs, cur_f);
+          cur_f = (func_t) { 0 };
+          cur_is_optional = false;
+          func_len = 0;
+          param_segs.len = 0;
         }
-        else LOGF("Unexpected character in function paramter: `%c`(%d) in line: %d\n"
-                  "  `%.*s?%c?%.5s...`", c, (int)c, line, func_len - 1, cur_f.ret_type.str, c, &all_funcs.str[i + 1]);
+        else LOGF("[%s] Unexpected character in function paramter: `%c`(%d) in line: %d\n"
+                  "  `%.*s?%c?%.5s...`", module, c, (int)c, line, func_len - 1, cur_f.ret_type.str, c, &all_funcs.str[i + 1]);
       } break;
     }
   }
-  FILE* file = fopen(".generated/gl.c", "wb+");
-  fprintf(file, "#pragma once\n");
-  fprintf(file, "// Generated using tools/gl_gen.c\n");
 
-  fprintf(file, "#if defined(__GNUC__) || defined(__clang__)\n");
-  fprintf(file, "#  pragma GCC diagnostic push\n");
-  fprintf(file, "#  pragma GCC diagnostic ignored \"-Wpedantic\"\n");
-  fprintf(file, "#endif\n");
+  {
+    fprintf(file_impl, "#if defined(BR_HAS_%s) && defined(BR_WANTS_%s)\n", module_upper, module_upper);
 
-  fprintf(file, "#include \"src/br_gl.h\"\n");
-  fprintf(file, "#include \"src/br_pp.h\"\n");
-  fprintf(file, "\n");
-  fprintf(file, "#include <stdbool.h>\n");
-  fprintf(file, "\n");
-  fprintf(file, "#include \"external/glfw/include/GLFW/glfw3.h\"");
-  fprintf(file, "\n");
+    fprintf(file_impl, "#if defined(BR_%s_STATIC)\n", module_upper);
+    fprintf(file_impl, "bool br_%s_load(void) { return true; }\n\n", module);
 
-  fprintf(file, "#if defined(__EMSCRIPTEN__)\n");
-  print_wasm_declarations(file, funcs.arr, funcs.len);
-  fprintf(file, "void brgl_load(void) {}\n\n");
-  fprintf(file, "#elif !defined(TRACY_ENABLE) && !defined(HEADLESS)\n");
-  print_declarations(file, funcs.arr, funcs.len, NULL);
-  print_loader(file, funcs.arr, funcs.len, NULL);
-  fprintf(file, "#elif defined(HEADLESS) \n");
-  print_headless_impl(file, funcs.arr, funcs.len);
-  fprintf(file, "#else \n");
-  print_tracy_impl(file, funcs.arr, funcs.len);
-  print_loader(file, funcs.arr, funcs.len, "internal");
-  fprintf(file, "#endif // defined(TRACY_ENABLE)\n");
+    fprintf(file_impl, "#elif defined(HEADLESS)\n");
+    fprintf(file_impl, "void br_%s_load(void) {}\n\n", module);
+    print_headless_impl(file_impl, module, funcs.arr, funcs.len);
 
-  fprintf(file, "#if defined(__GNUC__) || defined(__clang__)\n");
-  fprintf(file, "#  pragma GCC diagnostic pop\n");
-  fprintf(file, "#endif\n");
+    fprintf(file_impl, "#elif defined(TRACY_ENABLE)\n");
+    print_tracy_impl(file_impl, funcs.arr, funcs.len);
+    print_loader(file_impl, module, funcs.arr, funcs.len, load_func, "internal");
 
-  fclose(file);
+    fprintf(file_impl, "#else // Normal mode\n");
+    print_declarations(file_impl, funcs.arr, funcs.len, NULL, "");
+    print_loader(file_impl, module, funcs.arr, funcs.len, load_func, NULL);
 
+    fprintf(file_impl, "#endif // STATIC/HEADLESS/TRACY/NORMAL\n");
 
-  FILE* f = fopen(".generated/gl_cmake_is_retarded.h", "w+"); fclose(f);
+    fprintf(file_impl, "#endif // defined(BR_HAS_%s) && defined(BR_WANTS_%s)\n", module_upper, module_upper);
+  }
+
+  {
+    fprintf(file_header, "#if defined(BR_HAS_%s) && defined(BR_WANTS_%s)\n", module_upper, module_upper);
+    fprintf(file_header, "bool br_%s_load(void);\n\n", module);
+
+    fprintf(file_header, "#if defined(TRACY_ENABLE) || defined(HEADLESS) || defined(BR_%s_STATIC)\n", module_upper);
+    print_static_declarations(file_header, funcs.arr, funcs.len);
+
+    fprintf(file_header, "#else // NORMAL\n");
+    print_declarations(file_header, funcs.arr, funcs.len, NULL, "extern");
+
+    fprintf(file_header, "#endif\n");
+
+    fprintf(file_header, "#endif // defined(BR_HAS_%s) && defined(BR_WANTS_%s)\n", module_upper, module_upper);
+  }
+
   for (int i = 0; i < funcs.len; ++i) {
     br_da_free(funcs.arr[i].params);
   }
@@ -383,7 +504,27 @@ int do_gl_gen(void) {
 
 #if !defined(BR_GL_GEN_NO_MAIN)
 int main(void) {
-  do_gl_gen();
+  FILE* file_impl = fopen(".generated/gl.c", "wb+");
+  FILE* file_header = fopen(".generated/gl.h", "wb+");
+  fprintf(file_impl, "// Generated using %s\n", __FILE__);
+  fprintf(file_impl, "#if defined(__GNUC__) || defined(__clang__)\n");
+  fprintf(file_impl, "#  pragma GCC diagnostic push\n");
+  fprintf(file_impl, "#  pragma GCC diagnostic ignored \"-Wpedantic\"\n");
+  fprintf(file_impl, "#endif\n");
+
+  fprintf(file_header, "// Generated using %s\n", __FILE__);
+  fprintf(file_header, "#pragma once\n");
+
+  for (int i = 0; i < BR_ARR_LEN(modules); ++i) {
+    do_gl_gen(modules[i].name, modules[i].name_upper, modules[i].load_func, modules[i].functions, file_impl, file_header);
+  }
+
+  fprintf(file_impl, "#if defined(__GNUC__) || defined(__clang__)\n");
+  fprintf(file_impl, "#  pragma GCC diagnostic pop\n");
+  fprintf(file_impl, "#endif\n");
+  fclose(file_impl);
+
+  fclose(file_header);
 }
 void br_on_fatal_error(void) {}
 #endif

@@ -1,6 +1,5 @@
 #include "src/br_pp.h"
 #include "src/br_text_renderer.h"
-#include "src/br_tl.h"
 #include "src/br_ui.h"
 #include "src/br_plotter.h"
 #include "external/stb_ds.h"
@@ -12,7 +11,7 @@ static bool context_menu_opened = false;
 void br_hot_init(void* br) {
   (void)br;
   res = NULL;
-  printf("Eat a dick\n");
+  printf("Init\n");
 }
 
 void brui_context_menu_delete(void);

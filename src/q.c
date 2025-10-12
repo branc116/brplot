@@ -74,7 +74,7 @@ void handle_all_commands(br_plotter_t* br, q_commands* commands) {
       } break;
       case q_command_clear:         br_plotter_data_remove(br, comm.clear.group); break;
       case q_command_clear_all:     br_plotter_datas_deinit(br); break;
-      case q_command_screenshot:    br_plot_screenshot(br->text, &br->plots.arr[0], &br->shaders, br->groups, comm.path_arg.path); BR_FREE(comm.path_arg.path); break;
+      case q_command_screenshot:    /*br_plot_screenshot(br->text, &br->plots.arr[0], &br->shaders, br->groups, comm.path_arg.path);*/ BR_FREE(comm.path_arg.path); break;
       case q_command_export:        br_plotter_export(br, comm.path_arg.path);     BR_FREE(comm.path_arg.path); break;
       case q_command_exportcsv:     br_plotter_export_csv(br, comm.path_arg.path); BR_FREE(comm.path_arg.path); break;
       case q_command_hide:          BR_TODO("Command hide not implemented");

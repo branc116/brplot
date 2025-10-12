@@ -1,25 +1,19 @@
+#include "src/br_pp.h"
 #include "src/br_gl.h"
+#define BR_WANTS_GL 1
+#include "src/br_platform.h"
 #include "src/br_str.h"
-#include "src/br_tl.h"
 #include "src/br_shaders.h"
 
 #include <string.h>
 
-#define GL_COLOR_BUFFER_BIT 0x00004000
-#define GL_DEPTH_BUFFER_BIT 0x00000100
-#define GL_TEXTURE_MAG_FILTER 0x2800
-#define GL_TEXTURE_MIN_FILTER 0x2801
-#define GL_NEAREST 0x2600
-#define GL_LINEAR 0x2601
-#define GL_TEXTURE_RECTANGLE 0x84F5
-#define GL_FRAMEBUFFER_DEFAULT_WIDTH 0x9310
-#define GL_FRAMEBUFFER_DEFAULT_HEIGHT 0x9311
-#define GL_MAX_FRAMEBUFFER_WIDTH 0x9315
-#define GL_MAX_FRAMEBUFFER_HEIGHT 0x9316
+static BR_THREAD_LOCAL struct {
+  br_shaders_t* shaders;
+} brgl_state;
 
-typedef void (*glDebugProc)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
-
-#include ".generated/gl.c"
+void brgl_construct(br_shaders_t* shaders) {
+  brgl_state.shaders = shaders;
+}
 
 unsigned int brgl_load_shader(const char* vs, const char* fs, int* ok) {
   GLuint vsid = brgl_compile_shader(vs, GL_VERTEX_SHADER);
@@ -139,7 +133,6 @@ static BR_THREAD_LOCAL struct {
 } br_framebuffers[BR_FRAMEBUFFERS] = { 0 };
 
 void brgl_viewport(GLint x, GLint y, GLsizei width, GLsizei height) {
-  brtl_viewport_set(BR_EXTENTI(x, y, width, height));
   br_framebuffers[0].fb_id = 0;
   br_framebuffers[0].tx_id = 0;
   br_framebuffers[0].width = width;
@@ -212,7 +205,7 @@ GLuint brgl_framebuffer_to_texture(GLuint br_id) {
 }
 
 void brgl_enable_framebuffer(GLuint br_id, int new_width, int new_height) {
-  br_shaders_draw_all(*brtl_shaders()); // Draw everything that was not already
+  br_shaders_draw_all(*brgl_state.shaders); // Draw everything that was not already
 
   GLuint fb_id = br_framebuffers[br_id].fb_id;
   int width = br_framebuffers[br_id].width;
@@ -323,6 +316,10 @@ GLint brgl_get_locu(GLuint shader_id, char const* name) {
 void brgl_clear(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
   glClearColor(r, g, b, a);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void brgl_finish(void) {
+  glFinish();
 }
 
 static bool brgl_fb_is_set(GLuint br_id) {

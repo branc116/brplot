@@ -6,7 +6,6 @@
 #include "src/br_resampling.h"
 #include "src/br_threads.h"
 #include "src/br_q.h"
-#include "src/br_tl.h"
 #include "include/brplot.h"
 
 
@@ -23,13 +22,13 @@ typedef union {
 } br_common_ctor;
 
 static void br_main_iter(br_plotter_t* br) {
-  br_plotter_draw(br);
-  br_dagens_handle(&br->groups, &br->dagens, &br->plots, brtl_time() + 0.010);
-  br_plotter_frame_end(br);
+  br_plotter_one_iter(br);
 }
 
 static BR_THREAD_FUNC BR_THREAD_RET_TYPE main_loop(void* plotterv) {
   br_plotter_t* plotter = plotterv;
+  br_data_construct(&plotter->sp);
+  br_resampling_construct(&plotter->shaders, &plotter->ui.theme.ui.min_sampling, &plotter->ui.theme.ui.cull_min);
   br_plotter_init(plotter);
   while (plotter->should_close == false) {
     br_main_iter(plotter);
@@ -47,8 +46,6 @@ static int br_ctors_len = 0;
 
 br_plotter_ctor_t* br_plotter_default_ctor(void) {
   // TODO: Only run this once...
-  br_data_construct();
-  br_resampling_construct();
   int id = br_ctors_len;
   br_ctors[id].plotter = (br_plotter_ctor_t) {
     .version = BR_VERSION,
@@ -66,7 +63,7 @@ br_plotter_ctor_t* br_plotter_default_ctor(void) {
 br_plotter_t* br_plotter_new(br_plotter_ctor_t const* ctor) {
   br_plotter_t* plotter = br_plotter_malloc();
   if (ctor->ctor.use_stdin) {
-    read_input_start(plotter);
+    br_read_input_start(plotter);
   }
   br_thread_start(&main_loop, plotter);
 
@@ -298,8 +295,9 @@ BR_EXPORT void br_wasm_loop(br_plotter_t* br) {
   br_main_iter(br);
 }
 
-void glfwSetWindowSize(GLFWwindow* window, int width, int height);
+// void glfwSetWindowSize(GLFWwindow* window, int width, int height);
 BR_EXPORT void br_wasm_resize(br_plotter_t* br, int width, int height) {
-  glfwSetWindowSize(br->win.glfw, width, height);
+  LOGW("Resize not implemented");
+  // glfwSetWindowSize(br->win.glfw, width, height);
 }
 #endif

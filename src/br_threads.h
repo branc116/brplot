@@ -9,7 +9,7 @@ void br_thread_start(BR_THREAD_RET_TYPE (*function)(void*), void* args);
 #else
 #  define BR_THREAD_RET_TYPE DWORD
 #  define BR_THREAD_FUNC WINAPI
-void br_thread_start(BR_THREAD_RET_TYPE (WINAPI * function)(void*), void* args);
+unsigned long br_thread_start(BR_THREAD_RET_TYPE (WINAPI * function)(void*), void* args);
 #endif
 
 

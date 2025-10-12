@@ -5,7 +5,6 @@
 #include "src/br_shaders.h"
 #include "src/br_str.h"
 #include "src/br_text_renderer.h"
-#include "src/br_tl.h"
 #include "src/br_filesystem.h"
 #include "src/br_memory.h"
 
@@ -51,6 +50,7 @@ typedef struct br_text_renderer_t {
   unsigned char const* font_data;
   unsigned char const* default_font_data;
   unsigned char* custom_font_data;
+  br_sizei_t viewport;
 
   struct {stbtt_aligned_quad* arr; size_t len, cap; } tmp_quads;
   struct {stbtt_packedchar* arr; size_t len, cap; } baking_chars;
@@ -259,9 +259,12 @@ br_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, br_vec3_t pos, int
 }
 
 br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color_fg, br_color_t color_bg, br_strv_t text, br_bb_t limit, br_text_renderer_ancor_t ancor) {
-  float min_y = FLT_MAX, max_y = FLT_MIN, min_x = FLT_MAX, max_x = FLT_MIN;
+  float min_x = FLT_MAX, max_x = FLT_MIN;
   float y_off = 0.f;
   float x_off = 0.f;
+  if      (ancor & br_text_renderer_ancor_y_mid)  pos.y -= (float)font_size * 0.5f;
+  else if (ancor & br_text_renderer_ancor_y_down) pos.y -= (float)font_size;
+  pos.y += (float)font_size*0.75;
   BR_PROFILE("text renderer push2") {
     float x = pos.x, y = pos.y, z = pos.z;
     ptrdiff_t size_index = stbds_hmgeti(r->sizes, font_size);
@@ -272,13 +275,13 @@ br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int fon
     } else {
       size_to_font s = r->sizes[size_index];
       BR_STRV_FOREACH_UTF8(text, ch) {
-        ptrdiff_t char_index = stbds_hmgeti(s.value, ch);
         if (ch == '\n') {
           pos.y += (float)font_size * 1.1f;
           pos.x = og_x;
           continue;
         }
         if (ch == '\r') continue;
+        ptrdiff_t char_index = stbds_hmgeti(s.value, ch);
         if (char_index == -1) {
           stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = ch }), 0);
         } else {
@@ -292,24 +295,21 @@ br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int fon
 #define MMIN(x, y) (x < y ? x : y)
 #define MMAX(x, y) (x > y ? x : y)
     for (size_t i = 0; i < r->tmp_quads.len; ++i) {
-      min_y = MMIN(r->tmp_quads.arr[i].y0, min_y);
       min_x = MMIN(r->tmp_quads.arr[i].x0, min_x);
-      max_y = MMAX(r->tmp_quads.arr[i].y1, max_y);
       max_x = MMAX(r->tmp_quads.arr[i].x1, max_x);
     }
 #undef MMAX
 #undef MMIN
-    if (ancor & br_text_renderer_ancor_y_up)         y_off = min_y - y;
-    else if (ancor & br_text_renderer_ancor_y_mid)   y_off = (max_y + min_y) * 0.5f - y;
-    else if (ancor & br_text_renderer_ancor_y_down)  y_off = max_y - y;
     if (ancor & br_text_renderer_ancor_x_left)       x_off = min_x - x;
     else if (ancor & br_text_renderer_ancor_x_mid)   x_off = (max_x + min_x) * 0.5f - x;
     else if (ancor & br_text_renderer_ancor_x_right) x_off = max_x - x;
-    br_sizei_t sz = brtl_viewport().size;
+    br_sizei_t sz = r->viewport;
     br_vec4_t fg = BR_COLOR_TO4(color_fg);
     br_vec4_t bg = BR_COLOR_TO4(color_bg);
     for (size_t i = 0; i < r->tmp_quads.len; ++i) {
-      br_bb_t bb = br_bb_sub(BR_BB(r->tmp_quads.arr[i].x0, r->tmp_quads.arr[i].y0, r->tmp_quads.arr[i].x1, r->tmp_quads.arr[i].y1), BR_VEC2(x_off, y_off));
+      br_bb_t bb = BR_BB(r->tmp_quads.arr[i].x0, r->tmp_quads.arr[i].y0, r->tmp_quads.arr[i].x1, r->tmp_quads.arr[i].y1);
+      bb.min_x -= x_off;
+      bb.max_x -= x_off;
       br_bb_t tex = BR_BB(r->tmp_quads.arr[i].s0, r->tmp_quads.arr[i].t0, r->tmp_quads.arr[i].s1, r->tmp_quads.arr[i].t1);
       br_shader_font_push_quad(*r->shader_f, (br_shader_font_el_t[4]) {
           { .pos = BR_VEC42(br_vec2_stog(bb.min, sz), tex.min),             .fg = fg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, bb.min),       .z = z },
@@ -319,6 +319,9 @@ br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int fon
       });
     }
   }
-  return BR_EXTENT(min_x - x_off, min_y - y_off, max_x - min_x, max_y - min_y);
+  return BR_EXTENT(min_x - x_off, pos.y, max_x - min_x, font_size);
 }
 
+void br_text_renderer_viewport_set(br_text_renderer_t* r, br_sizei_t viewport) {
+  r->viewport = viewport;
+}

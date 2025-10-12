@@ -5,7 +5,6 @@
 #include "src/br_math.h"
 #include "src/br_plot.h"
 #include "src/br_resampling.h"
-#include "src/br_tl.h"
 #include "src/br_ui.h"
 #include "src/br_memory.h"
 
@@ -28,6 +27,33 @@ void br_plot_draw(br_plot_t* plot, br_datas_t datas) {
     case br_plot_kind_3d: br_plot_3d_draw(plot, datas); break;
     default: BR_UNREACHABLE("Plot kind %d is not handled", plot->kind);
   }
+}
+
+void br_plot2d_move_screen_space(br_plot_t* plot, br_vec2_t delta, br_size_t plot_screen_size) {
+  float height = plot_screen_size.height;
+  plot->dd.offset.x -= plot->dd.zoom.x*delta.x/height;
+  plot->dd.offset.y += plot->dd.zoom.y*delta.y/height;
+}
+
+void br_plot2d_zoom(br_plot_t* plot, br_vec2_t vec, br_extent_t screen_extent, br_vec2_t mouse_pos_screen) {
+  br_vec2d_t old = plot->dd.mouse_pos;
+  bool any = false;
+  if (false == br_float_near_zero(vec.x)) {
+    float mw_scale = (1 + vec.x/10);
+    plot->dd.zoom.x *= mw_scale;
+    any = true;
+  }
+  if (false == br_float_near_zero(vec.y)) {
+    float mw_scale = (1 + vec.y/10);
+    plot->dd.zoom.y *= mw_scale;
+    any = true;
+  }
+  if (false == any) return;
+
+  br_plot_update_context(plot, screen_extent, mouse_pos_screen);
+  br_vec2d_t now = plot->dd.mouse_pos;
+  plot->dd.offset.x -= now.x - old.x;
+  plot->dd.offset.y -= now.y - old.y;
 }
 
 void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
@@ -81,10 +107,36 @@ br_vec2d_t br_plot_2d_get_mouse_position(br_plot_t* plot, br_vec2_t screen_mouse
   );
 }
 
-void br_plot_update_context(br_plot_t* plot, br_vec2_t mouse_pos) {
-  br_extent_t ex = BR_EXTENTI_TOF(plot->cur_extent);
+br_vec2d_t br_plot2d_to_plot(br_plot_t* plot, br_vec2_t vec) {
+  br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
+  br_vec2_t vec_in_resizable = br_vec2_sub(vec, ex.pos);
+  br_vec2_t vec_in_resizable2 = br_vec2_scale(vec_in_resizable, 2);
+  br_vec2_t b = br_vec2_sub(ex.size.vec, vec_in_resizable2);
+  br_vec2_t c = br_vec2_scale(b, 1.f/(float)ex.height);
+  return BR_VEC2D(
+    -(double)c.x*plot->dd.zoom.x/2.0 + plot->dd.offset.x,
+     (double)c.y*plot->dd.zoom.y/2.0 + plot->dd.offset.y
+  );
+}
+
+br_vec2_t br_plot2d_to_screen(br_plot_t* plot, br_vec2d_t vec) {
+  br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
+
+  br_vec2d_t d = vec;
+  d = br_vec2d_sub(d, plot->dd.offset);
+  d = br_vec2d_scale(d, 2.0);
+  d = br_vec2d_mul(d, BR_VEC2D(-1/plot->dd.zoom.x, 1/plot->dd.zoom.y));
+  br_vec2_t f = BR_VEC2((float)d.x, (float)d.y);
+  f = br_vec2_scale(f, ex.height);
+  f = br_vec2_sub(ex.size.vec, f);
+  f = br_vec2_scale(f, 0.5f);
+  f = br_vec2_add(f, ex.pos);
+  return f;
+}
+
+void br_plot_update_context(br_plot_t* plot, br_extent_t plot_screen_extent, br_vec2_t mouse_pos) {
   if (plot->kind == br_plot_kind_2d) {
-    float aspect = ex.width/ex.height;
+    float aspect = plot_screen_extent.width/plot_screen_extent.height;
     plot->dd.mouse_pos = br_plot_2d_get_mouse_position(plot, mouse_pos);
     plot->dd.graph_rect = BR_EXTENTD(
       (-aspect*plot->dd.zoom.x/2.0 + plot->dd.offset.x),

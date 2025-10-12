@@ -12,8 +12,10 @@ void br_thread_start(void *(*function)(void *), void* args) {
 #include <windows.h>
 #include <processthreadsapi.h>
 
-void br_thread_start(DWORD (WINAPI * function)(void *), void* args) {
-  CreateThread(NULL, 0, function, args, 0, NULL);
+DWORD br_thread_start(DWORD (WINAPI * function)(void *), void* args) {
+  DWORD thread_id;
+  CreateThread(NULL, 0, function, args, 0, &thread_id);
+  return thread_id;
 }
 #elif defined(__EMSCRIPTEN__)
 #include <stdio.h>

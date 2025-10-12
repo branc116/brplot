@@ -6,8 +6,9 @@
 #include "src/br_pp.h"
 #include "src/br_resampling.h"
 #include "src/br_str.h"
-#include "src/br_tl.h"
 #include "src/br_memory.h"
+#include "src/br_platform.h"
+#include "src/br_string_pool.h"
 
 #include <stdio.h>
 #include <errno.h>
@@ -289,7 +290,7 @@ void br_dagens_handle(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots,
   for (size_t i = 0; i < dagens->len; ++i) {
     dagens->arr[i].state = br_dagen_state_inprogress;
   }
-  while (brtl_time() < until && br_dagens_handle_once(datas, dagens, plots));
+  while (brpl_time() < until && br_dagens_handle_once(datas, dagens, plots));
 }
 
 void br_dagens_free(br_dagens_t* dagens) {
@@ -373,8 +374,7 @@ static void br_dagen_handle(br_dagen_t* dagen, br_data_t* data, br_datas_t datas
       }
       return;
 error:
-      name = brsp_get(*brtl_brsp(), data->name);
-      LOGE("Failed to read data for a plot %.*s: %d(%s)", name.len, name.str, errno, strerror(errno));
+      LOGE("Failed to read data for a plot %d: %d(%s)", data->group_id,  errno, strerror(errno));
       fclose(dagen->file.file);
       dagen->state = br_dagen_state_failed;
     } break;

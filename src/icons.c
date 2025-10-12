@@ -4,17 +4,20 @@
 #include "src/br_gl.h"
 #include "src/br_icons.h"
 #include "src/br_shaders.h"
-#include "src/br_tl.h"
 #include "src/br_math.h"
 #include "src/br_pp.h"
 
-static BR_THREAD_LOCAL GLuint icons_id = 0;
+static BR_THREAD_LOCAL struct {
+  GLuint icons_id;
+  br_shader_icon_t* shader;
+} br_icon;
 
 struct br_extra_icons_t br_extra_icons;
 
 void br_icons_init(br_shader_icon_t* shader) {
-  icons_id = brgl_load_texture(br_icons_atlas, br_icons_atlas_width, br_icons_atlas_height, BRGL_TEX_GRAY);
-  shader->uvs.atlas_uv = icons_id;
+  br_icon.shader = shader;
+  br_icon.icons_id = brgl_load_texture(br_icons_atlas, br_icons_atlas_width, br_icons_atlas_height, BRGL_TEX_GRAY);
+  shader->uvs.atlas_uv = br_icon.icons_id;
 
 #define I br_icons.edge.size_8
   br_extra_icons = (struct br_extra_icons_t) {
@@ -30,8 +33,7 @@ void br_icons_init(br_shader_icon_t* shader) {
 #undef I
 }
 
-void br_icons_draw(br_bb_t screen, br_bb_t atlas, br_color_t bg, br_color_t fg, br_bb_t limit, int z) {
-  br_sizei_t res = brtl_viewport().size;
+void br_icons_draw(br_bb_t screen, br_bb_t atlas, br_color_t bg, br_color_t fg, br_bb_t limit, int z, br_sizei_t viewport_size) {
   br_vec4_t bgv = BR_COLOR_TO4(bg);
   br_vec4_t fgv = BR_COLOR_TO4(fg);
   float gl_z = BR_Z_TO_GL(z);
@@ -45,16 +47,32 @@ void br_icons_draw(br_bb_t screen, br_bb_t atlas, br_color_t bg, br_color_t fg, 
   br_vec2_t atr = br_bb_tr(atlas);
   br_vec2_t abr = atlas.max;
   br_vec2_t abl = br_bb_bl(atlas);
-  br_shader_icon_push_quad(brtl_shaders()->icon, (br_shader_icon_el_t[4]) {
-    { .pos = BR_VEC42(br_vec2_stog(stl, res), atl), .bg  = bgv, .fg = fgv, .clip_dists = br_bb_clip_dists(limit, stl), .z = gl_z },
-    { .pos = BR_VEC42(br_vec2_stog(str, res), atr), .bg  = bgv, .fg = fgv, .clip_dists = br_bb_clip_dists(limit, str), .z = gl_z },
-    { .pos = BR_VEC42(br_vec2_stog(sbr, res), abr), .bg  = bgv, .fg = fgv, .clip_dists = br_bb_clip_dists(limit, sbr), .z = gl_z },
-    { .pos = BR_VEC42(br_vec2_stog(sbl, res), abl), .bg  = bgv, .fg = fgv, .clip_dists = br_bb_clip_dists(limit, sbl), .z = gl_z },
+  br_shader_icon_push_quad(br_icon.shader, (br_shader_icon_el_t[4]) {
+    { .pos = BR_VEC42(br_vec2_stog(stl, viewport_size), atl), .bg  = bgv, .fg = fgv, .clip_dists = br_bb_clip_dists(limit, stl), .z = gl_z },
+    { .pos = BR_VEC42(br_vec2_stog(str, viewport_size), atr), .bg  = bgv, .fg = fgv, .clip_dists = br_bb_clip_dists(limit, str), .z = gl_z },
+    { .pos = BR_VEC42(br_vec2_stog(sbr, viewport_size), abr), .bg  = bgv, .fg = fgv, .clip_dists = br_bb_clip_dists(limit, sbr), .z = gl_z },
+    { .pos = BR_VEC42(br_vec2_stog(sbl, viewport_size), abl), .bg  = bgv, .fg = fgv, .clip_dists = br_bb_clip_dists(limit, sbl), .z = gl_z },
+  });
+}
+
+void br_icons_draw_triangle(br_vec2_t a, br_vec2_t b, br_vec2_t c, br_bb_t atlas, br_color_t bg, br_color_t fg, br_bb_t limit, int z, br_sizei_t viewport_size) {
+  br_vec4_t bgv = BR_COLOR_TO4(bg);
+  br_vec4_t fgv = BR_COLOR_TO4(fg);
+  float gl_z = BR_Z_TO_GL(z);
+
+  br_vec2_t atl = atlas.min;
+  br_vec2_t atr = br_bb_tr(atlas);
+  br_vec2_t abr = atlas.max;
+
+  br_shader_icon_push_tri(br_icon.shader, (br_shader_icon_el_t[3]) {
+    { .pos = BR_VEC42(br_vec2_stog(a, viewport_size), atl), .bg  = bgv, .fg = fgv, .clip_dists = br_bb_clip_dists(limit, a), .z = gl_z },
+    { .pos = BR_VEC42(br_vec2_stog(b, viewport_size), atr), .bg  = bgv, .fg = fgv, .clip_dists = br_bb_clip_dists(limit, b), .z = gl_z },
+    { .pos = BR_VEC42(br_vec2_stog(c, viewport_size), abr), .bg  = bgv, .fg = fgv, .clip_dists = br_bb_clip_dists(limit, c), .z = gl_z },
   });
 }
 
 void br_icons_deinit(void) {
-  brgl_unload_texture(icons_id);
+  brgl_unload_texture(br_icon.icons_id);
 }
 
 br_extent_t br_icons_y_mirror(br_extent_t icon) {

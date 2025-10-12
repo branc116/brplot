@@ -60,38 +60,20 @@ SOFTWARE.
  * systems where unsigned long is not 32 bits, must NOT be used in
  * client or library code.
  */
-#ifndef _XSERVER64
-#  ifndef _XTYPEDEF_XID
+#ifndef _XTYPEDEF_XID
 #    define _XTYPEDEF_XID
 typedef unsigned long XID;
-#  endif
-#  ifndef _XTYPEDEF_MASK
-#    define _XTYPEDEF_MASK
+#endif
+#ifndef _XTYPEDEF_MASK
+#  define _XTYPEDEF_MASK
 typedef unsigned long Mask;
-#  endif
-#  ifndef _XTYPEDEF_ATOM
-#    define _XTYPEDEF_ATOM
+#endif
+#ifndef _XTYPEDEF_ATOM
+#  define _XTYPEDEF_ATOM
 typedef unsigned long Atom;    /* Also in Xdefs.h */
-#  endif
+#endif
 typedef unsigned long VisualID;
 typedef unsigned long Time;
-#else
-#  include "external/X11/Xmd.h"
-#  ifndef _XTYPEDEF_XID
-#    define _XTYPEDEF_XID
-typedef CARD32 XID;
-#  endif
-#  ifndef _XTYPEDEF_MASK
-#    define _XTYPEDEF_MASK
-typedef CARD32 Mask;
-#  endif
-#  ifndef _XTYPEDEF_ATOM
-#    define _XTYPEDEF_ATOM
-typedef CARD32 Atom;
-#  endif
-typedef CARD32 VisualID;
-typedef CARD32 Time;
-#endif
 
 typedef XID Window;
 typedef XID Drawable;

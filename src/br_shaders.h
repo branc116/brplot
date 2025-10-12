@@ -172,6 +172,10 @@ BR_ALL_SHADERS(X, NOP2, NOP2)
 BR_ALL_SHADERS(X, NOP2, NOP2)
 #undef X
 
+#if BR_HAS_SHADER_RELOAD
+void br_start_refreshing_shaders(bool* is_dirty, bool const* should_close);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

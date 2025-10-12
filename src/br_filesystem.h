@@ -28,6 +28,8 @@ typedef struct br_fs_files_t {
   br_str_t tmp_path;
 } br_fs_files_t;
 
+#define br_fs_read(PATH, OUT_CONTENT) br_fs_read_internal(PATH, OUT_CONTENT, __FILE__, __LINE__)
+
 bool br_fs_mkdir(br_strv_t path);
 bool br_fs_exists(br_strv_t path);
 bool br_fs_get_config_dir(br_str_t* path);
@@ -36,7 +38,7 @@ bool br_fs_up_dir(br_str_t* cwd);
 bool br_fs_cd(br_str_t* cwd, br_strv_t path);
 
 bool br_fs_move(const char* from, const char* to);
-bool br_fs_read(const char* path, br_str_t* out_content);
+bool br_fs_read_internal(const char* path, br_str_t* out_content, const char* file_name, int line);
 br_str_t br_fs_read1(const char* path);
 bool br_fs_list_dir(br_strv_t path, br_fs_files_t* out_files);
 

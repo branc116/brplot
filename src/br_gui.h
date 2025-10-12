@@ -22,6 +22,8 @@ typedef struct brgui_file_manager_t {
   bool is_inited;
   bool is_open;
   bool show_hidden_files;
+  bool has_tabed;
+  bool has_entered;
 
   br_fs_files_t cur_dir;
 } brgui_file_manager_t;
@@ -40,7 +42,6 @@ typedef struct brgui_fm_result_t {
   bool is_selected;
   brsp_id_t selected_file;
   int resizable_handle;
-
 } brgui_fm_result_t;
 
 typedef enum br_csv_state_t {
@@ -81,11 +82,9 @@ typedef struct brgui_csv_reader_t {
   brsp_id_t read_id;
 } brgui_csv_reader_t;
 
-void draw_grid_numbers(br_text_renderer_t* r, br_plot_t* br);
-void br_plot_update_context(br_plot_t* plot, br_vec2_t mouse_pos);
+void br_plot_update_context(br_plot_t* plot, br_extent_t plot_screen_extent, br_vec2_t mouse_pos);
 void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders);
-brgui_fm_result_t brgui_draw_file_manager(brgui_file_manager_t* state);
-void brgui_draw_csv_manager(brgui_csv_reader_t* reader, br_csv_parser_t* parser);
+brgui_fm_result_t brgui_draw_file_manager(br_plotter_t* br, brsp_t* sp, brgui_file_manager_t* state);
 
 
 #ifdef __cplusplus

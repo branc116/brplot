@@ -17,7 +17,7 @@
 #include "src/data_generator.c"
 #include "src/data.c"
 #include "src/resampling.c"
-#include "tests/src/mock_tl.c"
+#include "tests/src/mock_platform.c"
 #include "tests/src/mock_mesh.c"
 #include "tests/src/mock_gl.c"
 
@@ -35,12 +35,15 @@ void br_expr_debug(br_dagens_t dagens) {
   br_dagens_t dagens = {0}; \
   br_plots_t plots = {0}; \
   br_dagen_exprs_t arena = {0}; \
+  brsp_t sp = {0}; \
+  br_data_construct(&sp); \
   (void)arena;
 
 #define FREE \
   br_datas_deinit(&datas); \
   br_dagens_free(&dagens); \
-  br_da_free(plots);
+  br_da_free(plots); \
+  brsp_free(&sp);
 
 #define TEST_TOKENIZER_PASS(STR, ...) do { \
   tokens_t ts = {0}; \

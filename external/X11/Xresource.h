@@ -101,10 +101,6 @@ extern XrmString XrmQuarkToString(
     XrmQuark     /* quark */
 );
 
-extern XrmQuark XrmUniqueQuark(
-    void
-);
-
 #define XrmStringsEqual(a1, a2) (strcmp(a1, a2) == 0)
 
 

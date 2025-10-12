@@ -51,7 +51,6 @@ SOFTWARE.
 
 /* You must include <X11/Xlib.h> before including this file */
 #include "external/X11/Xlib.h"
-#include "external/X11/keysym.h"
 
 /* The Xlib structs are full of implicit padding to properly align members.
    We can't clean that up without breaking ABI, so tell clang not to bother
@@ -356,7 +355,6 @@ typedef struct {
 
 typedef int XContext;
 
-#define XUniqueContext()       ((XContext) XrmUniqueQuark())
 #define XStringToContext(string)   ((XContext) XrmStringToQuark(string))
 
 _XFUNCPROTOBEGIN
@@ -531,14 +529,6 @@ extern void XConvertCase(
     KeySym*    /* upper */
 );
 
-extern int XLookupString(
-    XKeyEvent*    /* event_struct */,
-    char*    /* buffer_return */,
-    int      /* bytes_buffer */,
-    KeySym*    /* keysym_return */,
-    XComposeStatus*  /* status_in_out */
-);
-
 extern Status XMatchVisualInfo(
     Display*    /* display */,
     int      /* screen */,
@@ -675,18 +665,6 @@ extern void XSetWMProperties(
 );
 
 extern void XmbSetWMProperties(
-    Display*    /* display */,
-    Window    /* w */,
-    _Xconst char*  /* window_name */,
-    _Xconst char*  /* icon_name */,
-    char**    /* argv */,
-    int      /* argc */,
-    XSizeHints*    /* normal_hints */,
-    XWMHints*    /* wm_hints */,
-    XClassHint*    /* class_hints */
-);
-
-extern void Xutf8SetWMProperties(
     Display*    /* display */,
     Window    /* w */,
     _Xconst char*  /* window_name */,

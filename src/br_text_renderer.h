@@ -47,6 +47,8 @@ br_extent_t br_text_renderer_push(br_text_renderer_t* r, br_vec3_t pos, int font
 br_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color_fg, br_color_t color_bg, br_strv_t text, br_bb_t limit);
 br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color_fg, br_color_t color_bg, br_strv_t str, br_bb_t limit, br_text_renderer_ancor_t ancor);
 
+void br_text_renderer_viewport_set(br_text_renderer_t* r, br_sizei_t viewport);
+
 #if defined(__cplusplus)
 }
 #endif

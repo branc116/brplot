@@ -11,14 +11,18 @@ extern "C" {
 typedef struct br_resampling_t br_resampling_t;
 typedef struct br_plot_t br_plot_t;
 typedef struct br_plot_data_t br_plot_data_t;
+typedef struct br_shaders_t br_shaders_t;
 
-void br_resampling_construct(void);
+void br_resampling_construct(br_shaders_t* shaders, float* min_something, float* cull_min);
 br_resampling_t* br_resampling_malloc(br_data_kind_t kind);
 void br_resampling_empty(br_resampling_t* res);
 void br_resampling_free(br_resampling_t* res);
 void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* rdi, br_plot_data_t const* pd);
 // TODO: index should be size_t...
 void br_resampling_add_point(br_resampling_t* res, br_data_t const* pg, uint32_t index);
+
+bool br_resampling_get_point_at2(br_data_t data, br_vec2d_t vec, float* dist, int* out_index);
+
 void br_resampling_reset(br_resampling_t* res);
 void br_resampling_change_something(br_datas_t pg);
 // In seconds
@@ -26,14 +30,6 @@ double br_resampling_get_draw_time(br_resampling_t* res);
 float br_resampling_get_something(br_resampling_t* res);
 float br_resampling_get_something2(br_resampling_t* res);
 
-
-// Internal
-typedef struct {
-  bool has_old;
-  br_vec2_t old;
-  br_vec2_t mid;
-  br_mesh_line_t args;
-} br_line_culler_t;
 
 typedef struct br_resampling_nodes_t {
   uint32_t index_start, len;
@@ -68,6 +64,14 @@ typedef struct br_resampling_nodes_common_t {
   br_resampling_nodes_t* arr;
   size_t len, cap;
 } br_resampling_nodes_common_t;
+
+// Internal
+typedef struct {
+  bool has_old;
+  br_vec2_t old;
+  br_vec2_t mid;
+  br_mesh_line_t args;
+} br_line_culler_t;
 
 typedef struct br_resampling_t {
   br_data_kind_t kind;

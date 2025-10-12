@@ -1,9 +1,11 @@
 #include "src/br_pp.h"
 #define BR_MEMORY_TRACER_IMPLEMENTATION
 #include "src/br_memory.h"
+#define BRFL_IMPLEMENTATION
+#include "src/br_free_list.h"
 #include "src/br_test.h"
 #include "src/resampling.c"
-#include "tests/src/mock_tl.c"
+#include "tests/src/mock_platform.c"
 #include "tests/src/mock_mesh.c"
 
 void resampling(void) {

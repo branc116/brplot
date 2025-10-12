@@ -192,6 +192,10 @@ void* br_memory_malloc(bool zero, size_t size, const char* file_name, int line_n
   size_t* memory;
 
   memory = malloc(size + sizeof(size_t));
+  if (memory == 0) {
+    BR_LOGW("Failed to allocated %zu bytes at %s:%d", size, file_name, line_num);
+    return NULL;
+  }
   if (zero) memset(memory, 0, size);
   *memory = br_memory.len;
 
@@ -222,7 +226,11 @@ void* br_memory_realloc(void* old, size_t new_size, const char* file_name, int l
   br_memory_node_t *node, new_node;
   size_t* new_memory;
 
-  if (old == NULL) BR_LOGF("Trying to realloc NULL at: %s:%d", file_name, line);
+  if (old == NULL) {
+    BR_LOGW("Trying to realloc NULL at: %s:%d", file_name, line);
+    return br_memory_malloc(false, new_size, file_name, line);
+  }
+
   index = *(((size_t*)old) - 1);
   if (index >= br_memory.len) BR_LOGF("Trying to realloc something that was not mallocked at: %s:%d", file_name, line);
   node = &br_memory.arr[index];
@@ -281,7 +289,11 @@ void br_memory_free(void* old, const char* file_name, int line) {
   br_memory_node_t *node, new_node;
   int new_nid;
 
-  if (NULL == old) BR_LOGF("Trying to free NULL at: %s:%d", file_name, line);
+  if (NULL == old) {
+    BR_LOGW("Trying to free NULL at: %s:%d", file_name, line);
+    return;
+  }
+
   index = (((size_t*)old) - 1);
   if (*index >= br_memory.len) BR_LOGF("Trying to free something that was not mallocked at: %s:%d", file_name, line);
   node = &br_memory.arr[*index];

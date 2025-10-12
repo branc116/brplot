@@ -220,3 +220,19 @@ void __sanitizer_print_stack_trace(void);
 
 #include <stdio.h>
 
+
+#define BR_HAS_GL 1
+#define BR_HAS_GLFW 1
+
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
+#  if !defined(BR_NO_X11)
+#    define BR_HAS_GLX 1
+#    define BR_HAS_X11 1
+#  endif
+#  if defined(HEADLESS)
+#  endif
+#elif defined(__EMSCRIPTEN__)
+#  define BR_GL_STATIC
+#  define BR_GLFW_STATIC
+#endif
+

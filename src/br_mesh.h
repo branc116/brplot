@@ -1,7 +1,7 @@
 #pragma once
-#include "src/br_shaders.h"
-#include "src/br_data.h"
 #include "src/br_math.h"
+
+#include <sys/types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,6 +18,9 @@ typedef struct br_mesh_line_3d_t {
   br_mat_t mvp;
 } br_mesh_line_3d_t;
 
+typedef struct br_shaders_t br_shaders_t;
+void br_mesh_construct(br_shaders_t* shaders, bool* debug);
+
 void br_mesh_gen_bb(br_mesh_line_t args, br_bb_t bb);
 void br_mesh_gen_point(br_mesh_line_t args, br_vec2_t point);
 void br_mesh_gen_point1(br_mesh_line_t args, br_vec2_t point, br_vec2_t size);
@@ -32,7 +35,9 @@ void br_mesh_3d_gen_line_strip1(br_mesh_line_3d_t args, float const* xs, float c
 void br_mesh_3d_gen_line_strip2(br_mesh_line_3d_t args, br_vec2_t const* ps, size_t len);
 void br_mesh_3d_gen_line_strip3(br_mesh_line_3d_t args, float const* xs, float const* ys, size_t len);
 
-void br_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders);
+typedef struct br_theme_t br_theme_t;
+typedef struct br_plot_t br_plot_t;
+void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme);
 
 
 #ifdef __cplusplus

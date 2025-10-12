@@ -8,7 +8,7 @@
 #include "src/br_permastate.h"
 #include "src/br_ui.h"
 #include "src/br_gui.h"
-#include "src/br_tl.h"
+#include "src/br_platform.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,7 +17,6 @@ extern "C" {
 typedef struct br_plotter_t br_plotter_t;
 typedef struct q_commands q_commands;
 typedef struct br_text_renderer_t br_text_renderer_t;
-typedef struct GLFWwindow GLFWwindow;
 
 #if BR_HAS_HOTRELOAD
 typedef struct br_hotreload_state_t {
@@ -31,6 +30,14 @@ typedef struct br_hotreload_state_t {
 } br_hotreload_state_t;
 #endif
 
+typedef enum br_plotter_entity_kind_t {
+  br_plotter_entity_none,
+  br_plotter_entity_plot_2d,
+  br_plotter_entity_plot_3d,
+  br_plotter_entity_ui,
+  br_plotter_entity_text_input,
+} br_plotter_entity_kind_t;
+
 typedef struct br_plotter_t {
   br_datas_t groups;
   br_plots_t plots;
@@ -38,38 +45,39 @@ typedef struct br_plotter_t {
   br_dagens_t dagens;
   bruirs_t resizables;
   br_csv_parser_t csv_parser;
+  brsp_t sp;
 
   br_text_renderer_t* text;
   // Any thread can write to this q, only render thread can pop
   q_commands* commands;
 
+  brpl_window_t win;
+
   struct {
-    GLFWwindow* glfw;
-    br_sizei_t size;
-    br_extenti_t viewport;
-  } win;
+    br_plotter_entity_kind_t active;
+    union {
+      int plot_id;
+      int resizable_id;
+      brsp_id_t input;
+    };
+  } action, hovered;
 
   struct {
     br_vec2_t old_pos;
     br_vec2_t pos;
     br_vec2_t delta;
-    br_vec2_t scroll;
-    struct {
-      bool left:1;
-      bool right:1;
-    } down;
-    struct {
-      bool left:1;
-      bool right:1;
-    } pressed;
+    bool dragging_left;
+    bool dragging_right;
+    bool click;
+    bool active;
   } mouse;
 
   struct {
-    bool down[512];
-    int mod;
+    bool ctrl_down;
+    bool shift_down;
+    bool alt_down;
+    bool down[255];
   } key;
-
-  br_pressed_chars_t pressed_chars;
 
   struct {
     double old;
@@ -125,6 +133,9 @@ void        br_plotter_init(br_plotter_t* br);
 void        br_plotter_deinit(br_plotter_t* br);
 void        br_plotter_free(br_plotter_t* br);
 
+void        br_plotter_one_iter(br_plotter_t* br);
+void        br_plotter_update(br_plotter_t* br);
+
 void        br_plotter_resize(br_plotter_t* br, float width, float height);
 br_datas_t* br_plotter_get_br_datas(br_plotter_t* br);
 void        br_plotter_switch_2d(br_plotter_t* br);
@@ -144,6 +155,8 @@ void        br_plotter_draw(br_plotter_t* br);
 void        br_plotter_minimal(br_plotter_t* br);
 void        br_plotter_frame_end(br_plotter_t* br);
 void        br_plotter_datas_deinit(br_plotter_t* br);
+void        br_plotter_datas_deinit_in_plot(br_plotter_t* br, int plot_id);
+void        br_plotter_datas_empty_in_plot(br_plotter_t* br, int plot_id);
 
 // Platform specific
 void br_plotter_wait(br_plotter_t const* br);
@@ -151,6 +164,14 @@ void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height)
 void br_plotter_deinit_specifics_platform(br_plotter_t* br);
 void br_plotter_begin_drawing(br_plotter_t* br);
 void br_plotter_end_drawing(br_plotter_t* br);
+
+#if BR_HAS_HOTRELOAD
+void br_hotreload_start(br_hotreload_state_t* s);
+void br_hotreload_tick_ui(br_hotreload_state_t* s);
+#endif
+
+void br_read_input_start(br_plotter_t* br);
+void br_read_input_stop(void);
 
 #ifdef __cplusplus
 }

@@ -8,7 +8,6 @@
 #include "src/br_str.h"
 #include "src/br_math.h"
 #include "src/br_string_pool.h"
-#include "src/br_tl.h"
 #include "src/br_memory.h"
 
 #include <stdio.h>
@@ -23,42 +22,40 @@ static void br_data_push_point2(br_data_t* g, br_vec2_t v);
 static void br_data_push_point3(br_data_t* g, br_vec3_t v);
 static void br_bb_3d_expand_with_point(bb_3d_t* bb, br_vec3_t v);
 
-static br_color_t base_colors[8];
 
-void br_data_construct(void) {
-  base_colors[0] = BR_RED;
-  base_colors[1] = BR_GREEN;
-  base_colors[2] = BR_BLUE;
-  base_colors[3] = BR_LIGHTGRAY;
-  base_colors[4] = BR_PINK;
-  base_colors[5] = BR_GOLD;
-  base_colors[6] = BR_VIOLET;
-  base_colors[7] = BR_DARKPURPLE;
+static BR_THREAD_LOCAL struct {
+  brsp_t* sp;
+  br_color_t base_colors[8];
+} br_data;
+
+void br_data_construct(brsp_t* sp) {
+  br_data.sp = sp;
+  br_data.base_colors[0] = BR_RED;
+  br_data.base_colors[1] = BR_GREEN;
+  br_data.base_colors[2] = BR_BLUE;
+  br_data.base_colors[3] = BR_LIGHTGRAY;
+  br_data.base_colors[4] = BR_PINK;
+  br_data.base_colors[5] = BR_GOLD;
+  br_data.base_colors[6] = BR_VIOLET;
+  br_data.base_colors[7] = BR_DARKPURPLE;
 }
 
 int br_datas_get_new_id(br_datas_t *datas) {
   int max = 1;
-  for (size_t i = 0; i < datas->len; ++i) {
-    if (datas->arr[i].group_id > max) max = datas->arr[i].group_id;
-  }
+  br_data_t data;
+  brfl_foreachv(data, *datas) if (data.group_id > max) max = data.group_id;
   return max;
 }
 
 br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind) {
   br_data_t data;
   if (NULL == br_data_init(&data, group_id, kind)) return NULL;
-  size_t index = datas->len;
-  br_da_push(*datas, data);
-  if (index == datas->len) {
-    br_data_deinit(&data);
-    return NULL;
-  }
-  return &datas->arr[index];
+  int index = brfl_push(*datas, data);
+  return br_da_getp(*datas, index);
 }
 
 br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, br_color_t color, size_t cap, brsp_id_t name) {
   BR_ASSERT(kind == br_data_kind_2d || kind == br_data_kind_3d);
-  br_data_t* ret = NULL;
 
   cap = cap < DEF_CAP ? DEF_CAP : cap;
   br_data_t d = {
@@ -72,10 +69,8 @@ br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind
   if (NULL == (d.dd.xs = BR_MALLOC(sizeof(float) * cap)))                               goto error;
   if (NULL == (d.dd.ys = BR_MALLOC(sizeof(float) * cap)))                               goto error;
   if (kind == br_data_kind_3d) if (NULL == (d.ddd.zs = BR_MALLOC(sizeof(float) * cap))) goto error;
-  br_da_push(*datas, d);
-  ret = &datas->arr[datas->len - 1];
-  if (ret->group_id != group_id)                                                        goto error;
-  return ret;
+  int handle = brfl_push(*datas, d);
+  return br_da_getp(*datas, handle);
 
 error:
   br_data_deinit(&d);
@@ -118,15 +113,15 @@ void br_data_push_xy(br_datas_t* pg_array, double x, double y, int group) {
   br_data_push_point2(pg, (br_vec2_t){ .x = (float)(x - pg->dd.rebase_x), .y = (float)(y - pg->dd.rebase_y) });
 }
 
-void br_data_push_xyz(br_datas_t* pg_array, double x, double y, double z, int group) {
-  br_data_t* pg = br_data_get2(pg_array, group, br_data_kind_3d);
-  if (pg == NULL) return;
-  if (pg->len == 0) {
-    pg->ddd.rebase_x = x;
-    pg->ddd.rebase_y = y;
-    pg->ddd.rebase_z = z;
+void br_data_push_xyz(br_datas_t* datas, double x, double y, double z, int group) {
+  br_data_t* data = br_data_get2(datas, group, br_data_kind_3d);
+  if (data == NULL) return;
+  if (data->len == 0) {
+    data->ddd.rebase_x = x;
+    data->ddd.rebase_y = y;
+    data->ddd.rebase_z = z;
   }
-  br_data_push_point3(pg, (br_vec3_t){ .x = (float)(x - pg->ddd.rebase_x), .y = (float)(y - pg->ddd.rebase_y), .z = (float)(z - pg->ddd.rebase_z) });
+  br_data_push_point3(data, (br_vec3_t){ .x = (float)(x - data->ddd.rebase_x), .y = (float)(y - data->ddd.rebase_y), .z = (float)(z - data->ddd.rebase_z) });
 }
 
 br_vec2d_t br_data_el_xy(br_datas_t datas, int group, int index) {
@@ -163,66 +158,59 @@ static int br_data_compare(const void* data1, const void* data2) {
   return ((br_data_t*)data1)->group_id - ((br_data_t*)data2)->group_id;
 }
 
-void br_data_export(br_data_t const* pg, FILE* file) {
-  for (size_t i = 0; i < pg->len; ++i) {
-    switch(pg->kind) {
+void br_data_export(br_data_t data, FILE* file) {
+  for (size_t i = 0; i < data.len; ++i) {
+    switch(data.kind) {
       case br_data_kind_2d: {
-        br_vec2_t point = BR_VEC2(pg->dd.xs[i], pg->dd.ys[i]);
-        fprintf(file, "%f,%f;%d\n", point.x, point.y, pg->group_id);
-        break;
-      }
+        br_vec2_t point = BR_VEC2(data.dd.xs[i], data.dd.ys[i]);
+        fprintf(file, "%f,%f;%d\n", point.x, point.y, data.group_id);
+      } break;
       case br_data_kind_3d: {
-        br_vec3_t point = BR_VEC3(pg->ddd.xs[i], pg->ddd.ys[i], pg->ddd.zs[i]);
-        fprintf(file, "%f,%f,%f;%d\n", point.x, point.y, point.z, pg->group_id);
-        break;
-      }
-      default: BR_UNREACHABLE("Kind %d not supported", pg->kind);
+        br_vec3_t point = BR_VEC3(data.ddd.xs[i], data.ddd.ys[i], data.ddd.zs[i]);
+        fprintf(file, "%f,%f,%f;%d\n", point.x, point.y, point.z, data.group_id);
+      } break;
+      default: BR_UNREACHABLE("Kind %d not supported", data.kind);
     }
   }
 }
 
-void br_data_export_csv(br_data_t const* pg, FILE* file) {
+void br_data_export_csv(br_data_t data, FILE* file) {
   fprintf(file, "group,id,x,y,z\n");
-  for (size_t i = 0; i < pg->len; ++i) {
-    switch(pg->kind) {
+  for (size_t i = 0; i < data.len; ++i) {
+    switch(data.kind) {
       case br_data_kind_2d: {
-        br_vec2_t point = BR_VEC2(pg->dd.xs[i], pg->dd.ys[i]);
-        fprintf(file, "%d,%zu,%f,%f,\n", pg->group_id, i, point.x, point.y);
-        break;
-      }
+        br_vec2_t point = BR_VEC2(data.dd.xs[i], data.dd.ys[i]);
+        fprintf(file, "%d,%zu,%f,%f,\n", data.group_id, i, point.x, point.y);
+      } break;
       case br_data_kind_3d: {
-        br_vec3_t point = BR_VEC3(pg->ddd.xs[i], pg->ddd.ys[i], pg->ddd.zs[i]);
-        fprintf(file, "%d,%zu,%f,%f,%f\n", pg->group_id, i, point.x, point.y, point.z);
-        break;
-      }
-      default: BR_ASSERT(0);
+        br_vec3_t point = BR_VEC3(data.ddd.xs[i], data.ddd.ys[i], data.ddd.zs[i]);
+        fprintf(file, "%d,%zu,%f,%f,%f\n", data.group_id, i, point.x, point.y, point.z);
+      } break;
+      default: BR_UNREACHABLE("Kind %d not supported", data.kind);
     }
   }
 }
 
-void br_datas_export(br_datas_t const* pg_array, FILE* file) {
-  for (size_t i = 0; i < pg_array->len; ++i) {
-    br_data_export(&pg_array->arr[i], file);
-  }
+void br_datas_export(br_datas_t datas, FILE* file) {
+  br_data_t data;
+  brfl_foreachv(data, datas) br_data_export(data, file);
 }
 
-void br_datas_export_csv(br_datas_t const* pg_array, FILE* file) {
+void br_datas_export_csv(br_datas_t datas, FILE* file) {
   fprintf(file, "group,id,x,y,z\n");
-  for (size_t j = 0; j < pg_array->len; ++j) {
-    br_data_t* pg = &pg_array->arr[j];
-    for (size_t i = 0; i < pg->len; ++i) {
-      switch(pg->kind) {
+  br_data_t data;
+  brfl_foreachv(data, datas) {
+    for (size_t i = 0; i < data.len; ++i) {
+      switch(data.kind) {
         case br_data_kind_2d: {
-          br_vec2_t point = BR_VEC2(pg->dd.xs[i], pg->dd.ys[i]);
-          fprintf(file, "%d,%zu,%f,%f,\n", pg->group_id, i, point.x, point.y);
-          break;
-        }
+          br_vec2_t point = BR_VEC2(data.dd.xs[i], data.dd.ys[i]);
+          fprintf(file, "%d,%zu,%f,%f,\n", data.group_id, i, point.x, point.y);
+        } break;
         case br_data_kind_3d: {
-          br_vec3_t point = BR_VEC3(pg->ddd.xs[i], pg->ddd.ys[i], pg->ddd.zs[i]);
-          fprintf(file, "%d,%zu,%f,%f,%f\n", pg->group_id, i, point.x, point.y, point.z);
-          break;
-        }
-        default: BR_UNREACHABLE("Kind %d not supported", pg->kind);
+          br_vec3_t point = BR_VEC3(data.ddd.xs[i], data.ddd.ys[i], data.ddd.zs[i]);
+          fprintf(file, "%d,%zu,%f,%f,%f\n", data.group_id, i, point.x, point.y, point.z);
+        } break;
+        default: BR_UNREACHABLE("Kind %d not supported", data.kind);
       }
     }
   }
@@ -235,28 +223,26 @@ void br_data_deinit(br_data_t* g) {
   BR_FREE(g->dd.ys); g->dd.ys = NULL;
   if (br_data_kind_3d == g->kind) BR_FREE(g->ddd.zs), g->ddd.zs = NULL;
   br_resampling_free(g->resampling);
-  brsp_remove(brtl_brsp(), g->name);
+  brsp_remove(br_data.sp, g->name);
   g->len = g->cap = 0;
 }
 
-void br_datas_deinit(br_datas_t* arr) {
-  if (arr->arr == NULL) return;
-  for (size_t i = 0; i < arr->len; ++i) br_data_deinit(&arr->arr[i]);
-  br_da_free(*arr);
+void br_datas_deinit(br_datas_t* datas) {
+  if (datas->arr == NULL) return;
+  brfl_foreach(i, *datas) br_data_deinit(&datas->arr[i]);
+  br_da_free(*datas);
 }
 
-void br_datas_empty(br_datas_t* pg) {
-  for (size_t i = 0; i < pg->len; ++i) br_data_empty(&pg->arr[i]);
+void br_datas_empty(br_datas_t datas) {
+  brfl_foreach(i, datas) br_data_empty(&datas.arr[i]);
 }
 
-void br_data_remove(br_datas_t* pg, int data_id) {
-  for (size_t i = 0; i < pg->len; ++i) {
-    if (pg->arr[i].group_id != data_id) continue;
-    br_data_deinit(&pg->arr[i]);
-    if (i != pg->len - 1) memcpy(&pg->arr[i], &pg->arr[pg->len - 1], sizeof(br_data_t));
-    memset(&pg->arr[--pg->len], 0, sizeof(br_data_t));
+void br_data_remove(br_datas_t* datas, int data_id) {
+  brfl_foreach(i, *datas) {
+    if (datas->arr[i].group_id != data_id) continue;
+    br_data_deinit(&datas->arr[i]);
+    brfl_remove(*datas, i);
   }
-  if (pg->len > 1) qsort(pg->arr, pg->len, sizeof(pg->arr[0]), br_data_compare);
 }
 
 void br_datas_add_test_points(br_datas_t* pg) {
@@ -355,7 +341,7 @@ static br_data_t* br_data_init(br_data_t* g, int group_id, br_data_kind_t kind) 
     .cap = DEF_CAP, .len = 0, .kind = kind,
     .group_id = group_id,
     .color = br_data_get_default_color(group_id),
-    .name = brsp_new(brtl_brsp()),
+    .name = brsp_new(br_data.sp),
     .is_new = true,
   };
   if (NULL == g->resampling)                                                                 goto error;
@@ -364,7 +350,7 @@ static br_data_t* br_data_init(br_data_t* g, int group_id, br_data_kind_t kind) 
   if (kind == br_data_kind_3d) if (NULL == (g->ddd.zs = BR_MALLOC(sizeof(float) * DEF_CAP))) goto error;
   char* scrach = br_scrach_get(64);
     int n = sprintf(scrach, "Data #%d", group_id);
-    brsp_set(brtl_brsp(), g->name, BR_STRV(scrach, (uint32_t)n));
+    brsp_set(br_data.sp, g->name, BR_STRV(scrach, (uint32_t)n));
   br_scrach_free();
   return g;
 
@@ -375,14 +361,14 @@ error:
 
 br_color_t br_data_get_default_color(int group_id) {
   group_id = abs(group_id);
-  static int base_colors_count = sizeof(base_colors)/sizeof(br_color_t);
+  static int base_colors_count = sizeof(br_data.base_colors)/sizeof(br_color_t);
   float count = 2.f;
-  br_color_t c = base_colors[group_id%base_colors_count];
+  br_color_t c = br_data.base_colors[group_id%base_colors_count];
   group_id /= base_colors_count;
   while (group_id > 0) {
-    c.r = (unsigned char)(((float)c.r + (float)base_colors[group_id%base_colors_count].r) / count);
-    c.g = (unsigned char)(((float)c.g + (float)base_colors[group_id%base_colors_count].g) / count);
-    c.b = (unsigned char)(((float)c.b + (float)base_colors[group_id%base_colors_count].b) / count);
+    c.r = (unsigned char)(((float)c.r + (float)br_data.base_colors[group_id%base_colors_count].r) / count);
+    c.g = (unsigned char)(((float)c.g + (float)br_data.base_colors[group_id%base_colors_count].g) / count);
+    c.b = (unsigned char)(((float)c.b + (float)br_data.base_colors[group_id%base_colors_count].b) / count);
     group_id /= base_colors_count;
     count += 1;
   }
@@ -417,8 +403,7 @@ bool br_data_realloc(br_data_t* data, size_t new_cap) {
 }
 
 br_data_t* br_data_get1(br_datas_t pg, int group) {
-  for (size_t i = 0; i < pg.len; ++i) if (pg.arr[i].group_id == group)
-    return &pg.arr[i];
+  brfl_foreach(i, pg) if (pg.arr[i].group_id == group) return &pg.arr[i];
   return NULL;
 }
 
@@ -428,42 +413,20 @@ br_data_t* br_data_get(br_datas_t* pg, int group) {
 
 br_data_t* br_data_get2(br_datas_t* pg, int group, br_data_kind_t kind) {
   BR_ASSERT(pg);
-
-  // TODO: da
-  if (pg->len == 0) {
-    pg->arr = BR_MALLOC(sizeof(br_data_t));
-    if (NULL == pg->arr) return NULL;
-    br_data_t* ret = br_data_init(&pg->arr[0], group, kind);
-    if (ret == NULL) return NULL;
-    pg->cap = pg->len = 1;
-    return ret;
-  }
-
-  for (size_t i = 0; i < pg->len; ++i) {
+  brfl_foreach(i, *pg) {
     if (pg->arr[i].group_id != group) continue;
     return pg->arr[i].kind == kind ? &pg->arr[i] : NULL;
   }
-
-  if (pg->len >= pg->cap) {
-    size_t new_cap = pg->cap * 2;
-    br_data_t* new_arr = BR_REALLOC(pg->arr, sizeof(br_data_t)*new_cap);
-    if (NULL == new_arr) return NULL;
-    pg->arr = new_arr;
-    pg->cap = new_cap;
-  }
-  br_data_t* ret = br_data_init(&pg->arr[pg->len++], group, kind);
-  if (NULL == ret) {
-    --pg->len;
-    return NULL;
-  }
-  qsort(pg->arr, pg->len, sizeof(pg->arr[0]), br_data_compare);
-  return br_data_get2(pg, group, kind);
+  br_data_t new_data;
+  if (NULL == br_data_init(&new_data, group, kind)) return NULL;
+  int handle = brfl_push(*pg, new_data);
+  return br_da_getp(*pg, handle);
 }
 
 void br_data_set_name(br_datas_t* pg, int group, br_str_t name) {
   br_data_t* g = br_data_get(pg, group);
   if (pg == NULL) return;
-  brsp_set(brtl_brsp(), g->name, br_str_as_view(name));
+  brsp_set(br_data.sp, g->name, br_str_as_view(name));
   br_str_free(name);
 }
 

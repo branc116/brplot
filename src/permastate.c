@@ -11,7 +11,6 @@
 #include "src/br_free_list.h"
 #include "src/br_string_pool.h"
 #include "src/br_ui.h"
-#include "src/br_tl.h"
 #include "src/br_memory.h"
 
 #include <stdint.h>
@@ -74,42 +73,42 @@ done:
   return success;
 }
 
-bool br_permastate_savef_data(FILE* file, br_dagens_t const* dagens, br_data_t* data) {
+bool br_permastate_savef_data(FILE* file, br_dagens_t const* dagens, br_data_t data) {
   br_save_state_command_t command = 0;
   bool success = true;
 
-  if (br_data_is_generated(dagens, data->group_id)) return true;
-  switch (data->kind) {
+  if (br_data_is_generated(dagens, data.group_id)) return true;
+  switch (data.kind) {
     case br_data_kind_2d: command = br_save_state_command_save_data_2d; break;
     case br_data_kind_3d: command = br_save_state_command_save_data_3d; break;
-    default: BR_UNREACHABLE("Data kind %d", data->kind);
+    default: BR_UNREACHABLE("Data kind %d", data.kind);
   }
   if (NULL == file)                                                                      BR_ERRORE("File is null");
   if (1 != fwrite(&command, sizeof(command), 1, file))                                   BR_ERRORE("Failed to write command");
-  if (1 != fwrite(&data->color, sizeof(data->color), 1, file))                           BR_ERRORE("Failed to write color");
-  if (1 != fwrite(&data->len, sizeof(data->len), 1, file))                               BR_ERRORE("Failed to write length");
-  switch (data->kind) {
+  if (1 != fwrite(&data.color, sizeof(data.color), 1, file))                             BR_ERRORE("Failed to write color");
+  if (1 != fwrite(&data.len, sizeof(data.len), 1, file))                                 BR_ERRORE("Failed to write length");
+  switch (data.kind) {
     case br_plot_kind_2d: {
-      if (1 != fwrite(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file))   BR_ERRORE("Failed to write bounding box");
-      if (1 != fwrite(&data->dd.rebase_x, sizeof(data->dd.rebase_x), 1, file))           BR_ERRORE("Failed to write rebase x");
-      if (1 != fwrite(&data->dd.rebase_y, sizeof(data->dd.rebase_y), 1, file))           BR_ERRORE("Failed to write rebase y");
-      if (0 != data->len) {
-        if (data->len != fwrite(data->dd.xs, sizeof(*data->dd.xs), data->len, file))     BR_ERRORE("Failed to write xs");
-        if (data->len != fwrite(data->dd.ys, sizeof(*data->dd.ys), data->len, file))     BR_ERRORE("Failed to write ys");
+      if (1 != fwrite(&data.dd.bounding_box, sizeof(data.dd.bounding_box), 1, file))     BR_ERRORE("Failed to write bounding box");
+      if (1 != fwrite(&data.dd.rebase_x, sizeof(data.dd.rebase_x), 1, file))             BR_ERRORE("Failed to write rebase x");
+      if (1 != fwrite(&data.dd.rebase_y, sizeof(data.dd.rebase_y), 1, file))             BR_ERRORE("Failed to write rebase y");
+      if (0 != data.len) {
+        if (data.len != fwrite(data.dd.xs, sizeof(*data.dd.xs), data.len, file))         BR_ERRORE("Failed to write xs");
+        if (data.len != fwrite(data.dd.ys, sizeof(*data.dd.ys), data.len, file))         BR_ERRORE("Failed to write ys");
       }
     } break;
     case br_plot_kind_3d: {
-      if (1 != fwrite(&data->ddd.bounding_box, sizeof(data->ddd.bounding_box), 1, file)) BR_ERRORE("Failed to write bounding box");
-      if (1 != fwrite(&data->ddd.rebase_x, sizeof(data->ddd.rebase_x), 1, file))         BR_ERRORE("Failed to write rebase x");
-      if (1 != fwrite(&data->ddd.rebase_y, sizeof(data->ddd.rebase_y), 1, file))         BR_ERRORE("Failed to write rebase y");
-      if (1 != fwrite(&data->ddd.rebase_z, sizeof(data->ddd.rebase_z), 1, file))         BR_ERRORE("Failed to write rebase z");
-      if (0 != data->len) {
-        if (data->len != fwrite(data->ddd.xs, sizeof(*data->ddd.xs), data->len, file))   BR_ERRORE("Failed to write xs");
-        if (data->len != fwrite(data->ddd.ys, sizeof(*data->ddd.ys), data->len, file))   BR_ERRORE("Failed to write ys");
-        if (data->len != fwrite(data->ddd.zs, sizeof(*data->ddd.zs), data->len, file))   BR_ERRORE("Failed to write zs");
+      if (1 != fwrite(&data.ddd.bounding_box, sizeof(data.ddd.bounding_box), 1, file))   BR_ERRORE("Failed to write bounding box");
+      if (1 != fwrite(&data.ddd.rebase_x, sizeof(data.ddd.rebase_x), 1, file))           BR_ERRORE("Failed to write rebase x");
+      if (1 != fwrite(&data.ddd.rebase_y, sizeof(data.ddd.rebase_y), 1, file))           BR_ERRORE("Failed to write rebase y");
+      if (1 != fwrite(&data.ddd.rebase_z, sizeof(data.ddd.rebase_z), 1, file))           BR_ERRORE("Failed to write rebase z");
+      if (0 != data.len) {
+        if (data.len != fwrite(data.ddd.xs, sizeof(*data.ddd.xs), data.len, file))       BR_ERRORE("Failed to write xs");
+        if (data.len != fwrite(data.ddd.ys, sizeof(*data.ddd.ys), data.len, file))       BR_ERRORE("Failed to write ys");
+        if (data.len != fwrite(data.ddd.zs, sizeof(*data.ddd.zs), data.len, file))       BR_ERRORE("Failed to write zs");
       }
     } break;
-    default: BR_UNREACHABLE("Data kind %d", data->kind);
+    default: BR_UNREACHABLE("Data kind %d", data.kind);
   }
   goto done;
 
@@ -125,15 +124,15 @@ bool br_permastate_save_datas(br_str_t path_folder, br_dagens_t const* dagens, b
   FILE* file = NULL;
   bool success = true;
 
-  for (size_t i = 0; i < datas.len; ++i) {
-    br_data_t* data = &datas.arr[i];
-    if (br_data_is_generated(dagens, data->group_id)) continue;
+  br_data_t data;
+  brfl_foreachv(data, datas) {
+    if (br_data_is_generated(dagens, data.group_id)) continue;
     if (false == br_fs_cd(&path_folder, br_strv_from_literal("data")))        BR_ERROR("Failed to change dir");
-    if (false == br_str_push_int(&path_folder, data->group_id))               BR_ERROR("Failed to push int");
+    if (false == br_str_push_int(&path_folder, data.group_id))                BR_ERROR("Failed to push int");
     if (false == br_str_push_strv(&path_folder, br_strv_from_literal(".br"))) BR_ERROR("Failed to push strv");
     br_str_to_c_str1(path_folder, buff);
     if (NULL == (file = fopen(buff, "wb")))                                   BR_ERRORE("Failed to open file %s", buff);
-    if (false == br_permastate_savef_data(file, dagens, data))                BR_ERROR("Failed to write data %zu", i);
+    if (false == br_permastate_savef_data(file, dagens, data))                BR_ERROR("Failed to write data %d", data.group_id);
     fclose(file);
     file = NULL;
     buff[0] = '\0';
@@ -157,16 +156,16 @@ static bool br_permastate_savef_plotter(FILE* file, br_plotter_t* br) {
 
   if (NULL == file)                                                          BR_ERRORE("File is NULL");
   if (1 != fwrite(&command, sizeof(command), 1, file))                       BR_ERRORE("Failed to write command");
-  if (1 != fwrite(&br->groups.len, sizeof(br->groups.len), 1, file))         BR_ERRORE("Failed to write groups len");
-  for (size_t i = 0; i < br->groups.len; ++i) {
-    br_data_t* data = &br->groups.arr[i];
-    if (1 != fwrite(&data->group_id, sizeof(data->group_id), 1, file))       BR_ERRORE("Failed to write group id");
-    if (1 != fwrite(&data->name, sizeof(data->name), 1, file))               BR_ERRORE("Failed to write name id");
+  if (1 != fwrite(&br->groups.free_len, sizeof(br->groups.free_len), 1, file)) BR_ERRORE("Failed to write datas len");
+  br_data_t d;
+  brfl_foreachv(d, br->groups) {
+    br_data_desc_t dd = { .group_id = d.group_id, .name = d.name };
+    if (1 != fwrite(&dd, sizeof(dd), 1, file))                               BR_ERRORE("Failed to write group %d", d.group_id);
   }
   if (1 != fwrite(&br->ui, sizeof(br->ui), 1, file))                         BR_ERRORE("Failed to write UI.");
   brui_resizable_temp_delete_all();
   brfl_write(file, br->resizables, fl_write_error); if (fl_write_error != 0) BR_ERRORE("Failed to write resizables.");
-  if (false == brsp_write(file, brtl_brsp()))                                BR_ERRORE("Failed to write string pool.");
+  if (false == brsp_write(file, &br->sp))                                    BR_ERRORE("Failed to write string pool.");
   goto done;
 
 error:
@@ -221,25 +220,25 @@ done:
   return;
 }
 
-bool br_permastate_save_as(br_plotter_t* br, const char* path_to) {
-  FILE* f           = NULL;
-  bool success      = true;
-
-  if (NULL == (f = fopen(path_to, "wb")))                                      BR_ERROR("Failed to open a file %s: %s", path_to, strerror(errno));
-  if (false == br_permastate_savef_plots(f, br->plots))                        BR_ERROR("Failed to save plots");
-  for (size_t i = 0; i < br->groups.len; ++i) {
-    if (false == br_permastate_savef_data(f, &br->dagens, &br->groups.arr[i])) BR_ERROR("Failed to save data %zu", i);
-  }
-  if (false == br_permastate_savef_plotter(f, br))                             BR_ERROR("Failed to plotter");
-  goto done;
-
-error:
-  success = false;
-
-done:
-  if (NULL != f) fclose(f);
-  return success;
-}
+//bool br_permastate_save_as(br_plotter_t* br, const char* path_to) {
+//  FILE* f           = NULL;
+//  bool success      = true;
+//
+//  if (NULL == (f = fopen(path_to, "wb")))                                      BR_ERROR("Failed to open a file %s: %s", path_to, strerror(errno));
+//  if (false == br_permastate_savef_plots(f, br->plots))                        BR_ERROR("Failed to save plots");
+//  for (size_t i = 0; i < br->groups.len; ++i) {
+//    if (false == br_permastate_savef_data(f, &br->dagens, &br->groups.arr[i])) BR_ERROR("Failed to save data %zu", i);
+//  }
+//  if (false == br_permastate_savef_plotter(f, br))                             BR_ERROR("Failed to plotter");
+//  goto done;
+//
+//error:
+//  success = false;
+//
+//done:
+//  if (NULL != f) fclose(f);
+//  return success;
+//}
 
 bool br_permastate_remove_pointers(br_plot_t* plot) {
   plot->data_info.cap = 0;
@@ -249,22 +248,23 @@ bool br_permastate_remove_pointers(br_plot_t* plot) {
 }
 
 bool br_permastate_load_plotter(FILE* file, br_plotter_t* br, br_data_descs_t* desc) {
-  size_t datas_len = 0;
+  int datas_len = 0;
   size_t uis_read = 0;
   int fl_read_error = 0;
   int success = true;
   (void)success;
 
-  if (1 != fread(&datas_len, sizeof(datas_len), 1, file))                 BR_ERROR("Failed to read number of datas");
+  if (1 != fread(&datas_len, sizeof(datas_len), 1, file))                 BR_ERROR("Failed to read datas len");
   br_da_reserve(*desc, datas_len);
-  if (datas_len != fread(desc->arr, sizeof(desc->arr[0]), datas_len, file)) BR_ERROR("Failed to read datas.");
+  if (NULL == desc->arr)                                                   BR_ERROR("Failed to allocate data info array.");
+  if (datas_len != fread(desc->arr, sizeof(desc->arr[0]), datas_len, file)) BR_ERROR("Failed to read datas info");
   desc->len = datas_len;
 
   if (1 != (uis_read = fread(&br->ui, sizeof(br->ui), 1, file)))          BR_ERROR("Failed to read UI state.");
   brfl_read(file, br->resizables, fl_read_error); if (fl_read_error != 0) BR_ERROR("Failed to read resizables.");
-  if (false == brsp_read(file, brtl_brsp()))                              BR_ERROR("Failed to read string pool.");
+  if (false == brsp_read(file, &br->sp))                                  BR_ERROR("Failed to read string pool.");
   if (0 != feof(file))                                                    BR_ERROR("Expected eof.");
-  brsp_compress(brtl_brsp(), 1.3f, 16);
+  brsp_compress(&br->sp, 1.3f, 16);
   return true;
 
 error:

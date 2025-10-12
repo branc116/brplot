@@ -1,212 +1,77 @@
-#include "src/br_math.h"
-#include "src/br_resampling.h"
 #include "src/br_pp.h"
-#include "src/br_data.h"
-#include "src/br_plot.h"
-#include "src/br_mesh.h"
+#include "src/br_resampling.h"
 #include "src/br_da.h"
-#include "src/br_shaders.h"
-#include "src/br_tl.h"
+#include "src/br_data.h"
+#include "src/br_math.h"
 #include "src/br_memory.h"
+#include "src/br_mesh.h"
+#include "src/br_platform.h"
+#include "src/br_plot.h"
+#include "src/br_shaders.h"
+#include "src/br_free_list.h"
 
 #include <stdint.h>
 #include <math.h>
 #include <string.h>
 
-#define RESAMPLING_NODE_MAX_LEN 64
+// Memory[MB] - MAX_LEN
+// 53         - 128
+// 54.5       - 64
+// 57.8       - 32
+// 64.1       - 16
+// 64.78      - 8
+// 78.1       - 4
+// 104.8      - 2
+#define RESAMPLING_NODE_MAX_LEN 16
 
-static void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_vec2_t plot_size) {
-  if (lc->has_old == false) {
-    lc->old = p;
-    lc->has_old = true;
-  }
+static void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_vec2_t plot_size);
+static void br_line_culler_push_line_strip(br_vec2_t const* points, size_t n, br_line_culler_t* lc, br_vec2_t plot_size);
+static void br_line_culler_end(br_line_culler_t* lc);
+static void br_line_culler_push_line_strip2(float const* xs, float const* ys, size_t n, br_line_culler_t* lc, br_vec2_t plot_size);
 
-  br_vec2_t d = 
-  br_vec2_mul(
-    br_vec2_div(
-      br_vec2_sub(p, lc->old),
-      //plot->dd.graph_rect.size.vec),
-      plot_size),
-    BR_VEC2D_TOF(lc->args.screen_size)
-  );
+static inline float min4(float a, float b, float c, float d);
+static inline float min6(float a, float b, float c, float d, float e, float f);
+static inline float max3(float a, float b, float c);
+static inline float max4(float a, float b, float c, float d);
+static inline float max6(float a, float b, float c, float d, float e, float f);
 
-  const float min_dist = *brtl_cull_min();
-  if (fabsf(d.x) + fabsf(d.y) < min_dist) {
-    lc->mid = p;
-    return;
-  }
+static inline bool br_resampling_nodes_2d_is_inside(br_resampling_nodes_t res, float const* xs, float const* ys, br_extent_t rect);
+static bool br_resampling_nodes_2d_is_inside_3d(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mat);
+static br_vec2_t br_resampling_nodes_2d_get_ratios(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, float screen_width, float screen_height);
+static br_vec2_t br_resampling_nodes_2d_get_ratios(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, float screen_width, float screen_height);
+static br_vec2_t br_resampling_nodes_2d_get_ratios_3d(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mvp);
 
-  br_mesh_gen_line(&lc->args, lc->old, p);
-  lc->mid = lc->old = p;
-}
-
-void br_line_culler_push_line_strip(br_vec2_t const* points, size_t n, br_line_culler_t* lc, br_vec2_t plot_size) {
-  for (size_t i = 0; i < n; ++i) {
-    br_line_culler_push_point(lc, points[i], plot_size);
-  }
-}
-
-void br_line_culler_end(br_line_culler_t* lc) {
-  if (false == br_vec2_eq(lc->old, lc->mid)) {
-    br_mesh_gen_line(&lc->args, lc->old, lc->mid);
-  }
-  lc->has_old = false;
-  lc->args.prev[0] = (br_vec2_t){ 0 };
-  lc->args.prev[1] = (br_vec2_t){ 0 };
-}
-
-void br_line_culler_push_line_strip2(float const* xs, float const* ys, size_t n, br_line_culler_t* lc, br_vec2_t plot_size) {
-  for (size_t i = 0; i < n; ++i) {
-    br_line_culler_push_point(lc, BR_VEC2(xs[i], ys[i]), plot_size);
-  }
-}
-
-static inline float min4(float a, float b, float c, float d) {
-  return fminf(fminf(a, b), fminf(c, d));
-}
-
-static inline float min6(float a, float b, float c, float d, float e, float f) {
-  return fminf(min4(a, b, c, d), fminf(e, f));
-}
-
-static inline float max3(float a, float b, float c) {
-  return fmaxf(fmaxf(a, b), c);
-}
-
-static inline float max4(float a, float b, float c, float d) {
-  return fmaxf(fmaxf(a, b), fmaxf(c, d));
-}
-
-static inline float max6(float a, float b, float c, float d, float e, float f) {
-  return fmaxf(max4(a, b, c, d), fmaxf(e, f));
-}
-
-bool br_resampling_nodes_2d_is_inside(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, br_extent_t rect) {
-  if (res->base.len == 0) return false;
-  float minx = xs[res->base.min_index_x], miny = ys[res->base.min_index_y], maxx = xs[res->base.max_index_x], maxy = ys[res->base.max_index_y];
-  return !((miny > rect.y) || (maxy < rect.y - rect.height) || (minx > rect.x + rect.width) || (maxx < rect.x));
-}
-
-bool br_resampling_nodes_2d_is_inside_3d(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mat) {
-  if (res->base.len == 0) return false;
-  br_vec3_t minx = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_x], ys[res->base.min_index_x]), mat),
-            miny = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_y], ys[res->base.min_index_y]), mat),
-            maxx = br_vec2_transform_scale(BR_VEC2(xs[res->base.max_index_x], ys[res->base.max_index_x]), mat),
-            maxy = br_vec2_transform_scale(BR_VEC2(xs[res->base.max_index_y], ys[res->base.max_index_y]), mat);
-  float mx = min4(minx.x, miny.x, maxy.x, maxx.x);
-  float Mx = max4(minx.x, miny.x, maxy.x, maxx.x);
-  float my = min4(minx.y, miny.y, maxy.y, maxx.y);
-  float My = max4(minx.y, miny.y, maxy.y, maxx.y);
-  float Mz = max4(minx.z, miny.z, maxy.z, maxx.z);
-  float quad_size = 2.1f;
-  
-  br_extent_t rect = BR_EXTENT(quad_size / -2, quad_size / -2, quad_size, quad_size);
-  return Mz > 0.f && br_col_extents(rect, BR_EXTENT(mx, my, Mx - mx, My - my));
-}
-
-br_vec2_t br_resampling_nodes_2d_get_ratios(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, float screen_width, float screen_height) {
-  float xr = xs[res->base.max_index_x] - xs[res->base.min_index_x], yr = ys[res->base.max_index_y] - ys[res->base.min_index_y];
-  return BR_VEC2(xr / screen_width, yr / screen_height);
-}
-
-static br_vec2_t br_resampling_nodes_2d_get_ratios_3d(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mvp) {
-  br_vec3_t minx = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_x], ys[res->base.min_index_x]), mvp),
-            miny = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_y], ys[res->base.min_index_y]), mvp),
-            maxx = br_vec2_transform_scale(BR_VEC2(xs[res->base.max_index_x], ys[res->base.max_index_x]), mvp),
-            maxy = br_vec2_transform_scale(BR_VEC2(xs[res->base.max_index_y], ys[res->base.max_index_y]), mvp);
-  float mx = min4(minx.x, miny.x, maxy.x, maxx.x);
-  float my = min4(minx.y, miny.y, maxy.y, maxx.y);
-  float Mx = max4(minx.x, miny.x, maxy.x, maxx.x);
-  float My = max4(minx.y, miny.y, maxy.y, maxx.y);
-  return BR_VEC2((Mx - mx) / 2.f, (My - my) / 2.f);
-}
-
-br_vec3_t br_data_3d_get_v3(br_data_3d_t const* data, uint32_t index) {
-  return BR_VEC3(data->xs[index], data->ys[index], data->zs[index]);
-}
-
-static bool br_resampling_nodes_3d_is_inside(br_resampling_nodes_3d_t const* res, br_data_3d_t const* data, br_mat_t mvp) {
-  br_vec3_t minx = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.min_index_x), mvp),
-          miny = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.min_index_y), mvp),
-          minz = br_vec3_transform_scale(br_data_3d_get_v3(data, res->min_index_z), mvp),
-          maxx = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.max_index_x), mvp),
-          maxy = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.max_index_y), mvp),
-          maxz = br_vec3_transform_scale(br_data_3d_get_v3(data, res->max_index_z), mvp);
-  float my = min6(minx.y, miny.y, maxy.y, maxx.y, minz.y, maxz.y);
-  float mx = min6(minx.x, miny.x, maxy.x, maxx.x, minz.x, maxz.x);
-  float My = max6(minx.y, miny.y, maxy.y, maxx.y, minz.y, maxz.y);
-  float Mx = max6(minx.x, miny.x, maxy.x, maxx.x, minz.x, maxz.x);
-  float Mz = max6(minx.z, miny.z, maxy.z, maxx.z, minz.z, maxz.z);
-  float quad_size = 2.1f;
-  
-  br_extent_t rect = BR_EXTENT(quad_size / -2, quad_size / -2, quad_size, quad_size);
-  return Mz > 0.f && br_col_extents(rect, BR_EXTENT(mx, my, Mx - mx, My - my));
-}
-
-void br_resampling_debug_3d(br_resampling_t const* r, br_resampling_nodes_3d_t const* res, br_data_3d_t const* data) {
-  br_vec3_t minx = br_data_3d_get_v3(data, res->base.min_index_x),
-    miny = br_data_3d_get_v3(data, res->base.min_index_y),
-    minz = br_data_3d_get_v3(data, res->min_index_z),
-    maxx = br_data_3d_get_v3(data, res->base.max_index_x),
-    maxy = br_data_3d_get_v3(data, res->base.max_index_y),
-    maxz = br_data_3d_get_v3(data, res->max_index_z);
-
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(maxx.x, miny.y, minz.z));
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(minx.x, maxy.y, minz.z));
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(minx.x, miny.y, maxz.z));
-
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(minx.x, maxy.y, minz.z));
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(maxx.x, miny.y, minz.z));
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
-
-
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(minx.x, miny.y, maxz.z));
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(minx.x, maxy.y, minz.z));
-
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(minx.x, miny.y, maxz.z));
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(maxx.x, miny.y, minz.z));
-}
-
-static br_vec2_t br_resampling_nodes_3d_get_ratios(br_resampling_nodes_3d_t const* res, br_data_3d_t const* data, br_vec3_t look_dir) {
-  br_vec3_t minx = br_data_3d_get_v3(data, res->base.min_index_x),
-    miny         = br_data_3d_get_v3(data, res->base.min_index_y),
-    minz         = br_data_3d_get_v3(data, res->min_index_z),
-    maxx         = br_data_3d_get_v3(data, res->base.max_index_x),
-    maxy         = br_data_3d_get_v3(data, res->base.max_index_y),
-    maxz         = br_data_3d_get_v3(data, res->max_index_z);
-  br_vec3_t m = BR_VEC3(minx.x, miny.y, minz.z);
-  br_vec3_t M = BR_VEC3(maxx.x, maxy.y, maxz.z);
-  br_vec3_t diff = br_vec3_sub(M, m);
-
-  br_vec3_t rot_axis = br_vec3_normalize(br_vec3_cross(BR_VEC3(0, 0, 1.f), look_dir));
-  float angle = br_vec3_angle(BR_VEC3(0, 0, 1.f), look_dir);
-  br_vec3_t nA1 = br_vec3_abs(br_vec3_rot(BR_VEC3(diff.x, 0, 0), rot_axis, angle));
-  br_vec3_t nA2 = br_vec3_abs(br_vec3_rot(BR_VEC3(0, diff.y, 0), rot_axis, angle));
-  br_vec3_t nA3 = br_vec3_abs(br_vec3_rot(BR_VEC3(0, 0, diff.z), rot_axis, angle));
-  br_vec3_t nA = BR_VEC3(max3(nA1.x, nA2.x, nA3.x), max3(nA1.y, nA2.y, nA3.y), 0);
-  br_vec3_t curv = br_vec3_scale(res->curvature, 1.f/(float)res->base.len);
-  br_vec3_t nC1 = br_vec3_abs(br_vec3_rot(BR_VEC3(curv.x, 0, 0), rot_axis, angle));
-  br_vec3_t nC2 = br_vec3_abs(br_vec3_rot(BR_VEC3(0, curv.y, 0), rot_axis, angle));
-  br_vec3_t nC3 = br_vec3_abs(br_vec3_rot(BR_VEC3(0, 0, curv.z), rot_axis, angle));
-  br_vec3_t nC = br_vec3_add(nC1, br_vec3_add(nC2, nC3));
-  return br_vec3_abs(br_vec3_mul(nC, nA)).xy;
-}
-
-static uint32_t powers[32] = {0};
-static uint32_t powers_base = 2;
-void br_resampling_construct(void) {
-  powers[0] = 1;
-  powers[1] = powers_base;
-  for (int i = 2; i < 32; ++i) {
-    powers[i] = powers[i - 1] * powers_base;
-  }
-}
-
+// TODO: Look at this should this take into consideration rebasing of data..
+static br_vec3_t br_data_3d_get_v3(br_data_3d_t const* data, uint32_t index);
+static bool br_resampling_nodes_3d_is_inside(br_resampling_nodes_3d_t const* res, br_data_3d_t const* data, br_mat_t mvp);
+static void br_resampling_debug_3d(br_resampling_t const* r, br_resampling_nodes_3d_t const* res, br_data_3d_t const* data);
+static br_vec2_t br_resampling_nodes_3d_get_ratios(br_resampling_nodes_3d_t const* res, br_data_3d_t const* data, br_vec3_t look_dir);
 static void br_resampling_nodes_deinit(br_resampling_t* nodes);
 static bool br_resampling_nodes_2d_push_point(br_resampling_nodes_2d_allocator_t* nodes, size_t node_index, uint32_t index, float const* xs, float const* ys);
 static bool br_resampling_nodes_3d_push_point(br_resampling_nodes_3d_allocator_t* nodes, size_t node_index, uint32_t index, float const* xs, float const* ys, float const* zs);
+
+
+static BR_THREAD_LOCAL struct {
+  uint32_t powers_base;
+  uint32_t powers[32];
+  br_shaders_t* shaders;
+  float* min_sampling;
+  float* cull_min;
+} br_resampling;
+
+void br_resampling_construct(br_shaders_t* shaders, float* min_sampling, float* cull_min) {
+  br_resampling.powers_base = 2;
+
+  br_resampling.powers[0] = 1;
+  br_resampling.powers[1] = br_resampling.powers_base;
+  for (int i = 2; i < 32; ++i) {
+    br_resampling.powers[i] = br_resampling.powers[i - 1] * br_resampling.powers_base;
+  }
+
+  br_resampling.shaders = shaders;
+  br_resampling.min_sampling = min_sampling;
+  br_resampling.cull_min = cull_min;
+}
 
 br_resampling_t* br_resampling_malloc(br_data_kind_t kind) {
   br_resampling_t* r = (br_resampling_t*)BR_CALLOC(1, sizeof(*r));
@@ -233,7 +98,7 @@ void br_resampling_add_point(br_resampling_t* r, const br_data_t *pg, uint32_t i
     switch (r->kind) {
       case br_data_kind_2d: { br_da_push((r->dd), (br_resampling_nodes_2d_t){0}); break; }
       case br_data_kind_3d: { br_da_push((r->ddd), (br_resampling_nodes_3d_t){0}); break; }
-      default: BR_ASSERT(false);
+      default: BR_UNREACHABLE("kind %d", r->kind);
     }
   }
   switch (r->kind) {
@@ -241,6 +106,51 @@ void br_resampling_add_point(br_resampling_t* r, const br_data_t *pg, uint32_t i
     case br_data_kind_3d: { br_resampling_nodes_3d_push_point(&r->ddd, 0, index, pg->ddd.xs, pg->ddd.ys, pg->ddd.zs); break; }
     default: BR_UNREACHABLE("kind %d", r->kind);
   }
+}
+
+bool br_resampling_get_point_at2(br_data_t data, br_vec2d_t vecd, float* dist, int* out_index) {
+#define BR_STACK_PUSH(VAL) stack[stack_len++] = VAL
+#define BR_STACK_POP() stack_len > 0 ? stack[--stack_len] : -1
+
+  // NOTE: (2**64)*64 = 2**69 = 10**19 elements
+  //       data.len can not be larger than 2**64, so we are good..
+  int stack[64] /* = undefined */;
+  int stack_len = 0;
+  int cur_index = 0;
+  int cur_node /* = undefined */; ;
+  br_vec2_t vec = BR_VEC2(vecd.x - data.dd.rebase_x, vecd.y - data.dd.rebase_y);
+  br_extent_t ex = BR_EXTENT(vec.x - *dist/2, vec.y + *dist/2, *dist, *dist);
+  br_resampling_nodes_2d_allocator_t rns = data.resampling->dd;
+  if (rns.len == 0) return false;
+  int n = 0;
+  bool found = false;
+
+  BR_STACK_PUSH(0);
+  while (stack_len > 0) {
+    ++n;
+    cur_node = BR_STACK_POP();
+    br_resampling_nodes_2d_t node = rns.arr[cur_node];
+    if (br_resampling_nodes_2d_is_inside(node.base, data.dd.xs, data.dd.ys, ex)) {
+      if (node.base.depth == 0) {
+        for (int i = 0; i < node.base.len; ++i) {
+          int index = i + node.base.index_start;
+          float cur_dist = br_vec2_dist(BR_VEC2(data.dd.xs[index], data.dd.ys[index]), vec);
+          if (cur_dist < *dist) {
+            *out_index = index;
+            *dist = cur_dist;
+            found = true;
+          }
+        }
+      } else {
+        BR_STACK_PUSH(node.base.child1);
+        BR_STACK_PUSH(node.base.child2);
+      }
+    }
+  }
+  return found;
+
+#undef BR_STACK_PUSH
+#undef BR_STACK_POP
 }
 
 void br_resampling_reset(br_resampling_t* res) {
@@ -259,10 +169,10 @@ static bool br_resampling_nodes_2d_push_point(br_resampling_nodes_2d_allocator_t
   br_resampling_nodes_2d_t node = nodes->arr[node_index];
   ++node.base.len;
   if (node.base.len == 1) {
-    node.base.index_start = 
-    node.base.max_index_y = 
+    node.base.index_start =
+    node.base.max_index_y =
     node.base.min_index_y =
-    node.base.max_index_x = 
+    node.base.max_index_x =
     node.base.min_index_x = index;
   } else {
     if (ys[index] < ys[node.base.min_index_y]) node.base.min_index_y = index;
@@ -274,8 +184,9 @@ static bool br_resampling_nodes_2d_push_point(br_resampling_nodes_2d_allocator_t
         return false;
       }
     }
-    bool split = (node_index == 0 && node.base.len == RESAMPLING_NODE_MAX_LEN * powers[node.base.depth]) ||
-      (node_index != 0 && node.base.len > RESAMPLING_NODE_MAX_LEN * powers[node.base.depth]);
+    uint32_t power = br_resampling.powers[node.base.depth];
+    bool split = (node_index == 0 && node.base.len == RESAMPLING_NODE_MAX_LEN * power) ||
+      (node_index != 0 && node.base.len > RESAMPLING_NODE_MAX_LEN * power);
     if (split) {
       br_resampling_nodes_2d_t left = node;
       br_resampling_nodes_2d_t right = {0};
@@ -295,12 +206,12 @@ static bool br_resampling_nodes_3d_push_point(br_resampling_nodes_3d_allocator_t
   br_resampling_nodes_3d_t node = nodes->arr[node_index];
   ++node.base.len;
   if (node.base.len == 1) {
-    node.base.index_start = 
-    node.max_index_z = 
+    node.base.index_start =
+    node.max_index_z =
     node.min_index_z =
-    node.base.max_index_y = 
+    node.base.max_index_y =
     node.base.min_index_y =
-    node.base.max_index_x = 
+    node.base.max_index_x =
     node.base.min_index_x = index;
     node.curvature = BR_VEC3(0, 0, 0);
   } else {
@@ -328,8 +239,9 @@ static bool br_resampling_nodes_3d_push_point(br_resampling_nodes_3d_allocator_t
         return false;
       }
     }
-    bool split = (node_index == 0 && node.base.len == RESAMPLING_NODE_MAX_LEN * powers[node.base.depth]) ||
-      (node_index != 0 && node.base.len > RESAMPLING_NODE_MAX_LEN * powers[node.base.depth]);
+    uint32_t power = br_resampling.powers[node.base.depth];
+    bool split = (node_index == 0 && node.base.len == RESAMPLING_NODE_MAX_LEN * power) ||
+      (node_index != 0 && node.base.len > RESAMPLING_NODE_MAX_LEN * power);
     if (split) {
       br_resampling_nodes_3d_t left = node;
       br_resampling_nodes_3d_t right = {0};
@@ -355,7 +267,7 @@ static void br_resampling_draw22(br_resampling_nodes_2d_allocator_t const* const
   float const* ys = pg->dd.ys;
   br_vec2_t plot_size = plot_extent.size.vec;
   br_resampling_nodes_2d_t node = nodes->arr[index];
-  if (false == br_resampling_nodes_2d_is_inside(&node, xs, ys, plot_extent)) {
+  if (false == br_resampling_nodes_2d_is_inside(node.base, xs, ys, plot_extent)) {
     br_line_culler_end(&pg->resampling->culler);
     return;
   }
@@ -475,9 +387,7 @@ static void br_resampling_draw33(br_resampling_t const* const res, size_t index,
 }
 
 void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* plot, br_plot_data_t const* pd) {
-  //ZoneScopedN("resampline2_draw0");
-
-  double start = brtl_time();
+  double start = brpl_time();
   if (res->common.len == 0) return;
   switch (pg->kind) {
     case br_data_kind_2d: {
@@ -492,7 +402,7 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           res->culler.args.prev[0] = BR_VEC2(0, 0);
           res->culler.args.prev[1] = BR_VEC2(0, 0);
 
-          brtl_shaders()->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
+          br_resampling.shaders->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
           br_extent_t ex = BR_EXTENTI_TOF(plot->cur_extent);
           float aspect = ex.width/ex.height;
           br_extentd_t plot_rect = BR_EXTENTD(
@@ -503,7 +413,7 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
 
           br_resampling_draw22(&res->dd, 0, pg, BR_EXTENTD_TOF(plot_rect));
           br_line_culler_end(&res->culler);
-          br_shader_line_draw(brtl_shaders()->line);
+          br_shader_line_draw(br_resampling.shaders->line);
         } break;
         case br_plot_kind_3d: {
           br_vec3_t target = plot->ddd.target;
@@ -516,18 +426,17 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           br_vec2_t re = (br_vec2_t) { .x = ex.width, .y = ex.height };
           br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
           br_mat_t look = br_mat_look_at(eye, target, plot->ddd.up);
-          brtl_shaders()->line_3d_simple->uvs.m_mvp_uv = brtl_shaders()->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
-          brtl_shaders()->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
-          brtl_shaders()->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
+          br_resampling.shaders->line_3d_simple->uvs.m_mvp_uv = br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
+          br_resampling.shaders->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
+          br_resampling.shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
           res->args_3d.line_thickness = 0.03f * pd->thickness_multiplyer;
-          res->args_3d.mvp = brtl_shaders()->line_3d_simple->uvs.m_mvp_uv;
+          res->args_3d.mvp = br_resampling.shaders->line_3d_simple->uvs.m_mvp_uv;
 
           br_resampling_draw32(res, 0, pg, plot);
-          br_shader_line_3d_draw(brtl_shaders()->line_3d);
+          br_shader_line_3d_draw(br_resampling.shaders->line_3d);
         } break;
       }
-      break;
-    }
+    } break;
     case br_data_kind_3d: {
       switch (plot->kind) {
         case br_plot_kind_2d: BR_UNREACHABLE("Can't draw 3d data on 2d plot..");
@@ -544,37 +453,36 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           br_vec2_t re = (br_vec2_t) { .x = ex.width, .y = ex.height };
           br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
           br_mat_t look = br_mat_look_at(eye, target, plot->ddd.up);
-          brtl_shaders()->line_3d_simple->uvs.m_mvp_uv = brtl_shaders()->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
-          brtl_shaders()->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
-          brtl_shaders()->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
+          br_resampling.shaders->line_3d_simple->uvs.m_mvp_uv = br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
+          br_resampling.shaders->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
+          br_resampling.shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
           res->args_3d.line_thickness = 0.03f * pd->thickness_multiplyer;
-          res->args_3d.mvp = brtl_shaders()->line_3d_simple->uvs.m_mvp_uv;
+          res->args_3d.mvp = br_resampling.shaders->line_3d_simple->uvs.m_mvp_uv;
 
           br_resampling_draw33(res, 0, pg, plot); break;
-          br_shader_line_3d_draw(brtl_shaders()->line_3d);
+          br_shader_line_3d_draw(br_resampling.shaders->line_3d);
         }
       }
-      break;
-    }
-    default: BR_ASSERT(0);
+    } break;
+    default: BR_UNREACHABLE("Unknown data kind: %d", pg->kind);
   }
-  res->render_time = brtl_time() - start;
+  res->render_time = brpl_time() - start;
   ++res->draw_count;
 }
 
 void br_resampling_change_something(br_datas_t pg) {
   uint32_t draw_count = 0;
-  for (size_t i = 0; i < pg.len; ++i) draw_count += pg.arr[i].resampling->draw_count;
+  brfl_foreach(i, pg) draw_count += pg.arr[i].resampling->draw_count;
   if (draw_count == 0) return;
   double target = 0.016 / (double)draw_count;
-  for (size_t i = 0; i < pg.len; ++i) {
+  brfl_foreach(i, pg) {
     if (pg.arr[i].resampling->draw_count == 0) continue;
     double delta = (pg.arr[i].resampling->render_time - target);
     double mul = 1.0 + 10.0f* (delta);
 
     pg.arr[i].resampling->something *= (float)mul;
     pg.arr[i].resampling->something2 *= (float)mul;
-    float mins = *brtl_min_sampling();
+    float mins = *br_resampling.min_sampling;
   //pg.arr[i].resampling->something = mins;
   //pg.arr[i].resampling->something2 = mins;
     if (pg.arr[i].resampling->something < mins) pg.arr[i].resampling->something = mins;
@@ -594,3 +502,183 @@ float br_resampling_get_something(br_resampling_t* res) {
 float br_resampling_get_something2(br_resampling_t* res) {
   return res->something2;
 }
+
+static void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_vec2_t plot_size) {
+  if (lc->has_old == false) {
+    lc->old = p;
+    lc->has_old = true;
+  }
+
+  br_vec2_t d =
+  br_vec2_mul(
+    br_vec2_div(
+      br_vec2_sub(p, lc->old),
+      //plot->dd.graph_rect.size.vec),
+      plot_size),
+    BR_VEC2D_TOF(lc->args.screen_size)
+  );
+
+  const float min_dist = *br_resampling.cull_min;
+  if (fabsf(d.x) + fabsf(d.y) < min_dist) {
+    lc->mid = p;
+    return;
+  }
+
+  br_mesh_gen_line(&lc->args, lc->old, p);
+  lc->mid = lc->old = p;
+}
+
+static void br_line_culler_push_line_strip(br_vec2_t const* points, size_t n, br_line_culler_t* lc, br_vec2_t plot_size) {
+  for (size_t i = 0; i < n; ++i) {
+    br_line_culler_push_point(lc, points[i], plot_size);
+  }
+}
+
+static void br_line_culler_end(br_line_culler_t* lc) {
+  if (false == br_vec2_eq(lc->old, lc->mid)) {
+    br_mesh_gen_line(&lc->args, lc->old, lc->mid);
+  }
+  lc->has_old = false;
+  lc->args.prev[0] = (br_vec2_t){ 0 };
+  lc->args.prev[1] = (br_vec2_t){ 0 };
+}
+
+static void br_line_culler_push_line_strip2(float const* xs, float const* ys, size_t n, br_line_culler_t* lc, br_vec2_t plot_size) {
+  for (size_t i = 0; i < n; ++i) {
+    br_line_culler_push_point(lc, BR_VEC2(xs[i], ys[i]), plot_size);
+  }
+}
+
+static inline float min4(float a, float b, float c, float d) {
+  return fminf(fminf(a, b), fminf(c, d));
+}
+
+static inline float min6(float a, float b, float c, float d, float e, float f) {
+  return fminf(min4(a, b, c, d), fminf(e, f));
+}
+
+static inline float max3(float a, float b, float c) {
+  return fmaxf(fmaxf(a, b), c);
+}
+
+static inline float max4(float a, float b, float c, float d) {
+  return fmaxf(fmaxf(a, b), fmaxf(c, d));
+}
+
+static inline float max6(float a, float b, float c, float d, float e, float f) {
+  return fmaxf(max4(a, b, c, d), fmaxf(e, f));
+}
+
+static inline bool br_resampling_nodes_2d_is_inside(br_resampling_nodes_t res, float const* xs, float const* ys, br_extent_t rect) {
+  if (res.len == 0) return false;
+  float minx = xs[res.min_index_x], miny = ys[res.min_index_y], maxx = xs[res.max_index_x], maxy = ys[res.max_index_y];
+  return !((miny > rect.y) || (maxy < rect.y - rect.height) || (minx > rect.x + rect.width) || (maxx < rect.x));
+}
+
+static bool br_resampling_nodes_2d_is_inside_3d(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mat) {
+  if (res->base.len == 0) return false;
+  br_vec3_t minx = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_x], ys[res->base.min_index_x]), mat),
+            miny = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_y], ys[res->base.min_index_y]), mat),
+            maxx = br_vec2_transform_scale(BR_VEC2(xs[res->base.max_index_x], ys[res->base.max_index_x]), mat),
+            maxy = br_vec2_transform_scale(BR_VEC2(xs[res->base.max_index_y], ys[res->base.max_index_y]), mat);
+  float mx = min4(minx.x, miny.x, maxy.x, maxx.x);
+  float Mx = max4(minx.x, miny.x, maxy.x, maxx.x);
+  float my = min4(minx.y, miny.y, maxy.y, maxx.y);
+  float My = max4(minx.y, miny.y, maxy.y, maxx.y);
+  float Mz = max4(minx.z, miny.z, maxy.z, maxx.z);
+  float quad_size = 2.1f;
+
+  br_extent_t rect = BR_EXTENT(quad_size / -2, quad_size / -2, quad_size, quad_size);
+  return Mz > 0.f && br_col_extents(rect, BR_EXTENT(mx, my, Mx - mx, My - my));
+}
+
+br_vec2_t br_resampling_nodes_2d_get_ratios(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, float screen_width, float screen_height) {
+  float xr = xs[res->base.max_index_x] - xs[res->base.min_index_x], yr = ys[res->base.max_index_y] - ys[res->base.min_index_y];
+  return BR_VEC2(xr / screen_width, yr / screen_height);
+}
+
+static br_vec2_t br_resampling_nodes_2d_get_ratios_3d(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mvp) {
+  br_vec3_t minx = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_x], ys[res->base.min_index_x]), mvp),
+            miny = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_y], ys[res->base.min_index_y]), mvp),
+            maxx = br_vec2_transform_scale(BR_VEC2(xs[res->base.max_index_x], ys[res->base.max_index_x]), mvp),
+            maxy = br_vec2_transform_scale(BR_VEC2(xs[res->base.max_index_y], ys[res->base.max_index_y]), mvp);
+  float mx = min4(minx.x, miny.x, maxy.x, maxx.x);
+  float my = min4(minx.y, miny.y, maxy.y, maxx.y);
+  float Mx = max4(minx.x, miny.x, maxy.x, maxx.x);
+  float My = max4(minx.y, miny.y, maxy.y, maxx.y);
+  return BR_VEC2((Mx - mx) / 2.f, (My - my) / 2.f);
+}
+
+static br_vec3_t br_data_3d_get_v3(br_data_3d_t const* data, uint32_t index) {
+  return BR_VEC3(data->xs[index], data->ys[index], data->zs[index]);
+}
+
+static bool br_resampling_nodes_3d_is_inside(br_resampling_nodes_3d_t const* res, br_data_3d_t const* data, br_mat_t mvp) {
+  br_vec3_t minx = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.min_index_x), mvp),
+          miny = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.min_index_y), mvp),
+          minz = br_vec3_transform_scale(br_data_3d_get_v3(data, res->min_index_z), mvp),
+          maxx = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.max_index_x), mvp),
+          maxy = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.max_index_y), mvp),
+          maxz = br_vec3_transform_scale(br_data_3d_get_v3(data, res->max_index_z), mvp);
+  float my = min6(minx.y, miny.y, maxy.y, maxx.y, minz.y, maxz.y);
+  float mx = min6(minx.x, miny.x, maxy.x, maxx.x, minz.x, maxz.x);
+  float My = max6(minx.y, miny.y, maxy.y, maxx.y, minz.y, maxz.y);
+  float Mx = max6(minx.x, miny.x, maxy.x, maxx.x, minz.x, maxz.x);
+  float Mz = max6(minx.z, miny.z, maxy.z, maxx.z, minz.z, maxz.z);
+  float quad_size = 2.1f;
+
+  br_extent_t rect = BR_EXTENT(quad_size / -2, quad_size / -2, quad_size, quad_size);
+  return Mz > 0.f && br_col_extents(rect, BR_EXTENT(mx, my, Mx - mx, My - my));
+}
+
+void br_resampling_debug_3d(br_resampling_t const* r, br_resampling_nodes_3d_t const* res, br_data_3d_t const* data) {
+  br_vec3_t minx = br_data_3d_get_v3(data, res->base.min_index_x),
+    miny = br_data_3d_get_v3(data, res->base.min_index_y),
+    minz = br_data_3d_get_v3(data, res->min_index_z),
+    maxx = br_data_3d_get_v3(data, res->base.max_index_x),
+    maxy = br_data_3d_get_v3(data, res->base.max_index_y),
+    maxz = br_data_3d_get_v3(data, res->max_index_z);
+
+  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(maxx.x, miny.y, minz.z));
+  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(minx.x, maxy.y, minz.z));
+  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(minx.x, miny.y, maxz.z));
+
+  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(minx.x, maxy.y, minz.z));
+  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(maxx.x, miny.y, minz.z));
+  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
+
+
+  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
+  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(minx.x, miny.y, maxz.z));
+  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(minx.x, maxy.y, minz.z));
+
+  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(minx.x, miny.y, maxz.z));
+  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
+  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(maxx.x, miny.y, minz.z));
+}
+
+static br_vec2_t br_resampling_nodes_3d_get_ratios(br_resampling_nodes_3d_t const* res, br_data_3d_t const* data, br_vec3_t look_dir) {
+  br_vec3_t minx = br_data_3d_get_v3(data, res->base.min_index_x),
+    miny         = br_data_3d_get_v3(data, res->base.min_index_y),
+    minz         = br_data_3d_get_v3(data, res->min_index_z),
+    maxx         = br_data_3d_get_v3(data, res->base.max_index_x),
+    maxy         = br_data_3d_get_v3(data, res->base.max_index_y),
+    maxz         = br_data_3d_get_v3(data, res->max_index_z);
+  br_vec3_t m = BR_VEC3(minx.x, miny.y, minz.z);
+  br_vec3_t M = BR_VEC3(maxx.x, maxy.y, maxz.z);
+  br_vec3_t diff = br_vec3_sub(M, m);
+
+  br_vec3_t rot_axis = br_vec3_normalize(br_vec3_cross(BR_VEC3(0, 0, 1.f), look_dir));
+  float angle = br_vec3_angle(BR_VEC3(0, 0, 1.f), look_dir);
+  br_vec3_t nA1 = br_vec3_abs(br_vec3_rot(BR_VEC3(diff.x, 0, 0), rot_axis, angle));
+  br_vec3_t nA2 = br_vec3_abs(br_vec3_rot(BR_VEC3(0, diff.y, 0), rot_axis, angle));
+  br_vec3_t nA3 = br_vec3_abs(br_vec3_rot(BR_VEC3(0, 0, diff.z), rot_axis, angle));
+  br_vec3_t nA = BR_VEC3(max3(nA1.x, nA2.x, nA3.x), max3(nA1.y, nA2.y, nA3.y), 0);
+  br_vec3_t curv = br_vec3_scale(res->curvature, 1.f/(float)res->base.len);
+  br_vec3_t nC1 = br_vec3_abs(br_vec3_rot(BR_VEC3(curv.x, 0, 0), rot_axis, angle));
+  br_vec3_t nC2 = br_vec3_abs(br_vec3_rot(BR_VEC3(0, curv.y, 0), rot_axis, angle));
+  br_vec3_t nC3 = br_vec3_abs(br_vec3_rot(BR_VEC3(0, 0, curv.z), rot_axis, angle));
+  br_vec3_t nC = br_vec3_add(nC1, br_vec3_add(nC2, nC3));
+  return br_vec3_abs(br_vec3_mul(nC, nA)).xy;
+}
+

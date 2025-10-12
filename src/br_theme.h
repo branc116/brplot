@@ -38,8 +38,8 @@ typedef struct br_theme_t {
   } ui;
 } br_theme_t;
 
-void br_theme_dark(void);
-void br_theme_light(void);
+void br_theme_dark(br_theme_t* theme);
+void br_theme_light(br_theme_t* theme);
 
-void br_theme_reset_ui(void);
+void br_theme_reset_ui(br_theme_t* theme);
 

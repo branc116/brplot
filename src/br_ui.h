@@ -39,6 +39,13 @@ typedef enum brui_action_kind_t {
   brui_action_typing
 } brui_action_kind_t;
 
+typedef struct brui_action_text_t {
+  brsp_id_t id;
+  int cursor_pos;
+  float offset_x, offset_x_target;
+  bool changed;
+} brui_action_text_t;
+
 typedef struct brui_action_t {
   brui_action_kind_t kind;
   union {
@@ -46,12 +53,7 @@ typedef struct brui_action_t {
       void* value;
       br_vec2_t drag_ancor_point;
     } slider;
-    struct {
-      brsp_id_t id;
-      int cursor_pos;
-      float offset_x, offset_x_target;
-      bool changed;
-    } text;
+    brui_action_text_t text;
   } args;
 } brui_action_t;
 
@@ -77,16 +79,6 @@ typedef struct {
   bool hide_border;
   bool hide_bg;
 } brui_stack_el_t;
-
-typedef struct {
-  brui_stack_el_t* arr;
-  size_t len, cap;
-
-  brui_action_t action;
-  int active_resizable;
-  bool select_next;
-  bool log;
-} brui_stack_t;
 
 #define brui_resizable_anim_fields(X) \
   X(float, scroll_offset_percent) \
@@ -128,9 +120,15 @@ typedef union {
   };
 } brui_resizable_t;
 
+typedef struct brui_resizable_temp_state_t {
+  int resizable_handle;
+  bool was_drawn;
+  bool is_deleted;
+} brui_resizable_temp_state_t;
+
 typedef struct brui_resizable_temp_t {
   size_t key;
-  int value;
+  brui_resizable_temp_state_t value;
 } brui_resizable_temp_t;
 
 typedef struct brui_resizable_temp_push_t {
@@ -149,9 +147,34 @@ typedef struct bruirs_t {
   int menu_extent_handle;
   brui_drag_mode_t drag_mode;
   int drag_index;
+  int active_resizable;
   br_vec2_t drag_point;
   br_extent_t drag_old_ex;
 } bruirs_t;
+
+typedef struct br_theme_t br_theme_t;
+typedef struct br_shaders_t br_shaders_t;
+typedef struct {
+  brui_stack_el_t* arr;
+  size_t len, cap;
+
+  bruirs_t* rs;
+  brsp_t* sp;
+  br_theme_t* theme;
+  br_text_renderer_t* tr;
+  br_shaders_t* shaders;
+
+  float frame_time;
+
+  brui_action_t action;
+  
+  br_vec2_t mouse_pos;
+  bool mouse_clicked;
+
+  bool ctrl_down;
+  bool select_next;
+  bool log;
+} brui_stack_t;
 
 typedef struct bruir_children_t {
   int* arr;
@@ -174,6 +197,8 @@ typedef struct brui_split_t {
 
 extern BR_THREAD_LOCAL char brui__scrach[2048];
 
+void brui_construct(br_theme_t* theme, bruirs_t* rs, brsp_t* sp, br_text_renderer_t* tr, br_shaders_t* shaders);
+
 void brui_begin(void);
 void brui_end(void);
 
@@ -181,6 +206,7 @@ void brui_end(void);
 void brui_finish(void);
 
 br_size_t brui_text(br_strv_t strv);
+void brui_text_at(br_strv_t strv, br_vec2_t at);
 bool brui_text_input(brsp_id_t str_id);
 void brui_new_lines(int n);
 bool brui_button(br_strv_t text);
@@ -189,6 +215,7 @@ void brui_img_hack(unsigned int texture_id);
 void brui_img(unsigned int texture_id);
 void brui_icon(float size, br_bb_t icon, br_color_t forground, br_color_t background);
 bool brui_button_icon(br_sizei_t size, br_extent_t icon);
+bool brui_triangle(br_vec2_t a, br_vec2_t b, br_vec2_t c, br_bb_t limit, br_color_t color, int z);
 bool brui_rectangle(br_bb_t bb, br_bb_t limit, br_color_t color, int z);
 bool brui_sliderf(br_strv_t text, float* val);
 bool brui_sliderf2(br_strv_t text, float* value);
@@ -232,29 +259,46 @@ float brui_local_y(void);
 bool  brui_active(void);
 void  brui_debug(void);
 
-brui_action_t* brui_action(void);
-void brui_action_stop(void);
-brui_stack_t* brui_stack(void);
+void brui_mouse_clicked(bool is_mouse_clicked);
+void brui_mouse_pos(br_vec2_t mouse_pos);
+void brui_ctrl_down(bool is_down);
+void brui_log(bool should_log);
+void brui_frame_time(float frame_time);
 
-void              brui_resizable_init(void);
+brui_action_t* brui_action(void);
+void           brui_action_stop(void);
+brui_stack_t*  brui_stack(void);
+
+void              brui_resizable_init(bruirs_t* rs, br_extent_t viewport);
 void              brui_resizable_deinit(void);
-int               brui_resizable_new(br_extent_t init_extent, int parent);
-int               brui_resizable_new2(br_extent_t init_extent, int parent, brui_resizable_t template);
+int               brui_resizable_new(bruirs_t* rs, br_extent_t init_extent, int parent);
+int               brui_resizable_new2(bruirs_t* rs, br_extent_t init_extent, int parent, brui_resizable_t template);
 void              brui_resizable_delete(int handle);
-void              brui_resizable_update(void);
-void              bruir_resizable_refresh(int index);
-brui_resizable_t* brui_resizable_get(int id);
+void              brui_resizable_update(bruirs_t* rs, br_extent_t viewport);
+
+void              brui_resizable_mouse_move(bruirs_t* resizables, br_vec2_t mouse_pos);
+void              brui_resizable_mouse_pressl(bruirs_t* resizables, br_vec2_t mouse_pos, bool ctrl_down);
+void              brui_resizable_mouse_pressr(bruirs_t* resizables, br_vec2_t mouse_pos);
+void              brui_resizable_mouse_releasel(bruirs_t* resizables, br_vec2_t mouse_pos);
+void              brui_resizable_mouse_releaser(bruirs_t* resizables, br_vec2_t mouse_pos);
+void              brui_resizable_mouse_scroll(bruirs_t* resizables, br_vec2_t delta);
+void              brui_resizable_page(bruirs_t* resizables, br_vec2_t delta);
+void              brui_resizable_scroll_percent_set(bruirs_t* resizables, float percent);
+br_vec2_t         brui_resizable_local(bruirs_t* resizables, int id, br_vec2_t global_pos);
+
+void              bruir_resizable_refresh(bruirs_t* rs, int index);
 brui_resizable_t* brui_resizable_push(int id);
 void              brui_resizable_pop(void);
-int               brui_resizable_active(void);
 void              brui_resizable_show(int resizable_handle, bool show);
 void              brui_resizable_maximize(int resizable_handle, bool maximize);
 bool              brui_resizable_is_hidden(int resizable_handle);
 br_vec2_t         brui_resizable_to_global(int resizable_handle, br_vec2_t pos);
+void              brui_resizable_move_on_top(bruirs_t* rs, int r_handle);
 int               brui_resizable_sibling_max_z(int id);
 bruir_children_t  brui_resizable_children_temp(int resizable_handle);
 int               brui_resizable_children_count(int resizable_handle);
-int               brui_resizable_children_top_z(int resizable_handle);
+int               brui_resizable_children_top_z(bruirs_t* rs, int resizable_handle);
+br_extent_t       brui_resizable_cur_extent(int resizable_handle);
 
 brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id);
 bool              brui_resizable_temp_pop(void);

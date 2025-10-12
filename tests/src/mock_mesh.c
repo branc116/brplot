@@ -13,7 +13,7 @@ void br_mesh_3d_gen_line_strip1(br_mesh_line_3d_t args, float const* xs, float c
 void br_mesh_3d_gen_line_strip2(br_mesh_line_3d_t args, br_vec2_t const* ps, size_t len) { (void)args; (void)ps; (void)len; }
 void br_mesh_3d_gen_line_strip3(br_mesh_line_3d_t args, float const* xs, float const* ys, size_t len) { (void)args; (void)xs; (void)ys; (void)len; }
 
-void br_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) { (void)plot; (void)shaders; }
+void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) { (void)plot; }
 
 void br_shader_line_draw(br_shader_line_t* shader) { (void)shader; }
 void br_shader_line_3d_draw(br_shader_line_3d_t* shader) { (void)shader; }

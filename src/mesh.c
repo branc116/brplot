@@ -2,8 +2,17 @@
 #include "src/br_mesh.h"
 #include "src/br_plot.h"
 #include "src/br_math.h"
-#include "src/br_tl.h"
 #include "src/br_theme.h"
+
+static BR_THREAD_LOCAL struct {
+  br_shaders_t* shaders;
+  bool* debug;
+} br_mesh_state;
+
+void br_mesh_construct(br_shaders_t* shaders, bool* debug) {
+  br_mesh_state.shaders = shaders;
+  br_mesh_state.debug = debug;
+}
 
 void br_mesh_gen_bb(br_mesh_line_t args, br_bb_t bb) {
   float xmi = bb.min_x, ymi = bb.min_y , xma = bb.max_x, yma = bb.max_y;
@@ -72,7 +81,7 @@ void br_mesh_gen_line(br_mesh_line_t* args, br_vec2_t startPos, br_vec2_t endPos
   br_vec2_t cur[2] = {BR_VEC2((float)poss[0].x, (float)poss[0].y), BR_VEC2((float)poss[1].x, (float)poss[1].y) };
   br_vec2_t mid = br_vec2_add(br_vec2_scale(cur[0], 0.5f), br_vec2_scale(cur[1], 0.5f));
 
-  br_shader_line_push_quad(brtl_shaders()->line, (br_shader_line_el_t[4]) {
+  br_shader_line_push_quad(br_mesh_state.shaders->line, (br_shader_line_el_t[4]) {
       { .pos_delta = BR_VEC4((float)poss[0].x, (float)poss[0].y, 0.98f,  1.f) },
       { .pos_delta = BR_VEC4((float)poss[1].x, (float)poss[1].y, 0.98f, -1.f) },
       { .pos_delta = BR_VEC4((float)poss[2].x, (float)poss[2].y, 0.98f, -1.f) },
@@ -81,14 +90,14 @@ void br_mesh_gen_line(br_mesh_line_t* args, br_vec2_t startPos, br_vec2_t endPos
 
   if (args->prev[0].x != 0.f || args->prev[1].x != 0.f || args->prev[0].y != 0.f || args->prev[1].y != 0.f) {
     if (false == br_vec2_ccv(mid, args->prev[1], cur[0])) {
-      br_shader_line_push_tri(brtl_shaders()->line, (br_shader_line_el_t[3]) {
+      br_shader_line_push_tri(br_mesh_state.shaders->line, (br_shader_line_el_t[3]) {
           { .pos_delta = BR_VEC4(mid.x, mid.y, 0.98f,  0.f) },
           { .pos_delta = BR_VEC4(args->prev[1].x, args->prev[1].y, 0.98f, 1.f) },
           { .pos_delta = BR_VEC4(cur[0].x, cur[0].y, 0.98f, 1.f) },
       });
     }
     if (true == br_vec2_ccv(mid, args->prev[0], cur[1])) {
-      br_shader_line_push_tri(brtl_shaders()->line, (br_shader_line_el_t[3]) {
+      br_shader_line_push_tri(br_mesh_state.shaders->line, (br_shader_line_el_t[3]) {
           { .pos_delta = BR_VEC4(mid.x, mid.y, 0.98f,  0.f) },
           { .pos_delta = BR_VEC4(cur[1].x, cur[1].y, 0.98f, 1.f) },
           { .pos_delta = BR_VEC4(args->prev[0].x, args->prev[0].y, 0.98f, 1.f) },
@@ -99,11 +108,11 @@ void br_mesh_gen_line(br_mesh_line_t* args, br_vec2_t startPos, br_vec2_t endPos
   args->prev[0] = BR_VEC2((float)poss[2].x, (float)poss[2].y);
   args->prev[1] = BR_VEC2((float)poss[3].x, (float)poss[3].y);
 
-  if (*brtl_debug()) {
-    *brtl_debug() = false;
+  if (*br_mesh_state.debug) {
+    *br_mesh_state.debug = false;
     br_mesh_gen_point(*args, startPos);
     br_mesh_gen_point(*args, endPos);
-    *brtl_debug() = true;
+    *br_mesh_state.debug = true;
   }
 }
 
@@ -153,7 +162,7 @@ void br_mesh_3d_gen_line_simple(br_shader_line_3d_simple_t* shader, br_vec3_t p1
 }
 
 void br_mesh_3d_gen_line(br_mesh_line_3d_t args, br_vec3_t p1, br_vec3_t p2) {
-  br_shader_line_3d_t* ls = brtl_shaders()->line_3d;
+  br_shader_line_3d_t* ls = br_mesh_state.shaders->line_3d;
   float const line_3d_size = args.line_thickness;
   br_vec3_t diff  = br_vec3_normalize(br_vec3_sub(p2, p1));
   br_vec3_t norm = br_vec3_perpendicular(diff);
@@ -195,16 +204,16 @@ void br_mesh_3d_gen_line_strip3(br_mesh_line_3d_t args, float const* xs, float c
 
 
 // TODO: This should be split to _gen and _draw
-void br_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
+void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
   // TODO 2D/3D
   switch (plot->kind) {
     case br_plot_kind_2d: {
       TracyCFrameMarkStart("grid_draw_2d");
-      shaders->grid->uvs.bg_color_uv = BR_COLOR_TO4(BR_THEME.colors.plot_bg);
-      shaders->grid->uvs.lines_color_uv = BR_COLOR_TO4(BR_THEME.colors.grid_lines);
-      shaders->grid->uvs.line_thickness_uv = plot->dd.grid_line_thickness;
-      shaders->grid->uvs.major_line_thickness_uv = plot->dd.grid_major_line_thickness;
-      br_shader_grid_push_quad(shaders->grid, (br_shader_grid_el_t[4]) {
+      br_mesh_state.shaders->grid->uvs.bg_color_uv = BR_COLOR_TO4(theme->colors.plot_bg);
+      br_mesh_state.shaders->grid->uvs.lines_color_uv = BR_COLOR_TO4(theme->colors.grid_lines);
+      br_mesh_state.shaders->grid->uvs.line_thickness_uv = plot->dd.grid_line_thickness;
+      br_mesh_state.shaders->grid->uvs.major_line_thickness_uv = plot->dd.grid_major_line_thickness;
+      br_shader_grid_push_quad(br_mesh_state.shaders->grid, (br_shader_grid_el_t[4]) {
           { .vertexPosition = BR_VEC2(-1, 1) },
           { .vertexPosition = BR_VEC2(1, 1) },
           { .vertexPosition = BR_VEC2(1, -1) },
@@ -215,13 +224,13 @@ void br_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
     case br_plot_kind_3d: {
       TracyCFrameMarkStart("grid_draw_3d");
       float sz = 10000.f;
-      br_shader_grid_3d_push_quad(shaders->grid_3d, (br_shader_grid_3d_el_t[4]) {
+      br_shader_grid_3d_push_quad(br_mesh_state.shaders->grid_3d, (br_shader_grid_3d_el_t[4]) {
         { .vertexPosition = BR_VEC3(-sz, 0, -sz), .vertexColor = BR_VEC3(0, 1, 0), .z = BR_Z_TO_GL(1) },
         { .vertexPosition = BR_VEC3(sz, 0, -sz),  .vertexColor = BR_VEC3(0, 1, 0), .z = BR_Z_TO_GL(1) },
         { .vertexPosition = BR_VEC3(sz, 0, sz),   .vertexColor = BR_VEC3(0, 1, 0), .z = BR_Z_TO_GL(1) },
         { .vertexPosition = BR_VEC3(-sz, 0, sz),  .vertexColor = BR_VEC3(0, 1, 0), .z = BR_Z_TO_GL(1) },
       });
-      br_shader_grid_3d_push_quad(shaders->grid_3d, (br_shader_grid_3d_el_t[4]) {
+      br_shader_grid_3d_push_quad(br_mesh_state.shaders->grid_3d, (br_shader_grid_3d_el_t[4]) {
         { .vertexPosition = BR_VEC3(-sz, -sz, 0), .vertexColor = BR_VEC3(0, 0, 1), .z = BR_Z_TO_GL(5) },
         { .vertexPosition = BR_VEC3(sz, -sz, 0),  .vertexColor = BR_VEC3(0, 0, 1), .z = BR_Z_TO_GL(5) },
         { .vertexPosition = BR_VEC3(sz, sz, 0),   .vertexColor = BR_VEC3(0, 0, 1), .z = BR_Z_TO_GL(5) },
@@ -229,7 +238,7 @@ void br_mesh_grid_draw(br_plot_t* plot, br_shaders_t* shaders) {
       });
       TracyCFrameMarkEnd("grid_draw_3d");
     } break;
-    default: BR_ASSERT(0);
+    default: BR_UNREACHABLE("plot kind: %d", plot->kind);
   }
 }
 

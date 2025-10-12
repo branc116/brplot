@@ -1473,17 +1473,6 @@ extern XImage *XGetSubImage(
     int      /* dest_y */
 );
 
-/*
- * X function declarations.
- */
-extern Display *XOpenDisplay(
-    _Xconst char*  /* display_name */
-);
-
-extern void XrmInitialize(
-    void
-);
-
 extern char *XFetchBytes(
     Display*    /* display */,
     int*    /* nbytes_return */
@@ -1528,11 +1517,6 @@ extern int (*XSetAfterFunction(
             )    /* procedure */
 ))(
     Display*    /* display */
-);
-extern Atom XInternAtom(
-    Display*    /* display */,
-    _Xconst char*  /* atom_name */,
-    Bool    /* only_if_exists */
 );
 extern Status XInternAtoms(
     Display*    /* dpy */,
@@ -1629,20 +1613,6 @@ extern Window XGetSelectionOwner(
     Display*    /* display */,
     Atom    /* selection */
 );
-extern Window XCreateWindow(
-    Display*    /* display */,
-    Window    /* parent */,
-    int      /* x */,
-    int      /* y */,
-    unsigned int  /* width */,
-    unsigned int  /* height */,
-    unsigned int  /* border_width */,
-    int      /* depth */,
-    unsigned int  /* class */,
-    Visual*    /* visual */,
-    unsigned long  /* valuemask */,
-    XSetWindowAttributes*  /* attributes */
-);
 extern Colormap *XListInstalledColormaps(
     Display*    /* display */,
     Window    /* w */,
@@ -1679,20 +1649,6 @@ extern XHostAddress *XListHosts(
     int*    /* nhosts_return */,
     Bool*    /* state_return */
 );
-_X_DEPRECATED
-extern KeySym XKeycodeToKeysym(
-    Display*    /* display */,
-#if NeedWidePrototypes
-    unsigned int  /* keycode */,
-#else
-    KeyCode    /* keycode */,
-#endif
-    int      /* index */
-);
-extern KeySym XLookupKeysym(
-    XKeyEvent*    /* key_event */,
-    int      /* index */
-);
 extern KeySym *XGetKeyboardMapping(
     Display*    /* display */,
 #if NeedWidePrototypes
@@ -1726,10 +1682,6 @@ extern VisualID XVisualIDFromVisual(
 );
 
 /* multithread routines */
-
-extern Status XInitThreads(
-    void
-);
 
 extern Status XFreeThreads(
     void
@@ -1901,11 +1853,6 @@ extern Status XSetWMProtocols(
     Atom*    /* protocols */,
     int      /* count */
 );
-extern Status XIconifyWindow(
-    Display*    /* display */,
-    Window    /* w */,
-    int      /* screen_number */
-);
 extern Status XWithdrawWindow(
     Display*    /* display */,
     Window    /* w */,
@@ -2073,17 +2020,6 @@ extern int XChangePointerControl(
     int      /* accel_numerator */,
     int      /* accel_denominator */,
     int      /* threshold */
-);
-
-extern int XChangeProperty(
-    Display*    /* display */,
-    Window    /* w */,
-    Atom    /* property */,
-    Atom    /* type */,
-    int      /* format */,
-    int      /* mode */,
-    _Xconst unsigned char*  /* data */,
-    int      /* nelements */
 );
 
 extern int XChangeSaveSet(
@@ -2514,17 +2450,9 @@ extern int XFillRectangles(
     int      /* nrectangles */
 );
 
-extern int XFlush(
-    Display*    /* display */
-);
-
 extern int XForceScreenSaver(
     Display*    /* display */,
     int      /* mode */
-);
-
-extern int XFree(
-    void*    /* data */
 );
 
 extern int XFreeColormap(
@@ -2813,11 +2741,6 @@ extern int XMapSubwindows(
     Window    /* w */
 );
 
-extern int XMapWindow(
-    Display*    /* display */,
-    Window    /* w */
-);
-
 extern int XMaskEvent(
     Display*    /* display */,
     long    /* event_mask */,
@@ -2846,11 +2769,6 @@ extern int XMoveWindow(
     Window    /* w */,
     int      /* x */,
     int      /* y */
-);
-
-extern int XNextEvent(
-    Display*    /* display */,
-    XEvent*    /* event_return */
 );
 
 extern int XNoOp(
@@ -2888,10 +2806,6 @@ extern int XPeekIfEvent(
     XPointer    /* arg */
 );
 
-extern int XPending(
-    Display*    /* display */
-);
-
 extern int XPlanesOfScreen(
     Screen*    /* screen */
 );
@@ -2921,10 +2835,6 @@ extern int XPutImage(
     int      /* dest_y */,
     unsigned int  /* width */,
     unsigned int  /* height */
-);
-
-extern int XQLength(
-    Display*    /* display */
 );
 
 extern Status XQueryBestCursor(
@@ -3833,13 +3743,6 @@ extern void Xutf8DrawImageString(
     int      /* bytes_text */
 );
 
-extern XIM XOpenIM(
-    Display*      /* dpy */,
-    struct _XrmHashBucketRec*  /* rdb */,
-    char*      /* res_name */,
-    char*      /* res_class */
-);
-
 extern Status XCloseIM(
     XIM /* im */
 );
@@ -3859,10 +3762,6 @@ extern Display *XDisplayOfIM(
 extern char *XLocaleOfIM(
     XIM /* im*/
 );
-
-extern XIC XCreateIC(
-    XIM /* im */, ...
-) _X_SENTINEL(0);
 
 extern void XDestroyIC(
     XIC /* ic */
@@ -3919,15 +3818,6 @@ extern int XwcLookupString(
     XKeyPressedEvent*  /* event */,
     wchar_t*    /* buffer_return */,
     int      /* wchars_buffer */,
-    KeySym*    /* keysym_return */,
-    Status*    /* status_return */
-);
-
-extern int Xutf8LookupString(
-    XIC      /* ic */,
-    XKeyPressedEvent*  /* event */,
-    char*    /* buffer_return */,
-    int      /* bytes_buffer */,
     KeySym*    /* keysym_return */,
     Status*    /* status_return */
 );

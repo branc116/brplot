@@ -20,3 +20,6 @@ packages/aur/src/brplot
 dist
 crash-*
 *.tar.gz
+nob
+nob.cache
+tags

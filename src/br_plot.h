@@ -1,7 +1,4 @@
 #pragma once
-#include "src/br_shaders.h"
-#include "src/br_data.h"
-#include "src/br_text_renderer.h"
 #include "src/br_math.h"
 #include "src/br_data.h"
 
@@ -10,8 +7,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef struct br_hotreload_state_t br_hotreload_state_t;
 
 #if !defined(BR_PLOT_KIND_T)
 typedef enum {
@@ -24,13 +19,14 @@ typedef enum {
 typedef struct br_plot_2d_t {
   // graph_rect is in the graph coordinates.
   //            That is if you zoom in and out, graph_rect will change.
-  br_extentd_t graph_rect;
+  br_extentd_t graph_rect; // TODO: Remove this field. It's realy cheap to caclculate it and there is no need to cache it...
 
   float line_thickness;
   float grid_line_thickness;
   float grid_major_line_thickness;
 
-  br_vec2d_t mouse_pos;
+  br_vec2d_t mouse_pos; // TODO: Remove this field. It's realy cheap to caclculate it and there is no need to cache it...
+
   br_vec2d_t zoom;
   br_vec2d_t offset;
   bool show_closest, show_x_closest, show_y_closest;
@@ -86,36 +82,17 @@ typedef struct br_plots_t {
   int len, cap;
 } br_plots_t;
 
-typedef struct br_plotter_t br_plotter_t;
-
-br_vec2_t br_graph_to_screen(br_extent_t graph_rect, br_extenti_t screen_rect, br_vec2_t point);
-
 void br_plots_remove_group(br_plots_t plots, int group);
 
 void br_plot_deinit(br_plot_t* plot);
 void br_plot_create_texture(br_plot_t* br);
 void br_plot_draw(br_plot_t* plot, br_datas_t datas);
-void br_plot_screenshot(br_text_renderer_t* tr, br_plot_t* br, br_shaders_t* shaders, br_datas_t groups, char const* path);
-void br_keybinding_handle_keys(br_plotter_t* br, br_plot_t* plot);
 
-void read_input_start(br_plotter_t* br);
-void read_input_main_worker(br_plotter_t* br, void* read_input_state);
-int  read_input_read_next(void* read_input_state);
-void read_input_stop(void);
+void br_plot2d_move_screen_space(br_plot_t* plot, br_vec2_t delta, br_size_t extent);
+void br_plot2d_zoom(br_plot_t* plot, br_vec2_t vec, br_extent_t screen_extent, br_vec2_t mouse_pos_screen);
 
-min_distances_t min_distances_get(br_vec2_t const* points, size_t points_len, br_vec2_t to);
-void            min_distances_get1(min_distances_t* m, br_vec2_t const* points, size_t points_len, br_vec2_t to);
-
-
-#if BR_HAS_SHADER_RELOAD
-// Start watching shaders folder for changes and
-// mark gv->shader_dirty flag to true if there were any change to shaders.
-void br_start_refreshing_shaders(bool* is_dirty, bool const* should_close);
-#endif
-#if BR_HAS_HOTRELOAD
-void br_hotreload_start(br_hotreload_state_t* s);
-void br_hotreload_tick_ui(br_hotreload_state_t* s);
-#endif
+br_vec2d_t br_plot2d_to_plot  (br_plot_t* plot, br_vec2_t  vec);
+br_vec2_t  br_plot2d_to_screen(br_plot_t* plot, br_vec2d_t vec);
 
 #ifdef __cplusplus
 }

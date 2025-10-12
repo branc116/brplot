@@ -265,6 +265,14 @@ static inline bool br_float_near_zero(float value) {
   return fabsf(value) < 1e-6;
 }
 
+static inline float br_float_max(float a, float b) {
+  return a > b ? a : b;
+}
+
+static inline float br_float_min(float a, float b) {
+  return a < b ? a : b;
+}
+
 //------------------------br_vec2_t------------------------------
 
 static inline br_vec2_t br_vec2i_tof(br_vec2i_t v) {
@@ -319,6 +327,10 @@ static inline float br_vec2_len2(br_vec2_t a) {
 
 static inline float br_vec2_len(br_vec2_t a) {
   return sqrtf(br_vec2_len2(a));
+}
+
+static inline float br_vec2_dist(br_vec2_t a, br_vec2_t b) {
+  return br_vec2_len(br_vec2_sub(a, b));
 }
 
 static inline br_vec2_t br_vec2_mul(br_vec2_t a, br_vec2_t b) {

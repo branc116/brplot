@@ -25,9 +25,8 @@ ifeq ($(PLATFORM), LINUX)
 	TRACY       ?= NO
 	# YES | NO
 	LTO         ?= YES
-	# X11 | WAYLAND
+	# X11
 	HAS_X11     ?= YES
-	HAS_WAYLAND ?= YES
 	# Only when TYPE=LIB
 	STATIC      ?= NO
 	# Only in debug build
@@ -56,8 +55,6 @@ else ifeq ($(PLATFORM)_$(COMPILER), LINUX_GCC)
 else ifeq ($(PLATFORM)_$(COMPILER), LINUX_COSMO)
 	CC= cosmocc
 else ifeq ($(PLATFORM)_$(COMPILER), LINUX_MUSL)
-	# Wayland doesn't work with MUSL... linux/input.h is missing...
-	HAS_WAYLAND = NO
 	CC= musl-gcc
 	COMMONFLAGS+= -DBR_MUSL
 	# MUSL fails with sanitizer...
@@ -84,25 +81,22 @@ ifeq ($(PLATFORM), LINUX)
 	else
 		LIBS+= -lm -ldl -pthread
 	endif
-	ifeq ($(HAS_WAYLAND), NO)
-		COMMONFLAGS+= -DBR_NO_WAYLAND
-	endif
 	ifeq ($(HAS_X11), NO)
 		COMMONFLAGS+= -DBR_NO_X11
 	endif
-	ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), YES_YES_YES)
+	ifeq ($(HEADLESS)_$(HAS_X11), YES_YES_YES)
 		BACKENDS= HWX
-	else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), YES_YES_NO)
+	else ifeq ($(HEADLESS)_$(HAS_X11), YES_YES_NO)
 		BACKENDS= HW
-	else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), YES_NO_YES)
+	else ifeq ($(HEADLESS)_$(HAS_X11), YES_NO_YES)
 		BACKENDS= HX
-	else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), YES_NO_NO)
+	else ifeq ($(HEADLESS)_$(HAS_X11), YES_NO_NO)
 		BACKENDS= H
-	else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), NO_YES_YES)
+	else ifeq ($(HEADLESS)_$(HAS_X11), NO_YES_YES)
 		BACKENDS= WX
-	else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), NO_YES_NO)
+	else ifeq ($(HEADLESS)_$(HAS_X11), NO_YES_NO)
 		BACKENDS= W
-	else ifeq ($(HEADLESS)_$(HAS_WAYLAND)_$(HAS_X11), NO_NO_YES)
+	else ifeq ($(HEADLESS)_$(HAS_X11), NO_NO_YES)
 		BACKENDS= X
 	else
 		$(error This is not valid configuration)
@@ -276,7 +270,7 @@ bench: bin/bench
 	./bin/bench >> bench.txt
 	cat bench.txt
 
-SOURCE_BENCH= ./src/misc/benchmark.c ./src/resampling.c ./src/mesh.c ./src/shaders.c ./src/plotter.c ./src/gui.c ./src/data.c ./src/plot.c ./src/q.c ./src/keybindings.c ./src/graph_utils.c ./src/data_generator.c ./src/platform.c  ./src/permastate.c ./src/filesystem.c
+SOURCE_BENCH= ./src/misc/benchmark.c ./src/resampling.c ./src/mesh.c ./src/shaders.c ./src/plotter.c ./src/gui.c ./src/data.c ./src/plot.c ./src/q.c ./src/graph_utils.c ./src/data_generator.c ./src/platform.c  ./src/permastate.c ./src/filesystem.c
 OBJS_BENCH= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(SOURCE_BENCH))
 
 bin/bench: $(OBJS_BENCH) $(NOBS)

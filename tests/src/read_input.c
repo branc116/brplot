@@ -13,7 +13,6 @@
 #  include "src/br_plotter.h"
 #  include "src/br_gui.h"
 #  include "src/br_icons.h"
-#  include "src/br_tl.h"
 
 int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
   lex_state_t s = { 0 };
@@ -27,14 +26,14 @@ int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
     } else s.read_next = true;
     lex_step(br, &s);
     br_plotter_draw(br);
-    br_dagens_handle(&br->groups, &br->dagens, &br->plots, brtl_time() + 0.010);
+    br_dagens_handle(&br->groups, &br->dagens, &br->plots, brpl_time() + 0.010);
   }
   s.c = 0;
   while (s.tokens_len > 0) {
     lex_step(br, &s);
     input_tokens_reduce(br, &s, true);
     br_plotter_draw(br);
-    br_dagens_handle(&br->groups, &br->dagens, &br->plots, brtl_time() + 0.010);
+    br_dagens_handle(&br->groups, &br->dagens, &br->plots, brpl_time() + 0.010);
   }
   br_plotter_deinit(br);
   br_plotter_free(br);

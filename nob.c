@@ -22,6 +22,7 @@
 #  define NOB_REBUILD_URSELF(binary_path, source_path) "cc", "-I.", "-ggdb", "-o", binary_path, source_path, "-lm"
 #endif
 #define NOB_IMPLEMENTATION
+#define NOB_EXPERIMENTAL_DELETE_OLD
 #include "external/nob.h"
 
 #define COMMANDS(X) \
@@ -119,7 +120,6 @@ const char* sources[] = {
  "src/mesh.c",
  "src/q.c",
  "src/read_input.c",
- "src/keybindings.c",
  "src/resampling.c",
  "src/graph_utils.c",
  "src/shaders.c",
@@ -130,7 +130,7 @@ const char* sources[] = {
  "src/gui.c",
  "src/text_renderer.c",
  "src/data_generator.c",
- "src/platform.c",
+ "src/platform2.c",
  "src/threads.c",
  "src/gl.c",
  "src/icons.c",
@@ -184,6 +184,7 @@ static bool pip_skip_build = false;
 static bool no_gen = false;
 static bool disable_logs = false;
 static bool is_pedantic = false;
+static bool is_fatal_error = false;
 static bool is_tracy = false;
 static bool is_help_subcommands = false;
 
@@ -212,6 +213,7 @@ static void fill_command_flag_data(void) {
   command_flag_t debug_flag          = (command_flag_t) {.name = BR_STRL("debug"),      .alias = 'd',  .description = BR_STRL("Build debug version"),                                                                            .is_set = &is_debug};
   command_flag_t has_hotreload_flag  = (command_flag_t) {.name = BR_STRL("hot"),        .alias = 'H',  .description = BR_STRL("Build a version with hotreaload enabled"),                                                        .is_set = &has_hotreload};
   command_flag_t pedantic_flag       = (command_flag_t) {.name = BR_STRL("pedantic"),   .alias = 'p',  .description = BR_STRL("Turn on all warnings and treat warnings as errors"),                                              .is_set = &is_pedantic};
+  command_flag_t fatal_error_flag    = (command_flag_t) {.name = BR_STRL("fatal-error"),.alias = 'F',  .description = BR_STRL("All compile errors are fatal"),                                                                   .is_set = &is_fatal_error};
   command_flag_t tracy_flag          = (command_flag_t) {.name = BR_STRL("tracy"),      .alias = 't',  .description = BR_STRL("Turn tracy profiler on"),                                                                         .is_set = &is_tracy};
   command_flag_t headless_flag       = (command_flag_t) {.name = BR_STRL("headless"),   .alias = '\0', .description = BR_STRL("Create a build that will not spawn any windows"),                                                 .is_set = &is_headless};
   command_flag_t asan_flag           = (command_flag_t) {.name = BR_STRL("asan"),       .alias = 'a',  .description = BR_STRL("Enable address sanitizer"),                                                                       .is_set = &enable_asan};
@@ -228,6 +230,7 @@ static void fill_command_flag_data(void) {
   br_da_push(command_flags[n_compile], debug_flag);
   br_da_push(command_flags[n_compile], has_hotreload_flag);
   br_da_push(command_flags[n_compile], pedantic_flag);
+  br_da_push(command_flags[n_compile], fatal_error_flag);
   br_da_push(command_flags[n_compile], tracy_flag);
   br_da_push(command_flags[n_compile], headless_flag);
   br_da_push(command_flags[n_compile], asan_flag);
@@ -319,8 +322,11 @@ static bool gl_gen(void) {
   nob_cmd_append(&cmd, NOB_REBUILD_URSELF(gl_gen_bin, gl_gen_src));
   if (false == nob_cmd_run_cache(&cmd)) return false;
 
-  nob_cmd_append(&cmd, gl_gen_bin);
-  if (false == nob_cmd_run_cache(&cmd)) return false;
+  // TODO: THis is not cached properly. Investigate...
+  if (false == cache.was_last_cached) {
+    nob_cmd_append(&cmd, gl_gen_bin);
+    if (false == br_cmd_run(&cmd)) return false;
+  }
 
   nob_cmd_free(cmd);
   return true;
@@ -329,7 +335,7 @@ static bool gl_gen(void) {
 static bool compile_standard_flags(Nob_Cmd* cmd) {
   nob_cmd_append(cmd, "-I.");
   if (is_headless) {
-    nob_cmd_append(cmd, "-DBR_NO_X11", "-DBR_NO_WAYLAND", "-DHEADLESS");
+    nob_cmd_append(cmd, "-DBR_NO_X11", "-DHEADLESS");
   }
   if (is_wasm) nob_cmd_append(cmd, "-DGRAPHICS_API_OPENGL_ES3=1");
   if (is_tracy) nob_cmd_append(cmd, "-DTRACY_ENABLE=1");
@@ -354,6 +360,10 @@ static bool compile_standard_flags(Nob_Cmd* cmd) {
 #else
     nob_cmd_append(cmd, "-Wall", "-Wextra", "-Wpedantic", "-Wconversion", "-Wshadow");
 #endif
+  }
+  if (is_fatal_error) {
+    if (is_msvc) LOGF("Pedantic flags for msvc are not known");
+    else nob_cmd_append(cmd, "-Wfatal-errors");
   }
 
   if (is_lib) {
@@ -437,8 +447,10 @@ static bool compile_and_link(Nob_Cmd* cmd) {
     else {
       if (has_hotreload) nob_cmd_append(&link_command, "-fpic", "-fpie", "-rdynamic", "-ldl");
 
-      if (is_msvc) nob_cmd_append(&link_command, "/Fe:bin\\brplot.exe");
-      else nob_cmd_append(&link_command, "-o", "bin/brplot" EXE_EXT);
+      if (is_msvc) {
+		  if (is_debug) nob_cmd_append(&link_command, "/Zi", "/DEBUG:FULL");
+		  nob_cmd_append(&link_command, "/Fe:bin\\brplot.exe");
+	  } else nob_cmd_append(&link_command, "-o", "bin/brplot" EXE_EXT);
 
       if (tp_linux == g_platform) nob_cmd_append(&link_command, "-lm", "-pthread", "-ldl");
     }
