@@ -47,6 +47,7 @@ typedef void* funcptr_t;
 
 const char* br_gl_library_names[] = {
 #if defined(_WIN32)
+  "opengl32.dll",
   "OpenGL.dll",
 #else
   "libGL.so",
@@ -89,6 +90,7 @@ const char* br_glfw_library_names[] = {
 #if defined(__APPLE__)
 #  include <mach/mach_time.h>
 #elif defined(_WIN32)
+#  include <Windows.h>
 #else
 #  include <unistd.h>
 #  include <time.h>
@@ -101,10 +103,14 @@ const char* br_glfw_library_names[] = {
 #include <stdlib.h>
 
 static void brpl_time_init(void);
+#if BR_HAS_X11
 static bool brpl_x11_load(brpl_window_t* window);
 static bool brpl_x11_open_window(brpl_window_t* window);
+#endif
+#if BR_HAS_GLFW
 static bool brpl_glfw_load(brpl_window_t* window);
 static bool brpl_glfw_open_window(brpl_window_t* window);
+#endif
 
 static BR_THREAD_LOCAL struct {
   uint64_t start;
@@ -162,7 +168,7 @@ brpl_event_t brpl_event_next(brpl_window_t* window) {
     case brpl_event_window_focused: { LOGI("brpl_event_window_focused"); } break;
     case brpl_event_window_unfocused: { LOGI("brpl_event_window_unfocused"); } break;
     case brpl_event_close: { LOGI("brpl_event_close"); } break;
-    // case brpl_event_next_frame: { LOGI("brpl_event_next_frame"); } break;
+	case brpl_event_next_frame: { LOGI("brpl_event_next_frame: time=%f", ev.time); } break;
     case brpl_event_scale: { LOGI("brpl_event_scale"); } break;
     case brpl_event_nop: { LOGI("brpl_event_nop"); } break;
     case brpl_event_unknown: { LOGI("brpl_event_unknown"); } break;
@@ -194,7 +200,9 @@ double brpl_time(void) {
 
 static void brpl_time_init(void) {
 #if defined(_WIN32)
-  QueryPerformanceFrequency(&brpl__time.frequency);
+  LARGE_INTEGER freq;
+  QueryPerformanceFrequency(&freq);
+  brpl__time.frequency = (double)freq.QuadPart;
 #elif defined(__APPLE__)
  #define GLFW_BUILD_COCOA_TIMER
   mach_timebase_info_data_t info;
@@ -223,6 +231,18 @@ void* brpl_load_symbol(void* library, const char* name) {
 #else
   return (void*)dlsym(library, name);
 #endif
+}
+
+void* brpl_load_gl(void* module, const char* func_name) {
+	void* ret = brpl_load_symbol(module, func_name);
+	if (NULL == ret) {
+		void* (*wglGetProcAddress_l)(const char* name) = brpl_load_symbol(module, "wglGetProcAddress");
+		if (NULL == wglGetProcAddress_l) {
+			LOGF("Failed to load GetProcAddress");
+		}
+		ret = wglGetProcAddress_l(func_name);
+	}
+	return ret;
 }
 
 #include <assert.h>                                               
@@ -623,7 +643,7 @@ static brpl_event_t brpl_glfw_event_next(brpl_window_t* win) {
 
 // /usr/include/GLFW/glfw3.h
 static bool brpl_glfw_load(brpl_window_t* win) {
-  bool ok = br_glfw_load() && br_gl_load();
+  bool ok = br_glfw_load();
   win->f.frame_start = brpl_glfw_frame_start;
   win->f.frame_end   = brpl_glfw_frame_end;
   win->f.event_next  = brpl_glfw_event_next;
@@ -633,7 +653,6 @@ static bool brpl_glfw_load(brpl_window_t* win) {
 static void brpl_glfw_error_callback(int error_code, const char* description) {
   LOGE("GLFW error %d: %s", error_code, description);
 }
-
 static void brpl_glfw_windowsizefun(GLFWwindow* window, int width, int height) {
   brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
   brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_window_resize, .size = BR_SIZE(width, height) });
@@ -676,10 +695,14 @@ void brpl_glfw_charfun(GLFWwindow* window, unsigned int codepoint) {
 }
 
 static bool brpl_glfw_open_window(brpl_window_t* window) {
-  BR_ASSERT(glfwInit());
+  bool ok = glfwInit();
+  if (false == ok) {
+	  LOGE("Failed to initialize the glfw");
+	  return false;
+  }
   glfwSetErrorCallback(brpl_glfw_error_callback);
   glfwDefaultWindowHints();
-#if !defined(__EMSCRIPTEN__)
+#if !defined(__EMSCRIPTEN__) 
 #define GLFW_CONTEXT_VERSION_MAJOR  0x00022002
 #define GLFW_CONTEXT_VERSION_MINOR  0x00022003
 #define GLFW_OPENGL_FORWARD_COMPAT  0x00022006
@@ -689,6 +712,10 @@ static bool brpl_glfw_open_window(brpl_window_t* window) {
 #endif
 
   GLFWwindow* glfw_window = glfwCreateWindow(window->viewport.width, window->viewport.height, window->title, NULL, NULL);
+  if (NULL == glfw_window) {
+	  LOGE("Failed to create glfw window");
+	  return false;
+  }
   brpl_glfw_window_t* win = BR_CALLOC(sizeof(brpl_glfw_window_t), 1);
   win->glfw = glfw_window;
   window->win = win;
@@ -703,6 +730,10 @@ static bool brpl_glfw_open_window(brpl_window_t* window) {
   glfwSetKeyCallback(glfw_window, brpl_glfw_keyfun);
   glfwSetCharCallback(glfw_window, brpl_glfw_charfun);
   glfwMakeContextCurrent(glfw_window);
+  if (false == br_gl_load()) {
+	  LOGE("Failed to load gl.");
+	  return false;
+  }
   return true;
 }
 #endif

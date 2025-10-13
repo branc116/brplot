@@ -1,9 +1,9 @@
 #include "src/br_pp.h"
-#include "src/br_plot.h"
 #include "src/br_plotter.h"
 #include "src/br_q.h"
 #include "src/br_memory.h"
 
+static void br_read_input_main_worker(br_plotter_t* br, void* read_state);
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
 
 #include <pthread.h>
@@ -16,7 +16,6 @@
 static BR_THREAD_LOCAL int br_read_input_pipes[2];
 static BR_THREAD_LOCAL pthread_t br_read_input_thread;
 static void* br_indirection_function(void* gv);
-static void br_read_input_main_worker(br_plotter_t* br, void* read_state);
 
 void br_read_input_start(br_plotter_t* br) {
   static BR_THREAD_LOCAL struct { br_plotter_t* br; int* pipes; } data;
