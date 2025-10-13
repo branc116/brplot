@@ -255,10 +255,11 @@ bool br_permastate_load_plotter(FILE* file, br_plotter_t* br, br_data_descs_t* d
   (void)success;
 
   if (1 != fread(&datas_len, sizeof(datas_len), 1, file))                 BR_ERROR("Failed to read datas len");
-  br_da_reserve(*desc, datas_len);
+  if (datas_len < 0)                                                      BR_ERROR("datas_len is < 0");
+  desc->len = (size_t)datas_len;
+  br_da_reserve(*desc, desc->len);
   if (NULL == desc->arr)                                                   BR_ERROR("Failed to allocate data info array.");
-  if (datas_len != fread(desc->arr, sizeof(desc->arr[0]), datas_len, file)) BR_ERROR("Failed to read datas info");
-  desc->len = datas_len;
+  if (desc->len != fread(desc->arr, sizeof(desc->arr[0]), desc->len, file)) BR_ERROR("Failed to read datas info");
 
   if (1 != (uis_read = fread(&br->ui, sizeof(br->ui), 1, file)))          BR_ERROR("Failed to read UI state.");
   brfl_read(file, br->resizables, fl_read_error); if (fl_read_error != 0) BR_ERROR("Failed to read resizables.");

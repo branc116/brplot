@@ -214,7 +214,7 @@ br_size_t brui_text(br_strv_t strv) {
 void brui_text_at(br_strv_t strv, br_vec2_t at) {
   br_text_renderer_t* tr = brui__stack.tr;
   br_size_t size = br_text_renderer_measure(tr, TOP.font_size, strv);
-  size.height += TOP.font_size;
+  size.height += (float)TOP.font_size;
   br_bb_t text_limit = TOP.limit;
   float padd = TOP.padding.x * 2;
   br_vec2_t at_og = at;
@@ -225,15 +225,15 @@ void brui_text_at(br_strv_t strv, br_vec2_t at) {
   if (at.x - size.width - padd * 3 > text_limit.min_x) {
     at.x -= size.width + padd * 2;
     at.y -= size.height * 0.5f;
-    rect = BR_BB(at.x - padd, at.y, at.x + size.width, at.y + TOP.font_size);
+    rect = BR_BB(at.x - padd, at.y, at.x + size.width, at.y + (float)TOP.font_size);
     b = BR_VEC2(rect.max_x, rect.min_y);
     c = BR_VEC2(rect.max_x, rect.max_y);
   } else if (at.y - size.height > text_limit.min_y) {
     at.x = text_limit.min_x + padd;
     at.y -= size.height * 1.5f;
-    rect = BR_BB(at.x - padd, at.y, at.x + size.width + padd, at.y + TOP.font_size);
-    b.x = at_og.x - TOP.font_size*.5f;
-    c.x = at_og.x + TOP.font_size*.5f;
+    rect = BR_BB(at.x - padd, at.y, at.x + size.width + padd, at.y + (float)TOP.font_size);
+    b.x = at_og.x - (float)TOP.font_size*.5f;
+    c.x = at_og.x + (float)TOP.font_size*.5f;
     float diffb = rect.min_x - b.x;
     float diffc = c.x - rect.max_x;
     float diff = br_float_max(diffb, diffc);
@@ -1447,10 +1447,8 @@ brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id) {
   bool just_created = false;
   brui_resizable_temp_state_t state;
   if (index < 0) {
-    brui_resizable_temp_state_t state = {
-      .was_drawn = true,
-      .resizable_handle = brui_resizable_new(brui__stack.rs, BR_EXTENT(0, 0, 100, 100), 0)
-    };
+    state.was_drawn = true;
+    state.resizable_handle = brui_resizable_new(brui__stack.rs, BR_EXTENT(0, 0, 100, 100), 0);
     stbds_hmput(bruir__temp_res, hash, state);
     just_created = true;
   } else {

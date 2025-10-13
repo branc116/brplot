@@ -26,7 +26,7 @@ extern "C" {
 #define BR_STRV(STR, LEN) ((br_strv_t) { .str = (STR), .len = (LEN) })
 #define BR_STRL(STR) ((br_strv_t) { .str = (STR), .len = (uint32_t)(sizeof((STR)) - 1) })
 
-#define BR_STRV_FOREACH_UTF8(SV, CHAR) for (int CHAR = br_strv_utf8_pop(&(SV)); CHAR; CHAR = br_strv_utf8_pop(&(SV)))
+#define BR_STRV_FOREACH_UTF8(SV, CHAR) for (br_u32 CHAR = br_strv_utf8_pop(&(SV)); CHAR; CHAR = br_strv_utf8_pop(&(SV)))
 
 
 typedef struct br_str_t {
@@ -80,7 +80,7 @@ bool       br_strv_starts_with(br_strv_t buff, br_strv_t starts_with);
 int        br_strv_count(br_strv_t buff, char ch);
 bool       br_strv_match(br_strv_t full, br_strv_t sub);
 int        br_strv_utf8_add(br_strv_t, int cur_pos, int n);
-int        br_strv_utf8_pop(br_strv_t* t);
+br_u32     br_strv_utf8_pop(br_strv_t* t);
 
 br_strv_t  br_scrach_printf(const char* fmt, ...);
 #if defined(BR_RELEASE)
@@ -554,37 +554,37 @@ int br_strv_utf8_add(br_strv_t strv, int cur_pos, int n) {
 }
 
 
-int br_strv_utf8_pop(br_strv_t* t) {
+br_u32 br_strv_utf8_pop(br_strv_t* t) {
 //  U+0000    U+007F    0yyyzzzz
 //  U+0080    U+07FF    110xxxyy  10yyzzzz
 //  U+0800    U+FFFF    1110wwww  10xxxxyy  10yyzzzz
 //  U+010000  U+10FFFF  11110uvv  10vvwwww  10xxxxyy  10yyzzzz
 //  U+uvwxyz
-  int ret = 0;
+  br_u32 ret = 0;
   if (t->len == 0) return ret;
 
-  int initial = (int)br_strv_popu(*t);
+  br_u32 initial = (br_u32)br_strv_popu(*t);
   ret = initial;
   if (0 == (initial & 0x80)) return ret;
 
   BR_ASSERTF(initial != 0b10000000, "Decoding from the middle of the UTF8 character");
 
   BR_ASSERT(t->len > 0);
-  int next = (int)br_strv_popu(*t);
+  br_u32 next = (br_u32)br_strv_popu(*t);
   ret &= 0b00011111;
   ret <<= 6;
   ret |= next & 0b00111111;
   if ((initial & 0b11100000) == 0b11000000) return ret;
 
   BR_ASSERT(t->len > 0);
-  next = (int)br_strv_popu(*t);
+  next = (br_u32)br_strv_popu(*t);
   ret &= 0b0000111100000000;
   ret <<= 6;
   ret |= next & 0b00111111;
   if ((initial & 0b11110000) == 0b11100000) return ret;
 
   BR_ASSERT(t->len > 0);
-  next = (int)br_strv_popu(*t);
+  next = (br_u32)br_strv_popu(*t);
   ret &= 0b000001111111111111111111;
   ret <<= 6;
   ret |= next & 0b00111111;
@@ -601,13 +601,13 @@ br_strv_t br_scrach_printf(const char* fmt, ...) {
   va_end(args);
 
   BR_ASSERT(n >= 0);
-  char *result = (char*)br_scrach_get(n + 1);
+  char *result = (char*)br_scrach_get((size_t)n + 1);
   va_start(args, fmt);
-  vsnprintf(result, n + 1, fmt, args);
+  vsnprintf(result, (size_t)n + 1, fmt, args);
   va_end(args);
   br_scrach_free();
 
-  return BR_STRV(result, n);
+  return BR_STRV(result, (br_u32)n);
 }
 
 

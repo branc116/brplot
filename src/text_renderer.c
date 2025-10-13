@@ -17,30 +17,30 @@
 #include <float.h>
 
 typedef struct {
-  int key;
+  br_u32 key;
   stbtt_packedchar value;
-} key_to_packedchar_t;
+} brtr_key_to_packedchar_t;
 
 typedef struct {
-  int key;
-  key_to_packedchar_t* value;
-} size_to_font;
+  br_i32 key;
+  brtr_key_to_packedchar_t* value;
+} brtr_size_to_font_t;
 
 typedef struct {
   int size;
-  int ch;
-} char_sz;
+  br_u32 ch;
+} brtr_char_sz_t;
 
 typedef struct {
-  char_sz key;
-  int value;
-} to_bake_t;
+  brtr_char_sz_t key;
+  br_u32 value;
+} brtr_to_bake_t;
 
 typedef struct br_text_renderer_t {
   br_shader_font_t** shader_f;
   br_shader_fontbg_t** shader_bg;
-  size_to_font* sizes;
-  to_bake_t* to_bake;
+  brtr_size_to_font_t* sizes;
+  brtr_to_bake_t* to_bake;
   unsigned char* bitmap_pixels;
   int bitmap_pixels_len;
   int bitmap_pixels_height;
@@ -144,7 +144,7 @@ void br_text_renderer_free(br_text_renderer_t* r) {
 }
 
 static int br_text_renderer_sort_by_size(const void* s1, const void* s2) {
-  to_bake_t a = *(to_bake_t*)s1, b = *(to_bake_t*)s2;
+  brtr_to_bake_t a = *(brtr_to_bake_t*)s1, b = *(brtr_to_bake_t*)s2;
   if (a.key.size < b.key.size) return -1;
   else if (a.key.size > b.key.size) return 1;
   else if (a.key.ch < b.key.ch) return -1;
@@ -152,18 +152,18 @@ static int br_text_renderer_sort_by_size(const void* s1, const void* s2) {
   else return 0;
 }
 
-static void br_text_renderer_bake_range(br_text_renderer_t* r, int size, int start, int len) {
+static void br_text_renderer_bake_range(br_text_renderer_t* r, int size, br_u32 start, br_u32 len) {
   r->baking_chars.len = 0;
   br_da_reserve(r->baking_chars, (size_t)len);
   r->baking_chars.len = (size_t)len;
-  stbtt_PackFontRange(&r->pack_cntx, r->font_data, 0, (float)size, start, len, br_da_getp(r->baking_chars, 0));
+  stbtt_PackFontRange(&r->pack_cntx, r->font_data, 0, (float)size, (br_i32)start, (br_i32)len, br_da_getp(r->baking_chars, 0));
   ptrdiff_t k = stbds_hmgeti(r->sizes, size);
   if (k == -1) {
     stbds_hmput(r->sizes, size, NULL);
     k = stbds_hmgeti(r->sizes, size);
   }
-  for (int j = 0; j < len; ++j) {
-    int key = start + j;
+  for (br_u32 j = 0; j < len; ++j) {
+    br_u32 key = start + j;
     stbds_hmput(r->sizes[k].value, key, br_da_get(r->baking_chars, j));
   }
 }
@@ -176,7 +176,7 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
     int pack_from = 0;
     for (int i = 1; i < hm_len; ++i) {
       int new_size = r->to_bake[i].key.size;
-      int p_len = r->to_bake[i].key.ch - r->to_bake[i - 1].key.ch;
+      br_u32 p_len = r->to_bake[i].key.ch - r->to_bake[i - 1].key.ch;
       if (new_size == old_size && p_len < 10) continue;
       p_len = 1 + r->to_bake[i - 1].key.ch - r->to_bake[pack_from].key.ch;
       br_text_renderer_bake_range(r, old_size, r->to_bake[pack_from].key.ch, p_len);
@@ -184,7 +184,7 @@ void br_text_renderer_dump(br_text_renderer_t* r) {
       pack_from = i;
     }
     if (pack_from < hm_len) {
-      int s_len = 1 + r->to_bake[hm_len - 1].key.ch - r->to_bake[pack_from].key.ch;
+      br_u32 s_len = 1 + r->to_bake[hm_len - 1].key.ch - r->to_bake[pack_from].key.ch;
       br_text_renderer_bake_range(r, old_size, r->to_bake[pack_from].key.ch, s_len);
     }
     stbds_hmfree(r->to_bake);
@@ -201,13 +201,13 @@ uint32_t br_text_renderer_texture_id(br_text_renderer_t* r) {
   return r->bitmap_texture_id;
 }
 
-static bool brtr_move_loc(size_to_font s, int c, br_vec2_t* pos) {
-  if (c == '\n') {
+static bool brtr_move_loc(brtr_size_to_font_t s, br_u32 c, br_vec2_t* pos) {
+  if ((char)c == '\n') {
     pos->y += (float)s.key * 1.1f;
     pos->x = 0;
     return true;
   }
-  if (c == '\r') return true;
+  if ((char)c == '\r') return true;
   ptrdiff_t char_index = s.value == NULL ? -1 : stbds_hmgeti(s.value, c);
   if (char_index == -1) pos->x += (float)s.key;
   else                  pos->x += s.value[char_index].value.xadvance;
@@ -218,7 +218,7 @@ br_strv_t br_text_renderer_fit(br_text_renderer_t* r, br_size_t size, int font_s
   br_strv_t iter = text;
   BR_PROFILE("Text renderer fit") {
     br_vec2_t loc = { 0 };
-    size_to_font stof = { .key = font_size, .value = NULL };
+    brtr_size_to_font_t stof = { .key = font_size, .value = NULL };
     ptrdiff_t size_index = stbds_hmgeti(r->sizes, font_size);
 
     if (size_index != -1) stof = r->sizes[size_index];
@@ -233,7 +233,7 @@ br_strv_t br_text_renderer_fit(br_text_renderer_t* r, br_size_t size, int font_s
 
 br_size_t br_text_renderer_measure(br_text_renderer_t* r, int font_size, br_strv_t str) {
   br_vec2_t loc = { 0 };
-  size_to_font f = { 0 };
+  brtr_size_to_font_t f = { 0 };
   ptrdiff_t size_index = stbds_hmgeti(r->sizes, font_size);
 
   if (size_index == -1) return BR_SIZE(0, 0);
@@ -260,20 +260,19 @@ br_extent_t br_text_renderer_push_strv(br_text_renderer_t* r, br_vec3_t pos, int
 
 br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int font_size, br_color_t color_fg, br_color_t color_bg, br_strv_t text, br_bb_t limit, br_text_renderer_ancor_t ancor) {
   float min_x = FLT_MAX, max_x = FLT_MIN;
-  float y_off = 0.f;
   float x_off = 0.f;
   if      (ancor & br_text_renderer_ancor_y_mid)  pos.y -= (float)font_size * 0.5f;
   else if (ancor & br_text_renderer_ancor_y_down) pos.y -= (float)font_size;
-  pos.y += (float)font_size*0.75;
+  pos.y += (float)font_size*0.75f;
   BR_PROFILE("text renderer push2") {
-    float x = pos.x, y = pos.y, z = pos.z;
+    float x = pos.x, z = pos.z;
     ptrdiff_t size_index = stbds_hmgeti(r->sizes, font_size);
     float og_x = pos.x;
     r->tmp_quads.len = 0;
     if (size_index == -1) {
-      BR_STRV_FOREACH_UTF8(text, ch) stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = ch }), 0);
+      BR_STRV_FOREACH_UTF8(text, ch) stbds_hmput(r->to_bake, ((brtr_char_sz_t){ .size = font_size, .ch = ch }), 0);
     } else {
-      size_to_font s = r->sizes[size_index];
+      brtr_size_to_font_t s = r->sizes[size_index];
       BR_STRV_FOREACH_UTF8(text, ch) {
         if (ch == '\n') {
           pos.y += (float)font_size * 1.1f;
@@ -283,7 +282,7 @@ br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int fon
         if (ch == '\r') continue;
         ptrdiff_t char_index = stbds_hmgeti(s.value, ch);
         if (char_index == -1) {
-          stbds_hmput(r->to_bake, ((char_sz){ .size = font_size, .ch = ch }), 0);
+          stbds_hmput(r->to_bake, ((brtr_char_sz_t){ .size = font_size, .ch = ch }), 0);
         } else {
           stbtt_aligned_quad q;
           stbtt_packedchar pack = s.value[char_index].value;
@@ -319,7 +318,7 @@ br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int fon
       });
     }
   }
-  return BR_EXTENT(min_x - x_off, pos.y, max_x - min_x, font_size);
+  return BR_EXTENT(min_x - x_off, pos.y, max_x - min_x, (float)font_size);
 }
 
 void br_text_renderer_viewport_set(br_text_renderer_t* r, br_sizei_t viewport) {

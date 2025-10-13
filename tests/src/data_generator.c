@@ -432,7 +432,7 @@ void dagen_parser_range(void) {
   br_data_t* res = br_data_get1(datas, 2);
 
   TEST_EQUAL(res->kind, br_data_kind_2d);
-  for (int i = 0; i < 10; ++i) {
+  for (br_u32 i = 0; i < 10; ++i) {
     br_vec2d_t val = br_data_el_xy(datas, 2, i);
     TEST_EQUALF((float)val.y, (float)i);
   }

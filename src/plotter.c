@@ -155,7 +155,7 @@ void br_plotter_init(br_plotter_t* br) {
   }
   br_icons_init(br->shaders.icon);
   if (br->loaded_status < br_permastate_status_ui_loaded) {
-    br->resizables.menu_extent_handle = brui_resizable_new(&br->resizables, BR_EXTENT(10, 40, 160, br->win.viewport.height/2.f), 0);
+    br->resizables.menu_extent_handle = brui_resizable_new(&br->resizables, BR_EXTENT(10, 40, 160, (float)br->win.viewport.height/2.f), 0);
     br_theme_dark(&br->ui.theme);
     br_theme_reset_ui(&br->ui.theme);
   } else {
@@ -229,7 +229,7 @@ void br_plotter_update(br_plotter_t* br) {
         else if (ev.key < 255)                br->key.down[ev.key] = true;
 
         if (ev.key == BR_KEY_ESCAPE) {
-          br->action.active = brui_action_none;
+          br->action.active = br_plotter_entity_none;
           brui_resizable_mouse_releasel(&br->resizables, br->mouse.pos);
         } else {
           if (br->action.active == br_plotter_entity_none ||
@@ -369,7 +369,7 @@ void br_plotter_update(br_plotter_t* br) {
                 if (ta->id == br->ui.fm_state.path_id) {
                   br->ui.fm_state.has_entered = true;
                 }
-              }
+              } break;
               default: LOGI("text input %d (%d)", ev.key, ev.keycode); break;
             }
           } else {
@@ -390,8 +390,6 @@ void br_plotter_update(br_plotter_t* br) {
           brui_action_t* action = brui_action();
           brsp_t* sp = &br->sp;
           brsp_id_t str_id = action->args.text.id;
-          br_strv_t strv = brsp_get(*sp, str_id);
-          LOGI("input U+%06X", ev.utf8_char);
           action->args.text.cursor_pos += brsp_insert_unicode(sp, str_id, action->args.text.cursor_pos, ev.utf8_char);
           action->args.text.changed = true;
         }
@@ -402,7 +400,6 @@ void br_plotter_update(br_plotter_t* br) {
           brui_resizable_mouse_releasel(&br->resizables, br->mouse.pos);
         } else {
           if (ev.mouse_key == 0) {
-            int r_id = br_plotter_hovered_resizable(br);
             br->mouse.dragging_left = true;
             brui_resizable_mouse_pressl(&br->resizables, br->mouse.pos, br->key.ctrl_down);
             if (false == br->key.ctrl_down) {
@@ -465,7 +462,7 @@ void br_plotter_update(br_plotter_t* br) {
             br_plot2d_zoom(plot, zoom, ex, br->mouse.pos);
           } else if (br->hovered.active == br_plotter_entity_plot_3d) {
             br_plot_t* plot = &br->plots.arr[br->hovered.plot_id];
-            float mw_scale = (1 + br->time.frame*ev.vec.y*3.f);
+            float mw_scale = (1.0f + (float)br->time.frame*ev.vec.y*3.f);
             br_vec3_t zeroed = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
             br_vec3_t zero_dir = br_vec3_normalize(zeroed);
             float len = br_vec3_len(zeroed);
@@ -601,7 +598,7 @@ void br_plotter_update(br_plotter_t* br) {
 }
 
 void br_plotter_resize(br_plotter_t* br, float width, float height) {
-  (void)br;
+  (void)br; (void)width; (void)height;
   BR_TODO("br_plotter_resize");
   //brtl_window_size_set((int)width, (int)height);
 }
@@ -771,7 +768,7 @@ void br_plotter_datas_empty_in_plot(br_plotter_t* br, int plot_id) {
   br_plot_t* plot = br_da_getp(br->plots, plot_id);
   for (int i = 0; i < plot->data_info.len; ++i) {
     br_plot_data_t pd = br_da_get(plot->data_info, i);
-    br_data_empty(br_da_getp(br->groups, i));
+    br_data_empty(br_data_get1(br->groups, pd.group_id));
   }
 }
 

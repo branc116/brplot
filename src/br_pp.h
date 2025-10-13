@@ -236,3 +236,9 @@ void __sanitizer_print_stack_trace(void);
 #  define BR_GLFW_STATIC
 #endif
 
+
+typedef unsigned long long br_u64;
+typedef signed long long br_i64;
+typedef unsigned int br_u32;
+typedef signed int br_i32;
+

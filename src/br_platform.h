@@ -9,9 +9,9 @@ typedef void* voidp;
 #endif
 
 #if defined(_WIN32)
-void* brpl_load_gl(void* module, const char* func_name);
-#else
 #define brpl_load_gl brpl_load_symbol
+#else
+void* brpl_load_gl(void* module, const char* func_name);
 #endif
 
 #include ".generated/gl.h"
@@ -174,7 +174,7 @@ typedef struct brpl_event_t {
     br_vec2_t vec;
     br_size_t size;
     double time;
-    uint32_t utf8_char;
+    br_u32 utf8_char;
     int mouse_key;
     struct {
       int key;

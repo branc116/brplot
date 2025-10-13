@@ -132,14 +132,6 @@ void br_mesh_gen_line_strip2(br_mesh_line_t args, float const* xs, float const* 
 }
 
 
-void br_mesh_gen_line_strip_stride(br_mesh_line_t args, br_vec2_t const * points, ssize_t len, int stride) {
-  ssize_t v = 0;
-  for (; v < (len - stride); v += stride) {
-    br_mesh_gen_line(&args, points[v], points[v + stride]);
-  }
-  if (v != len - 1) br_mesh_gen_line(&args, points[v], points[len - 1]);
-}
-
 void br_mesh_3d_gen_line_simple(br_shader_line_3d_simple_t* shader, br_vec3_t p1, br_vec3_t p2, br_color_t color, br_vec3_t eye) {
   // TODO: This actually looks quite good. Maybe use this in the future
   (void)color;

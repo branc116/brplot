@@ -153,6 +153,7 @@ void brpl_frame_end(brpl_window_t* window) {
 
 brpl_event_t brpl_event_next(brpl_window_t* window) {
   brpl_event_t ev = window->f.event_next(window);
+#if 0
   switch (ev.kind) {
     case brpl_event_none: { LOGI("brpl_event_none"); } break;
     case brpl_event_key_press: { LOGI("brpl_event_key_press"); } break;
@@ -168,11 +169,12 @@ brpl_event_t brpl_event_next(brpl_window_t* window) {
     case brpl_event_window_focused: { LOGI("brpl_event_window_focused"); } break;
     case brpl_event_window_unfocused: { LOGI("brpl_event_window_unfocused"); } break;
     case brpl_event_close: { LOGI("brpl_event_close"); } break;
-	case brpl_event_next_frame: { LOGI("brpl_event_next_frame: time=%f", ev.time); } break;
+    case brpl_event_next_frame: { LOGI("brpl_event_next_frame: time=%f", ev.time); } break;
     case brpl_event_scale: { LOGI("brpl_event_scale"); } break;
     case brpl_event_nop: { LOGI("brpl_event_nop"); } break;
     case brpl_event_unknown: { LOGI("brpl_event_unknown"); } break;
   }
+#endif
   return ev;
 }
 
@@ -290,12 +292,12 @@ brpl_event_t brpl_q_pop(brpl_q_t* q) {
 typedef struct brpl_window_x11_t {
   void* display;
   int screen;
-  int root;
+  Window root;
   int context;
   int parent;
-  int window_handle;
+  Window window_handle;
   void* glx_ctx;
-  int glx_window;
+  GLXWindow glx_window;
 
   XIM im;
   XIC ic;
@@ -326,7 +328,8 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
                   PointerMotionMask | ButtonPressMask | ButtonReleaseMask |
                   ExposureMask | FocusChangeMask | VisibilityChangeMask |
                   EnterWindowMask | LeaveWindowMask | PropertyChangeMask;
-  int xpos = 0, ypos = 0, width = 800, height = 600;
+  br_i32 xpos = 0, ypos = 0;
+  br_u32 width = 800, height = 600;
   x11.window_handle = XCreateWindow(x11.display,
                                     x11.root,
                                     xpos, ypos,
@@ -337,11 +340,10 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
                                     visual,
                                     CWBorderPixel | CWColormap | CWEventMask,
                                     &wa);
-  BR_ASSERT(x11.window_handle);
+  if (0 == x11.window_handle) return false;
 
   int major, minor;
   if (!glXQueryVersion(d, &major, &minor)) return false;
-  LOGI("glx.version= %d.%d", major, minor);
 
   int native_count = 0;
   int valid_count = 0;
@@ -363,26 +365,24 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
 
     glXGetFBConfigAttrib(d, n, GLX_DOUBLEBUFFER, &value);
     if (!value) continue;
-    LOGI("DB: %d", value);
 
     last_good = i;
     valid_count += 1;
   }
-  BR_ASSERT(native_count);
-  LOGI("%d -> %d (%d)", native_count, valid_count, last_good);
+  if (0 == native_count) return false;
 
 #define GLX_RGBA_TYPE 0x8014
   x11.glx_ctx = glXCreateNewContext(d, nativeConfigs[last_good], GLX_RGBA_TYPE, NULL, True);
-  BR_ASSERT(x11.glx_ctx);
+  if (0 == x11.glx_ctx) return false;
 
   x11.glx_window = glXCreateWindow(x11.display, nativeConfigs[last_good], x11.window_handle, NULL);
   XFree(nativeConfigs);
   bool isOk = glXMakeCurrent(x11.display, x11.glx_window, x11.glx_ctx);
-  BR_ASSERT(isOk);
+  if (false == isOk) return false;
 
   const char* title = window->title;
   if (title == NULL) title = "Brpl";
-  size_t title_len = strlen(title);
+  int title_len = (int)strlen(title);
   Xutf8SetWMProperties(x11.display,
                        x11.window_handle,
                        title, title,
@@ -410,22 +410,6 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
                      XNFocusWindow,
                      x11.window_handle,
                      NULL);
-
-#if 0
-  if (window->x11.ic)
-  {
-      XWindowAttributes attribs;
-      XGetWindowAttributes(_glfw.x11.display, window->x11.handle, &attribs);
-
-      unsigned long filter = 0;
-      if (XGetICValues(window->x11.ic, XNFilterEvents, &filter, NULL) == NULL)
-      {
-          XSelectInput(_glfw.x11.display,
-                       window->x11.handle,
-                       attribs.your_event_mask | filter);
-      }
-  }
-#endif
 
   brpl_window_x11_t* win = BR_MALLOC(sizeof(brpl_window_x11_t));
   memcpy(win, &x11, sizeof(x11));
@@ -472,7 +456,7 @@ static int brpl_x11_keysym(XEvent event) {
 static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
   // TODO: Move this struct to a window_x11_t struct;
   static BR_THREAD_LOCAL struct {
-    int* arr;
+    br_u32* arr;
     size_t len, cap;
 
     size_t read_index;
@@ -495,10 +479,10 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
   switch (event.type) {
     case MotionNotify: {
       XMotionEvent m = event.xmotion;
-      return (brpl_event_t) { .kind = brpl_event_mouse_move, .pos = BR_VEC2(m.x, m.y) };
+      return (brpl_event_t) { .kind = brpl_event_mouse_move, .pos = BR_VEC2((float)m.x, (float)m.y) };
     } break;
     case KeyPress: {
-      const int keycode = event.xkey.keycode;
+      const br_u32 keycode = event.xkey.keycode;
       int keysym = brpl_x11_keysym(event);
       int count;
       Status status;
@@ -512,7 +496,7 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
 
       if (status == XBufferOverflow)
       {
-          chars = BR_CALLOC(count + 1, 1);
+          chars = BR_CALLOC((size_t)(count + 1), 1);
           count = Xutf8LookupString(w->ic,
                                     &event.xkey,
                                     chars, count,
@@ -524,22 +508,21 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
           utf8_chars.len = 0;
           utf8_chars.read_index = 0;
 
-          br_strv_t s = BR_STRV(chars, count);
+          br_strv_t s = BR_STRV(chars, (br_u32)count);
           BR_STRV_FOREACH_UTF8(s, value) br_da_push(utf8_chars, value);
       }
 
       if (chars != buffer) BR_FREE(chars);
 
-      return (brpl_event_t) { .kind = brpl_event_key_press, .key = keysym, .keycode = keycode };
+      return (brpl_event_t) { .kind = brpl_event_key_press, .key = keysym, .keycode = (br_i32)keycode };
     } break;
     case KeyRelease: {
-      const int keycode = event.xkey.keycode;
+      const br_u32 keycode = event.xkey.keycode;
       int keysym = brpl_x11_keysym(event);
-      LOGI("Key Release: %d hint: %d", event.xkey.state, event.xkey.keycode);
       return (brpl_event_t) {
         .kind = brpl_event_key_release,
         .key = keysym,
-        .keycode = keycode
+        .keycode = (br_i32)keycode
       };
     } break;
     case ButtonPress: {
@@ -550,13 +533,13 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
       else if (event.xbutton.button == Button5) return (brpl_event_t) { .kind = brpl_event_mouse_scroll, .vec = BR_VEC2(0, -1) };
       else if (event.xbutton.button == 6)       return (brpl_event_t) { .kind = brpl_event_mouse_scroll, .vec = BR_VEC2(1, 0) };
       else if (event.xbutton.button == 7)       return (brpl_event_t) { .kind = brpl_event_mouse_scroll, .vec = BR_VEC2(-1, 0) };
-      else                                      return (brpl_event_t) { .kind = brpl_event_mouse_press, .mouse_key = event.xbutton.button - Button1 - 4 };
+      else                                      return (brpl_event_t) { .kind = brpl_event_mouse_press, .mouse_key = (br_i32)event.xbutton.button - Button1 - 4 };
       return (brpl_event_t) { .kind = brpl_event_nop };
     } break;
     case ButtonRelease: {
-      if (event.xbutton.button <= Button3) return (brpl_event_t) { .kind = brpl_event_mouse_release, .mouse_key = event.xbutton.button - Button1 };
+      if (event.xbutton.button <= Button3) return (brpl_event_t) { .kind = brpl_event_mouse_release, .mouse_key = (br_i32)event.xbutton.button - Button1 };
       else if (event.xbutton.button <= 7)  return (brpl_event_t) { .kind = brpl_event_nop };
-      else                                 return (brpl_event_t) { .kind = brpl_event_mouse_release, .mouse_key = event.xbutton.button - Button1 - 4 };
+      else                                 return (brpl_event_t) { .kind = brpl_event_mouse_release, .mouse_key = (br_i32)event.xbutton.button - Button1 - 4 };
     } break;
     case EnterNotify: {
       return (brpl_event_t) {
@@ -582,7 +565,7 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
       XConfigureEvent ce = event.xconfigure;
       return (brpl_event_t) {
         .kind = brpl_event_window_resize,
-        .size = BR_SIZE(ce.width, ce.height)
+        .size = BR_SIZE((float)ce.width, (float)ce.height)
       };
     } break;
     case PropertyNotify: {
@@ -655,7 +638,7 @@ static void brpl_glfw_error_callback(int error_code, const char* description) {
 }
 static void brpl_glfw_windowsizefun(GLFWwindow* window, int width, int height) {
   brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
-  brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_window_resize, .size = BR_SIZE(width, height) });
+  brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_window_resize, .size = BR_SIZE((float)width, (float)height) });
 }
 static void brpl_glfw_windowclosefun(GLFWwindow* window) {
   brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
@@ -670,6 +653,7 @@ static void brpl_glfw_windowcontentscalefun(GLFWwindow* window, float xscale, fl
   brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_scale, .size = BR_SIZE(xscale, yscale) });
 }
 static void brpl_glfw_mousebuttonfun(GLFWwindow* window, int button, int action, int mods) {
+  (void)mods;
   brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
   LOGI("mousebutton but=%d, action=%d", button, action);
   int ev = action == 0 ? brpl_event_mouse_release : brpl_event_mouse_press;
@@ -678,13 +662,14 @@ static void brpl_glfw_mousebuttonfun(GLFWwindow* window, int button, int action,
 }
 void brpl_glfw_cursorposfun(GLFWwindow* window, double xpos, double ypos) {
   brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
-  brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_mouse_move, .pos = BR_VEC2(xpos, ypos) });
+  brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_mouse_move, .pos = BR_VEC2((float)xpos, (float)ypos) });
 }
 void brpl_glfw_scrollfun(GLFWwindow* window, double xoffset, double yoffset) {
   brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
-  brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_mouse_scroll, .vec = BR_VEC2(xoffset, yoffset) });
+  brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_mouse_scroll, .vec = BR_VEC2((float)xoffset, (float)yoffset) });
 }
 void brpl_glfw_keyfun(GLFWwindow* window, int key, int scancode, int action, int mods) {
+  (void)mods;
   brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
   brpl_event_kind_t event = action == 0 ? brpl_event_key_release : brpl_event_key_press;
   brpl_q_push(&win->q, (brpl_event_t) { .kind = event, .key = key, .keycode = scancode });
@@ -716,7 +701,7 @@ static bool brpl_glfw_open_window(brpl_window_t* window) {
 	  LOGE("Failed to create glfw window");
 	  return false;
   }
-  brpl_glfw_window_t* win = BR_CALLOC(sizeof(brpl_glfw_window_t), 1);
+  brpl_glfw_window_t* win = BR_CALLOC(1, sizeof(brpl_glfw_window_t));
   win->glfw = glfw_window;
   window->win = win;
   glfwSetWindowUserPointer(glfw_window, win);

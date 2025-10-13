@@ -34,9 +34,9 @@ ifeq ($(PLATFORM), LINUX)
 endif
 
 SOURCE             = src/main.c           src/ui.c              src/data.c        src/mesh.c        src/q.c       src/read_input.c \
-										 src/keybindings.c    external/shl_impls.c  src/resampling.c  src/graph_utils.c src/shaders.c src/plotter.c    \
+										 external/shl_impls.c src/resampling.c      src/graph_utils.c src/shaders.c     src/plotter.c                  \
 										 src/plot.c           src/permastate.c      src/filesystem.c  src/gui.c         src/text_renderer.c            \
-										 src/data_generator.c src/platform.c        src/threads.c     src/gl.c          src/icons.c   src/theme.c
+										 src/data_generator.c src/platform2.c       src/threads.c     src/gl.c          src/icons.c   src/theme.c
 COMMONFLAGS        = -I. -MMD -MP -fvisibility=hidden -std=gnu11
 WARNING_FLAGS      = -Wconversion -Wall -Wextra -Wshadow -D_GNU_SOURCE -Wno-gnu-folding-constant
 LD_FLAGS           =
@@ -84,19 +84,11 @@ ifeq ($(PLATFORM), LINUX)
 	ifeq ($(HAS_X11), NO)
 		COMMONFLAGS+= -DBR_NO_X11
 	endif
-	ifeq ($(HEADLESS)_$(HAS_X11), YES_YES_YES)
-		BACKENDS= HWX
-	else ifeq ($(HEADLESS)_$(HAS_X11), YES_YES_NO)
-		BACKENDS= HW
-	else ifeq ($(HEADLESS)_$(HAS_X11), YES_NO_YES)
+	ifeq ($(HEADLESS)_$(HAS_X11), YES_YES)
 		BACKENDS= HX
-	else ifeq ($(HEADLESS)_$(HAS_X11), YES_NO_NO)
+	else ifeq ($(HEADLESS)_$(HAS_X11), YES_NO)
 		BACKENDS= H
-	else ifeq ($(HEADLESS)_$(HAS_X11), NO_YES_YES)
-		BACKENDS= WX
-	else ifeq ($(HEADLESS)_$(HAS_X11), NO_YES_NO)
-		BACKENDS= W
-	else ifeq ($(HEADLESS)_$(HAS_X11), NO_NO_YES)
+	else ifeq ($(HEADLESS)_$(HAS_X11), NO_YES)
 		BACKENDS= X
 	else
 		$(error This is not valid configuration)

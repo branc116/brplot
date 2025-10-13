@@ -338,7 +338,6 @@ static bool br_dagens_handle_once(br_datas_t* datas, br_dagens_t* dagens, br_plo
 }
 
 static void br_dagen_handle(br_dagen_t* dagen, br_data_t* data, br_datas_t datas) {
-  br_strv_t name;
   switch (dagen->kind) {
     case br_dagen_kind_file:
     {

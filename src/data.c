@@ -124,20 +124,20 @@ void br_data_push_xyz(br_datas_t* datas, double x, double y, double z, int group
   br_data_push_point3(data, (br_vec3_t){ .x = (float)(x - data->ddd.rebase_x), .y = (float)(y - data->ddd.rebase_y), .z = (float)(z - data->ddd.rebase_z) });
 }
 
-br_vec2d_t br_data_el_xy(br_datas_t datas, int group, int index) {
+br_vec2d_t br_data_el_xy(br_datas_t datas, int group, br_u32 index) {
   return br_data_el_xy1(*br_data_get1(datas, group), index);
 }
 
-br_vec2d_t br_data_el_xy1(br_data_t data, int index) {
+br_vec2d_t br_data_el_xy1(br_data_t data, br_u32 index) {
   BR_ASSERT(data.kind == br_data_kind_2d);
   return BR_VEC2D(data.dd.xs[index] + data.dd.rebase_x, data.dd.ys[index] + data.dd.rebase_y);
 }
 
-br_vec3d_t br_data_el_xyz(br_datas_t datas, int group, int index) {
+br_vec3d_t br_data_el_xyz(br_datas_t datas, int group, br_u32 index) {
   return br_data_el_xyz1(*br_data_get1(datas, group), index);
 }
 
-br_vec3d_t br_data_el_xyz1(br_data_t data, int index) {
+br_vec3d_t br_data_el_xyz1(br_data_t data, br_u32 index) {
   BR_ASSERT(data.kind == br_data_kind_3d);
   return BR_VEC3D(data.ddd.xs[index] + data.ddd.rebase_x, data.ddd.ys[index] + data.ddd.rebase_y, data.ddd.zs[index] + data.ddd.rebase_z);
 }
@@ -152,10 +152,6 @@ br_vec3d_t br_data_el_xyz1(br_data_t data, int index) {
 void br_data_empty(br_data_t* pg) {
   pg->len = 0;
   br_resampling_empty(pg->resampling);
-}
-
-static int br_data_compare(const void* data1, const void* data2) {
-  return ((br_data_t*)data1)->group_id - ((br_data_t*)data2)->group_id;
 }
 
 void br_data_export(br_data_t data, FILE* file) {

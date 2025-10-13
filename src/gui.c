@@ -80,7 +80,7 @@ void br_plotter_draw(br_plotter_t* br) {
         brui_mouse_clicked(br->mouse.click);
         brui_mouse_pos(br->mouse.pos);
         brui_ctrl_down(br->key.ctrl_down);
-        brui_frame_time(br->time.frame);
+        brui_frame_time((float)br->time.frame);
         br_shaders_draw_all(br->shaders);
 #if BR_HAS_HOTRELOAD
         br_hotreload_tick_ui(&br->hot_state);
@@ -98,14 +98,14 @@ void br_plotter_draw(br_plotter_t* br) {
                   br_plot_data_t pd = PLOT->data_info.arr[j];
                   if (pd.thickness_multiplyer < 0.1f) continue;
                   br_data_t* data = br_data_get(&br->groups, pd.group_id);
-                  float dist = PLOT->dd.zoom.x*0.05f;
-                  int index = 0;
+                  float dist = (float)(PLOT->dd.zoom.x*0.05);
+                  br_u32 index = 0;
                   bool has_any = br_resampling_get_point_at2(*data, v, &dist, &index);
                   br_strv_t name = brsp_get(br->sp, data->name);
                   if (has_any) {
-                    br_vec2d_t v = br_data_el_xy1(*data, index);
-                    br_vec2_t s = br_plot2d_to_screen(PLOT, v);
-                    brui_text_at(br_scrach_printf("%.*s, %f, %f", name.len, name.str, v.x, v.y), s);
+                    br_vec2d_t vreal = br_data_el_xy1(*data, index);
+                    br_vec2_t s = br_plot2d_to_screen(PLOT, vreal);
+                    brui_text_at(br_scrach_printf("%.*s, %f, %f", name.len, name.str, vreal.x, vreal.y), s);
                   }
                 }
               }
@@ -117,7 +117,7 @@ void br_plotter_draw(br_plotter_t* br) {
         brgui_draw_debug_window(br);
         brgui_draw_license(br);
         brgui_draw_about(br);
-        brgui_fm_result_t fs_r = brgui_draw_file_manager(br, &br->sp, &br->ui.fm_state);
+        brgui_fm_result_t fs_r = brgui_draw_file_manager(&br->sp, &br->ui.fm_state);
         if (fs_r.is_selected) {
           switch (br->ui.fm_state.action) {
             case brgui_file_manager_import_csv: {
@@ -213,7 +213,7 @@ static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas, br_theme_t* the
   brui_resizable_pop();
 }
 
-brgui_fm_result_t brgui_draw_file_manager(br_plotter_t* br, brsp_t* sp, brgui_file_manager_t* state) {
+brgui_fm_result_t brgui_draw_file_manager(brsp_t* sp, brgui_file_manager_t* state) {
   brgui_fm_result_t ret = { 0 };
   if (false == state->is_open && false == state->is_inited) return ret;
 
@@ -514,23 +514,23 @@ void brgui_draw_csv_manager(brsp_t* sp, brgui_csv_reader_t* reader, br_csv_parse
 static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas) {
   if (false == d->show) return;
 
-  brui_resizable_temp_push_t tmp = brui_resizable_temp_push(BR_STRL("Data"));
+  brui_resizable_temp_push(BR_STRL("Data"));
     br_data_t* data = br_data_get1(datas, d->data_id);
     if (NULL != data) {
       float local_y = brui_local_y();
       float ts = (float)brui_text_size() + brui_padding_y();
-      int i = 0;
+      br_u32 i = 0;
       if (local_y < -ts) {
-        int n = (int)(-(local_y + 2.f*ts)/ts);
+        br_u32 n = (br_u32)(-(local_y + 2.f*ts)/ts);
         if (n > 0) {
-          brui_new_lines(n);
+          brui_new_lines((br_i32)n);
           i += n;
         }
       }
       float space_left = brui_max_y() - brui_y();
-      int max_n = (int)(space_left / ts) + 1;
-      int lines = (int)data->len;
-      int j = 0;
+      br_u32 max_n = (br_u32)(space_left / ts) + 1;
+      br_u32 lines = (br_u32)data->len;
+      br_u32 j = 0;
       switch (data->kind) {
         case br_data_kind_2d: {
           br_vec2d_t v2 = br_data_el_xy1(*data, i);
@@ -552,16 +552,15 @@ static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas) {
         } break;
         default: BR_UNREACHABLE("Kind %d not handled", data->kind);
       }
-      brui_new_lines(lines - i - j);
+      brui_new_lines((br_i32)lines - (br_i32)i - (br_i32)j);
     }
   if (brui_resizable_temp_pop()) d->show = false;
 }
 
 static void brgui_draw_help(br_plotter_t* br) {
-  brui_action_t* action = brui_action();
   if (false == br->ui.help.show) return;
 
-  brui_resizable_temp_push_t tmp = brui_resizable_temp_push(BR_STRL("Help"));
+  brui_resizable_temp_push(BR_STRL("Help"));
     if (brui_collapsable(BR_STRL("Key bindings"), &br->ui.help.key_bindings)) {
       brui_text(BR_STRL("Right mouse button + Mouse move - Change plot offset"));
       brui_text(BR_STRL("Mouse wheel- Change plot zoom"));
@@ -806,7 +805,7 @@ static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_datas_t datas) 
       if (brui_checkbox(BR_STRL("Show Legend"), &show_legend)) {
         brui_resizable_show(plot->legend_extent_handle, show_legend);
       };
-      for (size_t k = 0; k < datas.len; ++k) {
+      for (int k = 0; k < datas.len; ++k) {
         bool is_shown = false;
         br_data_t* data = br_da_getp(datas, k);
         for (int j = 0; j < plot->data_info.len; ++j) {
@@ -1042,7 +1041,7 @@ static void brgui_draw_license(br_plotter_t* br) {
 
 static void brgui_draw_about(br_plotter_t* br) {
   if (false == br->ui.show_about) return;
-  brui_resizable_temp_push_t tmp = brui_resizable_temp_push(BR_STRL("About"));
+  brui_resizable_temp_push(BR_STRL("About"));
     brui_text(BR_STRL("Brplot © 2025 Branimir Ričko [branc116]"));
     brui_textf("%d.%d.%d-%s-%s", BR_MAJOR_VERSION, BR_MINOR_VERSION, BR_PATCH_VERSION, BR_GIT_BRANCH, BR_GIT_HASH);
   if (brui_resizable_temp_pop()) br->ui.show_about = false;

@@ -94,10 +94,10 @@ void br_data_push_x(br_datas_t* datas, double x, int group);
 void br_data_push_xy(br_datas_t* datas, double x, double y, int group);
 void br_data_push_xyz(br_datas_t* datas, double x, double y, double z, int group);
 
-br_vec2d_t br_data_el_xy(br_datas_t datas, int group, int index);
-br_vec2d_t br_data_el_xy1(br_data_t data, int index);
-br_vec3d_t br_data_el_xyz(br_datas_t datas, int group, int index);
-br_vec3d_t br_data_el_xyz1(br_data_t data, int index);
+br_vec2d_t br_data_el_xy(br_datas_t datas, int group, br_u32 index);
+br_vec2d_t br_data_el_xy1(br_data_t data, br_u32 index);
+br_vec3d_t br_data_el_xyz(br_datas_t datas, int group, br_u32 index);
+br_vec3d_t br_data_el_xyz1(br_data_t data, br_u32 index);
 
 // Only remove all points from a group, don't remove the group itself.
 void br_data_empty(br_data_t* data);

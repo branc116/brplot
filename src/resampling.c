@@ -96,8 +96,8 @@ void br_resampling_free(br_resampling_t* r) {
 void br_resampling_add_point(br_resampling_t* r, const br_data_t *pg, uint32_t index) {
   if (r->dd.len == 0) {
     switch (r->kind) {
-      case br_data_kind_2d: { br_da_push((r->dd), (br_resampling_nodes_2d_t){0}); break; }
-      case br_data_kind_3d: { br_da_push((r->ddd), (br_resampling_nodes_3d_t){0}); break; }
+      case br_data_kind_2d: { br_da_push_t(br_u32, (r->dd), (br_resampling_nodes_2d_t){0}); break; }
+      case br_data_kind_3d: { br_da_push_t(br_u32, (r->ddd), (br_resampling_nodes_3d_t){0}); break; }
       default: BR_UNREACHABLE("kind %d", r->kind);
     }
   }
@@ -108,17 +108,16 @@ void br_resampling_add_point(br_resampling_t* r, const br_data_t *pg, uint32_t i
   }
 }
 
-bool br_resampling_get_point_at2(br_data_t data, br_vec2d_t vecd, float* dist, int* out_index) {
+bool br_resampling_get_point_at2(br_data_t data, br_vec2d_t vecd, float* dist, br_u32* out_index) {
 #define BR_STACK_PUSH(VAL) stack[stack_len++] = VAL
-#define BR_STACK_POP() stack_len > 0 ? stack[--stack_len] : -1
+#define BR_STACK_POP() stack_len > 0 ? stack[--stack_len] : 0xFFFFFFFF;
 
   // NOTE: (2**64)*64 = 2**69 = 10**19 elements
   //       data.len can not be larger than 2**64, so we are good..
-  int stack[64] /* = undefined */;
+  br_u32 stack[64] /* = undefined */;
   int stack_len = 0;
-  int cur_index = 0;
-  int cur_node /* = undefined */; ;
-  br_vec2_t vec = BR_VEC2(vecd.x - data.dd.rebase_x, vecd.y - data.dd.rebase_y);
+  br_u32 cur_node /* = undefined */; ;
+  br_vec2_t vec = BR_VEC2((float)(vecd.x - data.dd.rebase_x), (float)(vecd.y - data.dd.rebase_y));
   br_extent_t ex = BR_EXTENT(vec.x - *dist/2, vec.y + *dist/2, *dist, *dist);
   br_resampling_nodes_2d_allocator_t rns = data.resampling->dd;
   if (rns.len == 0) return false;
@@ -132,8 +131,8 @@ bool br_resampling_get_point_at2(br_data_t data, br_vec2d_t vecd, float* dist, i
     br_resampling_nodes_2d_t node = rns.arr[cur_node];
     if (br_resampling_nodes_2d_is_inside(node.base, data.dd.xs, data.dd.ys, ex)) {
       if (node.base.depth == 0) {
-        for (int i = 0; i < node.base.len; ++i) {
-          int index = i + node.base.index_start;
+        for (br_u32 i = 0; i < node.base.len; ++i) {
+          br_u32 index = i + node.base.index_start;
           float cur_dist = br_vec2_dist(BR_VEC2(data.dd.xs[index], data.dd.ys[index]), vec);
           if (cur_dist < *dist) {
             *out_index = index;
@@ -190,9 +189,9 @@ static bool br_resampling_nodes_2d_push_point(br_resampling_nodes_2d_allocator_t
     if (split) {
       br_resampling_nodes_2d_t left = node;
       br_resampling_nodes_2d_t right = {0};
-      br_da_push(*nodes, left);
+      br_da_push_t(br_u32, *nodes, left);
       node.base.child1 = nodes->len - 1;
-      br_da_push(*nodes, right);
+      br_da_push_t(br_u32, *nodes, right);
       node.base.child2 = nodes->len - 1;
       ++node.base.depth;
     }
@@ -245,9 +244,9 @@ static bool br_resampling_nodes_3d_push_point(br_resampling_nodes_3d_allocator_t
     if (split) {
       br_resampling_nodes_3d_t left = node;
       br_resampling_nodes_3d_t right = {0};
-      br_da_push(*nodes, left);
+      br_da_push_t(br_u32, *nodes, left);
       node.base.child1 = nodes->len - 1;
-      br_da_push(*nodes, right);
+      br_da_push_t(br_u32, *nodes, right);
       node.base.child2 = nodes->len - 1;
       ++node.base.depth;
     }
@@ -614,6 +613,7 @@ static br_vec3_t br_data_3d_get_v3(br_data_3d_t const* data, uint32_t index) {
 }
 
 static bool br_resampling_nodes_3d_is_inside(br_resampling_nodes_3d_t const* res, br_data_3d_t const* data, br_mat_t mvp) {
+  (void)br_resampling_debug_3d;
   br_vec3_t minx = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.min_index_x), mvp),
           miny = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.min_index_y), mvp),
           minz = br_vec3_transform_scale(br_data_3d_get_v3(data, res->min_index_z), mvp),
@@ -631,7 +631,7 @@ static bool br_resampling_nodes_3d_is_inside(br_resampling_nodes_3d_t const* res
   return Mz > 0.f && br_col_extents(rect, BR_EXTENT(mx, my, Mx - mx, My - my));
 }
 
-void br_resampling_debug_3d(br_resampling_t const* r, br_resampling_nodes_3d_t const* res, br_data_3d_t const* data) {
+static void br_resampling_debug_3d(br_resampling_t const* r, br_resampling_nodes_3d_t const* res, br_data_3d_t const* data) {
   br_vec3_t minx = br_data_3d_get_v3(data, res->base.min_index_x),
     miny = br_data_3d_get_v3(data, res->base.min_index_y),
     minz = br_data_3d_get_v3(data, res->min_index_z),

@@ -21,7 +21,7 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* rd
 // TODO: index should be size_t...
 void br_resampling_add_point(br_resampling_t* res, br_data_t const* pg, uint32_t index);
 
-bool br_resampling_get_point_at2(br_data_t data, br_vec2d_t vec, float* dist, int* out_index);
+bool br_resampling_get_point_at2(br_data_t data, br_vec2d_t vec, float* dist, br_u32* out_index);
 
 void br_resampling_reset(br_resampling_t* res);
 void br_resampling_change_something(br_datas_t pg);
@@ -32,12 +32,12 @@ float br_resampling_get_something2(br_resampling_t* res);
 
 
 typedef struct br_resampling_nodes_t {
-  uint32_t index_start, len;
-  size_t child1;
-  size_t child2;
-  uint32_t depth;
-  uint32_t min_index_x, max_index_x;
-  uint32_t min_index_y, max_index_y;
+  br_u32 index_start, len;
+  br_u32 child1;
+  br_u32 child2;
+  br_u32 depth;
+  br_u32 min_index_x, max_index_x;
+  br_u32 min_index_y, max_index_y;
 } br_resampling_nodes_t;
 
 typedef struct br_resampling_nodes_2d_t {
@@ -46,23 +46,23 @@ typedef struct br_resampling_nodes_2d_t {
 
 typedef struct br_resampling_nodes_3d_t {
   br_resampling_nodes_t base;
-  uint32_t min_index_z, max_index_z;
+  br_u32 min_index_z, max_index_z;
   br_vec3_t curvature;
 } br_resampling_nodes_3d_t;
 
 typedef struct br_resampling_nodes_2d_allocator_t {
   br_resampling_nodes_2d_t* arr;
-  size_t len, cap;
+  br_u32 len, cap;
 } br_resampling_nodes_2d_allocator_t;
 
 typedef struct br_resampling_nodes_3d_allocator_t {
   br_resampling_nodes_3d_t* arr;
-  size_t len, cap;
+  br_u32 len, cap;
 } br_resampling_nodes_3d_allocator_t;
 
 typedef struct br_resampling_nodes_common_t {
   br_resampling_nodes_t* arr;
-  size_t len, cap;
+  br_u32 len, cap;
 } br_resampling_nodes_common_t;
 
 // Internal
@@ -83,7 +83,7 @@ typedef struct br_resampling_t {
   double render_time;
   float something;
   float something2;
-  uint32_t draw_count;
+  br_u32 draw_count;
   br_line_culler_t culler;
   br_mesh_line_3d_t args_3d;
 } br_resampling_t;

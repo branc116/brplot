@@ -84,7 +84,7 @@ typedef struct brgui_csv_reader_t {
 
 void br_plot_update_context(br_plot_t* plot, br_extent_t plot_screen_extent, br_vec2_t mouse_pos);
 void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders);
-brgui_fm_result_t brgui_draw_file_manager(br_plotter_t* br, brsp_t* sp, brgui_file_manager_t* state);
+brgui_fm_result_t brgui_draw_file_manager(brsp_t* sp, brgui_file_manager_t* state);
 
 
 #ifdef __cplusplus
