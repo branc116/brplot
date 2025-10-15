@@ -722,6 +722,7 @@ static bool brpl_glfw_open_window(brpl_window_t* window) {
 	  LOGE("Failed to load gl.");
 	  return false;
   }
+  brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_window_focused });
   return true;
 }
 #endif

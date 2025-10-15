@@ -235,6 +235,12 @@ static void fill_command_flag_data(void) {
   }
 }
 
+platform_kind_t get_target(void) {
+  if (is_wasm) return p_wasm;
+  else if (is_win32) return p_windows;
+  return p_native;
+}
+
 const char* get_compiler(platform_kind_t target) {
   if (target == p_native) {
 #if _WIN32
@@ -277,6 +283,15 @@ typedef enum compile_output_kind_t {
   compile_output_slib,
   compile_output_dlib
 } compile_output_kind_t;
+
+const char* exe_ext(platform_kind_t target, const char* path) {
+  switch (target) {
+    case p_linux: return path;
+    case p_wasm: return path;
+    case p_mac: return nob_temp_sprintf("%s", path);
+    case p_windows: return nob_temp_sprintf("%s.exe", path);
+  }
+}
 
 const char* compiler_set_output(Nob_Cmd* cmd, const char* output_name, compile_output_kind_t kind, platform_kind_t target, const char* compiler) {
   if (is_msvc(compiler)) {
@@ -887,10 +902,7 @@ static bool n_generate_do(void) {
 
 static bool n_compile_do(void) {
   Nob_Cmd cmd = { 0 };
-  platform_kind_t    target = p_native;
-  if (is_wasm)       target = p_wasm;
-  else if (is_win32) target = p_windows;
-  bool ret = compile_and_link(target, &cmd);
+  bool ret = compile_and_link(get_target(), &cmd);
   nob_cmd_free(cmd);
   return ret;
 }
@@ -903,7 +915,7 @@ static bool n_build_do(void) {
 static bool n_run_do(void) {
   if (false == n_build_do()) return false;
   Nob_Cmd cmd = { 0 };
-  nob_cmd_append(&cmd, "bin/brplot" EXE_EXT);
+  nob_cmd_append(&cmd, exe_ext(get_target(), "bin/brplot"));
   br_cmd_run(&cmd);
   return true;
 }
@@ -911,7 +923,7 @@ static bool n_run_do(void) {
 static bool n_crun_do(void) {
   if (false == n_compile_do()) return false;
   Nob_Cmd cmd = { 0 };
-  nob_cmd_append(&cmd, "bin/brplot" EXE_EXT);
+  nob_cmd_append(&cmd, exe_ext(get_target(), "bin/brplot"));
   br_cmd_run(&cmd);
   return true;
 }
@@ -1064,9 +1076,7 @@ static bool n_unittests_do(void) {
   Nob_Cmd cmd = { 0 };
   is_debug = true;
   is_headless = true;
-  platform_kind_t platform = p_native;
-  if (is_win32) platform = p_windows;
-  const char* compiler = get_compiler(platform);
+  const char* compiler = get_compiler(get_target());
 
   static struct { char const *test_file, *out_bin; } test_programs[] = {
     { .test_file = "./tests/src/data_generator.c", .out_bin  = "bin/data_generator" },
@@ -1084,7 +1094,7 @@ static bool n_unittests_do(void) {
   for (size_t i = 0; i < BR_ARR_LEN(test_programs); ++i) {
     LOGI("-------------- START TESTS ------------------");
     LOGI("------------- %15s -> %15s ------------------", test_programs[i].test_file, test_programs[i].out_bin);
-    const char* output = compiler_single_file_exe(platform, test_programs[i].test_file, test_programs[i].out_bin);
+    const char* output = compiler_single_file_exe(get_target(), test_programs[i].test_file, test_programs[i].out_bin);
     nob_cmd_append(&cmd, output);
     if (false == br_cmd_run(&cmd)) return false;
     LOGI("-------------- END TESTS ------------------");
