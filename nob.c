@@ -67,12 +67,6 @@
 #define nob_cmd_run_cache(cmd, ...) nob_cmd_run(cmd, .ptrace_cache = &cache, ##__VA_ARGS__)
 #define br_cmd_run(cmd, ...) nob_cmd_run(cmd, .ptrace_cache = NULL)
 
-typedef enum target_platform_t {
-  tp_linux,
-  tp_windows,
-  tp_web
-} target_platform_t;
-
 typedef struct {
   br_strv_t name;
   char alias;
@@ -137,37 +131,21 @@ const char* sources[] = {
  "src/theme.c",
 };
 
-static const target_platform_t g_platform =
+typedef enum platform_kind_t {
+  p_linux,
+  p_mac,
+  p_wasm,
+  p_windows,
+  p_native =
 #if defined(_WIN32)
-  tp_windows;
+    p_windows
+#elif defined(__APPLE__)
+    p_mac
 #else
-  tp_linux;
+    p_linux
 #endif
-//static const char* out_name =
-//#if defined(_WIN32)
-//  "brplot.exe";
-//#else
-//  "brplot";
-//#endif
+} platform_kind_t;
 
-#if _WIN32
-#  if defined(__GNUC__)
-static const bool is_msvc = false;
-static const char* compiler = "gcc";
-#  elif defined(__clang__)
-static const bool is_msvc = false;
-static const char* compiler = "clang";
-#  elif defined(_MSC_VER)
-static const bool is_msvc = true;
-static const char* compiler = "cl.exe";
-#  endif
-#elif defined(__TINYC__)
-static const bool is_msvc = false;
-static const char* compiler = "tcc";
-#else
-static const bool is_msvc = false;
-static const char* compiler = "cc";
-#endif
 static const char* program_name;
 static n_command do_command = n_default;
 static bool is_debug = false;
@@ -179,6 +157,7 @@ static bool is_lib = false;
 static bool is_rebuild = false;
 static bool is_slib = false;
 static bool is_wasm = false;
+static bool is_win32 = false;
 static bool do_dist = true;
 static bool pip_skip_build = false;
 static bool no_gen = false;
@@ -187,12 +166,6 @@ static bool is_pedantic = false;
 static bool is_fatal_error = false;
 static bool is_tracy = false;
 static bool is_help_subcommands = false;
-
-#if !defined(__APPLE__)
-static bool is_macos = false;
-#else
-static bool is_macos = true;
-#endif
 
 #define X(name, desc) [n_ ## name] = { 0 },
 static command_flags_t command_flags[] = {
@@ -219,6 +192,7 @@ static void fill_command_flag_data(void) {
   command_flag_t asan_flag           = (command_flag_t) {.name = BR_STRL("asan"),       .alias = 'a',  .description = BR_STRL("Enable address sanitizer"),                                                                       .is_set = &enable_asan};
   command_flag_t lib_flag            = (command_flag_t) {.name = BR_STRL("lib"),        .alias = 'l',  .description = BR_STRL("Build dynamic library"),                                                                          .is_set = &is_lib};
   command_flag_t wasm_flag           = (command_flag_t) {.name = BR_STRL("wasm"),       .alias = 'w',  .description = BR_STRL("Wasm version of brplot"),                                                                         .is_set = &is_wasm};
+  command_flag_t win32_flag          = (command_flag_t) {.name = BR_STRL("win32"),      .alias = 'W',  .description = BR_STRL("Windows version of brplot"),                                                                         .is_set = &is_win32};
   command_flag_t force_rebuild       = (command_flag_t) {.name = BR_STRL("force"),      .alias = 'f',  .description = BR_STRL("Force rebuild everything"),                                                                       .is_set = &is_rebuild};
   command_flag_t slib_flag           = (command_flag_t) {.name = BR_STRL("slib"),       .alias = 's',  .description = BR_STRL("Build static library"),                                                                           .is_set = &is_slib};
   command_flag_t help_flag           = (command_flag_t) {.name = BR_STRL("help"),       .alias = 'h',  .description = BR_STRL("Print help"),                                                                                     .is_set = &print_help};
@@ -236,6 +210,7 @@ static void fill_command_flag_data(void) {
   br_da_push(command_flags[n_compile], asan_flag);
   br_da_push(command_flags[n_compile], lib_flag);
   br_da_push(command_flags[n_compile], wasm_flag);
+  br_da_push(command_flags[n_compile], win32_flag);
   br_da_push(command_flags[n_compile], slib_flag);
   br_da_push(command_flags[n_compile], force_rebuild);
   br_da_push(command_flags[n_help], help_flag);
@@ -260,6 +235,159 @@ static void fill_command_flag_data(void) {
   }
 }
 
+const char* get_compiler(platform_kind_t target) {
+  if (target == p_native) {
+#if _WIN32
+#  if defined(__GNUC__)
+    return "gcc.exe";
+#  elif defined(__clang__)
+    return "clang.exe";
+#  elif defined(_MSC_VER)
+    return "cl.exe";
+#  endif
+#elif defined(__TINYC__)
+    return "tcc";
+#else
+    return "cc";
+#endif
+  } else {
+    switch (p_native) {
+      case p_linux: {
+        switch (target) {
+          case p_linux: BR_UNREACHABLE("Handled by if statment"); break;
+          case p_mac:   BR_TODO("Build for mac on linux."); break;
+          case p_wasm:  return "emcc"; break;
+          case p_windows:  return "x86_64-w64-mingw32-gcc"; break;
+        }
+      } break;
+      case p_mac: BR_TODO("Cross compile from mac?"); break;
+      case p_wasm: BR_TODO("Cross compile from wasm ? ? ?"); break;
+      case p_windows: BR_TODO("Cross compile from windows?"); break;
+    }
+  }
+}
+
+bool is_msvc(const char* compiler) {
+  return strcmp(compiler, "cl.exe") == 0;
+}
+
+typedef enum compile_output_kind_t {
+  compile_output_obj,
+  compile_output_exe,
+  compile_output_slib,
+  compile_output_dlib
+} compile_output_kind_t;
+
+const char* compiler_set_output(Nob_Cmd* cmd, const char* output_name, compile_output_kind_t kind, platform_kind_t target, const char* compiler) {
+  if (is_msvc(compiler)) {
+    BR_ASSERTF(target == p_windows, "Msvc compiler can only compile for windows...");
+    switch (kind) {
+      case compile_output_obj: {
+        nob_cmd_append(cmd, nob_temp_sprintf("/Fo:%s.obj", output_name));
+        return nob_temp_sprintf("%s.obj", output_name);
+      } break;
+      case compile_output_exe: {
+        nob_cmd_append(cmd, "/Zi", "/DEBUG:FULL", nob_temp_sprintf("/Fe:%s.exe", output_name));
+        return nob_temp_sprintf("%s.exe", output_name);
+      } break;
+      case compile_output_slib: BR_TODO("IDK slib on windows ?"); break;
+      case compile_output_dlib: BR_TODO("IDK dlib on windows ?"); break;
+    }
+  } else {
+    switch (target) {
+      case p_linux: {
+        switch (kind) {
+          case compile_output_obj: {
+            nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.o", output_name));
+            return cmd->items[cmd->count - 1];
+          } break;
+          case compile_output_exe: {
+            if (has_hotreload) nob_cmd_append(cmd, "-fpie", "-rdynamic");
+            nob_cmd_append(cmd, "-o", output_name);
+            const char* ret = cmd->items[cmd->count - 1];
+            if (is_tracy) nob_cmd_append(cmd, "-l:libTracyClient.a", "-lstdc++");
+            nob_cmd_append(cmd, "-ldl", "-lm", "-pthread");
+            if (enable_asan) nob_cmd_append(cmd, SANITIZER_FLAGS);
+            return ret;
+          } break;
+          case compile_output_slib: {
+            nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.a", output_name));
+            return cmd->items[cmd->count - 1];
+          } break;
+          case compile_output_dlib: {
+            nob_cmd_append(cmd, "-shared", "-fPIC");
+            nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.so", output_name));
+            return cmd->items[cmd->count - 1];
+          } break;
+          default: BR_UNREACHABLE("output kind: %d", kind); break;
+        }
+      } break;
+      case p_wasm: {
+        switch (kind) {
+          case compile_output_obj: {
+            nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.o", output_name));
+            return cmd->items[cmd->count - 1];
+          } break;
+          case compile_output_exe: BR_TODO("wasm exe"); break;
+          case compile_output_slib: BR_TODO("wasm static lib"); break;
+          case compile_output_dlib: {
+            nob_cmd_append(cmd, "-sWASM_BIGINT", "-sALLOW_MEMORY_GROWTH", "-sUSE_GLFW=3", "-sUSE_WEBGL2=1",
+                                          "-sGL_ENABLE_GET_PROC_ADDRESS",
+                                          "-sCHECK_NULL_WRITES=0", "-sDISABLE_EXCEPTION_THROWING=1", "-sFILESYSTEM=0", "-sDYNAMIC_EXECUTION=0");
+            nob_cmd_append(cmd, "-sMODULARIZE=1", "-sEXPORT_ES6=1");
+            nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.js", output_name));
+            return cmd->items[cmd->count - 1];
+          } break;
+          default: BR_UNREACHABLE("output kind: %d", kind); break;
+        }
+      } break;
+      case p_mac: {
+        switch (kind) {
+          case compile_output_obj: nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.o", output_name)); break;
+          case compile_output_exe: nob_cmd_append(cmd, "-o", output_name); break;
+          case compile_output_slib: nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.a", output_name)); break;
+          case compile_output_dlib: nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.dylib", output_name)); break;
+          default: BR_UNREACHABLE("output kind: %d", kind);
+        }
+        return cmd->items[cmd->count - 1];
+      } break;
+      case p_windows: {
+        switch (kind) {
+          case compile_output_obj: {
+            nob_cmd_append(cmd, "-DWIN32_LEAN_AND_MEAN");
+            nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.o", output_name));
+          } break;
+          case compile_output_exe: nob_cmd_append(cmd, "-static", "-o", nob_temp_sprintf("%s.exe", output_name)); break;
+          case compile_output_slib: BR_TODO("IDK slib on windows ?");
+          case compile_output_dlib: BR_TODO("IDK dlib on windows ?");
+          default: BR_UNREACHABLE("output kind: %d", kind);
+        }
+        return cmd->items[cmd->count - 1];
+      } break;
+    }
+  }
+}
+
+const char* compiler_base_flags(Nob_Cmd* cmd, const char* compiler) {
+  nob_cmd_append(cmd, compiler);
+  if (is_msvc(compiler)) {
+    nob_cmd_append(cmd, "/I.", "/Zi");
+  } else {
+    nob_cmd_append(cmd, "-I.", "-g");
+  }
+}
+
+const char* compiler_single_file_exe(platform_kind_t platform, const char* src_name, const char* output_file) {
+  static Nob_Cmd cmd = { 0 };
+  cmd.count = 0;
+  const char* compiler = get_compiler(platform);
+  compiler_base_flags(&cmd, compiler);
+  nob_cmd_append(&cmd, src_name);
+  const char* output = compiler_set_output(&cmd, output_file, compile_output_exe, platform, compiler);
+  nob_cmd_run_cache(&cmd);
+  return output;
+}
+
 static bool create_all_dirs(void) {
   if (false == nob_mkdir_if_not_exists("build"))      return false;
   if (false == nob_mkdir_if_not_exists("bin"))        return false;
@@ -268,17 +396,12 @@ static bool create_all_dirs(void) {
 }
 
 static bool bake_font(void) {
-  const char* file_in = "content/font.ttf";
-  const char* file_out = ".generated/default_font.h";
-  const char* font_bake_bin = "bin/font_bake"EXE_EXT;
   Nob_Cmd cmd = { 0 };
-  nob_cmd_append(&cmd, NOB_REBUILD_URSELF(font_bake_bin, "tools/font_bake.c"));
-  if (false == nob_cmd_run_cache(&cmd)) return false;
+  const char* output = compiler_single_file_exe(p_native, "tools/font_bake.c", "bin/font_bake");
+  if (NULL == output) return false;
 
-  nob_cmd_append(&cmd, font_bake_bin, "./content/font.ttf", ".generated/default_font.h");
+  nob_cmd_append(&cmd, output, "./content/font.ttf", ".generated/default_font.h");
   if (false == nob_cmd_run_cache(&cmd)) return false;
-
-  nob_cmd_free(cmd);
   return true;
 }
 
@@ -332,7 +455,7 @@ static bool gl_gen(void) {
   return true;
 }
 
-static bool compile_standard_flags(Nob_Cmd* cmd) {
+static bool compile_standard_flags(Nob_Cmd* cmd, bool is_msvc) {
   nob_cmd_append(cmd, "-I.");
   if (is_headless) {
     nob_cmd_append(cmd, "-DBR_NO_X11", "-DHEADLESS");
@@ -378,8 +501,9 @@ static bool compile_standard_flags(Nob_Cmd* cmd) {
 }
 
 bool g_sike_compile = false;
-static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd, br_str_t* build_dir) {
+static bool compile_one(platform_kind_t target, Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd, br_str_t* build_dir) {
   build_dir->len = 0;
+  const char* compiler = get_compiler(target);
 
   Nob_String_View file_name = source;
   nob_sv_chop_by_delim(&file_name, '/');
@@ -393,70 +517,40 @@ static bool compile_one(Nob_Cmd* cmd, Nob_String_View source, Nob_Cmd* link_cmd,
   if (enable_asan)   br_str_push_literal(build_dir, ".asan");
   if (has_hotreload) br_str_push_literal(build_dir, ".hot");
   if (is_wasm)       br_str_push_literal(build_dir, ".wasm");
+  if (is_win32)      br_str_push_literal(build_dir, ".win32");
   if (is_tracy)      br_str_push_literal(build_dir, ".tracy");
                      br_str_push_literal(build_dir, ".");
                      br_str_push_c_str  (build_dir, compiler);
-  if (is_msvc)       br_str_push_literal(build_dir, ".obj");
-  else               br_str_push_literal(build_dir, ".o");
   br_str_push_zero(build_dir);
-  nob_cmd_append(link_cmd, build_dir->str);
+  nob_cmd_append(cmd, compiler, "-c", source.data);
+  compile_standard_flags(cmd, is_msvc(compiler));
+  const char* obj = compiler_set_output(cmd, build_dir->str, compile_output_obj, target, compiler);
 
-  if (is_msvc) nob_cmd_append(cmd, compiler, nob_temp_sprintf("/Fo:%s", build_dir->str), "/c", source.data);
-  else nob_cmd_append(cmd, compiler, "-o", build_dir->str, "-c", source.data);
-  compile_standard_flags(cmd);
-  if (is_macos) {
-    if (0 == strcmp(source.data, "src/platform.c")) {
-      nob_cmd_append(cmd, "-ObjC");
-    }
-  }
+  nob_cmd_append(link_cmd, obj);
+
   return g_sike_compile || nob_cmd_run_cache(cmd);
 }
 
-static bool compile_and_link(Nob_Cmd* cmd) {
+static bool compile_and_link(platform_kind_t target, Nob_Cmd* cmd) {
   Nob_Cmd link_command = { 0 };
-  if (is_slib)      nob_cmd_append(&link_command, "ar", "rcs", "bin/brplot" SLIB_EXT);
-  else if (is_msvc) nob_cmd_append(&link_command, compiler);
-  else              nob_cmd_append(&link_command, compiler, "-ggdb");
+  const char* compiler = get_compiler(target);
+
+  compile_output_kind_t out_kind;
+  if (is_slib)          out_kind = compile_output_slib;
+  else if (is_lib)      out_kind = compile_output_dlib;
+  else                  out_kind = compile_output_exe;
+
+  if (is_slib)      nob_cmd_append(&link_command, "ar", "rcs");
+  else {
+    compiler_base_flags(&link_command, compiler);
+  }
 
   for (size_t i = 0; i < NOB_ARRAY_LEN(sources); ++i) {
     br_str_t build_dir = { 0 };
-    if (false == compile_one(cmd, nob_sv_from_cstr(sources[i]), &link_command, &build_dir)) return false;
+    if (false == compile_one(target, cmd, nob_sv_from_cstr(sources[i]), &link_command, &build_dir)) return false;
   }
 
-  if (is_macos) {
-    nob_cmd_append(&link_command, "-framework", "Foundation");
-    nob_cmd_append(&link_command, "-framework", "CoreServices");
-    nob_cmd_append(&link_command, "-framework", "CoreGraphics");
-    nob_cmd_append(&link_command, "-framework", "AppKit");
-    nob_cmd_append(&link_command, "-framework", "IOKit");
-  }
-  if (is_wasm) {
-    nob_cmd_append(&link_command, "-sWASM_BIGINT", "-sALLOW_MEMORY_GROWTH", "-sUSE_GLFW=3", "-sUSE_WEBGL2=1",
-        "-sGL_ENABLE_GET_PROC_ADDRESS",
-        "-sCHECK_NULL_WRITES=0", "-sDISABLE_EXCEPTION_THROWING=1", "-sFILESYSTEM=0", "-sDYNAMIC_EXECUTION=0");
-    if (is_lib) {
-      nob_cmd_append(&link_command, "-sMODULARIZE=1", "-sEXPORT_ES6=1");
-      nob_cmd_append(&link_command, "-o", "bin/brplot_lib.js");
-    } else {
-      BR_TODO("Implement wasm exe");
-    }
-  } else {
-    if (is_tracy) nob_cmd_append(&link_command, "-l:libTracyClient.a", "-lstdc++");
-    if (is_slib);
-    else if (is_lib) nob_cmd_append(&link_command, "-shared", "-fPIC", "-o", "bin/brplot" LIB_EXT);
-    else {
-      if (has_hotreload) nob_cmd_append(&link_command, "-fpie", "-rdynamic", "-ldl");
-
-      if (is_msvc) {
-		  if (is_debug) nob_cmd_append(&link_command, "/Zi", "/DEBUG:FULL");
-		  nob_cmd_append(&link_command, "/Fe:bin\\brplot.exe");
-	  } else nob_cmd_append(&link_command, "-o", "bin/brplot" EXE_EXT);
-
-      if (tp_linux == g_platform) nob_cmd_append(&link_command, "-lm", "-pthread", "-ldl");
-    }
-  }
-
-  if (false == is_slib && enable_asan) nob_cmd_append(&link_command, SANITIZER_FLAGS);
+  compiler_set_output(&link_command, "bin/brplot", out_kind, target, compiler);
   bool ret = nob_cmd_run_cache(&link_command);
   nob_cmd_free(link_command);
   return ret;
@@ -793,7 +887,10 @@ static bool n_generate_do(void) {
 
 static bool n_compile_do(void) {
   Nob_Cmd cmd = { 0 };
-  bool ret = compile_and_link(&cmd);
+  platform_kind_t    target = p_native;
+  if (is_wasm)       target = p_wasm;
+  else if (is_win32) target = p_windows;
+  bool ret = compile_and_link(target, &cmd);
   nob_cmd_free(cmd);
   return ret;
 }
@@ -967,34 +1064,28 @@ static bool n_unittests_do(void) {
   Nob_Cmd cmd = { 0 };
   is_debug = true;
   is_headless = true;
+  platform_kind_t platform = p_native;
+  if (is_win32) platform = p_windows;
+  const char* compiler = get_compiler(platform);
 
   static struct { char const *test_file, *out_bin; } test_programs[] = {
-    { .test_file = "./tests/src/data_generator.c", .out_bin  = "bin/data_generator" EXE_EXT },
-    { .test_file = "./tests/src/resampling.c", .out_bin  = "bin/resampling" EXE_EXT },
-    { .test_file = "./tests/src/read_input.c", .out_bin  = "bin/read_input" EXE_EXT },
-    { .test_file = "./tests/src/filesystem.c", .out_bin  = "bin/memory" EXE_EXT },
-    { .test_file = "./tests/src/memory.c", .out_bin  = "bin/memory" EXE_EXT },
-    { .test_file = "./tests/src/str.c", .out_bin  = "bin/test_str" EXE_EXT },
-    { .test_file = "./tests/src/free_list.c", .out_bin  = "bin/test_fl" EXE_EXT },
-    { .test_file = "./tests/src/math.c", .out_bin  = "bin/test_math" EXE_EXT },
-    { .test_file = "./tests/src/string_pool.c", .out_bin  = "bin/string_pool" EXE_EXT },
-    { .test_file = "./tests/src/da.c", .out_bin  = "bin/da" EXE_EXT },
+    { .test_file = "./tests/src/data_generator.c", .out_bin  = "bin/data_generator" },
+    { .test_file = "./tests/src/resampling.c", .out_bin  = "bin/resampling" },
+    { .test_file = "./tests/src/read_input.c", .out_bin  = "bin/read_input" },
+    { .test_file = "./tests/src/filesystem.c", .out_bin  = "bin/memory" },
+    { .test_file = "./tests/src/memory.c", .out_bin  = "bin/memory" },
+    { .test_file = "./tests/src/str.c", .out_bin  = "bin/test_str" },
+    { .test_file = "./tests/src/free_list.c", .out_bin  = "bin/test_fl" },
+    { .test_file = "./tests/src/math.c", .out_bin  = "bin/test_math" },
+    { .test_file = "./tests/src/string_pool.c", .out_bin  = "bin/string_pool" },
+    { .test_file = "./tests/src/da.c", .out_bin  = "bin/da" },
   };
 
   for (size_t i = 0; i < BR_ARR_LEN(test_programs); ++i) {
     LOGI("-------------- START TESTS ------------------");
     LOGI("------------- %15s -> %15s ------------------", test_programs[i].test_file, test_programs[i].out_bin);
-    cmd.count = 0;
-    nob_cmd_append(&cmd, compiler);
-    if (is_msvc) nob_cmd_append(&cmd, nob_temp_sprintf("/Fe:%s", test_programs[i].out_bin));
-    else nob_cmd_append(&cmd, "-o", test_programs[i].out_bin);
-    nob_cmd_append(&cmd, test_programs[i].test_file);
-    compile_standard_flags(&cmd);
-    if (tp_linux == g_platform) {
-      nob_cmd_append(&cmd, "-lm", "-pthread");
-    }
-    if (false == nob_cmd_run_cache(&cmd)) return false;
-    nob_cmd_append(&cmd, test_programs[i].out_bin);
+    const char* output = compiler_single_file_exe(platform, test_programs[i].test_file, test_programs[i].out_bin);
+    nob_cmd_append(&cmd, output);
     if (false == br_cmd_run(&cmd)) return false;
     LOGI("-------------- END TESTS ------------------");
   }
@@ -1007,7 +1098,7 @@ static bool n_fuzztests_do(void) {
 #define FUZZ_FLAGS "-print_final_stats=1", "-timeout=1", "-max_total_time=200", "-create_missing_dirs=1", ".generated/corpus_sp"
   Nob_Cmd cmd = { 0 };
   is_headless = true;
-  compiler = "clang";
+  const char* compiler = "clang"EXE_EXT;
 
 //  nob_cmd_append(&cmd, "clang", "-fsanitize=fuzzer,address,leak,undefined", "-DBR_DISABLE_LOG", "-DFUZZ", "-o", "bin/fuzz_read_input", "tools/unity/brplot.c");
 //  compile_standard_flags(&cmd);
@@ -1016,7 +1107,7 @@ static bool n_fuzztests_do(void) {
 //  if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
 
   nob_cmd_append(&cmd, compiler, "-fsanitize=fuzzer,address,leak,undefined", "-DFUZZ", "-o", "bin/fuzz_sp", "./tests/src/string_pool.c");
-  compile_standard_flags(&cmd);
+  compile_standard_flags(&cmd, false);
   if (false == br_cmd_run(&cmd)) return false;
   nob_cmd_append(&cmd, "./bin/fuzz_sp", FUZZ_FLAGS);
   if (false == br_cmd_run(&cmd)) return false;
@@ -1043,7 +1134,7 @@ static bool n_compile_commands_do(void) {
     LOGI("Index: %d: %s", i, sources[i]);
     fprintf(f, "  {\n    ");
     compile_command.count = link_command.count = 0;
-    if (false == compile_one(&compile_command, nob_sv_from_cstr(sources[i]), &link_command, &build_dir)) goto error;
+    if (false == compile_one(p_native, &compile_command, nob_sv_from_cstr(sources[i]), &link_command, &build_dir)) goto error;
     fprintf(f, "\"directory\": \"%s\",\n    ", cwd);
     fprintf(f, "\"command\": \"");
     for (int j = 0; j < compile_command.count; ++j) {
@@ -1108,7 +1199,6 @@ int main(int argc, char** argv) {
     print_usage();
     return 0;
   }
-  if (is_wasm) compiler = "emcc";
 #define X(name, desc) if (do_command == n_ ## name) { success = n_ ## name ## _do();  } else
   COMMANDS(X)
 #undef X

@@ -95,7 +95,6 @@ ifeq ($(PLATFORM), LINUX)
 	endif
 
 else ifeq ($(PLATFORM), WINDOWS)
-	LIBS= -lopengl32 -lgdi32 -lwinmm
 	CC= x86_64-w64-mingw32-gcc
 	COMMONFLAGS+= -D_WIN32=1 -DWIN32_LEAN_AND_MEAN
 	LD_FLAGS+= -static
