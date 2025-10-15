@@ -403,14 +403,14 @@ sudo rm /usr/bin/brplot
 * ~~For Imgui disable default font and use the font that is used in the rest of the graph.~~
 * ~~Number of draw call for RAYLIB,WEB is not corret - Fix this.~~
   * Fixed
-* Add ability to lineary modify a line on the graph
+~~* Add ability to lineary modify a line on the graph~~
   * Should this be done in shader
     * this will then requre to not batch different lines together...
     * or maybe somehow add this information to the color buffer?
-  * Should be this be done during resampling
-    * This will then require to offset points before resampling
-    * This is most likely the way to go...
-  * Offset for x-y value
+  ~~* Should be this be done during resampling~~
+    ~~* This will then require to offset points before resampling~~
+    ~~* This is most likely the way to go...~~
+  ~~* Offset for x-y value~~
   * Scale for x-y value
 * ~~Give lines a names.~~
 * Show the name of the line if you hover over it.
@@ -448,7 +448,7 @@ sudo rm /usr/bin/brplot
         * Impelement ALT-LEFT to go back.
         * ~~For that we need text input widget.~~
           * Implemented it but it looks bad and needs more features..
-              * Impelement CTRL-BACKSPACE to delete a work.
+              ~~* Impelement CTRL-BACKSPACE to delete a work.~~
 
 * ~~Web resizing is again fucked, unfuck it.~~
 * ~~Automaticaly generate functions to select icon that best fits wanted size..~~
@@ -467,6 +467,7 @@ sudo rm /usr/bin/brplot
 * Make event history array and print it like you do with memory so that you can debug events.
 * 3d plot wasd is broken because of something to do with rebasing
 * Bug with resizing plot window and numbers being scizered off. Most likely to do with viewport being calculated wrongly.
+* Windows is not focused on in the start for some reason.
 
 ## Screenshots
 Here is a history of how brplot looked over time:
