@@ -9,9 +9,9 @@ typedef void* voidp;
 #endif
 
 #if defined(_WIN32)
-#define brpl_load_gl brpl_load_symbol
+   void* brpl_load_gl(void* module, const char* func_name);
 #else
-void* brpl_load_gl(void* module, const char* func_name);
+#  define brpl_load_gl brpl_load_symbol
 #endif
 
 #include ".generated/gl.h"

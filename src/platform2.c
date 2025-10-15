@@ -89,8 +89,9 @@ const char* br_glfw_library_names[] = {
 
 #if defined(__APPLE__)
 #  include <mach/mach_time.h>
+#  include <dlfcn.h>
 #elif defined(_WIN32)
-#  include <Windows.h>
+#  include <windows.h>
 #else
 #  include <unistd.h>
 #  include <time.h>
@@ -180,8 +181,8 @@ brpl_event_t brpl_event_next(brpl_window_t* window) {
 
 uint64_t brpl_timestamp(void) {
 #if defined(_WIN32)
-  uint64_t value;
-  QueryPerformanceCounter(&value);
+  br_u64 value;
+  QueryPerformanceCounter((LARGE_INTEGER*)&value);
   return value;
 #elif defined(__APPLE__)
   return mach_absolute_time();
@@ -235,6 +236,7 @@ void* brpl_load_symbol(void* library, const char* name) {
 #endif
 }
 
+#if defined(_WIN32)
 void* brpl_load_gl(void* module, const char* func_name) {
 	void* ret = brpl_load_symbol(module, func_name);
 	if (NULL == ret) {
@@ -246,6 +248,7 @@ void* brpl_load_gl(void* module, const char* func_name) {
 	}
 	return ret;
 }
+#endif
 
 #include <assert.h>                                               
 void brpl_q_push(brpl_q_t* q, brpl_event_t event) {               

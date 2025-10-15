@@ -466,6 +466,7 @@ sudo rm /usr/bin/brplot
 * Fork a process child continues, parent execvc it's self into gdb that attaches onto a child.
 * Make event history array and print it like you do with memory so that you can debug events.
 * 3d plot wasd is broken because of something to do with rebasing
+* Bug with resizing plot window and numbers being scizered off. Most likely to do with viewport being calculated wrongly.
 
 ## Screenshots
 Here is a history of how brplot looked over time:
