@@ -16,8 +16,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#if definedBR_RELEASE
-#error "RELEASE must not be defined"
+#if defined(BR_RELEASE)
+#  error "RELEASE must not be defined"
 #endif
 
 #define BR_CC "clang"

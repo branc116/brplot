@@ -344,7 +344,7 @@ static bool compile_standard_flags(Nob_Cmd* cmd) {
     if (is_msvc) nob_cmd_append(cmd, "/Zi");
     else nob_cmd_append(cmd, "-ggdb");
     nob_cmd_append(cmd, "-DBR_DEBUG");
-    if (has_hotreload) nob_cmd_append(cmd, "-fpic", "-fpie");
+    if (has_hotreload) nob_cmd_append(cmd, "-fpie");
     else nob_cmd_append(cmd, "-DBR_HAS_HOTRELOAD=0");
   } else {
     if (is_msvc) nob_cmd_append(cmd, "/O2");
@@ -445,7 +445,7 @@ static bool compile_and_link(Nob_Cmd* cmd) {
     if (is_slib);
     else if (is_lib) nob_cmd_append(&link_command, "-shared", "-fPIC", "-o", "bin/brplot" LIB_EXT);
     else {
-      if (has_hotreload) nob_cmd_append(&link_command, "-fpic", "-fpie", "-rdynamic", "-ldl");
+      if (has_hotreload) nob_cmd_append(&link_command, "-fpie", "-rdynamic", "-ldl");
 
       if (is_msvc) {
 		  if (is_debug) nob_cmd_append(&link_command, "/Zi", "/DEBUG:FULL");

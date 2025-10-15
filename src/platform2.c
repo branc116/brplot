@@ -223,7 +223,7 @@ void* brpl_load_library(const char* path) {
 #if defined(_WIN32)
   return LoadLibraryA(path);
 #else
-  return dlopen(path, RTLD_LAZY | RTLD_LOCAL);
+  return dlopen(path, RTLD_LAZY | RTLD_GLOBAL);
 #endif
 }
 

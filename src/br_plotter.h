@@ -167,6 +167,7 @@ void br_plotter_end_drawing(br_plotter_t* br);
 
 #if BR_HAS_HOTRELOAD
 void br_hotreload_start(br_hotreload_state_t* s);
+void br_hotreload_tick(br_hotreload_state_t* s);
 void br_hotreload_tick_ui(br_hotreload_state_t* s);
 #endif
 

@@ -20,6 +20,7 @@
 #include <ctype.h>
 
 #if BR_HAS_HOTRELOAD
+#  include "src/desktop/hotreload.c"
 #  include <pthread.h>
 #endif
 
@@ -29,7 +30,7 @@ br_plotter_t* br_plotter_malloc(void) {
     .win = {
       .title = "brplot",
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__)
-      .kind = brpl_window_glfw,
+      .kind = brpl_window_x11,
 #else
       .kind = brpl_window_glfw,
 #endif

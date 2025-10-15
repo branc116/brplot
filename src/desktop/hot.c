@@ -10,12 +10,12 @@ static bool context_menu_opened = false;
 
 void br_hot_init(void* br) {
   (void)br;
-  res = NULL;
   printf("Init\n");
 }
 
 void brui_context_menu_delete(void);
 void brui_context_menu(void) {
+  /*
   bool should_delete = false;
   if (context_menu_opened) {
     brui_resizable_temp_push_t rt = brui_resizable_temp_push(BR_STRL("context_menu"));
@@ -40,11 +40,14 @@ void brui_context_menu(void) {
     context_menu_opened = false;
   }
   if (should_delete) brui_context_menu_delete();
+  */
 }
 
 void brui_context_menu_delete(void) {
+  /*
   context_menu_opened = false;
   brui_resizable_temp_delete(BR_STRL("context_menu"));
+  */
 }
 
 void br_hot_loop(void* obr) { (void)obr; }
