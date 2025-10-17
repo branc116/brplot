@@ -10,6 +10,7 @@ struct {
   const char* name_upper;
   const char* load_func;
   const char* functions;
+  const char* prefix;
 } modules[] = {
   {
     .name = "gl",
@@ -152,6 +153,22 @@ struct {
       "GLFWcharfun glfwSetCharCallback(GLFWwindow* window, GLFWcharfun callback)"
       "voidp glfwGetWindowUserPointer(GLFWwindow* window)"
       "void glfwSetWindowUserPointer(GLFWwindow* window, void* pointer)"
+  }, {
+    .name = "wgl",
+    .name_upper = "WGL",
+    .prefix = "br_",
+    .functions =
+      "HGLRC wglCreateContext(HDC hdc)"
+      "void wglMakeCurrent(HDC hdc, HGLRC hglrc)"
+      "voidp wglGetProcAddress(const char* str)"
+  }, {
+    .name = "gdi",
+    .name_upper = "GDI",
+    .prefix = "br_",
+    .functions =
+      "int ChoosePixelFormat(HDC hdc, PIXELFORMATDESCRIPTOR* pfd)"
+      "int SetPixelFormat(HDC hdc, int format, PIXELFORMATDESCRIPTOR* pfd)"
+      "void SwapBuffers(HDC hdc)"
   }
 };
 
@@ -182,12 +199,14 @@ void extract_param(br_strv_t* segs, int len, fparam_t* param) {
   param->name.len = segs[len - 1].len;
 }
 
-static void print_declarations(FILE* file, func_t* funcs, size_t len, const char* postfix, const char* modifier);
+static void print_declarations(FILE* file, func_t* funcs, size_t len, const char* prefix, const char* postfix, const char* modifier);
 
-static void print_headless_impl(FILE* file, const char* module_name, func_t* funcs, size_t len) {
+static void print_headless_impl(FILE* file, const char* module_name, func_t* funcs, size_t len, const char* prefix) {
+  if (NULL == prefix) prefix = "";
+
   for (uint32_t i = 0; i < len; ++i) {
     func_t f = funcs[i];
-    fprintf(file, "%.*s %.*s(", f.ret_type.len, f.ret_type.str, f.name.len, f.name.str);
+    fprintf(file, "%.*s %s%.*s(", f.ret_type.len, prefix, f.ret_type.str, f.name.len, f.name.str);
     if (f.params.len == 0) {
       fprintf(file, "void");
     } else {
@@ -213,12 +232,12 @@ static void print_headless_impl(FILE* file, const char* module_name, func_t* fun
   fprintf(file, "void br_%s_load(void) {}\n", module_name);
 }
 
-static void print_tracy_impl(FILE* file, func_t* funcs, size_t len) {
-  print_declarations(file, funcs, len, "internal", "static");
+static void print_tracy_impl(FILE* file, func_t* funcs, size_t len, const char* prefix) {
+  print_declarations(file, funcs, len, prefix, "_internal", "static");
   fprintf(file, "\n\n");
   for (uint32_t i = 0; i < len; ++i) {
     func_t f = funcs[i];
-    fprintf(file, "%.*s %.*s(", f.ret_type.len, f.ret_type.str, f.name.len, f.name.str);
+    fprintf(file, "%.*s %s%.*s(", f.ret_type.len, f.ret_type.str, prefix, f.name.len, f.name.str);
     if (f.params.len == 0) {
       fprintf(file, "void");
     } else {
@@ -233,11 +252,10 @@ static void print_tracy_impl(FILE* file, func_t* funcs, size_t len) {
     fprintf(file, ") {\n");
     fprintf(file, "  TracyCZone(%.*s, true);\n", f.name.len, f.name.str);
     bool is_void = br_strv_eq(f.ret_type, br_strv_from_literal("void"));
-    if (is_void == true) {
-      fprintf(file, "  %.*s_internal(", f.name.len, f.name.str);
-    } else {
-      fprintf(file, "  %.*s ret = %.*s_internal(", f.ret_type.len, f.ret_type.str, f.name.len, f.name.str);
+    if (is_void == false) {
+      fprintf(file, "  %.*s ret =", f.ret_type.len, f.ret_type.str);
     }
+    fprintf(file, "  %.*s_internal(", f.name.len, f.name.str);
     if (f.params.len == 0) {
     } else {
       for (int j = 0; j < f.params.len; ++j) {
@@ -257,10 +275,11 @@ static void print_tracy_impl(FILE* file, func_t* funcs, size_t len) {
   }
 }
 
-static void print_static_declarations(FILE* file, func_t* funcs, size_t len) {
+static void print_static_declarations(FILE* file, func_t* funcs, size_t len, const char* prefix) {
+  if (NULL == prefix) prefix = "";
   for (int i = 0; i <  len; ++i) {
     func_t f = funcs[i];
-    fprintf(file, "%.*s %.*s(", f.ret_type.len, f.ret_type.str, f.name.len, f.name.str);
+    fprintf(file, "%.*s %s%.*s(", f.ret_type.len, f.ret_type.str, prefix, f.name.len, f.name.str);
 
     if (f.params.len == 0) {
       fprintf(file, "void");
@@ -277,12 +296,13 @@ static void print_static_declarations(FILE* file, func_t* funcs, size_t len) {
   }
 }
 
-static void print_declarations(FILE* file, func_t* funcs, size_t len, const char* postfix, const char* modifier) {
+static void print_declarations(FILE* file, func_t* funcs, size_t len, const char* prefix, const char* postfix, const char* modifier) {
   fprintf(file, "\n// Declarations ( %s )\n\n", postfix == NULL ? "null" : postfix);
+  if (NULL == prefix) prefix = "";
+  if (NULL == postfix) postfix = "";
   for (int i = 0; i <  len; ++i) {
     func_t f = funcs[i];
-    if (postfix == NULL) fprintf(file, "%s %.*s (*%.*s)(", modifier, f.ret_type.len, f.ret_type.str, f.name.len, f.name.str);
-    else                 fprintf(file, "%s %.*s (*%.*s_%s)(", modifier, f.ret_type.len, f.ret_type.str, f.name.len, f.name.str, postfix);
+    fprintf(file, "%s %.*s (*%s%.*s%s)(", modifier, f.ret_type.len, f.ret_type.str, prefix, f.name.len, f.name.str, postfix);
 
     if (f.params.len == 0) {
       fprintf(file, "void");
@@ -299,8 +319,11 @@ static void print_declarations(FILE* file, func_t* funcs, size_t len, const char
   }
 }
 
-void print_loader(FILE* file, const char* module_name, func_t* funcs, size_t len, const char* load_func, const char* postfix) {
+void print_loader(FILE* file, const char* module_name, func_t* funcs, size_t len, const char* load_func, const char* prefix, const char* postfix) {
   if (NULL == load_func) load_func = "brpl_load_symbol";
+  if (NULL == prefix) prefix = "";
+  if (NULL == postfix) postfix = "";
+
   fprintf(file, "\n// Loader ( %s )\n", postfix == NULL ? "null" : postfix);
   fprintf(file, "bool br_%s_load(void) {\n", module_name);
   fprintf(file, "  void* module = NULL;\n");
@@ -308,10 +331,7 @@ void print_loader(FILE* file, const char* module_name, func_t* funcs, size_t len
   fprintf(file, "  if (module == NULL) return false;\n");
   for (int i = 0; i <  len; ++i) {
     func_t f = funcs[i];
-    if (postfix == NULL)
-      fprintf(file, "  %.*s = (%.*s (*)(", f.name.len, f.name.str, f.ret_type.len, f.ret_type.str);
-    else
-      fprintf(file, "  %.*s_%s = (%.*s (*)(", f.name.len, f.name.str, postfix, f.ret_type.len, f.ret_type.str);
+    fprintf(file, "  %s%.*s%s = (%.*s (*)(", prefix, f.name.len, f.name.str, postfix, f.ret_type.len, f.ret_type.str);
     if (f.params.len == 0) {
       fprintf(file, "void");
     } else {
@@ -324,23 +344,15 @@ void print_loader(FILE* file, const char* module_name, func_t* funcs, size_t len
       }
     }
     fprintf(file, "))%s(module, \"%.*s\");\n", load_func, f.name.len, f.name.str);
-    if (postfix) {
-      fprintf(file, "  if (NULL == %.*s_%s) {\n", f.name.len, f.name.str, postfix);
-    } else {
-      fprintf(file, "  if (NULL == %.*s) {\n", f.name.len, f.name.str);
-    }
-    if (f.is_optional) {
-      fprintf(file, "    LOGW(\"Failed to load optional %.*s from shared library %s.\");\n", f.name.len, f.name.str, module_name);
-    } else {
-      fprintf(file, "    LOGW(\"Failed to load %.*s from shared library %s.\");\n", f.name.len, f.name.str, module_name);
-    }
+    fprintf(file, "  if (NULL == %s%.*s%s) {\n", prefix, f.name.len, f.name.str, postfix);
+    fprintf(file, "    LOGW(\"Failed to load %.*s from shared library %s.\");\n", f.name.len, f.name.str, module_name);
     fprintf(file, "  }\n");
   }
   fprintf(file, "  return true;\n");
   fprintf(file, "}\n\n");
 }
 
-int do_gl_gen(const char* module, const char* module_upper, const char* load_func, const char* functions, FILE* file_impl, FILE* file_header) {
+int do_gl_gen(const char* module, const char* module_upper, const char* load_func, const char* prefix, const char* functions, FILE* file_impl, FILE* file_header) {
   struct { func_t* arr; size_t len, cap; } funcs = { 0 };
   br_strv_t all_funcs = br_strv_from_c_str(functions);
   br_strv_t cur = { .str = all_funcs.str, 0 };
@@ -463,15 +475,15 @@ int do_gl_gen(const char* module, const char* module_upper, const char* load_fun
 
     fprintf(file_impl, "#elif defined(HEADLESS)\n");
     fprintf(file_impl, "void br_%s_load(void) {}\n\n", module);
-    print_headless_impl(file_impl, module, funcs.arr, funcs.len);
+    print_headless_impl(file_impl, module, funcs.arr, funcs.len, prefix);
 
     fprintf(file_impl, "#elif defined(TRACY_ENABLE)\n");
-    print_tracy_impl(file_impl, funcs.arr, funcs.len);
-    print_loader(file_impl, module, funcs.arr, funcs.len, load_func, "internal");
+    print_tracy_impl(file_impl, funcs.arr, funcs.len, prefix);
+    print_loader(file_impl, module, funcs.arr, funcs.len, load_func, prefix, "internal");
 
     fprintf(file_impl, "#else // Normal mode\n");
-    print_declarations(file_impl, funcs.arr, funcs.len, NULL, "");
-    print_loader(file_impl, module, funcs.arr, funcs.len, load_func, NULL);
+    print_declarations(file_impl, funcs.arr, funcs.len, prefix, NULL, "");
+    print_loader(file_impl, module, funcs.arr, funcs.len, load_func, prefix, NULL);
 
     fprintf(file_impl, "#endif // STATIC/HEADLESS/TRACY/NORMAL\n");
 
@@ -483,10 +495,10 @@ int do_gl_gen(const char* module, const char* module_upper, const char* load_fun
     fprintf(file_header, "bool br_%s_load(void);\n\n", module);
 
     fprintf(file_header, "#if defined(TRACY_ENABLE) || defined(HEADLESS) || defined(BR_%s_STATIC)\n", module_upper);
-    print_static_declarations(file_header, funcs.arr, funcs.len);
+    print_static_declarations(file_header, funcs.arr, funcs.len, prefix);
 
     fprintf(file_header, "#else // NORMAL\n");
-    print_declarations(file_header, funcs.arr, funcs.len, NULL, "extern");
+    print_declarations(file_header, funcs.arr, funcs.len, prefix, NULL, "extern");
 
     fprintf(file_header, "#endif\n");
 
@@ -516,7 +528,7 @@ int main(void) {
   fprintf(file_header, "#pragma once\n");
 
   for (int i = 0; i < BR_ARR_LEN(modules); ++i) {
-    do_gl_gen(modules[i].name, modules[i].name_upper, modules[i].load_func, modules[i].functions, file_impl, file_header);
+    do_gl_gen(modules[i].name, modules[i].name_upper, modules[i].load_func, modules[i].prefix, modules[i].functions, file_impl, file_header);
   }
 
   fprintf(file_impl, "#if defined(__GNUC__) || defined(__clang__)\n");

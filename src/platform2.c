@@ -39,6 +39,20 @@ typedef XVisualInfo* XVisualInfop;
 typedef void* funcptr_t;
 #endif
 
+#if defined(BR_HAS_WIN32)
+#  define BR_HAS_WGL 1
+#  define BR_WANTS_WGL 1
+#  define BR_HAS_GDI 1
+#  define BR_WANTS_GDI 1
+#  include <windows.h>
+const char* br_wgl_library_names[] = {
+  "opengl32.dll"
+};
+const char* br_gdi_library_names[] = {
+  "gdi32.dll"
+};
+#endif
+
 #include "src/br_platform.h"
 #include "src/br_gl.h"
 #include "src/br_memory.h"
@@ -442,7 +456,6 @@ static void brpl_x11_frame_end(brpl_window_t* window) {
 static int brpl_x11_keysym(XEvent event) {
   int keysym = XLookupKeysym(&event.xkey, 0);
   if (keysym >= 'a' && keysym <= 'z') {
-    LOGI("Big");
     return keysym - 0x20;
   }
   switch (keysym) {
@@ -748,29 +761,23 @@ static bool brpl_glfw_open_window(brpl_window_t* window) {
 #if BR_HAS_WIN32
 
 #pragma comment(lib, "user32")
-#pragma comment(lib, "gdi32")
-#pragma comment(lib, "opengl32")
 
 #include "src/br_threads.h"
 
 typedef struct brpl_win32_window_t {
-  GLFWwindow* glfw;
   brpl_q_t q;
   HANDLE event_window_create_done;
   HWND hwnd;
   HDC hdc;
-  PAINTSTRUCT ps;
 } brpl_win32_window_t;
+
 static BR_THREAD_LOCAL brpl_q_t* brpl_win32_q;
 
-
 static void brpl_win32_frame_start(brpl_window_t* win) {
-  BeginPaint(((brpl_win32_window_t*)win->win)->hwnd, &((brpl_win32_window_t*)win->win)->ps);
 }
 
 static void brpl_win32_frame_end(brpl_window_t* win) {
-  EndPaint(((brpl_win32_window_t*)win->win)->hwnd, &((brpl_win32_window_t*)win->win)->ps);
-  SwapBuffers(((brpl_win32_window_t*)win->win)->hdc);
+  br_SwapBuffers(((brpl_win32_window_t*)win->win)->hdc);
 }
 
 static brpl_event_t brpl_win32_event_next(brpl_window_t* win) {
@@ -789,6 +796,10 @@ static bool brpl_win32_load(brpl_window_t* window) {
 }
 
 LRESULT CALLBACK brpl_win32_event_callback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+  brpl_event_t ev;
+  bool release = 0;
+  bool result = true;
+  bool is_down = false;
   switch (uMsg) {
     case WM_SIZE: {
       int ww = LOWORD(lParam);
@@ -804,7 +815,81 @@ LRESULT CALLBACK brpl_win32_event_callback(HWND hwnd, UINT uMsg, WPARAM wParam, 
     } break;
     case WM_PAINT: {
       return 1;
-      //brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_next_frame });
+    } break;
+
+    case WM_LBUTTONUP:
+    case WM_MBUTTONUP:
+    case WM_RBUTTONUP: {
+      release = 1;
+    } // fallthrough;
+    case WM_LBUTTONDOWN:
+    case WM_MBUTTONDOWN:
+    case WM_RBUTTONDOWN: {
+      if (release) ev.kind = brpl_event_mouse_release;
+      else         ev.kind = brpl_event_mouse_press;
+      switch (uMsg) {
+        case WM_LBUTTONUP: case WM_LBUTTONDOWN: ev.mouse_key = 0; break;
+        case WM_MBUTTONUP: case WM_MBUTTONDOWN: ev.mouse_key = 1; break;
+        case WM_RBUTTONUP: case WM_RBUTTONDOWN: ev.mouse_key = 3; break;
+      }
+      brpl_q_push(brpl_win32_q, ev);
+    } break;
+    case WM_MOUSEMOVE: {
+      RECT rcClient, rcWind;
+      POINT ptDiff;
+      GetClientRect(hwnd, &rcClient);
+      GetWindowRect(hwnd, &rcWind);
+      ptDiff.x = (rcWind.right - rcWind.left) - rcClient.right;
+      ptDiff.y = (rcWind.bottom - rcWind.top) - rcClient.bottom;
+      br_vec2_t pos = BR_VEC2(LOWORD(lParam), HIWORD(lParam));
+      LOGI("client: %d %d | window: %d %d | mouse: %f %f", rcClient.left, rcClient.right, rcWind.left, rcWind.right, pos.x, pos.y);
+      //LOGI("%d %d", ptDiff.x, ptDiff.y);
+      brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_mouse_move, .pos = pos });
+      return 0;
+    } break;
+    case WM_MOUSEWHEEL: {
+      float wd = ((short)HIWORD(wParam)) / 120.f;
+      brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_mouse_scroll, . vec = BR_VEC2(0, wd) });
+      return 0;
+    } break;
+    case WM_MOUSEHWHEEL: {
+      float wd = ((short)HIWORD(wParam)) / 120.f;
+      brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_mouse_scroll, . vec = BR_VEC2(wd, 0) });
+      return 0;
+    } break;
+    case WM_SYSKEYDOWN:
+    case WM_KEYDOWN:
+      is_down = true;
+    case WM_SYSKEYUP:
+    case WM_KEYUP: {
+      if (is_down) ev.kind = brpl_event_key_press;
+      else         ev.kind = brpl_event_key_release;
+      ev.key = wParam;
+      switch (wParam) {
+        case 8:          ev.key = BR_KEY_BACKSPACE;    break;
+        case 9:          ev.key = BR_KEY_TAB;          break;
+        case VK_CONTROL: ev.key = BR_KEY_LEFT_CONTROL; break;
+        case VK_SHIFT:   ev.key = BR_KEY_LEFT_SHIFT;   break;
+        case VK_MENU:    ev.key = BR_KEY_LEFT_ALT;     break;
+        case 13:         ev.key = BR_KEY_ENTER;        break;
+        case 27:         ev.key = BR_KEY_ESCAPE;       break;
+        case 33:         ev.key = BR_KEY_PAGE_UP;      break;
+        case 34:         ev.key = BR_KEY_PAGE_DOWN;    break;
+        case 35:         ev.key = BR_KEY_END;          break;
+        case 36:         ev.key = BR_KEY_HOME;         break;
+        case 37:         ev.key = BR_KEY_LEFT;         break;
+        case 38:         ev.key = BR_KEY_UP;           break;
+        case 39:         ev.key = BR_KEY_RIGHT;        break;
+        case 46:         ev.key = BR_KEY_DELETE;       break;
+        default:         ev.key = wParam;
+      }
+      ev.keycode = ev.key;
+      brpl_q_push(brpl_win32_q, ev);
+      return DefWindowProcA(hwnd, uMsg, wParam, lParam);
+    } break;
+    case WM_CHAR: {
+      br_u32 c = wParam;
+      brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_input, .utf8_char = c });
     } break;
     default: {
       return DefWindowProcA(hwnd, uMsg, wParam, lParam);
@@ -860,6 +945,11 @@ done:
 }
 
 static bool brpl_win32_open_window(brpl_window_t* window) {
+  bool wgl_loaded = br_gdi_load() && br_wgl_load();
+  if (false == wgl_loaded) {
+    LOGE("Failed to load wgl");
+    return false;
+  }
   brpl_win32_window_t* win32 = BR_CALLOC(1, sizeof(brpl_win32_window_t));
   window->win = win32;
   win32->event_window_create_done = CreateEventA(NULL, FALSE, FALSE, NULL);
@@ -869,26 +959,21 @@ static bool brpl_win32_open_window(brpl_window_t* window) {
   WaitForSingleObject(win32->event_window_create_done, INFINITE);
   CloseHandle(win32->event_window_create_done);
 
-  PIXELFORMATDESCRIPTOR pfd = {
-      sizeof(pfd), 1,
-      PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
-      PFD_TYPE_RGBA, 24, 0,0,0,0,0,0,
-      0, 0, 0, 0,0,0,0,
-      16, 0, 0, PFD_MAIN_PLANE,
-      0, 0, 0, 0
-  };
-  int format = ChoosePixelFormat(win32->hdc, &pfd);
-  SetPixelFormat(win32->hdc, format, &pfd);
-  HGLRC hRC = wglCreateContext(win32->hdc);
-  wglMakeCurrent(win32->hdc, hRC);
-  void* opengl32 = brpl_load_library("opengl32.dll");
-  void* (*wglGetProcAddress_l)(const char* name) = brpl_load_symbol(opengl32, "wglGetProcAddress");
-  if (wglGetProcAddress_l) {
-    void (*wglSwapIntervalEXT)(int enable) = wglGetProcAddress_l("wglSwapIntervalEXT");
-    wglSwapIntervalEXT(1);
-  }
-  bool gl_loaded = br_gl_load();
+  PIXELFORMATDESCRIPTOR pfd = {sizeof(pfd)};
+  pfd.nVersion = 1;
+  pfd.dwFlags = PFD_DRAW_TO_WINDOW|PFD_SUPPORT_OPENGL|PFD_DOUBLEBUFFER;
+  pfd.iPixelType = PFD_TYPE_RGBA;
+  pfd.cColorBits = 32;
+  pfd.cDepthBits = 24;
+  pfd.cStencilBits = 8;
+  pfd.iLayerType = PFD_MAIN_PLANE;
+  int format = br_ChoosePixelFormat(win32->hdc, &pfd);
+  br_SetPixelFormat(win32->hdc, format, &pfd);
+  HGLRC hRC = br_wglCreateContext(win32->hdc);
+  br_wglMakeCurrent(win32->hdc, hRC);
 
+  bool gl_loaded = br_gl_load();
+  brpl_q_push(&win32->q, (brpl_event_t) { .kind = brpl_event_window_focused });
   return 0 != win32->hwnd && gl_loaded;
 }
 
