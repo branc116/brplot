@@ -31,6 +31,8 @@ br_plotter_t* br_plotter_malloc(void) {
       .title = "brplot",
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__)
       .kind = brpl_window_x11,
+#elif defined(_WIN32)
+      .kind = brpl_window_win32,
 #else
       .kind = brpl_window_glfw,
 #endif
@@ -86,8 +88,17 @@ void br_plotter_init(br_plotter_t* br) {
     if (false == brpl_window_open(&br->win)) {
       LOGF("Failed to open window either with x11 or glfw. Please install one of those two.");
     }
+#elif defined(_WIN32) 
+    LOGF("Failed");
+    br->win.kind = brpl_window_glfw;
+    if (false == brpl_window_open(&br->win)) {
+      LOGF("Failed to open window either with native win32 windowing stuff or glfw. Please fix your PC.\n"
+           "Or download glfw:\n"
+           "  https://www.glfw.org/download\n"
+           "And place the glfw3.dll next to the brplot.exe file in the file explorer");
+    }
 #else
-    LOGF("Failed to open window either with GLFW. Please install GLFW on your device.");
+    LOGF("Failed to open window with GLFW. Please install GLFW on your device.\nhttps://www.glfw.org/download");
 #endif
   }
   brgl_disable_back_face_cull();
@@ -227,154 +238,155 @@ void br_plotter_update(br_plotter_t* br) {
         if (ev.key == BR_KEY_LEFT_CONTROL)    br->key.ctrl_down = true;
         else if (ev.key == BR_KEY_LEFT_SHIFT) br->key.shift_down = true;
         else if (ev.key == BR_KEY_LEFT_ALT)   br->key.alt_down = true;
-        else if (ev.key < 255)                br->key.down[ev.key] = true;
-
-        if (ev.key == BR_KEY_ESCAPE) {
-          br->action.active = br_plotter_entity_none;
-          brui_resizable_mouse_releasel(&br->resizables, br->mouse.pos);
-        } else {
-          if (br->action.active == br_plotter_entity_none ||
-              br->action.active == br_plotter_entity_plot_2d ||
-              br->action.active == br_plotter_entity_plot_3d) {
-            switch (ev.key) {
-              case BR_KEY_2: {
-                br_plotter_switch_2d(br);
-              } break;
-              case BR_KEY_3: {
-                br_plotter_switch_3d(br);
-              } break;
-              case BR_KEY_C: {
-                if (br->hovered.active == br_plotter_entity_plot_2d ||
-                    br->hovered.active == br_plotter_entity_plot_3d) {
-                  if (br->key.shift_down) br_plotter_datas_deinit_in_plot(br, br->hovered.plot_id);
-                  else                    br_plotter_datas_empty_in_plot(br, br->hovered.plot_id);
-                } else {
-                  if (br->key.shift_down) br_plotter_datas_deinit(br);
-                  else                    br_datas_empty(br->groups);
-                }
-              } break;
-              case BR_KEY_F: {
-                if (br->hovered.active == br_plotter_entity_plot_2d) {
-                  br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
-                  if (br->key.ctrl_down) br_plot_focus_visible(plot, br->groups);
-                  else                   plot->follow = !plot->follow;
-                } else {
-                  BR_TODO("br->hovered.active: %d", br->hovered.active);
-                }
-              } break;
-              case BR_KEY_H: {
-                br->ui.help.show = !br->ui.help.show;
-              } break;
-              case BR_KEY_D: {
-                if (br->hovered.active != br_plotter_entity_plot_3d) br->ui.theme.ui.debug = !br->ui.theme.ui.debug;
-              } break;
-              case BR_KEY_R: {
-                if (br->hovered.active == br_plotter_entity_plot_2d) {
-                  br_plot_t* plot = br_da_getp(br->plots, br->hovered.plot_id);
-                  if (!br->key.ctrl_down) plot->dd.zoom.x = plot->dd.zoom.y = 1;
-                  if (!br->key.ctrl_down) plot->dd.offset.x = plot->dd.offset.y = 0;
-                } else if (br->hovered.active == br_plotter_entity_plot_3d) {
-                  br_plot_t* plot = br_da_getp(br->plots, br->hovered.plot_id);
-                  br_plot_3d_t* pi3 = &plot->ddd;
-                  pi3->eye = BR_VEC3(0, 0, 100);
-                  pi3->target = BR_VEC3(0, 0, 0);
-                  pi3->up = BR_VEC3(0, 1, 0);
-                }
-              } break;
-              case BR_KEY_T: {
-                br_datas_add_test_points(&br->groups);
-              } break;
-              case BR_KEY_U: brui_log(true); break;
-              case BR_KEY_PAGE_UP: brui_resizable_page(&br->resizables, BR_VEC2(0, -1.f)); break;
-              case BR_KEY_PAGE_DOWN: brui_resizable_page(&br->resizables, BR_VEC2(0, 1.f)); break;
-              case BR_KEY_END: brui_resizable_scroll_percent_set(&br->resizables, 1.f); break;
-              case BR_KEY_HOME: brui_resizable_scroll_percent_set(&br->resizables, 0.f); break;
-              default: {
-                LOGI("pressed %d (%d)", ev.key, ev.keycode);
-              } break;
-            }
-          } else if (br->action.active == br_plotter_entity_text_input) {
-            brui_action_text_t* ta = &brui_action()->args.text;
-            br_strv_t strv = brsp_get(br->sp, ta->id);
-
-            switch (ev.key) {
-              case BR_KEY_LEFT: {
-                do {
-                  ta->cursor_pos = br_strv_utf8_add(strv, ta->cursor_pos, -1);
-                } while (ta->cursor_pos > 0 && br->key.ctrl_down && isalnum(strv.str[ta->cursor_pos]));
-              } break;
-              case BR_KEY_RIGHT: {
-                do {
-                  ta->cursor_pos = br_strv_utf8_add(strv, ta->cursor_pos, 1);
-                } while (ta->cursor_pos < (int)strv.len && br->key.ctrl_down && isalnum(strv.str[ta->cursor_pos]));
-              } break;
-              case BR_KEY_ESCAPE: {
-                brui_action()->kind = brui_action_none;
-                br->action.active = br_plotter_entity_none;
-              } break;
-              case BR_KEY_DELETE: {
-                ta->changed = brsp_remove_utf8_after(&br->sp, ta->id, ta->cursor_pos) > 0;
-                br_strv_t s = brsp_get(br->sp, ta->id);
-                char c;
-                bool is_alnum;
-                do {
-                  if (ta->cursor_pos == (int)s.len) break;
-                  c = s.str[ta->cursor_pos];
-                  is_alnum = isalnum(c) || isspace(c);
-                  if (brsp_remove_utf8_after(&br->sp, ta->id, ta->cursor_pos) > 0) {
-                    ta->changed = true;
-                  }
-                  if (false == is_alnum) break;
-                  s = brsp_get(br->sp, ta->id);
-                  c = s.str[ta->cursor_pos];
-                  is_alnum = isalnum(c);
-                } while (ta->cursor_pos < (int)s.len && br->key.ctrl_down && is_alnum);
-              } break;
-              case BR_KEY_BACKSPACE: {
-                br_strv_t s = brsp_get(br->sp, ta->id);
-                char c;
-                bool is_alnum;
-                do {
-                  if (ta->cursor_pos == 0) break;
-                  ta->cursor_pos = br_strv_utf8_add(strv, ta->cursor_pos, -1);
-                  c = s.str[ta->cursor_pos];
-                  is_alnum = isalnum(c) || isspace(c);
-                  if (brsp_remove_utf8_after(&br->sp, ta->id, ta->cursor_pos) > 0) {
-                    ta->changed = true;
-                  }
-                  if (false == is_alnum) break;
-                  s = brsp_get(br->sp, ta->id);
-                  c = s.str[ta->cursor_pos - 1];
-                  is_alnum = isalnum(c);
-                } while (ta->cursor_pos > 0 && br->key.ctrl_down && is_alnum);
-              } break;
-              case BR_KEY_HOME: {
-                ta->cursor_pos = 0;
-                ta->changed = true;
-              } break;
-              case BR_KEY_END: {
-                ta->cursor_pos = (int)strv.len;
-                ta->changed = true;
-              } break;
-              case BR_KEY_TAB: {
-                if (ta->id == br->ui.fm_state.path_id) {
-                  if (br->key.ctrl_down) {
-                    if (br->ui.fm_state.select_index > 0) --br->ui.fm_state.select_index;
-                  } else {
-                    if (br->ui.fm_state.select_index < (int)br->ui.fm_state.cur_dir.len) ++br->ui.fm_state.select_index;
-                  }
-                  br->ui.fm_state.has_tabed = true;
-                }
-              } break;
-              case BR_KEY_ENTER: {
-                if (ta->id == br->ui.fm_state.path_id) {
-                  br->ui.fm_state.has_entered = true;
-                }
-              } break;
-              default: LOGI("text input %d (%d)", ev.key, ev.keycode); break;
-            }
+        else {
+          if (ev.key < 255)                br->key.down[ev.key] = true;
+          if (ev.key == BR_KEY_ESCAPE) {
+            br->action.active = br_plotter_entity_none;
+            brui_resizable_mouse_releasel(&br->resizables, br->mouse.pos);
           } else {
-            BR_TODO("active: %d", br->action.active);
+            if (br->action.active == br_plotter_entity_none ||
+                br->action.active == br_plotter_entity_plot_2d ||
+                br->action.active == br_plotter_entity_plot_3d) {
+              switch (ev.key) {
+                case BR_KEY_2: {
+                  br_plotter_switch_2d(br);
+                } break;
+                case BR_KEY_3: {
+                  br_plotter_switch_3d(br);
+                } break;
+                case BR_KEY_C: {
+                  if (br->hovered.active == br_plotter_entity_plot_2d ||
+                      br->hovered.active == br_plotter_entity_plot_3d) {
+                    if (br->key.shift_down) br_plotter_datas_deinit_in_plot(br, br->hovered.plot_id);
+                    else                    br_plotter_datas_empty_in_plot(br, br->hovered.plot_id);
+                  } else {
+                    if (br->key.shift_down) br_plotter_datas_deinit(br);
+                    else                    br_datas_empty(br->groups);
+                  }
+                } break;
+                case BR_KEY_F: {
+                  if (br->hovered.active == br_plotter_entity_plot_2d) {
+                    br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
+                    if (br->key.ctrl_down) br_plot_focus_visible(plot, br->groups);
+                    else                   plot->follow = !plot->follow;
+                  } else {
+                    BR_TODO("br->hovered.active: %d", br->hovered.active);
+                  }
+                } break;
+                case BR_KEY_H: {
+                  br->ui.help.show = !br->ui.help.show;
+                } break;
+                case BR_KEY_D: {
+                  if (br->hovered.active != br_plotter_entity_plot_3d) br->ui.theme.ui.debug = !br->ui.theme.ui.debug;
+                } break;
+                case BR_KEY_R: {
+                  if (br->hovered.active == br_plotter_entity_plot_2d) {
+                    br_plot_t* plot = br_da_getp(br->plots, br->hovered.plot_id);
+                    if (!br->key.ctrl_down) plot->dd.zoom.x = plot->dd.zoom.y = 1;
+                    if (!br->key.ctrl_down) plot->dd.offset.x = plot->dd.offset.y = 0;
+                  } else if (br->hovered.active == br_plotter_entity_plot_3d) {
+                    br_plot_t* plot = br_da_getp(br->plots, br->hovered.plot_id);
+                    br_plot_3d_t* pi3 = &plot->ddd;
+                    pi3->eye = BR_VEC3(0, 0, 100);
+                    pi3->target = BR_VEC3(0, 0, 0);
+                    pi3->up = BR_VEC3(0, 1, 0);
+                  }
+                } break;
+                case BR_KEY_T: {
+                  br_datas_add_test_points(&br->groups);
+                } break;
+                case BR_KEY_U: brui_log(true); break;
+                case BR_KEY_PAGE_UP: brui_resizable_page(&br->resizables, BR_VEC2(0, -1.f)); break;
+                case BR_KEY_PAGE_DOWN: brui_resizable_page(&br->resizables, BR_VEC2(0, 1.f)); break;
+                case BR_KEY_END: brui_resizable_scroll_percent_set(&br->resizables, 1.f); break;
+                case BR_KEY_HOME: brui_resizable_scroll_percent_set(&br->resizables, 0.f); break;
+                default: {
+                  LOGI("pressed %d (%d)", ev.key, ev.keycode);
+                } break;
+              }
+            } else if (br->action.active == br_plotter_entity_text_input) {
+              brui_action_text_t* ta = &brui_action()->args.text;
+              br_strv_t strv = brsp_get(br->sp, ta->id);
+
+              switch (ev.key) {
+                case BR_KEY_LEFT: {
+                  do {
+                    ta->cursor_pos = br_strv_utf8_add(strv, ta->cursor_pos, -1);
+                  } while (ta->cursor_pos > 0 && br->key.ctrl_down && isalnum(strv.str[ta->cursor_pos]));
+                } break;
+                case BR_KEY_RIGHT: {
+                  do {
+                    ta->cursor_pos = br_strv_utf8_add(strv, ta->cursor_pos, 1);
+                  } while (ta->cursor_pos < (int)strv.len && br->key.ctrl_down && isalnum(strv.str[ta->cursor_pos]));
+                } break;
+                case BR_KEY_ESCAPE: {
+                  brui_action()->kind = brui_action_none;
+                  br->action.active = br_plotter_entity_none;
+                } break;
+                case BR_KEY_DELETE: {
+                  ta->changed = brsp_remove_utf8_after(&br->sp, ta->id, ta->cursor_pos) > 0;
+                  br_strv_t s = brsp_get(br->sp, ta->id);
+                  char c;
+                  bool is_alnum;
+                  do {
+                    if (ta->cursor_pos == (int)s.len) break;
+                    c = s.str[ta->cursor_pos];
+                    is_alnum = isalnum(c) || isspace(c);
+                    if (brsp_remove_utf8_after(&br->sp, ta->id, ta->cursor_pos) > 0) {
+                      ta->changed = true;
+                    }
+                    if (false == is_alnum) break;
+                    s = brsp_get(br->sp, ta->id);
+                    c = s.str[ta->cursor_pos];
+                    is_alnum = isalnum(c);
+                  } while (ta->cursor_pos < (int)s.len && br->key.ctrl_down && is_alnum);
+                } break;
+                case BR_KEY_BACKSPACE: {
+                  br_strv_t s = brsp_get(br->sp, ta->id);
+                  char c;
+                  bool is_alnum;
+                  do {
+                    if (ta->cursor_pos == 0) break;
+                    ta->cursor_pos = br_strv_utf8_add(strv, ta->cursor_pos, -1);
+                    c = s.str[ta->cursor_pos];
+                    is_alnum = isalnum(c) || isspace(c);
+                    if (brsp_remove_utf8_after(&br->sp, ta->id, ta->cursor_pos) > 0) {
+                      ta->changed = true;
+                    }
+                    if (false == is_alnum) break;
+                    s = brsp_get(br->sp, ta->id);
+                    c = s.str[ta->cursor_pos - 1];
+                    is_alnum = isalnum(c);
+                  } while (ta->cursor_pos > 0 && br->key.ctrl_down && is_alnum);
+                } break;
+                case BR_KEY_HOME: {
+                  ta->cursor_pos = 0;
+                  ta->changed = true;
+                } break;
+                case BR_KEY_END: {
+                  ta->cursor_pos = (int)strv.len;
+                  ta->changed = true;
+                } break;
+                case BR_KEY_TAB: {
+                  if (ta->id == br->ui.fm_state.path_id) {
+                    if (br->key.ctrl_down) {
+                      if (br->ui.fm_state.select_index > 0) --br->ui.fm_state.select_index;
+                    } else {
+                      if (br->ui.fm_state.select_index < (int)br->ui.fm_state.cur_dir.len) ++br->ui.fm_state.select_index;
+                    }
+                    br->ui.fm_state.has_tabed = true;
+                  }
+                } break;
+                case BR_KEY_ENTER: {
+                  if (ta->id == br->ui.fm_state.path_id) {
+                    br->ui.fm_state.has_entered = true;
+                  }
+                } break;
+                default: LOGI("text input %d (%d)", ev.key, ev.keycode); break;
+              }
+            } else {
+              BR_TODO("active: %d, ev key: %d, keycode: %d", br->action.active, ev.key, ev.keycode);
+            }
           }
         }
       } break;

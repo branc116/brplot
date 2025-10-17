@@ -234,6 +234,8 @@ void __sanitizer_print_stack_trace(void);
 #elif defined(__EMSCRIPTEN__)
 #  define BR_GL_STATIC
 #  define BR_GLFW_STATIC
+#elif defined(_WIN32)
+#  define BR_HAS_WIN32 1
 #endif
 
 

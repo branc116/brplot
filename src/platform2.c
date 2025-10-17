@@ -112,6 +112,10 @@ static bool brpl_x11_open_window(brpl_window_t* window);
 static bool brpl_glfw_load(brpl_window_t* window);
 static bool brpl_glfw_open_window(brpl_window_t* window);
 #endif
+#if BR_HAS_WIN32
+static bool brpl_win32_load(brpl_window_t* window);
+static bool brpl_win32_open_window(brpl_window_t* window);
+#endif
 
 static BR_THREAD_LOCAL struct {
   uint64_t start;
@@ -132,6 +136,12 @@ bool brpl_window_open(brpl_window_t* window) {
     case brpl_window_glfw: {
       if (false == brpl_glfw_load(window)) return false;
       return brpl_glfw_open_window(window);
+    } break;
+#endif
+#if BR_HAS_WIN32
+    case brpl_window_win32: {
+      if (false == brpl_win32_load(window)) return false;
+      return brpl_win32_open_window(window);
     } break;
 #endif
     default: {
@@ -238,15 +248,15 @@ void* brpl_load_symbol(void* library, const char* name) {
 
 #if defined(_WIN32)
 void* brpl_load_gl(void* module, const char* func_name) {
-	void* ret = brpl_load_symbol(module, func_name);
-	if (NULL == ret) {
-		void* (*wglGetProcAddress_l)(const char* name) = brpl_load_symbol(module, "wglGetProcAddress");
-		if (NULL == wglGetProcAddress_l) {
-			LOGF("Failed to load GetProcAddress");
-		}
-		ret = wglGetProcAddress_l(func_name);
-	}
-	return ret;
+  void* ret = brpl_load_symbol(module, func_name);
+  if (NULL == ret) {
+    void* (*wglGetProcAddress_l)(const char* name) = brpl_load_symbol(module, "wglGetProcAddress");
+    if (NULL == wglGetProcAddress_l) {
+      LOGF("Failed to load GetProcAddress");
+    }
+    ret = wglGetProcAddress_l(func_name);
+  }
+  return ret;
 }
 #endif
 
@@ -274,23 +284,23 @@ brpl_event_t brpl_q_pop(brpl_q_t* q) {
 // -------------------------------
 #if BR_HAS_X11
 
-#define GLX_USE_GL		1
-#define GLX_BUFFER_SIZE		2
-#define GLX_LEVEL		3
-#define GLX_RGBA		4
-#define GLX_DOUBLEBUFFER	5
-#define GLX_STEREO		6
-#define GLX_AUX_BUFFERS		7
-#define GLX_RED_SIZE		8
-#define GLX_GREEN_SIZE		9
-#define GLX_BLUE_SIZE		10
-#define GLX_ALPHA_SIZE		11
-#define GLX_DEPTH_SIZE		12
-#define GLX_STENCIL_SIZE	13
-#define GLX_ACCUM_RED_SIZE	14
-#define GLX_ACCUM_GREEN_SIZE	15
-#define GLX_ACCUM_BLUE_SIZE	16
-#define GLX_ACCUM_ALPHA_SIZE	17
+#define GLX_USE_GL    1
+#define GLX_BUFFER_SIZE    2
+#define GLX_LEVEL    3
+#define GLX_RGBA    4
+#define GLX_DOUBLEBUFFER  5
+#define GLX_STEREO    6
+#define GLX_AUX_BUFFERS    7
+#define GLX_RED_SIZE    8
+#define GLX_GREEN_SIZE    9
+#define GLX_BLUE_SIZE    10
+#define GLX_ALPHA_SIZE    11
+#define GLX_DEPTH_SIZE    12
+#define GLX_STENCIL_SIZE  13
+#define GLX_ACCUM_RED_SIZE  14
+#define GLX_ACCUM_GREEN_SIZE  15
+#define GLX_ACCUM_BLUE_SIZE  16
+#define GLX_ACCUM_ALPHA_SIZE  17
 
 typedef struct brpl_window_x11_t {
   void* display;
@@ -358,8 +368,8 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
 
 #define GLX_DRAWABLE_TYPE 0x8010
 #define GLX_RENDER_TYPE 0x8011
-#define GLX_RGBA_BIT			0x00000001
-#define GLX_WINDOW_BIT			0x00000001
+#define GLX_RGBA_BIT      0x00000001
+#define GLX_WINDOW_BIT      0x00000001
     glXGetFBConfigAttrib(d, n, GLX_RENDER_TYPE, &value);
     if (!(value & GLX_RGBA_BIT)) continue;
 
@@ -685,8 +695,8 @@ void brpl_glfw_charfun(GLFWwindow* window, unsigned int codepoint) {
 static bool brpl_glfw_open_window(brpl_window_t* window) {
   bool ok = glfwInit();
   if (false == ok) {
-	  LOGE("Failed to initialize the glfw");
-	  return false;
+    LOGE("Failed to initialize the glfw");
+    return false;
   }
   glfwSetErrorCallback(brpl_glfw_error_callback);
   glfwDefaultWindowHints();
@@ -701,8 +711,8 @@ static bool brpl_glfw_open_window(brpl_window_t* window) {
 
   GLFWwindow* glfw_window = glfwCreateWindow(window->viewport.width, window->viewport.height, window->title, NULL, NULL);
   if (NULL == glfw_window) {
-	  LOGE("Failed to create glfw window");
-	  return false;
+    LOGE("Failed to create glfw window");
+    return false;
   }
   brpl_glfw_window_t* win = BR_CALLOC(1, sizeof(brpl_glfw_window_t));
   win->glfw = glfw_window;
@@ -719,13 +729,171 @@ static bool brpl_glfw_open_window(brpl_window_t* window) {
   glfwSetCharCallback(glfw_window, brpl_glfw_charfun);
   glfwMakeContextCurrent(glfw_window);
   if (false == br_gl_load()) {
-	  LOGE("Failed to load gl.");
-	  return false;
+    LOGE("Failed to load gl.");
+    return false;
   }
   brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_window_focused });
   return true;
 }
-#endif
+
+#endif // BR_HAS_GLFW
+
 // -------------------------------
 // END OF GLFW IMPL
+// -------------------------------
+
+// -------------------------------
+// WIN32 IMPL
+// -------------------------------
+#if BR_HAS_WIN32
+
+#pragma comment(lib, "user32")
+#pragma comment(lib, "gdi32")
+#pragma comment(lib, "opengl32")
+
+#include "src/br_threads.h"
+
+typedef struct brpl_win32_window_t {
+  GLFWwindow* glfw;
+  brpl_q_t q;
+  HANDLE event_window_create_done;
+  HWND hwnd;
+  HDC hdc;
+  PAINTSTRUCT ps;
+} brpl_win32_window_t;
+static BR_THREAD_LOCAL brpl_q_t* brpl_win32_q;
+
+
+static void brpl_win32_frame_start(brpl_window_t* win) {
+  BeginPaint(((brpl_win32_window_t*)win->win)->hwnd, &((brpl_win32_window_t*)win->win)->ps);
+}
+
+static void brpl_win32_frame_end(brpl_window_t* win) {
+  EndPaint(((brpl_win32_window_t*)win->win)->hwnd, &((brpl_win32_window_t*)win->win)->ps);
+  SwapBuffers(((brpl_win32_window_t*)win->win)->hdc);
+}
+
+static brpl_event_t brpl_win32_event_next(brpl_window_t* win) {
+  brpl_win32_window_t* gw = win->win;
+  brpl_event_t e = brpl_q_pop(&gw->q);
+  if (e.kind == brpl_event_none) return (brpl_event_t) { .kind = brpl_event_next_frame, .time = brpl_time() };
+  else if (e.kind == brpl_event_next_frame) return (brpl_event_t) { .kind = brpl_event_next_frame, .time = brpl_time() };
+  else return e;
+}
+
+static bool brpl_win32_load(brpl_window_t* window) {
+  window->f.frame_start = brpl_win32_frame_start;
+  window->f.frame_end   = brpl_win32_frame_end;
+  window->f.event_next  = brpl_win32_event_next;
+  return true;
+}
+
+LRESULT CALLBACK brpl_win32_event_callback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+  switch (uMsg) {
+    case WM_SIZE: {
+      int ww = LOWORD(lParam);
+      int wh = HIWORD(lParam);
+      brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_window_resize, .size = BR_SIZE((float)ww, (float)wh) });
+      return 1;
+    } break;
+    case WM_CLOSE: {
+      brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_close });
+    } break;
+    case WM_ERASEBKGND: {
+      return 1;
+    } break;
+    case WM_PAINT: {
+      return 1;
+      //brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_next_frame });
+    } break;
+    default: {
+      return DefWindowProcA(hwnd, uMsg, wParam, lParam);
+    } break;
+  }
+  return 0;
+}
+
+static unsigned long brpl_win32_window_event_loop(void* arg) {
+  brpl_window_t* win = arg;
+  brpl_win32_window_t* win32 = win->win;
+  bool success = true;
+  brpl_win32_q = &win32->q;
+
+  WNDCLASS wc = {0};
+  wc.style = 0; //CS_OWNDC;
+  wc.lpfnWndProc = brpl_win32_event_callback;
+  wc.hInstance = GetModuleHandleA(NULL);
+  wc.lpszClassName = win->title;
+  wc.hCursor = LoadCursorA(NULL, IDC_ARROW);
+  RegisterClassA(&wc);
+
+  HWND hwnd = CreateWindowExA( WS_EX_APPWINDOW, wc.lpszClassName, win->title,
+    WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_SIZEBOX,
+    CW_USEDEFAULT, CW_USEDEFAULT, win->viewport.width, win->viewport.height,
+    NULL, NULL, wc.hInstance, NULL
+  );
+
+  if (0 == hwnd) {
+    brpl_q_push(&win32->q, (brpl_event_t) { .kind = brpl_event_close });
+    BR_ERROR("Failed to create a window");
+  }
+
+  HDC hdc = GetDC(hwnd);
+  win32->hwnd = hwnd;
+  win32->hdc = hdc;
+  SetEvent(win32->event_window_create_done);
+
+  MSG msg;
+  while (false == win->should_close && GetMessageA(&msg, NULL, 0, 0)) {
+      TranslateMessage(&msg);
+      DispatchMessageA(&msg);
+  }
+  brpl_q_push(&win32->q, (brpl_event_t) { .kind = brpl_event_close });
+  goto done;
+
+error:
+  SetEvent(win32->event_window_create_done);  // Notify main thread
+
+done:
+  if (hwnd) ReleaseDC(hwnd, hdc);
+  return success == true;
+}
+
+static bool brpl_win32_open_window(brpl_window_t* window) {
+  brpl_win32_window_t* win32 = BR_CALLOC(1, sizeof(brpl_win32_window_t));
+  window->win = win32;
+  win32->event_window_create_done = CreateEventA(NULL, FALSE, FALSE, NULL);
+
+  br_thread_start(brpl_win32_window_event_loop, window);
+
+  WaitForSingleObject(win32->event_window_create_done, INFINITE);
+  CloseHandle(win32->event_window_create_done);
+
+  PIXELFORMATDESCRIPTOR pfd = {
+      sizeof(pfd), 1,
+      PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+      PFD_TYPE_RGBA, 24, 0,0,0,0,0,0,
+      0, 0, 0, 0,0,0,0,
+      16, 0, 0, PFD_MAIN_PLANE,
+      0, 0, 0, 0
+  };
+  int format = ChoosePixelFormat(win32->hdc, &pfd);
+  SetPixelFormat(win32->hdc, format, &pfd);
+  HGLRC hRC = wglCreateContext(win32->hdc);
+  wglMakeCurrent(win32->hdc, hRC);
+  void* opengl32 = brpl_load_library("opengl32.dll");
+  void* (*wglGetProcAddress_l)(const char* name) = brpl_load_symbol(opengl32, "wglGetProcAddress");
+  if (wglGetProcAddress_l) {
+    void (*wglSwapIntervalEXT)(int enable) = wglGetProcAddress_l("wglSwapIntervalEXT");
+    wglSwapIntervalEXT(1);
+  }
+  bool gl_loaded = br_gl_load();
+
+  return 0 != win32->hwnd && gl_loaded;
+}
+
+#endif // BR_HAS_WIN32
+
+// -------------------------------
+// END OF WIN32 IMPL
 // -------------------------------
