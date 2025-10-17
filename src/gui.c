@@ -5,7 +5,9 @@
 #include "src/br_da.h"
 #include "src/br_filesystem.h"
 #include "src/br_free_list.h"
-#define BR_WANTS_GL
+#if !defined(BR_WANTS_GL)
+#  define BR_WANTS_GL 1
+#endif
 #include "src/br_platform.h"
 #include "src/br_license.h"
 #include "src/br_math.h"

@@ -2,6 +2,7 @@
 #include "include/brplot.h"
 #include "external/shl_impls.c"
 #include "src/platform2.c"
+#include "src/threads.c"
 #include "src/data.c"
 #include "src/data_generator.c"
 #include "src/filesystem.c"
@@ -21,7 +22,6 @@
 #include "src/resampling.c"
 #include "src/theme.c"
 #include "src/ui.c"
-#include "src/threads.c"
 
 // cc -I. -o brploto tools/unity/brplot.c -lm
 

@@ -1,7 +1,9 @@
 #include <stdint.h>
 #include "src/br_pp.h"
 
-#define BR_WANTS_GL 1
+#if !defined(BR_WANTS_GL)
+#  define BR_WANTS_GL 1
+#endif
 
 #if defined(BR_HAS_GLFW)
 #  define BR_WANTS_GLFW 1
@@ -20,23 +22,23 @@
 #endif
 
 #if defined(BR_HAS_X11)
-#define BR_WANTS_X11 1
-#include "external/X11/Xlib.h"
-#include "external/X11/Xresource.h"
-#include "external/X11/Xutil.h"
-typedef Display* Displayp;
+#  define BR_WANTS_X11 1
+#  include "external/X11/Xlib.h"
+#  include "external/X11/Xresource.h"
+#  include "external/X11/Xutil.h"
+   typedef Display* Displayp;
 #endif
 
 #if defined(BR_HAS_GLX)
-#define BR_WANTS_GLX 1
-typedef struct __GLXcontext* GLXContext;
-typedef struct _GLXFBConfig _GLXFBConfig;
-typedef _GLXFBConfig *GLXFBConfig;
-typedef GLXFBConfig *GLXFBConfigs;
-typedef XID GLXWindow;
-typedef const char* ccharp_t;
-typedef XVisualInfo* XVisualInfop;
-typedef void* funcptr_t;
+#  define BR_WANTS_GLX 1
+   typedef struct __GLXcontext* GLXContext;
+   typedef struct _GLXFBConfig _GLXFBConfig;
+   typedef _GLXFBConfig *GLXFBConfig;
+   typedef GLXFBConfig *GLXFBConfigs;
+   typedef XID GLXWindow;
+   typedef const char* ccharp_t;
+   typedef XVisualInfo* XVisualInfop;
+   typedef void* funcptr_t;
 #endif
 
 #if defined(BR_HAS_WIN32)

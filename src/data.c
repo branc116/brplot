@@ -226,7 +226,7 @@ void br_data_deinit(br_data_t* g) {
 void br_datas_deinit(br_datas_t* datas) {
   if (datas->arr == NULL) return;
   brfl_foreach(i, *datas) br_data_deinit(&datas->arr[i]);
-  br_da_free(*datas);
+  brfl_free(*datas);
 }
 
 void br_datas_empty(br_datas_t datas) {

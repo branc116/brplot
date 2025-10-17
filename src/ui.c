@@ -7,7 +7,9 @@
 #include "src/br_text_renderer.h"
 #include "src/br_theme.h"
 #include "src/br_da.h"
-#define BR_WANTS_GL 1
+#if !defined(BR_WANTS_GL)
+#  define BR_WANTS_GL 1
+#endif
 #include "src/br_platform.h"
 #include "src/br_shaders.h"
 #include "src/br_free_list.h"

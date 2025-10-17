@@ -1,6 +1,8 @@
 #include "src/br_pp.h"
 #include "src/br_gl.h"
-#define BR_WANTS_GL 1
+#if !defined(BR_WANTS_GL)
+#  define BR_WANTS_GL 1
+#endif
 #include "src/br_platform.h"
 #include "src/br_str.h"
 #include "src/br_shaders.h"
