@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "src/br_pp.h"
+#include "src/br_threads.h"
 
 #if !defined(BR_WANTS_GL)
 #  define BR_WANTS_GL 1
@@ -763,8 +764,6 @@ static bool brpl_glfw_open_window(brpl_window_t* window) {
 #if BR_HAS_WIN32
 
 #pragma comment(lib, "user32")
-
-#include "src/br_threads.h"
 
 typedef struct brpl_win32_window_t {
   brpl_q_t q;
