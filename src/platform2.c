@@ -854,11 +854,13 @@ LRESULT CALLBACK brpl_win32_event_callback(HWND hwnd, UINT uMsg, WPARAM wParam, 
       brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_mouse_scroll, . vec = BR_VEC2(0, wd) });
       return 0;
     } break;
+#if defined(WM_MOUSEHWHEEL)
     case WM_MOUSEHWHEEL: {
       float wd = ((short)HIWORD(wParam)) / 120.f;
       brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_mouse_scroll, . vec = BR_VEC2(wd, 0) });
       return 0;
     } break;
+#endif
     case WM_SYSKEYDOWN:
     case WM_KEYDOWN:
       is_down = true;
