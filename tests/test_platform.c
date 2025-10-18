@@ -1,10 +1,9 @@
 #include "src/br_pp.h"
-#define BR_WANTS_GL 1
-#include "src/br_platform.h"
-#define BR_MEMORY_TRACER_IMPLEMENTATION
-#include "src/br_memory.h"
 #define BR_STR_IMPLMENTATION
 #include "src/br_str.h"
+#define BR_MEMORY_TRACER_IMPLEMENTATION
+#include "src/br_memory.h"
+#include "src/platform2.c"
 
 #include <stdlib.h>
 
@@ -13,13 +12,14 @@ int main(void) {
   int mouse_x = 0.f;
   brpl_window_t window = {
     .title = "Test",
-    .kind = brpl_window_glfw,
+    .kind = brpl_window_x11,
     .viewport = {
       .width = 800, .height = 600
     }
   };
 
-  BR_ASSERT(brpl_window_open(&window));
+  bool is_open = brpl_window_open(&window)
+  BR_ASSERT(is_open);
   while (false == window.should_close) {
     brpl_event_t event = brpl_event_next(&window);
     switch (event.kind) {

@@ -213,7 +213,7 @@ static void print_headless_impl(FILE* file, const char* module_name, func_t* fun
 
   for (uint32_t i = 0; i < len; ++i) {
     func_t f = funcs[i];
-    fprintf(file, "%.*s %s%.*s(", f.ret_type.len, prefix, f.ret_type.str, f.name.len, f.name.str);
+    fprintf(file, "%.*s %s%.*s(", f.ret_type.len, f.ret_type.str, prefix, f.name.len, f.name.str);
     if (f.params.len == 0) {
       fprintf(file, "void");
     } else {
@@ -229,6 +229,7 @@ static void print_headless_impl(FILE* file, const char* module_name, func_t* fun
     bool is_void = br_strv_eq(f.ret_type, br_strv_from_literal("void"));
     for (uint32_t j = 0; j < f.params.len; ++j) {
       fparam_t param = f.params.arr[j];
+      if (param.type.str[0] == '.') continue;
       fprintf(file, "(void)%.*s;\n", param.name.len, param.name.str);
     }
     if (is_void == false) {
@@ -236,7 +237,7 @@ static void print_headless_impl(FILE* file, const char* module_name, func_t* fun
     }
     fprintf(file, "}\n");
   }
-  fprintf(file, "void br_%s_load(void) {}\n", module_name);
+  fprintf(file, "bool br_%s_load(void) { return true; }\n", module_name);
 }
 
 static void print_tracy_impl(FILE* file, func_t* funcs, size_t len, const char* prefix) {
@@ -286,6 +287,7 @@ static void print_static_declarations(FILE* file, func_t* funcs, size_t len, con
   if (NULL == prefix) prefix = "";
   for (int i = 0; i <  len; ++i) {
     func_t f = funcs[i];
+
     fprintf(file, "%.*s %s%.*s(", f.ret_type.len, f.ret_type.str, prefix, f.name.len, f.name.str);
 
     if (f.params.len == 0) {
@@ -481,7 +483,6 @@ int do_gl_gen(const char* module, const char* module_upper, const char* load_fun
     fprintf(file_impl, "bool br_%s_load(void) { return true; }\n\n", module);
 
     fprintf(file_impl, "#elif defined(HEADLESS)\n");
-    fprintf(file_impl, "void br_%s_load(void) {}\n\n", module);
     print_headless_impl(file_impl, module, funcs.arr, funcs.len, prefix);
 
     fprintf(file_impl, "#elif defined(TRACY_ENABLE)\n");

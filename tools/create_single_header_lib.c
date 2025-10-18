@@ -33,10 +33,6 @@ typedef struct {
   size_t len, cap;
 } files_t;
 
-const char* source_files[] = {
-  "include/brplot.h"
-};
-
 bool has_visited(files_t all_visited, br_strv_t file) {
   for (size_t i = 0; i < all_visited.len; ++i) if (br_strv_eq(all_visited.arr[i], file)) return true;
   return false;
@@ -232,27 +228,27 @@ bool cshl_get_tokens(br_strv_t file_name, files_t* all_visited, cshl_tokens_t* t
   return true;
 }
 
-void fill_to_visit(files_t* to_visit) {
-  for (size_t i = 0; i < BR_ARR_LEN(source_files); ++i) {
+void fill_to_visit(files_t* to_visit, const char** source_files, int len) {
+  for (int i = 0; i < len; ++i) {
     br_da_push(*to_visit, br_strv_from_c_str(source_files[i]));
   }
 }
 
-int do_create_single_header_lib(void) {
+int do_create_single_header_lib(const char** source_files, int len, const char* output_file) {
   files_t to_visit = { 0 };
   files_t visited = { 0 };
 
   cshl_tokens_t tokens = { 0 };
-  fill_to_visit(&to_visit);
+  fill_to_visit(&to_visit, source_files, len);
 
   while (to_visit.len > 0) {
     cshl_get_tokens(to_visit.arr[to_visit.len - 1], &visited, &tokens, 0, false);
     --to_visit.len;
   }
   LOGI("Found %zu tokens, %zu files visited.", tokens.len, visited.len);
-  const char* out_amalgam = ".generated/brplot.c";
+  //const char* out_amalgam = ".generated/brplot.c";
   {
-    FILE* amalgam_file = fopen(out_amalgam, "wb");
+    FILE* amalgam_file = fopen(output_file, "wb");
     for (size_t i = 0; i < tokens.len; ++i) {
       cshl_token_t token = tokens.arr[i];
       if (token.kind == cshl_token_kind_include) {
@@ -264,29 +260,25 @@ int do_create_single_header_lib(void) {
       }
     }
     fclose(amalgam_file);
-    LOGI("Generated: %s", out_amalgam);
-  }
-  {
-    const char* out_dependencies = ".generated/brplot.c.d";
-    FILE* dependencies = fopen(out_dependencies, "wb+");
-    fprintf(dependencies, "%s: \\\n", out_amalgam);
-    for (size_t i = 0; i < tokens.len; ++i) {
-      cshl_token_t token = tokens.arr[i];
-      if (token.kind == cshl_token_kind_include) {
-        fprintf(dependencies, "\t%.*s \\\n", token.include_path.len, token.include_path.str);
-      }
-    }
-    fprintf(dependencies, "\n");
-    fclose(dependencies);
-    LOGI("Generated: %s", out_dependencies);
+    LOGI("Generated: %s", output_file);
   }
   return 0;
 }
 
 #if !defined(BR_CREATE_SINGLE_HEADER_LIB_NO_MAIN)
-int main(void) {
-  return do_create_single_header_lib();
+int main(int argc, const char** argv) {
+  if (argc < 3) {
+    LOGE("Missing argumentes!");
+    LOGF("Usage: %s <input files>... <output file>", argv[0]);
+    return 1;
+  } else {
+    const char** input_files = &argv[1];
+    int input_files_n = argc - 2;
+    const char* output_file = argv[argc - 1];
+    return do_create_single_header_lib(input_files, input_files_n, output_file);
+  }
 }
+void br_on_fatal_error(void) { abort(); }
 #endif
 
 // cc -DBR_DEBUG -Wall -Wextra -Wpedantic -g -I. -o bin/cshl tools/create_single_header_lib.c && ./bin/cshl

@@ -952,12 +952,10 @@ static bool n_amalgam_do(void) {
   Nob_Cmd cmd = { 0 };
   if (false == n_generate_do()) return false;
 
-  const char* run_cmd_bin = "build/cshl" EXE_EXT;
-  const char* run_cmd_src = "tools/create_single_header_lib.c";
-  nob_cmd_append(&cmd, NOB_REBUILD_URSELF(run_cmd_bin, run_cmd_src));
-  if (false == nob_cmd_run_cache(&cmd)) return false;
+  const char* output = compiler_single_file_exe(p_native, "tools/create_single_header_lib.c", "bin/cshl");
+  if (NULL == output) return false;
 
-  nob_cmd_append(&cmd, run_cmd_bin);
+  nob_cmd_append(&cmd, output, "tools/unity/brplot.c", ".generated/brplot.c");
   if (false == nob_cmd_run_cache(&cmd)) return false;
 
   nob_cmd_free(cmd);
