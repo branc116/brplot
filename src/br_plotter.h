@@ -116,6 +116,7 @@ typedef struct br_plotter_t {
       bool show;
     } memory;
     bool dark_theme;
+    bool multisampling;
     bool expand_file;
     bool expand_plots;
     bool expand_optimizations;

@@ -127,6 +127,16 @@ void brgl_disable_clip_distance(void) {
   brgl_disable(GL_CLIP_DISTANCE0 + 3);
 }
 
+static BR_THREAD_LOCAL bool brgl_g_enable_multisampling = false;
+#define GL_MULTISAMPLE 0x809D
+void brgl_enable_multisampling(void) {
+  brgl_g_enable_multisampling = true;
+}
+
+void brgl_disable_multisampling(void) {
+  brgl_g_enable_multisampling = false;
+}
+
 #define BR_FRAMEBUFFERS 16
 #define BR_FRAMEBUFFER_STACK 16
 static BR_THREAD_LOCAL struct {
@@ -162,6 +172,9 @@ GLuint brgl_load_texture(const void* data, int width, int height, int format) {
 #endif
 
   glBindTexture(GL_TEXTURE_2D, 0);
+
+  if (brgl_g_enable_multisampling) brgl_enable(GL_MULTISAMPLE);
+  else                             brgl_disable(GL_MULTISAMPLE);
 
   return id;
 }

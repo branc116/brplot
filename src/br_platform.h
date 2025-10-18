@@ -200,6 +200,8 @@ struct brpl_window_t {
     void (*frame_start)(brpl_window_t* window);
     void (*frame_end)(brpl_window_t* window);
     brpl_event_t (*event_next)(brpl_window_t* window);
+    bool (*window_open)(brpl_window_t* window);
+    void (*window_close)(brpl_window_t* window);
   } f;
   // Data that specific windowing backend is using
   void* win;

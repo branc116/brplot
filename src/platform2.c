@@ -1,6 +1,8 @@
-#include <stdint.h>
 #include "src/br_pp.h"
 #include "src/br_threads.h"
+
+#include <stdint.h>
+#include <assert.h>
 
 #if !defined(BR_WANTS_GL)
 #  define BR_WANTS_GL 1
@@ -123,15 +125,12 @@ const char* br_glfw_library_names[] = {
 static void brpl_time_init(void);
 #if BR_HAS_X11
 static bool brpl_x11_load(brpl_window_t* window);
-static bool brpl_x11_open_window(brpl_window_t* window);
 #endif
 #if BR_HAS_GLFW
 static bool brpl_glfw_load(brpl_window_t* window);
-static bool brpl_glfw_open_window(brpl_window_t* window);
 #endif
 #if BR_HAS_WIN32
 static bool brpl_win32_load(brpl_window_t* window);
-static bool brpl_win32_open_window(brpl_window_t* window);
 #endif
 
 static BR_THREAD_LOCAL struct {
@@ -142,33 +141,24 @@ static BR_THREAD_LOCAL struct {
 
 bool brpl_window_open(brpl_window_t* window) {
   brpl_time_init();
+  bool loaded = false;
   switch (window->kind) {
 #if BR_HAS_X11
-    case brpl_window_x11: {
-      if (false == brpl_x11_load(window)) return false;
-      return brpl_x11_open_window(window);
-    } break;
+    case brpl_window_x11: loaded = brpl_x11_load(window); break;
 #endif
 #if BR_HAS_GLFW
-    case brpl_window_glfw: {
-      if (false == brpl_glfw_load(window)) return false;
-      return brpl_glfw_open_window(window);
-    } break;
+    case brpl_window_glfw: loaded = brpl_glfw_load(window); break;
 #endif
 #if BR_HAS_WIN32
-    case brpl_window_win32: {
-      if (false == brpl_win32_load(window)) return false;
-      return brpl_win32_open_window(window);
-    } break;
+    case brpl_window_win32: loaded = brpl_glfw_load(window); break;
 #endif
-    default: {
-      LOGF("Unknown kind: %d", window->kind);
-      return false;
-    } break;
+    default: LOGE("Unknown kind: %d", window->kind); break;
   }
+  return loaded && window->f.window_open && window->f.window_open(window);
 }
+
 bool brpl_window_close(brpl_window_t* window) {
-  BR_TODO("brpl_window_close");
+  window->f.window_close(window);
 }
 
 void brpl_frame_start(brpl_window_t* window) {
@@ -277,47 +267,28 @@ void* brpl_load_gl(void* module, const char* func_name) {
 }
 #endif
 
-#include <assert.h>                                               
-void brpl_q_push(brpl_q_t* q, brpl_event_t event) {               
-  int index = q->write_index;                                     
-  q->events[index] = event;                                       
+void brpl_q_push(brpl_q_t* q, brpl_event_t event) {
+  int index = q->write_index;
+  q->events[index] = event;
   static_assert(sizeof(q->events) / sizeof(q->events[0]) == 1024, "events queue must be 1024 or changed the bit patter on the nextline");
   int next_index = (index + 1) & 0x2FF;
   BR_ASSERT(next_index != q->read_index);
   q->write_index = next_index;
-}                                                                 
-                                                                  
-brpl_event_t brpl_q_pop(brpl_q_t* q) {                            
+}
+
+brpl_event_t brpl_q_pop(brpl_q_t* q) {
   if (q->read_index == q->write_index) return (brpl_event_t) { .kind = brpl_event_none };
   int index = q->read_index;
   brpl_event_t ret = q->events[index];
   static_assert(sizeof(q->events) / sizeof(q->events[0]) == 1024, "events queue must be 1024 or changed the bit patter on the next line");
-  q->read_index = (index + 1) & 0x2FF;                            
-  return ret;                                                     
-}                                                                 
+  q->read_index = (index + 1) & 0x2FF;
+  return ret;
+}
 
 // -------------------------------
 // X11 IMPL
 // -------------------------------
 #if BR_HAS_X11
-
-#define GLX_USE_GL    1
-#define GLX_BUFFER_SIZE    2
-#define GLX_LEVEL    3
-#define GLX_RGBA    4
-#define GLX_DOUBLEBUFFER  5
-#define GLX_STEREO    6
-#define GLX_AUX_BUFFERS    7
-#define GLX_RED_SIZE    8
-#define GLX_GREEN_SIZE    9
-#define GLX_BLUE_SIZE    10
-#define GLX_ALPHA_SIZE    11
-#define GLX_DEPTH_SIZE    12
-#define GLX_STENCIL_SIZE  13
-#define GLX_ACCUM_RED_SIZE  14
-#define GLX_ACCUM_GREEN_SIZE  15
-#define GLX_ACCUM_BLUE_SIZE  16
-#define GLX_ACCUM_ALPHA_SIZE  17
 
 typedef struct brpl_window_x11_t {
   void* display;
@@ -332,120 +303,8 @@ typedef struct brpl_window_x11_t {
   XIM im;
   XIC ic;
 
-  Atom NET_WM_NAME;
-  Atom UTF8_STRING;
-  Atom NET_WM_ICON_NAME;
+  Atom WM_DELETE_WINDOW;
 } brpl_window_x11_t;
-
-static bool brpl_x11_open_window(brpl_window_t* window) {
-  brpl_window_x11_t x11 = { 0 };
-  void* d = x11.display = XOpenDisplay(NULL);
-  if (NULL == x11.display) {
-    LOGE("Failed to open x11 window. display is null.");
-    return false;
-  }
-  x11.NET_WM_NAME = XInternAtom(d, "_NET_WM_NAME", false);
-  x11.UTF8_STRING = XInternAtom(d, "UTF8_STRING", false);
-  x11.NET_WM_ICON_NAME = XInternAtom(d, "_NET_WM_ICON_NAME", false);
-  x11.screen = DefaultScreen(x11.display);
-  x11.root = RootWindow(x11.display, x11.screen);
-  x11.context = XrmUniqueQuark();
-
-  Visual* visual = DefaultVisual(x11.display, x11.screen);
-  int depth = DefaultDepth(x11.display, x11.screen);
-  XSetWindowAttributes wa = { 0 };
-  wa.event_mask = StructureNotifyMask | KeyPressMask | KeyReleaseMask |
-                  PointerMotionMask | ButtonPressMask | ButtonReleaseMask |
-                  ExposureMask | FocusChangeMask | VisibilityChangeMask |
-                  EnterWindowMask | LeaveWindowMask | PropertyChangeMask;
-  br_i32 xpos = 0, ypos = 0;
-  br_u32 width = 800, height = 600;
-  x11.window_handle = XCreateWindow(x11.display,
-                                    x11.root,
-                                    xpos, ypos,
-                                    width, height,
-                                    0,      // Border width
-                                    depth,  // Color depth
-                                    InputOutput,
-                                    visual,
-                                    CWBorderPixel | CWColormap | CWEventMask,
-                                    &wa);
-  if (0 == x11.window_handle) return false;
-
-  int major, minor;
-  if (!glXQueryVersion(d, &major, &minor)) return false;
-
-  int native_count = 0;
-  int valid_count = 0;
-  int last_good = 0;
-  GLXFBConfigs nativeConfigs = glXGetFBConfigs(d, x11.screen, &native_count);
-  for (int i = 0; i < native_count; ++i) {
-    GLXFBConfig n = nativeConfigs[i];
-    int value = 0;
-
-#define GLX_DRAWABLE_TYPE 0x8010
-#define GLX_RENDER_TYPE 0x8011
-#define GLX_RGBA_BIT      0x00000001
-#define GLX_WINDOW_BIT      0x00000001
-    glXGetFBConfigAttrib(d, n, GLX_RENDER_TYPE, &value);
-    if (!(value & GLX_RGBA_BIT)) continue;
-
-    glXGetFBConfigAttrib(d, n, GLX_DRAWABLE_TYPE, &value);
-    if (!(value & GLX_WINDOW_BIT)) continue;
-
-    glXGetFBConfigAttrib(d, n, GLX_DOUBLEBUFFER, &value);
-    if (!value) continue;
-
-    last_good = i;
-    valid_count += 1;
-  }
-  if (0 == native_count) return false;
-
-#define GLX_RGBA_TYPE 0x8014
-  x11.glx_ctx = glXCreateNewContext(d, nativeConfigs[last_good], GLX_RGBA_TYPE, NULL, True);
-  if (0 == x11.glx_ctx) return false;
-
-  x11.glx_window = glXCreateWindow(x11.display, nativeConfigs[last_good], x11.window_handle, NULL);
-  XFree(nativeConfigs);
-  bool isOk = glXMakeCurrent(x11.display, x11.glx_window, x11.glx_ctx);
-  if (false == isOk) return false;
-
-  const char* title = window->title;
-  if (title == NULL) title = "Brpl";
-  int title_len = (int)strlen(title);
-  Xutf8SetWMProperties(x11.display,
-                       x11.window_handle,
-                       title, title,
-                       NULL, 0,
-                       NULL, NULL, NULL);
-
-  XChangeProperty(x11.display,  x11.window_handle,
-                  x11.NET_WM_NAME, x11.UTF8_STRING, 8,
-                  PropModeReplace,
-                  (unsigned char*) title, title_len);
-
-  XChangeProperty(x11.display,  x11.window_handle,
-                  x11.NET_WM_ICON_NAME, x11.UTF8_STRING, 8,
-                  PropModeReplace,
-                  (unsigned char*) title, title_len);
-  XMapWindow(d, x11.window_handle);
-  XFlush(d);
-
-  x11.im = XOpenIM(x11.display, 0, NULL, NULL);
-  x11.ic = XCreateIC(x11.im,
-                     XNInputStyle,
-                     XIMPreeditNothing | XIMStatusNothing,
-                     XNClientWindow,
-                     x11.window_handle,
-                     XNFocusWindow,
-                     x11.window_handle,
-                     NULL);
-
-  brpl_window_x11_t* win = BR_MALLOC(sizeof(brpl_window_x11_t));
-  memcpy(win, &x11, sizeof(x11));
-  window->win = win;
-  return true;
-}
 
 static void brpl_x11_frame_start(brpl_window_t* window) {
   (void)window;
@@ -456,32 +315,7 @@ static void brpl_x11_frame_end(brpl_window_t* window) {
   glXSwapBuffers(w->display, w->glx_window);
 }
 
-static int brpl_x11_keysym(XEvent event) {
-  int keysym = XLookupKeysym(&event.xkey, 0);
-  if (keysym >= 'a' && keysym <= 'z') {
-    return keysym - 0x20;
-  }
-  switch (keysym) {
-    case 0xFF08: return BR_KEY_BACKSPACE;
-    case 0xFF09: return BR_KEY_TAB;
-    case 0xFF0D: return BR_KEY_ENTER;
-    case 0xFF50: return BR_KEY_HOME;
-    case 0xFF51: return BR_KEY_LEFT;
-    case 0xFF52: return BR_KEY_UP;
-    case 0xFF53: return BR_KEY_RIGHT;
-    case 0xFF54: return BR_KEY_DOWN;
-    case 0xFF55: return BR_KEY_PAGE_UP;
-    case 0xFF56: return BR_KEY_PAGE_DOWN;
-    case 0xFF57: return BR_KEY_END;
-    case 0xFF1B: return BR_KEY_ESCAPE;
-    case 0xFFE1: return BR_KEY_LEFT_SHIFT;
-    case 0xFFE3: return BR_KEY_LEFT_CONTROL;
-    case 0xFFE7: return BR_KEY_LEFT_ALT;
-    case 0xFFFF: return BR_KEY_DELETE;
-    default: return keysym;
-  }
-}
-
+static int brpl_x11_keysym(XEvent event);
 static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
   // TODO: Move this struct to a window_x11_t struct;
   static BR_THREAD_LOCAL struct {
@@ -603,12 +437,177 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
     case Expose: {
       return (brpl_event_t) { .kind = brpl_event_nop };
     } break;
+    case ClientMessage: {
+      if (event.xclient.data.l[0] == w->WM_DELETE_WINDOW) {
+        return (brpl_event_t) { .kind = brpl_event_close };
+      } else {
+        return (brpl_event_t) { .kind = brpl_event_nop };
+      }
+    } break;
     default: {
-      LOGI("Unknown x11 event type: %d", event.type); 
+      LOGI("Unknown x11 event type: %d", event.type);
     } break;
   }
 
   return (brpl_event_t) { .kind = brpl_event_next_frame, .time = brpl_time() };
+}
+
+int brpl_x11_error_callback(Display* d, XErrorEvent* e) {
+    char err_text[1024];
+    XGetErrorText(d, e->error_code, err_text, sizeof(err_text));
+    LOGE("X Error: %s", err_text);
+    return 0;
+}
+
+static bool brpl_x11_open_window(brpl_window_t* window) {
+  brpl_window_x11_t x11 = { 0 };
+  XSetErrorHandler(brpl_x11_error_callback);
+  void* d = x11.display = XOpenDisplay(NULL);
+  if (NULL == x11.display) {
+    LOGE("Failed to open x11 window. display is null.");
+    return false;
+  }
+  x11.WM_DELETE_WINDOW = XInternAtom(d, "WM_DELETE_WINDOW", false);
+  x11.screen = DefaultScreen(x11.display);
+  x11.root = RootWindow(x11.display, x11.screen);
+  x11.context = XrmUniqueQuark();
+
+  Visual* visual = DefaultVisual(x11.display, x11.screen);
+  int depth = DefaultDepth(x11.display, x11.screen);
+  XSetWindowAttributes wa = { 0 };
+  wa.event_mask = StructureNotifyMask | KeyPressMask | KeyReleaseMask |
+                  PointerMotionMask | ButtonPressMask | ButtonReleaseMask |
+                  ExposureMask | FocusChangeMask | VisibilityChangeMask |
+                  EnterWindowMask | LeaveWindowMask | PropertyChangeMask;
+  br_i32 xpos = 0, ypos = 0;
+  br_u32 width = 800, height = 600;
+  x11.window_handle = XCreateWindow(x11.display,
+                                    x11.root,
+                                    xpos, ypos,
+                                    width, height,
+                                    0,      // Border width
+                                    depth,  // Color depth
+                                    InputOutput,
+                                    visual,
+                                    CWBorderPixel | CWColormap | CWEventMask,
+                                    &wa);
+  if (0 == x11.window_handle) return false;
+
+  int major, minor;
+  if (!glXQueryVersion(d, &major, &minor)) return false;
+
+#define GLX_DOUBLEBUFFER	5
+#define GLX_RED_SIZE		8
+#define GLX_GREEN_SIZE		9
+#define GLX_BLUE_SIZE		10
+#define GLX_ALPHA_SIZE		11
+#define GLX_DEPTH_SIZE		12
+#define GLX_STENCIL_SIZE	13
+#define GLX_RENDER_TYPE			0x8011
+#define GLX_DRAWABLE_TYPE		0x8010
+#define GLX_RGBA_BIT			0x00000001
+#define GLX_WINDOW_BIT			0x00000001
+#define GLX_X_RENDERABLE		0x8012
+#define GLX_SAMPLE_BUFFERS              0x186a0 /*100000*/
+#define GLX_SAMPLES         0x186a1 /*100001*/
+#define GLX_RGBA_TYPE 0x8014
+#define GLX_X_VISUAL_TYPE		0x22
+#define GLX_TRUE_COLOR			0x8002
+
+  const int attrib_list[] = {
+    GLX_X_RENDERABLE,	1,
+    GLX_DOUBLEBUFFER, 1,
+    GLX_RED_SIZE, 8,
+    GLX_GREEN_SIZE, 8,
+    GLX_BLUE_SIZE, 8,
+    GLX_ALPHA_SIZE, 8,
+    GLX_DEPTH_SIZE, 24,
+    GLX_STENCIL_SIZE, 8,
+    GLX_RENDER_TYPE, GLX_RGBA_BIT,
+    GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
+    GLX_SAMPLE_BUFFERS, 1,
+    GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
+    GLX_SAMPLES, 4,
+    0
+  };
+
+  int out_ret = 0;
+  GLXFBConfigs config = glXChooseFBConfig(d, x11.screen, attrib_list, &out_ret);
+  if (out_ret == 0 || NULL == config) return false;
+  XVisualInfo* glx_visual = glXGetVisualFromFBConfig(d, config[0]);
+  if (NULL == glx_visual) return false;
+
+  x11.glx_ctx = glXCreateContext(d, glx_visual, NULL, true);
+  if (0 == x11.glx_ctx) return false;
+
+  x11.glx_window = glXCreateWindow(x11.display, config[0], x11.window_handle, NULL);
+  bool isOk = glXMakeCurrent(x11.display, x11.glx_window, x11.glx_ctx);
+  if (false == isOk) return false;
+
+  const char* title = window->title;
+  if (title == NULL) title = "Brpl";
+  int title_len = (int)strlen(title);
+  Xutf8SetWMProperties(x11.display,
+                       x11.window_handle,
+                       title, title,
+                       NULL, 0,
+                       NULL, NULL, NULL);
+
+  XSetWMProtocols(x11.display, x11.window_handle, &x11.WM_DELETE_WINDOW, 1);
+  XMapWindow(d, x11.window_handle);
+  XFlush(d);
+
+  x11.im = XOpenIM(x11.display, 0, NULL, NULL);
+  x11.ic = XCreateIC(x11.im,
+                     XNInputStyle,
+                     XIMPreeditNothing | XIMStatusNothing,
+                     XNClientWindow,
+                     x11.window_handle,
+                     XNFocusWindow,
+                     x11.window_handle,
+                     NULL);
+
+  brpl_window_x11_t* win = BR_MALLOC(sizeof(brpl_window_x11_t));
+  memcpy(win, &x11, sizeof(x11));
+  window->win = win;
+  return true;
+}
+
+static void brpl_x11_close_window(brpl_window_t* window) {
+  brpl_window_x11_t* win = window->win;
+  glXMakeCurrent(win->display, None, NULL);
+  glXDestroyWindow(win->display, win->glx_window);
+  glXDestroyContext(win->display, win->glx_ctx);
+  XDestroyWindow(win->display, win->window_handle);
+  XFlush(win->display);
+  XCloseDisplay(win->display);
+  BR_FREE(win);
+}
+
+static int brpl_x11_keysym(XEvent event) {
+  int keysym = XLookupKeysym(&event.xkey, 0);
+  if (keysym >= 'a' && keysym <= 'z') {
+    return keysym - 0x20;
+  }
+  switch (keysym) {
+    case 0xFF08: return BR_KEY_BACKSPACE;
+    case 0xFF09: return BR_KEY_TAB;
+    case 0xFF0D: return BR_KEY_ENTER;
+    case 0xFF50: return BR_KEY_HOME;
+    case 0xFF51: return BR_KEY_LEFT;
+    case 0xFF52: return BR_KEY_UP;
+    case 0xFF53: return BR_KEY_RIGHT;
+    case 0xFF54: return BR_KEY_DOWN;
+    case 0xFF55: return BR_KEY_PAGE_UP;
+    case 0xFF56: return BR_KEY_PAGE_DOWN;
+    case 0xFF57: return BR_KEY_END;
+    case 0xFF1B: return BR_KEY_ESCAPE;
+    case 0xFFE1: return BR_KEY_LEFT_SHIFT;
+    case 0xFFE3: return BR_KEY_LEFT_CONTROL;
+    case 0xFFE7: return BR_KEY_LEFT_ALT;
+    case 0xFFFF: return BR_KEY_DELETE;
+    default: return keysym;
+  }
 }
 
 static bool brpl_x11_load(brpl_window_t* win) {
@@ -617,9 +616,12 @@ static bool brpl_x11_load(brpl_window_t* win) {
     win->f.frame_start = brpl_x11_frame_start;
     win->f.frame_end =   brpl_x11_frame_end;
     win->f.event_next =  brpl_x11_event_next;
+    win->f.window_open =  brpl_x11_open_window;
+    win->f.window_close =  brpl_x11_close_window;
   }
   return ok;
 }
+
 #endif
 
 // -------------------------------
@@ -653,15 +655,6 @@ static brpl_event_t brpl_glfw_event_next(brpl_window_t* win) {
   else return e;
 }
 
-// /usr/include/GLFW/glfw3.h
-static bool brpl_glfw_load(brpl_window_t* win) {
-  bool ok = br_glfw_load();
-  win->f.frame_start = brpl_glfw_frame_start;
-  win->f.frame_end   = brpl_glfw_frame_end;
-  win->f.event_next  = brpl_glfw_event_next;
-  return ok;
-}
-
 static void brpl_glfw_error_callback(int error_code, const char* description) {
   LOGE("GLFW error %d: %s", error_code, description);
 }
@@ -689,26 +682,26 @@ static void brpl_glfw_mousebuttonfun(GLFWwindow* window, int button, int action,
   int key  = button == 0 ? 0 : 3;
   brpl_q_push(&win->q, (brpl_event_t) { .kind = ev, .mouse_key = key });
 }
-void brpl_glfw_cursorposfun(GLFWwindow* window, double xpos, double ypos) {
+static void brpl_glfw_cursorposfun(GLFWwindow* window, double xpos, double ypos) {
   brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
   brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_mouse_move, .pos = BR_VEC2((float)xpos, (float)ypos) });
 }
-void brpl_glfw_scrollfun(GLFWwindow* window, double xoffset, double yoffset) {
+static void brpl_glfw_scrollfun(GLFWwindow* window, double xoffset, double yoffset) {
   brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
   brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_mouse_scroll, .vec = BR_VEC2((float)xoffset, (float)yoffset) });
 }
-void brpl_glfw_keyfun(GLFWwindow* window, int key, int scancode, int action, int mods) {
+static void brpl_glfw_keyfun(GLFWwindow* window, int key, int scancode, int action, int mods) {
   (void)mods;
   brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
   brpl_event_kind_t event = action == 0 ? brpl_event_key_release : brpl_event_key_press;
   brpl_q_push(&win->q, (brpl_event_t) { .kind = event, .key = key, .keycode = scancode });
 }
-void brpl_glfw_charfun(GLFWwindow* window, unsigned int codepoint) {
+static void brpl_glfw_charfun(GLFWwindow* window, unsigned int codepoint) {
   brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
   brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_input, .utf8_char = codepoint });
 }
 
-static bool brpl_glfw_open_window(brpl_window_t* window) {
+static bool brpl_glfw_window_open(brpl_window_t* window) {
   bool ok = glfwInit();
   if (false == ok) {
     LOGE("Failed to initialize the glfw");
@@ -716,7 +709,7 @@ static bool brpl_glfw_open_window(brpl_window_t* window) {
   }
   glfwSetErrorCallback(brpl_glfw_error_callback);
   glfwDefaultWindowHints();
-#if !defined(__EMSCRIPTEN__) 
+#if !defined(__EMSCRIPTEN__)
 #define GLFW_CONTEXT_VERSION_MAJOR  0x00022002
 #define GLFW_CONTEXT_VERSION_MINOR  0x00022003
 #define GLFW_OPENGL_FORWARD_COMPAT  0x00022006
@@ -752,6 +745,21 @@ static bool brpl_glfw_open_window(brpl_window_t* window) {
   return true;
 }
 
+void brpl_glfw_window_close(brpl_window_t* window) {
+  BR_TODO("brpl_glfw_window_close");
+}
+
+// /usr/include/GLFW/glfw3.h
+static bool brpl_glfw_load(brpl_window_t* win) {
+  bool ok = br_glfw_load();
+  win->f.frame_start = brpl_glfw_frame_start;
+  win->f.frame_end   = brpl_glfw_frame_end;
+  win->f.event_next  = brpl_glfw_event_next;
+  win->f.window_open = brpl_glfw_window_open;
+  win->f.window_close = brpl_glfw_window_close;
+  return ok;
+}
+
 #endif // BR_HAS_GLFW
 
 // -------------------------------
@@ -762,8 +770,6 @@ static bool brpl_glfw_open_window(brpl_window_t* window) {
 // WIN32 IMPL
 // -------------------------------
 #if BR_HAS_WIN32
-
-#pragma comment(lib, "user32")
 
 typedef struct brpl_win32_window_t {
   brpl_q_t q;
@@ -799,30 +805,23 @@ static bool brpl_win32_load(brpl_window_t* window) {
 LRESULT CALLBACK brpl_win32_event_callback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
   brpl_event_t ev;
   bool release = 0;
-  bool result = true;
   bool is_down = false;
   switch (uMsg) {
     case WM_SIZE: {
       int ww = LOWORD(lParam);
       int wh = HIWORD(lParam);
       brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_window_resize, .size = BR_SIZE((float)ww, (float)wh) });
-      return 1;
     } break;
     case WM_CLOSE: {
       brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_close });
     } break;
-    case WM_ERASEBKGND: {
-      return 1;
-    } break;
-    case WM_PAINT: {
-      return 1;
-    } break;
-
+    case WM_ERASEBKGND: break;
+    case WM_PAINT:      break;
     case WM_LBUTTONUP:
     case WM_MBUTTONUP:
     case WM_RBUTTONUP: {
       release = 1;
-    } // fallthrough;
+    } BR_FALLTHROUGH;
     case WM_LBUTTONDOWN:
     case WM_MBUTTONDOWN:
     case WM_RBUTTONDOWN: {
@@ -836,38 +835,28 @@ LRESULT CALLBACK brpl_win32_event_callback(HWND hwnd, UINT uMsg, WPARAM wParam, 
       brpl_q_push(brpl_win32_q, ev);
     } break;
     case WM_MOUSEMOVE: {
-      RECT rcClient, rcWind;
-      POINT ptDiff;
-      GetClientRect(hwnd, &rcClient);
-      GetWindowRect(hwnd, &rcWind);
-      ptDiff.x = (rcWind.right - rcWind.left) - rcClient.right;
-      ptDiff.y = (rcWind.bottom - rcWind.top) - rcClient.bottom;
       br_vec2_t pos = BR_VEC2(LOWORD(lParam), HIWORD(lParam));
-      LOGI("client: %d %d | window: %d %d | mouse: %f %f", rcClient.left, rcClient.right, rcWind.left, rcWind.right, pos.x, pos.y);
-      //LOGI("%d %d", ptDiff.x, ptDiff.y);
       brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_mouse_move, .pos = pos });
-      return 0;
     } break;
     case WM_MOUSEWHEEL: {
       float wd = ((short)HIWORD(wParam)) / 120.f;
       brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_mouse_scroll, . vec = BR_VEC2(0, wd) });
-      return 0;
     } break;
 #if defined(WM_MOUSEHWHEEL)
     case WM_MOUSEHWHEEL: {
       float wd = ((short)HIWORD(wParam)) / 120.f;
       brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_mouse_scroll, . vec = BR_VEC2(wd, 0) });
-      return 0;
     } break;
 #endif
     case WM_SYSKEYDOWN:
-    case WM_KEYDOWN:
+    case WM_KEYDOWN: {
       is_down = true;
+    } BR_FALLTHROUGH;
     case WM_SYSKEYUP:
     case WM_KEYUP: {
       if (is_down) ev.kind = brpl_event_key_press;
       else         ev.kind = brpl_event_key_release;
-      ev.key = wParam;
+
       switch (wParam) {
         case 8:          ev.key = BR_KEY_BACKSPACE;    break;
         case 9:          ev.key = BR_KEY_TAB;          break;
@@ -884,14 +873,14 @@ LRESULT CALLBACK brpl_win32_event_callback(HWND hwnd, UINT uMsg, WPARAM wParam, 
         case 38:         ev.key = BR_KEY_UP;           break;
         case 39:         ev.key = BR_KEY_RIGHT;        break;
         case 46:         ev.key = BR_KEY_DELETE;       break;
-        default:         ev.key = wParam;
+        default:         ev.key = (int)wParam;         break;
       }
       ev.keycode = ev.key;
       brpl_q_push(brpl_win32_q, ev);
       return DefWindowProcA(hwnd, uMsg, wParam, lParam);
     } break;
     case WM_CHAR: {
-      br_u32 c = wParam;
+      br_u32 c = (br_u32)wParam;
       brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_input, .utf8_char = c });
     } break;
     default: {
@@ -962,7 +951,8 @@ static bool brpl_win32_open_window(brpl_window_t* window) {
   WaitForSingleObject(win32->event_window_create_done, INFINITE);
   CloseHandle(win32->event_window_create_done);
 
-  PIXELFORMATDESCRIPTOR pfd = {sizeof(pfd)};
+  PIXELFORMATDESCRIPTOR pfd = { 0 };
+  pfd.nSize = sizeof(pfd);
   pfd.nVersion = 1;
   pfd.dwFlags = PFD_DRAW_TO_WINDOW|PFD_SUPPORT_OPENGL|PFD_DOUBLEBUFFER;
   pfd.iPixelType = PFD_TYPE_RGBA;

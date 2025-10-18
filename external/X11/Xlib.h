@@ -1797,11 +1797,6 @@ typedef int (*XErrorHandler) (      /* WARNING, this type not in Xlib spec */
     XErrorEvent*  /* error_event */
 );
 
-extern XErrorHandler XSetErrorHandler (
-    XErrorHandler  /* handler */
-);
-
-
 typedef int (*XIOErrorHandler) (    /* WARNING, this type not in Xlib spec */
     Display*    /* display */
 );
@@ -1846,12 +1841,6 @@ extern Status XGetWMProtocols(
     Window    /* w */,
     Atom**    /* protocols_return */,
     int*    /* count_return */
-);
-extern Status XSetWMProtocols(
-    Display*    /* display */,
-    Window    /* w */,
-    Atom*    /* protocols */,
-    int      /* count */
 );
 extern Status XWithdrawWindow(
     Display*    /* display */,
@@ -2103,10 +2092,6 @@ extern int XClearWindow(
     Window    /* w */
 );
 
-extern int XCloseDisplay(
-    Display*    /* display */
-);
-
 extern int XConfigureWindow(
     Display*    /* display */,
     Window    /* w */,
@@ -2184,11 +2169,6 @@ extern int XDeleteProperty(
     Display*    /* display */,
     Window    /* w */,
     Atom    /* property */
-);
-
-extern int XDestroyWindow(
-    Display*    /* display */,
-    Window    /* w */
 );
 
 extern int XDestroySubwindows(
@@ -2531,13 +2511,6 @@ extern int XGetErrorDatabaseText(
     _Xconst char*  /* name */,
     _Xconst char*  /* message */,
     _Xconst char*  /* default_string */,
-    char*    /* buffer_return */,
-    int      /* length */
-);
-
-extern int XGetErrorText(
-    Display*    /* display */,
-    int      /* code */,
     char*    /* buffer_return */,
     int      /* length */
 );

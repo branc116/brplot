@@ -183,6 +183,12 @@ void __sanitizer_print_stack_trace(void);
 #  define BR_PROFILE(NAME)
 #endif
 
+#if defined(__GNUC__)
+#  define BR_FALLTHROUGH        __attribute__ ((fallthrough))
+#else
+#  define BR_FALLTHROUGH
+#endif
+
 #if defined(__cplusplus) &&  __cplusplus >= 201103L
 #  define BR_THREAD_LOCAL       thread_local
 #elif defined(__TINYC__)

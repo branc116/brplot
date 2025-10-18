@@ -119,6 +119,8 @@ void br_plotter_init(br_plotter_t* br) {
 #endif
   br_theme_reset_ui(&br->ui.theme);
   br->loaded_status = br_permastate_load(br);
+  if (br->ui.multisampling) brgl_enable_multisampling();
+  else                      brgl_disable_multisampling();
   if (br->loaded_status != br_permastate_status_ok) {
     br_datas_deinit(&br->groups);
     br->plots.len = 0;
@@ -464,7 +466,7 @@ void br_plotter_update(br_plotter_t* br) {
           br->mouse.delta = BR_VEC2(0, 0);
         } else br->mouse.active = false;
       } break;
-      case brpl_event_mouse_scroll:
+      case brpl_event_mouse_scroll: {
         if (br->action.active == br_plotter_entity_none) {
           if (br->hovered.active == br_plotter_entity_plot_2d) {
             br_plot_t* plot = &br->plots.arr[br->hovered.plot_id];
@@ -488,27 +490,22 @@ void br_plotter_update(br_plotter_t* br) {
         } else {
           LOGW("Scrolling %d", br->action.active);
         }
-        break;
-      case brpl_event_window_focused:
-        br->win.active = true;
-        break;
-      case brpl_event_window_unfocused:
-        br->win.active = false;
-        break;
-      case brpl_event_window_shown:
+      } break;
+      case brpl_event_window_focused: br->win.active = true; break;
+      case brpl_event_window_unfocused: br->win.active = false; break;
+      case brpl_event_window_shown: {
         LOGI("SHOW");
-        break;
-      case brpl_event_window_hidden:
-        LOGI("HIDE");
+      } break;
+      case brpl_event_window_hidden: {
         br->win.active = false;
-        break;
-      case brpl_event_window_resize:
+      } break;
+      case brpl_event_window_resize: {
         br->win.viewport.size = BR_SIZE_TOI(ev.size);
         br->mouse.active = false;
-        break;
-      case brpl_event_close:
+      } break;
+      case brpl_event_close: {
         br->should_close = true;
-        break;
+      } return;
       case brpl_event_next_frame: {
         br->time.old = br->time.now;
         br->time.now = ev.time;

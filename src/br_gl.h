@@ -127,6 +127,8 @@ void brgl_enable_depth_test(void);
 void brgl_disable_depth_test(void);
 void brgl_enable_clip_distance(void);
 void brgl_disable_clip_distance(void);
+void brgl_enable_multisampling(void);
+void brgl_disable_multisampling(void);
 void brgl_viewport(GLint x, GLint y, GLsizei width, GLsizei height);
 GLuint brgl_load_texture(const void* data, int width, int height, int format);
 void brgl_unload_texture(GLuint tex_id);

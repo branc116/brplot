@@ -59,6 +59,8 @@ void br_plotter_draw(br_plotter_t* br) {
 
         brgl_enable_framebuffer(PLOT->texture_id, PLOT->cur_extent.width, PLOT->cur_extent.height);
         brgl_clear(BR_COLOR_COMPF(br->ui.theme.colors.plot_bg));
+        if (br->ui.multisampling) brgl_enable_multisampling();
+        else                      brgl_disable_multisampling();
         if (PLOT->kind == br_plot_kind_2d) {
           br_mesh_grid_draw(PLOT, &br->ui.theme);
           br_shaders_draw_all(br->shaders); // TODO: This should be called whenever a other shader are being drawn.
@@ -877,9 +879,13 @@ static void draw_left_panel(br_plotter_t* br) {
     }
 
     if (brui_collapsable(BR_STRL("Optimizations"), &br->ui.expand_optimizations)) {
-      brui_sliderf3(BR_STRL("min something"), &br->ui.theme.ui.min_sampling, 4);
-      brui_sliderf2(BR_STRL("cull min"), &br->ui.theme.ui.cull_min);
+      brui_sliderf3(BR_STRL("Min Something"), &br->ui.theme.ui.min_sampling, 4);
+      brui_sliderf2(BR_STRL("Cull Min"), &br->ui.theme.ui.cull_min);
       brui_checkbox(BR_STRL("Debug"), &br->ui.theme.ui.debug);
+      if (brui_checkbox(BR_STRL("Multi sampling"), &br->ui.multisampling)) {
+        if (br->ui.multisampling) brgl_enable_multisampling();
+        else                      brgl_disable_multisampling();
+      }
       brui_collapsable_end();
     }
 

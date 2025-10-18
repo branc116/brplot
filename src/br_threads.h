@@ -7,6 +7,7 @@ extern "C" {
 #  define BR_THREAD_FUNC
 void br_thread_start(BR_THREAD_RET_TYPE (*function)(void*), void* args);
 #else
+#  include <windows.h>
 #  define BR_THREAD_RET_TYPE DWORD
 #  define BR_THREAD_FUNC WINAPI
 unsigned long br_thread_start(BR_THREAD_RET_TYPE (WINAPI * function)(void*), void* args);
