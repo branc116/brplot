@@ -139,6 +139,11 @@ struct {
       "int XLookupKeysym(XKeyEvent* key_event, int index)"
       "int XQueryExtension(Display* d, const char* name, int* major, int* minor, int* error)"
   }, {
+    .name = "xi",
+    .name_upper = "XI",
+    .functions =
+      "int XISelectEvents(Display* d, Window win, XIEventMask* masks, int num_masks)"
+  }, {
     .name = "glfw",
     .name_upper = "GLFW",
     .functions =

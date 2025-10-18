@@ -30,6 +30,68 @@
 #  include "external/X11/Xresource.h"
 #  include "external/X11/Xutil.h"
    typedef Display* Displayp;
+
+const char* br_glx_library_names[] = {
+  "libGLX.so.0",
+  "libGL.so",
+  "libGL-1.so",
+  "libGL.so.1",
+};
+
+const char* br_x11_library_names[] = {
+  "libX11.so",
+  "libX11-6.so",
+  "libX11.so.6",
+};
+
+const char* br_xi_library_names[] = {
+  "libXi.so",
+};
+
+#  define BR_WANTS_XI 1
+#  define BR_HAS_XI 1
+typedef struct
+{
+    int                 deviceid;
+    int                 mask_len;
+    unsigned char*      mask;
+} XIEventMask;
+
+/* Event types */
+#define XI_DeviceChanged                 1
+#define XI_KeyPress                      2
+#define XI_KeyRelease                    3
+#define XI_ButtonPress                   4
+#define XI_ButtonRelease                 5
+#define XI_Motion                        6
+#define XI_Enter                         7
+#define XI_Leave                         8
+#define XI_FocusIn                       9
+#define XI_FocusOut                      10
+#define XI_HierarchyChanged              11
+#define XI_PropertyEvent                 12
+#define XI_RawKeyPress                   13
+#define XI_RawKeyRelease                 14
+#define XI_RawButtonPress                15
+#define XI_RawButtonRelease              16
+#define XI_RawMotion                     17
+#define XI_TouchBegin                    18 /* XI 2.2 */
+#define XI_TouchUpdate                   19
+#define XI_TouchEnd                      20
+#define XI_TouchOwnership                21
+#define XI_RawTouchBegin                 22
+#define XI_RawTouchUpdate                23
+#define XI_RawTouchEnd                   24
+#define XI_BarrierHit                    25 /* XI 2.3 */
+#define XI_BarrierLeave                  26
+#define XI_GesturePinchBegin             27 /* XI 2.4 */
+#define XI_GesturePinchUpdate            28
+#define XI_GesturePinchEnd               29
+#define XI_GestureSwipeBegin             30
+#define XI_GestureSwipeUpdate            31
+#define XI_GestureSwipeEnd               32
+#define XI_LASTEVENT                     XI_GestureSwipeEnd
+#define XISetMask(ptr, event)   (((unsigned char*)(ptr))[(event)>>3] |=  (1 << ((event) & 7)))
 #endif
 
 #if defined(BR_HAS_GLX)
@@ -73,19 +135,6 @@ const char* br_gl_library_names[] = {
   "libGL-1.so",
   "libGL.so.1",
 #endif
-};
-
-const char* br_glx_library_names[] = {
-  "libGLX.so.0",
-  "libGL.so",
-  "libGL-1.so",
-  "libGL.so.1",
-};
-
-const char* br_x11_library_names[] = {
-  "libX11.so",
-  "libX11-6.so",
-  "libX11.so.6",
 };
 
 const char* br_glfw_library_names[] = {
@@ -339,6 +388,7 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
 
   XEvent event;
   XNextEvent(d, &event);
+  LOGI("Ex: %d", event.xgeneric.extension);
   switch (event.type) {
     case MotionNotify: {
       XMotionEvent m = event.xmotion;
@@ -572,6 +622,17 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
   XQueryExtension(x11.display, "XInputExtension", &major, &minor, &error);
   LOGI("XINPUT: maj: %d, min: %d, error: %d", major, minor, error);
 
+  XIEventMask evmask;
+  unsigned char mask[(XI_LASTEVENT + 7)/8] = {0};
+#define XIAllDevices                            0
+  evmask.deviceid = XIAllDevices;
+  evmask.mask_len = sizeof(mask);
+  evmask.mask = mask;
+  XISetMask(mask, XI_TouchBegin);
+  XISetMask(mask, XI_TouchUpdate);
+  XISetMask(mask, XI_TouchEnd);
+  XISelectEvents(x11.display, x11.window_handle, &evmask, 1);
+
   brpl_window_x11_t* win = BR_MALLOC(sizeof(brpl_window_x11_t));
   memcpy(win, &x11, sizeof(x11));
   window->win = win;
@@ -616,7 +677,7 @@ static int brpl_x11_keysym(XEvent event) {
 }
 
 static bool brpl_x11_load(brpl_window_t* win) {
-  bool ok = br_x11_load() && br_gl_load() && br_glx_load();
+  bool ok = br_x11_load() && br_gl_load() && br_glx_load() && br_xi_load();
   if (ok) {
     win->f.frame_start = brpl_x11_frame_start;
     win->f.frame_end =   brpl_x11_frame_end;
