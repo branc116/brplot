@@ -126,6 +126,7 @@ typedef struct br_plotter_t {
     bool expand_about;
     bool show_license;
     bool show_about;
+    bool show_log;
   } ui;
 } br_plotter_t;
 

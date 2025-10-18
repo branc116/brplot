@@ -24,11 +24,19 @@
 #include "src/br_ui.h"
 #include "src/br_memory.h"
 
+typedef struct br_lines_t {
+  br_str_t* arr;
+  int len, cap;
+} br_lines_t;
+
+static BR_THREAD_LOCAL br_lines_t br_log_lines;
+
 static void draw_left_panel(br_plotter_t* br);
 static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_datas_t datas);
 static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas, br_theme_t* theme, br_plotter_t* br);
 static void brgui_draw_debug_window(br_plotter_t* br);
 static void brgui_draw_license(br_plotter_t* br);
+static void brgui_draw_log(br_plotter_t* br);
 static void brgui_draw_about(br_plotter_t* br);
 static void brgui_draw_add_expression(br_plotter_t* br);
 static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas);
@@ -120,6 +128,7 @@ void br_plotter_draw(br_plotter_t* br) {
         draw_left_panel(br);
         brgui_draw_debug_window(br);
         brgui_draw_license(br);
+        brgui_draw_log(br);
         brgui_draw_about(br);
         brgui_fm_result_t fs_r = brgui_draw_file_manager(&br->sp, &br->ui.fm_state);
         if (fs_r.is_selected) {
@@ -962,6 +971,9 @@ static void draw_left_panel(br_plotter_t* br) {
         br->ui.memory.show = true;
       }
 #endif
+      if (brui_button(BR_STRL("Log"))) {
+        br->ui.show_log = true;
+      }
       brui_collapsable_end();
     }
 
@@ -1047,6 +1059,28 @@ static void brgui_draw_license(br_plotter_t* br) {
   if (brui_resizable_temp_pop()) br->ui.show_license = false;
 }
 
+static void brgui_draw_log(br_plotter_t* br) {
+  if (false == br->ui.show_log) return;
+  brui_resizable_temp_push_t tmp = brui_resizable_temp_push(BR_STRL("Log"));
+    float local_y = brui_local_y();
+    float ts = (float)brui_text_size() + brui_padding_y();
+    int i = 0;
+    if (local_y < -ts) {
+      int n = (int)(-(local_y + 2.f*ts)/ts);
+      if (n > 0) {
+        brui_new_lines(n);
+        i += n;
+      }
+    }
+    float space_left = brui_max_y() - brui_y();
+    int max_n = (int)(space_left / ts) + 1;
+
+    for (int j = 0; j < max_n && i < br_log_lines.len; ++j, ++i) brui_text(br_str_as_view(br_log_lines.arr[i]));
+
+    brui_new_lines(br_log_lines.len - i);
+  if (brui_resizable_temp_pop()) br->ui.show_log = false;
+}
+
 static void brgui_draw_about(br_plotter_t* br) {
   if (false == br->ui.show_about) return;
   brui_resizable_temp_push(BR_STRL("About"));
@@ -1123,4 +1157,20 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, br_theme_t
   }
   end: TracyCFrameMarkEnd("draw_grid_numbers");
   br_scrach_free();
+}
+
+
+void brgui_push_log_line(const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  int n = vsnprintf(NULL, 0, fmt, args);
+  va_end(args);
+
+  BR_ASSERT(n >= 0);
+  br_str_t str = br_str_malloc(n + 1);
+  va_start(args, fmt);
+  vsnprintf(str.str, (size_t)n + 1, fmt, args);
+  str.len = n;
+  va_end(args);
+  br_da_push(br_log_lines, str);
 }

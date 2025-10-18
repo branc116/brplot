@@ -7,22 +7,24 @@
 
 // --------------------------------------------- DEFINES ---------------------------------------------
 
+void brgui_push_log_line(const char* fmt, ...);
 #if !defined(BR_DISABLE_LOG)
-#  define LOG(...)
-#  define LOGI(format, ...) fprintf(stderr, "[INFO][ " __FILE__ ":%d ] " format "\n", __LINE__, ##__VA_ARGS__)
-#  define LOGW(format, ...) fprintf(stderr, "[WARNING][ " __FILE__ ":%d ] " format "\n", __LINE__, ##__VA_ARGS__)
+#  define BR_LOG(SEVERITY, FMT, ...) do { \
+  brgui_push_log_line(SEVERITY FMT, ##__VA_ARGS__); \
+  fprintf(stderr, SEVERITY"[ " __FILE__ ":%d ] " FMT "\n", __LINE__, ##__VA_ARGS__); \
+} while(0)
+
 #  define LOGE(format, ...) do { \
     fprintf(stderr, "[ERROR][ " __FILE__ ":%d ] " format "\n", __LINE__, ##__VA_ARGS__); \
     BR_STACKTRACE(); \
 } while(0)
 #else
-#  define LOG(...)
-#  define LOGI(...)
-#  define LOGW(...)
+#  define BR_LOG(SEVERITY, FMT, ...)
 #  define LOGE(...)
 #endif
 
-#define BR_LOG LOG
+#define LOGI(format, ...) BR_LOG("[INFO]", format, ##__VA_ARGS__)
+#define LOGW(format, ...) BR_LOG("[WARNING]", format, ##__VA_ARGS__)
 #define BR_LOGI LOGI
 #define BR_LOGW LOGW
 #define BR_LOGE LOGE
