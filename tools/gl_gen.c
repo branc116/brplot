@@ -137,6 +137,7 @@ struct {
       "int Xutf8LookupString(XIC ic, XKeyPressedEvent* event, char* buffer_return, int bytes_buffer , KeySym* keysym_return, Status* status_return)"
       "int XKeycodeToKeysym(Display* display, uint32_t keycode, int index)"
       "int XLookupKeysym(XKeyEvent* key_event, int index)"
+      "int XQueryExtension(Display* d, const char* name, int* major, int* minor, int* error)"
   }, {
     .name = "glfw",
     .name_upper = "GLFW",

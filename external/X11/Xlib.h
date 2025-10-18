@@ -2860,14 +2860,6 @@ extern int XQueryColors(
     int      /* ncolors */
 );
 
-extern Bool XQueryExtension(
-    Display*    /* display */,
-    _Xconst char*  /* name */,
-    int*    /* major_opcode_return */,
-    int*    /* first_event_return */,
-    int*    /* first_error_return */
-);
-
 extern int XQueryKeymap(
     Display*    /* display */,
     char [32]    /* keys_return */

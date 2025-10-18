@@ -567,6 +567,11 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
                      x11.window_handle,
                      NULL);
 
+  int error = 0;
+  major = 0, minor = 0;
+  XQueryExtension(x11.display, "XInputExtension", &major, &minor, &error);
+  LOGI("XINPUT: maj: %d, min: %d, error: %d", major, minor, error);
+
   brpl_window_x11_t* win = BR_MALLOC(sizeof(brpl_window_x11_t));
   memcpy(win, &x11, sizeof(x11));
   window->win = win;
