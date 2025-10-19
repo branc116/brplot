@@ -1225,6 +1225,7 @@ int main(int argc, char** argv) {
 void br_on_fatal_error() {
   LOGE("Fatal");
 }
+void brgui_push_log_line(const char* fmt, ...) {}
 // On linux, mac, bsds
 // cc -o nob -I. nob.c -lm
 // ./nob

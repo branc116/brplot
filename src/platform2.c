@@ -388,7 +388,6 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
 
   XEvent event;
   XNextEvent(d, &event);
-  LOGI("Ex: %d", event.xgeneric.extension);
   switch (event.type) {
     case MotionNotify: {
       XMotionEvent m = event.xmotion;
@@ -483,6 +482,7 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
     } break;
     case PropertyNotify: {
       LOGI("Prop %lu changed: %d", event.xproperty.atom, event.xproperty.state);
+      return (brpl_event_t) { .kind = brpl_event_nop };
     } break;
     case Expose: {
       return (brpl_event_t) { .kind = brpl_event_nop };
@@ -496,10 +496,9 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
     } break;
     default: {
       LOGI("Unknown x11 event type: %d", event.type);
+      return (brpl_event_t) { .kind = brpl_event_nop };
     } break;
   }
-
-  return (brpl_event_t) { .kind = brpl_event_next_frame, .time = brpl_time() };
 }
 
 int brpl_x11_error_callback(Display* d, XErrorEvent* e) {
@@ -507,6 +506,37 @@ int brpl_x11_error_callback(Display* d, XErrorEvent* e) {
     XGetErrorText(d, e->error_code, err_text, sizeof(err_text));
     LOGE("X Error: %s", err_text);
     return 0;
+}
+
+static bool brpl_x11_get_set_context(brpl_window_x11_t* x11, int* attrib_list) {
+  int out_ret = 0;
+  GLXFBConfigs configs = glXChooseFBConfig(x11->display, x11->screen, attrib_list, &out_ret);
+  if (out_ret == 0 || NULL == configs) return false;
+  bool is_ok = false;
+  XVisualInfo* glx_visual = NULL;
+
+  for (int i = 0; i < out_ret; ++i) {
+    GLXFBConfig config = configs[i];
+
+    XVisualInfo* glx_visual = glXGetVisualFromFBConfig(x11->display, config);
+    if (NULL == glx_visual) continue;
+
+    x11->glx_window = glXCreateWindow(x11->display, config, x11->window_handle, (int[]) { None });
+    if (0 == x11->glx_window) continue;
+
+    x11->glx_ctx = glXCreateContext(x11->display, glx_visual, NULL, true);
+    if (0 == x11->glx_ctx) continue;
+
+    is_ok = glXMakeCurrent(x11->display, x11->glx_window, x11->glx_ctx);
+    if (is_ok) break;
+
+    glXDestroyContext(x11->display, x11->glx_ctx);
+    glXDestroyWindow(x11->display, x11->glx_window);
+    XFree(glx_visual);
+  }
+  XFree(configs);
+  XFree(glx_visual);
+  if (false == is_ok) return false;
 }
 
 static bool brpl_x11_open_window(brpl_window_t* window) {
@@ -564,35 +594,30 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
 #define GLX_X_VISUAL_TYPE		0x22
 #define GLX_TRUE_COLOR			0x8002
 
-  const int attrib_list[] = {
+  int attrib_list[] = {
+    GLX_SAMPLE_BUFFERS, 1,
     GLX_X_RENDERABLE,	1,
     GLX_DOUBLEBUFFER, 1,
     GLX_RED_SIZE, 8,
     GLX_GREEN_SIZE, 8,
     GLX_BLUE_SIZE, 8,
-    GLX_ALPHA_SIZE, 8,
+    GLX_ALPHA_SIZE, 0,
     GLX_DEPTH_SIZE, 24,
     GLX_STENCIL_SIZE, 8,
     GLX_RENDER_TYPE, GLX_RGBA_BIT,
     GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-    GLX_SAMPLE_BUFFERS, 1,
     GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
-    GLX_SAMPLES, 4,
     0
   };
-
-  int out_ret = 0;
-  GLXFBConfigs config = glXChooseFBConfig(d, x11.screen, attrib_list, &out_ret);
-  if (out_ret == 0 || NULL == config) return false;
-  XVisualInfo* glx_visual = glXGetVisualFromFBConfig(d, config[0]);
-  if (NULL == glx_visual) return false;
-
-  x11.glx_ctx = glXCreateContext(d, glx_visual, NULL, true);
-  if (0 == x11.glx_ctx) return false;
-
-  x11.glx_window = glXCreateWindow(x11.display, config[0], x11.window_handle, NULL);
-  bool isOk = glXMakeCurrent(x11.display, x11.glx_window, x11.glx_ctx);
-  if (false == isOk) return false;
+  if (false == brpl_x11_get_set_context(&x11, attrib_list)) {
+    attrib_list[1] = 0; // No MSAA
+    if (false == brpl_x11_get_set_context(&x11, attrib_list)) {
+      attrib_list[0] = None; // Anything
+      if (false == brpl_x11_get_set_context(&x11, attrib_list)) {
+        return false;
+      }
+    }
+  }
 
   const char* title = window->title;
   if (title == NULL) title = "Brpl";
