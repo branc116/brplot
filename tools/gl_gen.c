@@ -138,6 +138,8 @@ struct {
       "int XKeycodeToKeysym(Display* display, uint32_t keycode, int index)"
       "int XLookupKeysym(XKeyEvent* key_event, int index)"
       "int XQueryExtension(Display* d, const char* name, int* major, int* minor, int* error)"
+      "Bool XGetEventData(Display* display, XGenericEventCookie* cookie)"
+      "void XFreeEventData(Display* display, XGenericEventCookie* cookie)"
   }, {
     .name = "xi",
     .name_upper = "XI",

@@ -145,6 +145,11 @@ typedef void* voidp;
 
 #define BR_KEY_LAST               BR_KEY_MENU
 
+typedef struct brpl_touch_point_t {
+  br_vec2_t pos;
+  int id;
+} brpl_touch_point_t;
+
 typedef enum brpl_event_kind_t {
   brpl_event_none = 0, // Nothing happend
   brpl_event_key_press = 1,
@@ -162,6 +167,9 @@ typedef enum brpl_event_kind_t {
   brpl_event_close = 13,
   brpl_event_next_frame = 14,
   brpl_event_scale = 15, // DPI
+  brpl_event_touch_begin = 16,
+  brpl_event_touch_update = 17,
+  brpl_event_touch_end = 18,
   brpl_event_nop, // Something happend but it's nothing
   brpl_event_unknown, // Something happend but I don't know what..
 } brpl_event_kind_t;
@@ -180,6 +188,7 @@ typedef struct brpl_event_t {
       int key;
       int keycode;
     };
+    brpl_touch_point_t touch;
   };
 } brpl_event_t;
 

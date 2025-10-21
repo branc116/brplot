@@ -63,6 +63,15 @@ typedef struct br_plotter_t {
   } action, hovered;
 
   struct {
+    brpl_touch_point_t* arr;
+    int* free_arr;
+
+    int len, cap;
+    int free_len;
+    int free_next;
+  } touch_points;
+
+  struct {
     br_vec2_t old_pos;
     br_vec2_t pos;
     br_vec2_t delta;

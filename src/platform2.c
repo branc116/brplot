@@ -57,41 +57,23 @@ typedef struct
     unsigned char*      mask;
 } XIEventMask;
 
-/* Event types */
-#define XI_DeviceChanged                 1
-#define XI_KeyPress                      2
-#define XI_KeyRelease                    3
-#define XI_ButtonPress                   4
-#define XI_ButtonRelease                 5
-#define XI_Motion                        6
-#define XI_Enter                         7
-#define XI_Leave                         8
-#define XI_FocusIn                       9
-#define XI_FocusOut                      10
-#define XI_HierarchyChanged              11
-#define XI_PropertyEvent                 12
-#define XI_RawKeyPress                   13
-#define XI_RawKeyRelease                 14
-#define XI_RawButtonPress                15
-#define XI_RawButtonRelease              16
-#define XI_RawMotion                     17
+typedef struct {
+  XGenericEvent generic;
+  Time   time;
+  int    deviceid, sourceid, detail;
+  Window root, event, child;
+  double root_x, root_y;
+  double event_x, event_y;
+  int    flags;
+  struct {
+    int mask_len;
+    br_u64* mask;
+  } btn;
+} XIDeviceEvent;
+
 #define XI_TouchBegin                    18 /* XI 2.2 */
 #define XI_TouchUpdate                   19
 #define XI_TouchEnd                      20
-#define XI_TouchOwnership                21
-#define XI_RawTouchBegin                 22
-#define XI_RawTouchUpdate                23
-#define XI_RawTouchEnd                   24
-#define XI_BarrierHit                    25 /* XI 2.3 */
-#define XI_BarrierLeave                  26
-#define XI_GesturePinchBegin             27 /* XI 2.4 */
-#define XI_GesturePinchUpdate            28
-#define XI_GesturePinchEnd               29
-#define XI_GestureSwipeBegin             30
-#define XI_GestureSwipeUpdate            31
-#define XI_GestureSwipeEnd               32
-#define XI_LASTEVENT                     XI_GestureSwipeEnd
-#define XISetMask(ptr, event)   (((unsigned char*)(ptr))[(event)>>3] |=  (1 << ((event) & 7)))
 #endif
 
 #if defined(BR_HAS_GLX)
@@ -238,6 +220,8 @@ brpl_event_t brpl_event_next(brpl_window_t* window) {
     case brpl_event_close: { LOGI("brpl_event_close"); } break;
     case brpl_event_next_frame: { LOGI("brpl_event_next_frame: time=%f", ev.time); } break;
     case brpl_event_scale: { LOGI("brpl_event_scale"); } break;
+    case brpl_event_touch_begin: { LOGI("brpl_event_touch_begin: id=%d", ev.touch.id); } break;
+    case brpl_event_touch_end: { LOGI("brpl_event_touch_end: id=%d", ev.touch.id); } break;
     case brpl_event_nop: { LOGI("brpl_event_nop"); } break;
     case brpl_event_unknown: { LOGI("brpl_event_unknown"); } break;
   }
@@ -353,6 +337,8 @@ typedef struct brpl_window_x11_t {
   XIC ic;
 
   Atom WM_DELETE_WINDOW;
+
+  int xi_opcode;
 } brpl_window_x11_t;
 
 static void brpl_x11_frame_start(brpl_window_t* window) {
@@ -388,6 +374,31 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
 
   XEvent event;
   XNextEvent(d, &event);
+
+  if (w->xi_opcode == event.xcookie.extension) {
+    XGetEventData(w->display, &event.xcookie);
+    XIDeviceEvent* de = (XIDeviceEvent*)event.xcookie.data;
+    brpl_event_t e = { .kind = brpl_event_nop };
+    switch (event.xcookie.evtype) {
+      case XI_TouchBegin: {
+        e.kind = brpl_event_touch_begin;
+        e.touch.id = de->detail;
+        e.touch.pos = BR_VEC2(de->event_x, de->event_y);
+      } break;
+      case XI_TouchUpdate: {
+        e.kind = brpl_event_touch_update;
+        e.touch.id = de->detail;
+        e.touch.pos = BR_VEC2(de->event_x, de->event_y);
+      } break;
+      case XI_TouchEnd: {
+        e.kind = brpl_event_touch_end;
+        e.touch.id = de->detail;
+        e.touch.pos = BR_VEC2(de->event_x, de->event_y);
+      } break;
+    }
+    XFreeEventData(w->display, &event.xcookie);
+    return e;
+  }
   switch (event.type) {
     case MotionNotify: {
       XMotionEvent m = event.xmotion;
@@ -536,7 +547,7 @@ static bool brpl_x11_get_set_context(brpl_window_x11_t* x11, int* attrib_list) {
   }
   XFree(configs);
   XFree(glx_visual);
-  if (false == is_ok) return false;
+  return is_ok;
 }
 
 static bool brpl_x11_open_window(brpl_window_t* window) {
@@ -642,21 +653,20 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
                      x11.window_handle,
                      NULL);
 
-  int error = 0;
-  major = 0, minor = 0;
-  XQueryExtension(x11.display, "XInputExtension", &major, &minor, &error);
-  LOGI("XINPUT: maj: %d, min: %d, error: %d", major, minor, error);
+  int opcode = 0, event = 0, error = 0;
+  XQueryExtension(x11.display, "XInputExtension", &opcode, &event, &error);
+  LOGI("XINPUT: opcode: %d, event: %d, error: %d", opcode, event, error);
+  x11.xi_opcode = opcode;
 
-  XIEventMask evmask;
-  unsigned char mask[(XI_LASTEVENT + 7)/8] = {0};
-#define XIAllDevices                            0
-  evmask.deviceid = XIAllDevices;
-  evmask.mask_len = sizeof(mask);
-  evmask.mask = mask;
-  XISetMask(mask, XI_TouchBegin);
-  XISetMask(mask, XI_TouchUpdate);
-  XISetMask(mask, XI_TouchEnd);
-  XISelectEvents(x11.display, x11.window_handle, &evmask, 1);
+  br_u64 mask = 1<<XI_TouchBegin | 1<<XI_TouchUpdate | 1<<XI_TouchEnd;
+  XIEventMask evmask = {
+    .deviceid = 0,
+    .mask_len = sizeof(mask),
+    .mask = (void*)&mask
+  };
+  int status = XISelectEvents(x11.display, x11.window_handle, &evmask, 1);
+  XFlush(x11.display);
+  LOGI("Status: %d", status);
 
   brpl_window_x11_t* win = BR_MALLOC(sizeof(brpl_window_x11_t));
   memcpy(win, &x11, sizeof(x11));

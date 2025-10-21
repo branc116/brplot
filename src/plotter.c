@@ -14,6 +14,7 @@
 #include "src/br_gl.h"
 #include "src/br_free_list.h"
 #include "src/br_memory.h"
+#include "src/lib.c"
 
 #include <math.h>
 #include <string.h>
@@ -600,10 +601,81 @@ void br_plotter_update(br_plotter_t* br) {
       case brpl_event_scale: {
         LOGI("Window scale: %f %f", ev.size.width, ev.size.height);
       } break;
+      case brpl_event_touch_begin: {
+        brpl_touch_point_t* tpp = NULL;
+        brfl_foreach(i, br->touch_points) {
+          brpl_touch_point_t tp = br->touch_points.arr[i];
+          if (tp.id != ev.touch.id) continue;
+          tpp = &br->touch_points.arr[i];
+        }
+        if (tpp == NULL) brfl_push(br->touch_points, ev.touch);
+      } break;
+      case brpl_event_touch_update: {
+        brpl_touch_point_t* tpp = NULL;
+        brfl_foreach(i, br->touch_points) {
+          brpl_touch_point_t tp = br->touch_points.arr[i];
+          if (tp.id != ev.touch.id) continue;
+          tpp = &br->touch_points.arr[i];
+        }
+        if (tpp == NULL) break;
+        if (br->hovered.active == br_plotter_entity_plot_2d) {
+          br_plot_t* plot = br_da_getp(br->plots, br->hovered.plot_id);
+          br_extent_t ex = br->resizables.arr[plot->extent_handle].cur_extent;
+          if (br->touch_points.free_len == 1) {
+              br_vec2_t delta = br_vec2_sub(ev.touch.pos, tpp->pos);
+              br_plot2d_move_screen_space(plot, delta, ex.size);
+              tpp->pos = ev.touch.pos;
+          } else if (br->touch_points.free_len == 2) {
+            brpl_touch_point_t* other;
+            brfl_foreach(i, br->touch_points) {
+              brpl_touch_point_t tp = br->touch_points.arr[i];
+              if (tp.id == ev.touch.id) continue;
+              other = &br->touch_points.arr[i];
+            }
+            if (NULL == other) break;
+            br_plot_t* plot = br_da_getp(br->plots, br->hovered.plot_id);
+            br_vec2d_t middle_old = { 0 };
+            // Handle Zoom
+            {
+              br_vec2d_t pa = br_plot2d_to_plot(plot, tpp->pos);
+              br_vec2d_t pb = br_plot2d_to_plot(plot, other->pos);
+              br_vec2d_t pc = br_plot2d_to_plot(plot, ev.touch.pos);
+              middle_old = br_vec2d_add(br_vec2d_scale(pa, 0.5f), br_vec2d_scale(pb, 0.5f));
+              float old_len = br_vec2_dist(BR_VEC2D_TOF(pb), BR_VEC2D_TOF(pa));
+              float new_len = br_vec2_dist(BR_VEC2D_TOF(pb), BR_VEC2D_TOF(pc));
+              float zoom = old_len/new_len;
+              plot->dd.zoom.x *= zoom;
+              plot->dd.zoom.y *= zoom;
+            }
+            // Handle offset
+            {
+              br_vec2d_t pa = br_plot2d_to_plot(plot, tpp->pos);
+              br_vec2d_t pb = br_plot2d_to_plot(plot, other->pos);
+              br_vec2d_t pc = br_plot2d_to_plot(plot, ev.touch.pos);
+              br_vec2d_t middle_new = br_vec2d_add(br_vec2d_scale(pb, 0.5f), br_vec2d_scale(pc, 0.5f));
+              br_vec2d_t delta = br_vec2d_sub(middle_new, middle_old);
+              br_data_add_v1(br, delta.x, ev.touch.id);
+              plot->dd.offset = br_vec2d_sub(plot->dd.offset, delta);
+            }
+            tpp->pos = ev.touch.pos;
+          }
+        }
+      } break;
+      case brpl_event_touch_end: {
+        int to_remove = -1;
+        brfl_foreach(i, br->touch_points) {
+          brpl_touch_point_t tp = br->touch_points.arr[i];
+          if (tp.id != ev.touch.id) continue;
+          to_remove = i;
+          break;
+        }
+        if (to_remove >= 0) brfl_remove(br->touch_points, to_remove);
+      } break;
       default: BR_TODO("br_plotter_update active: %d, event: %d", br->action.active, ev.kind);
     }
     ev = brpl_event_next(&br->win);
     ++n;
+    LOGI("len: %d", br->touch_points.free_len);
   }
 }
 

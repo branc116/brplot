@@ -3861,16 +3861,6 @@ extern int _Xwctomb(
     wchar_t      /* wc */
 );
 
-extern Bool XGetEventData(
-    Display*      /* dpy */,
-    XGenericEventCookie*  /* cookie*/
-);
-
-extern void XFreeEventData(
-    Display*      /* dpy */,
-    XGenericEventCookie*  /* cookie*/
-);
-
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
