@@ -529,7 +529,7 @@ static bool brpl_x11_get_set_context(brpl_window_x11_t* x11, int* attrib_list) {
   for (int i = 0; i < out_ret; ++i) {
     GLXFBConfig config = configs[i];
 
-    XVisualInfo* glx_visual = glXGetVisualFromFBConfig(x11->display, config);
+    glx_visual = glXGetVisualFromFBConfig(x11->display, config);
     if (NULL == glx_visual) continue;
 
     x11->glx_window = glXCreateWindow(x11->display, config, x11->window_handle, (int[]) { None });
@@ -655,7 +655,6 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
 
   int opcode = 0, event = 0, error = 0;
   XQueryExtension(x11.display, "XInputExtension", &opcode, &event, &error);
-  LOGI("XINPUT: opcode: %d, event: %d, error: %d", opcode, event, error);
   x11.xi_opcode = opcode;
 
   br_u64 mask = 1<<XI_TouchBegin | 1<<XI_TouchUpdate | 1<<XI_TouchEnd;

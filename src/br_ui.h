@@ -39,6 +39,12 @@ typedef enum brui_action_kind_t {
   brui_action_typing
 } brui_action_kind_t;
 
+typedef struct brui_state_t {
+  br_bb_t bb;
+  bool clicked;
+  bool hovered;
+} brui_state_t;
+
 typedef struct brui_action_text_t {
   brsp_id_t id;
   int cursor_pos;
@@ -80,6 +86,8 @@ typedef struct {
   bool hide_bg;
 } brui_stack_el_t;
 
+#define brui_resizable_tag_ancor_helper 10
+
 #define brui_resizable_anim_fields(X) \
   X(float, scroll_offset_percent) \
   X(br_extent_t, cur_extent) \
@@ -92,6 +100,7 @@ typedef struct {
   X(int, max_z) \
   X(int, parent) \
   X(int, tag) \
+  X(brsp_id_t, title_id) \
   brui_resizable_anim_fields(X) \
   X(float, full_height) \
   X(br_extent_t, ancor_none_extent) \
@@ -232,7 +241,7 @@ bool brui_collapsable(br_strv_t name, bool* expanded);
 void brui_collapsable_end(void);
 
 void brui_push(void);
-bool brui_pop(void);
+brui_state_t brui_pop(void);
 void brui_push_simple(void);
 void brui_pop_simple(void);
 void brui_push_y(float y);

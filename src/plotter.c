@@ -675,7 +675,6 @@ void br_plotter_update(br_plotter_t* br) {
     }
     ev = brpl_event_next(&br->win);
     ++n;
-    LOGI("len: %d", br->touch_points.free_len);
   }
 }
 

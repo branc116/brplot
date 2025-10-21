@@ -54,6 +54,7 @@ extern "C" {
 
 brsp_id_t brsp_new(brsp_t* sp);
 brsp_id_t brsp_new1(brsp_t* sp, int size);
+brsp_id_t brsp_push(brsp_t* sp, br_strv_t sv);
 br_strv_t brsp_get(brsp_t sp, brsp_id_t t);
 br_strv_t brsp_try_get(brsp_t sp, brsp_id_t t);
 bool brsp_is_in(brsp_t sp, brsp_id_t t);
@@ -123,6 +124,12 @@ brsp_id_t brsp_new1(brsp_t* sp, int size) {
   index = brfl_push_end(*sp, new_node);
   br_str_push_uninitialized(&sp->pool, (unsigned int)size);
   return index + 1;
+}
+
+brsp_id_t brsp_push(brsp_t* sp, br_strv_t sv) {
+  brsp_id_t new_id = brsp_new1(sp, sv.len + 8);
+  brsp_insert_strv_at_end(sp, new_id, sv);
+  return new_id;
 }
 
 br_strv_t brsp_get(brsp_t sp, brsp_id_t t) {

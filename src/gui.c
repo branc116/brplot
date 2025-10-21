@@ -126,7 +126,6 @@ void br_plotter_draw(br_plotter_t* br) {
         }
         if (to_remove != -1) br_plotter_remove_plot(br, to_remove);
         draw_left_panel(br);
-        brgui_draw_debug_window(br);
         brgui_draw_license(br);
         brgui_draw_log(br);
         brgui_draw_about(br);
@@ -160,6 +159,7 @@ void br_plotter_draw(br_plotter_t* br) {
 #if defined(BR_HAS_MEMORY)
         brgui_draw_memory(br);
 #endif
+        brgui_draw_debug_window(br);
       brui_end();
     }
   }
@@ -502,7 +502,7 @@ void brgui_draw_csv_manager(brsp_t* sp, brgui_csv_reader_t* reader, br_csv_parse
                 br_csv_cells_t cells = br_da_get(parser->rows, i);
                 brui_text(br_da_get(cells, j));
               }
-            if (brui_pop()) {
+            if (brui_pop().clicked) {
               if (reader->first_coord == -1) {
                 reader->first_coord = (int)j;
               } else {
@@ -948,7 +948,7 @@ static void draw_left_panel(br_plotter_t* br) {
               brui_textf("3D rebase: %.3f, %.3f, %.3f", data.ddd.rebase_x, data.ddd.rebase_y, data.ddd.rebase_z);
             } break;
           }
-        if (brui_pop()) {
+        if (brui_pop().clicked) {
           br->ui.show_data.show = true;
           br->ui.show_data.data_id = data.group_id;
         }
@@ -983,14 +983,78 @@ static void draw_left_panel(br_plotter_t* br) {
   brui_resizable_pop();
 }
 
-static void brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth) {
-   brui_resizable_t r = br->resizables.arr[handle];
-   brui_textf("%*s, %d Res: z: %d, max_z: %d, max_sib_z: %d, parent: %d", depth*2, "", handle, r.z, r.max_z, brui_resizable_sibling_max_z(handle), r.parent);
-   brfl_foreach(i, br->resizables) if (i != 0 && br->resizables.arr[i].parent == handle) brgui_draw_debug_window_rec(br, i, 1+depth);
+static int brgui_resizable_log_id = 0;
+static bool brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth) {
+  brui_resizable_t r = br->resizables.arr[handle];
+  bool in_any = false;
+  brui_push();
+    if (r.title_id > 0) {
+      brui_push();
+        brui_text_color_set(BR_COLOR(250, 200, 200, 255));
+          br_strv_t title = brsp_get(br->sp, r.title_id);
+          brui_textf("%.*s", title.len, title.str);
+      brui_pop();
+    }
+    brui_textf("%*s%d Res: z: %d, max_z: %d, max_sib_z: %d, parent: %d", depth*2, "", handle, r.z, r.max_z, brui_resizable_sibling_max_z(handle), r.parent);
+    brui_textf("target: %.2f,%.2f,%.2f,%.2f", BR_EXTENT_(r.target.cur_extent));
+    brui_textf("current: %.2f,%.2f,%.2f,%.2f", BR_EXTENT_(r.current.cur_extent));
+    brfl_foreach(i, br->resizables) if (i != 0 && br->resizables.arr[i].parent == handle) in_any |= brgui_draw_debug_window_rec(br, i, 1+depth);
+  brui_state_t s = brui_pop();
+
+  if (s.hovered) {
+    if (in_any == false) {
+      if (s.clicked) {
+        brgui_resizable_log_id = handle;
+      }
+      br_color_t color = br->ui.theme.colors.btn_hovered;
+      color.a = 12;
+      br_extent_t e = brui_resizable_cur_extent(handle);
+      br_bb_t bb = BR_EXTENT_TOBB(e);
+      brui_rectangle(bb, bb, color, 10000);
+    }
+    return true;
+  }
+  return false;
 }
 
 static void brgui_draw_debug_window(br_plotter_t* br) {
   if (false == br->ui.theme.ui.debug) return;
+  if (brgui_resizable_log_id > 0) {
+    int h = brgui_resizable_log_id;
+    brui_resizable_temp_push(br_scrach_printf("Debug %d", h));
+      br_extent_t ex = brui_resizable_cur_extent(h);
+      brui_resizable_t r = br_da_get(br->resizables, h);
+      brui_textf("%d Res: z: %d, max_z: %d, max_sib_z: %d, parent: %d", h, r.z, r.max_z, brui_resizable_sibling_max_z(h), r.parent);
+      br_extent_t t = r.target.cur_extent;
+      br_extent_t c = r.current.cur_extent;
+      brui_vsplit(5);
+        brui_text(BR_STRL("Kind"));
+        brui_text(BR_STRL("Calculated"));
+        brui_text(BR_STRL("Target"));
+        brui_text(BR_STRL("Curent"));
+      brui_vsplit_pop();
+        brui_text(BR_STRL("X"));
+        brui_textf("%.2f", ex.x);
+        brui_textf("%.2f", t.x);
+        brui_textf("%.2f", c.x);
+      brui_vsplit_pop();
+        brui_text(BR_STRL("Y"));
+        brui_textf("%.2f", ex.y);
+        brui_textf("%.2f", t.y);
+        brui_textf("%.2f", c.y);
+      brui_vsplit_pop();
+        brui_text(BR_STRL("Width"));
+        brui_textf("%.2f", ex.width);
+        brui_textf("%.2f", t.width);
+        brui_textf("%.2f", c.width);
+      brui_vsplit_pop();
+        brui_text(BR_STRL("Height"));
+        brui_textf("%.2f", ex.height);
+        brui_textf("%.2f", t.height);
+        brui_textf("%.2f", c.height);
+      brui_vsplit_end();
+    if (brui_resizable_temp_pop()) brgui_resizable_log_id = 0;
+  }
   if (brui_resizable_temp_push(BR_STRL("Debug")).just_created) {
     brui_ancor_set(brui_ancor_left);
   }
@@ -1102,9 +1166,7 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, br_theme_t
   char* scrach = br_scrach_get(128);
   br_extent_t vpf = brui_resizable_cur_extent(plot->extent_handle);
   br_text_renderer_viewport_set(tr, BR_SIZE_TOI(vpf.size));
-  br_extentd_t vp = BR_EXTENTI_TOD(vpf);
-  br_bbd_t limit = BR_EXTENTD_TOBB(vp);
-  br_bb_t limitf = BR_BBD_TOF(limit);
+  br_bb_t limitf = BR_BB(0,0,10000,10000);
 
   if (r.height > 0.f) {
     double exp = floor(log10(r.height / 2.f));
@@ -1161,16 +1223,16 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, br_theme_t
 
 
 void brgui_push_log_line(const char* fmt, ...) {
-  va_list args;
-  va_start(args, fmt);
-  int n = vsnprintf(NULL, 0, fmt, args);
-  va_end(args);
-
-  BR_ASSERT(n >= 0);
-  br_str_t str = br_str_malloc(n + 1);
-  va_start(args, fmt);
-  vsnprintf(str.str, (size_t)n + 1, fmt, args);
-  str.len = n;
-  va_end(args);
-  br_da_push(br_log_lines, str);
+//  va_list args;
+//  va_start(args, fmt);
+//  int n = vsnprintf(NULL, 0, fmt, args);
+//  va_end(args);
+//
+//  BR_ASSERT(n >= 0);
+//  br_str_t str = br_str_malloc(n + 1);
+//  va_start(args, fmt);
+//  vsnprintf(str.str, (size_t)n + 1, fmt, args);
+//  str.len = n;
+//  va_end(args);
+//  br_da_push(br_log_lines, str);
 }
