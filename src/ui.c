@@ -1248,9 +1248,9 @@ void brui_resizable_mouse_pressl(bruirs_t* rs, br_vec2_t mouse_pos, bool ctrl_do
         else if (local_pos.y > (float)ex.height - slack) new_mode |= brui_drag_mode_bottom;
         if      (new_mode == brui_drag_mode_none)        new_mode  = brui_drag_mode_move;
       }
-      brui_resizable_t* parent = br_da_getp(*brui__stack.rs, hovered->parent);
-      if (parent->tag == brui_resizable_tag_ancor_helper) {
-        if (!(new_mode & brui_drag_mode_move)) {
+      if (!(new_mode & brui_drag_mode_move)) {
+        brui_resizable_t* parent = br_da_getp(*brui__stack.rs, hovered->parent);
+        while (!(new_mode & brui_drag_mode_move) && parent->tag == brui_resizable_tag_ancor_helper) {
           if (hovered->ancor & brui_ancor_top) {
             if (new_mode & brui_drag_mode_bottom) new_mode = brui_drag_mode_move;
           } else if (hovered->ancor & brui_ancor_bottom) {
@@ -1263,6 +1263,7 @@ void brui_resizable_mouse_pressl(bruirs_t* rs, br_vec2_t mouse_pos, bool ctrl_do
           rs->drag_index = hovered->parent;
           rs->active_resizable = hovered->parent;
           hovered = parent;
+          parent = br_da_getp(*brui__stack.rs, hovered->parent);
         }
       }
       rs->drag_mode = new_mode;
