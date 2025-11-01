@@ -90,7 +90,6 @@ void br_plotter_init(br_plotter_t* br) {
       LOGF("Failed to open window either with x11 or glfw. Please install one of those two.");
     }
 #elif defined(_WIN32) 
-    LOGF("Failed");
     br->win.kind = brpl_window_glfw;
     if (false == brpl_window_open(&br->win)) {
       LOGF("Failed to open window either with native win32 windowing stuff or glfw. Please fix your PC.\n"

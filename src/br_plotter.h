@@ -142,7 +142,6 @@ typedef struct br_plotter_t {
 br_plotter_t* br_plotter_malloc(void);
 void        br_plotter_init(br_plotter_t* br);
 void        br_plotter_deinit(br_plotter_t* br);
-void        br_plotter_free(br_plotter_t* br);
 
 void        br_plotter_one_iter(br_plotter_t* br);
 void        br_plotter_update(br_plotter_t* br);
@@ -170,7 +169,6 @@ void        br_plotter_datas_deinit_in_plot(br_plotter_t* br, int plot_id);
 void        br_plotter_datas_empty_in_plot(br_plotter_t* br, int plot_id);
 
 // Platform specific
-void br_plotter_wait(br_plotter_t const* br);
 void br_plotter_init_specifics_platform(br_plotter_t* br, int width, int height);
 void br_plotter_deinit_specifics_platform(br_plotter_t* br);
 void br_plotter_begin_drawing(br_plotter_t* br);

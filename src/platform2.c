@@ -181,7 +181,7 @@ bool brpl_window_open(brpl_window_t* window) {
     case brpl_window_glfw: loaded = brpl_glfw_load(window); break;
 #endif
 #if BR_HAS_WIN32
-    case brpl_window_win32: loaded = brpl_glfw_load(window); break;
+    case brpl_window_win32: loaded = brpl_win32_load(window); break;
 #endif
     default: LOGE("Unknown kind: %d", window->kind); break;
   }
@@ -870,6 +870,7 @@ static bool brpl_glfw_load(brpl_window_t* win) {
 // WIN32 IMPL
 // -------------------------------
 #if BR_HAS_WIN32
+#pragma comment(lib, "user32.lib")
 
 typedef struct brpl_win32_window_t {
   brpl_q_t q;
@@ -895,12 +896,6 @@ static brpl_event_t brpl_win32_event_next(brpl_window_t* win) {
   else return e;
 }
 
-static bool brpl_win32_load(brpl_window_t* window) {
-  window->f.frame_start = brpl_win32_frame_start;
-  window->f.frame_end   = brpl_win32_frame_end;
-  window->f.event_next  = brpl_win32_event_next;
-  return true;
-}
 
 LRESULT CALLBACK brpl_win32_event_callback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
   brpl_event_t ev;
@@ -915,8 +910,6 @@ LRESULT CALLBACK brpl_win32_event_callback(HWND hwnd, UINT uMsg, WPARAM wParam, 
     case WM_CLOSE: {
       brpl_q_push(brpl_win32_q, (brpl_event_t) { .kind = brpl_event_close });
     } break;
-    case WM_ERASEBKGND: break;
-    case WM_PAINT:      break;
     case WM_LBUTTONUP:
     case WM_MBUTTONUP:
     case WM_RBUTTONUP: {
@@ -997,14 +990,23 @@ static unsigned long brpl_win32_window_event_loop(void* arg) {
   brpl_win32_q = &win32->q;
 
   WNDCLASS wc = {0};
-  wc.style = 0; //CS_OWNDC;
+  wc.style = CS_OWNDC;
   wc.lpfnWndProc = brpl_win32_event_callback;
   wc.hInstance = GetModuleHandleA(NULL);
   wc.lpszClassName = win->title;
   wc.hCursor = LoadCursorA(NULL, IDC_ARROW);
   RegisterClassA(&wc);
 
-  HWND hwnd = CreateWindowExA( WS_EX_APPWINDOW, wc.lpszClassName, win->title,
+  // TODO: Make WS_EX_NOREDIRECTIONBITMAP work with opengl.
+  //       ATM This is imposible out of the box.
+  //       One should most likely create Direct2D context. Draw
+  //       OpenGL frame, take the framebuffer from opengl. Draw
+  //       that framebuffer into the Direct2D context and then
+  //       swap manauly with Direct2D DirectRendering bullshit.
+  //DWORD ex_style = WS_EX_APPWINDOW | WS_EX_NOREDIRECTIONBITMAP;
+  DWORD ex_style = WS_EX_APPWINDOW;
+
+  HWND hwnd = CreateWindowExA(ex_style, wc.lpszClassName, win->title,
     WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_SIZEBOX,
     CW_USEDEFAULT, CW_USEDEFAULT, win->viewport.width, win->viewport.height,
     NULL, NULL, wc.hInstance, NULL
@@ -1068,6 +1070,14 @@ static bool brpl_win32_open_window(brpl_window_t* window) {
   bool gl_loaded = br_gl_load();
   brpl_q_push(&win32->q, (brpl_event_t) { .kind = brpl_event_window_focused });
   return 0 != win32->hwnd && gl_loaded;
+}
+
+static bool brpl_win32_load(brpl_window_t* window) {
+  window->f.window_open = brpl_win32_open_window;
+  window->f.frame_start = brpl_win32_frame_start;
+  window->f.frame_end   = brpl_win32_frame_end;
+  window->f.event_next  = brpl_win32_event_next;
+  return true;
 }
 
 #endif // BR_HAS_WIN32
