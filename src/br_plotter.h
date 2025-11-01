@@ -142,6 +142,7 @@ typedef struct br_plotter_t {
 br_plotter_t* br_plotter_malloc(void);
 void        br_plotter_init(br_plotter_t* br);
 void        br_plotter_deinit(br_plotter_t* br);
+void        br_plotter_free(br_plotter_t* plotter);
 
 void        br_plotter_one_iter(br_plotter_t* br);
 void        br_plotter_update(br_plotter_t* br);

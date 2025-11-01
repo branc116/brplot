@@ -399,7 +399,7 @@ const char* compiler_single_file_exe(platform_kind_t platform, const char* src_n
   compiler_base_flags(&cmd, compiler);
   nob_cmd_append(&cmd, src_name);
   const char* output = compiler_set_output(&cmd, output_file, compile_output_exe, platform, compiler);
-  nob_cmd_run_cache(&cmd);
+  if (false ==  nob_cmd_run_cache(&cmd)) return NULL;
   return output;
 }
 
@@ -462,7 +462,7 @@ static bool gl_gen(void) {
 
   // TODO: THis is not cached properly. Investigate...
   if (false == cache.was_last_cached) {
-    nob_cmd_append(&cmd, gl_gen_bin);
+    nob_cmd_append(&cmd, gl_gen_bin, "--no-tracy");
     if (false == br_cmd_run(&cmd)) return false;
   }
 

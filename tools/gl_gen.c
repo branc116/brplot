@@ -4,6 +4,8 @@
 #include "src/br_da.h"
 
 #include <stdio.h>
+#include <errno.h>
+#include <string.h>
 
 struct {
   const char* name;
@@ -16,7 +18,7 @@ struct {
     .name = "gl",
     .name_upper = "GL",
 	  .load_func = "brpl_load_gl",
-    .functions = 
+    .functions =
       "void glBegin(GLenum mode)"
       "void glColor3f(GLfloat r, GLfloat g, GLfloat b)"
       "void glVertex3f(GLfloat x, GLfloat y, GLfloat z)"
@@ -115,6 +117,10 @@ struct {
       "Status XInitThreads(void)"
       "void XrmInitialize(void)"
       "Displayp XOpenDisplay(const char* name)"
+      "int XDefaultScreen(Display* d)"
+      "int XRootWindow(Display* d, int screen)"
+      "Visualp XDefaultVisual(Display* d, int screen)"
+      "int XDefaultDepth(Display* d, int screen)"
       "int XCloseDisplay(Display* d)"
       "XErrorHandler XSetErrorHandler(XErrorHandler handler)"
       "int XGetErrorText(Display* d, int code, char* bufer_return, int length)"
@@ -122,9 +128,9 @@ struct {
       "XrmQuark XrmUniqueQuark(void)"
       "Window XCreateWindow(Display* display, Window parent, int x, int y, unsigned int width, unsigned int height, unsigned int border_width, int depth, unsigned int class, Visual* visual, unsigned long valuemask, XSetWindowAttributes* attributes)"
       "int XDestroyWindow(Display* d, Window w)"
-      "Atom XInternAtom(Display* display, _Xconst char* atom_name, Bool only_if_exists)"
-      "void Xutf8SetWMProperties(Display* display, Window w, _Xconst char* window_name, _Xconst char* icon_name, char** argv, int argc, XSizeHints* normal_hints, XWMHints* wm_hints, XClassHint* class_hints)"
-      "int XChangeProperty(Display* display, Window w, Atom property, Atom type, int format, int mode, _Xconst unsigned char* data, int nelements)"
+      "Atom XInternAtom(Display* display, const char* atom_name, Bool only_if_exists)"
+      "void Xutf8SetWMProperties(Display* display, Window w, const char* window_name, const char* icon_name, char** argv, int argc, XSizeHints* normal_hints, XWMHints* wm_hints, XClassHint* class_hints)"
+      "int XChangeProperty(Display* display, Window w, Atom property, Atom type, int format, int mode, const unsigned char* data, int nelements)"
       "int XMapWindow(Display* display, Window w)"
       "int XPending(Display* display)"
       "int XQLength(Display* display)"
@@ -186,6 +192,8 @@ struct {
       "void SwapBuffers(HDC hdc)"
   }
 };
+
+bool g_gen_tracy = true;
 
 typedef struct {
   br_strv_t type;
@@ -493,9 +501,11 @@ int do_gl_gen(const char* module, const char* module_upper, const char* load_fun
     fprintf(file_impl, "#elif defined(HEADLESS)\n");
     print_headless_impl(file_impl, module, funcs.arr, funcs.len, prefix);
 
-    fprintf(file_impl, "#elif defined(TRACY_ENABLE)\n");
-    print_tracy_impl(file_impl, funcs.arr, funcs.len, prefix);
-    print_loader(file_impl, module, funcs.arr, funcs.len, load_func, prefix, "internal");
+    if (g_gen_tracy) {
+      fprintf(file_impl, "#elif defined(TRACY_ENABLE)\n");
+      print_tracy_impl(file_impl, funcs.arr, funcs.len, prefix);
+      print_loader(file_impl, module, funcs.arr, funcs.len, load_func, prefix, "internal");
+    }
 
     fprintf(file_impl, "#else // Normal mode\n");
     print_declarations(file_impl, funcs.arr, funcs.len, prefix, NULL, "");
@@ -531,9 +541,28 @@ int do_gl_gen(const char* module, const char* module_upper, const char* load_fun
 }
 
 #if !defined(BR_GL_GEN_NO_MAIN)
-int main(void) {
+int main(int argc, char** argv) {
+  if (argc == 2) {
+    if (0 == strcmp(argv[1], "--no-tracy")) {
+      argv += 1;
+      argc -= 1;
+      g_gen_tracy = false;
+      LOGI("Disable tracy");
+    } else {
+      LOGF("Unknown flag `%s`", argv[0]);
+    }
+  } else if (argc > 2) {
+    LOGF("Unknown flags");
+    LOGF("USAGE: %s [--no-tracy]", argv[0]);
+  }
   FILE* file_impl = fopen(".generated/gl.c", "wb+");
+  if (NULL == file_impl) {
+    LOGF("Failed to open output files: %s", strerror(errno));
+  }
   FILE* file_header = fopen(".generated/gl.h", "wb+");
+  if (NULL == file_header) {
+    LOGF("Failed to open output files: %s", strerror(errno));
+  }
   fprintf(file_impl, "// Generated using %s\n", __FILE__);
   fprintf(file_impl, "#if defined(__GNUC__) || defined(__clang__)\n");
   fprintf(file_impl, "#  pragma GCC diagnostic push\n");

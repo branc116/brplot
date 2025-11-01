@@ -33,6 +33,8 @@ typedef struct {
   size_t len, cap;
 } files_t;
 
+static bool g_gen_tracy = true;
+
 bool has_visited(files_t all_visited, br_strv_t file) {
   for (size_t i = 0; i < all_visited.len; ++i) if (br_strv_eq(all_visited.arr[i], file)) return true;
   return false;
@@ -74,6 +76,7 @@ void cshl_get_includes(br_strv_t file_name, files_t* includes) {
 #define USE_EXTERNAL true
 bool cshl_get_tokens(br_strv_t file_name, files_t* all_visited, cshl_tokens_t* tokens, int depth, bool only_includes) {
   if (true == has_visited(*all_visited, file_name)) return true;
+  size_t start_count = tokens->len;
   LOGI("%*s%.*s", depth*2, "", file_name.len, file_name.str);
   br_da_push(*all_visited, file_name);
 
@@ -225,6 +228,7 @@ bool cshl_get_tokens(br_strv_t file_name, files_t* all_visited, cshl_tokens_t* t
       br_da_push(*tokens, pret);
     }
   }
+  LOGI("%*s%.*s [Count=%zu]", depth*2, "", file_name.len, file_name.str, tokens->len - start_count);
   return true;
 }
 
@@ -234,7 +238,7 @@ void fill_to_visit(files_t* to_visit, const char** source_files, int len) {
   }
 }
 
-int do_create_single_header_lib(const char** source_files, int len, const char* output_file) {
+bool do_create_single_header_lib(const char** source_files, int len, const char* output_file) {
   files_t to_visit = { 0 };
   files_t visited = { 0 };
 
@@ -242,13 +246,16 @@ int do_create_single_header_lib(const char** source_files, int len, const char* 
   fill_to_visit(&to_visit, source_files, len);
 
   while (to_visit.len > 0) {
-    cshl_get_tokens(to_visit.arr[to_visit.len - 1], &visited, &tokens, 0, false);
+    if (false == cshl_get_tokens(to_visit.arr[to_visit.len - 1], &visited, &tokens, 0, false)) return false;
     --to_visit.len;
   }
   LOGI("Found %zu tokens, %zu files visited.", tokens.len, visited.len);
-  //const char* out_amalgam = ".generated/brplot.c";
   {
     FILE* amalgam_file = fopen(output_file, "wb");
+    if (NULL == amalgam_file) {
+      LOGE("Failed to open amalgam file %s: %s", amalgam_file, strerror(errno));
+      return false;
+    }
     for (size_t i = 0; i < tokens.len; ++i) {
       cshl_token_t token = tokens.arr[i];
       if (token.kind == cshl_token_kind_include) {
@@ -262,7 +269,7 @@ int do_create_single_header_lib(const char** source_files, int len, const char* 
     fclose(amalgam_file);
     LOGI("Generated: %s", output_file);
   }
-  return 0;
+  return true;
 }
 
 #if !defined(BR_CREATE_SINGLE_HEADER_LIB_NO_MAIN)
@@ -275,10 +282,12 @@ int main(int argc, const char** argv) {
     const char** input_files = &argv[1];
     int input_files_n = argc - 2;
     const char* output_file = argv[argc - 1];
-    return do_create_single_header_lib(input_files, input_files_n, output_file);
+    bool ret = do_create_single_header_lib(input_files, input_files_n, output_file);
+    return ret ? 0 : 1;
   }
 }
 void br_on_fatal_error(void) { abort(); }
+void brgui_push_log_line(const char* fmt, ...) { }
 #endif
 
 // cc -DBR_DEBUG -Wall -Wextra -Wpedantic -g -I. -o bin/cshl tools/create_single_header_lib.c && ./bin/cshl

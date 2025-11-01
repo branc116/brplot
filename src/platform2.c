@@ -25,11 +25,172 @@
 #endif
 
 #if defined(BR_HAS_X11)
-#  define BR_WANTS_X11 1
-#  include "external/X11/Xlib.h"
-#  include "external/X11/Xresource.h"
-#  include "external/X11/Xutil.h"
-   typedef Display* Displayp;
+
+#define BR_WANTS_X11 1
+#define Bool int
+#define Status int
+#define None 0L
+#define XBufferOverflow -1
+#define XLookupChars    2
+#define XLookupBoth    4
+#define InputOutput    1
+#define Button1      1
+#define Button2      2
+#define Button3      3
+#define Button4      4
+#define Button5      5
+#define KeyPressMask      (1L<<0)
+#define KeyReleaseMask      (1L<<1)
+#define ButtonPressMask      (1L<<2)
+#define ButtonReleaseMask    (1L<<3)
+#define EnterWindowMask      (1L<<4)
+#define LeaveWindowMask      (1L<<5)
+#define PointerMotionMask    (1L<<6)
+#define PointerMotionHintMask    (1L<<7)
+#define Button1MotionMask    (1L<<8)
+#define Button2MotionMask    (1L<<9)
+#define Button3MotionMask    (1L<<10)
+#define Button4MotionMask    (1L<<11)
+#define Button5MotionMask    (1L<<12)
+#define ButtonMotionMask    (1L<<13)
+#define KeymapStateMask      (1L<<14)
+#define ExposureMask      (1L<<15)
+#define VisibilityChangeMask    (1L<<16)
+#define StructureNotifyMask    (1L<<17)
+#define ResizeRedirectMask    (1L<<18)
+#define SubstructureNotifyMask    (1L<<19)
+#define SubstructureRedirectMask  (1L<<20)
+#define FocusChangeMask      (1L<<21)
+#define PropertyChangeMask    (1L<<22)
+#define ColormapChangeMask    (1L<<23)
+#define OwnerGrabButtonMask    (1L<<24)
+
+#define CWBorderPixel           (1L<<3)
+#define CWEventMask    (1L<<11)
+#define CWColormap    (1L<<13)
+
+#define XNInputStyle "inputStyle"
+#define XNClientWindow "clientWindow"
+#define XNFocusWindow "focusWindow"
+
+#define XIMStatusNothing  0x0400L
+#define XIMPreeditNothing  0x0008L
+
+typedef struct _XDisplay Display;
+typedef struct _XIM *XIM;
+typedef struct _XIC *XIC;
+typedef Display* Displayp;
+typedef unsigned long Time;
+typedef unsigned long XID;
+typedef unsigned long VisualID;
+typedef unsigned long Atom;
+typedef int XrmQuark, *XrmQuarkList;
+typedef char *XPointer;
+typedef XID Window;
+typedef XID Pixmap;
+typedef XID KeySym;
+typedef XID Colormap;
+typedef XID Cursor;
+
+typedef void* Visual;
+typedef Visual* Visualp;
+typedef struct {
+  Visual *visual;
+  VisualID visualid;
+  int screen;
+  int depth;
+  int c_class;
+  unsigned long red_mask;
+  unsigned long green_mask;
+  unsigned long blue_mask;
+  int colormap_size;
+  int bits_per_rgb;
+} XVisualInfo;
+
+typedef struct {
+    Pixmap background_pixmap;  /* background or None or ParentRelative */
+    unsigned long background_pixel;  /* background pixel */
+    Pixmap border_pixmap;  /* border of the window */
+    unsigned long border_pixel;  /* border pixel value */
+    int bit_gravity;    /* one of bit gravity values */
+    int win_gravity;    /* one of the window gravity values */
+    int backing_store;    /* NotUseful, WhenMapped, Always */
+    unsigned long backing_planes;/* planes to be preserved if possible */
+    unsigned long backing_pixel;/* value to use in restoring planes */
+    Bool save_under;    /* should bits under be saved? (popups) */
+    long event_mask;    /* set of events that should be saved */
+    long do_not_propagate_mask;  /* set of events that should not propagate */
+    Bool override_redirect;  /* boolean value for override-redirect */
+    Colormap colormap;    /* color map to be associated with window */
+    Cursor cursor;    /* cursor to be displayed (or None) */
+} XSetWindowAttributes;
+
+typedef struct {
+  long flags;  /* marks which fields in this structure are defined */
+  int x, y;    /* obsolete for new window mgrs, but clients */
+  int width, height;  /* should set so old wm's don't mess up */
+  int min_width, min_height;
+  int max_width, max_height;
+  int width_inc, height_inc;
+  struct {
+    int x;  /* numerator */
+    int y;  /* denominator */
+  } min_aspect, max_aspect;
+  int base_width, base_height;    /* added by ICCCM version 1 */
+  int win_gravity;      /* added by ICCCM version 1 */
+} XSizeHints;
+
+typedef struct {
+  long flags;  /* marks which fields in this structure are defined */
+  Bool input;  /* does this application rely on the window manager to
+      get keyboard input? */
+  int initial_state;  /* see below */
+  Pixmap icon_pixmap;  /* pixmap to be used as icon */
+  Window icon_window;   /* window to be used as icon */
+  int icon_x, icon_y;   /* initial position of icon */
+  Pixmap icon_mask;  /* icon mask bitmap */
+  XID window_group;  /* id of related window group */
+  /* this structure may be extended in the future */
+} XWMHints;
+
+typedef struct {
+  int            type;       /* of event. Always GenericEvent */
+  unsigned long  serial;     /* # of last request processed */
+  Bool           send_event; /* true if from SendEvent request */
+  Display        *display;   /* Display the event was read from */
+  union {
+    int    extension; /* major opcode of extension that caused the event */
+    Window window;    /* "event" window it is reported relative to */
+  };
+  union {
+    int    evtype;       /* actual event type. */
+    Window root;         /* root window that the event occurred on */
+    Atom   atom;
+    Atom   message_type;
+  };
+} XGenericEvent;
+
+typedef struct {
+  int type;
+  Display *display;  /* Display the event was read from */
+  XID resourceid;    /* resource id */
+  unsigned long serial;  /* serial number of failed request */
+  unsigned char error_code;  /* error code of failed request */
+  unsigned char request_code;  /* Major op-code of failed request */
+  unsigned char minor_code;  /* Minor op-code of failed request */
+} XErrorEvent;
+
+typedef struct {
+  char *res_name;
+  char *res_class;
+} XClassHint;
+
+typedef struct _XComposeStatus {
+    XPointer compose_ptr;  /* state table pointer */
+    int chars_matched;    /* match state */
+} XComposeStatus;
+
+typedef int (*XErrorHandler)(Display* d, XErrorEvent* error);
 
 const char* br_glx_library_names[] = {
   "libGLX.so.0",
@@ -48,10 +209,28 @@ const char* br_xi_library_names[] = {
   "libXi.so",
 };
 
-#  define BR_WANTS_XI 1
-#  define BR_HAS_XI 1
-typedef struct
-{
+#define BR_WANTS_XI 1
+#define BR_HAS_XI 1
+
+#define KeyPress         2
+#define KeyRelease       3
+#define ButtonPress      4
+#define ButtonRelease    5
+#define MotionNotify     6
+#define EnterNotify      7
+#define LeaveNotify      8
+#define FocusIn          9
+#define FocusOut        10
+#define Expose          12
+#define ConfigureNotify 22
+#define PropertyNotify  28
+#define ClientMessage   33
+
+#define XI_TouchBegin  18 /* XI 2.2 */
+#define XI_TouchUpdate 19
+#define XI_TouchEnd    20
+
+typedef struct {
     int                 deviceid;
     int                 mask_len;
     unsigned char*      mask;
@@ -71,9 +250,80 @@ typedef struct {
   } btn;
 } XIDeviceEvent;
 
-#define XI_TouchBegin                    18 /* XI 2.2 */
-#define XI_TouchUpdate                   19
-#define XI_TouchEnd                      20
+typedef struct {
+  XGenericEvent generic;
+  Window subwindow;  /* child window */
+  Time time;    /* milliseconds */
+  int x, y;    /* pointer x, y coordinates in event window */
+  // TODO: Maybe use x,y_root insted of x,y
+  int x_root, y_root;  /* coordinates relative to root */
+  unsigned int state;  /* key or button mask */
+  unsigned int keycode;  /* detail */
+  Bool same_screen;  /* same screen flag */
+} XKeyEvent;
+typedef XKeyEvent XKeyPressedEvent;
+
+typedef struct {
+  XGenericEvent generic;
+  Window subwindow;  /* child window */
+  Time time;    /* milliseconds */
+  int x, y;    /* pointer x, y coordinates in event window */
+  int x_root, y_root;  /* coordinates relative to root */
+  unsigned int state;  /* key or button mask */
+  unsigned int button;  /* detail */
+  Bool same_screen;  /* same screen flag */
+} XButtonEvent;
+
+typedef struct {
+  XGenericEvent generic;
+  Window subwindow;  /* child window */
+  Time time;    /* milliseconds */
+  int x, y;    /* pointer x, y coordinates in event window */
+  int x_root, y_root;  /* coordinates relative to root */
+  unsigned int state;  /* key or button mask */
+  char is_hint;    /* detail */
+  Bool same_screen;  /* same screen flag */
+} XMotionEvent;
+
+typedef struct {
+  XGenericEvent generic;
+  int x, y;
+  int width, height;
+  int border_width;
+  Window above;
+  Bool override_redirect;
+} XConfigureEvent;
+
+typedef struct {
+  XGenericEvent generic;
+  Time time;
+  int state;    /* NewValue, Deleted */
+} XPropertyEvent;
+
+typedef struct {
+  XGenericEvent generic;
+  int format;
+  long msg;
+} XClientMessageEvent;
+
+typedef struct {
+  XGenericEvent generic;
+  unsigned int   cookie;
+  void           *data;
+} XGenericEventCookie;
+
+typedef union _XEvent {
+  int type; /* must not be changed; first element */
+  XKeyEvent xkey;
+  XButtonEvent xbutton;
+  XMotionEvent xmotion;
+  XConfigureEvent xconfigure;
+  XPropertyEvent xproperty;
+  XClientMessageEvent xclient;
+  XGenericEventCookie xcookie;
+  long pad[24];
+} XEvent;
+
 #endif
 
 #if defined(BR_HAS_GLX)
@@ -375,11 +625,11 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
   XEvent event;
   XNextEvent(d, &event);
 
-  if (w->xi_opcode == event.xcookie.extension) {
+  if (w->xi_opcode == event.xcookie.generic.extension) {
     XGetEventData(w->display, &event.xcookie);
     XIDeviceEvent* de = (XIDeviceEvent*)event.xcookie.data;
     brpl_event_t e = { .kind = brpl_event_nop };
-    switch (event.xcookie.evtype) {
+    switch (event.xcookie.generic.evtype) {
       case XI_TouchBegin: {
         e.kind = brpl_event_touch_begin;
         e.touch.id = de->detail;
@@ -492,14 +742,14 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
       };
     } break;
     case PropertyNotify: {
-      LOGI("Prop %lu changed: %d", event.xproperty.atom, event.xproperty.state);
+      LOGI("Prop %lu changed: %d", event.xproperty.generic.atom, event.xproperty.state);
       return (brpl_event_t) { .kind = brpl_event_nop };
     } break;
     case Expose: {
       return (brpl_event_t) { .kind = brpl_event_nop };
     } break;
     case ClientMessage: {
-      if (event.xclient.data.l[0] == w->WM_DELETE_WINDOW) {
+      if (event.xclient.msg == w->WM_DELETE_WINDOW) {
         return (brpl_event_t) { .kind = brpl_event_close };
       } else {
         return (brpl_event_t) { .kind = brpl_event_nop };
@@ -559,12 +809,12 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
     return false;
   }
   x11.WM_DELETE_WINDOW = XInternAtom(d, "WM_DELETE_WINDOW", false);
-  x11.screen = DefaultScreen(x11.display);
-  x11.root = RootWindow(x11.display, x11.screen);
+  x11.screen = XDefaultScreen(x11.display);
+  x11.root = XRootWindow(x11.display, x11.screen);
   x11.context = XrmUniqueQuark();
 
-  Visual* visual = DefaultVisual(x11.display, x11.screen);
-  int depth = DefaultDepth(x11.display, x11.screen);
+  Visual* visual = XDefaultVisual(x11.display, x11.screen);
+  int depth = XDefaultDepth(x11.display, x11.screen);
   XSetWindowAttributes wa = { 0 };
   wa.event_mask = StructureNotifyMask | KeyPressMask | KeyReleaseMask |
                   PointerMotionMask | ButtonPressMask | ButtonReleaseMask |
