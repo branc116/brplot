@@ -43,7 +43,7 @@ int main(void) {
 #pragma once
 #define BR_MAJOR_VERSION 0
 #define BR_MINOR_VERSION 0
-#define BR_PATCH_VERSION 5
+#define BR_PATCH_VERSION 6
 
 #if defined(__EMSCRIPTEN__)
 #  include <emscripten.h>
