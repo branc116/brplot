@@ -2,13 +2,11 @@
 
 precision mediump float;
 
-in vec2 vertexPosition;
+in vec3 vert;
 
-out vec2 fragTexCoord;
-
-uniform vec2 screen;
+out float middle_dist;
 
 void main() {
-  fragTexCoord = vec2(screen.x/screen.y, 1.0)*(vertexPosition);
-  gl_Position = vec4(vertexPosition.xy, 0.99, 1.0);
+  gl_Position = vec4(vert.xy, 1.0, 1.0);
+  middle_dist = vert.z;
 }

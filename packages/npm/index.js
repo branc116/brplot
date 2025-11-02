@@ -65,12 +65,42 @@ export class Brplot {
     this.module._br_wasm_init(plotter);
     this.module._br_wasm_loop(plotter);
     this.plotter = plotter;
+    this.canvas.addEventListener("touchstart", (ev) => {
+      ev.preventDefault();
+      for (let t of ev.changedTouches) {
+        let local_x = t.clientX - this.canvas.offsetLeft;
+        let local_y = t.clientY - this.canvas.offsetTop;
+        this.module._br_wasm_touch_event(this.plotter, 0, local_x, local_y, t.identifier);
+      }
+    });
+    this.canvas.addEventListener("touchmove", (ev) => {
+      ev.preventDefault();
+      for (let t of ev.changedTouches) {
+        let local_x = t.clientX - this.canvas.offsetLeft;
+        let local_y = t.clientY - this.canvas.offsetTop;
+        this.module._br_wasm_touch_event(this.plotter, 1, local_x, local_y, t.identifier);
+      }
+    })
+    this.canvas.addEventListener("touchend", (ev) => {
+      ev.preventDefault();
+      console.log("End");
+      for (let t of ev.changedTouches) {
+        let local_x = t.clientX - this.canvas.offsetLeft;
+        let local_y = t.clientY - this.canvas.offsetTop;
+        this.module._br_wasm_touch_event(this.plotter, 2, local_x, local_y, t.identifier);
+      }
+    });
   }
 
   _loopRedraw = () => {
     if (!this.startedDrawing) return;
+    let _this = this;
     this.redrawOnce();
-    requestAnimationFrame(this._loopRedraw);
+    function foo() {
+      _this.redrawOnce();
+      requestAnimationFrame(foo);
+    }
+    requestAnimationFrame(foo);
   }
 }
 

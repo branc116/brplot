@@ -59,19 +59,7 @@ void br_plot2d_zoom(br_plot_t* plot, br_vec2_t vec, br_extent_t screen_extent, b
 void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
   br_extent_t const ex = BR_EXTENTI_TOF(plot->cur_extent);
   switch (plot->kind) {
-    case br_plot_kind_2d: {
-      TracyCFrameMarkStart("update_shader_values_2d");
-      br_vec2d_t zoom = plot->dd.zoom;
-      br_vec2d_t zoom_log = { .x = pow(10.0, -floor(log10(zoom.x))), .y = pow(10.0, -floor(log10(zoom.y))) };
-      br_vec2d_t zoom_final = { .x = zoom.x * zoom_log.x, .y = zoom.y * zoom_log.y };
-      shaders->grid->uvs.zoom_uv = BR_VEC2D_TOF(zoom_final);
-      br_vec2d_t off_zoom = br_vec2d_mul(plot->dd.offset, zoom_log);
-      br_vec2d_t off = br_vec2d_mul(off_zoom, BR_VEC2D(0.1f, 0.1f));
-      br_vec2d_t off_final = br_vec2d_sub(off_zoom, BR_VEC2D(floor(off.x) * 10.0, floor(off.y) * 10.0));
-      shaders->grid->uvs.offset_uv = BR_VEC2D_TOF(off_final);
-      shaders->grid->uvs.screen_uv = ex.size.vec;
-      TracyCFrameMarkEnd("update_shader_values_2d");
-    } break;
+    case br_plot_kind_2d: break;
     case br_plot_kind_3d: {
       TracyCFrameMarkStart("update_shader_values_3d");
       br_vec2_t re = (br_vec2_t) { .x = ex.width, .y = ex.height };

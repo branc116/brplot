@@ -138,12 +138,14 @@ BR_ALL_SHADERS(X, X_VEC, NOP2)
 
 #define X(NAME, CAP, U_VEC, BUFF) \
   void br_shader_ ## NAME ## _draw(br_shader_ ## NAME ## _t* shader) { \
-    brgl_enable_shader((uint32_t)shader->id); \
-    br_shader_ ## NAME ## _update_us(shader); \
-    br_shader_ ## NAME ## _update_vbs(shader); \
-    brgl_enable_vao(shader->vao_id); \
-    brgl_draw_vao(0, shader->len*3); \
-    shader->len = 0; \
+    if (shader->len > 0) { \
+      brgl_enable_shader((uint32_t)shader->id); \
+      br_shader_ ## NAME ## _update_us(shader); \
+      br_shader_ ## NAME ## _update_vbs(shader); \
+      brgl_enable_vao(shader->vao_id); \
+      brgl_draw_vao(0, shader->len*3); \
+      shader->len = 0; \
+    } \
   }
 BR_ALL_SHADERS(X, NOP2, NOP2)
 #undef X
@@ -164,11 +166,7 @@ br_shaders_t br_shaders_malloc(void) {
 }
 
 void br_shaders_draw_all(br_shaders_t shaders) {
-#define X(NAME, CAP, V, B) \
-  if (shaders.NAME->len != 0) { \
-    br_shader_ ## NAME ## _draw(shaders.NAME); \
-    shaders.NAME->len = 0; \
-  }
+#define X(NAME, CAP, V, B) br_shader_ ## NAME ## _draw(shaders.NAME);
   BR_ALL_SHADERS(X, NOP2, NOP2)
 #undef X
 }

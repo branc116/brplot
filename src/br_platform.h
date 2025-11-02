@@ -201,9 +201,7 @@ typedef enum brpl_window_kind_t {
   brpl_window_x11,
   brpl_window_win32,
   brpl_window_glfw,
-} brpl_window_kind_t;
-
-typedef struct brpl_window_t brpl_window_t;
+} brpl_window_kind_t; typedef struct brpl_window_t brpl_window_t;
 struct brpl_window_t {
   struct {
     void (*frame_start)(brpl_window_t* window);
@@ -226,7 +224,7 @@ struct brpl_window_t {
 };
 
 bool brpl_window_open(brpl_window_t* window);
-bool brpl_window_close(brpl_window_t* window);
+void brpl_window_close(brpl_window_t* window);
 
 void brpl_frame_start(brpl_window_t* window);
 void brpl_frame_end  (brpl_window_t* window);
@@ -241,3 +239,7 @@ void* brpl_load_symbol(void* library, const char* name);
 
 void brpl_q_push(brpl_q_t* q, brpl_event_t event);
 brpl_event_t brpl_q_pop(brpl_q_t* q);
+
+// Only for web and with glfw...
+void brpl_additional_event_touch(brpl_window_t* window, int kind, float x, float y, int id);
+void brpl_window_size_set(brpl_window_t* window, int height, int width);

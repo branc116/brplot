@@ -14,7 +14,6 @@
 #include "src/br_gl.h"
 #include "src/br_free_list.h"
 #include "src/br_memory.h"
-#include "src/lib.c"
 
 #include <math.h>
 #include <string.h>
@@ -233,7 +232,6 @@ void br_plotter_update(br_plotter_t* br) {
   ++n;
   br->mouse.click = false;
   while (ev.kind != brpl_event_none) {
-    //LOGI("[%d] ev.kind = %d", n, ev.kind);
     switch (ev.kind) {
       case brpl_event_nop: break;
       case brpl_event_key_press: {
@@ -410,6 +408,7 @@ void br_plotter_update(br_plotter_t* br) {
         }
       } break;
       case brpl_event_mouse_press: {
+        if (br->time.now - br->touch_points.last_touch_time < 1) break;
         if (br->action.active == br_plotter_entity_text_input) {
           br->action.active = br_plotter_entity_none;
           brui_resizable_mouse_releasel(&br->resizables, br->mouse.pos);
@@ -429,6 +428,7 @@ void br_plotter_update(br_plotter_t* br) {
         }
       } break;
       case brpl_event_mouse_release: {
+        if (br->time.now - br->touch_points.last_touch_time < 1) break;
         if (br->action.active != br_plotter_entity_text_input) {
           brui_resizable_mouse_releasel(&br->resizables, br->mouse.pos);
           br->action.active = br_plotter_entity_none;
@@ -437,6 +437,7 @@ void br_plotter_update(br_plotter_t* br) {
         br->mouse.dragging_right = false;
       } break;
       case brpl_event_mouse_move: {
+        if (br->time.now - br->touch_points.last_touch_time < 1) break;
         if (br->win.active) {
           if (br->mouse.active) br->mouse.delta = br_vec2_sub(ev.pos, br->mouse.pos);
           else                  br->mouse.delta = BR_VEC2(0, 0);
@@ -593,7 +594,6 @@ void br_plotter_update(br_plotter_t* br) {
         } else if (brui_action()->kind == brui_action_typing) {
           br->action.active = br_plotter_entity_text_input;
         }
-        brgl_finish();
         brpl_frame_end(&br->win);
         return;
       } break;
@@ -601,6 +601,7 @@ void br_plotter_update(br_plotter_t* br) {
         LOGI("Window scale: %f %f", ev.size.width, ev.size.height);
       } break;
       case brpl_event_touch_begin: {
+        br->touch_points.last_touch_time = br->time.now;
         brpl_touch_point_t* tpp = NULL;
         brfl_foreach(i, br->touch_points) {
           brpl_touch_point_t tp = br->touch_points.arr[i];
@@ -610,6 +611,7 @@ void br_plotter_update(br_plotter_t* br) {
         if (tpp == NULL) brfl_push(br->touch_points, ev.touch);
       } break;
       case brpl_event_touch_update: {
+        br->touch_points.last_touch_time = br->time.now;
         brpl_touch_point_t* tpp = NULL;
         brfl_foreach(i, br->touch_points) {
           brpl_touch_point_t tp = br->touch_points.arr[i];
@@ -617,6 +619,7 @@ void br_plotter_update(br_plotter_t* br) {
           tpp = &br->touch_points.arr[i];
         }
         if (tpp == NULL) break;
+        br->mouse.pos = tpp->pos;
         if (br->hovered.active == br_plotter_entity_plot_2d) {
           br_plot_t* plot = br_da_getp(br->plots, br->hovered.plot_id);
           br_extent_t ex = br->resizables.arr[plot->extent_handle].cur_extent;
@@ -653,7 +656,6 @@ void br_plotter_update(br_plotter_t* br) {
               br_vec2d_t pc = br_plot2d_to_plot(plot, ev.touch.pos);
               br_vec2d_t middle_new = br_vec2d_add(br_vec2d_scale(pb, 0.5f), br_vec2d_scale(pc, 0.5f));
               br_vec2d_t delta = br_vec2d_sub(middle_new, middle_old);
-              br_data_add_v1(br, delta.x, ev.touch.id);
               plot->dd.offset = br_vec2d_sub(plot->dd.offset, delta);
             }
             tpp->pos = ev.touch.pos;
@@ -661,6 +663,7 @@ void br_plotter_update(br_plotter_t* br) {
         }
       } break;
       case brpl_event_touch_end: {
+        br->touch_points.last_touch_time = br->time.now;
         int to_remove = -1;
         brfl_foreach(i, br->touch_points) {
           brpl_touch_point_t tp = br->touch_points.arr[i];
@@ -668,7 +671,27 @@ void br_plotter_update(br_plotter_t* br) {
           to_remove = i;
           break;
         }
-        if (to_remove >= 0) brfl_remove(br->touch_points, to_remove);
+        if (to_remove >= 0) {
+          brpl_touch_point_t point = br_da_get(br->touch_points, to_remove);
+          brfl_remove(br->touch_points, to_remove);
+          double diff = br->time.now - br->touch_points.last_free_time;
+          if (br->touch_points.free_len == 0) {
+            if (diff < 0.5) {
+              br->mouse.pos = ev.pos;
+              br->mouse.old_pos = br->mouse.pos;
+              brui_resizable_mouse_move(&br->resizables, point.pos);
+              brui_resizable_mouse_pressl(&br->resizables, point.pos, br->key.ctrl_down);
+              brui_resizable_mouse_releasel(&br->resizables, point.pos);
+            } else {
+              LOGI("Diff = %f", diff);
+            }
+            br->touch_points.last_free_time = br->time.now;
+          } else {
+            LOGI("Free len: %d", br->touch_points.free_len);
+          }
+          LOGI("Free len: %d", br->touch_points.free_len);
+          LOGI("Diff = %f", diff);
+        }
       } break;
       default: BR_TODO("br_plotter_update active: %d, event: %d", br->action.active, ev.kind);
     }

@@ -297,7 +297,10 @@ BR_EXPORT void br_wasm_loop(br_plotter_t* br) {
 
 // void glfwSetWindowSize(GLFWwindow* window, int width, int height);
 BR_EXPORT void br_wasm_resize(br_plotter_t* br, int width, int height) {
-  LOGW("Resize not implemented");
-  // glfwSetWindowSize(br->win.glfw, width, height);
+  brpl_window_size_set(&br->win, width, height);
+}
+
+BR_EXPORT void br_wasm_touch_event(br_plotter_t* br, int kind, float x, float y, int id) {
+  brpl_additional_event_touch(&br->win, kind, x, y, id);
 }
 #endif

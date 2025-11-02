@@ -1432,7 +1432,6 @@ static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t an
     brui_resizable_t new = {
       .current = {
         .tag = brui_resizable_tag_ancor_helper,
-        .z = sibling->z,
         .title_id = title_id,
         .cur_extent = sibling->cur_extent,
         .parent = sibling->parent,

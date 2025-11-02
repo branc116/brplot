@@ -69,6 +69,9 @@ typedef struct br_plotter_t {
     int len, cap;
     int free_len;
     int free_next;
+
+    double last_free_time;
+    double last_touch_time;
   } touch_points;
 
   struct {

@@ -438,7 +438,7 @@ bool brpl_window_open(brpl_window_t* window) {
   return loaded && window->f.window_open && window->f.window_open(window);
 }
 
-bool brpl_window_close(brpl_window_t* window) {
+void brpl_window_close(brpl_window_t* window) {
   window->f.window_close(window);
 }
 
@@ -1093,6 +1093,24 @@ static bool brpl_glfw_window_open(brpl_window_t* window) {
   }
   brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_window_focused });
   return true;
+}
+
+void brpl_additional_event_touch(brpl_window_t* window, int kind, float x, float y, int id) {
+  brpl_event_kind_t ev_kind;
+  switch (kind) {
+    case 0: ev_kind = brpl_event_touch_begin; break;
+    case 1: ev_kind = brpl_event_touch_update; break;
+    case 2: ev_kind = brpl_event_touch_end; break;
+    default: BR_LOGE("Bad event kind: %d", kind);
+  }
+  brpl_glfw_window_t* win = window->win;
+  brpl_q_push(&win->q, (brpl_event_t) { .kind = ev_kind, .touch = { .pos = BR_VEC2(x, y), .id = id } });
+}
+
+void brpl_window_size_set(brpl_window_t* window, int width, int height) {
+ brpl_glfw_window_t* win = window->win;
+ glfwSetWindowSize(win->glfw, width, height);
+ brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_window_resize, .size = BR_SIZE(width, height) });
 }
 
 void brpl_glfw_window_close(brpl_window_t* window) {

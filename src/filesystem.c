@@ -341,6 +341,10 @@ bool br_fs_move(const char* from, const char* to) {
 }
 
 bool br_fs_read_internal(const char* path, br_str_t* out_content, const char* file_name, int line) {
+#if defined(__EMSCRIPTEN__)
+  LOGW("Failed to read %s on web at: %s:%d", path, file_name, line);
+  return false;
+#else
   FILE* file        = NULL;
   long size         = 0;
   size_t wanted_cap = 0;
@@ -367,6 +371,7 @@ error:
 done:
   if (file != NULL) fclose(file);
   return success;
+#endif
 }
 
 br_str_t br_fs_read1(const char* path) {

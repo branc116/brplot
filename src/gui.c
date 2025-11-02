@@ -51,6 +51,7 @@ static void brgui_draw_memory(br_plotter_t* br);
 void br_plotter_draw(br_plotter_t* br) {
   brsp_t* sp = &br->sp;
   BR_PROFILE("Plotter draw") {
+    brgl_enable_framebuffer(0, br->win.viewport.width, br->win.viewport.height);
 #if BR_HAS_HOTRELOAD
     br_hotreload_tick(&br->hot_state);
 #endif
@@ -75,12 +76,14 @@ void br_plotter_draw(br_plotter_t* br) {
           br_datas_draw(br->groups, PLOT);
           br_shaders_draw_all(br->shaders);
           brgui_draw_grid_numbers(br->text, PLOT, &br->ui.theme);
+          br_shaders_draw_all(br->shaders);
         } else if (PLOT->kind == br_plot_kind_3d) {
           br_datas_draw(br->groups, PLOT);
           br_shaders_draw_all(br->shaders);
           br_mesh_grid_draw(PLOT, &br->ui.theme);
           br_shaders_draw_all(br->shaders);
           brgui_draw_grid_numbers(br->text, PLOT, &br->ui.theme);
+          br_shaders_draw_all(br->shaders);
         }
       }
     }

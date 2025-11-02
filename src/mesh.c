@@ -194,6 +194,7 @@ void br_mesh_3d_gen_line_strip3(br_mesh_line_3d_t args, float const* xs, float c
       BR_VEC3(xs[i+1], ys[i+1], 0));
 }
 
+br_extent_t brui_resizable_cur_extent(int resizable_handle);
 
 // TODO: This should be split to _gen and _draw
 void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
@@ -203,14 +204,60 @@ void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
       TracyCFrameMarkStart("grid_draw_2d");
       br_mesh_state.shaders->grid->uvs.bg_color_uv = BR_COLOR_TO4(theme->colors.plot_bg);
       br_mesh_state.shaders->grid->uvs.lines_color_uv = BR_COLOR_TO4(theme->colors.grid_lines);
-      br_mesh_state.shaders->grid->uvs.line_thickness_uv = plot->dd.grid_line_thickness;
-      br_mesh_state.shaders->grid->uvs.major_line_thickness_uv = plot->dd.grid_major_line_thickness;
-      br_shader_grid_push_quad(br_mesh_state.shaders->grid, (br_shader_grid_el_t[4]) {
-          { .vertexPosition = BR_VEC2(-1, 1) },
-          { .vertexPosition = BR_VEC2(1, 1) },
-          { .vertexPosition = BR_VEC2(1, -1) },
-          { .vertexPosition = BR_VEC2(-1, -1) },
-      });
+      br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
+      br_vec2d_t from = br_plot2d_to_plot(plot, BR_VEC2(ex.x, ex.y + ex.height));
+      br_vec2d_t to = br_plot2d_to_plot(plot, BR_VEC2(ex.x + ex.width, ex.y));
+      {
+        double real_exp = log10((to.x - from.x) / 2.f);
+        double exp = floor(real_exp);
+        double base = pow(10.0, exp);
+        double start = floor(from.x / base) * base;
+        double n = (to.x - from.x) / base;
+        double thickness_base = br_float_max(1, 2 - n / 20);
+        for (double cur_x = start; cur_x < to.x; cur_x += base) {
+          double thick = thickness_base;
+          double higher = fabs(cur_x / (base * 10));
+          if (higher - floor(higher) < 0.01) thick = 5.0;
+
+          double from_start = cur_x - from.x;
+          double uv = 2.0 * from_start / (to.x - from.x) - 1.0;
+          double thick_real = 14.0/ex.width * plot->dd.grid_line_thickness;
+          double l = uv - thick_real;
+          double r = uv + thick_real;
+          br_shader_grid_push_quad(br_mesh_state.shaders->grid, (br_shader_grid_el_t[4]) {
+              { .vert = BR_VEC3(l,  1, -1/thick) },
+              { .vert = BR_VEC3(r,  1,  1/thick) },
+              { .vert = BR_VEC3(r, -1,  1/thick) },
+              { .vert = BR_VEC3(l, -1, -1/thick) },
+          });
+        }
+      }
+      {
+        double plot_height = to.y - from.y;
+        double real_exp = log10(plot_height / 2.f);
+        double exp = floor(real_exp);
+        double base = pow(10.0, exp);
+        double start = floor(from.y / base) * base;
+        double n = plot_height / base;
+        double thickness_base = br_float_max(1, 2 - n / 20);
+        for (double cur_y = start; cur_y < to.y; cur_y += base) {
+          double thick = thickness_base;
+          double higher = fabs(cur_y / (base * 10));
+          if (higher - floor(higher) < 0.01) thick = 5.0;
+
+          double from_start = cur_y - from.y;
+          double uv = 2.0 * from_start / plot_height - 1.0;
+          double thick_real = 14.0/ex.height * plot->dd.grid_line_thickness;
+          double d = uv - thick_real;
+          double u = uv + thick_real;
+          br_shader_grid_push_quad(br_mesh_state.shaders->grid, (br_shader_grid_el_t[4]) {
+              { .vert = BR_VEC3(-1, u, -1/thick) },
+              { .vert = BR_VEC3( 1, u, -1/thick) },
+              { .vert = BR_VEC3( 1, d,  1/thick) },
+              { .vert = BR_VEC3(-1, d,  1/thick) },
+          });
+        }
+      }
       TracyCFrameMarkEnd("grid_draw_2d");
     } break;
     case br_plot_kind_3d: {
