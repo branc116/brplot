@@ -1128,7 +1128,7 @@ static void brgui_draw_license(br_plotter_t* br) {
 
 static void brgui_draw_log(br_plotter_t* br) {
   if (false == br->ui.show_log) return;
-  brui_resizable_temp_push_t tmp = brui_resizable_temp_push(BR_STRL("Log"));
+  brui_resizable_temp_push(BR_STRL("Log"));
     float local_y = brui_local_y();
     float ts = (float)brui_text_size() + brui_padding_y();
     int i = 0;
@@ -1226,6 +1226,7 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, br_theme_t
 
 
 void brgui_push_log_line(const char* fmt, ...) {
+  (void)fmt;
 //  va_list args;
 //  va_start(args, fmt);
 //  int n = vsnprintf(NULL, 0, fmt, args);

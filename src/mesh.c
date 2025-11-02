@@ -213,7 +213,8 @@ void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
         double base = pow(10.0, exp);
         double start = floor(from.x / base) * base;
         double n = (to.x - from.x) / base;
-        double thickness_base = br_float_max(1, 2 - n / 20);
+        double thickness_base = 2 - n / 20;
+        if (thickness_base < 1.0) thickness_base = 1.0;
         for (double cur_x = start; cur_x < to.x; cur_x += base) {
           double thick = thickness_base;
           double higher = fabs(cur_x / (base * 10));
@@ -221,14 +222,14 @@ void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
 
           double from_start = cur_x - from.x;
           double uv = 2.0 * from_start / (to.x - from.x) - 1.0;
-          double thick_real = 14.0/ex.width * plot->dd.grid_line_thickness;
+          double thick_real = 14.0/(double)ex.width * (double)plot->dd.grid_line_thickness;
           double l = uv - thick_real;
           double r = uv + thick_real;
           br_shader_grid_push_quad(br_mesh_state.shaders->grid, (br_shader_grid_el_t[4]) {
-              { .vert = BR_VEC3(l,  1, -1/thick) },
-              { .vert = BR_VEC3(r,  1,  1/thick) },
-              { .vert = BR_VEC3(r, -1,  1/thick) },
-              { .vert = BR_VEC3(l, -1, -1/thick) },
+              { .vert = BR_VEC3((float)l,  1, -1/(float)thick) },
+              { .vert = BR_VEC3((float)r,  1,  1/(float)thick) },
+              { .vert = BR_VEC3((float)r, -1,  1/(float)thick) },
+              { .vert = BR_VEC3((float)l, -1, -1/(float)thick) },
           });
         }
       }
@@ -251,10 +252,10 @@ void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
           double d = uv - thick_real;
           double u = uv + thick_real;
           br_shader_grid_push_quad(br_mesh_state.shaders->grid, (br_shader_grid_el_t[4]) {
-              { .vert = BR_VEC3(-1, u, -1/thick) },
-              { .vert = BR_VEC3( 1, u, -1/thick) },
-              { .vert = BR_VEC3( 1, d,  1/thick) },
-              { .vert = BR_VEC3(-1, d,  1/thick) },
+              { .vert = BR_VEC3(-1, (float)u, -1/(float)thick) },
+              { .vert = BR_VEC3( 1, (float)u, -1/(float)thick) },
+              { .vert = BR_VEC3( 1, (float)d,  1/(float)thick) },
+              { .vert = BR_VEC3(-1, (float)d,  1/(float)thick) },
           });
         }
       }

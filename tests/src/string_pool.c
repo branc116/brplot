@@ -280,6 +280,8 @@ int main(void) {
   string_pool_compress();
 }
 #endif
+
 void br_on_fatal_error(void) {}
+void brgui_push_log_line(const char* fmt, ...) {(void)fmt;}
 
 // clang -fsanitize=address -ggdb -I. tests/src/string_pool.c -o bin/string_pool_tests && bin/string_pool_tests

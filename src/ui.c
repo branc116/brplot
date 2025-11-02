@@ -222,8 +222,8 @@ void brui_text_at(br_strv_t strv, br_vec2_t at) {
   float padd = TOP.padding.x * 2;
   br_vec2_t at_og = at;
   br_color_t bg = br_color_lighter(TOP.background_color, BR_THEME.colors.highlite_factor);
-  br_bb_t rect;
-  br_vec2_t b, c;
+  br_bb_t rect = { 0 };
+  br_vec2_t b = { 0 }, c = { 0 };
 
   if (at.x - size.width - padd * 3 > text_limit.min_x) {
     at.x -= size.width + padd * 2;
@@ -1148,7 +1148,7 @@ void brui_resizable_update(bruirs_t* rs, br_extent_t viewport) {
   brfl_foreach(i, *rs) {
     brui_resizable_t* r = br_da_getp(*rs, i);
     brui_resizable_t* parent = br_da_getp(*rs, r->parent);
-    if (parent->tag == brui_resizable_tag_ancor_helper) parent->max_z = br_float_max(parent->max_z, r->max_z);
+    if (parent->tag == brui_resizable_tag_ancor_helper) parent->max_z = br_i_max(parent->max_z, r->max_z);
   }
 
 

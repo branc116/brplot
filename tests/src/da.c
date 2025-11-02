@@ -30,3 +30,4 @@ int main(void) {
 }
 
 void br_on_fatal_error(void) {}
+void brgui_push_log_line(const char* fmt, ...) {(void)fmt;}
