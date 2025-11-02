@@ -8,6 +8,7 @@
 #include "src/br_shaders.h"
 
 #include <string.h>
+#include <stdio.h>
 
 static BR_THREAD_LOCAL struct {
   br_shaders_t* shaders;

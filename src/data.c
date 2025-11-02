@@ -308,23 +308,23 @@ void br_datas_add_test_points(br_datas_t* pg) {
 
 void br_datas_draw(br_datas_t pg, br_plot_t* plot) {
   if (plot->kind == br_plot_kind_2d) {
-    TracyCFrameMarkStart("br_datas_draw_2d");
-    for (int j = 0; j < plot->data_info.len; ++j) {
-      br_plot_data_t di = plot->data_info.arr[j];
-      br_data_t const* g = br_data_get1(pg, di.group_id);
-      if (g->len == 0) continue;
-      br_resampling_draw(g->resampling, g, plot, &di);
+    BR_PROFILE("br_datas_draw_2d") {
+      for (int j = 0; j < plot->data_info.len; ++j) {
+        br_plot_data_t di = plot->data_info.arr[j];
+        br_data_t const* g = br_data_get1(pg, di.group_id);
+        if (g->len == 0) continue;
+        br_resampling_draw(g->resampling, g, plot, &di);
+      }
     }
-    TracyCFrameMarkEnd("br_datas_draw_2d");
   } else {
-    TracyCFrameMarkStart("br_datas_draw_3d");
-    for (int j = 0; j < plot->data_info.len; ++j) {
-      br_plot_data_t di = plot->data_info.arr[j];
-      br_data_t const* g = br_data_get1(pg, di.group_id);
-      if (g->len == 0) continue;
-      br_resampling_draw(g->resampling, g, plot, &di);
+    BR_PROFILE("br_datas_draw_3d") {
+      for (int j = 0; j < plot->data_info.len; ++j) {
+        br_plot_data_t di = plot->data_info.arr[j];
+        br_data_t const* g = br_data_get1(pg, di.group_id);
+        if (g->len == 0) continue;
+        br_resampling_draw(g->resampling, g, plot, &di);
+      }
     }
-    TracyCFrameMarkEnd("br_datas_draw_3d");
   }
   br_resampling_change_something(pg);
 }

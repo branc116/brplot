@@ -61,22 +61,22 @@ void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
   switch (plot->kind) {
     case br_plot_kind_2d: break;
     case br_plot_kind_3d: {
-      TracyCFrameMarkStart("update_shader_values_3d");
-      br_vec2_t re = (br_vec2_t) { .x = ex.width, .y = ex.height };
-      br_vec3_t eye_zero = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
-      float eye_scale = 10.f * powf(10.f, -floorf(log10f(fmaxf(fmaxf(fabsf(eye_zero.x), fabsf(eye_zero.y)), fabsf(eye_zero.z)))));
-      br_vec3_t eye_final = br_vec3_add(br_vec3_scale(eye_zero, eye_scale), plot->ddd.target);
-      br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
-      br_mat_t look_grid = br_mat_look_at(eye_final, plot->ddd.target, plot->ddd.up);
-      br_mat_t look = br_mat_look_at(plot->ddd.eye, plot->ddd.target, plot->ddd.up);
-      shaders->grid_3d->uvs.m_mvp_uv = br_mat_mul(look_grid, per);
-      shaders->grid_3d->uvs.eye_uv = eye_final;
-      shaders->grid_3d->uvs.target_uv = plot->ddd.target;
-      shaders->grid_3d->uvs.look_dir_uv = br_vec3_normalize(br_vec3_sub(plot->ddd.target, plot->ddd.eye));
+      BR_PROFILE("update_shader_values_3d") {
+        br_vec2_t re = (br_vec2_t) { .x = ex.width, .y = ex.height };
+        br_vec3_t eye_zero = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
+        float eye_scale = 10.f * powf(10.f, -floorf(log10f(fmaxf(fmaxf(fabsf(eye_zero.x), fabsf(eye_zero.y)), fabsf(eye_zero.z)))));
+        br_vec3_t eye_final = br_vec3_add(br_vec3_scale(eye_zero, eye_scale), plot->ddd.target);
+        br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
+        br_mat_t look_grid = br_mat_look_at(eye_final, plot->ddd.target, plot->ddd.up);
+        br_mat_t look = br_mat_look_at(plot->ddd.eye, plot->ddd.target, plot->ddd.up);
+        shaders->grid_3d->uvs.m_mvp_uv = br_mat_mul(look_grid, per);
+        shaders->grid_3d->uvs.eye_uv = eye_final;
+        shaders->grid_3d->uvs.target_uv = plot->ddd.target;
+        shaders->grid_3d->uvs.look_dir_uv = br_vec3_normalize(br_vec3_sub(plot->ddd.target, plot->ddd.eye));
 
-      shaders->line_3d_simple->uvs.m_mvp_uv = shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
-      shaders->line_3d->uvs.eye_uv = plot->ddd.eye;
-      TracyCFrameMarkEnd("update_shader_values_3d");
+        shaders->line_3d_simple->uvs.m_mvp_uv = shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
+        shaders->line_3d->uvs.eye_uv = plot->ddd.eye;
+      }
     } break;
     default: BR_ASSERT(0);
   }
@@ -144,26 +144,27 @@ void br_plots_remove_group(br_plots_t plots, int group) {
 }
 
 static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas) {
-  TracyCFrameMarkStart("br_datas_draw_2d");
-  for (int j = 0; j < plot->data_info.len; ++j) {
-    br_plot_data_t di = plot->data_info.arr[j];
-    if (false == BR_PLOT_DATA_IS_VISIBLE(di)) continue;
-    br_data_t const* g = br_data_get1(datas, di.group_id);
-    if (g->len == 0) continue;
-    g->resampling->culler.args.screen_size = BR_VEC2I_TOD(plot->cur_extent.size.vec);
-    br_resampling_draw(g->resampling, g, plot, &di);
+  BR_PROFILE("br_datas_draw_2d") {
+    for (int j = 0; j < plot->data_info.len; ++j) {
+      br_plot_data_t di = plot->data_info.arr[j];
+      if (false == BR_PLOT_DATA_IS_VISIBLE(di)) continue;
+      br_data_t const* g = br_data_get1(datas, di.group_id);
+      if (g->len == 0) continue;
+      g->resampling->culler.args.screen_size = BR_VEC2I_TOD(plot->cur_extent.size.vec);
+      br_resampling_draw(g->resampling, g, plot, &di);
+    }
   }
 }
 
 static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas) {
-  TracyCFrameMarkStart("br_datas_draw_3d");
-  for (int j = 0; j < plot->data_info.len; ++j) {
-    br_plot_data_t di = plot->data_info.arr[j];
-    if (false == BR_PLOT_DATA_IS_VISIBLE(di)) continue;
-    br_data_t const* g = br_data_get1(datas, di.group_id);
-    if (g->len == 0) continue;
-    br_resampling_draw(g->resampling, g, plot, &di);
+  BR_PROFILE("br_datas_draw_3d") {
+    for (int j = 0; j < plot->data_info.len; ++j) {
+      br_plot_data_t di = plot->data_info.arr[j];
+      if (false == BR_PLOT_DATA_IS_VISIBLE(di)) continue;
+      br_data_t const* g = br_data_get1(datas, di.group_id);
+      if (g->len == 0) continue;
+      br_resampling_draw(g->resampling, g, plot, &di);
+    }
   }
-  TracyCFrameMarkEnd("br_datas_draw_3d");
 }
 

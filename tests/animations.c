@@ -6,13 +6,15 @@ int main(void) {
   float dr = 0.01f;
   brp_label("circle", circle);
   brp_label("standing wave", standing_wave);
-  for (float radius = 0.0f; 1; radius += dr) {
+  float time_left = 5.f;
+  for (float radius = 0.0f; time_left > 0; radius += dr) {
     for (float t = -10; t < 10; t += 0.1f) brp_2(radius*sinf(t),                 radius*cosf(t),        circle);
     for (float t = -10; t < 10; t += 0.1f) brp_2(         t/2.f, cosf(2*3.1415f*radius)*sinf(t)/t, standing_wave);
     brp_flush();
     brp_empty(circle);
     brp_empty(standing_wave);
     if (radius > 1 || radius < 0.0) dr *= -1.f;
+    time_left -= 0.016;
   }
   brp_focus_all();
   brp_wait();

@@ -14,6 +14,7 @@ typedef struct {
 #define BR_FILE_T br_test_file_t
 #include "src/br_pp.h"
 #include "src/br_test.h"
+#include <stddef.h>
 static size_t test_read(void* dest, size_t el_size, size_t n, br_test_file_t* null);
 static size_t test_write(void* src, size_t el_size, size_t n, br_test_file_t* null);
 

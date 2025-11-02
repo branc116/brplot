@@ -181,8 +181,14 @@ void __sanitizer_print_stack_trace(void);
 #if TRACY_ENABLE
 #  define BR_PROFILE(NAME) TracyCZoneN(BR_CAT(br_profiler, __LINE__),  NAME, true); \
      for (int BR_CAT(profile_loop_start, __LINE__) = 1; BR_CAT(profile_loop_start, __LINE__) == 1; BR_CAT(profile_loop_start, __LINE__) = 0, TracyCZoneEnd(BR_CAT(br_profiler, __LINE__)))
+#  define BR_PROFILE_START(NAME) TracyCFrameMarkStart(NAME)
+#  define BR_PROFILE_END(NAME) TracyCFrameMarkEnd(NAME)
+#  define BR_PROFILE_FRAME_MARK() TracyCFrameMark
 #else
 #  define BR_PROFILE(NAME)
+#  define BR_PROFILE_START(NAME)
+#  define BR_PROFILE_END(NAME)
+#  define BR_PROFILE_FRAME_MARK()
 #endif
 
 #if defined(__GNUC__)
@@ -223,11 +229,6 @@ void __sanitizer_print_stack_trace(void);
 #endif
 
 #define BR_ARR_LEN(ARR) (sizeof((ARR)) / sizeof((ARR)[0]))
-
-#include "external/Tracy/tracy/TracyC.h"
-
-#include <stdio.h>
-
 
 #define BR_HAS_GL 1
 #define BR_HAS_GLFW 1

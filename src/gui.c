@@ -1161,7 +1161,7 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, br_theme_t
   //assert(plot->kind == br_plot_kind_2d);
   if(plot->kind != br_plot_kind_2d) return;
 
-  TracyCFrameMarkStart("draw_grid_numbers");
+  BR_PROFILE_START("draw_grid_numbers");
   br_extentd_t r = plot->dd.graph_rect;
   br_extentd_t gr = BR_EXTENTI_TOD(plot->cur_extent);
   br_vec2d_t sz = BR_VEC2D(gr.width, gr.height);
@@ -1220,7 +1220,7 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, br_theme_t
       }
     }
   }
-  end: TracyCFrameMarkEnd("draw_grid_numbers");
+  end: BR_PROFILE_END("draw_grid_numbers");
   br_scrach_free();
 }
 

@@ -54,10 +54,6 @@ br_plotter_t* br_plotter_malloc(void) {
     LOGE("Failed to malloc command queue. Exiting...\n");
     exit(1);
   }
-  br_resampling_construct(&br->shaders, &br->ui.theme.ui.min_sampling, &br->ui.theme.ui.cull_min);
-  br_data_construct(&br->sp);
-  br_mesh_construct(&br->shaders, &br->ui.theme.ui.debug);
-  brgl_construct(&br->shaders);
   return br;
 }
 
@@ -82,6 +78,10 @@ static br_plot_t br_plot_2d(br_sizei_t window_size, float grid_line_thickness) {
 }
 
 void br_plotter_init(br_plotter_t* br) {
+  br_resampling_construct(&br->shaders, &br->ui.theme.ui.min_sampling, &br->ui.theme.ui.cull_min);
+  br_data_construct(&br->sp);
+  br_mesh_construct(&br->shaders, &br->ui.theme.ui.debug);
+  brgl_construct(&br->shaders);
   if (false == brpl_window_open(&br->win)) {
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__)
     br->win.kind = brpl_window_glfw;
@@ -221,7 +221,7 @@ int br_plotter_hovered_resizable(br_plotter_t* br) {
 }
 
 void br_plotter_one_iter(br_plotter_t* br) {
-  TracyCFrameMark;
+  BR_PROFILE_FRAME_MARK();
   br_memory_frame();
   br_plotter_update(br);
 }

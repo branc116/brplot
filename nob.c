@@ -955,7 +955,7 @@ static bool n_amalgam_do(void) {
   const char* output = compiler_single_file_exe(p_native, "tools/create_single_header_lib.c", "bin/cshl");
   if (NULL == output) return false;
 
-  nob_cmd_append(&cmd, output, "tools/unity/brplot.c", ".generated/brplot.c");
+  nob_cmd_append(&cmd, output, "include/brplot.h", ".generated/brplot.c");
   if (false == nob_cmd_run_cache(&cmd)) return false;
 
   nob_cmd_free(cmd);
