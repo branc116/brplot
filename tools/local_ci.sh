@@ -6,6 +6,10 @@ test -f nob || cc nob.c -O2 -I. -lm -o nob
 ./nob amalgam
 
 cc -ggdb -c -DBRPLOT_IMPLEMENTATION .generated/brplot.c -o build/amal_brplot.o
+
+cc -ggdb -o bin/hello_world -I.generated tests/hello_world.c build/amal_brplot.o -lm
+bin/hello_world
+
 cc -ggdb -o bin/animations -I.generated tests/animations.c build/amal_brplot.o -lm
 bin/animations
 
