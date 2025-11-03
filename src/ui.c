@@ -360,7 +360,7 @@ bool brui_collapsable(br_strv_t name, bool* expanded) {
       TOP.limit.min_y = fmaxf(TOP.limit.min_y, TOP.cur.y);
       brui_text_align_set(br_text_renderer_ancor_mid_mid);
       brui_text(name);
-    brui_vsplit_pop();
+      brui_vsplit_pop();
       if (*expanded) {
         if (brui_button(BR_STRL("V"))) {
           *expanded = false;
@@ -959,7 +959,6 @@ int brui_resizable_new(bruirs_t* rs, br_extent_t init_extent, int parent) {
   int new_id = brfl_push(*rs, new);
 
   if (parent > 0) bruir_update_extent(rs, new_id, rs->arr[new_id].target.cur_extent, true, true);
-  //brui_resizable_check_parents(brui__stack.rs);
   return new_id;
 }
 
@@ -978,12 +977,16 @@ int brui_resizable_new2(bruirs_t* rs, br_extent_t init_extent, int parent, brui_
   return new_id;
 }
 
+static void brui_resizable_check_parents(bruirs_t* rs);
 void brui_resizable_delete(int handle) {
+  brui_resizable_set_ancor(handle, 0, brui_ancor_none);
+
   bruir_children_t children = brui_resizable_children_temp(handle);
   for (int i = 0; i < children.len; ++i) brui_resizable_delete(children.arr[i]);
   brsp_remove(brui__stack.sp, brui__stack.rs->arr[handle].title_id);
 
   brfl_remove(*brui__stack.rs, handle);
+  brui_resizable_check_parents(brui__stack.rs);
 }
 
 float brui_resizable_hidden_factor(bruirs_t* rs, brui_resizable_t* r) {
@@ -1152,9 +1155,9 @@ void brui_resizable_update(bruirs_t* rs, br_extent_t viewport) {
     if (parent->tag == brui_resizable_tag_ancor_helper) parent->max_z = br_i_max(parent->max_z, r->max_z);
   }
 
-
   for (ptrdiff_t i = 0; i < stbds_hmlen(bruir__temp_res); ++i) {
     brui_resizable_temp_state_t* state = &bruir__temp_res[i].value;
+    if (state->is_deleted == true) continue;
     if (false == state->was_drawn) {
       brui_resizable_delete(state->resizable_handle);
       state->is_deleted = true;
@@ -1173,7 +1176,12 @@ static void brui_resizable_check_parents(bruirs_t* rs) {
       BR_ASSERT(false == brfl_is_free(*rs, parent));
       parent = rs->arr[parent].parent;
     }
-    BR_ASSERT(0);
+    brui_resizable_t r = br_da_get(*rs, i);
+
+    br_strv_t title;
+    if (r.title_id > 0) brsp_get(*brui__stack.sp, r.title_id);
+    if (r.title_id <= 0 || title.str == 0 && title.len == 0 || title.len > 0xFFFFFF) title = BR_STRL("Unnnamed"); 
+    BR_ASSERTF(0, "Resizable has no parent: id=%d, name=%.*s, parent_id=%d", i, title.len, title.str, parent);
 next:;
   }
   brfl_foreach(i, *rs) {
@@ -1184,7 +1192,9 @@ next:;
         brui_resizable_t r2 = br_da_get(*rs, j);
         if (r2.parent == i) count += 1;
       }
-      BR_ASSERTF(count == 2, "Thing with id of %d had %d children", i, count);
+      br_strv_t title = brsp_get(*brui__stack.sp, r.title_id);
+      if (r.title_id <= 0 || title.str == 0 && title.len == 0 || title.len > 0xFFFFFF) title = BR_STRL("Unnnamed"); 
+      BR_ASSERTF(count == 2, "Thing with id of %d `%.*s` had %d children", i, title.len, title.str, count);
     }
   }
 #endif
@@ -1231,6 +1241,7 @@ void brui_resizable_mouse_move(bruirs_t* rs, br_vec2_t mouse_pos) {
 }
 
 void brui_resizable_mouse_pressl(bruirs_t* rs, br_vec2_t mouse_pos, bool ctrl_down) {
+  if (rs->active_resizable < 0) return;
   brui_resizable_t* hovered = br_da_getp(*rs, rs->active_resizable);
   bool title_shown = hovered->title_height > 0.1f;
   brui_drag_mode_t new_mode = brui_drag_mode_none;
@@ -1538,7 +1549,6 @@ static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t an
   }
 
   res->ancor = ancor;
-  brui_resizable_check_parents(brui__stack.rs);
 }
 
 brui_resizable_t* brui_resizable_push(int id) {
@@ -1670,7 +1680,7 @@ brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id) {
 
   ptrdiff_t index = stbds_hmgeti(bruir__temp_res, hash);
   bool just_created = false;
-  brui_resizable_temp_state_t state;
+  brui_resizable_temp_state_t state = { 0 };
   brsp_id_t title_id = -1;
   if (index < 0) {
     state.was_drawn = true;
@@ -1685,6 +1695,7 @@ brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id) {
       just_created = true;
       bruir__temp_res[index].value.is_deleted = false;
       bruir__temp_res[index].value.resizable_handle = brui_resizable_new(brui__stack.rs, BR_EXTENT(0, 0, 100, 100), 0);
+      state = bruir__temp_res[index].value;
       title_id = brsp_push(brui__stack.sp, id);
     }
     bruir__temp_res[index].value.was_drawn = true;

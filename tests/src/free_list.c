@@ -34,6 +34,24 @@ size_t test_write(void* src, size_t el_size, size_t n, void* null) {
   return n;
 }
 
+void free_list_test0() {
+  struct {
+    int* arr;
+    int* free_arr;
+    int len, cap;
+    int free_len;
+    int free_next;
+  } is = { 0 };
+  int zero_handle = brfl_push(is, 0);
+  int one_handle = brfl_push(is, 1);
+  int two_handle = brfl_push(is, 2);
+  brfl_remove(is, one_handle);
+  one_handle = brfl_push(is, 1);
+  brfl_foreach_free(i, is) {
+    BR_ASSERT(one_handle != i);
+  }
+  brfl_free(is);
+}
 void free_list_test() {
   struct {
     int* arr;
@@ -129,6 +147,7 @@ void free_list_test4() {
 }
 
 int main(void) {
+  free_list_test0();
   free_list_test();
   free_list_test2();
   free_list_test3();
