@@ -140,7 +140,7 @@ void string_pool_read_write(void) {
     br_str_push_char(&s, 'c');
     brsp_set(&sp, t, br_str_as_view(s));
   }
-  br_test_file_t tf = { .arr = mem_file, .len = 0, .cap = sizeof(mem_file), .read_index = 0 };
+  br_test_file_t tf = { .arr = mem_file, .cap = sizeof(mem_file) };
   TEST_EQUAL(sp.free_len, 1);
   brsp_write(&tf, &sp);
 
@@ -156,6 +156,29 @@ void string_pool_read_write(void) {
   for (int i = 0; i < 129; ++i) {
     TEST_EQUAL(news.str[i], 'c');
   }
+  brsp_free(&sp2);
+}
+
+void sp_read_write2(void) {
+  brsp_t sp = { 0 };
+  brsp_push(&sp, BR_STRL("hehe"));
+  brsp_id_t id = brsp_push(&sp, BR_STRL("hehe"));
+  brsp_push(&sp, BR_STRL("hehe"));
+
+  brsp_remove(&sp, id);
+  br_test_file_t tf = { .arr = mem_file, .cap = sizeof(mem_file) };
+  brsp_write(&tf, &sp);
+  brsp_free(&sp);
+
+  brsp_t sp2 = { 0 };
+  brsp_read(&tf, &sp2);
+  id = brsp_push(&sp2, BR_STRL("hehe"));
+  br_strv_t s = brsp_get(sp2, id);
+  TEST_EQUAL(s.len, 4);
+  TEST_EQUAL(s.str[0], 'h');
+  TEST_EQUAL(s.str[1], 'e');
+  TEST_EQUAL(s.str[2], 'h');
+  TEST_EQUAL(s.str[3], 'e');
   brsp_free(&sp2);
 }
 
@@ -275,6 +298,7 @@ int main(void) {
   string_pool_resize();
   string_pool_resize2();
   string_pool_read_write();
+  sp_read_write2();
   string_pool_read_remove_write();
   string_pool_is_in();
   string_pool_copy();

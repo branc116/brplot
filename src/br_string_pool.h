@@ -93,22 +93,23 @@ brsp_id_t brsp_new1(brsp_t* sp, int size) {
     *sp = (brsp_t) { 0 };
   } else {
     brfl_foreach_free(i, *sp) {
-      brsp_node_t node = br_da_get(*sp, i);
-	  int next_free = sp->free_arr[i];
-      if (node.cap >= size) {
+      brsp_node_t* node = br_da_getp(*sp, i);
+      int next_free = sp->free_arr[i];
+      if (node->cap >= size) {
         if (prev == -1) sp->free_next      = next_free < 0 ? -1 : next_free;
         else            sp->free_arr[prev] = next_free;
         sp->free_arr[i] = -1;
         ++sp->free_len;
+        node->len = 0;
         return i + 1;
-      } else if (node.cap == -1) {
+      } else if (node->cap == -1) {
         if (prev == -1) sp->free_next      = next_free < 0 ? -1 : next_free;
         else            sp->free_arr[prev] = next_free;
         sp->free_arr[i] = -1;
         ++sp->free_len;
-        node.start_index = (int)sp->pool.len;
-        node.cap = size;
-        node.len = 0;
+        node->start_index = (int)sp->pool.len;
+        node->cap = size;
+        node->len = 0;
         br_str_push_uninitialized(&sp->pool, (uint32_t)size);
         return i + 1;
       }
