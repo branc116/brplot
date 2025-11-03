@@ -14,6 +14,7 @@
 #include "src/br_shaders.h"
 #include "src/br_free_list.h"
 #include "src/br_memory.h"
+#include "src/br_str.h"
 
 #include "external/stb_ds.h"
 
@@ -1422,18 +1423,43 @@ br_extent_t brui_resizable_cur_extent(int resizable_handle) {
   return ce;
 }
 
+br_strv_t brui_ancor_to_str(brui_ancor_t ancor) {
+  static BR_THREAD_LOCAL br_str_t buff = { 0 };
+  buff.len = 0;
+  if (brui_ancor_none  == ancor) br_str_push_c_str(&buff, "none");
+  if (brui_ancor_left   & ancor) br_str_push_c_str(&buff, "left ");
+  if (brui_ancor_right  & ancor) br_str_push_c_str(&buff, "right ");
+  if (brui_ancor_top    & ancor) br_str_push_c_str(&buff, "top ");
+  if (brui_ancor_bottom & ancor) br_str_push_c_str(&buff, "bottom ");
+  return br_str_as_view(buff);
+}
+
 static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t ancor) {
   brui_resizable_t* res = br_da_getp(*brui__stack.rs, res_id);
+  int parent_id = res->parent;
+  brui_resizable_t* parent = br_da_getp(*brui__stack.rs, parent_id);
   brui_resizable_t* sibling = br_da_getp(*brui__stack.rs, sibling_id);
+  br_strv_t ancor_str = brui_ancor_to_str(ancor);
+  LOGI("res_id = %d, sibling_id = %d, ancor = %.*s", res_id, sibling_id, ancor_str.len, ancor_str.str);
   if (res->ancor == brui_ancor_none) res->ancor_none_extent = res->current.cur_extent;
 
   if (0 != sibling_id) {
     brsp_id_t title_id = brsp_push(brui__stack.sp, br_scrach_printf("Ancor %d and %d", res_id, sibling_id));
+    br_extent_t new_extent = sibling->cur_extent;
+    if (ancor & (brui_ancor_top  | brui_ancor_bottom)) new_extent.height += res->cur_extent.height;
+    else                                               new_extent.height = br_float_max(res->cur_extent.height, new_extent.height);
+    if (ancor & (brui_ancor_left | brui_ancor_right))  new_extent.width  += res->cur_extent.width;
+    else                                               new_extent.width  = br_float_max(res->cur_extent.width,  new_extent.width);
+    //new_extent.x = br_float_min(res->cur_extent.x, new_extent.x);
+    //new_extent.y = br_float_min(res->cur_extent.y, new_extent.x);
+    new_extent.height = br_float_min(parent->cur_extent.height, new_extent.height);
+    new_extent.width = br_float_min(parent->cur_extent.width, new_extent.width);
+
     brui_resizable_t new = {
       .current = {
         .tag = brui_resizable_tag_ancor_helper,
         .title_id = title_id,
-        .cur_extent = sibling->cur_extent,
+        .cur_extent = new_extent,
         .parent = sibling->parent,
         .was_draw_last_frame = true,
         .ancor_none_extent = sibling->target.cur_extent,
@@ -1462,23 +1488,20 @@ static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t an
     else if (ancor == brui_ancor_left)   sibling->ancor = brui_ancor_right;
     else if (ancor == brui_ancor_right)  sibling->ancor = brui_ancor_left;
   } else {
-    int pid = res->parent;
-    brui_resizable_t parent = brui__stack.rs->arr[pid];
-    LOGI("Ancor helper: %d, tag= %d", pid, parent.tag);
-    if (parent.tag == brui_resizable_tag_ancor_helper) {
-      int gp = parent.parent;
+    if (parent->tag == brui_resizable_tag_ancor_helper) {
+      int gp = parent->parent;
       res->parent = gp;
-      res->current.cur_extent.pos = br_vec2_add(res->current.cur_extent.pos, parent.current.cur_extent.pos);
-      res->target.cur_extent.pos = br_vec2_add(res->target.cur_extent.pos, parent.current.cur_extent.pos);
+      res->current.cur_extent.pos = br_vec2_add(res->current.cur_extent.pos, parent->current.cur_extent.pos);
+      res->target.cur_extent.pos = br_vec2_add(res->target.cur_extent.pos, parent->current.cur_extent.pos);
       brui__stack.rs->drag_old_ex = res->target.cur_extent;
 
       brfl_foreach(i, *brui__stack.rs) {
         brui_resizable_t* sib = &brui__stack.rs->arr[i];
-        if (sib->parent != pid) continue;
+        if (sib->parent != parent_id) continue;
         sib->target.cur_extent.size = sib->ancor_none_extent.size;
-        sib->target.cur_extent.pos = br_vec2_add(sib->target.cur_extent.pos, parent.current.cur_extent.pos);
-        sib->current.cur_extent.pos = br_vec2_add(sib->current.cur_extent.pos, parent.current.cur_extent.pos);
-        sib->ancor = parent.ancor;
+        sib->target.cur_extent.pos = br_vec2_add(sib->target.cur_extent.pos, parent->current.cur_extent.pos);
+        sib->current.cur_extent.pos = br_vec2_add(sib->current.cur_extent.pos, parent->current.cur_extent.pos);
+        sib->ancor = parent->ancor;
         sib->parent = gp;
         if (sib->z > res->z) {
           int tmp = sib->z;
@@ -1487,7 +1510,7 @@ static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t an
         }
         break;
       }
-      brui_resizable_delete(pid);
+      brui_resizable_delete(parent_id);
       brui_resizable_check_parents(brui__stack.rs);
     } else {
       if (ancor == brui_ancor_none) {
