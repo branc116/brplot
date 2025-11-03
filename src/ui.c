@@ -1454,7 +1454,6 @@ static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t an
   brui_resizable_t* sibling = br_da_getp(*brui__stack.rs, sibling_id);
   br_strv_t ancor_str = brui_ancor_to_str(ancor);
   LOGI("res_id = %d, sibling_id = %d, ancor = %.*s", res_id, sibling_id, ancor_str.len, ancor_str.str);
-  BR_STACKTRACE();
   if (res->ancor == brui_ancor_none) res->ancor_none_extent = res->current.cur_extent;
 
   res->ancor = ancor;
