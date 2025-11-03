@@ -68,25 +68,24 @@ export class Brplot {
     this.canvas.addEventListener("touchstart", (ev) => {
       ev.preventDefault();
       for (let t of ev.changedTouches) {
-        let local_x = t.clientX - this.canvas.offsetLeft;
-        let local_y = t.clientY - this.canvas.offsetTop;
+        let local_x = t.pageX - this.canvas.offsetLeft;
+        let local_y = t.pageY - this.canvas.offsetTop;
         this.module._br_wasm_touch_event(this.plotter, 0, local_x, local_y, t.identifier);
       }
     });
     this.canvas.addEventListener("touchmove", (ev) => {
       ev.preventDefault();
       for (let t of ev.changedTouches) {
-        let local_x = t.clientX - this.canvas.offsetLeft;
-        let local_y = t.clientY - this.canvas.offsetTop;
+        let local_x = t.pageX - this.canvas.offsetLeft;
+        let local_y = t.pageY - this.canvas.offsetTop;
         this.module._br_wasm_touch_event(this.plotter, 1, local_x, local_y, t.identifier);
       }
     })
     this.canvas.addEventListener("touchend", (ev) => {
       ev.preventDefault();
-      console.log("End");
       for (let t of ev.changedTouches) {
-        let local_x = t.clientX - this.canvas.offsetLeft;
-        let local_y = t.clientY - this.canvas.offsetTop;
+        let local_x = t.pageX - this.canvas.offsetLeft;
+        let local_y = t.pageY - this.canvas.offsetTop;
         this.module._br_wasm_touch_event(this.plotter, 2, local_x, local_y, t.identifier);
       }
     });
