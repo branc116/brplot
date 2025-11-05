@@ -174,6 +174,7 @@ typedef struct {
   br_shaders_t* shaders;
 
   float frame_time;
+  float snap_cooldown;
 
   brui_action_t action;
   
