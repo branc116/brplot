@@ -4,10 +4,6 @@
 
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct br_resampling_t br_resampling_t;
 typedef struct br_plot_t br_plot_t;
 typedef struct br_plot_data_t br_plot_data_t;
@@ -87,8 +83,4 @@ typedef struct br_resampling_t {
   br_line_culler_t culler;
   br_mesh_line_3d_t args_3d;
 } br_resampling_t;
-
-#ifdef __cplusplus
-}
-#endif
 

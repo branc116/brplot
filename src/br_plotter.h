@@ -10,10 +10,6 @@
 #include "src/br_gui.h"
 #include "src/br_platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct br_plotter_t br_plotter_t;
 typedef struct q_commands q_commands;
 typedef struct br_text_renderer_t br_text_renderer_t;
@@ -186,8 +182,4 @@ void br_hotreload_tick_ui(br_hotreload_state_t* s);
 
 void br_read_input_start(br_plotter_t* br);
 void br_read_input_stop(void);
-
-#ifdef __cplusplus
-}
-#endif
 

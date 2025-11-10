@@ -3,10 +3,6 @@
 #include "src/br_pp.h"
 #include "src/br_str.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct br_plotter_t br_plotter_t;
 
 typedef enum {
@@ -102,6 +98,3 @@ q_command q_peek(q_commands* q);
 
 void handle_all_commands(br_plotter_t* br, q_commands* commands);
 
-#ifdef __cplusplus
-}
-#endif

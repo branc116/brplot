@@ -3,10 +3,6 @@
 
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef enum br_fs_file_kind_t {
   br_fs_file_kind_unknown,
   br_fs_file_kind_file,
@@ -42,7 +38,3 @@ bool br_fs_read_internal(const char* path, br_str_t* out_content, const char* fi
 br_str_t br_fs_read1(const char* path);
 bool br_fs_list_dir(br_strv_t path, br_fs_files_t* out_files);
 
-
-#ifdef __cplusplus
-}
-#endif

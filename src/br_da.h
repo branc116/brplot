@@ -5,13 +5,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#if defined(__cplusplus)
-#  define DECLTYPE(VALUE) std::remove_reference<decltype((VALUE))>::type
-extern "C" {
-#else
-#  define DECLTYPE(VALUE) void
-#endif
-
+#define DECLTYPE(VALUE) void
 
 #define br_da_reserve_t(SIZE_T, ARR, N) do { \
   if ((ARR).cap == 0) {                                                                                             \
@@ -162,9 +156,5 @@ static inline void ___br_function_call_asset_id_ok(ssize_t arr_len, ssize_t acc_
   ___br_function_call_asset_id_ok((ssize_t)((ARR).len), (ssize_t)(INDEX), __FILE__, __LINE__), \
   (ARR).arr[(INDEX)] = (VALUE); \
 } while(0)
-#endif
-
-#ifdef __cplusplus
-}
 #endif
   

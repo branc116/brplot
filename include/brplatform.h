@@ -1,10 +1,15 @@
 #if !defined(BR_INCLUDE_BR_PLATFORM_H)
 #define BR_INCLUDE_BR_PLATFORM_H
+#include "src/br_pp.h"
 #include "src/br_math.h"
 
 typedef void* voidp;
 
-#if defined(BR_WANTS_GL)
+#if !defined(BR_WANTS_GL)
+#  define BR_WANTS_GL 1
+#endif
+
+#if BR_WANTS_GL
 #  include "src/br_gl.h"
 #endif
 

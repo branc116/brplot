@@ -140,10 +140,6 @@ BR_ALL_SHADERS(X, X_U, X_B)
 #undef X_B
 #undef X_U
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct br_shaders_t {
 #define X(NAME, CAP, UNIF, BUFF) br_shader_ ## NAME ## _t* NAME;
 BR_ALL_SHADERS(X, NOP2, NOP2)
@@ -169,8 +165,4 @@ BR_ALL_SHADERS(X, NOP2, NOP2)
 
 #if BR_HAS_SHADER_RELOAD
 void br_start_refreshing_shaders(bool* is_dirty, bool const* should_close);
-#endif
-
-#ifdef __cplusplus
-}
 #endif

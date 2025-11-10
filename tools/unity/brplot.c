@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include "include/brplot.h"
 #include "external/shl_impls.c"
+#define BRPL_IMPLMENTATION
 #include "src/platform2.c"
 #include "src/threads.c"
 #include "src/data.c"

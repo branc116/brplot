@@ -5,10 +5,6 @@
 
 #include <stdio.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct br_resampling_t br_resampling_t;
 typedef struct br_plot_t br_plot_t;
 typedef struct br_plots_t br_plots_t;
@@ -118,6 +114,3 @@ bool br_data_realloc(br_data_t* data, size_t new_cap);
 
 size_t br_data_element_size(br_data_kind_t kind);
 
-#ifdef __cplusplus
-}
-#endif

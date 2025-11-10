@@ -4,10 +4,6 @@
 
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if !defined(BR_PLOT_KIND_T)
 typedef enum {
   br_plot_kind_2d,
@@ -93,8 +89,3 @@ void br_plot2d_zoom(br_plot_t* plot, br_vec2_t vec, br_extent_t screen_extent, b
 
 br_vec2d_t br_plot2d_to_plot  (br_plot_t* plot, br_vec2_t  vec);
 br_vec2_t  br_plot2d_to_screen(br_plot_t* plot, br_vec2d_t vec);
-
-#ifdef __cplusplus
-}
-#endif
-

@@ -1,10 +1,6 @@
 #pragma once
 #include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct br_plotter_t br_plotter_t;
 
 typedef enum {
@@ -48,6 +44,3 @@ br_permastate_status_t br_permastate_load(br_plotter_t* br);
 
 bool                   br_permastate_save_as(br_plotter_t* br, const char* path_to);
 
-#ifdef __cplusplus
-}
-#endif

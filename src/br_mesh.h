@@ -3,10 +3,6 @@
 
 #include <sys/types.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct br_mesh_line_t {
   br_vec2d_t zoom, offset, screen_size;
   float line_thickness;
@@ -38,7 +34,3 @@ typedef struct br_theme_t br_theme_t;
 typedef struct br_plot_t br_plot_t;
 void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme);
 
-
-#ifdef __cplusplus
-}
-#endif
