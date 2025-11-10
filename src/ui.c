@@ -59,7 +59,7 @@ static BR_THREAD_LOCAL bruir_children_t brui__temp_children = { 0 };
 #else
 #define BRUI_LOG(...)
 #endif
-#if 1
+#if 0
 #  define BRUI_LOGI(...) do { \
   BR_STACKTRACE(); \
   LOGI(__VA_ARGS__); \
