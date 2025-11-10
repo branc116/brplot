@@ -471,7 +471,7 @@ void br_plotter_update(br_plotter_t* br) {
         if (br->action.active == br_plotter_entity_none) {
           if (br->hovered.active == br_plotter_entity_plot_2d) {
             br_plot_t* plot = &br->plots.arr[br->hovered.plot_id];
-            br_extent_t ex = br->resizables.arr[plot->extent_handle].cur_extent;
+            br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
             br_vec2_t zoom = BR_VEC2(-ev.vec.y, -ev.vec.y);
             if (br->key.down[BR_KEY_X]) zoom.y = 0.f;
             if (br->key.down[BR_KEY_Y]) zoom.x = 0.f;
@@ -545,7 +545,7 @@ void br_plotter_update(br_plotter_t* br) {
               }
               zoom.x *= 60.f*(float)br->time.frame;
               zoom.y *= 60.f*(float)br->time.frame;
-              br_extent_t ex = br->resizables.arr[plot->extent_handle].cur_extent;
+              br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
               br_plot2d_zoom(plot, zoom, ex, br->mouse.pos);
             } else if (br->hovered.active == br_plotter_entity_plot_3d) {
               br_vec3_t zeroed = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
