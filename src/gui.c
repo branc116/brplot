@@ -49,6 +49,14 @@ static void brgui_draw_memory(br_plotter_t* br);
 #endif
 
 void br_plotter_draw(br_plotter_t* br) {
+#if BR_DEBUG
+  for (int i = 0; i < br->plots.len; ++i) {
+    br_plot_t p = br_da_get(br->plots, i);
+    BR_ASSERTF(false == brfl_is_free(br->resizables, p.extent_handle), "Plot id=%d, extent=%d", i, p.extent_handle);
+    BR_ASSERTF(false == brfl_is_free(br->resizables, p.menu_extent_handle), "Plot id=%d, extent=%d", i, p.menu_extent_handle);
+    BR_ASSERTF(false == brfl_is_free(br->resizables, p.legend_extent_handle), "Plot id=%d, extent=%d", i, p.legend_extent_handle);
+  }
+#endif
   brsp_t* sp = &br->sp;
   BR_PROFILE("Plotter draw") {
     brgl_enable_framebuffer(0, br->win.viewport.width, br->win.viewport.height);
@@ -1001,6 +1009,7 @@ static bool brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth)
     brui_textf("%*s%d Res: z: %d, max_z: %d, max_sib_z: %d, parent: %d", depth*2, "", handle, r.z, r.max_z, brui_resizable_sibling_max_z(handle), r.parent);
     brui_textf("target: %.2f,%.2f,%.2f,%.2f", BR_EXTENT_(r.target.cur_extent));
     brui_textf("current: %.2f,%.2f,%.2f,%.2f", BR_EXTENT_(r.current.cur_extent));
+    brui_textf("tag: %d", r.tag);
     brfl_foreach(i, br->resizables) if (i != 0 && br->resizables.arr[i].parent == handle) in_any |= brgui_draw_debug_window_rec(br, i, 1+depth);
   brui_state_t s = brui_pop();
 

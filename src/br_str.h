@@ -182,10 +182,10 @@ bool br_str_push_int(br_str_t* s, int c) {
     c *= -1;
   }
   long cur = 1;
-  while((long)c / cur > 10) {
+  while ((long)c / cur > 10) {
     cur *= 10;
   }
-  while((long)cur > 0) {
+  while ((long)cur > 0) {
     if (false == br_str_push_char(s, '0' + (char)((long)c / cur))) return false;
     c = (int)((long)c % cur);
     cur /= 10;
@@ -259,6 +259,7 @@ bool br_str_push_c_str(br_str_t* s, char const* c) {
   for (size_t i = 0; i < size; ++i) {
     br_str_push_char_unsafe(s, c[i]);
   }
+  br_str_push_zero(s);
   return true;
 }
 

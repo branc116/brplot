@@ -15,7 +15,9 @@ int main(void) {
   TEST_STREQUAL(c, "foo/bar");
   br_fs_cd(&br, br_strv_from_c_str("../baz")); br_str_to_c_str1(br, c);
   TEST_STREQUAL(c, "foo/baz");
-  br_fs_cd(&br, br_strv_from_c_str("../../baz")); br_str_to_c_str1(br, c);
+  br_fs_cd(&br, br_strv_from_c_str("../baz/bar")); br_str_to_c_str1(br, c);
+  TEST_STREQUAL(c, "foo/baz/bar");
+  br_fs_cd(&br, br_strv_from_c_str("../../../baz")); br_str_to_c_str1(br, c);
   TEST_STREQUAL(c, "baz");
   br_fs_cd(&br, br_strv_from_c_str("../")); br_str_to_c_str1(br, c);
   TEST_STREQUAL(c, "");
