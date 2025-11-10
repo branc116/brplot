@@ -71,6 +71,8 @@ br_strv_t  br_strv_from_c_str(const char* s);
 int        br_strv_to_int(br_strv_t str);
 float      br_strv_to_float(br_strv_t str);
 br_strv_t  br_strv_trim_zeros(br_strv_t buff);
+br_strv_t  br_strv_triml(br_strv_t buff, char c);
+br_strv_t  br_strv_trimr(br_strv_t buff, char c);
 br_strv_t  br_strv_splitrs(br_strv_t buff, br_strv_t split_strv);
 br_strv_t  br_strv_splitr(br_strv_t buff, char splitc);
 br_strv_t  br_strv_splitl(br_strv_t buff, char splitc);
@@ -439,6 +441,16 @@ br_strv_t br_strv_trim_zeros(const br_strv_t buff) {
     --ret.len;
   }
   return ret;
+}
+
+br_strv_t br_strv_triml(br_strv_t buff, char c) {
+	while (buff.len > 0 && buff.str[0] == c) ++buff.str, --buff.len;
+	return buff;
+}
+
+br_strv_t br_strv_trimr(br_strv_t buff, char c) {
+	while (buff.len > 0 && buff.str[buff.len - 1] == c) --buff.len;
+	return buff;
 }
 
 br_strv_t br_strv_splitrs(br_strv_t buff, br_strv_t split_strv) {

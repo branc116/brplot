@@ -320,9 +320,9 @@ sudo rm /usr/bin/brplot
 
 ## Todo
 * ~~Make drawing lines use buffers ( Don't use DrawLineStrip function by raylib. ) Maybe use DrawMesh? It's ok for plots with ~1'000'000 points, but I want more!~~
-  * Implemented this now. For every line, 2 triangles are created. Old points are put in buffers and are drawn like that. Plotter can now handle 30'000'000 points, easy.
-* When having many points ( 30'000'000 ), a few probles ocure:
-  * Distant points start being rounded up/down to the closest float. It doesn't look right.
+  * !Implemented this now. For every line, 2 triangles are created. Old points are put in buffers and are drawn like that. Plotter can now handle 30'000'000 points, easy.
+* ~~When having many points ( 30'000'000 ), a few probles ocure:~~
+  * ~~Distant points start being rounded up/down to the closest float. It doesn't look right.~~
   * ~~When zoomed out a lot. It becomes quite slow. ( I guess there is a lot of drawing of the same pixel.. )~~
     * Maybe combine few lines that are close when zoomed out... ( how to detect this ? )
     * This is partly fixed for plots where x values are sorted.
@@ -333,20 +333,21 @@ sudo rm /usr/bin/brplot
   * ~~Gpu memory usage will be lower. Current gpu memory usage:~~
     * ~~(N lines)*(2 triangles per line)*(3*vertices per triangle)*((3 floats for position) + (3 float for tangents))*(4 bytes per float)~~
     * ~~If N = 64'000'000, gpu usage will be ~9GB. This seems high...~~
-    * This is partly fixed. If plot values are sequential gpu memory usage can be constant with regard to number of points.
+    * !This is partly fixed. If plot values are sequential gpu memory usage can be constant with regard to number of points.
     * ~~Problem still remains if x values aren't sorted.~~
-        * ~~This is now solved by using quad tree structure for storing data points.~~
-        * ~~Still there is work to be done to make quad tree structure closer to optimal.~~
-        * This is now solved by finding intervals in which numbers are sorted one way or the other.
+      * ~~This is now solved by using quad tree structure for storing data points.~~
+      * ~~Still there is work to be done to make quad tree structure closer to optimal.~~
+      * ~~This is now solved by finding intervals in which numbers are sorted one way or the other.~~
+  * !This is solved these days with resampling stuff. Select points on gpu which will be shown. It's not bad, but has some pathological cases.
 * ~~I'm not happy with the thickness of the line when zooming in and out.~~
   * ~~It's not that bad, but it's inconsistent.~~
-  * Made is consistent. And now it's smooth af.
+  * !Made is consistent. And now it's smooth af.
 * ~~Quad tree rectangles are not inside one another, bounds of the outer quad are smaller than those of the inner quad. Fix this...~~
-  * I deleted everything that had anything to do with quad trees so this is not a problem anymore.
+  * !I deleted everything that had anything to do with quad trees so this is not a problem anymore.
 * ~~Text looks like shit... I don't know how to fix it...~~
-  * Text doesn't look like shit any more. I found a way to fix it.
+  * !Text doesn't look like shit any more. I found a way to fix it.
 * ~~Values on x,y axis should be on each horizontal and vertical line. ( Not in corners. )~~
-  * Did this and it looks awesome.
+  * !Did this and it looks awesome.
 * ~~Colors should be configurable. Black background is the best background, but maybe there will be a need for a white background.~~
   * ~~This will require having a configuration file ( Maybe )~~
   * Add setting of colors to the library api.
@@ -379,7 +380,7 @@ sudo rm /usr/bin/brplot
   * Something to change screenshot name. ( Or at least directory, and then set a name to a timestamp or something... )
 * ~~Fix negative zero~~
 * ~~Zoom in on the location where the mouse is located, not on center of the screen.~~
-  * Fix with the help of my favorite brother Andrija.
+  * !Fix with the help of my favorite brother Andrija.
 * Export of data to a text file.
   * ~~Export to format readable by brplot.~~
   * ~~Export to csv.~~
@@ -387,13 +388,14 @@ sudo rm /usr/bin/brplot
 * ~~Export the whole graph ( That includes current offset and current zoom )~~
   * ~~This will require setting current offest and zoom from stdin ( Extend input format to handle this. )~~
     * ~~Maybe something like ``--zoomx 69.0``~~
-      * Did this.
-  * This is done.
+      * !Did this.
+  * !This is done.
 * ~~Export what plots are visible and invisible.~~
   * ~~Need some file explorer.~~
 * Support for touch input.
-  * Support for draging with one finger.
-  * Support for multitouch zoom.
+  * ~~Support for draging with one finger.~~
+  * ~~Support for multitouch zoom.~~
+  * !Working on Steam deck and on 2d plots in web browsers on phones
 * ~~There is something wrong with new tokenizer. Fix this!!~~
 * ~~Support for exporting csv|brplot file by issuing command from stdin.~~
   * ~~New bug, bad numbers on x,y axis when exporting~~
@@ -402,7 +404,8 @@ sudo rm /usr/bin/brplot
 * ~~For Imgui try to make the same shit with fonts as for raylib. Export only the subset of ttf font.~~
 * ~~For Imgui disable default font and use the font that is used in the rest of the graph.~~
 * ~~Number of draw call for RAYLIB,WEB is not corret - Fix this.~~
-  * Fixed
+  * !Fixed
+  * !I no longer count the number of draw call, ther is no raylib anymore...
 ~~* Add ability to lineary modify a line on the graph~~
   * Should this be done in shader
     * this will then requre to not batch different lines together...
@@ -440,27 +443,27 @@ sudo rm /usr/bin/brplot
 * ~~csht should genereate makefile dependency list~~
 * I want touch to work.
   * ~~But for that I need a way of adding stuff on screen without stdin.~~
-    * Done
+    * !Done
     * ~~Say we need to implement read csv stuf..~~
-      * Added csv reading and parsing and stuff, it's looking good
+      * !Added csv reading and parsing and stuff, it's looking good
       * ~~For that we need file browser ( agin ) to locate that file.~~
-        * Implemented file browser looking good
-        * Impelement ALT-LEFT to go back.
+        * !Implemented file browser looking good
+        * ~~Implement ALT-LEFT to go back.~~
         * ~~For that we need text input widget.~~
-          * Implemented it but it looks bad and needs more features..
-              ~~* Impelement CTRL-BACKSPACE to delete a work.~~
-
+          * !Implemented it but it looks bad and needs more features..
+              ~~* Impleement CTRL-BACKSPACE to delete a work.~~
 * ~~Web resizing is again fucked, unfuck it.~~
 * ~~Automaticaly generate functions to select icon that best fits wanted size..~~
 * ~~Resizables should use br_free_list~~
 * Implement snappings for resizables
   * ~~Regions should be drawn on screen when moving resizables where if I move the resizable, it snaps on that side of the screen.~~
   * ~~If mouse over regions snap the resizable to that region~~
-  * If mouse over other resizable, draw regions over that other resizable and reparent the resizable that is being dragged
+  * ~~If mouse over other resizable, draw regions over that other resizable and reparent the resizable that is being dragged~~
 * ~~When dragging resizables, they should not be lerped~~
-* Make all inputs to the app go trough the same interface
-  * That interface should be some kind of queue structure
-    * For that we need multithreaded queue implmenetation
+* ~~Make all inputs to the app go trough the same interface~~
+  * ~~That interface should be some kind of queue structure~~
+    * ~~For that we need multithreaded queue implmenetation~~
+      * !Not true, did it without it..
 * ~~Remove dependency on assert.h~~
 * Make collapasables animated.
 * Fork a process child continues, parent execvc it's self into gdb that attaches onto a child.

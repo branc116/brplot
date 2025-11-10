@@ -24,8 +24,8 @@
  *
  * */
 
-#if 0
 /* Example of simple API: */
+#if 0
 #define BR_MEMORY_TRACER_IMPLEMENTATION
 #include <br_memory.h>
 

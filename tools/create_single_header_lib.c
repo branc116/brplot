@@ -253,17 +253,26 @@ bool do_create_single_header_lib(const char** source_files, int len, const char*
   {
     FILE* amalgam_file = fopen(output_file, "wb");
     if (NULL == amalgam_file) {
-      LOGE("Failed to open amalgam file %s: %s", amalgam_file, strerror(errno));
+      LOGE("Failed to open amalgam file %s: %s", output_file, strerror(errno));
       return false;
     }
     for (size_t i = 0; i < tokens.len; ++i) {
       cshl_token_t token = tokens.arr[i];
       if (token.kind == cshl_token_kind_include) {
         //fprintf(amalgam_file, "/* %.*s */\n", tokens.arr[i].str.len, tokens.arr[i].str.str);
-      } else if (token.kind == cshl_token_kind_include_system) {
-        fprintf(amalgam_file, "%.*s", tokens.arr[i].str.len, tokens.arr[i].str.str);
       } else {
-        fprintf(amalgam_file, "%.*s", tokens.arr[i].str.len, tokens.arr[i].str.str);
+        br_strv_t s = br_strv_triml(tokens.arr[i].str, '\r');
+        while (s.len > 0) {
+          br_strv_t ss = br_strv_splitl(s, '\r');
+		  if (ss.len > 0) {
+            fprintf(amalgam_file, "%.*s", ss.len, ss.str);
+            s = br_strv_splitr(s, '\r');
+            s = br_strv_triml(s, '\r');
+		  } else {
+            fprintf(amalgam_file, "%.*s", s.len, s.str);
+			s = ss;
+		  }
+		}
       }
     }
     fclose(amalgam_file);
