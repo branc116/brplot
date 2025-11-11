@@ -29,7 +29,8 @@ void br_read_input_start(br_plotter_t* br) {
 }
 
 void br_read_input_stop(void) {
-  write(br_read_input_pipes[1], "", 0);
+  ssize_t _ = /* I don't care if it succeded */write(br_read_input_pipes[1], "", 0);
+  (void)_;
   close(br_read_input_pipes[1]);
   close(STDIN_FILENO);
   /* Wait for thread to exit, or timeout after 64ms */
@@ -49,7 +50,9 @@ static int br_read_input_read_next(void* state) {
     if (poll(fds, 2, -1) <= 0) LOGE("Failed to pool %d:%s", errno, strerror(errno));
 
     if (POLLIN & fds[0].revents) {
-      read(STDIN_FILENO, &c, 1);
+      if (1 != read(STDIN_FILENO, &c, 1)) {
+        LOGF("Failed to read from stdin: %s", strerror(errno));
+	  }
       return (int)c;
     } else if (POLLHUP & fds[0].revents) {
       LOGI("Got POOLHUP(%d) on stdin, Stopping read_input", fds[0].revents);
@@ -76,7 +79,10 @@ static int br_read_input_read_next(void* state) {
 
 static void* br_indirection_function(void* gv) {
   struct { br_plotter_t* br; int* pipes; }* data = gv;
-  pipe(data->pipes);
+  int ok = pipe(data->pipes);
+  if (false == ok) {
+    LOGF("Failed to create pipes: %s", strerror(errno));
+  }
   br_read_input_main_worker(data->br, data->pipes);
   return NULL;
 }

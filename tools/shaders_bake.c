@@ -253,7 +253,8 @@ void embed_tokens(FILE* out, br_str_t name, br_str_t name_postfix, tokens_t toke
     if (t.kind == token_kind_preprocess) {
       fprintf(out, "\\n\" \\\n\"");
       for (; i < tokens.len && t.line == tokens.arr[i].line; ++i) {
-        fprintf(out, "%s ", br_strv_to_c_str(tokens.arr[i].view));
+        br_strv_t s =  tokens.arr[i].view;
+        fprintf(out, "%.*s ", s.len, s.str);
       }
       fprintf(out, "\\n\" \\\n\"");
       was_last_iden = false;
@@ -261,7 +262,8 @@ void embed_tokens(FILE* out, br_str_t name, br_str_t name_postfix, tokens_t toke
     } else {
       bool is_iden = t.kind == token_kind_identifier;
       if (was_last_iden && is_iden) fprintf(out, " ");
-      fprintf(out, "%s", br_strv_to_c_str(t.view));
+	  br_strv_t s = t.view;
+      fprintf(out, "%.*s", s.len, s.str);
       was_last_iden = is_iden;
     }
   }
@@ -456,12 +458,11 @@ void get_tokens(shader_t* shader) {
 #define EXPECT_TOKEN_KS(SHADER, TOKEN_INDEX, KIND, VALUE) \
   do { \
     token_t token = SHADER->tokens.arr[TOKEN_INDEX]; \
-    char* cur_val = br_strv_to_c_str(token.view); \
-    if (SHADER->tokens.arr[TOKEN_INDEX].kind != KIND || 0 != strcmp(VALUE, cur_val)) { \
-      FATAL(SHADER, token.line, token.start, "Expected token %s[%s] but got %s[%s]", \
-          token_kind_to_str(KIND), VALUE, token_kind_to_str(token.kind), br_strv_to_c_str(token.view)); \
+    br_strv_t __s = token.view; \
+    if (SHADER->tokens.arr[TOKEN_INDEX].kind != KIND || false == br_strv_eq(BR_STRL(VALUE), __s)) { \
+      FATAL(SHADER, token.line, token.start, "Expected token %s[%s] but got %s[%.*s]", \
+          token_kind_to_str(KIND), VALUE, token_kind_to_str(token.kind), __s.len, __s.str); \
     } \
-    BR_FREE(cur_val); \
   } while(0);
 
 #define ALL_CHECKS(X) \

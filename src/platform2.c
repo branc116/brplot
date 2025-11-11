@@ -27,76 +27,76 @@
 #if defined(BR_HAS_X11)
 
 #define BR_WANTS_X11 1
-#define Bool int
-#define Status int
-#define None 0L
-#define XBufferOverflow -1
-#define XLookupChars    2
-#define XLookupBoth    4
-#define InputOutput    1
-#define Button1      1
-#define Button2      2
-#define Button3      3
-#define Button4      4
-#define Button5      5
-#define KeyPressMask      (1L<<0)
-#define KeyReleaseMask      (1L<<1)
-#define ButtonPressMask      (1L<<2)
-#define ButtonReleaseMask    (1L<<3)
-#define EnterWindowMask      (1L<<4)
-#define LeaveWindowMask      (1L<<5)
-#define PointerMotionMask    (1L<<6)
-#define PointerMotionHintMask    (1L<<7)
-#define Button1MotionMask    (1L<<8)
-#define Button2MotionMask    (1L<<9)
-#define Button3MotionMask    (1L<<10)
-#define Button4MotionMask    (1L<<11)
-#define Button5MotionMask    (1L<<12)
-#define ButtonMotionMask    (1L<<13)
-#define KeymapStateMask      (1L<<14)
-#define ExposureMask      (1L<<15)
-#define VisibilityChangeMask    (1L<<16)
-#define StructureNotifyMask    (1L<<17)
-#define ResizeRedirectMask    (1L<<18)
-#define SubstructureNotifyMask    (1L<<19)
-#define SubstructureRedirectMask  (1L<<20)
-#define FocusChangeMask      (1L<<21)
-#define PropertyChangeMask    (1L<<22)
-#define ColormapChangeMask    (1L<<23)
-#define OwnerGrabButtonMask    (1L<<24)
+#define brpl_x11_Bool int
+#define brpl_x11_Status int
+#define brpl_x11_None 0L
+#define brpl_x11_XBufferOverflow -1
+#define brpl_x11_XLookupChars    2
+#define brpl_x11_XLookupBoth    4
+#define brpl_x11_InputOutput    1
+#define brpl_x11_Button1      1
+#define brpl_x11_Button2      2
+#define brpl_x11_Button3      3
+#define brpl_x11_Button4      4
+#define brpl_x11_Button5      5
+#define brpl_x11_KeyPressMask      (1L<<0)
+#define brpl_x11_KeyReleaseMask      (1L<<1)
+#define brpl_x11_ButtonPressMask      (1L<<2)
+#define brpl_x11_ButtonReleaseMask    (1L<<3)
+#define brpl_x11_EnterWindowMask      (1L<<4)
+#define brpl_x11_LeaveWindowMask      (1L<<5)
+#define brpl_x11_PointerMotionMask    (1L<<6)
+#define brpl_x11_PointerMotionHintMask    (1L<<7)
+#define brpl_x11_Button1MotionMask    (1L<<8)
+#define brpl_x11_Button2MotionMask    (1L<<9)
+#define brpl_x11_Button3MotionMask    (1L<<10)
+#define brpl_x11_Button4MotionMask    (1L<<11)
+#define brpl_x11_Button5MotionMask    (1L<<12)
+#define brpl_x11_ButtonMotionMask    (1L<<13)
+#define brpl_x11_KeymapStateMask      (1L<<14)
+#define brpl_x11_ExposureMask      (1L<<15)
+#define brpl_x11_VisibilityChangeMask    (1L<<16)
+#define brpl_x11_StructureNotifyMask    (1L<<17)
+#define brpl_x11_ResizeRedirectMask    (1L<<18)
+#define brpl_x11_SubstructureNotifyMask    (1L<<19)
+#define brpl_x11_SubstructureRedirectMask  (1L<<20)
+#define brpl_x11_FocusChangeMask      (1L<<21)
+#define brpl_x11_PropertyChangeMask    (1L<<22)
+#define brpl_x11_ColormapChangeMask    (1L<<23)
+#define brpl_x11_OwnerGrabButtonMask    (1L<<24)
 
-#define CWBorderPixel           (1L<<3)
-#define CWEventMask    (1L<<11)
-#define CWColormap    (1L<<13)
+#define brpl_x11_CWBorderPixel           (1L<<3)
+#define brpl_x11_CWEventMask    (1L<<11)
+#define brpl_x11_CWColormap    (1L<<13)
 
-#define XNInputStyle "inputStyle"
-#define XNClientWindow "clientWindow"
-#define XNFocusWindow "focusWindow"
+#define brpl_x11_XNInputStyle "inputStyle"
+#define brpl_x11_XNClientWindow "clientWindow"
+#define brpl_x11_XNFocusWindow "focusWindow"
 
-#define XIMStatusNothing  0x0400L
-#define XIMPreeditNothing  0x0008L
+#define brpl_x11_XIMStatusNothing  0x0400L
+#define brpl_x11_XIMPreeditNothing  0x0008L
 
-typedef struct _XDisplay Display;
-typedef struct _XIM *XIM;
-typedef struct _XIC *XIC;
-typedef Display* Displayp;
-typedef unsigned long Time;
-typedef unsigned long XID;
-typedef unsigned long VisualID;
-typedef unsigned long Atom;
-typedef int XrmQuark, *XrmQuarkList;
-typedef char *XPointer;
-typedef XID Window;
-typedef XID Pixmap;
-typedef XID KeySym;
-typedef XID Colormap;
-typedef XID Cursor;
+typedef struct _XDisplay brpl_x11_Display;
+typedef struct _XIM *brpl_x11_XIM;
+typedef struct _XIC *brpl_x11_XIC;
+typedef brpl_x11_Display* brpl_x11_Displayp;
+typedef unsigned long brpl_x11_Time;
+typedef unsigned long brpl_x11_XID;
+typedef unsigned long brpl_x11_VisualID;
+typedef unsigned long brpl_x11_Atom;
+typedef int brpl_x11_XrmQuark, *brpl_x11_XrmQuarkList;
+typedef char *brpl_x11_XPointer;
+typedef brpl_x11_XID brpl_x11_Window;
+typedef brpl_x11_XID brpl_x11_Pixmap;
+typedef brpl_x11_XID brpl_x11_KeySym;
+typedef brpl_x11_XID brpl_x11_Colormap;
+typedef brpl_x11_XID brpl_x11_Cursor;
 
-typedef void* Visual;
-typedef Visual* Visualp;
+typedef void* brpl_x11_Visual;
+typedef brpl_x11_Visual* brpl_x11_Visualp;
 typedef struct {
-  Visual *visual;
-  VisualID visualid;
+  brpl_x11_Visual *visual;
+  brpl_x11_VisualID visualid;
   int screen;
   int depth;
   int c_class;
@@ -105,25 +105,25 @@ typedef struct {
   unsigned long blue_mask;
   int colormap_size;
   int bits_per_rgb;
-} XVisualInfo;
+} brpl_x11_XVisualInfo;
 
 typedef struct {
-    Pixmap background_pixmap;  /* background or None or ParentRelative */
+    brpl_x11_Pixmap background_pixmap;  /* background or brpl_x11_None or ParentRelative */
     unsigned long background_pixel;  /* background pixel */
-    Pixmap border_pixmap;  /* border of the window */
+    brpl_x11_Pixmap border_pixmap;  /* border of the window */
     unsigned long border_pixel;  /* border pixel value */
     int bit_gravity;    /* one of bit gravity values */
     int win_gravity;    /* one of the window gravity values */
     int backing_store;    /* NotUseful, WhenMapped, Always */
     unsigned long backing_planes;/* planes to be preserved if possible */
     unsigned long backing_pixel;/* value to use in restoring planes */
-    Bool save_under;    /* should bits under be saved? (popups) */
+    brpl_x11_Bool save_under;    /* should bits under be saved? (popups) */
     long event_mask;    /* set of events that should be saved */
     long do_not_propagate_mask;  /* set of events that should not propagate */
-    Bool override_redirect;  /* boolean value for override-redirect */
-    Colormap colormap;    /* color map to be associated with window */
-    Cursor cursor;    /* cursor to be displayed (or None) */
-} XSetWindowAttributes;
+    brpl_x11_Bool override_redirect;  /* boolean value for override-redirect */
+    brpl_x11_Colormap colormap;    /* color map to be associated with window */
+    brpl_x11_Cursor cursor;    /* cursor to be displayed (or brpl_x11_None) */
+} brpl_x11_XSetWindowAttributes;
 
 typedef struct {
   long flags;  /* marks which fields in this structure are defined */
@@ -138,59 +138,59 @@ typedef struct {
   } min_aspect, max_aspect;
   int base_width, base_height;    /* added by ICCCM version 1 */
   int win_gravity;      /* added by ICCCM version 1 */
-} XSizeHints;
+} brpl_x11_XSizeHints;
 
 typedef struct {
   long flags;  /* marks which fields in this structure are defined */
-  Bool input;  /* does this application rely on the window manager to
+  brpl_x11_Bool input;  /* does this application rely on the window manager to
       get keyboard input? */
   int initial_state;  /* see below */
-  Pixmap icon_pixmap;  /* pixmap to be used as icon */
-  Window icon_window;   /* window to be used as icon */
+  brpl_x11_Pixmap icon_pixmap;  /* pixmap to be used as icon */
+  brpl_x11_Window icon_window;   /* window to be used as icon */
   int icon_x, icon_y;   /* initial position of icon */
-  Pixmap icon_mask;  /* icon mask bitmap */
-  XID window_group;  /* id of related window group */
+  brpl_x11_Pixmap icon_mask;  /* icon mask bitmap */
+  brpl_x11_XID window_group;  /* id of related window group */
   /* this structure may be extended in the future */
-} XWMHints;
+} brpl_x11_XWMHints;
 
 typedef struct {
   int            type;       /* of event. Always GenericEvent */
   unsigned long  serial;     /* # of last request processed */
-  Bool           send_event; /* true if from SendEvent request */
-  Display        *display;   /* Display the event was read from */
+  brpl_x11_Bool           send_event; /* true if from SendEvent request */
+  brpl_x11_Display        *display;   /* brpl_x11_Display the event was read from */
   union {
     int    extension; /* major opcode of extension that caused the event */
-    Window window;    /* "event" window it is reported relative to */
+    brpl_x11_Window window;    /* "event" window it is reported relative to */
   };
   union {
     int    evtype;       /* actual event type. */
-    Window root;         /* root window that the event occurred on */
-    Atom   atom;
-    Atom   message_type;
+    brpl_x11_Window root;         /* root window that the event occurred on */
+    brpl_x11_Atom   atom;
+    brpl_x11_Atom   message_type;
   };
-} XGenericEvent;
+} brpl_x11_XGenericEvent;
 
 typedef struct {
   int type;
-  Display *display;  /* Display the event was read from */
-  XID resourceid;    /* resource id */
+  brpl_x11_Display *display;  /* brpl_x11_Display the event was read from */
+  brpl_x11_XID resourceid;    /* resource id */
   unsigned long serial;  /* serial number of failed request */
   unsigned char error_code;  /* error code of failed request */
   unsigned char request_code;  /* Major op-code of failed request */
   unsigned char minor_code;  /* Minor op-code of failed request */
-} XErrorEvent;
+} brpl_x11_XErrorEvent;
 
 typedef struct {
   char *res_name;
   char *res_class;
-} XClassHint;
+} brpl_x11_XClassHint;
 
 typedef struct _XComposeStatus {
-    XPointer compose_ptr;  /* state table pointer */
+    brpl_x11_XPointer compose_ptr;  /* state table pointer */
     int chars_matched;    /* match state */
-} XComposeStatus;
+} brpl_x11_XComposeStatus;
 
-typedef int (*XErrorHandler)(Display* d, XErrorEvent* error);
+typedef int (*brpl_x11_XErrorHandler)(brpl_x11_Display* d, brpl_x11_XErrorEvent* error);
 
 const char* br_glx_library_names[] = {
   "libGLX.so.0",
@@ -212,35 +212,35 @@ const char* br_xi_library_names[] = {
 #define BR_WANTS_XI 1
 #define BR_HAS_XI 1
 
-#define KeyPress         2
-#define KeyRelease       3
-#define ButtonPress      4
-#define ButtonRelease    5
-#define MotionNotify     6
-#define EnterNotify      7
-#define LeaveNotify      8
-#define FocusIn          9
-#define FocusOut        10
-#define Expose          12
-#define ConfigureNotify 22
-#define PropertyNotify  28
-#define ClientMessage   33
+#define brpl_x11_KeyPress         2
+#define brpl_x11_KeyRelease       3
+#define brpl_x11_ButtonPress      4
+#define brpl_x11_ButtonRelease    5
+#define brpl_x11_MotionNotify     6
+#define brpl_x11_EnterNotify      7
+#define brpl_x11_LeaveNotify      8
+#define brpl_x11_FocusIn          9
+#define brpl_x11_FocusOut        10
+#define brpl_x11_Expose          12
+#define brpl_x11_ConfigureNotify 22
+#define brpl_x11_PropertyNotify  28
+#define brpl_x11_ClientMessage   33
 
-#define XI_TouchBegin  18 /* XI 2.2 */
-#define XI_TouchUpdate 19
-#define XI_TouchEnd    20
+#define brpl_x11_XI_TouchBegin  18 /* XI 2.2 */
+#define brpl_x11_XI_TouchUpdate 19
+#define brpl_x11_XI_TouchEnd    20
 
 typedef struct {
     int                 deviceid;
     int                 mask_len;
     unsigned char*      mask;
-} XIEventMask;
+} brpl_x11_XIEventMask;
 
 typedef struct {
-  XGenericEvent generic;
-  Time   time;
+  brpl_x11_XGenericEvent generic;
+  brpl_x11_Time   time;
   int    deviceid, sourceid, detail;
-  Window root, event, child;
+  brpl_x11_Window root, event, child;
   double root_x, root_y;
   double event_x, event_y;
   int    flags;
@@ -248,81 +248,81 @@ typedef struct {
     int mask_len;
     br_u64* mask;
   } btn;
-} XIDeviceEvent;
+} brpl_x11_XIDeviceEvent;
 
 typedef struct {
-  XGenericEvent generic;
-  Window subwindow;  /* child window */
-  Time time;    /* milliseconds */
+  brpl_x11_XGenericEvent generic;
+  brpl_x11_Window subwindow;  /* child window */
+  brpl_x11_Time time;    /* milliseconds */
   int x, y;    /* pointer x, y coordinates in event window */
   // TODO: Maybe use x,y_root insted of x,y
   int x_root, y_root;  /* coordinates relative to root */
   unsigned int state;  /* key or button mask */
   unsigned int keycode;  /* detail */
-  Bool same_screen;  /* same screen flag */
-} XKeyEvent;
-typedef XKeyEvent XKeyPressedEvent;
+  brpl_x11_Bool same_screen;  /* same screen flag */
+} brpl_x11_XKeyEvent;
+typedef brpl_x11_XKeyEvent brpl_x11_XKeyPressedEvent;
 
 typedef struct {
-  XGenericEvent generic;
-  Window subwindow;  /* child window */
-  Time time;    /* milliseconds */
+  brpl_x11_XGenericEvent generic;
+  brpl_x11_Window subwindow;  /* child window */
+  brpl_x11_Time time;    /* milliseconds */
   int x, y;    /* pointer x, y coordinates in event window */
   int x_root, y_root;  /* coordinates relative to root */
   unsigned int state;  /* key or button mask */
   unsigned int button;  /* detail */
-  Bool same_screen;  /* same screen flag */
-} XButtonEvent;
+  brpl_x11_Bool same_screen;  /* same screen flag */
+} brpl_x11_XButtonEvent;
 
 typedef struct {
-  XGenericEvent generic;
-  Window subwindow;  /* child window */
-  Time time;    /* milliseconds */
+  brpl_x11_XGenericEvent generic;
+  brpl_x11_Window subwindow;  /* child window */
+  brpl_x11_Time time;    /* milliseconds */
   int x, y;    /* pointer x, y coordinates in event window */
   int x_root, y_root;  /* coordinates relative to root */
   unsigned int state;  /* key or button mask */
   char is_hint;    /* detail */
-  Bool same_screen;  /* same screen flag */
-} XMotionEvent;
+  brpl_x11_Bool same_screen;  /* same screen flag */
+} brpl_x11_XMotionEvent;
 
 typedef struct {
-  XGenericEvent generic;
+  brpl_x11_XGenericEvent generic;
   int x, y;
   int width, height;
   int border_width;
-  Window above;
-  Bool override_redirect;
-} XConfigureEvent;
+  brpl_x11_Window above;
+  brpl_x11_Bool override_redirect;
+} brpl_x11_XConfigureEvent;
 
 typedef struct {
-  XGenericEvent generic;
-  Time time;
+  brpl_x11_XGenericEvent generic;
+  brpl_x11_Time time;
   int state;    /* NewValue, Deleted */
-} XPropertyEvent;
+} brpl_x11_XPropertyEvent;
 
 typedef struct {
-  XGenericEvent generic;
+  brpl_x11_XGenericEvent generic;
   int format;
   long msg;
-} XClientMessageEvent;
+} brpl_x11_XClientMessageEvent;
 
 typedef struct {
-  XGenericEvent generic;
+  brpl_x11_XGenericEvent generic;
   unsigned int   cookie;
   void           *data;
-} XGenericEventCookie;
+} brpl_x11_XGenericEventCookie;
 
 typedef union _XEvent {
   int type; /* must not be changed; first element */
-  XKeyEvent xkey;
-  XButtonEvent xbutton;
-  XMotionEvent xmotion;
-  XConfigureEvent xconfigure;
-  XPropertyEvent xproperty;
-  XClientMessageEvent xclient;
-  XGenericEventCookie xcookie;
+  brpl_x11_XKeyEvent xkey;
+  brpl_x11_XButtonEvent xbutton;
+  brpl_x11_XMotionEvent xmotion;
+  brpl_x11_XConfigureEvent xconfigure;
+  brpl_x11_XPropertyEvent xproperty;
+  brpl_x11_XClientMessageEvent xclient;
+  brpl_x11_XGenericEventCookie xcookie;
   long pad[24];
-} XEvent;
+} brpl_x11_XEvent;
 
 #endif
 
@@ -332,9 +332,9 @@ typedef union _XEvent {
    typedef struct _GLXFBConfig _GLXFBConfig;
    typedef _GLXFBConfig *GLXFBConfig;
    typedef GLXFBConfig *GLXFBConfigs;
-   typedef XID GLXWindow;
+   typedef brpl_x11_XID GLXWindow;
    typedef const char* ccharp_t;
-   typedef XVisualInfo* XVisualInfop;
+   typedef brpl_x11_XVisualInfo* XVisualInfop;
    typedef void* funcptr_t;
 #endif
 
@@ -576,17 +576,16 @@ brpl_event_t brpl_q_pop(brpl_q_t* q) {
 typedef struct brpl_window_x11_t {
   void* display;
   int screen;
-  Window root;
-  int context;
-  int parent;
-  Window window_handle;
+  brpl_x11_Window root;
+  brpl_x11_XrmQuark context;
+  brpl_x11_Window window_handle;
   void* glx_ctx;
   GLXWindow glx_window;
 
-  XIM im;
-  XIC ic;
+  brpl_x11_XIM im;
+  brpl_x11_XIC ic;
 
-  Atom WM_DELETE_WINDOW;
+  brpl_x11_Atom WM_DELETE_WINDOW;
 
   int xi_opcode;
 } brpl_window_x11_t;
@@ -600,7 +599,7 @@ static void brpl_x11_frame_end(brpl_window_t* window) {
   glXSwapBuffers(w->display, w->glx_window);
 }
 
-static int brpl_x11_keysym(XEvent event);
+static int brpl_x11_keysym(brpl_x11_XEvent event);
 static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
   // TODO: Move this struct to a window_x11_t struct;
   static BR_THREAD_LOCAL struct {
@@ -615,68 +614,68 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
   }
 
   brpl_window_x11_t* w = window->win;
-  Display* d = w->display;
+  brpl_x11_Display* d = w->display;
 
-  if (0 == XQLength(d)) {
-    XFlush(d);
+  if (0 == brpl_x11_XQLength(d)) {
+    brpl_x11_XFlush(d);
     return (brpl_event_t) { .kind = brpl_event_next_frame, .time = brpl_time() };
   }
 
-  XEvent event;
-  XNextEvent(d, &event);
+  brpl_x11_XEvent event;
+  brpl_x11_XNextEvent(d, &event);
 
   if (w->xi_opcode == event.xcookie.generic.extension) {
-    XGetEventData(w->display, &event.xcookie);
-    XIDeviceEvent* de = (XIDeviceEvent*)event.xcookie.data;
+    brpl_x11_XGetEventData(w->display, &event.xcookie);
+    brpl_x11_XIDeviceEvent* de = (brpl_x11_XIDeviceEvent*)event.xcookie.data;
     brpl_event_t e = { .kind = brpl_event_nop };
     switch (event.xcookie.generic.evtype) {
-      case XI_TouchBegin: {
+      case brpl_x11_XI_TouchBegin: {
         e.kind = brpl_event_touch_begin;
         e.touch.id = de->detail;
-        e.touch.pos = BR_VEC2(de->event_x, de->event_y);
+        e.touch.pos = BR_VEC2((float)de->event_x, (float)de->event_y);
       } break;
-      case XI_TouchUpdate: {
+      case brpl_x11_XI_TouchUpdate: {
         e.kind = brpl_event_touch_update;
         e.touch.id = de->detail;
-        e.touch.pos = BR_VEC2(de->event_x, de->event_y);
+        e.touch.pos = BR_VEC2((float)de->event_x, (float)de->event_y);
       } break;
-      case XI_TouchEnd: {
+      case brpl_x11_XI_TouchEnd: {
         e.kind = brpl_event_touch_end;
         e.touch.id = de->detail;
-        e.touch.pos = BR_VEC2(de->event_x, de->event_y);
+        e.touch.pos = BR_VEC2((float)de->event_x, (float)de->event_y);
       } break;
     }
-    XFreeEventData(w->display, &event.xcookie);
+    brpl_x11_XFreeEventData(w->display, &event.xcookie);
     return e;
   }
   switch (event.type) {
-    case MotionNotify: {
-      XMotionEvent m = event.xmotion;
+    case brpl_x11_MotionNotify: {
+      brpl_x11_XMotionEvent m = event.xmotion;
       return (brpl_event_t) { .kind = brpl_event_mouse_move, .pos = BR_VEC2((float)m.x, (float)m.y) };
     } break;
-    case KeyPress: {
+    case brpl_x11_KeyPress: {
       const br_u32 keycode = event.xkey.keycode;
       int keysym = brpl_x11_keysym(event);
       int count;
-      Status status;
+      brpl_x11_Status status;
       char buffer[128];
       char* chars = buffer;
 
-      count = Xutf8LookupString(w->ic,
+      count = brpl_x11_Xutf8LookupString(w->ic,
                                 &event.xkey,
                                 buffer, sizeof(buffer) - 1,
                                 NULL, &status);
 
-      if (status == XBufferOverflow)
+      if (status == brpl_x11_XBufferOverflow)
       {
           chars = BR_CALLOC((size_t)(count + 1), 1);
-          count = Xutf8LookupString(w->ic,
+          count = brpl_x11_Xutf8LookupString(w->ic,
                                     &event.xkey,
                                     chars, count,
                                     NULL, &status);
       }
 
-      if (status == XLookupChars || status == XLookupBoth)
+      if (status == brpl_x11_XLookupChars || status == brpl_x11_XLookupBoth)
       {
           utf8_chars.len = 0;
           utf8_chars.read_index = 0;
@@ -689,7 +688,7 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
 
       return (brpl_event_t) { .kind = brpl_event_key_press, .key = keysym, .keycode = (br_i32)keycode };
     } break;
-    case KeyRelease: {
+    case brpl_x11_KeyRelease: {
       const br_u32 keycode = event.xkey.keycode;
       int keysym = brpl_x11_keysym(event);
       return (brpl_event_t) {
@@ -698,58 +697,58 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
         .keycode = (br_i32)keycode
       };
     } break;
-    case ButtonPress: {
-      if (event.xbutton.button == Button1)      return (brpl_event_t) { .kind = brpl_event_mouse_press, .mouse_key = 0 };
-      else if (event.xbutton.button == Button2) return (brpl_event_t) { .kind = brpl_event_mouse_press, .mouse_key = 1 };
-      else if (event.xbutton.button == Button3) return (brpl_event_t) { .kind = brpl_event_mouse_press, .mouse_key = 3 };
-      else if (event.xbutton.button == Button4) return (brpl_event_t) { .kind = brpl_event_mouse_scroll, .vec = BR_VEC2(0, 1) };
-      else if (event.xbutton.button == Button5) return (brpl_event_t) { .kind = brpl_event_mouse_scroll, .vec = BR_VEC2(0, -1) };
+    case brpl_x11_ButtonPress: {
+      if (event.xbutton.button == brpl_x11_Button1)      return (brpl_event_t) { .kind = brpl_event_mouse_press, .mouse_key = 0 };
+      else if (event.xbutton.button == brpl_x11_Button2) return (brpl_event_t) { .kind = brpl_event_mouse_press, .mouse_key = 1 };
+      else if (event.xbutton.button == brpl_x11_Button3) return (brpl_event_t) { .kind = brpl_event_mouse_press, .mouse_key = 3 };
+      else if (event.xbutton.button == brpl_x11_Button4) return (brpl_event_t) { .kind = brpl_event_mouse_scroll, .vec = BR_VEC2(0, 1) };
+      else if (event.xbutton.button == brpl_x11_Button5) return (brpl_event_t) { .kind = brpl_event_mouse_scroll, .vec = BR_VEC2(0, -1) };
       else if (event.xbutton.button == 6)       return (brpl_event_t) { .kind = brpl_event_mouse_scroll, .vec = BR_VEC2(1, 0) };
       else if (event.xbutton.button == 7)       return (brpl_event_t) { .kind = brpl_event_mouse_scroll, .vec = BR_VEC2(-1, 0) };
-      else                                      return (brpl_event_t) { .kind = brpl_event_mouse_press, .mouse_key = (br_i32)event.xbutton.button - Button1 - 4 };
+      else                                      return (brpl_event_t) { .kind = brpl_event_mouse_press, .mouse_key = (br_i32)event.xbutton.button - brpl_x11_Button1 - 4 };
       return (brpl_event_t) { .kind = brpl_event_nop };
     } break;
-    case ButtonRelease: {
-      if (event.xbutton.button <= Button3) return (brpl_event_t) { .kind = brpl_event_mouse_release, .mouse_key = (br_i32)event.xbutton.button - Button1 };
+    case brpl_x11_ButtonRelease: {
+      if (event.xbutton.button <= brpl_x11_Button3) return (brpl_event_t) { .kind = brpl_event_mouse_release, .mouse_key = (br_i32)event.xbutton.button - brpl_x11_Button1 };
       else if (event.xbutton.button <= 7)  return (brpl_event_t) { .kind = brpl_event_nop };
-      else                                 return (brpl_event_t) { .kind = brpl_event_mouse_release, .mouse_key = (br_i32)event.xbutton.button - Button1 - 4 };
+      else                                 return (brpl_event_t) { .kind = brpl_event_mouse_release, .mouse_key = (br_i32)event.xbutton.button - brpl_x11_Button1 - 4 };
     } break;
-    case EnterNotify: {
+    case brpl_x11_EnterNotify: {
       return (brpl_event_t) {
         .kind = brpl_event_window_focused,
       };
     } break;
-    case LeaveNotify: {
+    case brpl_x11_LeaveNotify: {
       return (brpl_event_t) {
         .kind = brpl_event_window_unfocused,
       };
     } break;
-    case FocusIn: {
+    case brpl_x11_FocusIn: {
       return (brpl_event_t) {
         .kind = brpl_event_window_focused,
       };
     } break;
-    case FocusOut: {
+    case brpl_x11_FocusOut: {
       return (brpl_event_t) {
         .kind = brpl_event_window_unfocused,
       };
     } break;
-    case ConfigureNotify: {
-      XConfigureEvent ce = event.xconfigure;
+    case brpl_x11_ConfigureNotify: {
+      brpl_x11_XConfigureEvent ce = event.xconfigure;
       return (brpl_event_t) {
         .kind = brpl_event_window_resize,
         .size = BR_SIZE((float)ce.width, (float)ce.height)
       };
     } break;
-    case PropertyNotify: {
+    case brpl_x11_PropertyNotify: {
       LOGI("Prop %lu changed: %d", event.xproperty.generic.atom, event.xproperty.state);
       return (brpl_event_t) { .kind = brpl_event_nop };
     } break;
-    case Expose: {
+    case brpl_x11_Expose: {
       return (brpl_event_t) { .kind = brpl_event_nop };
     } break;
-    case ClientMessage: {
-      if (event.xclient.msg == w->WM_DELETE_WINDOW) {
+    case brpl_x11_ClientMessage: {
+      if ((brpl_x11_Atom)event.xclient.msg == w->WM_DELETE_WINDOW) {
         return (brpl_event_t) { .kind = brpl_event_close };
       } else {
         return (brpl_event_t) { .kind = brpl_event_nop };
@@ -762,9 +761,9 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
   }
 }
 
-int brpl_x11_error_callback(Display* d, XErrorEvent* e) {
+int brpl_x11_error_callback(brpl_x11_Display* d, brpl_x11_XErrorEvent* e) {
     char err_text[1024];
-    XGetErrorText(d, e->error_code, err_text, sizeof(err_text));
+    brpl_x11_XGetErrorText(d, e->error_code, err_text, sizeof(err_text));
     LOGE("X Error: %s", err_text);
     return 0;
 }
@@ -774,7 +773,7 @@ static bool brpl_x11_get_set_context(brpl_window_x11_t* x11, int* attrib_list) {
   GLXFBConfigs configs = glXChooseFBConfig(x11->display, x11->screen, attrib_list, &out_ret);
   if (out_ret == 0 || NULL == configs) return false;
   bool is_ok = false;
-  XVisualInfo* glx_visual = NULL;
+  brpl_x11_XVisualInfo* glx_visual = NULL;
 
   for (int i = 0; i < out_ret; ++i) {
     GLXFBConfig config = configs[i];
@@ -782,7 +781,7 @@ static bool brpl_x11_get_set_context(brpl_window_x11_t* x11, int* attrib_list) {
     glx_visual = glXGetVisualFromFBConfig(x11->display, config);
     if (NULL == glx_visual) continue;
 
-    x11->glx_window = glXCreateWindow(x11->display, config, x11->window_handle, (int[]) { None });
+    x11->glx_window = glXCreateWindow(x11->display, config, x11->window_handle, (int[]) { brpl_x11_None });
     if (0 == x11->glx_window) continue;
 
     x11->glx_ctx = glXCreateContext(x11->display, glx_visual, NULL, true);
@@ -793,44 +792,44 @@ static bool brpl_x11_get_set_context(brpl_window_x11_t* x11, int* attrib_list) {
 
     glXDestroyContext(x11->display, x11->glx_ctx);
     glXDestroyWindow(x11->display, x11->glx_window);
-    XFree(glx_visual);
+    brpl_x11_XFree(glx_visual);
   }
-  XFree(configs);
-  XFree(glx_visual);
+  brpl_x11_XFree(configs);
+  brpl_x11_XFree(glx_visual);
   return is_ok;
 }
 
 static bool brpl_x11_open_window(brpl_window_t* window) {
   brpl_window_x11_t x11 = { 0 };
-  XSetErrorHandler(brpl_x11_error_callback);
-  void* d = x11.display = XOpenDisplay(NULL);
+  brpl_x11_XSetErrorHandler(brpl_x11_error_callback);
+  void* d = x11.display = brpl_x11_XOpenDisplay(NULL);
   if (NULL == x11.display) {
     LOGE("Failed to open x11 window. display is null.");
     return false;
   }
-  x11.WM_DELETE_WINDOW = XInternAtom(d, "WM_DELETE_WINDOW", false);
-  x11.screen = XDefaultScreen(x11.display);
-  x11.root = XRootWindow(x11.display, x11.screen);
-  x11.context = XrmUniqueQuark();
+  x11.WM_DELETE_WINDOW = brpl_x11_XInternAtom(d, "WM_DELETE_WINDOW", false);
+  x11.screen = brpl_x11_XDefaultScreen(x11.display);
+  x11.root = brpl_x11_XRootWindow(x11.display, x11.screen);
+  x11.context = brpl_x11_XrmUniqueQuark();
 
-  Visual* visual = XDefaultVisual(x11.display, x11.screen);
-  int depth = XDefaultDepth(x11.display, x11.screen);
-  XSetWindowAttributes wa = { 0 };
-  wa.event_mask = StructureNotifyMask | KeyPressMask | KeyReleaseMask |
-                  PointerMotionMask | ButtonPressMask | ButtonReleaseMask |
-                  ExposureMask | FocusChangeMask | VisibilityChangeMask |
-                  EnterWindowMask | LeaveWindowMask | PropertyChangeMask;
+  brpl_x11_Visual* visual = brpl_x11_XDefaultVisual(x11.display, x11.screen);
+  int depth = brpl_x11_XDefaultDepth(x11.display, x11.screen);
+  brpl_x11_XSetWindowAttributes wa = { 0 };
+  wa.event_mask = brpl_x11_StructureNotifyMask | brpl_x11_KeyPressMask | brpl_x11_KeyReleaseMask |
+                  brpl_x11_PointerMotionMask | brpl_x11_ButtonPressMask | brpl_x11_ButtonReleaseMask |
+                  brpl_x11_ExposureMask | brpl_x11_FocusChangeMask | brpl_x11_VisibilityChangeMask |
+                  brpl_x11_EnterWindowMask | brpl_x11_LeaveWindowMask | brpl_x11_PropertyChangeMask;
   br_i32 xpos = 0, ypos = 0;
   br_u32 width = 800, height = 600;
-  x11.window_handle = XCreateWindow(x11.display,
+  x11.window_handle = brpl_x11_XCreateWindow(x11.display,
                                     x11.root,
                                     xpos, ypos,
                                     width, height,
                                     0,      // Border width
                                     depth,  // Color depth
-                                    InputOutput,
+                                    brpl_x11_InputOutput,
                                     visual,
-                                    CWBorderPixel | CWColormap | CWEventMask,
+                                    brpl_x11_CWBorderPixel | brpl_x11_CWColormap | brpl_x11_CWEventMask,
                                     &wa);
   if (0 == x11.window_handle) return false;
 
@@ -873,7 +872,7 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
   if (false == brpl_x11_get_set_context(&x11, attrib_list)) {
     attrib_list[1] = 0; // No MSAA
     if (false == brpl_x11_get_set_context(&x11, attrib_list)) {
-      attrib_list[0] = None; // Anything
+      attrib_list[0] = brpl_x11_None; // Anything
       if (false == brpl_x11_get_set_context(&x11, attrib_list)) {
         return false;
       }
@@ -882,40 +881,39 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
 
   const char* title = window->title;
   if (title == NULL) title = "Brpl";
-  int title_len = (int)strlen(title);
-  Xutf8SetWMProperties(x11.display,
+  brpl_x11_Xutf8SetWMProperties(x11.display,
                        x11.window_handle,
                        title, title,
                        NULL, 0,
                        NULL, NULL, NULL);
 
-  XSetWMProtocols(x11.display, x11.window_handle, &x11.WM_DELETE_WINDOW, 1);
-  XMapWindow(d, x11.window_handle);
-  XFlush(d);
+  brpl_x11_XSetWMProtocols(x11.display, x11.window_handle, &x11.WM_DELETE_WINDOW, 1);
+  brpl_x11_XMapWindow(d, x11.window_handle);
+  brpl_x11_XFlush(d);
 
-  x11.im = XOpenIM(x11.display, 0, NULL, NULL);
-  x11.ic = XCreateIC(x11.im,
-                     XNInputStyle,
-                     XIMPreeditNothing | XIMStatusNothing,
-                     XNClientWindow,
+  x11.im = brpl_x11_XOpenIM(x11.display, 0, NULL, NULL);
+  x11.ic = brpl_x11_XCreateIC(x11.im,
+                     brpl_x11_XNInputStyle,
+                     brpl_x11_XIMPreeditNothing | brpl_x11_XIMStatusNothing,
+                     brpl_x11_XNClientWindow,
                      x11.window_handle,
-                     XNFocusWindow,
+                     brpl_x11_XNFocusWindow,
                      x11.window_handle,
                      NULL);
 
   int opcode = 0, event = 0, error = 0;
-  XQueryExtension(x11.display, "XInputExtension", &opcode, &event, &error);
+  brpl_x11_XQueryExtension(x11.display, "XInputExtension", &opcode, &event, &error);
   x11.xi_opcode = opcode;
 
-  br_u64 mask = 1<<XI_TouchBegin | 1<<XI_TouchUpdate | 1<<XI_TouchEnd;
-  XIEventMask evmask = {
+  br_u64 mask = 1<<brpl_x11_XI_TouchBegin | 1<<brpl_x11_XI_TouchUpdate | 1<<brpl_x11_XI_TouchEnd;
+  brpl_x11_XIEventMask evmask = {
     .deviceid = 0,
     .mask_len = sizeof(mask),
     .mask = (void*)&mask
   };
   int status = XISelectEvents(x11.display, x11.window_handle, &evmask, 1);
-  XFlush(x11.display);
-  LOGI("Status: %d", status);
+  brpl_x11_XFlush(x11.display);
+  LOGI("brpl_x11_Status: %d", status);
 
   brpl_window_x11_t* win = BR_MALLOC(sizeof(brpl_window_x11_t));
   memcpy(win, &x11, sizeof(x11));
@@ -925,17 +923,17 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
 
 static void brpl_x11_close_window(brpl_window_t* window) {
   brpl_window_x11_t* win = window->win;
-  glXMakeCurrent(win->display, None, NULL);
+  glXMakeCurrent(win->display, brpl_x11_None, NULL);
   glXDestroyWindow(win->display, win->glx_window);
   glXDestroyContext(win->display, win->glx_ctx);
-  XDestroyWindow(win->display, win->window_handle);
-  XFlush(win->display);
-  XCloseDisplay(win->display);
+  brpl_x11_XDestroyWindow(win->display, win->window_handle);
+  brpl_x11_XFlush(win->display);
+  brpl_x11_XCloseDisplay(win->display);
   BR_FREE(win);
 }
 
-static int brpl_x11_keysym(XEvent event) {
-  int keysym = XLookupKeysym(&event.xkey, 0);
+static int brpl_x11_keysym(brpl_x11_XEvent event) {
+  int keysym = brpl_x11_XLookupKeysym(&event.xkey, 0);
   if (keysym >= 'a' && keysym <= 'z') {
     return keysym - 0x20;
   }
@@ -1096,7 +1094,7 @@ static bool brpl_glfw_window_open(brpl_window_t* window) {
 }
 
 void brpl_additional_event_touch(brpl_window_t* window, int kind, float x, float y, int id) {
-  brpl_event_kind_t ev_kind;
+  brpl_event_kind_t ev_kind = brpl_event_none;
   switch (kind) {
     case 0: ev_kind = brpl_event_touch_begin; break;
     case 1: ev_kind = brpl_event_touch_update; break;
@@ -1110,7 +1108,7 @@ void brpl_additional_event_touch(brpl_window_t* window, int kind, float x, float
 void brpl_window_size_set(brpl_window_t* window, int width, int height) {
  brpl_glfw_window_t* win = window->win;
  glfwSetWindowSize(win->glfw, width, height);
- brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_window_resize, .size = BR_SIZE(width, height) });
+ brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_window_resize, .size = BR_SIZE((float)width, (float)height) });
 }
 
 void brpl_glfw_window_close(brpl_window_t* window) {

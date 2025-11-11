@@ -66,8 +66,8 @@ static BR_THREAD_LOCAL bruir_children_t brui__temp_children = { 0 };
 } while(0)
 #  define BRUI_LOGV LOGI
 #else
-#  define BRUI_LOGI
-#  define BRUI_LOGV
+#  define BRUI_LOGI(...)
+#  define BRUI_LOGV(...)
 #endif
 
 void brui_construct(br_theme_t* theme, bruirs_t* rs, brsp_t* sp, br_text_renderer_t* tr, br_shaders_t* shaders) {
@@ -1227,6 +1227,8 @@ next:;
     }
   }
   BRUI_LOGV("Check ok");
+#else
+  (void)rs;
 #endif
 }
 
@@ -1396,7 +1398,6 @@ static bool brui_resizable_increment_z(bruirs_t* rs, int resizable_handle) {
   brui_resizable_t* res = br_da_getp(*rs, resizable_handle);
   bool any_bigger = false;
   bool any_equal = false;
-  bruir_children_t c = brui_resizable_children_temp(res->parent);
   brfl_foreach(sibling_index, *rs) {
     if (sibling_index == resizable_handle) continue;
     brui_resizable_t* sibling = br_da_getp(*rs, sibling_index);
@@ -1490,14 +1491,14 @@ static br_strv_t brui_ancor_to_str(brui_ancor_t ancor) {
 }
 
 static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t ancor) {
+  (void)brui_ancor_to_str;
   bruirs_t* rs = brui__stack.rs;
   brui_resizable_t* res = br_da_getp(*brui__stack.rs, res_id);
   int parent_id = res->parent;
   brui_resizable_t* parent = br_da_getp(*brui__stack.rs, parent_id);
   brui_resizable_t* sibling = br_da_getp(*brui__stack.rs, sibling_id);
-  br_strv_t ancor_str = brui_ancor_to_str(ancor);
 
-  BRUI_LOGI("Ancor %d and %d: %s", res_id, sibling_id, ancor_str.str);
+  BRUI_LOGI("Ancor %d and %d: %s", res_id, sibling_id, brui_ancor_to_str(ancor).str);
   if (res->ancor == brui_ancor_none) res->ancor_none_extent = res->current.cur_extent;
   if (sibling_id != 0) brui__stack.snap_cooldown = 1.f;
 
@@ -1849,6 +1850,7 @@ static int bruir_find_at(bruirs_t* rs, int index, br_vec2_t loc, br_vec2_t* out_
 }
 
 static void bruir_update_extent(bruirs_t* rs, int index, br_extent_t new_ex, bool force, bool animate) {
+  (void)animate;
   brui_resizable_check_parents(brui__stack.rs);
   brui_resizable_t* res = br_da_getp(*rs, index);
   br_extent_t old_ex = res->target.cur_extent;
