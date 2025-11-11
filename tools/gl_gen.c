@@ -113,7 +113,7 @@ struct {
   {
     .name = "x11",
     .name_upper = "X11",
-	.prefix = "brpl_x11_",
+    .prefix = "brpl_x11_",
     .functions =
       "brpl_x11_Status XInitThreads(void)"
       "void XrmInitialize(void)"
