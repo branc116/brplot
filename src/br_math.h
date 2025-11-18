@@ -26,6 +26,13 @@
 #define BR_SIZEI(WIDTH, HEIGHT) ((br_sizei_t) { .width = (WIDTH), .height = (HEIGHT) })
 #define BR_SIZEI_TOF(SZ) ((br_size_t) { .width = (float)((SZ).width), .height = (float)((SZ).height) })
 
+#define BR_MAT_(M) (M).m0, (M).m4, (M).m8,  (M).m12, \
+                   (M).m1, (M).m5, (M).m9,  (M).m13, \
+                   (M).m2, (M).m6, (M).m10, (M).m14, \
+                   (M).m3, (M).m7, (M).m11, (M).m15
+#define BR_MAT3(...) ((br_mat3_t) { .arr = { __VA_ARGS__ } })
+#define BR_MAT2(...) ((br_mat2_t) { .arr = { __VA_ARGS__ } })
+
 #define BR_EXTENT_ASPECT(E) ((E).height / (E).width)
 #define BR_EXTENT(X, Y, WIDTH, HEIGHT) (br_extent_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
 #define BR_EXTENT2(POS, SIZE) (br_extent_t) { .pos = (POS), .size = (SIZE) }
@@ -51,9 +58,10 @@
 #define BR_BBH(BB) ((BB).max_y - (BB).min_y)
 #define BR_BB_(BB) (BB).min_x, (BB).min_y, (BB).max_x, (BB).max_y
 
-#define BR_VEC4(X, Y, Z, W) ((br_vec4_t) { .x = (X), .y = (Y), .z = (Z), .w = (W) }) 
-#define BR_VEC42(XY, ZW) ((br_vec4_t) { .xy = (XY), .zw = (ZW)  }) 
-#define BR_VEC3(X, Y, Z) ((br_vec3_t) { .x = (X), .y = (Y), .z = (Z) }) 
+#define BR_VEC4(X, Y, Z, W) ((br_vec4_t) { .x = (X), .y = (Y), .z = (Z), .w = (W) })
+#define BR_VEC4_(V) (V).x, (V).y, (V).z, (V).w
+#define BR_VEC42(XY, ZW) ((br_vec4_t) { .xy = (XY), .zw = (ZW)  })
+#define BR_VEC3(X, Y, Z) ((br_vec3_t) { .x = (X), .y = (Y), .z = (Z) })
 #define BR_VEC_ELS(X) (sizeof((X).arr) / sizeof((X).arr[0]))
 #define BR_COLOR_TO4(X)  BR_VEC4(((X).r) / 255.f, ((X).g) / 255.f, ((X).b) / 255.f, ((X).a) / 255.f)
 #define BR_COLOR_COMP(X)  ((X).r), ((X).g), ((X).b), ((X).a)
@@ -243,6 +251,29 @@ typedef struct {
     br_vec4_t rows[4];
   };
 } br_mat_t;
+
+typedef struct {
+  union {
+    struct {
+      float m0, m3, m6;
+      float m1, m4, m7;
+      float m2, m5, m8;
+    };
+    float arr[9];
+    br_vec3_t rows[3];
+  };
+} br_mat3_t;
+
+typedef struct {
+  union {
+    struct {
+      float m0, m2;
+      float m1, m3;
+    };
+    float arr[4];
+    br_vec2_t rows[2];
+  };
+} br_mat2_t;
 
 //------------------------float----------------------------------
 
@@ -578,7 +609,7 @@ static inline float br_vec3_angle(br_vec3_t v1, br_vec3_t v2) {
   return atan2f(len, dot);
 }
 
-static inline br_vec3_t br_vec3_rot(br_vec3_t v, br_vec3_t axis, float angle) { 
+static inline br_vec3_t br_vec3_rot(br_vec3_t v, br_vec3_t axis, float angle) {
   float as = sinf(angle);
   // v + sin(angle)*axis x v + (1 - cos(angle))*axis x ( axis x v )
    br_vec3_t a = br_vec3_cross(br_vec3_scale(axis, as), v);
@@ -685,6 +716,27 @@ static inline br_extent_t br_extent_lerp(br_extent_t a, br_extent_t b, float x) 
   );
 }
 
+//------------------------vec4------------------------------
+
+static inline float br_vec4_dot(br_vec4_t v, br_vec4_t w) {
+  return v.x*w.x + v.y*w.y + v.z*w.z + v.w*w.w;
+}
+
+static inline br_vec4_t br_vec4_scale(br_vec4_t a, float s) {
+  return BR_VEC4(a.x * s, a.y * s, a.z * s, a.w * s);
+}
+
+static inline br_vec4_t br_vec4_apply(br_vec4_t v, br_mat_t mat) {
+  br_vec4_t result = { 0 };
+
+  result.x = br_vec4_dot(v, mat.rows[0]);
+  result.y = br_vec4_dot(v, mat.rows[1]);
+  result.z = br_vec4_dot(v, mat.rows[2]);
+  result.w = br_vec4_dot(v, mat.rows[3]);
+
+  return result;
+}
+
 // ------------------br_mat_t--------------------
 static inline br_mat_t br_mat_perspective(float fovY, float aspect, float nearPlane, float farPlane) {
   br_mat_t result = { 0 };
@@ -714,7 +766,7 @@ static inline br_mat_t br_mat_perspective(float fovY, float aspect, float nearPl
 static inline br_mat_t br_mat_look_at(br_vec3_t eye, br_vec3_t target, br_vec3_t up) {
   br_vec3_t vz = br_vec3_normalize(br_vec3_sub(eye, target));
   br_vec3_t vx = br_vec3_normalize(br_vec3_cross(up, vz));
-  br_vec3_t vy = br_vec3_cross(vz, vx);
+  br_vec3_t vy = br_vec3_normalize(br_vec3_cross(vz, vx));
 
   return (br_mat_t) { .rows = {
     BR_VEC4(vx.x, vx.y, vx.z, -br_vec3_dot(vx, eye)),
@@ -745,6 +797,85 @@ static inline br_mat_t br_mat_mul(br_mat_t left, br_mat_t right) {
   result.m15 = left.m12*right.m3 + left.m13*right.m7 + left.m14*right.m11 + left.m15*right.m15;
 
   return result;
+}
+
+static inline float br_mat2_det(br_mat2_t mat) {
+  return mat.rows[0].x * mat.rows[1].y -
+         mat.rows[0].y * mat.rows[1].x;
+}
+
+static inline float br_mat3_det(br_mat3_t mat) {
+  float a = mat.rows[0].x * br_mat2_det(BR_MAT2(mat.rows[1].y, mat.rows[1].z, mat.rows[2].y, mat.rows[2].z));
+  float b = mat.rows[0].y * br_mat2_det(BR_MAT2(mat.rows[1].x, mat.rows[1].z, mat.rows[2].x, mat.rows[2].z));
+  float c = mat.rows[0].z * br_mat2_det(BR_MAT2(mat.rows[1].x, mat.rows[1].y, mat.rows[2].x, mat.rows[2].y));
+  return a - b + c;
+}
+
+static inline float br_mat_det(br_mat_t mat) {
+  float a = mat.rows[0].x * br_mat3_det(BR_MAT3(mat.rows[1].y, mat.rows[1].z, mat.rows[1].w,
+                                                mat.rows[2].y, mat.rows[2].z, mat.rows[2].w,
+                                                mat.rows[3].y, mat.rows[3].z, mat.rows[3].w));
+  float b = mat.rows[0].y * br_mat3_det(BR_MAT3(mat.rows[1].x, mat.rows[1].z, mat.rows[1].w,
+                                                mat.rows[2].x, mat.rows[2].z, mat.rows[2].w,
+                                                mat.rows[3].x, mat.rows[3].z, mat.rows[3].w));
+  float c = mat.rows[0].z * br_mat3_det(BR_MAT3(mat.rows[1].x, mat.rows[1].y, mat.rows[1].w,
+                                                mat.rows[2].x, mat.rows[2].y, mat.rows[2].w,
+                                                mat.rows[3].x, mat.rows[3].y, mat.rows[3].w));
+  float d = mat.rows[0].w * br_mat3_det(BR_MAT3(mat.rows[1].x, mat.rows[1].y, mat.rows[1].z,
+                                                mat.rows[2].x, mat.rows[2].y, mat.rows[2].z,
+                                                mat.rows[3].x, mat.rows[3].y, mat.rows[3].z));
+  return a - b + c - d;
+}
+
+static inline br_vec3_t br_vec4_sub(br_vec4_t v, int i) {
+  br_vec3_t ret;
+  int c = 0; if (c == i) ++c;
+  ret.arr[0] = v.arr[c++]; if (c == i) ++c;
+  ret.arr[1] = v.arr[c++]; if (c == i) ++c;
+  ret.arr[2] = v.arr[c];
+  return ret;
+}
+
+static inline br_mat3_t br_mat_sub(br_mat_t m, int row, int col) {
+  br_mat3_t ret;
+  int r = 0;                                   if (r == row) ++r;
+  ret.rows[0] = br_vec4_sub(m.rows[r++], col); if (r == row) ++r;
+  ret.rows[1] = br_vec4_sub(m.rows[r++], col); if (r == row) ++r;
+  ret.rows[2] = br_vec4_sub(m.rows[r],   col);
+  return ret;
+}
+
+static inline br_mat_t br_mat_inverse(br_mat_t m) {
+    float det = br_mat_det(m);
+
+    if (det == 0.0f) {
+        br_mat_t zero = {0};
+        return zero;
+    }
+
+    br_mat_t inv = {
+      .arr = {
+         br_mat3_det(br_mat_sub(m, 0, 0)), -br_mat3_det(br_mat_sub(m, 0, 1)),  br_mat3_det(br_mat_sub(m, 0, 2)), -br_mat3_det(br_mat_sub(m, 0, 3)),
+        -br_mat3_det(br_mat_sub(m, 1, 0)),  br_mat3_det(br_mat_sub(m, 1, 1)), -br_mat3_det(br_mat_sub(m, 1, 2)),  br_mat3_det(br_mat_sub(m, 1, 3)),
+         br_mat3_det(br_mat_sub(m, 2, 0)), -br_mat3_det(br_mat_sub(m, 2, 1)),  br_mat3_det(br_mat_sub(m, 2, 2)), -br_mat3_det(br_mat_sub(m, 2, 3)),
+        -br_mat3_det(br_mat_sub(m, 3, 0)),  br_mat3_det(br_mat_sub(m, 3, 1)), -br_mat3_det(br_mat_sub(m, 3, 2)),  br_mat3_det(br_mat_sub(m, 3, 3)),
+      }
+    };
+
+    float inv_det = 1.0f / det;
+    for (int i = 0; i < 16; i++)  inv.arr[i] *= inv_det;
+
+    return inv;
+}
+
+static inline br_mat_t br_mat_transpose(br_mat_t m) {
+  br_mat_t ret = { .arr = {
+     m.m0,  m.m1,  m.m2,  m.m3,
+     m.m4,  m.m5,  m.m6,  m.m7,
+     m.m8,  m.m9,  m.m10, m.m11,
+     m.m12, m.m13, m.m14, m.m15,
+  }};
+  return ret;
 }
 
 // ------------------collisions--------------------

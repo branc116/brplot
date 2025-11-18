@@ -2,19 +2,14 @@
 
 precision mediump float;
 
-in vec3 vertexPosition;
-in vec3 vertexColor;
-in float z;
+in vec3 pos;
+in vec3 color;
 
-out vec3 fragTexCoord;
-out vec3 normal;
+out vec3 v_color;
 
 uniform mat4 m_mvp;
 
-void main()
-{
-    fragTexCoord = vertexPosition.xyz;
-    normal = vertexColor.xyz;
-    vec4 res = (m_mvp * vec4(vertexPosition.xyz, 1.0));
-    gl_Position = vec4(res.xy, z*res.w, res.w);
+void main() {
+  v_color = color;
+  gl_Position = m_mvp * vec4(pos.xyz, 1.0);
 }

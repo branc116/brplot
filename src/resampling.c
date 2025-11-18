@@ -385,14 +385,14 @@ static void br_resampling_draw33(br_resampling_t const* const res, size_t index,
   }
 }
 
-void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* plot, br_plot_data_t const* pd) {
+void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* plot, br_plot_data_t const* pd, br_extent_t extent) {
   double start = brpl_time();
   if (res->common.len == 0) return;
   switch (pg->kind) {
     case br_data_kind_2d: {
       switch (plot->kind) {
         case br_plot_kind_2d: {
-          res->culler.args.screen_size = BR_VEC2I_TOD(plot->cur_extent.size.vec);
+          res->culler.args.screen_size = BR_VEC2_TOD(extent.size.vec);
           res->culler.args.zoom = plot->dd.zoom;
           res->culler.args.offset = plot->dd.offset;
           res->culler.args.offset.x -= pg->dd.rebase_x;
@@ -402,8 +402,7 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           res->culler.args.prev[1] = BR_VEC2(0, 0);
 
           br_resampling.shaders->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
-          br_extent_t ex = BR_EXTENTI_TOF(plot->cur_extent);
-          float aspect = ex.width/ex.height;
+          float aspect = extent.width/extent.height;
           br_extentd_t plot_rect = BR_EXTENTD(
             -aspect*plot->dd.zoom.x/2.0 + plot->dd.offset.x - pg->dd.rebase_x,
                     plot->dd.zoom.y/2.f + plot->dd.offset.y - pg->dd.rebase_y,
@@ -421,8 +420,7 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           br_vec3_t eye = plot->ddd.eye;
           eye.x -= (float)pg->dd.rebase_x;
           eye.y -= (float)pg->dd.rebase_y;
-          br_extent_t const ex = BR_EXTENTI_TOF(plot->cur_extent);
-          br_vec2_t re = (br_vec2_t) { .x = ex.width, .y = ex.height };
+          br_vec2_t re = (br_vec2_t) { .x = extent.width, .y = extent.height };
           br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
           br_mat_t look = br_mat_look_at(eye, target, plot->ddd.up);
           br_resampling.shaders->line_3d_simple->uvs.m_mvp_uv = br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
@@ -448,8 +446,7 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           eye.x -= (float)pg->ddd.rebase_x;
           eye.y -= (float)pg->ddd.rebase_y;
           eye.z -= (float)pg->ddd.rebase_z;
-          br_extent_t const ex = BR_EXTENTI_TOF(plot->cur_extent);
-          br_vec2_t re = (br_vec2_t) { .x = ex.width, .y = ex.height };
+          br_vec2_t re = (br_vec2_t) { .x = extent.width, .y = extent.height };
           br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
           br_mat_t look = br_mat_look_at(eye, target, plot->ddd.up);
           br_resampling.shaders->line_3d_simple->uvs.m_mvp_uv = br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);

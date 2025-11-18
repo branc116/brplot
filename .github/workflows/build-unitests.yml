@@ -60,8 +60,8 @@ jobs:
       - run: |
           ./nob amalgam
           clang -g -fPIC -shared -DBRPLOT_IMPLEMENTATION .generated/brplot.c -o libbrplot.so
-          clang -g -I.generated tests/hello_world.c -lm -L. -lbrplot
-          clang -g -I.generated tests/animations.c -lm -L. -lbrplot
+          cc -g -I.generated tests/hello_world.c -lm -L. -lbrplot
+          cc -g -I.generated tests/animations.c -lm -L. -lbrplot
 
   windows:
     runs-on: windows-latest

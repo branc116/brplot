@@ -190,6 +190,35 @@ void br_mesh_3d_gen_line_strip3(br_mesh_line_3d_t args, float const* xs, float c
 
 br_extent_t brui_resizable_cur_extent(int resizable_handle);
 
+typedef struct {
+  float l, r;
+  float thick;
+} br_mesh_line_thick;
+int get_points(int n, br_mesh_line_thick* arr, double to, double from, double extent, double line_thickness) {
+  double diff = to - from;
+  double real_exp = log10(diff / 2.f);
+  double exp = floor(real_exp);
+  double base = pow(10.0, exp);
+  double start = floor(from / base) * base;
+  n = br_i_min(diff / base + 3, n);
+  double thickness_base = 2.0 - n / 20.0;
+  if (thickness_base < 1.0) thickness_base = 1.0;
+  for (int i = 0; i < n; ++i) {
+    double cur = start + i*base;
+    double thick = thickness_base;
+    double higher = fabs(cur / (base * 10));
+    if (fabs(higher - round(higher)) < 0.01) thick = 5.0;
+
+    double from_start = cur - from;
+    double uv = 2.0 * from_start / diff - 1.0;
+    double thick_real = 14.0/extent * line_thickness;
+    double l = uv - thick_real;
+    double r = uv + thick_real;
+    arr[i] = (br_mesh_line_thick) { .l = (float)l, .r = (float)r, .thick = (float)thick };
+  }
+  return n;
+}
+
 // TODO: This should be split to _gen and _draw
 void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
   // TODO 2D/3D
@@ -199,58 +228,35 @@ void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
         br_mesh_state.shaders->grid->uvs.bg_color_uv = BR_COLOR_TO4(theme->colors.plot_bg);
         br_mesh_state.shaders->grid->uvs.lines_color_uv = BR_COLOR_TO4(theme->colors.grid_lines);
         br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
-        br_vec2d_t from = br_plot2d_to_plot(plot, BR_VEC2(ex.x, ex.y + ex.height));
-        br_vec2d_t to = br_plot2d_to_plot(plot, BR_VEC2(ex.x + ex.width, ex.y));
+        br_vec2d_t from = br_plot2d_to_plot(plot, BR_VEC2(ex.x, ex.y + ex.height), ex);
+        br_vec2d_t to = br_plot2d_to_plot(plot, BR_VEC2(ex.x + ex.width, ex.y), ex);
+#define BR_MESH_LINE_THICK_N 32
+        br_mesh_line_thick line_thicks[BR_MESH_LINE_THICK_N];
         {
-          double real_exp = log10((to.x - from.x) / 2.f);
-          double exp = floor(real_exp);
-          double base = pow(10.0, exp);
-          double start = floor(from.x / base) * base;
-          double n = (to.x - from.x) / base;
-          double thickness_base = 2.0 - n / 20.0;
-          if (thickness_base < 1.0) thickness_base = 1.0;
-          for (double cur_x = start; cur_x < to.x; cur_x += base) {
-            double thick = thickness_base;
-            double higher = fabs(cur_x / (base * 10));
-            if (higher - floor(higher) < 0.01) thick = 5.0;
-
-            double from_start = cur_x - from.x;
-            double uv = 2.0 * from_start / (to.x - from.x) - 1.0;
-            double thick_real = 14.0/(double)ex.width * (double)plot->dd.grid_line_thickness;
-            double l = uv - thick_real;
-            double r = uv + thick_real;
+          int n = get_points(BR_MESH_LINE_THICK_N, line_thicks, to.x, from.x, ex.width, plot->dd.grid_line_thickness);
+          for (int i = 0; i < n; ++i) {
+            float thick = line_thicks[i].thick;
+            float l = line_thicks[i].l;
+            float r = line_thicks[i].r;
             br_shader_grid_push_quad(br_mesh_state.shaders->grid, (br_shader_grid_el_t[4]) {
-                { .vert = BR_VEC3((float)l,  1, -1/(float)thick) },
-                { .vert = BR_VEC3((float)r,  1,  1/(float)thick) },
-                { .vert = BR_VEC3((float)r, -1,  1/(float)thick) },
-                { .vert = BR_VEC3((float)l, -1, -1/(float)thick) },
+                { .vert = BR_VEC3(l,  1.f, -1.f/thick) },
+                { .vert = BR_VEC3(r,  1.f,  1.f/thick) },
+                { .vert = BR_VEC3(r, -1.f,  1.f/thick) },
+                { .vert = BR_VEC3(l, -1.f, -1.f/thick) },
             });
           }
         }
         {
-          double plot_height = to.y - from.y;
-          double real_exp = log10(plot_height / 2.f);
-          double exp = floor(real_exp);
-          double base = pow(10.0, exp);
-          double start = floor(from.y / base) * base;
-          double n = plot_height / base;
-          double thickness_base = 2.0 - n / 20.0;
-          if (thickness_base < 1.0) thickness_base = 1.0;
-          for (double cur_y = start; cur_y < to.y; cur_y += base) {
-            double thick = thickness_base;
-            double higher = fabs(cur_y / (base * 10));
-            if (higher - floor(higher) < 0.01) thick = 5.0;
-
-            double from_start = cur_y - from.y;
-            double uv = 2.0 * from_start / plot_height - 1.0;
-            double thick_real = 14.0/ex.height * plot->dd.grid_line_thickness;
-            double d = uv - thick_real;
-            double u = uv + thick_real;
+          int n = get_points(BR_MESH_LINE_THICK_N, line_thicks, to.y, from.y, ex.height, plot->dd.grid_line_thickness);
+          for (int i = 0; i < n; ++i) {
+            float thick = line_thicks[i].thick;
+            float d = line_thicks[i].l;
+            float u = line_thicks[i].r;
             br_shader_grid_push_quad(br_mesh_state.shaders->grid, (br_shader_grid_el_t[4]) {
-                { .vert = BR_VEC3(-1, (float)u, -1/(float)thick) },
-                { .vert = BR_VEC3( 1, (float)u, -1/(float)thick) },
-                { .vert = BR_VEC3( 1, (float)d,  1/(float)thick) },
-                { .vert = BR_VEC3(-1, (float)d,  1/(float)thick) },
+                { .vert = BR_VEC3(-1.f, u, -1.f/thick) },
+                { .vert = BR_VEC3( 1.f, u, -1.f/thick) },
+                { .vert = BR_VEC3( 1.f, d,  1.f/thick) },
+                { .vert = BR_VEC3(-1.f, d,  1.f/thick) },
             });
           }
         }
@@ -258,19 +264,27 @@ void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
     } break;
     case br_plot_kind_3d: {
       BR_PROFILE("grid_draw_3d") {
-        float sz = 10000.f;
-        br_shader_grid_3d_push_quad(br_mesh_state.shaders->grid_3d, (br_shader_grid_3d_el_t[4]) {
-          { .vertexPosition = BR_VEC3(-sz, 0, -sz), .vertexColor = BR_VEC3(0, 1, 0), .z = BR_Z_TO_GL(1) },
-          { .vertexPosition = BR_VEC3(sz, 0, -sz),  .vertexColor = BR_VEC3(0, 1, 0), .z = BR_Z_TO_GL(1) },
-          { .vertexPosition = BR_VEC3(sz, 0, sz),   .vertexColor = BR_VEC3(0, 1, 0), .z = BR_Z_TO_GL(1) },
-          { .vertexPosition = BR_VEC3(-sz, 0, sz),  .vertexColor = BR_VEC3(0, 1, 0), .z = BR_Z_TO_GL(1) },
-        });
-        br_shader_grid_3d_push_quad(br_mesh_state.shaders->grid_3d, (br_shader_grid_3d_el_t[4]) {
-          { .vertexPosition = BR_VEC3(-sz, -sz, 0), .vertexColor = BR_VEC3(0, 0, 1), .z = BR_Z_TO_GL(5) },
-          { .vertexPosition = BR_VEC3(sz, -sz, 0),  .vertexColor = BR_VEC3(0, 0, 1), .z = BR_Z_TO_GL(5) },
-          { .vertexPosition = BR_VEC3(sz, sz, 0),   .vertexColor = BR_VEC3(0, 0, 1), .z = BR_Z_TO_GL(5) },
-          { .vertexPosition = BR_VEC3(-sz, sz, 0),  .vertexColor = BR_VEC3(0, 0, 1), .z = BR_Z_TO_GL(5) },
-        });
+        br_mat_t mvp = br_mesh_state.shaders->line_3d->uvs.m_mvp_uv;
+        br_vec3_t eye = br_mesh_state.shaders->line_3d->uvs.eye_uv;
+        br_mat_t mvp_inv = br_mat_inverse(mvp);
+        mvp_inv = br_mat_transpose(mvp_inv);
+        LOGI("--------");
+        float z = 0.99f;
+        float det = br_mat3_det(br_mat_sub(mvp, 2, 1));
+        LOGI("det= %f", det);
+        det = br_mat_det(mvp);
+        LOGI("detm= %f", det);
+        br_vec4_t from = br_vec4_apply(BR_VEC4(-1, -1, z, 1), mvp_inv);
+        br_vec4_t to =   br_vec4_apply(BR_VEC4( 1,  1, z, 1), mvp_inv);
+        from = br_vec4_scale(from, 1/from.w);
+        to = br_vec4_scale(to, 1.f/to.w);
+        LOGI("z=%.3f", z);
+        LOGI("from = %.3f %.3f %.3f %.3f", BR_VEC4_(from));
+        LOGI("to   = %.3f %.3f %.3f %.3f", BR_VEC4_(to));
+        LOGI("\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f", BR_MAT_(mvp_inv));
+
+        LOGI("\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f", BR_MAT_(mvp));
+        LOGI("--------");
       }
     } break;
     default: BR_UNREACHABLE("plot kind: %d", plot->kind);

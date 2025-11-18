@@ -35,15 +35,11 @@
                                         \
       X_BUF(vert, 3)                    \
     )                                   \
-  X(grid_3d, 12,                        \
-      X_VEC(eye, 3)                     \
-      X_VEC(target, 3)                  \
-      X_VEC(look_dir, 3)                \
+  X(grid_3d, 512,                       \
       X_VEC(m_mvp, 16),                 \
                                         \
-      X_BUF(vertexPosition, 3)          \
-      X_BUF(vertexColor, 3)             \
-      X_BUF(z, 1)                       \
+      X_BUF(pos, 3)                     \
+      X_BUF(color, 3)                   \
     )                                   \
   X(line_3d_simple, 1024,               \
       X_VEC(m_mvp, 16)                  \

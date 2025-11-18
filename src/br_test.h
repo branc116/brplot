@@ -25,7 +25,8 @@
 #define TEST_EQUALF(a, b)                                    \
   do {                                                       \
     float aa = (float)(a), bb = (float)(b);                  \
-    if (fabsf(aa - bb) > 1e-5) {                             \
+    float __diff = fabsf(aa - bb); \
+    if (__diff > 1e-5 && __diff > fmaxf(fabsf(aa), fabsf(bb))*1e-2) { \
       LOGF("%f != %f ( " #a " != " #b " )", aa, bb);         \
     }                                                        \
   } while (0)

@@ -80,7 +80,7 @@ static int br_read_input_read_next(void* state) {
 static void* br_indirection_function(void* gv) {
   struct { br_plotter_t* br; int* pipes; }* data = gv;
   int ok = pipe(data->pipes);
-  if (false == ok) {
+  if (0 != ok) {
     LOGF("Failed to create pipes: %s", strerror(errno));
   }
   br_read_input_main_worker(data->br, data->pipes);

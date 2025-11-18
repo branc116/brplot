@@ -100,7 +100,7 @@ void br_data_empty(br_data_t* data);
 void br_data_remove(br_datas_t* datas, int data_id);
 void br_data_export(br_data_t data, FILE* file);
 void br_data_export_csv(br_data_t data, FILE* file);
-void br_datas_draw(br_datas_t datas, br_plot_t* plot);
+void br_datas_draw(br_datas_t datas, br_plot_t* plot, br_extent_t extent);
 void br_datas_add_test_points(br_datas_t* datas);
 void br_data_deinit(br_data_t* data);
 void br_datas_deinit(br_datas_t* datas);

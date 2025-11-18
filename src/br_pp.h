@@ -83,7 +83,7 @@ void __sanitizer_print_stack_trace(void);
 #endif
 
 #if !defined(BR_HAS_MEMORY)
-#  if defined(BR_DEBUG)
+#  if 0 && defined(BR_DEBUG)
 #    define BR_HAS_MEMORY
 #  endif
 #endif

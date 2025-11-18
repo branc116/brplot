@@ -34,7 +34,7 @@ ifeq ($(PLATFORM), LINUX)
 endif
 
 SOURCE             = src/main.c           src/ui.c              src/data.c        src/mesh.c        src/q.c       src/read_input.c \
-										 external/shl_impls.c src/resampling.c      src/graph_utils.c src/shaders.c     src/plotter.c                  \
+										 external/shl_impls.c src/resampling.c      src/shaders.c     src/plotter.c                  \
 										 src/plot.c           src/permastate.c      src/filesystem.c  src/gui.c         src/text_renderer.c            \
 										 src/data_generator.c src/platform2.c       src/threads.c     src/gl.c          src/icons.c   src/theme.c
 COMMONFLAGS        = -I. -MMD -MP -fvisibility=hidden -std=gnu11
@@ -261,7 +261,7 @@ bench: bin/bench
 	./bin/bench >> bench.txt
 	cat bench.txt
 
-SOURCE_BENCH= ./src/misc/benchmark.c ./src/resampling.c ./src/mesh.c ./src/shaders.c ./src/plotter.c ./src/gui.c ./src/data.c ./src/plot.c ./src/q.c ./src/graph_utils.c ./src/data_generator.c ./src/platform.c  ./src/permastate.c ./src/filesystem.c
+SOURCE_BENCH= ./src/misc/benchmark.c ./src/resampling.c ./src/mesh.c ./src/shaders.c ./src/plotter.c ./src/gui.c ./src/data.c ./src/plot.c ./src/q.c ./src/data_generator.c ./src/platform.c  ./src/permastate.c ./src/filesystem.c
 OBJS_BENCH= $(patsubst %.c, $(PREFIX_BUILD)/%.o, $(SOURCE_BENCH))
 
 bin/bench: $(OBJS_BENCH) $(NOBS)

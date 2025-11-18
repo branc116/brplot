@@ -51,7 +51,7 @@ typedef struct br_plot_t {
     br_plot_data_t* arr;
     int len, cap; 
   } data_info;
-  br_extenti_t cur_extent;
+  br_extenti_t _cur_extent;
   int extent_handle;
   int menu_extent_handle;
   int legend_extent_handle;
@@ -80,12 +80,15 @@ typedef struct br_plots_t {
 
 void br_plots_remove_group(br_plots_t plots, int group);
 
+void br_plots_focus_visible(br_plots_t plot, br_datas_t groups);
+void br_plot_focus_visible(br_plot_t* plot, br_datas_t groups, br_extent_t ex);
+
 void br_plot_deinit(br_plot_t* plot);
-void br_plot_create_texture(br_plot_t* br);
-void br_plot_draw(br_plot_t* plot, br_datas_t datas);
+void br_plot_create_texture(br_plot_t* br, br_extent_t ex);
 
 void br_plot2d_move_screen_space(br_plot_t* plot, br_vec2_t delta, br_size_t extent);
 void br_plot2d_zoom(br_plot_t* plot, br_vec2_t vec, br_extent_t screen_extent, br_vec2_t mouse_pos_screen);
 
-br_vec2d_t br_plot2d_to_plot  (br_plot_t* plot, br_vec2_t  vec);
-br_vec2_t  br_plot2d_to_screen(br_plot_t* plot, br_vec2d_t vec);
+br_vec2d_t br_plot2d_to_plot  (br_plot_t* plot, br_vec2_t  vec, br_extent_t ex);
+br_vec2_t  br_plot2d_to_screen(br_plot_t* plot, br_vec2d_t vec, br_extent_t ex);
+

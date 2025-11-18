@@ -60,6 +60,65 @@ int main(void) {
     res = br_vec3_perpendicular(BR_VEC3(1,0,0));
     TEST_EQUALF(br_vec3_dot(res, BR_VEC3(1,0,0)), 0.f);
   }
+  {
+    br_mat_t m = { .arr = {
+        1, 1, 1, -1,
+        1, 1, -1, 1,
+        1, -1, 1, 1,
+        -1, 1, 1, 1,
+      }
+    };
+    float det = br_mat_det(m);
+    TEST_EQUALF(det, -16);
+  }
+  {
+    br_mat_t m = { .arr = {
+        1, 0, 0, 0,
+        0, 2, -1, 0,
+        0, -1, 3, 0,
+        0, 0, 0, 4
+      }
+    };
+    float det = br_mat_det(m);
+    TEST_EQUALF(det, 20);
+  }
+  {
+    br_mat_t m = { .arr = {
+        1.11419, 0.0, -1.5051, -0.361676,
+        0.71714, 1.5983, 0.530884, -0.12714,
+        -0.701784, 0.487444, -0.519517, 5.67892,
+        -0.701784, 0.487444, -0.519517, 5.68092,
+      }
+    };
+    float det = br_mat_det(m);
+    TEST_EQUALF(det, -0.006852222642255142);
+    br_mat_t inv = br_mat_inverse(m);
+    br_mat_t expected_inv = { .arr = {
+      0.317729, 0.214028, -2065.49, 2064.79,
+      -1.52961e-7, 0.477006, 1354.92, -1354.43,
+      -0.429201, 0.15844, -1408.83, 1408.31,
+      0.0, 0.0, -500.25, 500.25
+    }};
+    for (int i = 0; i < 16; ++i) {
+      TEST_EQUALF(expected_inv.arr[i], inv.arr[i]);
+    }
+    br_mat_t ident = br_mat_mul(m, inv);
+    det = br_mat_det(ident);
+    TEST_EQUALF(det, 1);
+  }
+  {
+    br_mat_t m = { .arr = {
+        1, 0, 0, 0,
+        0, 2, -1, 0,
+        0, -1, 3, 0,
+        0, 0, 0, 4
+      }
+    };
+    br_mat_t inv = br_mat_inverse(m);
+    br_mat_t ident = br_mat_mul(m, inv);
+    float det = br_mat_det(ident);
+    TEST_EQUALF(det, 1);
+  }
 }
 
 void br_on_fatal_error(void) {}

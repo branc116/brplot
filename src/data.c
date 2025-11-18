@@ -299,32 +299,14 @@ void br_datas_add_test_points(br_datas_t* pg) {
       br_data_push_xyz(pg, x, y, z, group);
     }
   }
-  {
-//    br_data_push_expr_xy(pg, (br_data_expr_t){ .kind = br_data_expr_kind_reference_y, .group_id = 5 }, (br_data_expr_t){ .kind = br_data_expr_kind_reference_x, .group_id = 5 }, 12);
-  }
 }
 
-// Custom Blend Modes
-
-void br_datas_draw(br_datas_t pg, br_plot_t* plot) {
-  if (plot->kind == br_plot_kind_2d) {
-    BR_PROFILE("br_datas_draw_2d") {
-      for (int j = 0; j < plot->data_info.len; ++j) {
-        br_plot_data_t di = plot->data_info.arr[j];
-        br_data_t const* g = br_data_get1(pg, di.group_id);
-        if (g->len == 0) continue;
-        br_resampling_draw(g->resampling, g, plot, &di);
-      }
-    }
-  } else {
-    BR_PROFILE("br_datas_draw_3d") {
-      for (int j = 0; j < plot->data_info.len; ++j) {
-        br_plot_data_t di = plot->data_info.arr[j];
-        br_data_t const* g = br_data_get1(pg, di.group_id);
-        if (g->len == 0) continue;
-        br_resampling_draw(g->resampling, g, plot, &di);
-      }
-    }
+void br_datas_draw(br_datas_t pg, br_plot_t* plot, br_extent_t extent) {
+  for (int j = 0; j < plot->data_info.len; ++j) {
+    br_plot_data_t di = plot->data_info.arr[j];
+    br_data_t const* g = br_data_get1(pg, di.group_id);
+    if (g->len == 0) continue;
+    br_resampling_draw(g->resampling, g, plot, &di, extent);
   }
   br_resampling_change_something(pg);
 }

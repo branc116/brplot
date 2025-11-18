@@ -8,25 +8,14 @@
 #include "src/br_ui.h"
 #include "src/br_memory.h"
 
-static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas);
-static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas);
-
 void br_plot_deinit(br_plot_t* plot) {
   br_da_free(plot->data_info);
   brui_resizable_delete(plot->extent_handle);
   brgl_destroy_framebuffer(plot->texture_id);
 }
 
-void br_plot_create_texture(br_plot_t* br) {
-  br->texture_id = brgl_create_framebuffer(br->cur_extent.width, br->cur_extent.height);
-}
-
-void br_plot_draw(br_plot_t* plot, br_datas_t datas) {
-  switch (plot->kind) {
-    case br_plot_kind_2d: br_plot_2d_draw(plot, datas); break;
-    case br_plot_kind_3d: br_plot_3d_draw(plot, datas); break;
-    default: BR_UNREACHABLE("Plot kind %d is not handled", plot->kind);
-  }
+void br_plot_create_texture(br_plot_t* br, br_extent_t extent) {
+  br->texture_id = brgl_create_framebuffer((int)extent.width, (int)extent.height);
 }
 
 void br_plot2d_move_screen_space(br_plot_t* plot, br_vec2_t delta, br_size_t plot_screen_size) {
@@ -56,38 +45,11 @@ void br_plot2d_zoom(br_plot_t* plot, br_vec2_t vec, br_extent_t screen_extent, b
   plot->dd.offset.y -= now.y - old.y;
 }
 
-void br_plot_update_shader_values(br_plot_t* plot, br_shaders_t* shaders) {
-  br_extent_t const ex = BR_EXTENTI_TOF(plot->cur_extent);
-  switch (plot->kind) {
-    case br_plot_kind_2d: break;
-    case br_plot_kind_3d: {
-      BR_PROFILE("update_shader_values_3d") {
-        br_vec2_t re = (br_vec2_t) { .x = ex.width, .y = ex.height };
-        br_vec3_t eye_zero = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
-        float eye_scale = 10.f * powf(10.f, -floorf(log10f(fmaxf(fmaxf(fabsf(eye_zero.x), fabsf(eye_zero.y)), fabsf(eye_zero.z)))));
-        br_vec3_t eye_final = br_vec3_add(br_vec3_scale(eye_zero, eye_scale), plot->ddd.target);
-        br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
-        br_mat_t look_grid = br_mat_look_at(eye_final, plot->ddd.target, plot->ddd.up);
-        br_mat_t look = br_mat_look_at(plot->ddd.eye, plot->ddd.target, plot->ddd.up);
-        shaders->grid_3d->uvs.m_mvp_uv = br_mat_mul(look_grid, per);
-        shaders->grid_3d->uvs.eye_uv = eye_final;
-        shaders->grid_3d->uvs.target_uv = plot->ddd.target;
-        shaders->grid_3d->uvs.look_dir_uv = br_vec3_normalize(br_vec3_sub(plot->ddd.target, plot->ddd.eye));
-
-        shaders->line_3d_simple->uvs.m_mvp_uv = shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
-        shaders->line_3d->uvs.eye_uv = plot->ddd.eye;
-      }
-    } break;
-    default: BR_ASSERT(0);
-  }
-}
-
-br_vec2d_t br_plot_2d_get_mouse_position(br_plot_t* plot, br_vec2_t screen_mouse_pos) {
-  br_extenti_t ex = plot->cur_extent;
+br_vec2d_t br_plot_2d_get_mouse_position(br_plot_t* plot, br_vec2_t screen_mouse_pos, br_extent_t ex) {
   br_vec2i_t mouse_pos = BR_VEC2_TOI(screen_mouse_pos);
-  br_vec2i_t mp_in_graph = BR_VEC2I_SUB(mouse_pos, ex.pos);
+  br_vec2i_t mp_in_graph = BR_VEC2I_SUB(mouse_pos, BR_VEC2_TOI(ex.pos));
   br_vec2i_t a = BR_VEC2I_SCALE(mp_in_graph, 2);
-  br_vec2_t b = br_vec2i_tof(BR_VEC2I_SUB(plot->cur_extent.size.vec, a));
+  br_vec2_t b = br_vec2i_tof(BR_VEC2I_SUB(BR_VEC2_TOI(ex.size.vec), a));
   br_vec2_t c = br_vec2_scale(b, 1.f/(float)ex.height);
   return BR_VEC2D(
     -c.x*plot->dd.zoom.x/2.0 + plot->dd.offset.x,
@@ -95,8 +57,7 @@ br_vec2d_t br_plot_2d_get_mouse_position(br_plot_t* plot, br_vec2_t screen_mouse
   );
 }
 
-br_vec2d_t br_plot2d_to_plot(br_plot_t* plot, br_vec2_t vec) {
-  br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
+br_vec2d_t br_plot2d_to_plot(br_plot_t* plot, br_vec2_t vec, br_extent_t ex) {
   br_vec2_t vec_in_resizable = br_vec2_sub(vec, ex.pos);
   br_vec2_t vec_in_resizable2 = br_vec2_scale(vec_in_resizable, 2);
   br_vec2_t b = br_vec2_sub(ex.size.vec, vec_in_resizable2);
@@ -107,9 +68,7 @@ br_vec2d_t br_plot2d_to_plot(br_plot_t* plot, br_vec2_t vec) {
   );
 }
 
-br_vec2_t br_plot2d_to_screen(br_plot_t* plot, br_vec2d_t vec) {
-  br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
-
+br_vec2_t br_plot2d_to_screen(br_plot_t* plot, br_vec2d_t vec, br_extent_t ex) {
   br_vec2d_t d = vec;
   d = br_vec2d_sub(d, plot->dd.offset);
   d = br_vec2d_scale(d, 2.0);
@@ -125,7 +84,7 @@ br_vec2_t br_plot2d_to_screen(br_plot_t* plot, br_vec2d_t vec) {
 void br_plot_update_context(br_plot_t* plot, br_extent_t plot_screen_extent, br_vec2_t mouse_pos) {
   if (plot->kind == br_plot_kind_2d) {
     float aspect = plot_screen_extent.width/plot_screen_extent.height;
-    plot->dd.mouse_pos = br_plot_2d_get_mouse_position(plot, mouse_pos);
+    plot->dd.mouse_pos = br_plot_2d_get_mouse_position(plot, mouse_pos, plot_screen_extent);
     plot->dd.graph_rect = BR_EXTENTD(
       (-aspect*plot->dd.zoom.x/2.0 + plot->dd.offset.x),
       (plot->dd.zoom.y/2.0 + plot->dd.offset.y),
@@ -143,28 +102,59 @@ void br_plots_remove_group(br_plots_t plots, int group) {
   }
 }
 
-static void br_plot_2d_draw(br_plot_t* plot, br_datas_t datas) {
-  BR_PROFILE("br_datas_draw_2d") {
-    for (int j = 0; j < plot->data_info.len; ++j) {
-      br_plot_data_t di = plot->data_info.arr[j];
-      if (false == BR_PLOT_DATA_IS_VISIBLE(di)) continue;
-      br_data_t const* g = br_data_get1(datas, di.group_id);
-      if (g->len == 0) continue;
-      g->resampling->culler.args.screen_size = BR_VEC2I_TOD(plot->cur_extent.size.vec);
-      br_resampling_draw(g->resampling, g, plot, &di);
-    }
+void br_plots_focus_visible(br_plots_t plots, br_datas_t const groups) {
+  for (int i = 0; i < plots.len; ++i) {
+    if (plots.arr[i].kind != br_plot_kind_2d) continue;
+    br_plot_focus_visible(&plots.arr[i], groups, brui_resizable_cur_extent(plots.arr[i].extent_handle));
   }
 }
 
-static void br_plot_3d_draw(br_plot_t* plot, br_datas_t datas) {
-  BR_PROFILE("br_datas_draw_3d") {
-    for (int j = 0; j < plot->data_info.len; ++j) {
-      br_plot_data_t di = plot->data_info.arr[j];
-      if (false == BR_PLOT_DATA_IS_VISIBLE(di)) continue;
-      br_data_t const* g = br_data_get1(datas, di.group_id);
-      if (g->len == 0) continue;
-      br_resampling_draw(g->resampling, g, plot, &di);
+void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups, br_extent_t ex) {
+  // TODO 2D/3D
+  BR_ASSERT(plot->kind == br_plot_kind_2d);
+  if (plot->data_info.len == 0) return;
+
+  br_bb_t bb = { 0 };
+  int n = 0;
+  for (int i = 0; i < plot->data_info.len; ++i) {
+    br_plot_data_t di = plot->data_info.arr[i];
+    if (false == BR_PLOT_DATA_IS_VISIBLE(di)) continue;
+    br_data_t* d = br_data_get1(groups, di.group_id);
+    if (n > 0) {
+      if (d->len > 0) {
+        br_bb_t this_bb = br_bb_add(d->dd.bounding_box, BR_VEC2((float)d->dd.rebase_x, (float)d->dd.rebase_y));
+        bb = br_bb_union(bb, this_bb);
+        ++n;
+      }
+    } else {
+      if (d->len > 0) {
+        bb = br_bb_add(d->dd.bounding_box, BR_VEC2((float)d->dd.rebase_x, (float)d->dd.rebase_y));
+        ++n;
+      }
     }
+  }
+  if (n == 0) return;
+
+  float new_width = BR_BBW(bb);
+  float new_height = BR_BBH(bb);
+  bb.max_x += new_width  * .1f;
+  bb.max_y += new_height * .1f;
+  bb.min_x -= new_width  * .1f;
+  bb.min_y -= new_height * .1f;
+  new_width = BR_BBW(bb);
+  new_height = BR_BBH(bb);
+  br_vec2_t bl = bb.min;
+  if (0) {
+    float maxSize = fmaxf(new_width, new_height);
+    plot->dd.zoom.x = BR_EXTENTD_ASPECT(ex) * maxSize;
+    plot->dd.zoom.y = new_height;
+    plot->dd.offset.x = bl.x + maxSize / 2.f;
+    plot->dd.offset.y = bl.y + maxSize / 2.f;
+  } else {
+    plot->dd.offset.x = bl.x + new_width / 2.f;
+    plot->dd.offset.y = bl.y + new_height / 2.f;
+    plot->dd.zoom.x = new_width;
+    plot->dd.zoom.y = new_height;
   }
 }
 

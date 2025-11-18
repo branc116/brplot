@@ -68,25 +68,25 @@ void br_plotter_draw(br_plotter_t* br) {
       for (int i = 0; i < br->plots.len; ++i) {
 #define PLOT br_da_getp(br->plots, i)
         brui_resizable_t* r = br_da_getp(br->resizables, PLOT->extent_handle);
+        br_extent_t ex = brui_resizable_cur_extent(PLOT->extent_handle);
         if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
-        PLOT->cur_extent = BR_EXTENT_TOI(r->cur_extent);
+        PLOT->_cur_extent = BR_EXTENT_TOI(r->cur_extent);
         PLOT->mouse_inside_graph = PLOT->extent_handle == br->resizables.active_resizable;
-        br_plot_update_context(PLOT, r->cur_extent, br->mouse.pos);
-        br_plot_update_shader_values(PLOT, &br->shaders);
+        br_plot_update_context(PLOT, ex, br->mouse.pos);
 
-        brgl_enable_framebuffer(PLOT->texture_id, PLOT->cur_extent.width, PLOT->cur_extent.height);
+        brgl_enable_framebuffer(PLOT->texture_id, ex.width, ex.height);
         brgl_clear(BR_COLOR_COMPF(br->ui.theme.colors.plot_bg));
         if (br->ui.multisampling) brgl_enable_multisampling();
         else                      brgl_disable_multisampling();
         if (PLOT->kind == br_plot_kind_2d) {
           br_mesh_grid_draw(PLOT, &br->ui.theme);
           br_shaders_draw_all(br->shaders); // TODO: This should be called whenever a other shader are being drawn.
-          br_datas_draw(br->groups, PLOT);
+          br_datas_draw(br->groups, PLOT, ex);
           br_shaders_draw_all(br->shaders);
           brgui_draw_grid_numbers(br->text, PLOT, &br->ui.theme);
           br_shaders_draw_all(br->shaders);
         } else if (PLOT->kind == br_plot_kind_3d) {
-          br_datas_draw(br->groups, PLOT);
+          br_datas_draw(br->groups, PLOT, ex);
           br_shaders_draw_all(br->shaders);
           br_mesh_grid_draw(PLOT, &br->ui.theme);
           br_shaders_draw_all(br->shaders);
@@ -110,13 +110,14 @@ void br_plotter_draw(br_plotter_t* br) {
 #endif
         int to_remove = -1;
         for (int i = 0; i < br->plots.len; ++i) {
+          br_extent_t ex = brui_resizable_cur_extent(PLOT->extent_handle);
           if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
             brui_resizable_push(PLOT->extent_handle);
               brui_img(PLOT->texture_id);
               if (brgui_draw_plot_menu(&br->sp, PLOT, br->groups)) to_remove = i;
               brgui_draw_legend(PLOT, br->groups, &br->ui.theme, br);
               if (PLOT->kind == br_plot_kind_2d) {
-                br_vec2d_t v = br_plot2d_to_plot(PLOT, br->mouse.pos);
+                br_vec2d_t v = br_plot2d_to_plot(PLOT, br->mouse.pos, ex);
                 for (int j = 0; j < PLOT->data_info.len; ++j) {
                   br_plot_data_t pd = PLOT->data_info.arr[j];
                   if (pd.thickness_multiplyer < 0.1f) continue;
@@ -127,7 +128,7 @@ void br_plotter_draw(br_plotter_t* br) {
                   br_strv_t name = brsp_get(br->sp, data->name);
                   if (has_any) {
                     br_vec2d_t vreal = br_data_el_xy1(*data, index);
-                    br_vec2_t s = br_plot2d_to_screen(PLOT, vreal);
+                    br_vec2_t s = br_plot2d_to_screen(PLOT, vreal, ex);
                     brui_text_at(br_scrach_printf("%.*s, %f, %f", name.len, name.str, vreal.x, vreal.y), s);
                   }
                 }
@@ -857,6 +858,8 @@ static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_datas_t datas) 
         brui_textf("Zoom: %f %f", BR_VEC2_(plot->dd.zoom));
       } else if (plot->kind == br_plot_kind_3d) {
         brui_sliderf2(BR_STRL("Fov"), &plot->ddd.fov_y);
+        brui_sliderf2(BR_STRL("Far"), &plot->ddd.far_plane);
+        brui_sliderf2(BR_STRL("Near"), &plot->ddd.near_plane);
       }
     brui_resizable_pop();
   }
@@ -1136,24 +1139,17 @@ static void brgui_draw_license(br_plotter_t* br) {
 }
 
 static void brgui_draw_log(br_plotter_t* br) {
-  if (false == br->ui.show_log) return;
+  if (br_log_lines.len == 0) return;
   brui_resizable_temp_push(BR_STRL("Log"));
-    float local_y = brui_local_y();
-    float ts = (float)brui_text_size() + brui_padding_y();
-    int i = 0;
-    if (local_y < -ts) {
-      int n = (int)(-(local_y + 2.f*ts)/ts);
-      if (n > 0) {
-        brui_new_lines(n);
-        i += n;
+    for (int i = 0; i < br_log_lines.len; ++i) {
+      br_strv_t s = br_str_as_view(br_log_lines.arr[i]);
+      while (s.len > 0) {
+        brui_text(br_strv_splitl(s, '\n'));
+        s = br_strv_splitr(s, '\n');
       }
+      BR_FREE(br_log_lines.arr[i].str);
     }
-    float space_left = brui_max_y() - brui_y();
-    int max_n = (int)(space_left / ts) + 1;
-
-    for (int j = 0; j < max_n && i < br_log_lines.len; ++j, ++i) brui_text(br_str_as_view(br_log_lines.arr[i]));
-
-    brui_new_lines(br_log_lines.len - i);
+    br_log_lines.len = 0;
   if (brui_resizable_temp_pop()) br->ui.show_log = false;
 }
 
@@ -1172,11 +1168,10 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, br_theme_t
 
   BR_PROFILE_START("draw_grid_numbers");
   br_extentd_t r = plot->dd.graph_rect;
-  br_extentd_t gr = BR_EXTENTI_TOD(plot->cur_extent);
-  br_vec2d_t sz = BR_VEC2D(gr.width, gr.height);
   int font_size = theme->ui.font_size;
   char* scrach = br_scrach_get(128);
   br_extent_t vpf = brui_resizable_cur_extent(plot->extent_handle);
+  br_vec2d_t sz = BR_VEC2_TOD(vpf.size.vec);
   br_text_renderer_viewport_set(tr, BR_SIZE_TOI(vpf.size));
   br_bb_t limitf = BR_BB(0,0,10000,10000);
 
@@ -1236,16 +1231,16 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, br_theme_t
 
 void brgui_push_log_line(const char* fmt, ...) {
   (void)fmt;
-//  va_list args;
-//  va_start(args, fmt);
-//  int n = vsnprintf(NULL, 0, fmt, args);
-//  va_end(args);
-//
-//  BR_ASSERT(n >= 0);
-//  br_str_t str = br_str_malloc(n + 1);
-//  va_start(args, fmt);
-//  vsnprintf(str.str, (size_t)n + 1, fmt, args);
-//  str.len = n;
-//  va_end(args);
-//  br_da_push(br_log_lines, str);
+  va_list args;
+  va_start(args, fmt);
+  int n = vsnprintf(NULL, 0, fmt, args);
+  va_end(args);
+
+  BR_ASSERT(n >= 0);
+  br_str_t str = br_str_malloc(n + 1);
+  va_start(args, fmt);
+  vsnprintf(str.str, (size_t)n + 1, fmt, args);
+  str.len = n;
+  va_end(args);
+  br_da_push(br_log_lines, str);
 }

@@ -7,7 +7,6 @@
 #include "src/data.c"
 #include "src/data_generator.c"
 #include "src/filesystem.c"
-#include "src/graph_utils.c"
 #include "src/gui.c"
 #include "src/permastate.c"
 #include "src/plot.c"
