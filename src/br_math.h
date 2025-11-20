@@ -237,6 +237,10 @@ typedef struct {
 
 typedef struct {
   unsigned char r, g, b, a;
+  union {
+    br_vec3_t rgb;
+    br_vec4_t rgba;
+  };
 } br_color_t;
 
 typedef struct {
@@ -300,8 +304,16 @@ static inline float br_float_max(float a, float b) {
   return a > b ? a : b;
 }
 
+static inline float br_float_max4(float a, float b, float c, float d) {
+  return br_float_max(br_float_max(a, b), br_float_max(c, d));
+}
+
 static inline float br_float_min(float a, float b) {
   return a < b ? a : b;
+}
+
+static inline float br_float_min4(float a, float b, float c, float d) {
+  return br_float_min(br_float_min(a, b), br_float_min(c, d));
 }
 
 //------------------------br_vec2_t------------------------------

@@ -80,7 +80,7 @@ static br_plot_t br_plot_2d(br_sizei_t window_size, float grid_line_thickness) {
 void br_plotter_init(br_plotter_t* br) {
   br_resampling_construct(&br->shaders, &br->ui.theme.ui.min_sampling, &br->ui.theme.ui.cull_min);
   br_data_construct(&br->sp);
-  br_mesh_construct(&br->shaders, &br->ui.theme.ui.debug);
+  br_mesh_construct(&br->shaders, &br->ui.theme.ui.debug, &br->ui.theme);
   brgl_construct(&br->shaders);
   if (false == brpl_window_open(&br->win)) {
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__)
