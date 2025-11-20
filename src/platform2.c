@@ -774,6 +774,24 @@ static bool brpl_x11_get_set_context(brpl_window_x11_t* x11, int* attrib_list) {
   if (out_ret == 0 || NULL == configs) return false;
   bool is_ok = false;
   brpl_x11_XVisualInfo* glx_visual = NULL;
+#define GLX_CONTEXT_MAJOR_VERSION_ARB     0x2091
+#define GLX_CONTEXT_MINOR_VERSION_ARB     0x2092
+#define GLX_CONTEXT_PROFILE_MASK_ARB      0x9126
+#define GLX_CONTEXT_CORE_PROFILE_BIT_ARB  0x00000001
+#define GLX_CONTEXT_FLAGS_ARB             0x2094
+#define GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB 0x00000002
+#define GLX_CONTEXT_FLAGS_ARB             0x2094
+#define GLX_CONTEXT_DEBUG_BIT_ARB         0x00000001
+  int context_attribs[] = {
+      GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+      GLX_CONTEXT_MINOR_VERSION_ARB, 3,
+      GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+      GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+      // Important for RenderDoc:
+      GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+      0
+  };
+  if (glXCreateContextAttribsARB == NULL) glXCreateContextAttribsARB = glXGetProcAddressARB("glXCreateContextAttribsARB");
 
   for (int i = 0; i < out_ret; ++i) {
     GLXFBConfig config = configs[i];
@@ -784,7 +802,7 @@ static bool brpl_x11_get_set_context(brpl_window_x11_t* x11, int* attrib_list) {
     x11->glx_window = glXCreateWindow(x11->display, config, x11->window_handle, (int[]) { brpl_x11_None });
     if (0 == x11->glx_window) continue;
 
-    x11->glx_ctx = glXCreateContext(x11->display, glx_visual, NULL, true);
+    x11->glx_ctx = glXCreateContextAttribsARB(x11->display, config, 0, true, context_attribs);
     if (0 == x11->glx_ctx) continue;
 
     is_ok = glXMakeCurrent(x11->display, x11->glx_window, x11->glx_ctx);

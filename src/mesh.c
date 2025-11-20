@@ -156,7 +156,7 @@ void br_mesh_3d_gen_line(br_mesh_line_3d_t args, br_vec3_t p1, br_vec3_t p2) {
   br_vec3_t norm = br_vec3_perpendicular(diff);
   float dist1 = 0.1f * br_vec3_dist(ls->uvs.eye_uv, p1);
   float dist2 = 0.1f * br_vec3_dist(ls->uvs.eye_uv, p2);
-  int n = 4; //(int)(6.f/br_float_clamp(fminf(dist1, dist2), 1.f, 6.f)) + 1;
+  int n = 4;
   if (false == br_vec3_ccv(p1, norm, p2)) norm = br_vec3_scale(norm, -1.f);
   for (int k = 0; k <= n; ++k) {
     br_vec3_t next = br_vec3_normalize(br_vec3_rot(norm, diff, BR_PI * 2 / (float)n));
@@ -226,10 +226,52 @@ br_vec3_t get_zero_z(br_vec3_t p1, br_vec4_t p2) {
   br_vec3_t k = br_vec3_sub(p1, p2.xyz);
   br_vec3_t d = br_vec3_sub(p1, k);
   float t0 = -d.z/k.z;
-  LOGI("t0 = %f", t0);
   br_vec3_t zeroz = br_vec3_add(br_vec3_scale(k, t0), d);
-  LOGI("zeroz = %f %f %f", BR_VEC3_(zeroz));
   return zeroz;
+}
+
+void br_mesh_grid_3d_draw(br_vec3_t normal, br_vec3_t up, br_size_t size, br_vec3_t eye, br_vec3_t origin, br_vec2_t base) {
+  br_vec3_t right = br_vec3_normalize(br_vec3_cross(normal, up));
+  br_vec3_t start = origin;
+  br_vec2_t n = br_vec2_div(size.vec, base);
+  start = br_vec3_sub(start, br_vec3_scale(up, size.height/2));
+  start = br_vec3_sub(start, br_vec3_scale(right, size.width/2));
+  br_vec3_t color = br_mesh_state.theme->colors.grid_lines.rgb;
+  color = BR_VEC3(1,1,1);
+  for (int i = 1; i < (int)n.x; ++i) {
+    br_vec3_t p1 = br_vec3_add(start, br_vec3_scale(right, i*base.x));
+    br_vec3_t p2 = br_vec3_add(p1, br_vec3_scale(up, size.height));
+    float thick = br_vec3_dist(eye, br_vec3_scale(br_vec3_add(p1, p2), 0.5f)) * 0.001f;
+    br_vec3_t diff = br_vec3_sub(p2, p1);
+    br_vec3_t r = br_vec3_normalize(br_vec3_cross(br_vec3_sub(eye, p1), diff));
+    br_vec3_t bl = br_vec3_add(br_vec3_scale(r, -thick), p1);
+    br_vec3_t br = br_vec3_add(br_vec3_scale(r, thick), p1);
+    br_vec3_t tr = br_vec3_add(br_vec3_scale(r, thick), p2);
+    br_vec3_t tl = br_vec3_add(br_vec3_scale(r, -thick), p2);
+    br_shader_grid_3d_push_quad(br_mesh_state.shaders->grid_3d, (br_shader_grid_3d_el_t[4]) {
+        { .pos = BR_VEC4_31(bl, -1), .color = color },
+        { .pos = BR_VEC4_31(br,  1), .color = color },
+        { .pos = BR_VEC4_31(tr,  1), .color = color },
+        { .pos = BR_VEC4_31(tl, -1), .color = color },
+    });
+  }
+  for (int i = 1; i < (int)n.y; ++i) {
+    br_vec3_t p1 = br_vec3_add(start, br_vec3_scale(up, i*base.y));
+    br_vec3_t p2 = br_vec3_add(p1, br_vec3_scale(right, size.width));
+    float thick = br_vec3_dist(eye, br_vec3_scale(br_vec3_add(p1, p2), 0.5f)) * 0.001f;
+    br_vec3_t diff = br_vec3_sub(p2, p1);
+    br_vec3_t r = br_vec3_normalize(br_vec3_cross(br_vec3_sub(eye, p1), diff));
+    br_vec3_t bl = br_vec3_add(br_vec3_scale(r, -thick), p1);
+    br_vec3_t br = br_vec3_add(br_vec3_scale(r, thick), p1);
+    br_vec3_t tr = br_vec3_add(br_vec3_scale(r, thick), p2);
+    br_vec3_t tl = br_vec3_add(br_vec3_scale(r, -thick), p2);
+    br_shader_grid_3d_push_quad(br_mesh_state.shaders->grid_3d, (br_shader_grid_3d_el_t[4]) {
+        { .pos = BR_VEC4_31(bl, -1), .color = color },
+        { .pos = BR_VEC4_31(br,  1), .color = color },
+        { .pos = BR_VEC4_31(tr,  1), .color = color },
+        { .pos = BR_VEC4_31(tl, -1), .color = color },
+    });
+  }
 }
 
 // TODO: This should be split to _gen and _draw
@@ -279,16 +321,21 @@ void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
     case br_plot_kind_3d: {
       BR_PROFILE("grid_draw_3d") {
         br_mat_t mvp = br_mesh_state.shaders->line_3d->uvs.m_mvp_uv;
-        br_vec3_t eye = br_mesh_state.shaders->line_3d->uvs.eye_uv;
+        br_mesh_state.shaders->grid_3d->uvs.m_mvp_uv = mvp;
+        static float angle = 0;
+        //angle += 0.01;
+        br_mesh_grid_3d_draw(br_vec3_rot(BR_VEC3(0, 0, 1), BR_VEC3(1, 0, 0), angle), br_vec3_rot(BR_VEC3(0, 1, 0), BR_VEC3(1, 0, 0), angle), BR_SIZE(100, 100), plot->ddd.eye, BR_VEC3(0, 0, 0), BR_VEC2(10, 10));
+        br_mesh_grid_3d_draw(br_vec3_rot(BR_VEC3(0, 1, 0), BR_VEC3(1, 0, 0), angle), br_vec3_rot(BR_VEC3(0, 0, 1), BR_VEC3(1, 0, 0), angle), BR_SIZE(100, 100), plot->ddd.eye, BR_VEC3(0, 0, 0), BR_VEC2(10, 10));
+        br_mesh_grid_3d_draw(br_vec3_rot(BR_VEC3(1, 0, 0), BR_VEC3(1, 0, 0), angle), br_vec3_rot(BR_VEC3(0, 1, 0), BR_VEC3(1, 0, 0), angle), BR_SIZE(100, 100), plot->ddd.eye, BR_VEC3(0, 0, 0), BR_VEC2(10, 10));
+        /*
+        br_vec3_t eye = plot->ddd.eye;
+        br_vec3_t target = plot->ddd.target;
         br_mat_t mvp_inv = br_mat_inverse(mvp);
         mvp_inv = br_mat_transpose(mvp_inv);
-        br_mesh_state.shaders->grid_3d->uvs.m_mvp_uv = mvp;
         LOGI("--------");
         float z = 1.0f;
         float det = br_mat3_det(br_mat_sub(mvp, 2, 1));
-        LOGI("det= %f", det);
         det = br_mat_det(mvp);
-        LOGI("detm= %f", det);
         br_vec4_t ld = br_vec4_apply(BR_VEC4(-1, -1, z, 1), mvp_inv);
         br_vec4_t lu = br_vec4_apply(BR_VEC4(-1,  1, z, 1), mvp_inv);
         br_vec4_t rd = br_vec4_apply(BR_VEC4( 1, -1, z, 1), mvp_inv);
@@ -298,33 +345,40 @@ void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
         br_vec3_t rd_world = get_zero_z(eye, ld);
         br_vec3_t ru_world = get_zero_z(eye, ru);
         float base = 10.f;
-        float x_from = -100.f;
-        float x_to = 100.f;
+        float x_from = -10.f;
+        float x_to = 10.f;
         float diff = x_to - x_from;
         float n = diff / base;
         float y_from = br_float_min4(ld_world.y, rd_world.y, lu_world.y, ru_world.y);
         float y_to = br_float_max4(ld_world.y, rd_world.y, lu_world.y, ru_world.y);
         y_from = eye.y - plot->ddd.far_plane;
         y_to = eye.y + plot->ddd.far_plane;
+        look_dir.y = 0.f;
+        float angle_z = br_vec3_angle(BR_VEC3(0, 0, 1), br_vec3_normalize(look_dir));
         for (int i = 0; i < n; ++i) {
           float x = base * i + x_from;
-          float thick = br_vec2_len(br_vec2_sub(BR_VEC2(eye.x, eye.z), BR_VEC2(x, 0))) / ex.width * 2.f;
+          float thick = 0.1; // br_vec2_len(br_vec2_sub(BR_VEC2(eye.x, eye.z), BR_VEC2(x, 0))) / ex.width * 2.f;
+          br_vec3_t t = br_vec3_rot(BR_VEC3(1, 0, 0), BR_VEC3(0, 1, 0), angle_z);
+          float thick_x = t.x * thick;
+          float thick_z = t.z * thick;
           br_vec3_t color = br_mesh_state.theme->colors.grid_lines.rgb;
           color = BR_VEC3(1,1,1);
 
+
+          LOGI("thick_x,z: %f %f", thick_x, thick_z);
           br_shader_grid_3d_push_quad(br_mesh_state.shaders->grid_3d, (br_shader_grid_3d_el_t[4]) {
-              { .pos = BR_VEC3(x + thick, y_from, 0), .color = color },
-              { .pos = BR_VEC3(x + thick, y_to, 0), .color = color },
-              { .pos = BR_VEC3(x - thick, y_to, 0), .color = color },
-              { .pos = BR_VEC3(x - thick, y_from, 0), .color = color },
+              { .pos = BR_VEC3(x + thick_x, y_from,  thick_z), .color = color },
+              { .pos = BR_VEC3(x + thick_x, y_to,    thick_z), .color = color },
+              { .pos = BR_VEC3(x - thick_x, y_to,   -thick_z), .color = color },
+              { .pos = BR_VEC3(x - thick_x, y_from, -thick_z), .color = color },
           });
-          LOGI("y: %.3f - %.3f", y_from, y_to);
         }
 
         //LOGI("\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f", BR_MAT_(mvp_inv));
 
         //LOGI("\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f", BR_MAT_(mvp));
         LOGI("--------");
+        */
       }
     } break;
     default: BR_UNREACHABLE("plot kind: %d", plot->kind);

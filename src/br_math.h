@@ -61,6 +61,7 @@
 #define BR_VEC4(X, Y, Z, W) ((br_vec4_t) { .x = (X), .y = (Y), .z = (Z), .w = (W) })
 #define BR_VEC4_(V) (V).x, (V).y, (V).z, (V).w
 #define BR_VEC42(XY, ZW) ((br_vec4_t) { .xy = (XY), .zw = (ZW)  })
+#define BR_VEC4_31(XYZ, W) ((br_vec4_t) { .x = (XYZ).x, .y = (XYZ).y, .z = (XYZ).z, .w = (W) })
 #define BR_VEC3(X, Y, Z) ((br_vec3_t) { .x = (X), .y = (Y), .z = (Z) })
 #define BR_VEC_ELS(X) (sizeof((X).arr) / sizeof((X).arr[0]))
 #define BR_COLOR_TO4(X)  BR_VEC4(((X).r) / 255.f, ((X).g) / 255.f, ((X).b) / 255.f, ((X).a) / 255.f)

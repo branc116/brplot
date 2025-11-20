@@ -38,7 +38,7 @@
   X(grid_3d, 512,                       \
       X_VEC(m_mvp, 16),                 \
                                         \
-      X_BUF(pos, 3)                     \
+      X_BUF(pos, 4)                     \
       X_BUF(color, 3)                   \
     )                                   \
   X(line_3d_simple, 1024,               \
