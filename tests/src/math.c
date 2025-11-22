@@ -92,7 +92,7 @@ int main(void) {
     };
     float det = br_mat_det(m);
     TEST_EQUALF(det, -0.006852222642255142);
-    br_mat_t inv = br_mat_inverse(m);
+    br_mat_t inv = br_mat_transpose(br_mat_inverse(m));
     br_mat_t expected_inv = { .arr = {
       0.317729, 0.214028, -2065.49, 2064.79,
       -1.52961e-7, 0.477006, 1354.92, -1354.43,
