@@ -12,6 +12,7 @@ typedef struct br_mesh_line_t {
 typedef struct br_mesh_line_3d_t {
   float line_thickness;
   br_mat_t mvp;
+  br_vec2_t prev[4];
 } br_mesh_line_3d_t;
 
 typedef struct br_shaders_t br_shaders_t;
@@ -25,7 +26,7 @@ void br_mesh_gen_line(br_mesh_line_t* args, br_vec2_t p1, br_vec2_t p2);
 void br_mesh_gen_line_strip(br_mesh_line_t args, br_vec2_t const * points, size_t len);
 void br_mesh_gen_line_strip2(br_mesh_line_t args, float const* xs, float const* ys, size_t len);
 
-void br_mesh_3d_gen_line(br_mesh_line_3d_t args, br_vec3_t p1, br_vec3_t p2);
+void br_mesh_3d_gen_line(const br_mesh_line_3d_t* args, br_vec3_t p1, br_vec3_t p2);
 void br_mesh_3d_gen_line_strip(br_mesh_line_3d_t args, br_vec3_t const* ps, size_t len);
 void br_mesh_3d_gen_line_strip1(br_mesh_line_3d_t args, float const* xs, float const* ys, float const* zs, size_t len);
 void br_mesh_3d_gen_line_strip2(br_mesh_line_3d_t args, br_vec2_t const* ps, size_t len);

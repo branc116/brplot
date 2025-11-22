@@ -238,10 +238,6 @@ typedef struct {
 
 typedef struct {
   unsigned char r, g, b, a;
-  union {
-    br_vec3_t rgb;
-    br_vec4_t rgba;
-  };
 } br_color_t;
 
 typedef struct {
@@ -590,30 +586,24 @@ static inline br_vec3_t br_vec3_normalize(br_vec3_t a) {
   float len2 = br_vec3_len2(a);
   if (fabsf(len2) > FLT_EPSILON) {
     float len = sqrtf(len2);
-    for (size_t i = 0; i < BR_VEC_ELS(a); ++i) a.arr[i] /= len;
-    return a;
+    return br_vec3_scale(a, 1/len);
   }
   return BR_VEC3(0,0,0);
 }
 
 // TODO: This look sus...
 static inline br_vec3_t br_vec3_transform_scale(br_vec3_t v, br_mat_t mat) {
-  br_vec3_t result = { 0 };
-
+  br_vec3_t result = BR_VEC3(HUGE_VALF, HUGE_VALF, HUGE_VALF);
   float x = v.x, y = v.y, z = v.z;
+
+  float w =  mat.m3*x + mat.m7*y + mat.m11*z + mat.m15;
+  if (w <= 0) return result;
 
   result.x = mat.m0*x + mat.m4*y + mat.m8*z + mat.m12;
   result.y = mat.m1*x + mat.m5*y + mat.m9*z + mat.m13;
   result.z = mat.m2*x + mat.m6*y + mat.m10*z + mat.m14;
-  float w =  mat.m3*x + mat.m7*y + mat.m11*z + mat.m15;
 
-  if (fabsf(w) > 0.00001f) {
-    result.x /= w;
-    result.y /= w;
-    result.z /= w;
-  }
-
-  return result;
+  return br_vec3_scale(result, 1.f/w);
 }
 
 static inline float br_vec3_angle(br_vec3_t v1, br_vec3_t v2) {
@@ -624,10 +614,15 @@ static inline float br_vec3_angle(br_vec3_t v1, br_vec3_t v2) {
 
 static inline br_vec3_t br_vec3_rot(br_vec3_t v, br_vec3_t axis, float angle) {
   float as = sinf(angle);
-  // v + sin(angle)*axis x v + (1 - cos(angle))*axis x ( axis x v )
-   br_vec3_t a = br_vec3_cross(br_vec3_scale(axis, as), v);
-   br_vec3_t b = br_vec3_cross(br_vec3_scale(axis, (1 - cosf(angle))), br_vec3_cross(axis, v));
-   return br_vec3_add(v, br_vec3_add(a, b));
+  br_vec3_t a = br_vec3_cross(br_vec3_scale(axis, as), v);
+  br_vec3_t b = br_vec3_cross(br_vec3_scale(axis, (1 - cosf(angle))), br_vec3_cross(axis, v));
+  return br_vec3_add(v, br_vec3_add(a, b));
+}
+
+static inline br_vec3_t br_vec3_rot2(br_vec3_t v, br_vec3_t axis, float angle_sin, float angle_cos) {
+  br_vec3_t a = br_vec3_cross(br_vec3_scale(axis, angle_sin), v);
+  br_vec3_t b = br_vec3_cross(br_vec3_scale(axis, (1 - angle_cos)), br_vec3_cross(axis, v));
+  return br_vec3_add(v, br_vec3_add(a, b));
 }
 
 static inline br_vec3_t br_vec3_perpendicular(br_vec3_t v) {

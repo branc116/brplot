@@ -150,6 +150,7 @@ static n_command do_command = n_default;
 static bool is_debug = false;
 static bool has_hotreload = false;
 static bool is_headless = false;
+static bool is_native = false;
 static bool enable_asan = false;
 static bool print_help = false;
 static bool is_lib = false;
@@ -164,6 +165,7 @@ static bool disable_logs = false;
 static bool is_pedantic = false;
 static bool is_fatal_error = false;
 static bool is_tracy = false;
+static bool is_pg = false;
 static bool is_help_subcommands = false;
 
 #define X(name, desc) [n_ ## name] = { 0 },
@@ -187,11 +189,13 @@ static void fill_command_flag_data(void) {
   command_flag_t pedantic_flag       = (command_flag_t) {.name = BR_STRL("pedantic"),   .alias = 'p',  .description = BR_STRL("Turn on all warnings and treat warnings as errors"),                                              .is_set = &is_pedantic};
   command_flag_t fatal_error_flag    = (command_flag_t) {.name = BR_STRL("fatal-error"),.alias = 'F',  .description = BR_STRL("All compile errors are fatal"),                                                                   .is_set = &is_fatal_error};
   command_flag_t tracy_flag          = (command_flag_t) {.name = BR_STRL("tracy"),      .alias = 't',  .description = BR_STRL("Turn tracy profiler on"),                                                                         .is_set = &is_tracy};
+  command_flag_t pg_flag             = (command_flag_t) {.name = BR_STRL("pg"),         .alias = '\0', .description = BR_STRL("Turn gpref profiler on"),                                                                         .is_set = &is_pg};
+  command_flag_t native_flag         = (command_flag_t) {.name = BR_STRL("mnative"),    .alias = '\0', .description = BR_STRL("Mnative flag optimizations"),                                                                     .is_set = &is_native};
   command_flag_t headless_flag       = (command_flag_t) {.name = BR_STRL("headless"),   .alias = '\0', .description = BR_STRL("Create a build that will not spawn any windows"),                                                 .is_set = &is_headless};
   command_flag_t asan_flag           = (command_flag_t) {.name = BR_STRL("asan"),       .alias = 'a',  .description = BR_STRL("Enable address sanitizer"),                                                                       .is_set = &enable_asan};
   command_flag_t lib_flag            = (command_flag_t) {.name = BR_STRL("lib"),        .alias = 'l',  .description = BR_STRL("Build dynamic library"),                                                                          .is_set = &is_lib};
   command_flag_t wasm_flag           = (command_flag_t) {.name = BR_STRL("wasm"),       .alias = 'w',  .description = BR_STRL("Wasm version of brplot"),                                                                         .is_set = &is_wasm};
-  command_flag_t win32_flag          = (command_flag_t) {.name = BR_STRL("win32"),      .alias = 'W',  .description = BR_STRL("Windows version of brplot"),                                                                         .is_set = &is_win32};
+  command_flag_t win32_flag          = (command_flag_t) {.name = BR_STRL("win32"),      .alias = 'W',  .description = BR_STRL("Windows version of brplot"),                                                                      .is_set = &is_win32};
   command_flag_t force_rebuild       = (command_flag_t) {.name = BR_STRL("force"),      .alias = 'f',  .description = BR_STRL("Force rebuild everything"),                                                                       .is_set = &is_rebuild};
   command_flag_t slib_flag           = (command_flag_t) {.name = BR_STRL("slib"),       .alias = 's',  .description = BR_STRL("Build static library"),                                                                           .is_set = &is_slib};
   command_flag_t help_flag           = (command_flag_t) {.name = BR_STRL("help"),       .alias = 'h',  .description = BR_STRL("Print help"),                                                                                     .is_set = &print_help};
@@ -205,6 +209,8 @@ static void fill_command_flag_data(void) {
   br_da_push(command_flags[n_compile], pedantic_flag);
   br_da_push(command_flags[n_compile], fatal_error_flag);
   br_da_push(command_flags[n_compile], tracy_flag);
+  br_da_push(command_flags[n_compile], pg_flag);
+  br_da_push(command_flags[n_compile], native_flag);
   br_da_push(command_flags[n_compile], headless_flag);
   br_da_push(command_flags[n_compile], asan_flag);
   br_da_push(command_flags[n_compile], lib_flag);
@@ -387,7 +393,7 @@ const char* compiler_base_flags(Nob_Cmd* cmd, const char* compiler) {
   if (is_msvc(compiler)) {
     nob_cmd_append(cmd, "/I.", "/Zi");
   } else {
-    nob_cmd_append(cmd, "-I.", "-g");
+    nob_cmd_append(cmd, "-I.", "-g", "-pg");
   }
 }
 
@@ -477,6 +483,8 @@ static bool compile_standard_flags(Nob_Cmd* cmd, bool is_msvc) {
   if (is_wasm) nob_cmd_append(cmd, "-DGRAPHICS_API_OPENGL_ES3=1");
   if (is_tracy) nob_cmd_append(cmd, "-DTRACY_ENABLE=1");
   if (enable_asan) nob_cmd_append(cmd, SANITIZER_FLAGS);
+  if (is_pg) nob_cmd_append(cmd, "-pg");
+  if (is_native) nob_cmd_append(cmd, "-march=native", "-mtune=native");
   if (is_debug) {
     if (is_msvc) nob_cmd_append(cmd, "/Zi");
     else nob_cmd_append(cmd, "-ggdb");

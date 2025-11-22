@@ -336,6 +336,7 @@ typedef union _XEvent {
    typedef const char* ccharp_t;
    typedef brpl_x11_XVisualInfo* XVisualInfop;
    typedef void* funcptr_t;
+GLXContext (*glXCreateContextAttribsARB)(brpl_x11_Display* dpy, GLXFBConfig config, GLXContext share_context, brpl_x11_Bool direct, const int* attrib_list);
 #endif
 
 #if defined(BR_HAS_WIN32)

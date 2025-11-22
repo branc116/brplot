@@ -36,9 +36,13 @@
       X_BUF(vert, 3)                    \
     )                                   \
   X(grid_3d, 512,                       \
+      X_VEC(bg_color, 3)                \
+      X_VEC(eye, 3)                     \
+      X_VEC(target, 3)                  \
       X_VEC(m_mvp, 16),                 \
                                         \
       X_BUF(pos, 4)                     \
+      X_BUF(normal, 3)                  \
       X_BUF(color, 3)                   \
     )                                   \
   X(line_3d_simple, 1024,               \

@@ -376,7 +376,7 @@ static void br_resampling_draw33(br_resampling_t const* const res, size_t index,
     size_t cur = indexies[0];
     for (size_t i = 1; i < 8; ++i) {
       if (cur == indexies[i]) continue;
-      br_mesh_3d_gen_line(res->args_3d, BR_VEC3(xs[cur], ys[cur], zs[cur]),  BR_VEC3(xs[indexies[i]], ys[indexies[i]], zs[indexies[i]]));
+      br_mesh_3d_gen_line(&res->args_3d, BR_VEC3(xs[cur], ys[cur], zs[cur]),  BR_VEC3(xs[indexies[i]], ys[indexies[i]], zs[indexies[i]]));
       cur = indexies[i];
     }
   } else {
@@ -609,23 +609,56 @@ static br_vec3_t br_data_3d_get_v3(br_data_3d_t const* data, uint32_t index) {
   return BR_VEC3(data->xs[index], data->ys[index], data->zs[index]);
 }
 
-static bool br_resampling_nodes_3d_is_inside(br_resampling_nodes_3d_t const* res, br_data_3d_t const* data, br_mat_t mvp) {
-  (void)br_resampling_debug_3d;
-  br_vec3_t minx = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.min_index_x), mvp),
-          miny = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.min_index_y), mvp),
-          minz = br_vec3_transform_scale(br_data_3d_get_v3(data, res->min_index_z), mvp),
-          maxx = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.max_index_x), mvp),
-          maxy = br_vec3_transform_scale(br_data_3d_get_v3(data, res->base.max_index_y), mvp),
-          maxz = br_vec3_transform_scale(br_data_3d_get_v3(data, res->max_index_z), mvp);
-  float my = min6(minx.y, miny.y, maxy.y, maxx.y, minz.y, maxz.y);
-  float mx = min6(minx.x, miny.x, maxy.x, maxx.x, minz.x, maxz.x);
-  float My = max6(minx.y, miny.y, maxy.y, maxx.y, minz.y, maxz.y);
-  float Mx = max6(minx.x, miny.x, maxy.x, maxx.x, minz.x, maxz.x);
-  float Mz = max6(minx.z, miny.z, maxy.z, maxx.z, minz.z, maxz.z);
-  float quad_size = 2.1f;
+static bool br_resampling_nodes_3d_is_inside(
+    br_resampling_nodes_3d_t const* res,
+    br_data_3d_t const* data,
+    br_mat_t mvp)
+{
+    br_vec3_t bb_min = {
+        br_data_3d_get_v3(data, res->base.min_index_x).x,
+        br_data_3d_get_v3(data, res->base.min_index_y).y,
+        br_data_3d_get_v3(data, res->min_index_z).z
+    };
+    br_vec3_t bb_max = {
+        br_data_3d_get_v3(data, res->base.max_index_x).x,
+        br_data_3d_get_v3(data, res->base.max_index_y).y,
+        br_data_3d_get_v3(data, res->max_index_z).z
+    };
 
-  br_extent_t rect = BR_EXTENT(quad_size / -2, quad_size / -2, quad_size, quad_size);
-  return Mz > 0.f && br_col_extents(rect, BR_EXTENT(mx, my, Mx - mx, My - my));
+    float min_x =  INFINITY;
+    float max_x = -INFINITY;
+    float min_y =  INFINITY;
+    float max_y = -INFINITY;
+
+    // Test all 8 corners using your existing perfect function
+    for (int i = 0; i < 8; ++i) {
+        br_vec3_t corner = {
+            (i & 1) ? bb_max.x : bb_min.x,
+            (i & 2) ? bb_max.y : bb_min.y,
+            (i & 4) ? bb_max.z : bb_min.z
+        };
+
+        br_vec3_t ndc = br_vec3_transform_scale(corner, mvp);
+
+        if (ndc.x == HUGE_VALF) return true;
+
+        // Early out: if any point is clearly inside viewport → visible
+        if (ndc.x >= -1.0f && ndc.x <= 1.0f &&
+            ndc.y >= -1.0f && ndc.y <= 1.0f &&
+            ndc.z >= -1.0f && ndc.z <= 1.0f) {
+            return true;
+        }
+
+        if (ndc.x < min_x) min_x = ndc.x;
+        if (ndc.x > max_x) max_x = ndc.x;
+        if (ndc.y < min_y) min_y = ndc.y;
+        if (ndc.y > max_y) max_y = ndc.y;
+    }
+
+    const float guard = 1.05f;
+    bool visible = (max_x >= -guard && min_x <= guard &&
+                    max_y >= -guard && min_y <= guard);
+    return visible;
 }
 
 static void br_resampling_debug_3d(br_resampling_t const* r, br_resampling_nodes_3d_t const* res, br_data_3d_t const* data) {
@@ -636,22 +669,22 @@ static void br_resampling_debug_3d(br_resampling_t const* r, br_resampling_nodes
     maxy = br_data_3d_get_v3(data, res->base.max_index_y),
     maxz = br_data_3d_get_v3(data, res->max_index_z);
 
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(maxx.x, miny.y, minz.z));
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(minx.x, maxy.y, minz.z));
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(minx.x, miny.y, maxz.z));
+  br_mesh_3d_gen_line(&r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(maxx.x, miny.y, minz.z));
+  br_mesh_3d_gen_line(&r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(minx.x, maxy.y, minz.z));
+  br_mesh_3d_gen_line(&r->args_3d, BR_VEC3(minx.x, miny.y, minz.z), BR_VEC3(minx.x, miny.y, maxz.z));
 
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(minx.x, maxy.y, minz.z));
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(maxx.x, miny.y, minz.z));
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
+  br_mesh_3d_gen_line(&r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(minx.x, maxy.y, minz.z));
+  br_mesh_3d_gen_line(&r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(maxx.x, miny.y, minz.z));
+  br_mesh_3d_gen_line(&r->args_3d, BR_VEC3(maxx.x, maxy.y, minz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
 
 
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(minx.x, miny.y, maxz.z));
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(minx.x, maxy.y, minz.z));
+  br_mesh_3d_gen_line(&r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
+  br_mesh_3d_gen_line(&r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(minx.x, miny.y, maxz.z));
+  br_mesh_3d_gen_line(&r->args_3d, BR_VEC3(minx.x, maxy.y, maxz.z), BR_VEC3(minx.x, maxy.y, minz.z));
 
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(minx.x, miny.y, maxz.z));
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
-  br_mesh_3d_gen_line(r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(maxx.x, miny.y, minz.z));
+  br_mesh_3d_gen_line(&r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(minx.x, miny.y, maxz.z));
+  br_mesh_3d_gen_line(&r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(maxx.x, maxy.y, maxz.z));
+  br_mesh_3d_gen_line(&r->args_3d, BR_VEC3(maxx.x, miny.y, maxz.z), BR_VEC3(maxx.x, miny.y, minz.z));
 }
 
 static br_vec2_t br_resampling_nodes_3d_get_ratios(br_resampling_nodes_3d_t const* res, br_data_3d_t const* data, br_vec3_t look_dir) {

@@ -101,7 +101,6 @@ struct {
       "XVisualInfop glXGetVisualFromFBConfig(brpl_x11_Display* dpy, GLXFBConfig config)"
       "GLXContext glXCreateNewContext(brpl_x11_Display* dpy, GLXFBConfig config, int renderType, void* shareList, brpl_x11_Bool direct)"
       "GLXContext glXCreateContext(brpl_x11_Display* dpy, brpl_x11_XVisualInfo* visual, void* shareList, brpl_x11_Bool direct)"
-      "GLXContext glXCreateContextAttribsARB(brpl_x11_Display* dpy, GLXFBConfig config, GLXContext share_context, brpl_x11_Bool direct, const int* attrib_list)"
       "GLXFBConfigs glXGetFBConfigs(brpl_x11_Display* dpy, int screen, int* nitems)"
       "int glXGetFBConfigAttrib(brpl_x11_Display* display, GLXFBConfig config, int attriib, int* value)"
       "void glXSwapBuffers(brpl_x11_Display* display, GLXWindow w)"
