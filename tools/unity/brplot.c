@@ -1,8 +1,10 @@
 #define _GNU_SOURCE
 #include "include/brplot.h"
-#if !defined(BR_INCLUDE_BRPLATFORM_C)
-#  define BR_INCLUDE_BRPLATFORM_C
-#  include "tools/unity/brplatform.c"
+#if !defined(BR_INCLUDE_UNITY_BRUI_C)
+#  define BR_INCLUDE_UNITY_BRUI_C
+#  define BRUI_IMPLEMENTATION
+#  define BRPLAT_IMPLEMENTATION
+#  include "tools/unity/brui.c"
 #endif
 #if !defined(BR_INCLUDE_DATA_C)
 #  define BR_INCLUDE_DATA_C

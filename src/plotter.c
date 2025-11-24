@@ -229,7 +229,7 @@ int br_plotter_hovered_resizable(br_plotter_t* br) {
 
 void br_plotter_one_iter(br_plotter_t* br) {
   BR_PROFILE_FRAME_MARK();
-  br_memory_frame();
+  BR_MEMORY_FRAME();
   br_plotter_update(br);
 }
 

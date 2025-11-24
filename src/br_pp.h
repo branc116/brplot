@@ -93,11 +93,13 @@ void __sanitizer_print_stack_trace(void);
 #  define BR_CALLOC(N, SIZE) br_memory_malloc(true, ((N) * (SIZE)), __FILE__, __LINE__)
 #  define BR_REALLOC(PTR, NEW_SIZE) br_memory_realloc(PTR, NEW_SIZE, __FILE__, __LINE__)
 #  define BR_FREE(PTR) br_memory_free(PTR, __FILE__, __LINE__)
+#  define BR_MEMORY_FRAME() br_memory_frame()
 #else
 #  define BR_MALLOC malloc
 #  define BR_CALLOC calloc
 #  define BR_REALLOC realloc
 #  define BR_FREE free
+#  define BR_MEMORY_FRAME()
 #endif
 
 

@@ -4,7 +4,7 @@
 #include "src/br_pp.h"
 #define BR_MEMORY_TRACER_IMPLEMENTATION
 #include "src/br_memory.h"
-#define BR_STR_IMPLMENTATION
+#define BR_STR_IMPLEMENTATION
 #include "src/br_str.h"
 #include "src/br_test.h"
 

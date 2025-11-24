@@ -115,7 +115,7 @@ void br_scrach_finish(void);
 #endif
 
 
-#if defined(BR_STR_IMPLMENTATION)
+#if defined(BR_STR_IMPLEMENTATION)
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

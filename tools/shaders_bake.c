@@ -2,7 +2,7 @@
 #define BR_SHADER_TOOL
 #include "src/br_shaders.h"
 #include "src/br_da.h"
-#define BR_STR_IMPLMENTATION
+#define BR_STR_IMPLEMENTATION
 #include "src/br_str.h"
 #include "src/br_filesystem.h"
 #include "src/br_da.h"

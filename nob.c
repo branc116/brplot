@@ -16,7 +16,7 @@
 #include "external/nob.h"
 
 #define BR_NO_UNIT_TEST
-#define BR_STR_IMPLMENTATION
+#define BR_STR_IMPLEMENTATION
 #include "src/br_str.h"
 #include "src/br_da.h"
 

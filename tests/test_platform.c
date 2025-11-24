@@ -1,11 +1,7 @@
-#include "src/br_pp.h"
-#define BR_STR_IMPLMENTATION
-#include "src/br_str.h"
-#define BR_MEMORY_TRACER_IMPLEMENTATION
-#include "src/br_memory.h"
-#include "src/platform2.c"
-
+#define BRPLAT_IMPLEMENTATION
+#include "include/brplat.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 int main(void) {
   float up_x = 0.f;

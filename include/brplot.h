@@ -40,20 +40,24 @@ int main(void) {
  * Compile as: cc main.c
  * Functions that are part of simple api can be found by following a tag *SIMPLEAPI*
  * */
-#pragma once
+#if !defined(BR_INCLUDE_BRPLOT_H)
+#define BR_INCLUDE_BRPLOT_H
+
 #define BR_MAJOR_VERSION 0
 #define BR_MINOR_VERSION 0
 #define BR_PATCH_VERSION 6
 
-#if defined(__EMSCRIPTEN__)
-#  include <emscripten.h>
-#  define BR_EXPORT EMSCRIPTEN_KEEPALIVE
-#elif defined(__GNUC__)
-#  define BR_EXPORT __attribute__((visibility ("default")))
-#elif defined(_WIN32)
-#  define BR_EXPORT __declspec(dllexport)
-#else
-#  define BR_EXPORT
+#if !defined(BR_EXPORT)
+#  if defined(__EMSCRIPTEN__)
+#    include <emscripten.h>
+#    define BR_EXPORT EMSCRIPTEN_KEEPALIVE
+#  elif defined(__GNUC__)
+#    define BR_EXPORT __attribute__((visibility ("default")))
+#  elif defined(_WIN32)
+#    define BR_EXPORT __declspec(dllexport)
+#  else
+#    define BR_EXPORT
+#  endif
 #endif
 
 #if defined(__cplusplus)
@@ -264,8 +268,13 @@ BR_EXPORT void br_empty(br_plotter_t* plotter, br_data_id data);
 }
 #endif
 
+#endif // !defined(BR_INCLUDE_BRPLOT_H)
+
 // If you just wanna build brplot as an app you have to define this
 #if defined(BRPLOT_IMPLEMENTATION) || defined(BRPLOT_APP)
 #  include "src/br_pp.h"
-#  include "tools/unity/brplot.c"
+#  if !defined(BR_INCLUDE_UNITY_BRPLOT_C)
+#    define BR_INCLUDE_UNITY_BRPLOT_C
+#    include "tools/unity/brplot.c"
+#  endif
 #endif

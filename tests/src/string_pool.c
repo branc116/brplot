@@ -26,7 +26,7 @@ static size_t test_write(void* src, size_t el_size, size_t n, br_test_file_t* nu
 #define BRFL_IMPLEMENTATION
 #include "src/br_free_list.h"
 
-#define BR_STR_IMPLMENTATION
+#define BR_STR_IMPLEMENTATION
 #include "src/br_str.h"
 
 #define BRSP_IMPLEMENTATION
