@@ -393,7 +393,7 @@ void compiler_base_flags(Nob_Cmd* cmd, const char* compiler) {
   if (is_msvc(compiler)) {
     nob_cmd_append(cmd, "/I.", "/Zi", "/D_CRT_SECURE_NO_WARNINGS=1");
   } else {
-    nob_cmd_append(cmd, "-I.", "-g", "-pg");
+    nob_cmd_append(cmd, "-I.", "-g");
   }
 }
 
