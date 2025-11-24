@@ -16,8 +16,6 @@
 #  define grid_3d_vs        "src/shaders/grid_3d.vs"
 #  define line_3d_fs        "src/shaders/line_3d.fs"
 #  define line_3d_vs        "src/shaders/line_3d.vs"
-#  define line_3d_simple_fs "src/shaders/line_3d_simple.fs"
-#  define line_3d_simple_vs "src/shaders/line_3d_simple.vs"
 #  define font_fs           "src/shaders/font.fs"
 #  define font_vs           "src/shaders/font.vs"
 #  define img_fs            "src/shaders/img.fs"
@@ -45,20 +43,13 @@
       X_BUF(normal, 3)                  \
       X_BUF(color, 3)                   \
     )                                   \
-  X(line_3d_simple, 1024,               \
-      X_VEC(m_mvp, 16)                  \
-      X_VEC(color, 3),                  \
-                                        \
-      X_BUF(vertexPosition, 3)          \
-      X_BUF(vertexNormal, 3)            \
-    )                                   \
   X(line_3d, 16*1024,                   \
       X_VEC(eye, 3)                     \
       X_VEC(m_mvp, 16)                  \
       X_VEC(color, 3),                  \
                                         \
-      X_BUF(vertexPosition, 3)          \
-      X_BUF(vertexNormal, 3)            \
+      X_BUF(pos, 3)                     \
+      X_BUF(normal, 3)                  \
     )                                   \
   X(line, 2048,                         \
       X_VEC(color, 3),                  \

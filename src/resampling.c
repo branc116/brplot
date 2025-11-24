@@ -423,11 +423,13 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           br_vec2_t re = (br_vec2_t) { .x = extent.width, .y = extent.height };
           br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
           br_mat_t look = br_mat_look_at(eye, target, plot->ddd.up);
-          br_resampling.shaders->line_3d_simple->uvs.m_mvp_uv = br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
+          br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
           br_resampling.shaders->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
           br_resampling.shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
           res->args_3d.line_thickness = 0.03f * pd->thickness_multiplyer;
-          res->args_3d.mvp = br_resampling.shaders->line_3d_simple->uvs.m_mvp_uv;
+          res->args_3d.mvp = br_resampling.shaders->line_3d->uvs.m_mvp_uv;
+          res->args_3d.eye = eye;
+          res->args_3d.target = target;
 
           br_resampling_draw32(res, 0, pg, plot);
           br_shader_line_3d_draw(br_resampling.shaders->line_3d);
@@ -449,11 +451,13 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           br_vec2_t re = (br_vec2_t) { .x = extent.width, .y = extent.height };
           br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
           br_mat_t look = br_mat_look_at(eye, target, plot->ddd.up);
-          br_resampling.shaders->line_3d_simple->uvs.m_mvp_uv = br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
+          br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
           br_resampling.shaders->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
           br_resampling.shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
           res->args_3d.line_thickness = 0.03f * pd->thickness_multiplyer;
-          res->args_3d.mvp = br_resampling.shaders->line_3d_simple->uvs.m_mvp_uv;
+          res->args_3d.mvp = br_resampling.shaders->line_3d->uvs.m_mvp_uv;
+          res->args_3d.eye = eye;
+          res->args_3d.target = target;
 
           br_resampling_draw33(res, 0, pg, plot); break;
           br_shader_line_3d_draw(br_resampling.shaders->line_3d);

@@ -127,50 +127,51 @@ void br_mesh_gen_line_strip2(br_mesh_line_t args, float const* xs, float const* 
     br_mesh_gen_line(&args, BR_VEC2(xs[v], ys[v]), BR_VEC2(xs[v+1], ys[v+1]));
 }
 
+void br_mesh_3d_gen_line2(const br_mesh_line_3d_t* args, br_vec3_t p1, br_vec3_t p2) {
+  br_vec3_t ep = br_vec3_normalize(br_vec3_sub(args->eye, p1));
+  br_vec3_t te = br_vec3_normalize(br_vec3_sub(args->target, args->eye));
+  br_vec3_t tangent = br_vec3_normalize(br_vec3_sub(p2, p1));
+  br_vec3_t right = br_vec3_normalize(br_vec3_cross(tangent, ep));
+  if (right.x == 0 && right.y == 0 && right.z == 0) {
+    return;
+  }
+  float thick1 = br_vec3_dist(args->eye, p1) * 0.005;
+  float thick2 = br_vec3_dist(args->eye, p2) * 0.005;
+  br_vec3_t right_scale1 = br_vec3_scale(right, thick1);
+  br_vec3_t right_scale2 = br_vec3_scale(right, thick2);
+  br_shader_line_3d_push_quad(br_mesh_state.shaders->line_3d, (br_shader_line_3d_el_t[4]) {
+      { .pos = p1,                           .normal = te    },
+      { .pos = br_vec3_add(p1, right_scale1), .normal = right },
+      { .pos = br_vec3_add(p2, right_scale2), .normal = right },
+      { .pos = p2,                           .normal = te    },
+  });
 
-void br_mesh_3d_gen_line_simple(br_shader_line_3d_simple_t* shader, br_vec3_t p1, br_vec3_t p2, br_color_t color, br_vec3_t eye) {
-  // TODO: This actually looks quite good. Maybe use this in the future
-  (void)color;
-  br_vec3_t diff = br_vec3_sub(p2, p1);
-  float dist1 = 0.01f * br_vec3_dist(eye, p1);
-  float dist2 = 0.01f * br_vec3_dist(eye, p2);
-  dist1 = dist2 = (dist1 + dist2) * .5f;
-  br_vec3_t right1 = br_vec3_normalize(br_vec3_cross(br_vec3_sub(eye, p1), diff));
-  br_vec3_t right2 = br_vec3_normalize(br_vec3_cross(br_vec3_sub(eye, p2), diff));
-  br_vec3_t bl = br_vec3_scale(right1, -dist1);
-  br_vec3_t br = br_vec3_scale(right1, dist1);
-  br_vec3_t tl = br_vec3_scale(right2, -dist1);
-  br_vec3_t tr = br_vec3_scale(right2, dist1);
-  br_shader_line_3d_simple_push_quad(shader, (br_shader_line_3d_simple_el_t[4]) {
-    { .vertexPosition = br_vec3_add(p1, bl), .vertexNormal = bl },
-    { .vertexPosition = br_vec3_add(p1, br), .vertexNormal = br },
-    { .vertexPosition = br_vec3_add(p2, tr), .vertexNormal = br },
-    { .vertexPosition = br_vec3_add(p2, tl), .vertexNormal = tl },
+  br_vec3_t left = br_vec3_scale(right, -1.f);
+  br_vec3_t left_scale1 = br_vec3_scale(left, thick1);
+  br_vec3_t left_scale2 = br_vec3_scale(left, thick2);
+  br_shader_line_3d_push_quad(br_mesh_state.shaders->line_3d, (br_shader_line_3d_el_t[4]) {
+      { .pos = br_vec3_add(p1, left_scale1), .normal = left },
+      { .pos = p1,                           .normal = te   },
+      { .pos = p2,                           .normal = te   },
+      { .pos = br_vec3_add(p2, left_scale2), .normal = left },
   });
 }
 
 void br_mesh_3d_gen_line(const br_mesh_line_3d_t* args, br_vec3_t p1, br_vec3_t p2) {
-  br_shader_line_3d_t* ls = br_mesh_state.shaders->line_3d;
-  float const line_3d_size = args->line_thickness;
-  br_vec3_t diff  = br_vec3_normalize(br_vec3_sub(p2, p1));
-  br_vec3_t norm = br_vec3_normalize(br_vec3_perpendicular(diff));
-  float dist1 = 0.1f * br_vec3_dist(ls->uvs.eye_uv, p1);
-  float dist2 = 0.1f * br_vec3_dist(ls->uvs.eye_uv, p2);
-  if (false == br_vec3_ccv(p1, norm, p2)) norm = br_vec3_scale(norm, -1.f);
-#define BR_MESH_3D_N 4
-  static float angle = 3.14159265f * 2 / (float)BR_MESH_3D_N;
-  float angle_sin = sinf(angle);
-  float angle_cos = cosf(angle);
-  for (int k = 0; k <= BR_MESH_3D_N; ++k) {
-    br_vec3_t next = br_vec3_rot2(norm, diff, angle_sin, angle_cos);
-    br_shader_line_3d_push_quad(ls, (br_shader_line_3d_el_t[4]) {
-        { .vertexPosition = br_vec3_add(p1, br_vec3_scale(norm, line_3d_size*dist1)), .vertexNormal = norm },
-        { .vertexPosition = br_vec3_add(p1, br_vec3_scale(next, line_3d_size*dist1)), .vertexNormal = next },
-        { .vertexPosition = br_vec3_add(p2, br_vec3_scale(next, line_3d_size*dist2)), .vertexNormal = next },
-        { .vertexPosition = br_vec3_add(p2, br_vec3_scale(norm, line_3d_size*dist2)), .vertexNormal = norm }
-    });
-    norm = next;
+  br_vec3_t diff = br_vec3_sub(p2, p1);
+  float diff_sq = br_vec3_dot(diff, diff);
+  if (diff_sq < 1e-6f) return;  // Degenerate line
+  br_vec3_t ep = br_vec3_sub(args->eye, p1);
+  float t = br_vec3_dot(ep, diff) / diff_sq;
+  t = fmaxf(0.0f, fminf(1.0f, t));
+  if (t <= 0.f || t >= 1) {
+    br_mesh_3d_gen_line2(args, p1, p2);
+  } else {
+    br_vec3_t closest = br_vec3_add(p1, br_vec3_scale(diff, t));
+    br_mesh_3d_gen_line2(args, p1, closest);
+    br_mesh_3d_gen_line2(args, closest, p2);
   }
+
 }
 
 void br_mesh_3d_gen_line_strip(br_mesh_line_3d_t args, br_vec3_t const* ps, size_t len) {

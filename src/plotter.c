@@ -309,7 +309,6 @@ void br_plotter_update(br_plotter_t* br) {
                 case BR_KEY_END: brui_resizable_scroll_percent_set(&br->resizables, 1.f); break;
                 case BR_KEY_HOME: brui_resizable_scroll_percent_set(&br->resizables, 0.f); break;
                 default: {
-                  LOGI("pressed %d (%d)", ev.key, ev.keycode);
                 } break;
               }
             } else if (br->action.active == br_plotter_entity_text_input) {
