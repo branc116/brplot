@@ -769,7 +769,7 @@ int brpl_x11_error_callback(brpl_x11_Display* d, brpl_x11_XErrorEvent* e) {
     return 0;
 }
 
-static bool brpl_x11_get_set_context(brpl_window_x11_t* x11, int* attrib_list) {
+static bool brpl_x11_get_set_context(brpl_window_x11_t* x11, int* attrib_list, int major, int minor) {
   int out_ret = 0;
   GLXFBConfigs configs = glXChooseFBConfig(x11->display, x11->screen, attrib_list, &out_ret);
   if (out_ret == 0 || NULL == configs) return false;
@@ -784,8 +784,8 @@ static bool brpl_x11_get_set_context(brpl_window_x11_t* x11, int* attrib_list) {
 #define GLX_CONTEXT_FLAGS_ARB             0x2094
 #define GLX_CONTEXT_DEBUG_BIT_ARB         0x00000001
   int context_attribs[] = {
-      GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-      GLX_CONTEXT_MINOR_VERSION_ARB, 3,
+      GLX_CONTEXT_MAJOR_VERSION_ARB, major,
+      GLX_CONTEXT_MINOR_VERSION_ARB, minor,
       GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
       GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
       // Important for RenderDoc:
@@ -888,11 +888,14 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
     GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
     0
   };
-  if (false == brpl_x11_get_set_context(&x11, attrib_list)) {
+  int glmajor = window->opengl_version.major;
+  if (glmajor == 0) glmajor = 1;
+  int glminor = window->opengl_version.minor;
+  if (false == brpl_x11_get_set_context(&x11, attrib_list, glmajor, glminor)) {
     attrib_list[1] = 0; // No MSAA
-    if (false == brpl_x11_get_set_context(&x11, attrib_list)) {
+    if (false == brpl_x11_get_set_context(&x11, attrib_list, glmajor, glminor)) {
       attrib_list[0] = brpl_x11_None; // Anything
-      if (false == brpl_x11_get_set_context(&x11, attrib_list)) {
+      if (false == brpl_x11_get_set_context(&x11, attrib_list, glmajor, glminor)) {
         return false;
       }
     }

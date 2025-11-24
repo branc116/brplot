@@ -1,4 +1,8 @@
-#include ".generated/icons.c"
+
+#if !defined(BR_INCLUDE_ICONS_GEN_C)
+#  define BR_INCLUDE_ICONS_GEN_C
+#  include ".generated/icons.c"
+#endif
 #include ".generated/default_font.h"
 
 #include "src/br_gl.h"

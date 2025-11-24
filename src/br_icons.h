@@ -1,10 +1,6 @@
 #pragma once
 #include ".generated/icons.h"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 typedef struct br_shader_icon_t br_shader_icon_t;
 
 extern struct br_extra_icons_t {
@@ -49,7 +45,3 @@ br_extent_t br_icons_tc(br_extent_t icon, float top, float center);
 br_extent_t br_icons_lc(br_extent_t icon, float left, float center);
 br_extent_t br_icons_bc(br_extent_t icon, float top, float center);
 br_extent_t br_icons_rc(br_extent_t icon, float left, float center);
-
-#if defined(__cplusplus)
-}
-#endif

@@ -1,26 +1,53 @@
 #define _GNU_SOURCE
 #include "include/brplot.h"
-#include "external/shl_impls.c"
-#include "src/platform2.c"
-#include "src/threads.c"
-#include "src/data.c"
-#include "src/data_generator.c"
-#include "src/filesystem.c"
-#include "src/gui.c"
-#include "src/permastate.c"
-#include "src/plot.c"
-#include "src/plotter.c"
-#include "src/q.c"
-#include "src/read_input.c"
-#include "src/shaders.c"
-#include "src/mesh.c"
-#include "src/icons.c"
-#include "src/main.c"
-#include "src/gl.c"
-#include "src/text_renderer.c"
-#include "src/resampling.c"
-#include "src/theme.c"
-#include "src/ui.c"
+#if !defined(BR_INCLUDE_BRPLATFORM_C)
+#  define BR_INCLUDE_BRPLATFORM_C
+#  include "tools/unity/brplatform.c"
+#endif
+#if !defined(BR_INCLUDE_DATA_C)
+#  define BR_INCLUDE_DATA_C
+#  include "src/data.c"
+#endif
+#if !defined(BR_INCLUDE_DATA_GENERATOR_C)
+#  define BR_INCLUDE_DATA_GENERATOR_C
+#  include "src/data_generator.c"
+#endif
+#if !defined(BR_INCLUDE_GUI_C)
+#  define BR_INCLUDE_GUI_C
+#  include "src/gui.c"
+#endif
+#if !defined(BR_INCLUDE_PERMASTATE_C)
+#  define BR_INCLUDE_PERMASTATE_C
+#  include "src/permastate.c"
+#endif
+#if !defined(BR_INCLUDE_PLOT_C)
+#  define BR_INCLUDE_PLOT_C
+#  include "src/plot.c"
+#endif
+#if !defined(BR_INCLUDE_PLOTTER_C)
+#  define BR_INCLUDE_PLOTTER_C
+#  include "src/plotter.c"
+#endif
+#if !defined(BR_INCLUDE_Q_C)
+#  define BR_INCLUDE_Q_C
+#  include "src/q.c"
+#endif
+#if !defined(BR_INCLUDE_READ_INPUT_C)
+#  define BR_INCLUDE_READ_INPUT_C
+#  include "src/read_input.c"
+#endif
+#if !defined(BR_INCLUDE_MESH_C)
+#  define BR_INCLUDE_MESH_C
+#  include "src/mesh.c"
+#endif
+#if !defined(BR_INCLUDE_MAIN_C)
+#  define BR_INCLUDE_MAIN_C
+#  include "src/main.c"
+#endif
+#if !defined(BR_INCLUDE_RESAMPLING_C)
+#  define BR_INCLUDE_RESAMPLING_C
+#  include "src/resampling.c"
+#endif
 
 // cc -I. -o brploto tools/unity/brplot.c -lm
 

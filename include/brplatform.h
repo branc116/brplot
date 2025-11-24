@@ -98,6 +98,10 @@ typedef struct brpl_window_t {
   const char* title;       // INPUT
   brpl_window_kind_t kind; // INPUT
   br_extenti_t viewport;   // INPUT
+  struct {
+    int major;
+    int minor;
+  } opengl_version;        // INPUT
 
   br_vec2_t scale; // Think DPI
   bool active;

@@ -1,5 +1,3 @@
-#if !defined(_H_INCLUDE_SHL_IMPLS)
-#define _H_INCLUDE_SHL_IMPLS
 #include "src/br_pp.h"
 
 #define BR_MEMORY_TRACER_IMPLEMENTATION
@@ -45,4 +43,3 @@
 
 #define BRSP_IMPLEMENTATION
 #include "src/br_string_pool.h"
-#endif

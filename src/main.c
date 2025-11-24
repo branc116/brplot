@@ -54,5 +54,8 @@ const char* __asan_default_options(void) {
 #endif
 
 #if defined(BR_LIB)
+#if !defined(BR_INCLUDE_LIB_C)
+#  define BR_INCLUDE_LIB_C
 #  include "src/lib.c"
+#endif
 #endif

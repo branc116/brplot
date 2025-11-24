@@ -36,7 +36,8 @@ br_plotter_t* br_plotter_malloc(void) {
 #else
       .kind = brpl_window_glfw,
 #endif
-      .viewport = BR_EXTENTI(0, 0, 1280, 720)
+      .viewport = BR_EXTENTI(0, 0, 1280, 720),
+      .opengl_version = { 3, 3 }
     },
     .ui = {
       .fm_state = {

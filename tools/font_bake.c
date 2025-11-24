@@ -47,5 +47,8 @@ int main(int argc, char** argv) {
   }
   fprintf(file_out, "\n};\n");
   fprintf(file_out, "const long long br_font_data_size = %lld;\n", size);
+  fflush(file_out);
+  fclose(file_out);
+  free(c);
   return 0;
 }
