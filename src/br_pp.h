@@ -129,16 +129,6 @@ void __sanitizer_print_stack_trace(void);
 #  endif
 #endif
 
-#if defined(BR_DEBUG) && !defined(BR_WIN_MSVC) && !defined(BR_NO_UNIT_TEST)
-#  define BR_UNIT_TEST
-#endif
-
-
-#if defined(BR_DEBUG) && !defined(__linux__) && defined(UNIT_TEST)
-   // IT don't work on windows....
-#  undef UNIT_TEST
-#endif
-
 #if defined(BR_DEBUG)
 #  if defined(_MSC_VER)
 #    define BR_BREAKPOINT() __debugbreak()

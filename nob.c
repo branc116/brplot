@@ -1,13 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS
-#define BR_NO_UNIT_TEST
-#define BR_STR_IMPLMENTATION
-#include "src/br_str.h"
-#include "src/br_da.h"
-
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 #if _WIN32
 #  if defined(__GNUC__)
 #     define NOB_REBUILD_URSELF(binary_path, source_path) "gcc", "-I.", "-ggdb", "-o", binary_path, source_path
@@ -24,6 +14,16 @@
 #define NOB_IMPLEMENTATION
 #define NOB_EXPERIMENTAL_DELETE_OLD
 #include "external/nob.h"
+
+#define BR_NO_UNIT_TEST
+#define BR_STR_IMPLMENTATION
+#include "src/br_str.h"
+#include "src/br_da.h"
+
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 
 #define COMMANDS(X) \
   X(build, "(default) Generate and build everything that is needed") \
@@ -388,10 +388,10 @@ const char* compiler_set_output(Nob_Cmd* cmd, const char* output_name, compile_o
   }
 }
 
-const char* compiler_base_flags(Nob_Cmd* cmd, const char* compiler) {
+void compiler_base_flags(Nob_Cmd* cmd, const char* compiler) {
   nob_cmd_append(cmd, compiler);
   if (is_msvc(compiler)) {
-    nob_cmd_append(cmd, "/I.", "/Zi");
+    nob_cmd_append(cmd, "/I.", "/Zi", "/D_CRT_SECURE_NO_WARNINGS=1");
   } else {
     nob_cmd_append(cmd, "-I.", "-g", "-pg");
   }
