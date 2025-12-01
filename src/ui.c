@@ -1143,10 +1143,10 @@ void brui_resizable_update(bruirs_t* rs, br_extent_t viewport) {
     } else if (res->ancor == brui_ancor_all) {
       target_ex = pex;
     }
+    res->target.cur_extent = target_ex;
     target_ex.size  = br_size_scale(target_ex.size, 1.f - cur_hidden_factor);
     target_ex.pos   = br_vec2_scale(target_ex.pos, 1.f - cur_hidden_factor);
     br_extent_t old = res->cur_extent;
-    res->target.cur_extent = target_ex;
     /*if (i == 0 || (i != rs->drag_index && (res->ancor & (brui_ancor_bottom | brui_ancor_right)) && !(res->ancor & (brui_ancor_left | brui_ancor_top)))) {
       res->cur_extent = target_ex;
     } else*/ {
