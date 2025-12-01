@@ -129,7 +129,22 @@ void br_plotter_draw(br_plotter_t* br) {
                   if (has_any) {
                     br_vec2d_t vreal = br_data_el_xy1(*data, index);
                     br_vec2_t s = br_plot2d_to_screen(PLOT, vreal, ex);
-                    brui_text_at(br_scrach_printf("%.*s, %f, %f", name.len, name.str, vreal.x, vreal.y), s);
+                    brui_text_at(br_scrach_printf("%.*s: %f, %f", name.len, name.str, vreal.x, vreal.y), s);
+                  }
+                }
+              } else if (PLOT->kind == br_plot_kind_3d) {
+                br_vec3d_t vec = br_plot3d_to_plot(PLOT, br->mouse.pos, ex);
+                br_u32 index = 0;
+                for (int j = 0; j < PLOT->data_info.len; ++j) {
+                  br_plot_data_t pd = PLOT->data_info.arr[j];
+                  if (pd.thickness_multiplyer < 0.1f) continue;
+                  br_data_t* data = br_data_get1(br->groups, pd.group_id);
+                  float dist = 3.5f;
+                  if (br_resampling_get_point_at3(*data, BR_VEC3_TOD(PLOT->ddd.eye), vec, &dist, &index)) {
+                    br_vec3d_t vreal = br_data_el_xyz2(*data, index);
+                    br_vec2_t s = br_plot3d_to_screen(PLOT, BR_VEC3D_TOF(vreal), ex);
+                    br_strv_t name = brsp_get(br->sp, data->name);
+                    brui_text_at(br_scrach_printf("%.*s: %f, %f, %f", name.len, name.str, vreal.x, vreal.y, vreal.z), s);
                   }
                 }
               }
@@ -959,7 +974,7 @@ static void draw_left_panel(br_plotter_t* br) {
               brui_textf("   box: (%.3f, %.3f) (%.3f, %3.f)", BR_BB_(bb));
             } break;
             case br_data_kind_3d: {
-              brui_textf("3D rebase: %.3f, %.3f, %.3f", data.ddd.rebase_x, data.ddd.rebase_y, data.ddd.rebase_z);
+              brui_textf("3D rebase: %.3f, %.3f, %.3f", BR_VEC3_(data.ddd.rebase));
             } break;
           }
         if (brui_pop().clicked) {

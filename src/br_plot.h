@@ -92,3 +92,5 @@ void br_plot2d_zoom(br_plot_t* plot, br_vec2_t vec, br_extent_t screen_extent, b
 br_vec2d_t br_plot2d_to_plot  (br_plot_t* plot, br_vec2_t  vec, br_extent_t ex);
 br_vec2_t  br_plot2d_to_screen(br_plot_t* plot, br_vec2d_t vec, br_extent_t ex);
 
+br_vec3d_t br_plot3d_to_plot  (br_plot_t* plot, br_vec2_t  mouse_pos, br_extent_t ex);
+br_vec2_t  br_plot3d_to_screen(br_plot_t* plot, br_vec3_t pos, br_extent_t ex);

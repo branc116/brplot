@@ -108,10 +108,9 @@ void br_resampling_add_point(br_resampling_t* r, const br_data_t *pg, uint32_t i
   }
 }
 
-bool br_resampling_get_point_at2(br_data_t data, br_vec2d_t vecd, float* dist, br_u32* out_index) {
 #define BR_STACK_PUSH(VAL) stack[stack_len++] = VAL
 #define BR_STACK_POP() stack_len > 0 ? stack[--stack_len] : 0xFFFFFFFF;
-
+bool br_resampling_get_point_at2(br_data_t data, br_vec2d_t vecd, float* dist, br_u32* out_index) {
   // NOTE: (2**64)*64 = 2**69 = 10**19 elements
   //       data.len can not be larger than 2**64, so we are good..
   br_u32 stack[64] /* = undefined */;
@@ -147,10 +146,96 @@ bool br_resampling_get_point_at2(br_data_t data, br_vec2d_t vecd, float* dist, b
     }
   }
   return found;
+}
 
+br_vec3d_t br_resampling_get_rebase3(br_data_t data) {
+  switch (data.kind) {
+    case br_data_kind_3d: return data.ddd.rebase;
+    case br_data_kind_2d: return BR_VEC3D(data.dd.rebase_x, data.dd.rebase_y, 0.0);
+    default: BR_UNREACHABLE("Data kind: %d", data.kind);
+  }
+}
+
+br_bb3_t br_resampling_get_bb3_rebased(br_resampling_t* res, br_data_t data, br_u32 node_index) {
+  switch (data.kind) {
+    case br_data_kind_3d: {
+      br_resampling_nodes_3d_allocator_t rns = res->ddd;
+      br_resampling_nodes_3d_t node = rns.arr[node_index];
+      return (br_bb3_t){ .min = BR_VEC3(data.ddd.xs[node.base.min_index_x], data.ddd.ys[node.base.min_index_y], data.ddd.zs[node.min_index_z]),
+                         .max = BR_VEC3(data.ddd.xs[node.base.max_index_x], data.ddd.ys[node.base.max_index_y], data.ddd.zs[node.max_index_z]) };
+    } break;
+    case br_data_kind_2d: {
+      br_resampling_nodes_2d_allocator_t rns = res->dd;
+      br_resampling_nodes_2d_t node = rns.arr[node_index];
+      return (br_bb3_t){ .min = BR_VEC3(data.ddd.xs[node.base.min_index_x], data.ddd.ys[node.base.min_index_y], 0.f),
+                         .max = BR_VEC3(data.ddd.xs[node.base.max_index_x], data.ddd.ys[node.base.max_index_y], 0.f) };
+    } break;
+    default: BR_UNREACHABLE("Data kind: %d", data.kind); break;
+  }
+}
+
+static void br_resampling_get_info(br_resampling_t* res, br_data_kind_t kind, br_u32 node_index, br_u32* child1, br_u32* child2, br_u32* depth, br_u32* index_start, br_u32* node_len) {
+  br_resampling_nodes_t base;
+  switch (kind) {
+    case br_data_kind_2d: base = res->dd.arr[node_index].base; break;
+    case br_data_kind_3d: base = res->ddd.arr[node_index].base; break;
+    default: BR_UNREACHABLE("Data kind: %d", kind); break;
+  }
+  *child1 = base.child1;
+  *child2 = base.child2;
+  *depth = base.depth;
+  *index_start = base.index_start;
+  *node_len = base.len;
+}
+
+
+bool br_resampling_get_point_at3(br_data_t data, br_vec3d_t from, br_vec3d_t to, float* dist, br_u32* out_index) {
+  if (data.len == 0) return false;
+  if (data.resampling->common.len == 0) return false;
+
+  // NOTE: (2**64)*64 = 2**69 = 10**19 elements
+  //       data.len can not be larger than 2**64, so we are good..
+  br_u32 stack[64] /* = undefined */;
+  int stack_len = 0;
+  br_u32 cur_node /* = undefined */; ;
+  br_vec3d_t rebase = br_resampling_get_rebase3(data);
+  br_u32 child1, child2, depth, index_start, node_len;
+
+  from = br_vec3d_sub(from, rebase);
+  to =   br_vec3d_sub(to,   rebase);
+  br_vec3_t fromf = BR_VEC3D_TOF(from);
+  br_vec3_t tof =   BR_VEC3D_TOF(to);
+  int n = 0, m = 0;
+  bool found = false;
+
+  BR_STACK_PUSH(0);
+  while (stack_len > 0) {
+    ++n;
+    cur_node = BR_STACK_POP();
+    br_bb3_t bb = br_resampling_get_bb3_rebased(data.resampling, data, cur_node);
+    br_resampling_get_info(data.resampling, data.kind, cur_node, &child1, &child2, &depth, &index_start, &node_len);
+    if (br_col_line_bb(fromf, tof, bb) || br_vec3_line_dist2(fromf, tof, br_vec3_scale(br_vec3_add(bb.min, bb.max), 0.5f)) < *dist) {
+      if (depth == 0) {
+        for (br_u32 i = 0; i < node_len; ++i) {
+          ++m;
+          br_u32 index = i + index_start;
+          float cur_dist = br_vec3_line_dist2(fromf, tof, br_data_el_xyz_rebased(data, index));
+          if (cur_dist < *dist) {
+            *out_index = index;
+            *dist = cur_dist;
+            found = true;
+          }
+        }
+      } else {
+        BR_STACK_PUSH(child1);
+        BR_STACK_PUSH(child2);
+      }
+    }
+  }
+  return found;
+}
 #undef BR_STACK_PUSH
 #undef BR_STACK_POP
-}
 
 void br_resampling_reset(br_resampling_t* res) {
   res->common.len = 0;
@@ -440,24 +525,20 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
       switch (plot->kind) {
         case br_plot_kind_2d: BR_UNREACHABLE("Can't draw 3d data on 2d plot..");
         case br_plot_kind_3d: {
-          br_vec3_t target = plot->ddd.target;
-          target.x -= (float)pg->ddd.rebase_x;
-          target.y -= (float)pg->ddd.rebase_y;
-          target.z -= (float)pg->ddd.rebase_z;
-          br_vec3_t eye = plot->ddd.eye;
-          eye.x -= (float)pg->ddd.rebase_x;
-          eye.y -= (float)pg->ddd.rebase_y;
-          eye.z -= (float)pg->ddd.rebase_z;
-          br_vec2_t re = (br_vec2_t) { .x = extent.width, .y = extent.height };
+          br_vec3d_t target = BR_VEC3_TOD(plot->ddd.target);
+          br_vec3d_t eye = BR_VEC3_TOD(plot->ddd.eye);
+          target = br_vec3d_sub(target, pg->ddd.rebase);
+          eye = br_vec3d_sub(eye, pg->ddd.rebase);
+          br_vec2_t re = extent.size.vec;
           br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
-          br_mat_t look = br_mat_look_at(eye, target, plot->ddd.up);
+          br_mat_t look = br_mat_look_at(BR_VEC3D_TOF(eye), BR_VEC3D_TOF(target), plot->ddd.up);
           br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
-          br_resampling.shaders->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
+          br_resampling.shaders->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target); //TODO: Is this realy eye or eye target vector?
           br_resampling.shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
           res->args_3d.line_thickness = 0.03f * pd->thickness_multiplyer;
           res->args_3d.mvp = br_resampling.shaders->line_3d->uvs.m_mvp_uv;
-          res->args_3d.eye = eye;
-          res->args_3d.target = target;
+          res->args_3d.eye = BR_VEC3D_TOF(eye);
+          res->args_3d.target = BR_VEC3D_TOF(target);
 
           br_resampling_draw33(res, 0, pg, plot); break;
           br_shader_line_3d_draw(br_resampling.shaders->line_3d);

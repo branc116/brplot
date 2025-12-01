@@ -41,7 +41,7 @@ typedef struct br_data_3d_t {
   float* ys;
   float* zs;
   bb_3d_t bounding_box;
-  double rebase_x, rebase_y, rebase_z;
+  br_vec3d_t rebase;
 } br_data_3d_t;
 
 typedef struct br_data_t {
@@ -94,6 +94,8 @@ br_vec2d_t br_data_el_xy(br_datas_t datas, int group, br_u32 index);
 br_vec2d_t br_data_el_xy1(br_data_t data, br_u32 index);
 br_vec3d_t br_data_el_xyz(br_datas_t datas, int group, br_u32 index);
 br_vec3d_t br_data_el_xyz1(br_data_t data, br_u32 index);
+br_vec3d_t br_data_el_xyz2(br_data_t data, br_u32 index);
+br_vec3_t  br_data_el_xyz_rebased(br_data_t data, br_u32 index);
 
 // Only remove all points from a group, don't remove the group itself.
 void br_data_empty(br_data_t* data);

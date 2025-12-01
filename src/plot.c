@@ -81,6 +81,33 @@ br_vec2_t br_plot2d_to_screen(br_plot_t* plot, br_vec2d_t vec, br_extent_t ex) {
   return f;
 }
 
+br_vec3d_t br_plot3d_to_plot(br_plot_t* plot, br_vec2_t mouse_pos, br_extent_t ex) {
+  br_mat_t per = br_mat_perspective(plot->ddd.fov_y, ex.width / ex.height, plot->ddd.near_plane, plot->ddd.far_plane);
+  br_mat_t look = br_mat_look_at(plot->ddd.eye, plot->ddd.target, plot->ddd.up);
+  br_mat_t mvp = br_mat_mul(look, per);
+  br_mat_t imvp = br_mat_transpose(br_mat_inverse(mvp));
+  br_vec2_t mp_ndc = br_vec2_div(br_vec2_sub(mouse_pos, ex.pos), ex.size.vec);
+  mp_ndc = br_vec2_scale(mp_ndc, 2.f);
+  mp_ndc = br_vec2_sub(mp_ndc, BR_VEC2(1.f, 1.f));
+  br_vec4_t v = BR_VEC4(mp_ndc.x, -mp_ndc.y, 1.f, 1.f);
+  br_vec4_t w = br_vec4_apply(v, imvp);
+  br_vec4d_t wd = BR_VEC4_TOD(w);
+  return br_vec3d_scale(wd.xyz, 1.0/wd.w);
+}
+
+br_vec2_t br_plot3d_to_screen(br_plot_t* plot, br_vec3_t pos, br_extent_t ex) {
+  br_mat_t per = br_mat_perspective(plot->ddd.fov_y, ex.width / ex.height, plot->ddd.near_plane, plot->ddd.far_plane);
+  br_mat_t look = br_mat_look_at(plot->ddd.eye, plot->ddd.target, plot->ddd.up);
+  br_mat_t mvp = br_mat_mul(look, per);
+  br_vec3_t w = br_vec3_transform_scale(pos, mvp);
+  br_vec2_t w2 = w.xy;
+  w2 = br_vec2_mul(w2, BR_VEC2(0.5f, -0.5f));
+  w2 = br_vec2_add(w2, BR_VEC2(0.5f, 0.5f));
+  w2 = br_vec2_mul(w2, ex.size.vec);
+  w2 = br_vec2_add(w2, ex.pos);
+  return w2;
+}
+
 void br_plot_update_context(br_plot_t* plot, br_extent_t plot_screen_extent, br_vec2_t mouse_pos) {
   if (plot->kind == br_plot_kind_2d) {
     float aspect = plot_screen_extent.width/plot_screen_extent.height;

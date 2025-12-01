@@ -99,9 +99,7 @@ bool br_permastate_savef_data(FILE* file, br_dagens_t const* dagens, br_data_t d
     } break;
     case br_plot_kind_3d: {
       if (1 != fwrite(&data.ddd.bounding_box, sizeof(data.ddd.bounding_box), 1, file))   BR_ERRORE("Failed to write bounding box");
-      if (1 != fwrite(&data.ddd.rebase_x, sizeof(data.ddd.rebase_x), 1, file))           BR_ERRORE("Failed to write rebase x");
-      if (1 != fwrite(&data.ddd.rebase_y, sizeof(data.ddd.rebase_y), 1, file))           BR_ERRORE("Failed to write rebase y");
-      if (1 != fwrite(&data.ddd.rebase_z, sizeof(data.ddd.rebase_z), 1, file))           BR_ERRORE("Failed to write rebase z");
+      if (1 != fwrite(&data.ddd.rebase, sizeof(data.ddd.rebase), 1, file))               BR_ERRORE("Failed to write rebase");
       if (0 != data.len) {
         if (data.len != fwrite(data.ddd.xs, sizeof(*data.ddd.xs), data.len, file))       BR_ERRORE("Failed to write xs");
         if (data.len != fwrite(data.ddd.ys, sizeof(*data.ddd.ys), data.len, file))       BR_ERRORE("Failed to write ys");

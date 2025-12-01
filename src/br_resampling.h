@@ -18,6 +18,7 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* rd
 void br_resampling_add_point(br_resampling_t* res, br_data_t const* pg, uint32_t index);
 
 bool br_resampling_get_point_at2(br_data_t data, br_vec2d_t vec, float* dist, br_u32* out_index);
+bool br_resampling_get_point_at3(br_data_t data, br_vec3d_t from, br_vec3d_t to, float* dist, br_u32* out_index);
 
 void br_resampling_reset(br_resampling_t* res);
 void br_resampling_change_something(br_datas_t pg);

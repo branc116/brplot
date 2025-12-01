@@ -117,11 +117,10 @@ void br_data_push_xyz(br_datas_t* datas, double x, double y, double z, int group
   br_data_t* data = br_data_get2(datas, group, br_data_kind_3d);
   if (data == NULL) return;
   if (data->len == 0) {
-    data->ddd.rebase_x = x;
-    data->ddd.rebase_y = y;
-    data->ddd.rebase_z = z;
+    data->ddd.rebase = BR_VEC3D(x, y, z);
   }
-  br_data_push_point3(data, (br_vec3_t){ .x = (float)(x - data->ddd.rebase_x), .y = (float)(y - data->ddd.rebase_y), .z = (float)(z - data->ddd.rebase_z) });
+  br_vec3d_t p = br_vec3d_sub(BR_VEC3D(x, y, z), data->ddd.rebase);
+  br_data_push_point3(data, BR_VEC3D_TOF(p));
 }
 
 br_vec2d_t br_data_el_xy(br_datas_t datas, int group, br_u32 index) {
@@ -139,15 +138,28 @@ br_vec3d_t br_data_el_xyz(br_datas_t datas, int group, br_u32 index) {
 
 br_vec3d_t br_data_el_xyz1(br_data_t data, br_u32 index) {
   BR_ASSERT(data.kind == br_data_kind_3d);
-  return BR_VEC3D(data.ddd.xs[index] + data.ddd.rebase_x, data.ddd.ys[index] + data.ddd.rebase_y, data.ddd.zs[index] + data.ddd.rebase_z);
+  br_vec3d_t p = BR_VEC3D((double)data.ddd.xs[index], (double)data.ddd.ys[index], (double)data.ddd.zs[index]);
+  return br_vec3d_add(p, data.ddd.rebase);
 }
 
-//void br_data_push_expr_xy(br_datas_t* datas, br_data_expr_t x, br_data_expr_t y, int group) {
-//  br_data_t* data = br_data_get2(datas, group, br_data_kind_expr_2d);
-//  data->expr_2d.x_expr = x;
-//  data->expr_2d.y_expr = y;
-//  br_data_empty(data);
-//}
+br_vec3d_t br_data_el_xyz2(br_data_t data, br_u32 index) {
+  switch (data.kind) {
+    case br_data_kind_2d: {
+      br_vec3d_t p = BR_VEC3D((double)data.dd.xs[index], (double)data.dd.ys[index], 0.0);
+      return br_vec3d_add(p, BR_VEC3D(data.dd.rebase_x, data.dd.rebase_y, 0.0));
+    } break;
+    case br_data_kind_3d: return br_data_el_xyz1(data, index);
+    default: BR_UNREACHABLE("Data kind: %d", data.kind);
+  }
+}
+
+br_vec3_t  br_data_el_xyz_rebased(br_data_t data, br_u32 index) {
+  switch (data.kind) {
+    case br_data_kind_2d: return BR_VEC3(data.dd.xs[index], data.dd.ys[index], 0.f);
+    case br_data_kind_3d: return BR_VEC3(data.dd.xs[index], data.dd.ys[index], data.ddd.zs[index]);
+    default: BR_UNREACHABLE("Data kind: %d", data.kind);
+  }
+}
 
 void br_data_empty(br_data_t* pg) {
   pg->len = 0;

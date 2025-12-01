@@ -259,9 +259,7 @@ bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* 
       } break;
       case br_data_kind_3d: {
         if (1 != fread(&data->ddd.bounding_box, sizeof(data->ddd.bounding_box), 1, file)) BR_ERRORE("Failed to read bounding box");
-        if (1 != fread(&data->ddd.rebase_x, sizeof(data->ddd.rebase_x), 1, file))         BR_ERRORE("Failed to read rebase x");
-        if (1 != fread(&data->ddd.rebase_y, sizeof(data->ddd.rebase_y), 1, file))         BR_ERRORE("Failed to read rebase y");
-        if (1 != fread(&data->ddd.rebase_z, sizeof(data->ddd.rebase_z), 1, file))         BR_ERRORE("Failed to read rebase z");
+        if (1 != fread(&data->ddd.rebase, sizeof(data->ddd.rebase), 1, file))             BR_ERRORE("Failed to read rebase x");
       } break;
       default:                                                                            BR_ERROR("data kind unknown %d", kind);
     }
@@ -500,9 +498,9 @@ static double br_dagen_rebase(br_data_t const* data, br_dagen_expr_kind_t kind) 
     } break;
     case br_data_kind_3d: {
       switch (kind) {
-        case br_dagen_expr_kind_reference_x: return data->ddd.rebase_x; break;
-        case br_dagen_expr_kind_reference_y: return data->ddd.rebase_y; break;
-        case br_dagen_expr_kind_reference_z: return data->ddd.rebase_z; break;
+        case br_dagen_expr_kind_reference_x: return data->ddd.rebase.x; break;
+        case br_dagen_expr_kind_reference_y: return data->ddd.rebase.y; break;
+        case br_dagen_expr_kind_reference_z: return data->ddd.rebase.z; break;
         default: BR_UNREACHABLE();
       }
     } break;

@@ -119,6 +119,19 @@ int main(void) {
     float det = br_mat_det(ident);
     TEST_EQUALF(det, 1);
   }
+  {
+    bool col;
+    col = br_col_line_bb(BR_VEC3(0, 0, 100), BR_VEC3(0, 0, -100), (br_bb3_t) { .min = BR_VEC3(-1, -1, -1), .max = BR_VEC3(1, 1, 1) });
+    TEST_EQUAL(true, col);
+    col = br_col_line_bb(BR_VEC3(1, 0, 100), BR_VEC3(0, 0, -100), (br_bb3_t) { .min = BR_VEC3(-1, -1, -1), .max = BR_VEC3(1, 1, 1) });
+    TEST_EQUAL(true, col);
+    col = br_col_line_bb(BR_VEC3(2, 0, 100), BR_VEC3(0, 0, -100), (br_bb3_t) { .min = BR_VEC3(-1, -1, -1), .max = BR_VEC3(1, 1, 1) });
+    TEST_EQUAL(true, col);
+    col = br_col_line_bb(BR_VEC3(20, 0, 100), BR_VEC3(0, 0, -100), (br_bb3_t) { .min = BR_VEC3(-1, -1, -1), .max = BR_VEC3(1, 1, 1) });
+    TEST_EQUAL(false, col);
+    col = br_col_line_bb(BR_VEC3(1, 1, 100), BR_VEC3(0, 0, -100), (br_bb3_t) { .min = BR_VEC3(-1, -1, -1), .max = BR_VEC3(1, 1, 1) });
+    TEST_EQUAL(true, col);
+  }
 }
 
 void br_on_fatal_error(void) {}

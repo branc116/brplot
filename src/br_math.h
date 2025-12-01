@@ -19,7 +19,9 @@
 #define BR_VEC2D_TOF(V) ((br_vec2_t) { .x = (float)(V).x, .y = (float)(V).y })
 #define BR_VEC2_(V) (V).x, (V).y
 #define BR_VEC3_(V) (V).x, (V).y, (V).z
+#define BR_VEC3_TOD(V) ((br_vec3d_t) { .x = (double)(V).x, .y = (double)(V).y, .z = (double)(V).z })
 #define BR_VEC3D(X, Y, Z) ((br_vec3d_t) { .x = (X), .y = (Y), .z = (Z) })
+#define BR_VEC3D_TOF(V) ((br_vec3_t) { .x = (float)(V).x, .y = (float)(V).y, .z = (float)(V).z })
 #define BR_VEC3_TOC(V, A) ((br_color_t) { .r = (unsigned char)((V).x * 255.f), .g = (unsigned char)((V).y * 255.f), .b = (unsigned char)((V).z * 255.f), .a = (A) })
 #define BR_SIZE(WIDTH, HEIGHT) ((br_size_t) { .width = (WIDTH), .height = (HEIGHT) })
 #define BR_SIZE_TOI(SZ) ((br_sizei_t) { .width = (int)((SZ).width), .height = (int)((SZ).height) })
@@ -59,6 +61,7 @@
 #define BR_BB_(BB) (BB).min_x, (BB).min_y, (BB).max_x, (BB).max_y
 
 #define BR_VEC4(X, Y, Z, W) ((br_vec4_t) { .x = (X), .y = (Y), .z = (Z), .w = (W) })
+#define BR_VEC4_TOD(V) ((br_vec4d_t) { .x = (double)(V).x, .y = (double)(V).y, .z = (double)(V).z, .w = (double)(V).w })
 #define BR_VEC4_(V) (V).x, (V).y, (V).z, (V).w
 #define BR_VEC42(XY, ZW) ((br_vec4_t) { .xy = (XY), .zw = (ZW)  })
 #define BR_VEC4_31(XYZ, W) ((br_vec4_t) { .x = (XYZ).x, .y = (XYZ).y, .z = (XYZ).z, .w = (W) })
@@ -210,6 +213,19 @@ typedef struct {
 typedef struct {
   union {
     struct {
+      float min_x, min_y, min_z, max_x, max_y, max_z;
+    };
+    struct {
+      br_vec3_t min;
+      br_vec3_t max;
+    };
+    float arr[6];
+  };
+} br_bb3_t;
+
+typedef struct {
+  union {
+    struct {
       double x, y, z;
     };
     br_vec2d_t xy;
@@ -235,6 +251,25 @@ typedef struct {
     float arr[4];
   };
 }  br_vec4_t;
+
+typedef struct {
+  union {
+    struct {
+      double x, y, z, w;
+    };
+    struct {
+      double r, g, b, a;
+    };
+    struct {
+      br_vec2d_t xy;
+      br_vec2d_t zw;
+    };
+    struct {
+      br_vec3d_t xyz;
+    };
+    double arr[4];
+  };
+} br_vec4d_t;
 
 typedef struct {
   unsigned char r, g, b, a;
@@ -311,6 +346,43 @@ static inline float br_float_min(float a, float b) {
 
 static inline float br_float_min4(float a, float b, float c, float d) {
   return br_float_min(br_float_min(a, b), br_float_min(c, d));
+}
+
+//------------------------double----------------------------------
+
+static inline double br_double_clamp(double x, double m, double M) {
+  if (x < m) return m;
+  if (x > M) return M;
+  return x;
+}
+
+static inline double br_double_lerp(double from, double to, double factor) {
+  return from * (1 - factor) + to * (factor);
+}
+
+static inline double br_double_lerp2(double from, double to, double factor) {
+  double fact2 = sqrt(factor);
+  return from * (1 - fact2) + to * (fact2);
+}
+
+static inline bool br_double_near_zero(double value) {
+  return fabs(value) < 1e-6;
+}
+
+static inline double br_double_max(double a, double b) {
+  return a > b ? a : b;
+}
+
+static inline double br_double_max4(double a, double b, double c, double d) {
+  return br_double_max(br_double_max(a, b), br_double_max(c, d));
+}
+
+static inline double br_double_min(double a, double b) {
+  return a < b ? a : b;
+}
+
+static inline double br_double_min4(double a, double b, double c, double d) {
+  return br_double_min(br_double_min(a, b), br_double_min(c, d));
 }
 
 //------------------------br_vec2_t------------------------------
@@ -645,6 +717,135 @@ static inline br_vec3_t br_vec3_clamp(br_vec3_t v, float m, float M) {
   return v;
 }
 
+static inline float br_vec3_line_dist2(br_vec3_t a, br_vec3_t b, br_vec3_t point) {
+  br_vec3_t ab = br_vec3_sub(b, a);
+  float ab2 = br_vec3_dot(ab, ab);
+  const float EPS = 1e-6f;
+  if (ab2 < EPS) {
+    br_vec3_t diff = br_vec3_sub(point, a);
+    return br_vec3_len2(diff);
+  }
+
+  br_vec3_t ap = br_vec3_sub(point, a);
+  br_vec3_t cross = br_vec3_cross(ab, ap);
+  return br_vec3_len2(cross) / ab2;
+}
+
+
+//------------------------vec3d------------------------------
+
+static inline br_vec3d_t br_vec3d_add(br_vec3d_t a, br_vec3d_t b) {
+  return BR_VEC3D(a.x + b.x, a.y + b.y, a.z + b.z);
+}
+
+static inline br_vec3d_t br_vec3d_sub(br_vec3d_t a, br_vec3d_t b) {
+  return BR_VEC3D(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+static inline br_vec3d_t br_vec3d_max(br_vec3d_t a, br_vec3d_t b) {
+  return BR_VEC3D(fmax(a.x, b.x), fmax(a.y, b.y), fmax(a.z, b.z));
+}
+
+static inline br_vec3d_t br_vec3d_scale(br_vec3d_t a, double s) {
+  return BR_VEC3D(a.x * s, a.y * s, a.z * s);
+}
+
+static inline br_vec3d_t br_vec3d_pow(br_vec3d_t a, double exponent) {
+  return BR_VEC3D(pow(a.x, exponent), pow(a.y, exponent), pow(a.z, exponent));
+}
+
+static inline double br_vec3d_len2(br_vec3d_t a) {
+  double sum = 0.0;
+  for (size_t i = 0; i < BR_VEC_ELS(a); ++i) sum += a.arr[i] * a.arr[i];
+  return sum;
+}
+
+static inline br_vec3d_t br_vec3d_abs(br_vec3d_t a) {
+  return BR_VEC3D(fabs(a.x), fabs(a.y), fabs(a.z));
+}
+
+static inline double br_vec3d_len(br_vec3d_t a) {
+  return sqrt(br_vec3d_len2(a));
+}
+
+static inline double br_vec3d_dist2(br_vec3d_t a, br_vec3d_t b) {
+  double len2 = br_vec3d_len2(br_vec3d_sub(a, b));
+  return len2;
+}
+
+static inline double br_vec3d_dist(br_vec3d_t a, br_vec3d_t b) {
+  return sqrt(br_vec3d_dist2(a, b));
+}
+
+static inline br_vec3d_t br_vec3d_mul(br_vec3d_t a, br_vec3d_t b) {
+  return BR_VEC3D(a.x*b.x, a.y*b.y, a.z*b.z);
+}
+
+static inline double br_vec3d_dot(br_vec3d_t a, br_vec3d_t b) {
+  return a.x*b.x + a.y*b.y + a.z*b.z;
+}
+
+static inline br_vec3d_t br_vec3d_cross(br_vec3d_t a, br_vec3d_t b) {
+  return BR_VEC3D(
+    a.y*b.z - a.z*b.y,
+    a.z*b.x - a.x*b.z,
+    a.x*b.y - a.y*b.x);
+}
+
+static inline bool br_vec3d_ccv(br_vec3d_t a, br_vec3d_t b, br_vec3d_t c) {
+  br_vec3d_t ab = br_vec3d_sub(b, a);
+  br_vec3d_t cb = br_vec3d_sub(b, c);
+  return br_vec3d_cross(ab, cb).z > 0;
+}
+
+static inline br_vec3d_t br_vec3d_normalize(br_vec3d_t a) {
+  double len2 = br_vec3d_len2(a);
+  if (fabs(len2) > FLT_EPSILON) {
+    double len = sqrt(len2);
+    return br_vec3d_scale(a, 1/len);
+  }
+  return BR_VEC3D(0,0,0);
+}
+
+static inline double br_vec3d_angle(br_vec3d_t v1, br_vec3d_t v2) {
+  double len = br_vec3d_len(br_vec3d_cross(v1, v2));
+  double dot = br_vec3d_dot(v1, v2);
+  return atan2(len, dot);
+}
+
+static inline br_vec3d_t br_vec3d_rot(br_vec3d_t v, br_vec3d_t axis, double angle) {
+  double as = sin(angle);
+  br_vec3d_t a = br_vec3d_cross(br_vec3d_scale(axis, as), v);
+  br_vec3d_t b = br_vec3d_cross(br_vec3d_scale(axis, (1 - cos(angle))), br_vec3d_cross(axis, v));
+  return br_vec3d_add(v, br_vec3d_add(a, b));
+}
+
+static inline br_vec3d_t br_vec3d_rot2(br_vec3d_t v, br_vec3d_t axis, double angle_sin, double angle_cos) {
+  br_vec3d_t a = br_vec3d_cross(br_vec3d_scale(axis, angle_sin), v);
+  br_vec3d_t b = br_vec3d_cross(br_vec3d_scale(axis, (1 - angle_cos)), br_vec3d_cross(axis, v));
+  return br_vec3d_add(v, br_vec3d_add(a, b));
+}
+
+static inline br_vec3d_t br_vec3d_perpendicular(br_vec3d_t v) {
+  size_t min = 0;
+  double min_val = fabs(v.arr[0]);
+  br_vec3d_t ord = { 0 };
+
+  for (size_t i = 1; i < 3; ++i) {
+    double c = fabs(v.arr[i]);
+    if (c < min_val) min = i, min_val = c;
+  }
+  ord.arr[min] = 1;
+  return br_vec3d_cross(v, ord);
+}
+
+static inline br_vec3d_t br_vec3d_clamp(br_vec3d_t v, double m, double M) {
+  v.x = br_double_clamp(v.x, m, M);
+  v.y = br_double_clamp(v.y, m, M);
+  v.z = br_double_clamp(v.z, m, M);
+  return v;
+}
+
 // ------------------br_color_t-----------------
 
 static inline br_color_t br_color_lighter(br_color_t c, float factor) {
@@ -897,6 +1098,29 @@ static inline bool br_col_vec2_bb(br_bb_t ex, br_vec2_t point) {
 static inline bool br_col_extents(br_extent_t a, br_extent_t b) {
   return ((a.x < (b.x + b.width) && (a.x + a.width) > b.x) &&
           (a.y < (b.y + b.height) && (a.y + a.height) > b.y));
+}
+
+static inline bool br_col_line_bb(br_vec3_t p1, br_vec3_t p2, br_bb3_t bb) {
+  br_vec3_t dir = br_vec3_sub(p2, p1);
+
+  float tmin = 0.0f;
+  float tmax = 1.0f;
+  const float EPS = 1e-6f;
+
+  for (int i = 0; i < 3; ++i) {
+    float pi = p1.arr[i];
+    float di = dir.arr[i];
+    if (fabsf(di) < EPS) {
+      if (pi < bb.min.arr[i] || pi > bb.max.arr[i]) return false;
+    } else {
+      float t1 = (bb.min.arr[i] - pi) / di;
+      float t2 = (bb.max.arr[i] - pi) / di;
+      tmin = fmaxf(tmin, fminf(t1, t2));
+      tmax = fminf(tmax, fmaxf(t1, t2));
+      if (tmin > tmax) return false;
+    }
+  }
+  return true;
 }
 
 // ----------------br_bb_t-------------------------
