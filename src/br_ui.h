@@ -48,7 +48,7 @@ typedef struct brui_state_t {
 typedef struct brui_action_text_t {
   brsp_id_t id;
   int cursor_pos;
-  float offset_x, offset_x_target;
+  int offset_ahandle;
   bool changed;
 } brui_action_text_t;
 
@@ -163,6 +163,7 @@ typedef struct bruirs_t {
 
 typedef struct br_theme_t br_theme_t;
 typedef struct br_shaders_t br_shaders_t;
+typedef struct br_anims_t br_anims_t;
 typedef struct {
   brui_stack_el_t* arr;
   size_t len, cap;
@@ -172,6 +173,7 @@ typedef struct {
   br_theme_t* theme;
   br_text_renderer_t* tr;
   br_shaders_t* shaders;
+  br_anims_t* anims;
 
   float frame_time;
   float snap_cooldown;
@@ -207,7 +209,7 @@ typedef struct brui_split_t {
 
 extern BR_THREAD_LOCAL char brui__scrach[2048];
 
-void brui_construct(br_theme_t* theme, bruirs_t* rs, brsp_t* sp, br_text_renderer_t* tr, br_shaders_t* shaders);
+void brui_construct(br_theme_t* theme, bruirs_t* rs, brsp_t* sp, br_text_renderer_t* tr, br_shaders_t* shaders, br_anims_t* anims);
 
 void brui_begin(void);
 void brui_end(void);

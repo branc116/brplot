@@ -61,7 +61,7 @@ BR_EXPORT bool brui_buttonf(const char* fmt, ...);
 #endif
 
 #if defined(BRUI_IMPLEMENTATION)
-#  if defined(BR_INCLUDE_UNITY_BRUI_C)
+#  if !defined(BR_INCLUDE_UNITY_BRUI_C)
 #    define BR_INCLUDE_UNITY_BRUI_C
 #    include "tools/unity/brui.c"
 #  endif

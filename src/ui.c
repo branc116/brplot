@@ -15,6 +15,7 @@
 #include "src/br_free_list.h"
 #include "src/br_memory.h"
 #include "src/br_str.h"
+#include "src/br_anim.h"
 
 #include "external/stb_ds.h"
 
@@ -70,12 +71,14 @@ static BR_THREAD_LOCAL bruir_children_t brui__temp_children = { 0 };
 #  define BRUI_LOGV(...)
 #endif
 
-void brui_construct(br_theme_t* theme, bruirs_t* rs, brsp_t* sp, br_text_renderer_t* tr, br_shaders_t* shaders) {
+void brui_construct(br_theme_t* theme, bruirs_t* rs, brsp_t* sp, br_text_renderer_t* tr, br_shaders_t* shaders, br_anims_t* anims) {
   brui__stack.theme = theme;
   brui__stack.rs = rs;
   brui__stack.sp = sp;
   brui__stack.tr = tr;
   brui__stack.shaders = shaders;
+  brui__stack.anims = anims;
+  ACPARM.text.offset_ahandle = br_anim_newf(anims, 0, 0);
 }
 
 brui_stack_el_t brui_stack_el(void) {
@@ -278,7 +281,7 @@ bool brui_text_input(brsp_id_t str_id) {
   bool is_active = brui_action_typing == ACTION && str_id == ACPARM.text.id;
 
   br_vec2_t loc                = TOP.cur;
-  if (is_active) loc.x         -= ACPARM.text.offset_x;
+  if (is_active) loc.x         -= br_anim_getf(brui__stack.anims, ACPARM.text.offset_ahandle);
   float out_top /* neg or 0 */ = fminf(TOP.cur.y - TOP.limit.min_y, 0.f);
   float opt_height             = (float)TOP.font_size + TOP.padding.y;
   br_size_t space_left         = BR_SIZE(TOP.limit.max_x - loc.x, TOP.limit.max_y - TOP.cur.y + out_top);
@@ -305,8 +308,11 @@ bool brui_text_input(brsp_id_t str_id) {
     loc.x += size.width - 1.0f;
     text_limit.min_x -= 1.f;
     brui_rectangle(BR_BB(loc.x - half_thick, loc.y, loc.x + half_thick, loc.y + (float)text_height), text_limit, TOP.font_color, TOP.z + 2);
-    if (loc.x - (ACPARM.text.offset_x_target - ACPARM.text.offset_x) > TOP.limit.max_x - 20.f) ACPARM.text.offset_x_target += 20.f;
-    if (loc.x + (ACPARM.text.offset_x - ACPARM.text.offset_x_target) < TOP.limit.min_x + 20.f) ACPARM.text.offset_x_target = br_float_clamp(ACPARM.text.offset_x_target-20.f, 0.f, ACPARM.text.offset_x_target);
+    int off_ahandle = ACPARM.text.offset_ahandle;
+    br_anim_t off = brui__stack.anims->all.arr[off_ahandle];
+    if (loc.x - off.current > TOP.limit.max_x) br_anim_setf(brui__stack.anims, off_ahandle, size.width - ex.width / 2);
+    // TODO(anim)
+    //if (loc.x + off.current  < TOP.limit.min_x + 20.f) br_anim_setf(brui__stack.anims, off_ahandle,  loc.x - 20.f);
     changed = ACPARM.text.changed;
     ACPARM.text.changed = false;
   } else {
@@ -316,8 +322,7 @@ bool brui_text_input(brsp_id_t str_id) {
           ACTION = brui_action_typing;
           ACPARM.text.cursor_pos = 0;
           ACPARM.text.id = str_id;
-          ACPARM.text.offset_x = 0;
-          ACPARM.text.offset_x_target = 0;
+          br_anim_setf(brui__stack.anims, ACPARM.text.offset_ahandle, 0.f);
         }
       }
     }
@@ -1097,10 +1102,6 @@ void brui_resizable_update(bruirs_t* rs, br_extent_t viewport) {
     (void)local;
   }
 
-  if (brui_action_typing == ACTION) {
-    ACPARM.text.offset_x = br_float_lerp(ACPARM.text.offset_x, ACPARM.text.offset_x_target, lerp_speed);
-  }
-
   brfl_foreach(i, *rs) {
     brui_resizable_t* res = br_da_getp(*rs, i);
 
@@ -1815,6 +1816,7 @@ void brui_resizable_temp_delete_all(void) {
     if (bruir__temp_res[i].value.is_deleted) continue;
     brfl_remove(*rs, bruir__temp_res[i].value.resizable_handle);
   }
+  br_anim_delete(brui__stack.anims, ACPARM.text.offset_ahandle);
 }
 
 static int bruir_find_at(bruirs_t* rs, int index, br_vec2_t loc, br_vec2_t* out_local_pos) {

@@ -50,6 +50,10 @@
 #  define BR_INCLUDE_RESAMPLING_C
 #  include "src/resampling.c"
 #endif
+#if !defined(BR_INCLUDE_ANIM_C)
+#  define BR_INCLUDE_ANIM_C
+#  include "src/anim.c"
+#endif
 
 // cc -I. -o brploto tools/unity/brplot.c -lm
 

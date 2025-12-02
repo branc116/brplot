@@ -1,20 +1,18 @@
 #pragma once
 #include "src/br_pp.h"
+#include "src/br_anim.h"
 #include "src/br_data.h"
-#include "src/br_plot.h"
 #include "src/br_data_generator.h"
-#include "src/br_math.h"
-#include "src/br_theme.h"
-#include "src/br_permastate.h"
-#include "src/br_ui.h"
 #include "src/br_gui.h"
+#include "src/br_math.h"
+#include "src/br_permastate.h"
 #include "src/br_platform.h"
-
-typedef struct br_plotter_t br_plotter_t;
-typedef struct q_commands q_commands;
-typedef struct br_text_renderer_t br_text_renderer_t;
+#include "src/br_plot.h"
+#include "src/br_theme.h"
+#include "src/br_ui.h"
 
 #if BR_HAS_HOTRELOAD
+typedef struct br_plotter_t br_plotter_t;
 typedef struct br_hotreload_state_t {
   void (*func_loop)(struct br_plotter_t* gv);
   void (*func_loop_ui)(struct br_plotter_t* gv);
@@ -34,6 +32,8 @@ typedef enum br_plotter_entity_kind_t {
   br_plotter_entity_text_input,
 } br_plotter_entity_kind_t;
 
+typedef struct q_commands q_commands;
+typedef struct br_text_renderer_t br_text_renderer_t;
 typedef struct br_plotter_t {
   br_datas_t groups;
   br_plots_t plots;
@@ -42,6 +42,7 @@ typedef struct br_plotter_t {
   bruirs_t resizables;
   br_csv_parser_t csv_parser;
   brsp_t sp;
+  br_anims_t anims;
 
   br_text_renderer_t* text;
   // Any thread can write to this q, only render thread can pop

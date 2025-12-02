@@ -108,10 +108,11 @@ void br_plotter_init(br_plotter_t* br) {
   brgl_blend_func(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   brgl_blend_equation(GL_FUNC_ADD);
   brgl_viewport(0, 0, br->win.viewport.width, br->win.viewport.height);
+  br_anims_construct(&br->ui.theme);
 
   br->shaders = br_shaders_malloc();
   br->text = br_text_renderer_malloc(1024, 1024, br_font_data, &br->shaders.font);
-  brui_construct(&br->ui.theme, &br->resizables, &br->sp, br->text, &br->shaders);
+  brui_construct(&br->ui.theme, &br->resizables, &br->sp, br->text, &br->shaders, &br->anims);
   br->time.now = brpl_time();
 
 #if BR_HAS_HOTRELOAD
@@ -578,6 +579,7 @@ void br_plotter_update(br_plotter_t* br) {
 
         if (false == br->mouse.dragging_right) brui_resizable_update(&br->resizables, BR_EXTENTI_TOF(br->win.viewport));
 
+        br_anim_tick(&br->anims, br->time.frame);
         brpl_frame_start(&br->win);
 #if BR_HAS_HOTRELOAD
         br_hotreload_tick(&br->hot_state);

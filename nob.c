@@ -109,6 +109,7 @@ typedef struct {
 const char* sources[] = {
  "external/shl_impls.c",
  "src/main.c",
+ "src/anim.c",
  "src/ui.c",
  "src/data.c",
  "src/mesh.c",
