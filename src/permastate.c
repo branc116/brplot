@@ -164,6 +164,7 @@ static bool br_permastate_savef_plotter(FILE* file, br_plotter_t* br) {
   brui_resizable_temp_delete_all();
   brfl_write(file, br->resizables, fl_write_error); if (fl_write_error != 0) BR_ERRORE("Failed to write resizables.");
   if (false == brsp_write(file, &br->sp))                                    BR_ERRORE("Failed to write string pool.");
+  if (false == br_anim_save(file, &br->anims))                               BR_ERRORE("Failed to write anim.");
   goto done;
 
 error:
@@ -262,6 +263,7 @@ bool br_permastate_load_plotter(FILE* file, br_plotter_t* br, br_data_descs_t* d
   if (1 != (uis_read = fread(&br->ui, sizeof(br->ui), 1, file)))          BR_ERROR("Failed to read UI state.");
   brfl_read(file, br->resizables, fl_read_error); if (fl_read_error != 0) BR_ERROR("Failed to read resizables.");
   if (false == brsp_read(file, &br->sp))                                  BR_ERROR("Failed to read string pool.");
+  if (false == br_anim_load(file, &br->anims))                            BR_ERROR("Failed to load animations.");
   if (0 != feof(file))                                                    BR_ERROR("Expected eof.");
   brsp_compress(&br->sp, 1.3f, 16);
   return true;

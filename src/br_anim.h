@@ -1,6 +1,7 @@
 #pragma once
 #include "src/br_pp.h"
 #include <stdbool.h>
+#include <stdio.h>
 
 typedef enum br_anim_kind_t {
   br_anim_float,
@@ -44,3 +45,6 @@ void br_anim_tick(br_anims_t* anims, float dt);
 
 void br_anim_setf(br_anims_t* anims, int anim_handle, float target_value);
 float br_anim_getf(br_anims_t* anims, int anim_handle);
+
+bool br_anim_save(FILE* file, const br_anims_t* anims);
+bool br_anim_load(FILE* file, br_anims_t* anims);
