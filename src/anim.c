@@ -35,7 +35,6 @@ void br_anim_tick(br_anims_t* anims, float dt) {
   float lerp_factor = br_anims_state.theme->ui.animation_speed * dt;
   lerp_factor = br_float_clamp(lerp_factor, 0.f, 1.f);
   brfl_foreach(i, anims->alive) {
-    LOGI("i=%d", i);
     int anim_handle = br_da_get(anims->alive, i);
     br_anim_t* anim = br_da_getp(anims->all, anim_handle);
     switch (anim->kind) {
@@ -55,7 +54,6 @@ void br_anim_tick(br_anims_t* anims, float dt) {
 }
 
 void br_anim_setf(br_anims_t* anims, int anim_handle, float target_value) {
-  LOGI("heheh");
   br_anim_t* anim = br_da_getp(anims->all, anim_handle);
   BR_ASSERTF(anim->kind == br_anim_float, "Anim kind should be float, but it's: %d", anim->kind);
   if (target_value == anim->target) return;

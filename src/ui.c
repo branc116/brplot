@@ -309,10 +309,9 @@ bool brui_text_input(brsp_id_t str_id) {
     text_limit.min_x -= 1.f;
     brui_rectangle(BR_BB(loc.x - half_thick, loc.y, loc.x + half_thick, loc.y + (float)text_height), text_limit, TOP.font_color, TOP.z + 2);
     int off_ahandle = ACPARM.text.offset_ahandle;
-    br_anim_t off = brui__stack.anims->all.arr[off_ahandle];
-    if (loc.x - off.current > TOP.limit.max_x) br_anim_setf(brui__stack.anims, off_ahandle, size.width - ex.width / 2);
-    // TODO(anim)
-    //if (loc.x + off.current  < TOP.limit.min_x + 20.f) br_anim_setf(brui__stack.anims, off_ahandle,  loc.x - 20.f);
+    float off = br_anim_getf(brui__stack.anims, off_ahandle);
+    if (size.width - off > ex.width) br_anim_setf(brui__stack.anims, off_ahandle, size.width - ex.width / 2);
+    if (size.width - off < 0)        br_anim_setf(brui__stack.anims, off_ahandle, br_float_max(0.f, size.width - ex.width / 2));
     changed = ACPARM.text.changed;
     ACPARM.text.changed = false;
   } else {
