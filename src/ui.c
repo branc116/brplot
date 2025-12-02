@@ -782,33 +782,35 @@ void brui_vsplit_end(void) {
   BRUI_LOG("vsplit end");
 }
 
-void brui_scroll_bar(float* bar_offset_fract) {
+void brui_scroll_bar(int bar_offset_fract_ah) {
   float thick = TOP.padding.x * 0.5f;
   float slider_thick = TOP.padding.x * 0.8f;
   br_vec2_t mouse = brui__stack.mouse_pos;
   bool is_down = brui__stack.mouse_clicked;
 
+  float cur = br_anim_getf(brui__stack.anims, bar_offset_fract_ah);
   float limit_height = BR_BBH(TOP.limit);
   float hidden_height = TOP.content_height - limit_height;
   float slider_height = limit_height * (limit_height / (limit_height + hidden_height));
-  float slider_upper = *bar_offset_fract * (limit_height - slider_height);
-  float slider_downer = (1.f - *bar_offset_fract) * (limit_height - slider_height);
+  float slider_upper = cur * (limit_height - slider_height);
+  float slider_downer = (1.f - cur) * (limit_height - slider_height);
 
   br_bb_t line_bb = BR_BB(TOP.limit.max_x - thick, TOP.limit.min_y, TOP.limit.max_x, TOP.limit.max_y);
   br_bb_t slider_bb = BR_BB(TOP.limit.max_x - slider_thick, TOP.limit.min_y + slider_upper, TOP.limit.max_x, TOP.limit.max_y - slider_downer);
   br_color_t lc = BR_THEME.colors.btn_inactive;
   br_color_t bc = BR_THEME.colors.btn_txt_inactive;
-  if (ACTION == brui_action_sliding && ACPARM.slider.value == bar_offset_fract) {
+  if (ACTION == brui_action_sliding && ACPARM.slider.value == (void*)(size_t)bar_offset_fract_ah) {
     lc = BR_THEME.colors.btn_active;
     bc = BR_THEME.colors.btn_txt_active;
-    *bar_offset_fract = br_float_clamp((mouse.y - TOP.limit.min_y) / limit_height, 0, 1);
+    float new = br_float_clamp((mouse.y - TOP.limit.min_y) / limit_height, 0, 1);
+    br_anim_setf(brui__stack.anims, bar_offset_fract_ah, new);
   } else if (ACTION == brui_action_none && br_col_vec2_bb(line_bb, mouse)) {
     lc = BR_THEME.colors.btn_hovered;
     bc = BR_THEME.colors.btn_txt_hovered;
     ACTION = brui_action_none;
     if (is_down) {
       ACTION = brui_action_sliding;
-      ACPARM.slider.value = bar_offset_fract;
+      ACPARM.slider.value = (void*)(size_t)bar_offset_fract_ah;
     }
   }
   br_sizei_t viewport = BR_SIZE_TOI(brui__stack.rs->arr[0].cur_extent.size);
@@ -850,11 +852,11 @@ void brui_scroll_move(float value) {
   float hidden_height = res->full_height - res->current.cur_extent.height;
   if (hidden_height <= 0) return;
 
-  float cur_scroll_px = hidden_height * res->target.scroll_offset_percent;
+  float cur_scroll_px = hidden_height * br_anim_getf(brui__stack.anims, res->scroll_offset_percent_ah);
   float next_scroll_px = cur_scroll_px + value;
   if (next_scroll_px < 0) next_scroll_px = 0.f;
   if (next_scroll_px > hidden_height) next_scroll_px = hidden_height;
-  res->target.scroll_offset_percent = next_scroll_px / hidden_height;
+  br_anim_setf(brui__stack.anims, res->scroll_offset_percent_ah, next_scroll_px / hidden_height);
 }
 
 float brui_min_y(void) {
@@ -968,6 +970,7 @@ static int brui_resizable_new0(bruirs_t* rs, brui_resizable_t* new, br_extent_t 
   new->z = brui_resizable_children_top_z(rs, parent) + 1;
   new->parent = parent;
   new->title_height_ah = br_anim_newf(brui__stack.anims, 0, 0);
+  new->scroll_offset_percent_ah = br_anim_newf(brui__stack.anims, 0, 0);
   int new_id = brfl_push(*rs, *new);
 
   if (parent > 0) bruir_update_extent(rs, new_id, rs->arr[new_id].target.cur_extent, true, true);
@@ -1100,7 +1103,6 @@ void brui_resizable_update(bruirs_t* rs, br_extent_t viewport) {
     brui_resizable_t* res = br_da_getp(*rs, i);
 
     res->hidden_factor = br_float_lerp(res->hidden_factor, res->target.hidden_factor, lerp_speed);
-    res->scroll_offset_percent = br_float_lerp(res->scroll_offset_percent, res->target.scroll_offset_percent, lerp_speed);
     br_extent_t target_ex = res->target.cur_extent;
     float cur_hidden_factor = brui_resizable_hidden_factor(rs, res);
 
@@ -1325,25 +1327,30 @@ void brui_resizable_mouse_releasel(bruirs_t* rs, br_vec2_t mouse_pos) {
 }
 
 void brui_resizable_mouse_scroll(bruirs_t* rs, br_vec2_t delta) {
-  brui_resizable_t* hovered = &rs->arr[rs->active_resizable];
-  if (hovered->full_height > (float)hovered->cur_extent.height) {
-    float speed = 50.f / (hovered->full_height - (float)hovered->cur_extent.height);
-    hovered->target.scroll_offset_percent = br_float_clamp(hovered->target.scroll_offset_percent - delta.y * speed, 0.f, 1.f);
-  } else {
-    hovered->target.scroll_offset_percent = 0.f;
+  brui_resizable_t hovered = rs->arr[rs->active_resizable];
+  float new = 0.f;
+  float hidden_height = hovered.full_height - (float)hovered.cur_extent.height;
+  if (hidden_height > 0.f) {
+    float cur = br_anim_getft(brui__stack.anims, hovered.scroll_offset_percent_ah) * hidden_height;
+    cur += delta.y * 20.f;
+    new = br_float_clamp(cur / hidden_height, 0.f, 1.f);
   }
+  br_anim_setf(brui__stack.anims, hovered.scroll_offset_percent_ah, new);
 }
 
 void brui_resizable_page(bruirs_t* rs, br_vec2_t delta) {
-  brui_resizable_t* hovered = &rs->arr[rs->active_resizable];
-  float hidden_height = hovered->full_height - hovered->cur_extent.height;
-  float page_percent = hovered->cur_extent.height / hidden_height;
+  brui_resizable_t hovered = rs->arr[rs->active_resizable];
+  float hidden_height = hovered.full_height - hovered.cur_extent.height;
+  float page_percent = hovered.cur_extent.height / hidden_height;
   page_percent *= 0.9f;
-  hovered->target.scroll_offset_percent = br_float_clamp(hovered->current.scroll_offset_percent + delta.y * page_percent, 0.f, 1.f);
+  float cur = br_anim_getf(brui__stack.anims, hovered.scroll_offset_percent_ah);
+  float new = br_float_clamp(cur + delta.y * page_percent, 0.f, 1.f);
+  br_anim_setf(brui__stack.anims, hovered.scroll_offset_percent_ah, new);
 }
 
 void brui_resizable_scroll_percent_set(bruirs_t* rs, float percent) {
-  rs->arr[rs->active_resizable].target.scroll_offset_percent = percent;
+  brui_resizable_t hovered = rs->arr[rs->active_resizable];
+  br_anim_setf(brui__stack.anims, hovered.scroll_offset_percent_ah, percent);
 }
 
 br_vec2_t brui_resizable_local(bruirs_t* rs, int id, br_vec2_t global_pos) {
@@ -1364,7 +1371,7 @@ static br_vec2_t bruir_pos_global(brui_resizable_t r) {
   brui_resizable_t par = br_da_get(*brui__stack.rs, r.parent);
   br_vec2_t p = br_vec2_add(bruir_pos_global(par), r.cur_extent.pos);
   float hidden_heigth = par.full_height - par.cur_extent.height;
-  if (hidden_heigth > 0) p.y -= par.scroll_offset_percent * hidden_heigth;
+  if (hidden_heigth > 0) p.y -= br_anim_getf(brui__stack.anims, par.scroll_offset_percent_ah) * hidden_heigth;
   return p;
 }
 
@@ -1615,12 +1622,11 @@ brui_resizable_t* brui_resizable_push(int id) {
   float title_height = br_anim_getf(brui__stack.anims, res->title_height_ah);
   bool is_menu_shown = title_height > .01f;
   brui_push();
-  BRUI_LOG("resizablepre [%f %f %f %f] %f", BR_EXTENT_(rex), res->scroll_offset_percent);
   TOP.psum = BR_VEC2(0, 0);
   br_vec2_t cur_p = bruir_pos_global(*res);
   TOP.cur = cur_p;
   TOP.limit = BR_BB(TOP.cur.x, TOP.cur.y, TOP.cur.x + rex.width, TOP.cur.y + rex.height);
-  float scroll_y = (res->full_height - (float)res->cur_extent.height) * res->scroll_offset_percent;
+  float scroll_y = (res->full_height - (float)res->cur_extent.height) * br_anim_getf(brui__stack.anims, res->scroll_offset_percent_ah);
 
   int max_z_id = id;
   int ancor_parent_id = res->parent;
@@ -1638,7 +1644,6 @@ brui_resizable_t* brui_resizable_push(int id) {
 
   TOP.start_z = TOP.z;
   TOP.is_active = id == rs->active_resizable;
-  BRUI_LOG("resizablepost [%f %f %f %f] %f", BR_EXTENT_(rex), res->scroll_offset_percent);
   TOP.hide_border = true;
   TOP.hide_bg = true;
   brui_push();
@@ -1688,8 +1693,8 @@ void brui_resizable_pop(void) {
   float full_height = res->full_height = TOP.content_height;
   float hidden_height = full_height - (float)res->cur_extent.height;
   if (hidden_height > 0.f) {
-    if (brui_resizable_hidden_factor(rs, &rs->arr[cur_res]) < 0.01 && false == brui__stack.ctrl_down) brui_scroll_bar(&res->target.scroll_offset_percent);
-  } else res->target.scroll_offset_percent = 0.f;
+    if (brui_resizable_hidden_factor(rs, &rs->arr[cur_res]) < 0.01 && false == brui__stack.ctrl_down) brui_scroll_bar(res->scroll_offset_percent_ah);
+  } else br_anim_setf(brui__stack.anims, res->scroll_offset_percent_ah, 0.f);
   TOP.cur.y = (float)res->cur_extent.y + (float)res->cur_extent.height;
   TOP.content_height = (float)res->cur_extent.height;
   brui_pop();
@@ -1718,7 +1723,7 @@ br_vec2_t brui_resizable_to_global(int resizable_handle, br_vec2_t pos) {
   brui_resizable_t* r = br_da_getp(*brui__stack.rs, resizable_handle);
   pos = br_vec2_sub(pos, r->cur_extent.pos);
   float hidden_heigth = r->full_height - r->cur_extent.height;
-  if (hidden_heigth > 0) pos.y += r->scroll_offset_percent * hidden_heigth;
+  if (hidden_heigth > 0) pos.y += br_anim_getf(brui__stack.anims, r->scroll_offset_percent_ah) * hidden_heigth;
   return brui_resizable_to_global(r->parent, pos);
 }
 

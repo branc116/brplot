@@ -45,6 +45,7 @@ void br_anim_tick(br_anims_t* anims, float dt);
 
 void br_anim_setf(br_anims_t* anims, int anim_handle, float target_value);
 float br_anim_getf(br_anims_t* anims, int anim_handle);
+float br_anim_getft(br_anims_t* anims, int anim_handle);
 
 bool br_anim_save(FILE* file, const br_anims_t* anims);
 bool br_anim_load(FILE* file, br_anims_t* anims);

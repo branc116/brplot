@@ -89,7 +89,6 @@ typedef struct {
 #define brui_resizable_tag_ancor_helper 10
 
 #define brui_resizable_anim_fields(X) \
-  X(float, scroll_offset_percent) \
   X(br_extent_t, cur_extent) \
   X(float, hidden_factor) \
 
@@ -101,6 +100,7 @@ typedef struct {
   X(int, tag) \
   X(brsp_id_t, title_id) \
   X(int, title_height_ah) \
+  X(int, scroll_offset_percent_ah) \
   brui_resizable_anim_fields(X) \
   X(float, full_height) \
   X(br_extent_t, ancor_none_extent) \

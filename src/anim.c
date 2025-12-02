@@ -43,7 +43,6 @@ void br_anim_tick(br_anims_t* anims, float dt) {
     switch (anim->kind) {
       case br_anim_float: {
         anim->current = br_float_lerp(anim->current, anim->target, lerp_factor);
-        LOGI("Tick %d: %f -> %f", i, anim->current, anim->target);
         if (fabsf(anim->current - anim->target) < 1e-7) to_kill = i;
       } break;
       default: BR_UNREACHABLE("Anim kind: %d", anim->kind);
@@ -63,6 +62,7 @@ void br_anim_setf(br_anims_t* anims, int anim_handle, float target_value) {
   if (anim->target == target_value) return;
   anim->target = target_value;
   LOGI("Anim %d = %f, alive=%d", anim_handle, target_value, anim->is_alive);
+  BR_STACKTRACE();
   if (anim->is_alive) return;
   anim->is_alive = true;
   brfl_push(anims->alive, anim_handle);
@@ -71,6 +71,11 @@ void br_anim_setf(br_anims_t* anims, int anim_handle, float target_value) {
 float br_anim_getf(br_anims_t* anims, int anim_handle) {
   br_anim_t anim = br_da_get(anims->all, anim_handle);
   return anim.current;
+}
+
+float br_anim_getft(br_anims_t* anims, int anim_handle) {
+  br_anim_t anim = br_da_get(anims->all, anim_handle);
+  return anim.target;
 }
 
 bool br_anim_save(FILE* file, const br_anims_t* anims) {
