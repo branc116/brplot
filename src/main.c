@@ -18,7 +18,7 @@ static void* main_gui(void* plotter) {
   // CLEAN UP
   br_plotter_deinit(br);
   br_plotter_free(br);
-  br_memory_finish();
+  BR_MEMORY_FINISH();
   return 0;
 }
 
