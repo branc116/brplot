@@ -1114,6 +1114,7 @@ static bool n_fuzztests_do(void) {
 #define FUZZ_FLAGS "-print_final_stats=1", "-timeout=1", "-max_total_time=200", "-create_missing_dirs=1", ".generated/corpus_sp"
   Nob_Cmd cmd = { 0 };
   is_headless = true;
+  is_debug = true;
   const char* compiler = "clang"EXE_EXT;
 
 //  nob_cmd_append(&cmd, "clang", "-fsanitize=fuzzer,address,leak,undefined", "-DBR_DISABLE_LOG", "-DFUZZ", "-o", "bin/fuzz_read_input", "tools/unity/brplot.c");

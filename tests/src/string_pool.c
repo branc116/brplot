@@ -288,7 +288,7 @@ int LLVMFuzzerTestOneInput(unsigned char *str, size_t str_len) {
   BR_ASSERT(s.str[1] == 'e');
   BR_ASSERT(s.str[2] == 'l');
   BR_ASSERT(s.str[3] == 'l');
-  BR_ASSERT(s.str[4] == '0');
+  BR_ASSERT(s.str[4] == 'o');
   brsp_free(&sp);
   return 0;
 }

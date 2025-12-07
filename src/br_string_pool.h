@@ -334,7 +334,7 @@ bool brsp_read(BR_FILE_T* file, brsp_t* sp) {
   bool is_free = false;
 
   memset(sp, 0, sizeof(*sp));
-  brfl_read(file, (*sp), error); if (error != 0)                         BR_ERROR("Failed to read free list");
+  brfl_read(file, (*sp), error); if (error != 0) return false;
   sp->pool.str = NULL;
   if (sp->pool.len <= 1) {
     brsp_free(sp);
