@@ -763,10 +763,10 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
 }
 
 int brpl_x11_error_callback(brpl_x11_Display* d, brpl_x11_XErrorEvent* e) {
-    char err_text[1024];
-    brpl_x11_XGetErrorText(d, e->error_code, err_text, sizeof(err_text));
-    LOGE("X Error: %s", err_text);
-    return 0;
+  char err_text[1024];
+  brpl_x11_XGetErrorText(d, e->error_code, err_text, sizeof(err_text));
+  LOGE("X Error: %s, XID: %d", err_text, e->resourceid);
+  return 0;
 }
 
 static bool brpl_x11_get_set_context(brpl_window_x11_t* x11, int* attrib_list, int major, int minor) {
@@ -784,13 +784,13 @@ static bool brpl_x11_get_set_context(brpl_window_x11_t* x11, int* attrib_list, i
 #define GLX_CONTEXT_FLAGS_ARB             0x2094
 #define GLX_CONTEXT_DEBUG_BIT_ARB         0x00000001
   int context_attribs[] = {
-      GLX_CONTEXT_MAJOR_VERSION_ARB, major,
-      GLX_CONTEXT_MINOR_VERSION_ARB, minor,
-      GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
-      GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
-      // Important for RenderDoc:
-      GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
-      0
+    GLX_CONTEXT_MAJOR_VERSION_ARB, major,
+    GLX_CONTEXT_MINOR_VERSION_ARB, minor,
+    GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+    GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+    // Important for RenderDoc:
+    GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+    0
   };
   if (glXCreateContextAttribsARB == NULL) glXCreateContextAttribsARB = glXGetProcAddressARB("glXCreateContextAttribsARB");
 
@@ -798,20 +798,28 @@ static bool brpl_x11_get_set_context(brpl_window_x11_t* x11, int* attrib_list, i
     GLXFBConfig config = configs[i];
 
     glx_visual = glXGetVisualFromFBConfig(x11->display, config);
-    if (NULL == glx_visual) continue;
+    if (NULL == glx_visual) goto error;
 
     x11->glx_window = glXCreateWindow(x11->display, config, x11->window_handle, (int[]) { brpl_x11_None });
-    if (0 == x11->glx_window) continue;
+    brpl_x11_XFlush(x11->display);
+    if (0 == x11->glx_window) goto error;
 
     x11->glx_ctx = glXCreateContextAttribsARB(x11->display, config, 0, true, context_attribs);
-    if (0 == x11->glx_ctx) continue;
+    brpl_x11_XFlush(x11->display);
+    if (0 == x11->glx_ctx) goto error;
 
     is_ok = glXMakeCurrent(x11->display, x11->glx_window, x11->glx_ctx);
+    brpl_x11_XFlush(x11->display);
+
     if (is_ok) break;
 
-    glXDestroyContext(x11->display, x11->glx_ctx);
-    glXDestroyWindow(x11->display, x11->glx_window);
-    brpl_x11_XFree(glx_visual);
+error:
+    if (x11->glx_ctx) glXDestroyContext(x11->display, x11->glx_ctx);
+    x11->glx_ctx = 0;
+    if (x11->glx_window) glXDestroyWindow(x11->display, x11->glx_window);
+    x11->glx_window = 0;
+    if (glx_visual) brpl_x11_XFree(glx_visual);
+    glx_visual = NULL;
   }
   brpl_x11_XFree(configs);
   brpl_x11_XFree(glx_visual);
@@ -945,9 +953,14 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
 
 static void brpl_x11_close_window(brpl_window_t* window) {
   brpl_window_x11_t* win = window->win;
+  LOGI("Close window");
+  brpl_x11_XFlush(win->display);
   glXMakeCurrent(win->display, brpl_x11_None, NULL);
+  brpl_x11_XFlush(win->display);
   glXDestroyWindow(win->display, win->glx_window);
+  brpl_x11_XFlush(win->display);
   glXDestroyContext(win->display, win->glx_ctx);
+  brpl_x11_XFlush(win->display);
   brpl_x11_XDestroyWindow(win->display, win->window_handle);
   brpl_x11_XFlush(win->display);
   brpl_x11_XCloseDisplay(win->display);

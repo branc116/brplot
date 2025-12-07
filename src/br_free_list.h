@@ -148,46 +148,37 @@
   {                                                                                                                  \
     size_t size = sizeof((FL).free_arr[0]) * (size_t)(FL).cap;                                                       \
     (FL).free_arr = BR_MALLOC(size);                                                                                 \
-    if (NULL == (FL).arr) {                                                                                          \
+    if (NULL == (FL).free_arr) {                                                                                     \
       ERROR = 1;                                                                                                     \
       BR_LOGE("Failed to allocate free list free arr ( %zu bytes, %d elements ): %s", size, (FL).cap, strerror(errno)); \
-      BR_FREE((FL).arr);                                                                                             \
-      memset(&(FL), 0, sizeof(FL));                                                                                  \
+      brfl_free(FL);                                                                                                 \
       break;                                                                                                         \
     }                                                                                                                \
   }                                                                                                                  \
   if ((size_t)(FL).cap != (n_read = BR_FREAD((FL).arr, sizeof((FL).arr[0]), (size_t)(FL).cap, (FILE)))) {            \
     ERROR = 1;                                                                                                       \
     BR_LOGE("Failed to read %d free list elements, read %zu: %s", (FL).cap, n_read, strerror(errno));                \
-    BR_FREE((FL).arr);                                                                                               \
-    BR_FREE((FL).free_arr);                                                                                          \
-    memset(&(FL), 0, sizeof(FL));                                                                                    \
+    brfl_free(FL);                                                                                                   \
     break;                                                                                                           \
   }                                                                                                                  \
   if ((size_t)(FL).cap != (n_read = BR_FREAD((FL).free_arr, sizeof((FL).free_arr[0]), (size_t)(FL).cap, (FILE)))) {  \
     ERROR = 1;                                                                                                       \
     BR_LOGE("Failed to read %d free list free elements, read %zu: %s", (FL).cap, n_read, strerror(errno));           \
-    BR_FREE((FL).arr);                                                                                               \
-    BR_FREE((FL).free_arr);                                                                                          \
-    memset(&(FL), 0, sizeof(FL));                                                                                    \
+    brfl_free(FL);                                                                                                   \
     break;                                                                                                           \
   }                                                                                                                  \
   for (int __i = 0; __i < (FL).len; ++__i) {                                                                         \
     if ((FL).free_arr[__i] == __i) {                                                                                 \
       ERROR = 1;                                                                                                     \
       BR_LOGE("Free arr element can't have itself as an value, something bad %d.", __i);                             \
-      BR_FREE((FL).arr);                                                                                             \
-      BR_FREE((FL).free_arr);                                                                                        \
-      memset(&(FL), 0, sizeof(FL));                                                                                  \
+      brfl_free(FL);                                                                                                 \
       break;                                                                                                         \
     }                                                                                                                \
   }                                                                                                                  \
   if (false == brfl_is_valid((FL).free_arr, (FL).len, (FL).free_next, (FL).free_len)) {                              \
       ERROR = 1;                                                                                                     \
       BR_LOGE("Free arr is not valid");                                                                              \
-      BR_FREE((FL).arr);                                                                                             \
-      BR_FREE((FL).free_arr);                                                                                        \
-      memset(&(FL), 0, sizeof(FL));                                                                                  \
+      brfl_free(FL);                                                                                                 \
       break;                                                                                                         \
   }                                                                                                                  \
 } while(0)

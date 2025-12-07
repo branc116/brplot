@@ -6,4 +6,4 @@ echo "$PROCES" && \
 PID="$(echo $PROCES | awk '{print $1}')" && \
 (test -z "$PID" && echo "$NAME not started") || \
   ( echo "Attaching to ($PID)" && \
-    gdb -ex "attach $PID" )
+    gdb -ex "attach $PID" -x tools/debug.gdb )

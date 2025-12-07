@@ -1,1 +1,1 @@
-gf2 bin/brplot -ex "r" 
+gdb bin/brplot -ex "r" -x tools/debug.gdb

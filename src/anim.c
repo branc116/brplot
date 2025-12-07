@@ -14,10 +14,52 @@ void br_anims_construct(br_theme_t* theme) {
   br_anims_state.theme = theme;
 }
 
+void br_anims_tick(br_anims_t* anims, float dt) {
+  int to_kill = -1;
+  float lerp_factor = br_anims_state.theme->ui.animation_speed * dt;
+  lerp_factor = br_float_clamp(lerp_factor, 0.f, 1.f);
+  brfl_foreach(i, anims->alive) {
+    int anim_handle = br_da_get(anims->alive, i);
+    br_anim_t* anim = br_da_getp(anims->all, anim_handle);
+    switch (anim->kind) {
+      case br_anim_float: {
+        anim->f.current = br_float_lerp(anim->f.current, anim->f.target, lerp_factor);
+        if (fabsf(anim->f.current - anim->f.target) < 1e-7) to_kill = i;
+      } break;
+      case br_anim_extent: {
+        bool still_alive = false;
+        for (int i = 0; i < 4; ++i) {
+          anim->ex.current.arr[i] = br_float_lerp(anim->ex.current.arr[i], anim->ex.target.arr[i], lerp_factor);
+          if (fabsf(anim->ex.current.arr[i] - anim->ex.target.arr[i]) > 1e-7) still_alive = true;
+        }
+        if (false == still_alive) to_kill = i;
+      } break;
+      default: BR_UNREACHABLE("Anim kind: %d", anim->kind);
+    }
+  }
+  // NOTE: We will remove only one animation per tick
+  //       I mean it's not that bad..
+  if (to_kill >= 0) {
+    anims->all.arr[anims->alive.arr[to_kill]].is_alive = false;
+    brfl_remove(anims->alive, to_kill);
+  }
+}
+
+
 int br_anim_newf(br_anims_t* anims, float current, float target) {
-  br_anim_t anim = { .kind = br_anim_float, .current = current, .target = target };
+  br_anim_t anim = { .kind = br_anim_float, .f = {.current = current, .target = target } };
   int handle = brfl_push(anims->all, anim);
   if (current != target) {
+    brfl_push(anims->alive, handle);
+  }
+  return handle;
+}
+
+int br_anim_newex(br_anims_t* anims, br_extent_t current, br_extent_t target) {
+  br_anim_t anim = { .kind = br_anim_extent, .ex = {.current = current, .target = target } };
+  anim.is_alive = false == br_extent_eq(current, target);
+  int handle = brfl_push(anims->all, anim);
+  if (anim.is_alive) {
     brfl_push(anims->alive, handle);
   }
   return handle;
@@ -33,36 +75,15 @@ void br_anim_delete(br_anims_t* anims, int anim_handle) {
   brfl_remove(anims->all, anim_handle);
 }
 
-void br_anim_tick(br_anims_t* anims, float dt) {
-  int to_kill = -1;
-  float lerp_factor = br_anims_state.theme->ui.animation_speed * dt;
-  lerp_factor = br_float_clamp(lerp_factor, 0.f, 1.f);
-  brfl_foreach(i, anims->alive) {
-    int anim_handle = br_da_get(anims->alive, i);
-    br_anim_t* anim = br_da_getp(anims->all, anim_handle);
-    switch (anim->kind) {
-      case br_anim_float: {
-        anim->current = br_float_lerp(anim->current, anim->target, lerp_factor);
-        if (fabsf(anim->current - anim->target) < 1e-7) to_kill = i;
-      } break;
-      default: BR_UNREACHABLE("Anim kind: %d", anim->kind);
-    }
-  }
-  // NOTE: We will remove only one animation per tick
-  //       I mean it's not that bad..
-  if (to_kill >= 0) {
-    anims->all.arr[anims->alive.arr[to_kill]].is_alive = false;
-    brfl_remove(anims->alive, to_kill);
-  }
+bool br_anim_alive(br_anims_t* anims, int anim_handle) {
+  return (br_da_get(anims->all, anim_handle)).is_alive;
 }
 
 void br_anim_setf(br_anims_t* anims, int anim_handle, float target_value) {
   br_anim_t* anim = br_da_getp(anims->all, anim_handle);
   BR_ASSERTF(anim->kind == br_anim_float, "Anim kind should be float, but it's: %d", anim->kind);
-  if (anim->target == target_value) return;
-  anim->target = target_value;
-  LOGI("Anim %d = %f, alive=%d", anim_handle, target_value, anim->is_alive);
-  BR_STACKTRACE();
+  if (anim->f.target == target_value) return;
+  anim->f.target = target_value;
   if (anim->is_alive) return;
   anim->is_alive = true;
   brfl_push(anims->alive, anim_handle);
@@ -70,12 +91,43 @@ void br_anim_setf(br_anims_t* anims, int anim_handle, float target_value) {
 
 float br_anim_getf(br_anims_t* anims, int anim_handle) {
   br_anim_t anim = br_da_get(anims->all, anim_handle);
-  return anim.current;
+  BR_ASSERTF(anim.kind == br_anim_float, "Anim kind should be float, but it's: %d", anim.kind);
+  return anim.f.current;
 }
 
 float br_anim_getft(br_anims_t* anims, int anim_handle) {
   br_anim_t anim = br_da_get(anims->all, anim_handle);
-  return anim.target;
+  BR_ASSERTF(anim.kind == br_anim_float, "Anim kind should be float, but it's: %d", anim.kind);
+  return anim.f.target;
+}
+
+void br_anim_setex(br_anims_t* anims, int anim_handle, br_extent_t target_value) {
+  br_anim_t* anim = br_da_getp(anims->all, anim_handle);
+  BR_ASSERTF(anim->kind == br_anim_extent, "Anim kind should be extent, but it's: %d", anim->kind);
+  if (br_extent_eq(anim->ex.target, target_value)) return;
+  anim->ex.target = target_value;
+  if (anim->is_alive) return;
+  anim->is_alive = true;
+  brfl_push(anims->alive, anim_handle);
+}
+
+br_extent_t br_anim_getex(br_anims_t* anims, int anim_handle) {
+  br_anim_t anim = br_da_get(anims->all, anim_handle);
+  BR_ASSERTF(anim.kind == br_anim_extent, "Anim kind should be extent, but it's: %d", anim.kind);
+  return anim.ex.current;
+}
+
+br_extent_t br_anim_getext(br_anims_t* anims, int anim_handle) {
+  br_anim_t anim = br_da_get(anims->all, anim_handle);
+  BR_ASSERTF(anim.kind == br_anim_extent, "Anim kind should be extent, but it's: %d", anim.kind);
+  return anim.ex.target;
+}
+
+br_extent_t br_anim_rebase(br_anims_t* anims, int anim_handle, br_vec2_t rebase_for) {
+  br_anim_t* anim = br_da_getp(anims->all, anim_handle);
+  BR_ASSERTF(anim->kind == br_anim_extent, "Anim kind should be extent, but it's: %d", anim->kind);
+  anim->ex.target.pos = br_vec2_sub(anim->ex.target.pos, rebase_for);
+  anim->ex.current.pos = br_vec2_sub(anim->ex.current.pos, rebase_for);
 }
 
 bool br_anim_save(FILE* file, const br_anims_t* anims) {

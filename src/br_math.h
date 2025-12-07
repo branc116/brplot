@@ -893,10 +893,9 @@ static inline br_vec2_t br_extent_tr2(br_extent_t extent, float x, float y) {
 }
 
 static inline bool br_extent_eq(br_extent_t a, br_extent_t b) {
-  if (a.x != b.x) return false;
-  if (a.y != b.y) return false;
-  if (a.width != b.width) return false;
-  if (a.height != b.height) return false;
+  for (int i = 0; i < 4; ++i) {
+    if (fabsf(a.arr[i] - b.arr[i]) > 1e-6) return false;
+  }
   return true;
 }
 
@@ -1143,6 +1142,10 @@ static inline br_bb_t br_bb_add(br_bb_t bb, br_vec2_t v) {
 
 static inline br_bb_t br_bb_union(br_bb_t b1, br_bb_t b2) {
   return BR_BB2(br_vec2_min(b1.min, b2.min), br_vec2_max(b1.max, b2.max));
+}
+
+static inline br_bb_t br_bb_and(br_bb_t b1, br_bb_t b2) {
+  return BR_BB2(br_vec2_max(b1.min, b2.min), br_vec2_min(b1.max, b2.max));
 }
 
 static inline br_vec4_t br_bb_clip_dists(br_bb_t limit, br_vec2_t pos) {

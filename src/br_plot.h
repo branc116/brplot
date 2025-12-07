@@ -51,7 +51,6 @@ typedef struct br_plot_t {
     br_plot_data_t* arr;
     int len, cap; 
   } data_info;
-  br_extenti_t _cur_extent;
   int extent_handle;
   int menu_extent_handle;
   int legend_extent_handle;

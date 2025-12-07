@@ -31,6 +31,8 @@ typedef enum {
   brui_ancor_left_bottom = brui_ancor_left | brui_ancor_bottom,
   brui_ancor_right_bottom = brui_ancor_right | brui_ancor_bottom,
   brui_ancor_all = brui_ancor_left | brui_ancor_right | brui_ancor_top | brui_ancor_bottom,
+
+  brui_ancor_hidden = 16
 } brui_ancor_t;
 
 typedef enum brui_action_kind_t {
@@ -88,45 +90,21 @@ typedef struct {
 
 #define brui_resizable_tag_ancor_helper 10
 
-#define brui_resizable_anim_fields(X) \
-  X(br_extent_t, cur_extent) \
-
-#define brui_resizable_fields(X) \
-  X(brui_ancor_t, ancor) \
-  X(int, z) \
-  X(int, max_z) \
-  X(int, parent) \
-  X(int, tag) \
-  X(brsp_id_t, title_id) \
-  X(int, title_height_ah) \
-  X(int, scroll_offset_percent_ah) \
-  X(int, hidden_factor_ah) \
-  brui_resizable_anim_fields(X) \
-  X(float, full_height) \
-  X(br_extent_t, ancor_none_extent) \
-  X(bool, is_hoverd) \
-  X(bool, scroll_bar) \
-  X(bool, title_enabled) \
-  X(bool, was_draw_last_frame) \
-
-typedef union {
-  struct {
-    struct {
-#define X(type, name) type name;
-      brui_resizable_fields(X)
-#undef X
-    } current;
-    struct {
-#define X(type, name) type name;
-      brui_resizable_anim_fields(X)
-#undef X
-    } target;
-  };
-  struct {
-#define X(type, name) type name;
-    brui_resizable_fields(X)
-#undef X
-  };
+typedef struct {
+  brui_ancor_t ancor;
+  int z, max_z;
+  int parent;
+  int tag;
+  brsp_id_t title_id;
+  int title_height_ah;
+  int scroll_offset_percent_ah;
+  int cur_extent_ah;
+  float full_height;
+  br_extent_t ancor_none_extent;
+  bool is_hoverd;
+  bool scroll_bar;
+  bool title_enabled;
+  bool was_draw_last_frame;
 } brui_resizable_t;
 
 typedef struct brui_resizable_temp_state_t {
@@ -223,7 +201,6 @@ bool brui_text_input(brsp_id_t str_id);
 void brui_new_lines(int n);
 bool brui_button(br_strv_t text);
 bool brui_checkbox(br_strv_t text, bool* checked);
-void brui_img_hack(unsigned int texture_id);
 void brui_img(unsigned int texture_id);
 void brui_icon(float size, br_bb_t icon, br_color_t forground, br_color_t background);
 bool brui_button_icon(br_sizei_t size, br_extent_t icon);
@@ -298,7 +275,6 @@ void              brui_resizable_page(bruirs_t* resizables, br_vec2_t delta);
 void              brui_resizable_scroll_percent_set(bruirs_t* resizables, float percent);
 br_vec2_t         brui_resizable_local(bruirs_t* resizables, int id, br_vec2_t global_pos);
 
-void              bruir_resizable_refresh(bruirs_t* rs, int index);
 brui_resizable_t* brui_resizable_push(int id);
 void              brui_resizable_pop(void);
 void              brui_resizable_show(int resizable_handle, bool show);

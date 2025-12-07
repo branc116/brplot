@@ -70,7 +70,6 @@ void br_plotter_draw(br_plotter_t* br) {
         brui_resizable_t* r = br_da_getp(br->resizables, PLOT->extent_handle);
         br_extent_t ex = brui_resizable_cur_extent(PLOT->extent_handle);
         if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
-        PLOT->_cur_extent = BR_EXTENT_TOI(r->cur_extent);
         PLOT->mouse_inside_graph = PLOT->extent_handle == br->resizables.active_resizable;
         br_plot_update_context(PLOT, ex, br->mouse.pos);
 
@@ -1025,8 +1024,10 @@ static bool brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth)
       brui_pop();
     }
     brui_textf("%*s%d Res: z: %d, max_z: %d, max_sib_z: %d, parent: %d", depth*2, "", handle, r.z, r.max_z, brui_resizable_sibling_max_z(handle), r.parent);
-    brui_textf("target: %.2f,%.2f,%.2f,%.2f", BR_EXTENT_(r.target.cur_extent));
-    brui_textf("current: %.2f,%.2f,%.2f,%.2f", BR_EXTENT_(r.current.cur_extent));
+    br_extent_t cur = br_anim_getex(&br->anims, r.cur_extent_ah);
+    br_extent_t tar = br_anim_getext(&br->anims, r.cur_extent_ah);
+    brui_textf("target: %.2f,%.2f,%.2f,%.2f", BR_EXTENT_(cur));
+    brui_textf("current: %.2f,%.2f,%.2f,%.2f", BR_EXTENT_(tar));
     brui_textf("tag: %d", r.tag);
     brfl_foreach(i, br->resizables) if (i != 0 && br->resizables.arr[i].parent == handle) in_any |= brgui_draw_debug_window_rec(br, i, 1+depth);
   brui_state_t s = brui_pop();
@@ -1055,33 +1056,21 @@ static void brgui_draw_debug_window(br_plotter_t* br) {
       br_extent_t ex = brui_resizable_cur_extent(h);
       brui_resizable_t r = br_da_get(br->resizables, h);
       brui_textf("%d Res: z: %d, max_z: %d, max_sib_z: %d, parent: %d", h, r.z, r.max_z, brui_resizable_sibling_max_z(h), r.parent);
-      br_extent_t t = r.target.cur_extent;
-      br_extent_t c = r.current.cur_extent;
       brui_vsplit(5);
         brui_text(BR_STRL("Kind"));
         brui_text(BR_STRL("Calculated"));
-        brui_text(BR_STRL("Target"));
-        brui_text(BR_STRL("Curent"));
       brui_vsplit_pop();
         brui_text(BR_STRL("X"));
         brui_textf("%.2f", ex.x);
-        brui_textf("%.2f", t.x);
-        brui_textf("%.2f", c.x);
       brui_vsplit_pop();
         brui_text(BR_STRL("Y"));
         brui_textf("%.2f", ex.y);
-        brui_textf("%.2f", t.y);
-        brui_textf("%.2f", c.y);
       brui_vsplit_pop();
         brui_text(BR_STRL("Width"));
         brui_textf("%.2f", ex.width);
-        brui_textf("%.2f", t.width);
-        brui_textf("%.2f", c.width);
       brui_vsplit_pop();
         brui_text(BR_STRL("Height"));
         brui_textf("%.2f", ex.height);
-        brui_textf("%.2f", t.height);
-        brui_textf("%.2f", c.height);
       brui_vsplit_end();
     if (brui_resizable_temp_pop()) brgui_resizable_log_id = 0;
   }
