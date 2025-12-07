@@ -7,6 +7,8 @@
 #include "src/resampling.c"
 #include "tests/src/mock_platform.c"
 #include "tests/src/mock_mesh.c"
+#include "src/br_plotter.h"
+#include "tests/src/mock_data.c"
 
 void resampling(void) {
   float xs[] = { 0, 1, 2, 3 };

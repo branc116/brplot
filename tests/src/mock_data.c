@@ -6,6 +6,7 @@ void br_data_push_xy(br_datas_t* pg, double x, double y, int group) { (void)pg; 
 void br_data_push_xyz(br_datas_t* pg, double x, double y, double z, int group) { (void)pg; (void)x; (void)y; (void)z; (void)group; BR_TODO("br_data_push_xyz"); }
 br_data_t* br_data_get1(br_datas_t pg, int group) { (void)pg; (void)group; BR_TODO("br_data_get1"); }
 void br_data_empty(br_data_t* pg) { (void)pg; BR_TODO("br_data_empty"); }
+br_vec3_t  br_data_el_xyz_rebased(br_data_t data, br_u32 index) { BR_TODO("br_data_el_xyz_rebased");  }
 void br_plotter_data_remove(br_plotter_t* br, int group_id) { (void)br; (void)group_id; BR_TODO("br_plotter_data_remove"); }
 void br_plotter_datas_deinit(br_plotter_t* br) { (void)br; BR_TODO("br_plotter_datas_deinit"); }
 void br_plot_screenshot(br_text_renderer_t* tr, br_plot_t* br, br_shaders_t* shaders, br_datas_t groups, char const* path) {
