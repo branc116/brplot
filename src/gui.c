@@ -1024,8 +1024,8 @@ static bool brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth)
       brui_pop();
     }
     brui_textf("%*s%d Res: z: %d, max_z: %d, max_sib_z: %d, parent: %d", depth*2, "", handle, r.z, r.max_z, brui_resizable_sibling_max_z(handle), r.parent);
-    br_extent_t cur = br_anim_getex(&br->anims, r.cur_extent_ah);
-    br_extent_t tar = br_anim_getext(&br->anims, r.cur_extent_ah);
+    br_extent_t cur = br_animex(&br->anims, r.cur_extent_ah);
+    br_extent_t tar = br_animex_gett(&br->anims, r.cur_extent_ah);
     brui_textf("target: %.2f,%.2f,%.2f,%.2f", BR_EXTENT_(cur));
     brui_textf("current: %.2f,%.2f,%.2f,%.2f", BR_EXTENT_(tar));
     brui_textf("tag: %d", r.tag);

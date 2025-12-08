@@ -46,7 +46,7 @@ void br_anims_tick(br_anims_t* anims, float dt) {
 }
 
 
-int br_anim_newf(br_anims_t* anims, float current, float target) {
+int br_animf_new(br_anims_t* anims, float current, float target) {
   br_anim_t anim = { .kind = br_anim_float, .f = {.current = current, .target = target } };
   anim.is_alive = current == target;
   int handle = brfl_push(anims->all, anim);
@@ -56,7 +56,7 @@ int br_anim_newf(br_anims_t* anims, float current, float target) {
   return handle;
 }
 
-int br_anim_newex(br_anims_t* anims, br_extent_t current, br_extent_t target) {
+int br_animex_new(br_anims_t* anims, br_extent_t current, br_extent_t target) {
   br_anim_t anim = { .kind = br_anim_extent, .ex = {.current = current, .target = target } };
   anim.is_alive = false == br_extent_eq(current, target);
   int handle = brfl_push(anims->all, anim);
@@ -93,7 +93,7 @@ void br_anim_instant(br_anims_t* anims, int anim_handle) {
   }
 }
 
-void br_anim_setf(br_anims_t* anims, int anim_handle, float target_value) {
+void br_animf_set(br_anims_t* anims, int anim_handle, float target_value) {
   br_anim_t* anim = br_da_getp(anims->all, anim_handle);
   BR_ASSERTF(anim->kind == br_anim_float, "Anim kind should be float, but it's: %d", anim->kind);
   if (anim->is_instant) {
@@ -108,7 +108,7 @@ void br_anim_setf(br_anims_t* anims, int anim_handle, float target_value) {
   }
 }
 
-float br_anim_getf(br_anims_t* anims, int anim_handle) {
+float br_animf(br_anims_t* anims, int anim_handle) {
   br_anim_t anim = br_da_get(anims->all, anim_handle);
   BR_ASSERTF(anim.kind == br_anim_float, "Anim kind should be float, but it's: %d", anim.kind);
   return anim.f.current;
@@ -135,13 +135,13 @@ void br_anim_setex(br_anims_t* anims, int anim_handle, br_extent_t target_value)
   }
 }
 
-br_extent_t br_anim_getex(br_anims_t* anims, int anim_handle) {
+br_extent_t br_animex(br_anims_t* anims, int anim_handle) {
   br_anim_t anim = br_da_get(anims->all, anim_handle);
   BR_ASSERTF(anim.kind == br_anim_extent, "Anim kind should be extent, but it's: %d", anim.kind);
   return anim.ex.current;
 }
 
-br_extent_t br_anim_getext(br_anims_t* anims, int anim_handle) {
+br_extent_t br_animex_gett(br_anims_t* anims, int anim_handle) {
   br_anim_t anim = br_da_get(anims->all, anim_handle);
   BR_ASSERTF(anim.kind == br_anim_extent, "Anim kind should be extent, but it's: %d", anim.kind);
   return anim.ex.target;

@@ -1,6 +1,7 @@
 #pragma once
 #include "src/br_pp.h"
 #include "src/br_math.h"
+
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -26,16 +27,16 @@ typedef struct br_anim_t {
 } br_anim_t;
 
 typedef struct br_anims_alive_t {
-  int *arr;
-  int *free_arr;
+  br_i32* arr;
+  br_i32* free_arr;
   br_i32 len, cap;
   br_i32 free_len;
   br_i32 free_next;
 } br_anims_alive_t;
 
 typedef struct br_anims_all_t {
-  br_anim_t *arr;
-  int *free_arr;
+  br_anim_t* arr;
+  br_i32* free_arr;
   br_i32 len, cap;
   br_i32 free_len;
   br_i32 free_next;
@@ -51,20 +52,20 @@ void br_anims_construct(br_theme_t* theme);
 
 void br_anims_tick(br_anims_t* anims, float dt);
 
-int br_anim_newf(br_anims_t* anims, float current, float target);
-int br_anim_newex(br_anims_t* anims, br_extent_t current, br_extent_t target);
+int br_animf_new(br_anims_t* anims, float current, float target);
+int br_animex_new(br_anims_t* anims, br_extent_t current, br_extent_t target);
 
 void br_anim_delete(br_anims_t* anims, int anim_handle);
 bool br_anim_alive(br_anims_t* anims, int anim_handle);
 void br_anim_instant(br_anims_t* anims, int anim_handle);
 
-void br_anim_setf(br_anims_t* anims, int anim_handle, float target_value);
-float br_anim_getf(br_anims_t* anims, int anim_handle);
+void br_animf_set(br_anims_t* anims, int anim_handle, float target_value);
+float br_animf(br_anims_t* anims, int anim_handle);
 float br_anim_getft(br_anims_t* anims, int anim_handle);
 
 void br_anim_setex(br_anims_t* anims, int anim_handle, br_extent_t target_value);
-br_extent_t br_anim_getex(br_anims_t* anims, int anim_handle);
-br_extent_t br_anim_getext(br_anims_t* anims, int anim_handle);
+br_extent_t br_animex(br_anims_t* anims, int anim_handle);
+br_extent_t br_animex_gett(br_anims_t* anims, int anim_handle);
 br_extent_t br_anim_rebase(br_anims_t* anims, int anim_handle, br_vec2_t rebase_for);
 
 bool br_anim_save(FILE* file, const br_anims_t* anims);

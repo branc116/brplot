@@ -452,7 +452,7 @@ void br_plotter_update(br_plotter_t* br) {
           if (br->mouse.dragging_right) {
             if (br->action.active == br_plotter_entity_plot_2d) {
               br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
-              br_plot2d_move_screen_space(plot, br->mouse.delta, br_anim_getex(&br->anims, br->resizables.arr[plot->extent_handle].cur_extent_ah).size);
+              br_plot2d_move_screen_space(plot, br->mouse.delta, br_animex(&br->anims, br->resizables.arr[plot->extent_handle].cur_extent_ah).size);
             } else if (br->action.active == br_plotter_entity_plot_3d) {
               br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
               float speed = (float)br->time.frame / 2.f;
