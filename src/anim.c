@@ -114,13 +114,7 @@ float br_animf(br_anims_t* anims, int anim_handle) {
   return anim.f.current;
 }
 
-float br_anim_getft(br_anims_t* anims, int anim_handle) {
-  br_anim_t anim = br_da_get(anims->all, anim_handle);
-  BR_ASSERTF(anim.kind == br_anim_float, "Anim kind should be float, but it's: %d", anim.kind);
-  return anim.f.target;
-}
-
-void br_anim_setex(br_anims_t* anims, int anim_handle, br_extent_t target_value) {
+void br_animex_set(br_anims_t* anims, int anim_handle, br_extent_t target_value) {
   br_anim_t* anim = br_da_getp(anims->all, anim_handle);
   BR_ASSERTF(anim->kind == br_anim_extent, "Anim kind should be extent, but it's: %d", anim->kind);
   if (anim->is_instant) {
@@ -141,7 +135,7 @@ br_extent_t br_animex(br_anims_t* anims, int anim_handle) {
   return anim.ex.current;
 }
 
-br_extent_t br_animex_gett(br_anims_t* anims, int anim_handle) {
+br_extent_t br_animex_get_target(br_anims_t* anims, int anim_handle) {
   br_anim_t anim = br_da_get(anims->all, anim_handle);
   BR_ASSERTF(anim.kind == br_anim_extent, "Anim kind should be extent, but it's: %d", anim.kind);
   return anim.ex.target;

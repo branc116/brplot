@@ -61,11 +61,10 @@ void br_anim_instant(br_anims_t* anims, int anim_handle);
 
 void br_animf_set(br_anims_t* anims, int anim_handle, float target_value);
 float br_animf(br_anims_t* anims, int anim_handle);
-float br_anim_getft(br_anims_t* anims, int anim_handle);
 
-void br_anim_setex(br_anims_t* anims, int anim_handle, br_extent_t target_value);
+void br_animex_set(br_anims_t* anims, int anim_handle, br_extent_t target_value);
 br_extent_t br_animex(br_anims_t* anims, int anim_handle);
-br_extent_t br_animex_gett(br_anims_t* anims, int anim_handle);
+br_extent_t br_animex_get_target(br_anims_t* anims, int anim_handle);
 br_extent_t br_anim_rebase(br_anims_t* anims, int anim_handle, br_vec2_t rebase_for);
 
 bool br_anim_save(FILE* file, const br_anims_t* anims);

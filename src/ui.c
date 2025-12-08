@@ -36,7 +36,7 @@
 #define BRUI_ANIMF(ANIM_HANDLE) br_animf(brui_state.anims, (ANIM_HANDLE))
 #define BRUI_ANIMFS(ANIM_HANDLE, VALUE) br_animf_set(brui_state.anims, (ANIM_HANDLE), (VALUE))
 #define BRUI_ANIMEX(ANIM_HANDLE) br_animex(brui_state.anims, (ANIM_HANDLE))
-#define BRUI_ANIMEXS(ANIM_HANDLE, VALUE) br_anim_setex(brui_state.anims, (ANIM_HANDLE), (VALUE))
+#define BRUI_ANIMEXS(ANIM_HANDLE, VALUE) br_animex_set(brui_state.anims, (ANIM_HANDLE), (VALUE))
 
 #define RETURN_IF_OUT1(HEIGHT, ...) do { \
   float h = (HEIGHT); \
@@ -1165,14 +1165,14 @@ void brui_resizable_update(bruirs_t* rs, br_extent_t viewport) {
 
   brfl_foreach(i, *rs) {
     brui_resizable_t* res = br_da_getp(*rs, i);
-    br_extent_t target_ex = br_animex_gett(brui_state.anims, res->cur_extent_ah);
+    br_extent_t target_ex = br_animex_get_target(brui_state.anims, res->cur_extent_ah);
     if (i == 0) continue;
     if (res->ancor == brui_ancor_none) {
       brui_resizable_t parent = BRUI_RS(res->parent);
       if (parent.ancor != brui_ancor_hidden) {
         br_extent_t ex = BRUI_ANIMEX(res->cur_extent_ah);
         br_extent_t pex = BRUI_ANIMEX(parent.cur_extent_ah);
-        br_extent_t target_pex = br_animex_gett(brui_state.anims, parent.cur_extent_ah);
+        br_extent_t target_pex = br_animex_get_target(brui_state.anims, parent.cur_extent_ah);
         float max_x = br_float_max(pex.width, target_pex.width);
         float max_y = br_float_max(pex.height, target_pex.height);
         if (target_ex.x + target_ex.width > max_x) target_ex.x -= target_ex.x + target_ex.width - max_x;
@@ -1604,7 +1604,7 @@ static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t an
     sibling = br_da_getp(*brui_state.rs, sibling_id);
     res->parent = new_id;
     br_anim_rebase(brui_state.anims, res->cur_extent_ah, sex.pos);
-    sibling->ancor_none_extent = br_animex_gett(brui_state.anims, sibling->cur_extent_ah);
+    sibling->ancor_none_extent = br_animex_get_target(brui_state.anims, sibling->cur_extent_ah);
     sibling->parent = new_id;
     br_anim_rebase(brui_state.anims, sibling->cur_extent_ah, sex.pos);
     rs->drag_point = brui_state.mouse_pos;
@@ -1673,7 +1673,7 @@ static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t an
       }
 #endif
       brui_resizable_delete(parent_id);
-      rs->drag_old_ex = br_animex_gett(brui_state.anims, res->cur_extent_ah);
+      rs->drag_old_ex = br_animex_get_target(brui_state.anims, res->cur_extent_ah);
       brui_resizable_increment_z(rs, res_id);
       brui_resizable_check_parents(rs);
     } else {
