@@ -120,7 +120,7 @@ void br_plot_show_data(br_plotter_t* plotter, br_plot_id plot, br_data_id data) 
   bool contains = false;
   br_da_contains_feeld_t(int, p->data_info, group_id, data, contains);
   if (contains) return;
-  else br_da_push_t(int, p->data_info, BR_PLOT_DATA(data));
+  else br_da_push_t(int, p->data_info, br_plot_data(data));
 }
 
 br_data_ctor_t* br_data_default_ctor(void) {
