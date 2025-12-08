@@ -143,9 +143,17 @@ void br_plot_update_context(br_plot_t* plot, br_extent_t plot_screen_extent, br_
   }
 }
 
+void br_plot_remove_group(br_plot_t* plot, int group_id) {
+  for (int j = 0; j < plot->data_info.len; ++j) {
+    br_plot_data_t pd = br_da_get(plot->data_info, j);
+    if (pd.group_id == group_id) br_anim_delete(br_plot_state.anims, pd.thickness_multiplyer_ah);
+  }
+  br_da_remove_feeld(plot->data_info, group_id, group_id);
+}
+
 void br_plots_remove_group(br_plots_t plots, int group) {
   for (int i = 0; i < plots.len; ++i) {
-    br_da_remove_feeld(plots.arr[i].data_info, group_id, group);
+    br_plot_remove_group(br_da_getp(plots, i), group);
   }
 }
 

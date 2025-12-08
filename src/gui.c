@@ -858,10 +858,8 @@ static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_datas_t datas) 
         br_strv_t name = brsp_get(*sp, data->name);
         sprintf(c, "%.*s ( #%d )", name.len, name.str, data->group_id);
         if (brui_checkbox(br_strv_from_c_str(c), &is_shown)) {
-          if (false == is_shown) br_da_remove_feeld(plot->data_info, group_id, data->group_id);
-          else {
-            br_da_push_t(int, plot->data_info, br_plot_data(data->group_id));
-          }
+          if (false == is_shown) br_plot_remove_group(plot, data->group_id);
+          else                   br_da_push_t(int, plot->data_info, br_plot_data(data->group_id));
         }
       }
       br_scrach_free();

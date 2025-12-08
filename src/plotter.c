@@ -858,6 +858,7 @@ void br_plotter_datas_deinit_in_plot(br_plotter_t* br, int plot_id) {
   br_plot_t* plot = br_da_getp(br->plots, plot_id);
   for (int i = 0; i < plot->data_info.len; ++i) {
     br_plot_data_t pd = br_da_get(plot->data_info, i);
+    br_anim_delete(&br->anims, pd.thickness_multiplyer_ah);
     br_data_remove(&br->groups, pd.group_id);
     for (int j = 0; j < br->plots.len; ++j) {
       if (plot_id == j) continue;

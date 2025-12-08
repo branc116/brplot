@@ -79,6 +79,7 @@ void br_plot_construct(br_anims_t* anims);
 br_plot_data_t br_plot_data(int group_id);
 bool br_plot_data_is_visible(br_plot_data_t pd);
 
+void br_plot_remove_group(br_plot_t* plot, int group_id);
 void br_plots_remove_group(br_plots_t plots, int group);
 
 void br_plots_focus_visible(br_plots_t plot, br_datas_t groups);

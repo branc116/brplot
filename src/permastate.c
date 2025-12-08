@@ -381,9 +381,7 @@ br_permastate_status_t br_permastate_load(br_plotter_t* br_initial) {
     br_str_to_c_str1(path, buff);
     file_exists = br_fs_exists(br_str_as_view(path));
     if (false == file_exists || false == br_dagen_push_file(&loaded_br.dagens, &loaded_br.groups, &descs.arr[i], fopen(buff, "rb"))) {
-      for (int j = 0; j < loaded_br.plots.len; ++j) {
-        br_da_remove_feeld(loaded_br.plots.arr[j].data_info, group_id, descs.arr[i].group_id);
-      }
+      br_plotter_datas_deinit_in_plot(&loaded_br, br_da_get(descs, i).group_id);
     }
     if (false == br_fs_up_dir(&path))                                 BR_ERROR("Failed to go up a dir");
   }
