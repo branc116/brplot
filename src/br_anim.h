@@ -12,6 +12,7 @@ typedef enum br_anim_kind_t {
 typedef struct br_anim_t {
   br_anim_kind_t kind:8;
   bool is_alive:1;
+  bool is_instant:1;
   union {
     struct {
       float current;
@@ -55,6 +56,7 @@ int br_anim_newex(br_anims_t* anims, br_extent_t current, br_extent_t target);
 
 void br_anim_delete(br_anims_t* anims, int anim_handle);
 bool br_anim_alive(br_anims_t* anims, int anim_handle);
+void br_anim_instant(br_anims_t* anims, int anim_handle);
 
 void br_anim_setf(br_anims_t* anims, int anim_handle, float target_value);
 float br_anim_getf(br_anims_t* anims, int anim_handle);

@@ -48,8 +48,9 @@ void br_anims_tick(br_anims_t* anims, float dt) {
 
 int br_anim_newf(br_anims_t* anims, float current, float target) {
   br_anim_t anim = { .kind = br_anim_float, .f = {.current = current, .target = target } };
+  anim.is_alive = current == target;
   int handle = brfl_push(anims->all, anim);
-  if (current != target) {
+  if (anim.is_alive) {
     brfl_push(anims->alive, handle);
   }
   return handle;
@@ -79,14 +80,32 @@ bool br_anim_alive(br_anims_t* anims, int anim_handle) {
   return (br_da_get(anims->all, anim_handle)).is_alive;
 }
 
+void br_anim_instant(br_anims_t* anims, int anim_handle) {
+  br_anim_t* anim = br_da_getp(anims->all, anim_handle);
+  anim->is_instant = true;
+  if (anim->is_alive) {
+    anim->is_alive = false;
+  }
+  switch (anim->kind) {
+    case br_anim_float:  anim->f.current = anim->f.target; break;
+    case br_anim_extent: anim->ex.current = anim->ex.target; break;
+    default:             BR_UNREACHABLE("unknown kind: %d", anim->kind);
+  }
+}
+
 void br_anim_setf(br_anims_t* anims, int anim_handle, float target_value) {
   br_anim_t* anim = br_da_getp(anims->all, anim_handle);
   BR_ASSERTF(anim->kind == br_anim_float, "Anim kind should be float, but it's: %d", anim->kind);
-  if (anim->f.target == target_value) return;
-  anim->f.target = target_value;
-  if (anim->is_alive) return;
-  anim->is_alive = true;
-  brfl_push(anims->alive, anim_handle);
+  if (anim->is_instant) {
+    anim->f.target = target_value;
+    anim->f.current = target_value;
+  } else {
+    if (anim->f.target == target_value) return;
+    anim->f.target = target_value;
+    if (anim->is_alive) return;
+    anim->is_alive = true;
+    brfl_push(anims->alive, anim_handle);
+  }
 }
 
 float br_anim_getf(br_anims_t* anims, int anim_handle) {
@@ -104,11 +123,16 @@ float br_anim_getft(br_anims_t* anims, int anim_handle) {
 void br_anim_setex(br_anims_t* anims, int anim_handle, br_extent_t target_value) {
   br_anim_t* anim = br_da_getp(anims->all, anim_handle);
   BR_ASSERTF(anim->kind == br_anim_extent, "Anim kind should be extent, but it's: %d", anim->kind);
-  if (br_extent_eq(anim->ex.target, target_value)) return;
-  anim->ex.target = target_value;
-  if (anim->is_alive) return;
-  anim->is_alive = true;
-  brfl_push(anims->alive, anim_handle);
+  if (anim->is_instant) {
+    anim->ex.target = target_value;
+    anim->ex.current = target_value;
+  } else {
+    if (br_extent_eq(anim->ex.target, target_value)) return;
+    anim->ex.target = target_value;
+    if (anim->is_alive) return;
+    anim->is_alive = true;
+    brfl_push(anims->alive, anim_handle);
+  }
 }
 
 br_extent_t br_anim_getex(br_anims_t* anims, int anim_handle) {

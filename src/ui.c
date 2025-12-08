@@ -944,6 +944,8 @@ static void bruir_update_extent(bruirs_t* rs, int index, br_extent_t new_ex);
 void brui_resizable_init(bruirs_t* rs, br_extent_t extent) {
   brui_resizable_t screen = { 0 };
   screen.cur_extent_ah = br_anim_newex(brui__stack.anims, extent, extent);
+  br_anim_instant(brui__stack.anims, screen.cur_extent_ah);
+
   screen.ancor = brui_ancor_all;
   screen.z = 0.f;
   (void)brfl_push(*rs, screen);
