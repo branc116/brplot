@@ -88,9 +88,9 @@ int        br_strv_utf8_add(br_strv_t, int cur_pos, int n);
 br_u32     br_strv_utf8_pop(br_strv_t* t);
 
 
-void br_str_printf(br_str_t* out_str, const char* fmt, ...);
+br_strv_t br_str_printf(br_str_t* out_str, const char* fmt, ...);
 int br_str_printfvalloc(br_str_t* out_str, const char* fmt, va_list args);
-void br_str_printfv(br_str_t* out_str, const char* fmt, va_list args);
+br_strv_t br_str_printfv(br_str_t* out_str, const char* fmt, va_list args);
 br_strv_t  br_scrach_printf(const char* fmt, ...);
 int br_scrach_printfvalloc(const char* fmt, va_list args);
 br_strv_t br_scrach_printfv(int n, const char* fmt, va_list args);
@@ -621,15 +621,17 @@ br_u32 br_strv_utf8_pop(br_strv_t* t) {
   return 0;
 }
 
-void br_str_printf(br_str_t* out_str, const char* fmt, ...) {
+br_strv_t br_str_printf(br_str_t* out_str, const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
   br_str_printfvalloc(out_str, fmt, args);
   va_end(args);
 
   va_start(args, fmt);
-  br_str_printfv(out_str, fmt, args);
+  br_strv_t strv = br_str_printfv(out_str, fmt, args);
   va_end(args);
+
+  return strv;
 }
 
 int br_str_printfvalloc(br_str_t* out_str, const char* fmt, va_list args) {
@@ -640,9 +642,10 @@ int br_str_printfvalloc(br_str_t* out_str, const char* fmt, va_list args) {
   return n;
 }
 
-void br_str_printfv(br_str_t* out_str, const char* fmt, va_list args) {
+br_strv_t br_str_printfv(br_str_t* out_str, const char* fmt, va_list args) {
   int n = vsnprintf(out_str->str + out_str->len, (size_t)n + 1, fmt, args);
   out_str->len += n;
+  return br_str_as_view(*out_str);
 }
 
 br_strv_t br_scrach_printf(const char* fmt, ...) {

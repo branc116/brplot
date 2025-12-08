@@ -25,17 +25,12 @@
 #include <stdio.h>
 #include <string.h>
 
-BR_THREAD_LOCAL int brui__n__;
-
-BR_THREAD_LOCAL char brui__scrach[2048];
-static BR_THREAD_LOCAL bruir_children_t brui__temp_children = { 0 };
-
 #define BR_THEME (*brui_state.theme)
 #define TOP (brui_state.arr[brui_state.len ? brui_state.len - 1 : 0])
 #define ACTION (brui_state.action.kind)
-#define ACPARM (brui_state.action.args)
+#define ACPARM (brui_state.action)
 #define TOP2 (brui_state.arr[brui_state.len > 1 ? brui_state.len - 2 : 0])
-#define Z (brui_max_z = br_i_max(brui_max_z, TOP.z), ++TOP.z)
+#define Z (brui_state.max_z = br_i_max(brui_state.max_z, TOP.z), ++TOP.z)
 #define ZGL BR_Z_TO_GL(Z)
 #define BRUI_RS(RESIZABLE_HANDLE) (brui_state.rs->arr[RESIZABLE_HANDLE])
 #define BRUI_ANIMF(ANIM_HANDLE) br_anim_getf(brui_state.anims, (ANIM_HANDLE))
@@ -96,6 +91,18 @@ typedef struct {
   bool hide_bg;
 } brui_stack_el_t;
 
+typedef struct brui_resizable_temp_state_t {
+  int resizable_handle;
+  bool was_drawn;
+  bool is_deleted;
+} brui_resizable_temp_state_t;
+
+typedef struct brui_resizable_temp_t {
+  size_t key;
+  brui_resizable_temp_state_t value;
+} brui_resizable_temp_t;
+
+
 typedef struct {
   brui_stack_el_t* arr;
   size_t len, cap;
@@ -106,7 +113,12 @@ typedef struct {
   br_text_renderer_t* tr;
   br_shaders_t* shaders;
   br_anims_t* anims;
+  brui_resizable_temp_t* temp_res;
+  bruir_children_t temp_children;
+
   br_str_t scrach;
+
+  int max_z;
 
   float frame_time;
   float snap_cooldown;
@@ -121,20 +133,7 @@ typedef struct {
   bool log;
 } brui_state_t;
 
-typedef struct brui_resizable_temp_state_t {
-  int resizable_handle;
-  bool was_drawn;
-  bool is_deleted;
-} brui_resizable_temp_state_t;
-
-typedef struct brui_resizable_temp_t {
-  size_t key;
-  brui_resizable_temp_state_t value;
-} brui_resizable_temp_t;
-
 static BR_THREAD_LOCAL brui_state_t brui_state;
-static BR_THREAD_LOCAL brui_resizable_temp_t* bruir__temp_res = NULL;
-static BR_THREAD_LOCAL int brui_max_z = 0;
 
 void brui_construct(br_theme_t* theme, bruirs_t* rs, brsp_t* sp, br_text_renderer_t* tr, br_shaders_t* shaders, br_anims_t* anims) {
   brui_state.theme = theme;
@@ -202,7 +201,7 @@ void brui_end(void) {
 void brui_finish(void) {
   BR_ASSERT(brui_state.len == 0);
   br_da_free(brui_state);
-  br_da_free(brui__temp_children);
+  br_da_free(brui_state.temp_children);
 }
 
 void brui_push(void) {
@@ -301,10 +300,10 @@ br_size_t brui_textf(const char* fmt, ...) {
   va_end(args);
 
   va_start(args, fmt);
-  br_str_printfv(&brui_state.scrach, fmt, args);
+  br_strv_t strv = br_str_printfv(&brui_state.scrach, fmt, args);
   va_end(args);
 
-  return brui_text(br_str_as_view(brui_state.scrach));
+  return brui_text(strv);
 }
 
 void brui_text_at(br_strv_t strv, br_vec2_t at) {
@@ -680,8 +679,8 @@ bool brui_sliderf2(br_strv_t text, float* value) {
 
 bool brui_sliderf3(br_strv_t text, float* value, int percision) {
   float opt_height /* text + 2*1/2*padding */ = (float)TOP.font_size + TOP.padding.y;
-  int n = sprintf(brui__scrach, "%.*f", percision, *value);
-  br_strv_t value_str = BR_STRV(brui__scrach, (uint32_t)n);
+  brui_state.scrach.len = 0;
+  br_strv_t value_str = br_str_printf(&brui_state.scrach, "%.*f", percision, *value);
   br_size_t size = br_text_renderer_measure(brui_state.tr, TOP.font_size, value_str);
   size.width += TOP.padding.x * 2.f;
   float avaliable_width = BR_BBW(TOP.limit) - TOP.psum.x * 2.f;
@@ -715,8 +714,8 @@ bool brui_sliderf3(br_strv_t text, float* value, int percision) {
 
 bool brui_slideri(br_strv_t text, int* value) {
   float opt_height /* text + 2*1/2*padding */ = (float)TOP.font_size + TOP.padding.y;
-  int n = sprintf(brui__scrach, "%d", *value);
-  br_strv_t value_str = BR_STRV(brui__scrach, (uint32_t)n);
+  brui_state.scrach.len = 0;
+  br_strv_t value_str = br_str_printf(&brui_state.scrach, "%d", *value);
   br_size_t size = br_text_renderer_measure(brui_state.tr, TOP.font_size, value_str);
   size.width += TOP.padding.x * 2.f;
   float avaliable_width = BR_BBW(TOP.limit) - TOP.psum.x * 2.f;
@@ -1233,8 +1232,8 @@ void brui_resizable_update(bruirs_t* rs, br_extent_t viewport) {
     if (parent->tag == brui_resizable_tag_ancor_helper) parent->max_z = br_i_max(parent->max_z, r->max_z);
   }
 
-  for (ptrdiff_t i = 0; i < stbds_hmlen(bruir__temp_res); ++i) {
-    brui_resizable_temp_state_t* state = &bruir__temp_res[i].value;
+  for (ptrdiff_t i = 0; i < stbds_hmlen(brui_state.temp_res); ++i) {
+    brui_resizable_temp_state_t* state = &brui_state.temp_res[i].value;
     if (state->is_deleted == true) continue;
     if (false == state->was_drawn) {
       brui_resizable_delete(state->resizable_handle);
@@ -1509,13 +1508,13 @@ int brui_resizable_sibling_max_z(int id) {
 }
 
 bruir_children_t brui_resizable_children_temp(int resizable_handle) {
-  brui__temp_children.len = 0;
+  brui_state.temp_children.len = 0;
   brfl_foreach(i, *brui_state.rs) {
     if (resizable_handle == br_da_get(*brui_state.rs, i).parent) {
-      br_da_push_t(int, brui__temp_children, i);
+      br_da_push_t(int, brui_state.temp_children, i);
     }
   }
-  return brui__temp_children;
+  return brui_state.temp_children;
 }
 
 int brui_resizable_children_count(int resizable_handle) {
@@ -1572,7 +1571,8 @@ static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t an
   res->ancor = ancor;
 
   if (0 != sibling_id) {
-    brsp_id_t title_id = brsp_push(brui_state.sp, br_scrach_printf("Ancor %d and %d", res_id, sibling_id));
+    brui_state.scrach.len = 0;
+    brsp_id_t title_id = brsp_push(brui_state.sp, br_str_printf(&brui_state.scrach, "Ancor %d and %d", res_id, sibling_id));
     br_extent_t sex = BRUI_ANIMEX(sibling->cur_extent_ah);
     br_extent_t new_extent = sex;
     if (ancor & (brui_ancor_top  | brui_ancor_bottom)) new_extent.height += ex.height;
@@ -1761,7 +1761,7 @@ brui_resizable_t* brui_resizable_push(int id) {
     brui_pop_simple();
   }
   TOP.cur.y -= scroll_y;
-  brui_max_z = 0;
+  brui_state.max_z = 0;
   TOP.limit.min_y += title_height;
   TOP.cur.y += title_height;
   return res;
@@ -1782,7 +1782,7 @@ void brui_resizable_pop(void) {
   TOP.content_height = ex.height;
   brui_pop();
   brui_pop();
-  res->max_z = brui_max_z;
+  res->max_z = brui_state.max_z;
   TOP.content_height = ex.height;
   if (cur_res == rs->active_resizable && brui_state.rs->drag_mode == brui_drag_mode_move) {
     brui_snap_areas(brui_state.mouse_pos, cur_res, rs);
@@ -1832,7 +1832,7 @@ brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id) {
   size_t hash = stbds_hash_bytes((void*)id.str, id.len, 0xdeadbeefdeadbeef);
 #endif
 
-  ptrdiff_t index = stbds_hmgeti(bruir__temp_res, hash);
+  ptrdiff_t index = stbds_hmgeti(brui_state.temp_res, hash);
   bool just_created = false;
   brui_resizable_temp_state_t state = { 0 };
   brsp_id_t title_id = -1;
@@ -1840,19 +1840,19 @@ brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id) {
     state.was_drawn = true;
     state.resizable_handle = brui_resizable_new(brui_state.rs, BR_EXTENT(0, 0, 100, 100), 0);
     state.is_deleted = false;
-    stbds_hmput(bruir__temp_res, hash, state);
+    stbds_hmput(brui_state.temp_res, hash, state);
     title_id = brsp_push(brui_state.sp, id);
     just_created = true;
   } else {
-    state = bruir__temp_res[index].value;
+    state = brui_state.temp_res[index].value;
     if (state.is_deleted) {
       just_created = true;
-      bruir__temp_res[index].value.is_deleted = false;
-      bruir__temp_res[index].value.resizable_handle = brui_resizable_new(brui_state.rs, BR_EXTENT(0, 0, 100, 100), 0);
-      state = bruir__temp_res[index].value;
+      brui_state.temp_res[index].value.is_deleted = false;
+      brui_state.temp_res[index].value.resizable_handle = brui_resizable_new(brui_state.rs, BR_EXTENT(0, 0, 100, 100), 0);
+      state = brui_state.temp_res[index].value;
       title_id = brsp_push(brui_state.sp, id);
     }
-    bruir__temp_res[index].value.was_drawn = true;
+    brui_state.temp_res[index].value.was_drawn = true;
   }
 
   brui_resizable_temp_last = state.resizable_handle;
@@ -1889,20 +1889,20 @@ void brui_resizable_temp_delete(br_strv_t id) {
   size_t hash = stbds_hash_bytes((void*)id.str, id.len, 0xdeadbeefdeadbeef);
 #endif
   int handle = -1;
-  ptrdiff_t index = stbds_hmgeti(bruir__temp_res, hash);
+  ptrdiff_t index = stbds_hmgeti(brui_state.temp_res, hash);
   if (index >= 0) {
-    handle = bruir__temp_res[index].value.resizable_handle;
+    handle = brui_state.temp_res[index].value.resizable_handle;
     brui_resizable_delete(handle);
-    (void)stbds_hmdel(bruir__temp_res, hash);
+    (void)stbds_hmdel(brui_state.temp_res, hash);
   }
 }
 
 void brui_resizable_temp_delete_all(void) {
   bruirs_t* rs = brui_state.rs;
-  ptrdiff_t len = stbds_hmlen(bruir__temp_res);
+  ptrdiff_t len = stbds_hmlen(brui_state.temp_res);
   for (int i = 0; i < len; ++i) {
-    if (bruir__temp_res[i].value.is_deleted) continue;
-    brfl_remove(*rs, bruir__temp_res[i].value.resizable_handle);
+    if (brui_state.temp_res[i].value.is_deleted) continue;
+    brfl_remove(*rs, brui_state.temp_res[i].value.resizable_handle);
   }
   br_anim_delete(brui_state.anims, ACPARM.text.offset_ahandle);
 }

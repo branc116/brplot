@@ -287,8 +287,8 @@ brgui_fm_result_t brgui_draw_file_manager(brsp_t* sp, brgui_file_manager_t* stat
         br_fs_list_dir(cur_path, &state->cur_dir);
       }
       action->kind = brui_action_typing;
-      action->args.text.cursor_pos = (int)cur_path.len;
-      action->args.text.id = state->path_id;
+      action->text.cursor_pos = (int)cur_path.len;
+      action->text.id = state->path_id;
     }
     switch (state->action) {
       case brgui_file_manager_import_csv: brui_text(BR_STRL("Import CSV"));     break;
@@ -406,8 +406,8 @@ brgui_fm_result_t brgui_draw_file_manager(brsp_t* sp, brgui_file_manager_t* stat
     if (true == br_fs_list_dir(cur_path, &state->cur_dir)) {
       state->select_index = -1;
       action->kind = brui_action_typing;
-      action->args.text.id = state->path_id;
-      action->args.text.cursor_pos = (int)cur_path.len;
+      action->text.id = state->path_id;
+      action->text.cursor_pos = (int)cur_path.len;
     };
   }
 

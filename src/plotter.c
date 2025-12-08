@@ -312,7 +312,7 @@ void br_plotter_update(br_plotter_t* br) {
                 } break;
               }
             } else if (br->action.active == br_plotter_entity_text_input) {
-              brui_action_text_t* ta = &brui_action()->args.text;
+              brui_action_text_t* ta = &brui_action()->text;
               br_strv_t strv = brsp_get(br->sp, ta->id);
 
               switch (ev.key) {
@@ -408,9 +408,9 @@ void br_plotter_update(br_plotter_t* br) {
           if (ev.utf8_char < 32 || ev.utf8_char == 127) break;
           brui_action_t* action = brui_action();
           brsp_t* sp = &br->sp;
-          brsp_id_t str_id = action->args.text.id;
-          action->args.text.cursor_pos += brsp_insert_unicode(sp, str_id, action->args.text.cursor_pos, ev.utf8_char);
-          action->args.text.changed = true;
+          brsp_id_t str_id = action->text.id;
+          action->text.cursor_pos += brsp_insert_unicode(sp, str_id, action->text.cursor_pos, ev.utf8_char);
+          action->text.changed = true;
         }
       } break;
       case brpl_event_mouse_press: {

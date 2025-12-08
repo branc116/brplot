@@ -53,13 +53,11 @@ typedef struct brui_action_text_t {
 
 typedef struct brui_action_t {
   brui_action_kind_t kind;
-  union {
-    struct {
-      void* value;
-      br_vec2_t drag_ancor_point;
-    } slider;
-    brui_action_text_t text;
-  } args;
+  struct {
+    void* value;
+    br_vec2_t drag_ancor_point;
+  } slider;
+  brui_action_text_t text;
 } brui_action_t;
 
 #define brui_resizable_tag_ancor_helper 10
