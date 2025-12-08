@@ -13,6 +13,7 @@
 #include "src/br_string_pool.h"
 
 #include "src/plot.c"
+#include "src/anim.c"
 
 #include "src/data_generator.c"
 #include "src/data.c"
