@@ -1030,7 +1030,7 @@ static bool brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth)
     brui_textf("current: %.2f,%.2f,%.2f,%.2f", BR_EXTENT_(tar));
     brui_textf("tag: %d", r.tag);
     brfl_foreach(i, br->resizables) if (i != 0 && br->resizables.arr[i].parent == handle) in_any |= brgui_draw_debug_window_rec(br, i, 1+depth);
-  brui_state_t s = brui_pop();
+  brui_pop_t s = brui_pop();
 
   if (s.hovered) {
     if (in_any == false) {

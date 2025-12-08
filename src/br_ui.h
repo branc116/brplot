@@ -41,11 +41,11 @@ typedef enum brui_action_kind_t {
   brui_action_typing
 } brui_action_kind_t;
 
-typedef struct brui_state_t {
+typedef struct brui_pop_t {
   br_bb_t bb;
   bool clicked;
   bool hovered;
-} brui_state_t;
+} brui_pop_t;
 
 typedef struct brui_action_text_t {
   brsp_id_t id;
@@ -64,29 +64,6 @@ typedef struct brui_action_t {
     brui_action_text_t text;
   } args;
 } brui_action_t;
-
-typedef struct {
-  br_vec2_t cur;
-  br_bb_t limit;
-  int start_z, z;
-  br_vec2_t psum;
-  float content_height;
-
-  br_vec2_t padding;
-  br_color_t background_color;
-
-  int font_size;
-  br_color_t font_color;
-  br_text_renderer_ancor_t text_ancor;
-
-  int cur_resizable;
-
-  float vsplit_max_height;
-
-  bool is_active;
-  bool hide_border;
-  bool hide_bg;
-} brui_stack_el_t;
 
 #define brui_resizable_tag_ancor_helper 10
 
@@ -142,29 +119,6 @@ typedef struct bruirs_t {
 typedef struct br_theme_t br_theme_t;
 typedef struct br_shaders_t br_shaders_t;
 typedef struct br_anims_t br_anims_t;
-typedef struct {
-  brui_stack_el_t* arr;
-  size_t len, cap;
-
-  bruirs_t* rs;
-  brsp_t* sp;
-  br_theme_t* theme;
-  br_text_renderer_t* tr;
-  br_shaders_t* shaders;
-  br_anims_t* anims;
-
-  float frame_time;
-  float snap_cooldown;
-
-  brui_action_t action;
-  
-  br_vec2_t mouse_pos;
-  bool mouse_clicked;
-
-  bool ctrl_down;
-  bool select_next;
-  bool log;
-} brui_stack_t;
 
 typedef struct bruir_children_t {
   int* arr;
@@ -221,7 +175,7 @@ bool brui_collapsable(br_strv_t name, bool* expanded);
 void brui_collapsable_end(void);
 
 void brui_push(void);
-brui_state_t brui_pop(void);
+brui_pop_t brui_pop(void);
 void brui_push_simple(void);
 void brui_pop_simple(void);
 void brui_push_y(float y);
@@ -256,7 +210,6 @@ void brui_frame_time(float frame_time);
 
 brui_action_t* brui_action(void);
 void           brui_action_stop(void);
-brui_stack_t*  brui_stack(void);
 
 void              brui_resizable_init(bruirs_t* rs, br_extent_t viewport);
 void              brui_resizable_deinit(void);
