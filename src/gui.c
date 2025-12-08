@@ -94,8 +94,6 @@ void br_plotter_draw(br_plotter_t* br) {
         brui_resizable_t* r = br_da_getp(br->resizables, PLOT->extent_handle);
         br_extent_t ex = brui_resizable_cur_extent(PLOT->extent_handle);
         if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
-        PLOT->mouse_inside_graph = PLOT->extent_handle == br->resizables.active_resizable;
-        br_plot_update_context(PLOT, ex, br->mouse.pos);
 
         brgl_enable_framebuffer(PLOT->texture_id, ex.width, ex.height);
         brgl_clear(BR_COLOR_COMPF(br->ui.theme.colors.plot_bg));
@@ -1191,10 +1189,10 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, br_theme_t
   if(plot->kind != br_plot_kind_2d) return;
 
   BR_PROFILE_START("draw_grid_numbers");
-  br_extentd_t r = plot->dd.graph_rect;
+  br_extent_t vpf = brui_resizable_cur_extent(plot->extent_handle);
+  br_extentd_t r = br_plot2d_extent_to_plot(*plot, vpf);
   int font_size = theme->ui.font_size;
   char* scrach = br_scrach_get(128);
-  br_extent_t vpf = brui_resizable_cur_extent(plot->extent_handle);
   br_vec2d_t sz = BR_VEC2_TOD(vpf.size.vec);
   br_text_renderer_viewport_set(tr, BR_SIZE_TOI(vpf.size));
   br_bb_t limitf = BR_BB(0,0,10000,10000);

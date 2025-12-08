@@ -45,7 +45,7 @@ void br_plot2d_move_screen_space(br_plot_t* plot, br_vec2_t delta, br_size_t plo
 }
 
 void br_plot2d_zoom(br_plot_t* plot, br_vec2_t vec, br_extent_t screen_extent, br_vec2_t mouse_pos_screen) {
-  br_vec2d_t old = plot->dd.mouse_pos;
+  br_vec2d_t old = br_plot2d_to_plot(plot, mouse_pos_screen, screen_extent);
   bool any = false;
   if (false == br_float_near_zero(vec.x)) {
     float mw_scale = (1 + vec.x/10);
@@ -59,22 +59,9 @@ void br_plot2d_zoom(br_plot_t* plot, br_vec2_t vec, br_extent_t screen_extent, b
   }
   if (false == any) return;
 
-  br_plot_update_context(plot, screen_extent, mouse_pos_screen);
-  br_vec2d_t now = plot->dd.mouse_pos;
+  br_vec2d_t now = br_plot2d_to_plot(plot, mouse_pos_screen, screen_extent);
   plot->dd.offset.x -= now.x - old.x;
   plot->dd.offset.y -= now.y - old.y;
-}
-
-br_vec2d_t br_plot_2d_get_mouse_position(br_plot_t* plot, br_vec2_t screen_mouse_pos, br_extent_t ex) {
-  br_vec2i_t mouse_pos = BR_VEC2_TOI(screen_mouse_pos);
-  br_vec2i_t mp_in_graph = BR_VEC2I_SUB(mouse_pos, BR_VEC2_TOI(ex.pos));
-  br_vec2i_t a = BR_VEC2I_SCALE(mp_in_graph, 2);
-  br_vec2_t b = br_vec2i_tof(BR_VEC2I_SUB(BR_VEC2_TOI(ex.size.vec), a));
-  br_vec2_t c = br_vec2_scale(b, 1.f/(float)ex.height);
-  return BR_VEC2D(
-    -c.x*plot->dd.zoom.x/2.0 + plot->dd.offset.x,
-     c.y*plot->dd.zoom.y/2.0 + plot->dd.offset.y
-  );
 }
 
 br_vec2d_t br_plot2d_to_plot(br_plot_t* plot, br_vec2_t vec, br_extent_t ex) {
@@ -128,19 +115,14 @@ br_vec2_t br_plot3d_to_screen(br_plot_t* plot, br_vec3_t pos, br_extent_t ex) {
   return w2;
 }
 
-void br_plot_update_context(br_plot_t* plot, br_extent_t plot_screen_extent, br_vec2_t mouse_pos) {
-  if (plot->kind == br_plot_kind_2d) {
-    float aspect = plot_screen_extent.width/plot_screen_extent.height;
-    plot->dd.mouse_pos = br_plot_2d_get_mouse_position(plot, mouse_pos, plot_screen_extent);
-    plot->dd.graph_rect = BR_EXTENTD(
-      (-aspect*plot->dd.zoom.x/2.0 + plot->dd.offset.x),
-      (plot->dd.zoom.y/2.0 + plot->dd.offset.y),
-      (aspect*plot->dd.zoom.x),
-      (plot->dd.zoom.y));
-  } else {
-    // TODO 2D/3D
-    // BR_TODO("Update context for 3D");
-  }
+br_extentd_t br_plot2d_extent_to_plot(br_plot_t plot, br_extent_t screen_extent) {
+  BR_ASSERT(plot.kind == br_plot_kind_2d);
+  float aspect = screen_extent.width/screen_extent.height;
+  return BR_EXTENTD(
+    (-aspect*plot.dd.zoom.x/2.0 + plot.dd.offset.x),
+    (plot.dd.zoom.y/2.0 + plot.dd.offset.y),
+    (aspect*plot.dd.zoom.x),
+    (plot.dd.zoom.y));
 }
 
 void br_plot_remove_group(br_plot_t* plot, int group_id) {

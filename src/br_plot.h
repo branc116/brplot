@@ -13,15 +13,9 @@ typedef enum {
 #endif
 
 typedef struct br_plot_2d_t {
-  // graph_rect is in the graph coordinates.
-  //            That is if you zoom in and out, graph_rect will change.
-  br_extentd_t graph_rect; // TODO: Remove this field. It's realy cheap to caclculate it and there is no need to cache it...
-
   float line_thickness;
   float grid_line_thickness;
   float grid_major_line_thickness;
-
-  br_vec2d_t mouse_pos; // TODO: Remove this field. It's realy cheap to caclculate it and there is no need to cache it...
 
   br_vec2d_t zoom;
   br_vec2d_t offset;
@@ -58,7 +52,6 @@ typedef struct br_plot_t {
 
   bool follow;
   bool jump_around;
-  bool mouse_inside_graph;
   bool is_deleted;
 
   br_plot_kind_t kind;
@@ -91,8 +84,9 @@ void br_plot_create_texture(br_plot_t* br, br_extent_t ex);
 void br_plot2d_move_screen_space(br_plot_t* plot, br_vec2_t delta, br_size_t extent);
 void br_plot2d_zoom(br_plot_t* plot, br_vec2_t vec, br_extent_t screen_extent, br_vec2_t mouse_pos_screen);
 
-br_vec2d_t br_plot2d_to_plot  (br_plot_t* plot, br_vec2_t  vec, br_extent_t ex);
-br_vec2_t  br_plot2d_to_screen(br_plot_t* plot, br_vec2d_t vec, br_extent_t ex);
+br_vec2d_t   br_plot2d_to_plot  (br_plot_t* plot, br_vec2_t  vec, br_extent_t ex);
+br_vec2_t    br_plot2d_to_screen(br_plot_t* plot, br_vec2d_t vec, br_extent_t ex);
+br_extentd_t br_plot2d_extent_to_plot(br_plot_t plot, br_extent_t screen_extent);
 
 br_vec3d_t br_plot3d_to_plot  (br_plot_t* plot, br_vec2_t  mouse_pos, br_extent_t ex);
 br_vec2_t  br_plot3d_to_screen(br_plot_t* plot, br_vec3_t pos, br_extent_t ex);

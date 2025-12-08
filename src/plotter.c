@@ -749,7 +749,6 @@ int br_plotter_add_plot_3d(br_plotter_t* br) {
     .data_info = { 0 },
     .follow = false,
     .jump_around = false,
-    .mouse_inside_graph = false,
     .kind = br_plot_kind_3d,
     .ddd =  {
       .eye = BR_VEC3(0, 0, 100),
