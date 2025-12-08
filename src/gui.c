@@ -67,6 +67,30 @@ void br_plotter_draw(br_plotter_t* br) {
     BR_PROFILE("Draw Plots") {
       for (int i = 0; i < br->plots.len; ++i) {
 #define PLOT br_da_getp(br->plots, i)
+        if (PLOT->kind == br_plot_kind_2d) {
+          if (PLOT->follow) {
+            bool any = false;
+            br_bb_t bb = { 0 };
+            for (int j = 0; j < PLOT->data_info.len; ++j) {
+              br_plot_data_t pd = PLOT->data_info.arr[j];
+              br_data_t* data = br_data_get(&br->groups, pd.group_id);
+              if (br_plot_data_is_visible(pd)) {
+                if (any) {
+                  bb = br_bb_union(bb, data->dd.bounding_box);
+                } else {
+                  bb = data->dd.bounding_box;
+                  any = true;
+                }
+              }
+            }
+            if (any) {
+              float zoom = br_float_max(bb.max_x - bb.min_x, bb.max_y - bb.min_y);
+              br_vec2d_t offset = BR_VEC2D((bb.max_x + bb.min_x) / 2, (bb.max_y + bb.min_y) / 2);
+              PLOT->dd.zoom = br_vec2d_lerp(PLOT->dd.zoom, BR_VEC2D(zoom, zoom), 0.01f);
+              PLOT->dd.offset = br_vec2d_lerp(PLOT->dd.offset, offset, 0.01f);
+            }
+          }
+        }
         brui_resizable_t* r = br_da_getp(br->resizables, PLOT->extent_handle);
         br_extent_t ex = brui_resizable_cur_extent(PLOT->extent_handle);
         if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
