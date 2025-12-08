@@ -117,6 +117,8 @@ typedef struct {
   bruir_children_t temp_children;
 
   br_str_t scrach;
+  int rs_temp_last;
+  br_strv_t rs_temp_last_str;
 
   int max_z;
 
@@ -142,6 +144,7 @@ void brui_construct(br_theme_t* theme, bruirs_t* rs, brsp_t* sp, br_text_rendere
   brui_state.tr = tr;
   brui_state.shaders = shaders;
   brui_state.anims = anims;
+  brui_state.rs_temp_last = -1;
   ACPARM.text.offset_ahandle = br_anim_newf(anims, 0, 0);
 }
 
@@ -1542,16 +1545,15 @@ br_extent_t brui_resizable_cur_extent(int resizable_handle) {
 }
 
 static br_strv_t brui_ancor_to_str(brui_ancor_t ancor) {
-  static BR_THREAD_LOCAL br_str_t buff = { 0 };
-  buff.len = 0;
-  if (brui_ancor_none  == ancor) br_str_push_c_str(&buff, "none");
-  if (brui_ancor_left   & ancor) br_str_push_c_str(&buff, "left ");
-  if (brui_ancor_right  & ancor) br_str_push_c_str(&buff, "right ");
-  if (brui_ancor_top    & ancor) br_str_push_c_str(&buff, "top ");
-  if (brui_ancor_bottom & ancor) br_str_push_c_str(&buff, "bottom ");
-  if (buff.len == 0) br_str_push_int(&buff, ancor);
-  br_str_push_zero(&buff);
-  return br_str_as_view(buff);
+  brui_state.scrach.len = 0;
+  if (brui_ancor_none  == ancor) br_str_push_c_str(&brui_state.scrach, "none");
+  if (brui_ancor_left   & ancor) br_str_push_c_str(&brui_state.scrach, "left ");
+  if (brui_ancor_right  & ancor) br_str_push_c_str(&brui_state.scrach, "right ");
+  if (brui_ancor_top    & ancor) br_str_push_c_str(&brui_state.scrach, "top ");
+  if (brui_ancor_bottom & ancor) br_str_push_c_str(&brui_state.scrach, "bottom ");
+  if (brui_state.scrach.len == 0) br_str_push_int(&brui_state.scrach, ancor);
+  br_str_push_zero(&brui_state.scrach);
+  return br_str_as_view(brui_state.scrach);
 }
 
 static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t ancor) {
@@ -1819,13 +1821,11 @@ br_vec2_t brui_resizable_to_global(int resizable_handle, br_vec2_t pos) {
 }
 
 
-static BR_THREAD_LOCAL int brui_resizable_temp_last = -1;
-static BR_THREAD_LOCAL br_strv_t brui_resizable_temp_last_str;
 brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id) {
   // TODO: Handle hash collisions
 
-  if (-1 != brui_resizable_temp_last) LOGF("Can't have temp resizables in temp resizables, yet");
-  brui_resizable_temp_last_str = id;
+  if (-1 != brui_state.rs_temp_last) LOGF("Can't have temp resizables in temp resizables, yet");
+  brui_state.rs_temp_last_str = id;
 #if defined(BR_IS_SIZE_T_32_BIT)
   size_t hash = stbds_hash_bytes((void*)id.str, id.len, 0xdeadbeef);
 #else
@@ -1855,7 +1855,7 @@ brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id) {
     brui_state.temp_res[index].value.was_drawn = true;
   }
 
-  brui_resizable_temp_last = state.resizable_handle;
+  brui_state.rs_temp_last = state.resizable_handle;
   brui_resizable_t* res = brui_resizable_push(state.resizable_handle);
   if (title_id > -1) res->title_id = title_id;
   if (just_created) {
@@ -1870,11 +1870,11 @@ brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id) {
 }
 
 bool brui_resizable_temp_pop(void) {
-  int id = brui_resizable_temp_last;
-  br_strv_t handle = brui_resizable_temp_last_str;
+  int id = brui_state.rs_temp_last;
+  br_strv_t handle = brui_state.rs_temp_last_str;
   bool is_hidden = brui_resizable_is_hidden(id);
   brui_resizable_pop();
-  brui_resizable_temp_last = -1;
+  brui_state.rs_temp_last = -1;
   if (is_hidden) {
     brui_resizable_temp_delete(handle);
     return true;
