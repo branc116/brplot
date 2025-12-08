@@ -106,6 +106,7 @@ typedef struct {
   br_text_renderer_t* tr;
   br_shaders_t* shaders;
   br_anims_t* anims;
+  br_str_t scrach;
 
   float frame_time;
   float snap_cooldown;
@@ -119,6 +120,17 @@ typedef struct {
   bool select_next;
   bool log;
 } brui_state_t;
+
+typedef struct brui_resizable_temp_state_t {
+  int resizable_handle;
+  bool was_drawn;
+  bool is_deleted;
+} brui_resizable_temp_state_t;
+
+typedef struct brui_resizable_temp_t {
+  size_t key;
+  brui_resizable_temp_state_t value;
+} brui_resizable_temp_t;
 
 static BR_THREAD_LOCAL brui_state_t brui_state;
 static BR_THREAD_LOCAL brui_resizable_temp_t* bruir__temp_res = NULL;
@@ -281,6 +293,19 @@ br_size_t brui_text(br_strv_t strv) {
   return ex.size;
 }
 
+br_size_t brui_textf(const char* fmt, ...) {
+  brui_state.scrach.len = 0;
+  va_list args;
+  va_start(args, fmt);
+  int n = br_str_printfvalloc(&brui_state.scrach, fmt, args);
+  va_end(args);
+
+  va_start(args, fmt);
+  br_str_printfv(&brui_state.scrach, fmt, args);
+  va_end(args);
+
+  return brui_text(br_str_as_view(brui_state.scrach));
+}
 
 void brui_text_at(br_strv_t strv, br_vec2_t at) {
   br_text_renderer_t* tr = brui_state.tr;

@@ -4,9 +4,6 @@
 #include "src/br_text_renderer.h"
 #include "src/br_string_pool.h"
 
-extern BR_THREAD_LOCAL int brui__n__;
-#define brui_textf(...) (brui__n__ = sprintf(brui__scrach, __VA_ARGS__), brui_text(BR_STRV(brui__scrach, (uint32_t)brui__n__)))
-
 typedef enum {
   brui_drag_mode_none = 0,
   brui_drag_mode_left = 1,
@@ -84,17 +81,6 @@ typedef struct {
   bool was_draw_last_frame;
 } brui_resizable_t;
 
-typedef struct brui_resizable_temp_state_t {
-  int resizable_handle;
-  bool was_drawn;
-  bool is_deleted;
-} brui_resizable_temp_state_t;
-
-typedef struct brui_resizable_temp_t {
-  size_t key;
-  brui_resizable_temp_state_t value;
-} brui_resizable_temp_t;
-
 typedef struct brui_resizable_temp_push_t {
   brui_resizable_t* res;
   int resizable_handle;
@@ -139,8 +125,6 @@ typedef struct brui_split_t {
 #define BRUI_SPLITR(VALUE) ((brui_split_t) { .kind = brui_split_relative, .relative = (VALUE) })
 #define BRUI_SPLITA(VALUE) ((brui_split_t) { .kind = brui_split_absolute, .absolute = (VALUE) })
 
-extern BR_THREAD_LOCAL char brui__scrach[2048];
-
 void brui_construct(br_theme_t* theme, bruirs_t* rs, brsp_t* sp, br_text_renderer_t* tr, br_shaders_t* shaders, br_anims_t* anims);
 
 void brui_begin(void);
@@ -150,6 +134,7 @@ void brui_end(void);
 void brui_finish(void);
 
 br_size_t brui_text(br_strv_t strv);
+br_size_t brui_textf(const char* str, ...);
 void brui_text_at(br_strv_t strv, br_vec2_t at);
 bool brui_text_input(brsp_id_t str_id);
 void brui_new_lines(int n);

@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <errno.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,7 +87,14 @@ bool       br_strv_match(br_strv_t full, br_strv_t sub);
 int        br_strv_utf8_add(br_strv_t, int cur_pos, int n);
 br_u32     br_strv_utf8_pop(br_strv_t* t);
 
+
+void br_str_printf(br_str_t* out_str, const char* fmt, ...);
+int br_str_printfvalloc(br_str_t* out_str, const char* fmt, va_list args);
+void br_str_printfv(br_str_t* out_str, const char* fmt, va_list args);
 br_strv_t  br_scrach_printf(const char* fmt, ...);
+int br_scrach_printfvalloc(const char* fmt, va_list args);
+br_strv_t br_scrach_printfv(int n, const char* fmt, va_list args);
+
 #if defined(BR_RELEASE)
 char*      br_scrach_get(size_t len);
 void       br_scrach_free(void);
@@ -137,7 +146,10 @@ bool br_str_realloc(br_str_t* s, size_t new_cap) {
     BR_ASSERT(0 == s->len);
     BR_ASSERT(0 == s->cap);
     s->str = BR_MALLOC(new_cap > 8 ? new_cap : 8);
-    if (s->str == NULL) return false;
+    if (s->str == NULL) {
+      LOGE("Failed to malloc %zu bytes: %s", new_cap, strerror(errno));
+      return false;
+    }
     s->cap = new_cap > 8 ? (unsigned int)new_cap : 8;
     return true;
   }
@@ -148,7 +160,8 @@ bool br_str_realloc(br_str_t* s, size_t new_cap) {
       s->cap = (unsigned int)new_cap;
       return true;
     }
-  }
+  } else return true;
+  LOGE("Failed to realloc %zu bytes: %s", new_cap, strerror(errno));
   return false;
 }
 
@@ -608,6 +621,30 @@ br_u32 br_strv_utf8_pop(br_strv_t* t) {
   return 0;
 }
 
+void br_str_printf(br_str_t* out_str, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  br_str_printfvalloc(out_str, fmt, args);
+  va_end(args);
+
+  va_start(args, fmt);
+  br_str_printfv(out_str, fmt, args);
+  va_end(args);
+}
+
+int br_str_printfvalloc(br_str_t* out_str, const char* fmt, va_list args) {
+  int n = vsnprintf(NULL, 0, fmt, args);
+  BR_ASSERT(n >= 0);
+  bool ok_realloc = br_str_realloc(out_str, out_str->len + n + 1);
+  BR_ASSERT(ok_realloc);
+  return n;
+}
+
+void br_str_printfv(br_str_t* out_str, const char* fmt, va_list args) {
+  int n = vsnprintf(out_str->str + out_str->len, (size_t)n + 1, fmt, args);
+  out_str->len += n;
+}
+
 br_strv_t br_scrach_printf(const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
@@ -621,6 +658,21 @@ br_strv_t br_scrach_printf(const char* fmt, ...) {
   va_end(args);
   br_scrach_free();
 
+  return BR_STRV(result, (br_u32)n);
+}
+
+int br_scrach_printfvalloc(const char* fmt, va_list args) {
+  int n = vsnprintf(NULL, 0, fmt, args);
+  BR_ASSERT(n >= 0);
+  char *result = (char*)br_scrach_get((size_t)n + 1);
+  br_scrach_free();
+  return n;
+}
+
+br_strv_t br_scrach_printfv(int n, const char* fmt, va_list args) {
+  char *result = (char*)br_scrach_get((size_t)n + 1);
+  vsnprintf(result, (size_t)n + 1, fmt, args);
+  br_scrach_free();
   return BR_STRV(result, (br_u32)n);
 }
 
