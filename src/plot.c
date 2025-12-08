@@ -7,6 +7,26 @@
 #include "src/br_resampling.h"
 #include "src/br_ui.h"
 #include "src/br_memory.h"
+#include "src/br_anim.h"
+
+static BR_THREAD_LOCAL struct {
+  br_anims_t* anims;
+} br_plot_state;
+
+void br_plot_construct(br_anims_t* anims) {
+  br_plot_state.anims = anims;
+}
+
+br_plot_data_t br_plot_data(int group_id) {
+  br_plot_data_t ret;
+  ret.group_id = group_id;
+  ret.thickness_multiplyer_ah = br_animf_new(br_plot_state.anims, 0.f, 1.f);
+  return ret;
+}
+
+bool br_plot_data_is_visible(br_plot_data_t pd) {
+  return br_da_getp(br_plot_state.anims->all, pd.thickness_multiplyer_ah)->f.target > 0.1f;
+}
 
 void br_plot_deinit(br_plot_t* plot) {
   br_da_free(plot->data_info);
@@ -145,7 +165,7 @@ void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups, br_extent_t
   int n = 0;
   for (int i = 0; i < plot->data_info.len; ++i) {
     br_plot_data_t di = plot->data_info.arr[i];
-    if (false == BR_PLOT_DATA_IS_VISIBLE(di)) continue;
+    if (false == br_plot_data_is_visible(di)) continue;
     br_data_t* d = br_data_get1(groups, di.group_id);
     if (n > 0) {
       if (d->len > 0) {

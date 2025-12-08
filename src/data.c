@@ -9,6 +9,7 @@
 #include "src/br_math.h"
 #include "src/br_string_pool.h"
 #include "src/br_memory.h"
+#include "src/br_anim.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,14 +23,15 @@ static void br_data_push_point2(br_data_t* g, br_vec2_t v);
 static void br_data_push_point3(br_data_t* g, br_vec3_t v);
 static void br_bb_3d_expand_with_point(bb_3d_t* bb, br_vec3_t v);
 
-
 static BR_THREAD_LOCAL struct {
   brsp_t* sp;
   br_color_t base_colors[8];
+  br_anims_t* anims;
 } br_data;
 
-void br_data_construct(brsp_t* sp) {
+void br_data_construct(brsp_t* sp, br_anims_t* anims) {
   br_data.sp = sp;
+  br_data.anims = anims;
   br_data.base_colors[0] = BR_RED;
   br_data.base_colors[1] = BR_GREEN;
   br_data.base_colors[2] = BR_BLUE;
@@ -318,7 +320,7 @@ void br_datas_draw(br_datas_t pg, br_plot_t* plot, br_extent_t extent) {
     br_plot_data_t di = plot->data_info.arr[j];
     br_data_t const* g = br_data_get1(pg, di.group_id);
     if (g->len == 0) continue;
-    br_resampling_draw(g->resampling, g, plot, &di, extent);
+    br_resampling_draw(g->resampling, g, plot, br_animf(br_data.anims, di.thickness_multiplyer_ah), extent);
   }
   br_resampling_change_something(pg);
 }

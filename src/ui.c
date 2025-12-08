@@ -1155,8 +1155,6 @@ static void bruir_update_extent(bruirs_t* rs, int index, br_extent_t new_ex) {
 
 void brui_resizable_update(bruirs_t* rs, br_extent_t viewport) {
   bruir_update_extent(rs, 0, viewport);
-  float lerp_speed = brui_state.frame_time * BR_THEME.ui.animation_speed;
-  lerp_speed = br_float_clamp(lerp_speed, brui_state.frame_time, 1.f);
   brui_state.snap_cooldown -= brui_state.frame_time;
 
   if (rs->drag_mode == brui_drag_mode_none) {

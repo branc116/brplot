@@ -79,8 +79,9 @@ static br_plot_t br_plot_2d(br_sizei_t window_size, float grid_line_thickness) {
 
 void br_plotter_init(br_plotter_t* br) {
   br_resampling_construct(&br->shaders, &br->ui.theme.ui.min_sampling, &br->ui.theme.ui.cull_min);
-  br_data_construct(&br->sp);
+  br_data_construct(&br->sp, &br->anims);
   br_mesh_construct(&br->shaders, &br->ui.theme.ui.debug, &br->ui.theme);
+  br_plot_construct(&br->anims);
   brgl_construct(&br->shaders);
   if (false == brpl_window_open(&br->win)) {
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__)
@@ -528,10 +529,6 @@ void br_plotter_update(br_plotter_t* br) {
             }
             found_plot = j;
           }
-          for (int i = 0; i < plot->data_info.len; ++i) {
-            br_plot_data_t* pd = br_da_getp(plot->data_info, i);
-            pd->thickness_multiplyer = br_float_lerp(pd->thickness_multiplyer, pd->thickness_multiplyer_target, (float)br->time.frame*5.0f);
-          }
         }
 
         if (br->action.active == br_plotter_entity_none) {
@@ -800,10 +797,10 @@ void br_plotter_frame_end(br_plotter_t* br) {
     bool any_added = false;
     for (int j = 0; j < br->plots.len; ++j) {
       if (br->plots.arr[j].kind == br_plot_kind_2d && br->groups.arr[i].kind == br_data_kind_2d) {
-        br_da_push_t(int, br->plots.arr[j].data_info, BR_PLOT_DATA(br->groups.arr[i].group_id));
+        br_da_push_t(int, br->plots.arr[j].data_info, br_plot_data(br->groups.arr[i].group_id));
         any_added = true;
       } else if (br->plots.arr[j].kind == br_plot_kind_3d) {
-        br_da_push_t(int, br->plots.arr[j].data_info, BR_PLOT_DATA(br->groups.arr[i].group_id));
+        br_da_push_t(int, br->plots.arr[j].data_info, br_plot_data(br->groups.arr[i].group_id));
         any_added = true;
       }
     }
@@ -811,11 +808,11 @@ void br_plotter_frame_end(br_plotter_t* br) {
       switch (br->groups.arr[i].kind) {
         case br_data_kind_2d: {
           int id = br_plotter_add_plot_2d(br);
-          br_da_push_t(int, br->plots.arr[id].data_info, BR_PLOT_DATA(br->groups.arr[i].group_id));
+          br_da_push_t(int, br->plots.arr[id].data_info, br_plot_data(br->groups.arr[i].group_id));
         } break;
         case br_data_kind_3d: {
           int id = br_plotter_add_plot_3d(br);
-          br_da_push_t(int, br->plots.arr[id].data_info, BR_PLOT_DATA(br->groups.arr[i].group_id));
+          br_da_push_t(int, br->plots.arr[id].data_info, br_plot_data(br->groups.arr[i].group_id));
         } break;
         default: BR_UNREACHABLE("Kind: %d", br->groups.arr[i].kind);
       }

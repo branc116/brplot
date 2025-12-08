@@ -48,7 +48,7 @@ void br_anims_tick(br_anims_t* anims, float dt) {
 
 int br_animf_new(br_anims_t* anims, float current, float target) {
   br_anim_t anim = { .kind = br_anim_float, .f = {.current = current, .target = target } };
-  anim.is_alive = current == target;
+  anim.is_alive = current != target;
   int handle = brfl_push(anims->all, anim);
   if (anim.is_alive) {
     brfl_push(anims->alive, handle);
@@ -93,9 +93,22 @@ void br_anim_instant(br_anims_t* anims, int anim_handle) {
   }
 }
 
+#if BR_DEBUG
+void br_anim_trace(br_anims_t* anims, int anim_handle) {
+  br_anim_t* a = br_da_getp(anims->all, anim_handle);
+  a->trace = true;
+}
+#endif
+
 void br_animf_set(br_anims_t* anims, int anim_handle, float target_value) {
   br_anim_t* anim = br_da_getp(anims->all, anim_handle);
   BR_ASSERTF(anim->kind == br_anim_float, "Anim kind should be float, but it's: %d", anim->kind);
+#if BR_DEBUG
+  if (anim->trace) {
+    LOGI("ANIM %d: %f -> %f (current: %f)", anim_handle, anim->f.target, target_value, anim->f.current);
+    BR_STACKTRACE();
+  }
+#endif
   if (anim->is_instant) {
     anim->f.target = target_value;
     anim->f.current = target_value;

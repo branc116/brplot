@@ -77,7 +77,9 @@ typedef struct {
 } br_data_descs_t;
 
 typedef struct brsp_t brsp_t;
-void br_data_construct(brsp_t* sp);
+typedef struct br_anims_t br_anims_t;
+void br_data_construct(brsp_t* sp, br_anims_t* anims);
+
 int br_datas_get_new_id(br_datas_t* datas);
 br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind);
 br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, br_color_t color, size_t cap, brsp_id_t name);

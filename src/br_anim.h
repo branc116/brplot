@@ -14,6 +14,7 @@ typedef struct br_anim_t {
   br_anim_kind_t kind:8;
   bool is_alive:1;
   bool is_instant:1;
+  bool trace:1;
   union {
     struct {
       float current;
@@ -58,6 +59,12 @@ int br_animex_new(br_anims_t* anims, br_extent_t current, br_extent_t target);
 void br_anim_delete(br_anims_t* anims, int anim_handle);
 bool br_anim_alive(br_anims_t* anims, int anim_handle);
 void br_anim_instant(br_anims_t* anims, int anim_handle);
+#if BR_DEBUG
+void br_anim_trace(br_anims_t* anims, int anim_handle);
+#else
+#define br_anim_trace(...)
+#endif
+
 
 void br_animf_set(br_anims_t* anims, int anim_handle, float target_value);
 float br_animf(br_anims_t* anims, int anim_handle);

@@ -470,7 +470,7 @@ static void br_resampling_draw33(br_resampling_t const* const res, size_t index,
   }
 }
 
-void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* plot, br_plot_data_t const* pd, br_extent_t extent) {
+void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* plot, float pd_thickness, br_extent_t extent) {
   double start = brpl_time();
   if (res->common.len == 0) return;
   switch (pg->kind) {
@@ -482,7 +482,7 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           res->culler.args.offset = plot->dd.offset;
           res->culler.args.offset.x -= pg->dd.rebase_x;
           res->culler.args.offset.y -= pg->dd.rebase_y;
-          res->culler.args.line_thickness = plot->dd.line_thickness * pd->thickness_multiplyer;
+          res->culler.args.line_thickness = plot->dd.line_thickness * pd_thickness;
           res->culler.args.prev[0] = BR_VEC2(0, 0);
           res->culler.args.prev[1] = BR_VEC2(0, 0);
 
@@ -511,7 +511,7 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
           br_resampling.shaders->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
           br_resampling.shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
-          res->args_3d.line_thickness = 0.03f * pd->thickness_multiplyer;
+          res->args_3d.line_thickness = pd_thickness;
           res->args_3d.mvp = br_resampling.shaders->line_3d->uvs.m_mvp_uv;
           res->args_3d.eye = eye;
           res->args_3d.target = target;
@@ -535,13 +535,13 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
           br_resampling.shaders->line_3d->uvs.eye_uv = br_vec3_sub(plot->ddd.eye, plot->ddd.target); //TODO: Is this realy eye or eye target vector?
           br_resampling.shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
-          res->args_3d.line_thickness = 0.03f * pd->thickness_multiplyer;
+          res->args_3d.line_thickness = pd_thickness;
           res->args_3d.mvp = br_resampling.shaders->line_3d->uvs.m_mvp_uv;
           res->args_3d.eye = BR_VEC3D_TOF(eye);
           res->args_3d.target = BR_VEC3D_TOF(target);
 
           br_resampling_draw33(res, 0, pg, plot); break;
-          br_shader_line_3d_draw(br_resampling.shaders->line_3d);
+          br_shaders_draw_all(*br_resampling.shaders);
         }
       }
     } break;

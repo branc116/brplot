@@ -36,7 +36,8 @@ void br_expr_debug(br_dagens_t dagens) {
   br_plots_t plots = {0}; \
   br_dagen_exprs_t arena = {0}; \
   brsp_t sp = {0}; \
-  br_data_construct(&sp);
+  br_anims_t anims = {0}; \
+  br_data_construct(&sp, &anims);
 
 #define FREE \
   br_datas_deinit(&datas); \

@@ -39,12 +39,8 @@ typedef struct br_plot_3d_t {
 
 typedef struct br_plot_data_t {
   int group_id;
-  float thickness_multiplyer;
-  float thickness_multiplyer_target;
+  int thickness_multiplyer_ah;
 } br_plot_data_t;
-#define BR_PLOT_DATA(GROUP_ID) ((br_plot_data_t) { .group_id = (GROUP_ID), .thickness_multiplyer = 0.f, .thickness_multiplyer_target = 1.f })
-#define BR_PLOT_DATA_IS_VISIBLE(PD) ((PD).thickness_multiplyer_target > 0.1f)
-
 
 typedef struct br_plot_t {
   struct {
@@ -76,6 +72,12 @@ typedef struct br_plots_t {
   br_plot_t* arr;
   int len, cap;
 } br_plots_t;
+
+typedef struct br_anims_t br_anims_t;
+void br_plot_construct(br_anims_t* anims);
+
+br_plot_data_t br_plot_data(int group_id);
+bool br_plot_data_is_visible(br_plot_data_t pd);
 
 void br_plots_remove_group(br_plots_t plots, int group);
 

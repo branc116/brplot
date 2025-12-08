@@ -27,7 +27,7 @@ static void br_main_iter(br_plotter_t* br) {
 
 static BR_THREAD_RET_TYPE main_loop(void* plotterv) {
   br_plotter_t* plotter = plotterv;
-  br_data_construct(&plotter->sp);
+  br_data_construct(&plotter->sp, &plotter->anims);
   br_resampling_construct(&plotter->shaders, &plotter->ui.theme.ui.min_sampling, &plotter->ui.theme.ui.cull_min);
   br_plotter_init(plotter);
   while (plotter->should_close == false) {

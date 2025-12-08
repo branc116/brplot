@@ -135,8 +135,8 @@ void br_mesh_3d_gen_line2(const br_mesh_line_3d_t* args, br_vec3_t p1, br_vec3_t
   if (right.x == 0 && right.y == 0 && right.z == 0) {
     return;
   }
-  float thick1 = br_vec3_dist(args->eye, p1) * 0.005;
-  float thick2 = br_vec3_dist(args->eye, p2) * 0.005;
+  float thick1 = br_vec3_dist(args->eye, p1) * 0.005 * args->line_thickness;
+  float thick2 = br_vec3_dist(args->eye, p2) * 0.005 * args->line_thickness;
   br_vec3_t right_scale1 = br_vec3_scale(right, thick1);
   br_vec3_t right_scale2 = br_vec3_scale(right, thick2);
   br_shader_line_3d_push_quad(br_mesh_state.shaders->line_3d, (br_shader_line_3d_el_t[4]) {

@@ -6,14 +6,13 @@
 
 typedef struct br_resampling_t br_resampling_t;
 typedef struct br_plot_t br_plot_t;
-typedef struct br_plot_data_t br_plot_data_t;
 typedef struct br_shaders_t br_shaders_t;
-
 void br_resampling_construct(br_shaders_t* shaders, float* min_something, float* cull_min);
+
 br_resampling_t* br_resampling_malloc(br_data_kind_t kind);
 void br_resampling_empty(br_resampling_t* res);
 void br_resampling_free(br_resampling_t* res);
-void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* rdi, br_plot_data_t const* pd, br_extent_t extent);
+void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* rdi, float pd_thicness, br_extent_t extent);
 // TODO: index should be size_t...
 void br_resampling_add_point(br_resampling_t* res, br_data_t const* pg, uint32_t index);
 
