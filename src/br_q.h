@@ -1,7 +1,7 @@
 #pragma once
 #include "src/br_data.h"
 #include "src/br_pp.h"
-#include "src/br_str.h"
+#include "include/br_str_header.h"
 
 typedef struct br_plotter_t br_plotter_t;
 

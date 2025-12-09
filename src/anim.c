@@ -1,22 +1,22 @@
 #include "src/br_anim.h"
 #include "src/br_theme.h"
 #include "src/br_da.h"
-#include "src/br_free_list.h"
+#include "include/br_free_list_header.h"
 
 #include <errno.h>
 #include <string.h>
 
 static BR_THREAD_LOCAL struct br_anims_state {
-  br_theme_t* theme;
+  float* animation_speed;
 } br_anims_state;
 
-void br_anims_construct(br_theme_t* theme) {
-  br_anims_state.theme = theme;
+void br_anims_construct(float* animation_speed) {
+  br_anims_state.animation_speed = animation_speed;
 }
 
 void br_anims_tick(br_anims_t* anims, float dt) {
   int to_kill = -1;
-  float lerp_factor = br_anims_state.theme->ui.animation_speed * dt;
+  float lerp_factor = *br_anims_state.animation_speed * dt;
   lerp_factor = br_float_clamp(lerp_factor, 0.f, 1.f);
   brfl_foreach(i, anims->alive) {
     int anim_handle = br_da_get(anims->alive, i);

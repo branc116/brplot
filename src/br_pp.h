@@ -18,9 +18,11 @@ void brgui_push_log_line(const char* fmt, ...);
     fprintf(stderr, "[ERROR][ " __FILE__ ":%d ] " format "\n", __LINE__, ##__VA_ARGS__); \
     BR_STACKTRACE(); \
 } while(0)
+#  define BR_ON_FATAL_ERROR br_on_fatal_error
 #else
 #  define BR_LOG(SEVERITY, FMT, ...)
 #  define LOGE(...)
+#  define BR_ON_FATAL_ERROR(...)
 #endif
 
 #define LOGI(format, ...) BR_LOG("[INFO]", format, ##__VA_ARGS__)
@@ -32,7 +34,7 @@ void brgui_push_log_line(const char* fmt, ...);
 extern void br_on_fatal_error(void);
 #define LOGF(format, ...) do { \
   fprintf(stderr, "[FATAL][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__); \
-  br_on_fatal_error(); \
+  BR_ON_FATAL_ERROR(); \
   BR_STACKTRACE(); \
   abort(); \
 } while(0)

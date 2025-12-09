@@ -1,6 +1,6 @@
 #pragma once
 #include "src/br_pp.h"
-#include "src/br_str.h"
+#include "include/br_str_header.h"
 #include "src/br_math.h"
 
 #include <stdio.h>

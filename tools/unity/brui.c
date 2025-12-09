@@ -40,3 +40,7 @@
 #  define BR_INCLUDE_UI_C
 #  include "src/ui.c"
 #endif
+#if !defined(BR_INCLUDE_ANIM_C)
+#  define BR_INCLUDE_ANIM_C
+#  include "src/anim.c"
+#endif

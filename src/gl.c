@@ -4,7 +4,7 @@
 #  define BR_WANTS_GL 1
 #endif
 #include "src/br_platform.h"
-#include "src/br_str.h"
+#include "include/br_str_header.h"
 #include "src/br_shaders.h"
 
 #include <string.h>

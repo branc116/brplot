@@ -5,7 +5,7 @@
 #include "src/br_plot.h"
 #include "src/br_pp.h"
 #include "src/br_resampling.h"
-#include "src/br_str.h"
+#include "include/br_str_header.h"
 #include "src/br_memory.h"
 #include "src/br_platform.h"
 #include "src/br_string_pool.h"

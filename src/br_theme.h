@@ -25,17 +25,6 @@ typedef struct br_theme_t {
     br_color_t bg;
     float highlite_factor;
   } colors;
-
-  struct {
-    br_vec2_t padding;
-    int font_size;
-    float border_thick;
-    float animation_speed;
-    float min_sampling;
-    float cull_min;
-    float default_grid_line_thickenss;
-    bool debug;
-  } ui;
 } br_theme_t;
 
 void br_theme_dark(br_theme_t* theme);

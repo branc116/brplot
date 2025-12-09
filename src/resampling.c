@@ -8,7 +8,7 @@
 #include "src/br_platform.h"
 #include "src/br_plot.h"
 #include "src/br_shaders.h"
-#include "src/br_free_list.h"
+#include "include/br_free_list_header.h"
 
 #include <stdint.h>
 #include <math.h>

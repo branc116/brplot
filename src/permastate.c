@@ -1,6 +1,6 @@
 #include "src/br_pp.h"
 #include "src/br_plotter.h"
-#include "src/br_str.h"
+#include "include/br_str_header.h"
 #include "src/br_plot.h"
 #include "src/br_filesystem.h"
 #include "src/br_resampling.h"
@@ -8,7 +8,7 @@
 #include "src/br_data.h"
 #include "src/br_data_generator.h"
 #include "src/br_da.h"
-#include "src/br_free_list.h"
+#include "include/br_free_list_header.h"
 #include "src/br_string_pool.h"
 #include "src/br_ui.h"
 #include "src/br_memory.h"
@@ -162,9 +162,9 @@ static bool br_permastate_savef_plotter(FILE* file, br_plotter_t* br) {
   }
   if (1 != fwrite(&br->ui, sizeof(br->ui), 1, file))                         BR_ERRORE("Failed to write UI.");
   brui_resizable_temp_delete_all();
-  brfl_write(file, br->resizables, fl_write_error); if (fl_write_error != 0) BR_ERRORE("Failed to write resizables.");
-  if (false == brsp_write(file, &br->sp))                                    BR_ERRORE("Failed to write string pool.");
-  if (false == br_anim_save(file, &br->anims))                               BR_ERRORE("Failed to write anim.");
+  brfl_write(file, br->uiw.resizables, fl_write_error); if (fl_write_error != 0) BR_ERRORE("Failed to write resizables.");
+  if (false == brsp_write(file, &br->uiw.sp))                                    BR_ERRORE("Failed to write string pool.");
+  if (false == br_anim_save(file, &br->uiw.anims))                               BR_ERRORE("Failed to write anim.");
   goto done;
 
 error:
@@ -261,15 +261,15 @@ bool br_permastate_load_plotter(FILE* file, br_plotter_t* br, br_data_descs_t* d
   if (desc->len != fread(desc->arr, sizeof(desc->arr[0]), desc->len, file)) BR_ERROR("Failed to read datas info");
 
   if (1 != (uis_read = fread(&br->ui, sizeof(br->ui), 1, file)))          BR_ERROR("Failed to read UI state.");
-  brfl_read(file, br->resizables, fl_read_error); if (fl_read_error != 0) BR_ERROR("Failed to read resizables.");
-  if (false == brsp_read(file, &br->sp))                                  BR_ERROR("Failed to read string pool.");
-  if (false == br_anim_load(file, &br->anims))                            BR_ERROR("Failed to load animations.");
+  brfl_read(file, br->uiw.resizables, fl_read_error); if (fl_read_error != 0) BR_ERROR("Failed to read resizables.");
+  if (false == brsp_read(file, &br->uiw.sp))                                  BR_ERROR("Failed to read string pool.");
+  if (false == br_anim_load(file, &br->uiw.anims))                            BR_ERROR("Failed to load animations.");
   if (0 != feof(file))                                                    BR_ERROR("Expected eof.");
-  brsp_compress(&br->sp, 1.3f, 16);
+  brsp_compress(&br->uiw.sp, 1.3f, 16);
   return true;
 
 error:
-  if (br && br->resizables.arr) brfl_free(br->resizables);
+  if (br && br->uiw.resizables.arr) brfl_free(br->uiw.resizables);
   return false;
 }
 

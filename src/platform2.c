@@ -356,7 +356,7 @@ const char* br_gdi_library_names[] = {
 #include "src/br_platform.h"
 #include "src/br_gl.h"
 #include "src/br_memory.h"
-#include "src/br_str.h"
+#include "include/br_str_header.h"
 #include "src/br_da.h"
 
 const char* br_gl_library_names[] = {
@@ -469,7 +469,7 @@ brpl_event_t brpl_event_next(brpl_window_t* window) {
     case brpl_event_window_focused: { LOGI("brpl_event_window_focused"); } break;
     case brpl_event_window_unfocused: { LOGI("brpl_event_window_unfocused"); } break;
     case brpl_event_close: { LOGI("brpl_event_close"); } break;
-    case brpl_event_next_frame: { LOGI("brpl_event_next_frame: time=%f", ev.time); } break;
+    case brpl_event_frame_next: { LOGI("brpl_event_frame_next: time=%f", ev.time); } break;
     case brpl_event_scale: { LOGI("brpl_event_scale"); } break;
     case brpl_event_touch_begin: { LOGI("brpl_event_touch_begin: id=%d", ev.touch.id); } break;
     case brpl_event_touch_end: { LOGI("brpl_event_touch_end: id=%d", ev.touch.id); } break;
@@ -619,7 +619,7 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
 
   if (0 == brpl_x11_XQLength(d)) {
     brpl_x11_XFlush(d);
-    return (brpl_event_t) { .kind = brpl_event_next_frame, .time = brpl_time() };
+    return (brpl_event_t) { .kind = brpl_event_frame_next, .time = brpl_time() };
   }
 
   brpl_x11_XEvent event;
@@ -1034,7 +1034,7 @@ static void brpl_glfw_frame_end(brpl_window_t* win) {
 static brpl_event_t brpl_glfw_event_next(brpl_window_t* win) {
   brpl_glfw_window_t* gw = win->win;
   brpl_event_t e = brpl_q_pop(&gw->q);
-  if (e.kind == brpl_event_none) return (brpl_event_t) { .kind = brpl_event_next_frame, .time = brpl_time() };
+  if (e.kind == brpl_event_none) return (brpl_event_t) { .kind = brpl_event_frame_next, .time = brpl_time() };
   else return e;
 }
 
@@ -1192,8 +1192,8 @@ static void brpl_win32_frame_end(brpl_window_t* win) {
 static brpl_event_t brpl_win32_event_next(brpl_window_t* win) {
   brpl_win32_window_t* gw = win->win;
   brpl_event_t e = brpl_q_pop(&gw->q);
-  if (e.kind == brpl_event_none) return (brpl_event_t) { .kind = brpl_event_next_frame, .time = brpl_time() };
-  else if (e.kind == brpl_event_next_frame) return (brpl_event_t) { .kind = brpl_event_next_frame, .time = brpl_time() };
+  if (e.kind == brpl_event_none) return (brpl_event_t) { .kind = brpl_event_frame_next, .time = brpl_time() };
+  else if (e.kind == brpl_event_frame_next) return (brpl_event_t) { .kind = brpl_event_frame_next, .time = brpl_time() };
   else return e;
 }
 

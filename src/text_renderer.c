@@ -3,7 +3,7 @@
 #include "src/br_math.h"
 #include "src/br_pp.h"
 #include "src/br_shaders.h"
-#include "src/br_str.h"
+#include "include/br_str_header.h"
 #include "src/br_text_renderer.h"
 #include "src/br_filesystem.h"
 #include "src/br_memory.h"
@@ -38,7 +38,6 @@ typedef struct {
 
 typedef struct br_text_renderer_t {
   br_shader_font_t** shader_f;
-  br_shader_fontbg_t** shader_bg;
   brtr_size_to_font_t* sizes;
   brtr_to_bake_t* to_bake;
   unsigned char* bitmap_pixels;

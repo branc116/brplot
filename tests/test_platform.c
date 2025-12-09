@@ -31,7 +31,7 @@ int main(void) {
       case brpl_event_close: {
         window.should_close = true;
       } break;
-      case brpl_event_next_frame: {
+      case brpl_event_frame_next: {
         up_x = 2 * (mouse_x / (float)window.viewport.width) - 1;
         brpl_frame_start(&window);
           glViewport(0, 0, window.viewport.width, window.viewport.height);

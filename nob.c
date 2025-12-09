@@ -966,6 +966,12 @@ static bool n_amalgam_do(void) {
   nob_cmd_append(&cmd, output, "include/brplot.h", ".generated/brplot.c");
   if (false == nob_cmd_run_cache(&cmd)) return false;
 
+  nob_cmd_append(&cmd, output, "include/brplat.h", ".generated/brplat.h");
+  if (false == nob_cmd_run_cache(&cmd)) return false;
+
+  nob_cmd_append(&cmd, output, "include/brui.h", ".generated/brui.h");
+  if (false == nob_cmd_run_cache(&cmd)) return false;
+
   nob_cmd_free(cmd);
   return true;
 }

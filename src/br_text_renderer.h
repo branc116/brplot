@@ -1,11 +1,11 @@
-#pragma once
-#include "src/br_str.h"
+#if !defined(BR_INCLUDE_BR_TEXT_RENDERER_H)
+#define BR_INCLUDE_BR_TEXT_RENDERER_H
+#include "include/br_str_header.h"
 #include "src/br_math.h"
 
 typedef struct br_text_renderer_t br_text_renderer_t;
 #if !defined(br_shader_font_t)
 typedef struct br_shader_font_t br_shader_font_t;
-typedef struct br_shader_fontbg_t br_shader_fontbg_t;
 #endif
 
 typedef enum {
@@ -27,11 +27,6 @@ typedef enum {
   br_text_renderer_ancor_right_down = br_text_renderer_ancor_x_right | br_text_renderer_ancor_y_down,
 } br_text_renderer_ancor_t;
 
-
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 br_text_renderer_t* br_text_renderer_malloc(int bitmap_width, int bitmap_height, unsigned char const* font_data, br_shader_font_t** shader);
 bool br_text_renderer_load_font(br_text_renderer_t* r, br_strv_t path);
 void br_text_renderer_free(br_text_renderer_t* r);
@@ -49,7 +44,4 @@ br_extent_t br_text_renderer_push2(br_text_renderer_t* r, br_vec3_t pos, int fon
 
 void br_text_renderer_viewport_set(br_text_renderer_t* r, br_sizei_t viewport);
 
-#if defined(__cplusplus)
-}
 #endif
-

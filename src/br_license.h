@@ -1,5 +1,5 @@
 #pragma once
-#include "src/br_str.h"
+#include "include/br_str_header.h"
 
 extern const br_strv_t br_license[];
 extern int br_license_lines;

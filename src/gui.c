@@ -4,7 +4,7 @@
 #include "include/brplot.h"
 #include "src/br_da.h"
 #include "src/br_filesystem.h"
-#include "src/br_free_list.h"
+#include "include/br_free_list_header.h"
 #if !defined(BR_WANTS_GL)
 #  define BR_WANTS_GL 1
 #endif
@@ -18,7 +18,7 @@
 #include "src/br_resampling.h"
 #include "src/br_shaders.h"
 #include "src/br_mesh.h"
-#include "src/br_str.h"
+#include "include/br_str_header.h"
 #include "src/br_string_pool.h"
 #include "src/br_theme.h"
 #include "src/br_ui.h"
@@ -41,7 +41,7 @@ static void brgui_draw_about(br_plotter_t* br);
 static void brgui_draw_add_expression(br_plotter_t* br);
 static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas);
 static void brgui_draw_help(br_plotter_t* br);
-static void brgui_draw_grid_numbers(br_text_renderer_t* r, br_plot_t* br, br_theme_t* theme);
+static void brgui_draw_grid_numbers(br_text_renderer_t* r, br_plot_t* br, int font_size, br_color_t text_color);
 static void brgui_draw_csv_manager(brsp_t* sp, brgui_csv_reader_t* reader, br_csv_parser_t* parser, br_datas_t* datas);
 
 #if defined(BR_HAS_MEMORY)
@@ -52,18 +52,18 @@ void br_plotter_draw(br_plotter_t* br) {
 #if BR_DEBUG
   for (int i = 0; i < br->plots.len; ++i) {
     br_plot_t p = br_da_get(br->plots, i);
-    BR_ASSERTF(false == brfl_is_free(br->resizables, p.extent_handle), "Plot id=%d, extent=%d", i, p.extent_handle);
-    BR_ASSERTF(false == brfl_is_free(br->resizables, p.menu_extent_handle), "Plot id=%d, extent=%d", i, p.menu_extent_handle);
-    BR_ASSERTF(false == brfl_is_free(br->resizables, p.legend_extent_handle), "Plot id=%d, extent=%d", i, p.legend_extent_handle);
+    BR_ASSERTF(false == brfl_is_free(br->uiw.resizables, p.extent_handle), "Plot id=%d, extent=%d", i, p.extent_handle);
+    BR_ASSERTF(false == brfl_is_free(br->uiw.resizables, p.menu_extent_handle), "Plot id=%d, extent=%d", i, p.menu_extent_handle);
+    BR_ASSERTF(false == brfl_is_free(br->uiw.resizables, p.legend_extent_handle), "Plot id=%d, extent=%d", i, p.legend_extent_handle);
   }
 #endif
-  brsp_t* sp = &br->sp;
+  brsp_t* sp = &br->uiw.sp;
   BR_PROFILE("Plotter draw") {
-    brgl_enable_framebuffer(0, br->win.viewport.width, br->win.viewport.height);
+    brgl_enable_framebuffer(0, br->uiw.pl.viewport.width, br->uiw.pl.viewport.height);
 #if BR_HAS_HOTRELOAD
     br_hotreload_tick(&br->hot_state);
 #endif
-    brgl_clear(BR_COLOR_COMPF(br->ui.theme.colors.bg));
+    brgl_clear(BR_COLOR_COMPF(br->uiw.theme.colors.bg));
     BR_PROFILE("Draw Plots") {
       for (int i = 0; i < br->plots.len; ++i) {
 #define PLOT br_da_getp(br->plots, i)
@@ -91,41 +91,41 @@ void br_plotter_draw(br_plotter_t* br) {
             }
           }
         }
-        brui_resizable_t* r = br_da_getp(br->resizables, PLOT->extent_handle);
+        brui_resizable_t* r = br_da_getp(br->uiw.resizables, PLOT->extent_handle);
         br_extent_t ex = brui_resizable_cur_extent(PLOT->extent_handle);
         if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
 
         brgl_enable_framebuffer(PLOT->texture_id, ex.width, ex.height);
-        brgl_clear(BR_COLOR_COMPF(br->ui.theme.colors.plot_bg));
+        brgl_clear(BR_COLOR_COMPF(br->uiw.theme.colors.plot_bg));
         if (br->ui.multisampling) brgl_enable_multisampling();
         else                      brgl_disable_multisampling();
         if (PLOT->kind == br_plot_kind_2d) {
-          br_mesh_grid_draw(PLOT, &br->ui.theme);
-          br_shaders_draw_all(br->shaders); // TODO: This should be called whenever a other shader are being drawn.
+          br_mesh_grid_draw(PLOT, &br->uiw.theme);
+          br_shaders_draw_all(br->uiw.shaders); // TODO: This should be called whenever a other shader are being drawn.
           br_datas_draw(br->groups, PLOT, ex);
-          br_shaders_draw_all(br->shaders);
-          brgui_draw_grid_numbers(br->text, PLOT, &br->ui.theme);
-          br_shaders_draw_all(br->shaders);
+          br_shaders_draw_all(br->uiw.shaders);
+          brgui_draw_grid_numbers(br->uiw.text, PLOT, br->uiw.def.font_size, br->uiw.theme.colors.grid_nums);
+          br_shaders_draw_all(br->uiw.shaders);
         } else if (PLOT->kind == br_plot_kind_3d) {
           br_datas_draw(br->groups, PLOT, ex);
-          br_shaders_draw_all(br->shaders);
-          br_mesh_grid_draw(PLOT, &br->ui.theme);
-          br_shaders_draw_all(br->shaders);
-          brgui_draw_grid_numbers(br->text, PLOT, &br->ui.theme);
-          br_shaders_draw_all(br->shaders);
+          br_shaders_draw_all(br->uiw.shaders);
+          br_mesh_grid_draw(PLOT, &br->uiw.theme);
+          br_shaders_draw_all(br->uiw.shaders);
+          brgui_draw_grid_numbers(br->uiw.text, PLOT, br->uiw.def.font_size, br->uiw.theme.colors.grid_nums);
+          br_shaders_draw_all(br->uiw.shaders);
         }
       }
     }
 
-    brgl_enable_framebuffer(0, br->win.viewport.width, br->win.viewport.height);
-    br_text_renderer_viewport_set(br->text, br->win.viewport.size);
+    brgl_enable_framebuffer(0, br->uiw.pl.viewport.width, br->uiw.pl.viewport.height);
+    br_text_renderer_viewport_set(br->uiw.text, br->uiw.pl.viewport.size);
     BR_PROFILE("UI") {
       brui_begin();
-        brui_mouse_clicked(br->mouse.click);
-        brui_mouse_pos(br->mouse.pos);
-        brui_ctrl_down(br->key.ctrl_down);
-        brui_frame_time((float)br->time.frame);
-        br_shaders_draw_all(br->shaders);
+        brui_mouse_clicked(br->uiw.mouse.click);
+        brui_mouse_pos(br->uiw.mouse.pos);
+        brui_ctrl_down(br->uiw.key.ctrl_down);
+        brui_frame_time((float)br->uiw.time.frame);
+        br_shaders_draw_all(br->uiw.shaders);
 #if BR_HAS_HOTRELOAD
         br_hotreload_tick_ui(&br->hot_state);
 #endif
@@ -135,10 +135,10 @@ void br_plotter_draw(br_plotter_t* br) {
           if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
             brui_resizable_push(PLOT->extent_handle);
               brui_img(PLOT->texture_id);
-              if (brgui_draw_plot_menu(&br->sp, PLOT, br->groups)) to_remove = i;
-              brgui_draw_legend(PLOT, br->groups, &br->ui.theme, br);
+              if (brgui_draw_plot_menu(&br->uiw.sp, PLOT, br->groups)) to_remove = i;
+              brgui_draw_legend(PLOT, br->groups, &br->uiw.theme, br);
               if (PLOT->kind == br_plot_kind_2d) {
-                br_vec2d_t v = br_plot2d_to_plot(PLOT, br->mouse.pos, ex);
+                br_vec2d_t v = br_plot2d_to_plot(PLOT, br->uiw.mouse.pos, ex);
                 for (int j = 0; j < PLOT->data_info.len; ++j) {
                   br_plot_data_t pd = PLOT->data_info.arr[j];
                   if (false == br_plot_data_is_visible(pd)) continue;
@@ -146,7 +146,7 @@ void br_plotter_draw(br_plotter_t* br) {
                   float dist = (float)(PLOT->dd.zoom.x*0.05);
                   br_u32 index = 0;
                   bool has_any = br_resampling_get_point_at2(*data, v, &dist, &index);
-                  br_strv_t name = brsp_get(br->sp, data->name);
+                  br_strv_t name = brsp_get(br->uiw.sp, data->name);
                   if (has_any) {
                     br_vec2d_t vreal = br_data_el_xy1(*data, index);
                     br_vec2_t s = br_plot2d_to_screen(PLOT, vreal, ex);
@@ -154,7 +154,7 @@ void br_plotter_draw(br_plotter_t* br) {
                   }
                 }
               } else if (PLOT->kind == br_plot_kind_3d) {
-                br_vec3d_t vec = br_plot3d_to_plot(PLOT, br->mouse.pos, ex);
+                br_vec3d_t vec = br_plot3d_to_plot(PLOT, br->uiw.mouse.pos, ex);
                 br_u32 index = 0;
                 for (int j = 0; j < PLOT->data_info.len; ++j) {
                   br_plot_data_t pd = PLOT->data_info.arr[j];
@@ -164,7 +164,7 @@ void br_plotter_draw(br_plotter_t* br) {
                   if (br_resampling_get_point_at3(*data, BR_VEC3_TOD(PLOT->ddd.eye), vec, &dist, &index)) {
                     br_vec3d_t vreal = br_data_el_xyz2(*data, index);
                     br_vec2_t s = br_plot3d_to_screen(PLOT, BR_VEC3D_TOF(vreal), ex);
-                    br_strv_t name = brsp_get(br->sp, data->name);
+                    br_strv_t name = brsp_get(br->uiw.sp, data->name);
                     brui_text_at(br_scrach_printf("%.*s: %f, %f, %f", name.len, name.str, vreal.x, vreal.y, vreal.z), s);
                   }
                 }
@@ -177,7 +177,7 @@ void br_plotter_draw(br_plotter_t* br) {
         brgui_draw_license(br);
         brgui_draw_log(br);
         brgui_draw_about(br);
-        brgui_fm_result_t fs_r = brgui_draw_file_manager(&br->sp, &br->ui.fm_state);
+        brgui_fm_result_t fs_r = brgui_draw_file_manager(&br->uiw.sp, &br->ui.fm_state);
         if (fs_r.is_selected) {
           switch (br->ui.fm_state.action) {
             case brgui_file_manager_import_csv: {
@@ -189,7 +189,7 @@ void br_plotter_draw(br_plotter_t* br) {
             } break;
             case brgui_file_manager_load_font: {
               br_strv_t strv = brsp_get(*sp, fs_r.selected_file);
-              if (br_text_renderer_load_font(br->text, strv)) {
+              if (br_text_renderer_load_font(br->uiw.text, strv)) {
                 brsp_remove(sp, br->ui.font_path_id);
                 br->ui.font_path_id = brsp_copy(sp, fs_r.selected_file);
                 brsp_insert_char_at_end(sp, br->ui.font_path_id, '\0');
@@ -200,7 +200,7 @@ void br_plotter_draw(br_plotter_t* br) {
             } break;
           }
         }
-        brgui_draw_csv_manager(&br->sp, &br->ui.csv_state, &br->csv_parser, &br->groups);
+        brgui_draw_csv_manager(&br->uiw.sp, &br->ui.csv_state, &br->csv_parser, &br->groups);
         brgui_draw_add_expression(br);
         brgui_draw_show_data(&br->ui.show_data, br->groups);
         brgui_draw_help(br);
@@ -218,10 +218,10 @@ static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas, br_theme_t* the
   brui_resizable_push(plot->legend_extent_handle);
     bool is_active = brui_active();
     int active_group = -1;
-    bool pressed = br->mouse.click;
+    bool pressed = br->uiw.mouse.click;
     br_plot_data_t cdi;
     br_plot_data_t di = { .group_id = -1 };
-    br_vec2_t mp = br->mouse.pos;
+    br_vec2_t mp = br->uiw.mouse.pos;
     brui_padding_y_set(1.f);
     for (int i = 0; i < plot->data_info.len; ++i) {
       bool active = is_active;
@@ -242,10 +242,10 @@ static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas, br_theme_t* the
       active &= brui_y() >= mp.y;
       if (active) {
         active = false;
-        br_anim_trace(&br->anims, cdi.thickness_multiplyer_ah);
+        br_anim_trace(&br->uiw.anims, cdi.thickness_multiplyer_ah);
         if (br_plot_data_is_visible(cdi)) {
           if (pressed) {
-            br_animf_set(&br->anims, cdi.thickness_multiplyer_ah, 0.f);
+            br_animf_set(&br->uiw.anims, cdi.thickness_multiplyer_ah, 0.f);
             plot->selected_data_old = cdi.group_id;
             plot->selected_data = -1;
           } else {
@@ -254,19 +254,19 @@ static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas, br_theme_t* the
           }
         } else {
           if (pressed) {
-            br_animf_set(&br->anims, cdi.thickness_multiplyer_ah, 1.f);
+            br_animf_set(&br->uiw.anims, cdi.thickness_multiplyer_ah, 1.f);
           }
         }
       }
     }
     if (active_group != plot->selected_data_old) {
-      if (di.group_id != -1) br_animf_set(&br->anims, di.thickness_multiplyer_ah, 2.f);
+      if (di.group_id != -1) br_animf_set(&br->uiw.anims, di.thickness_multiplyer_ah, 2.f);
       if (false == pressed) {
         if (plot->selected_data_old >= 0) {
           int index = 0;
           br_da_find(plot->data_info, group_id, plot->selected_data_old, index);
           if (index < plot->data_info.len) {
-            br_animf_set(&br->anims, plot->data_info.arr[index].thickness_multiplyer_ah, 1.f);
+            br_animf_set(&br->uiw.anims, plot->data_info.arr[index].thickness_multiplyer_ah, 1.f);
           }
         }
       }
@@ -814,7 +814,7 @@ void brgui_draw_add_expression(br_plotter_t* br) {
 
   bool refresh = false;
   int group_id = 12;
-  brsp_t* sp = &br->sp;
+  brsp_t* sp = &br->uiw.sp;
   if (e->input_id <= 0) e->input_id = brsp_new(sp);
 
   if (brui_resizable_temp_push(BR_STRL("Add expression")).just_created) {
@@ -899,7 +899,7 @@ static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_datas_t datas) 
 }
 
 static void draw_left_panel(br_plotter_t* br) {
-  brui_resizable_push(br->resizables.menu_extent_handle);
+  brui_resizable_push(br->uiw.resizables.menu_extent_handle);
     if (brui_collapsable(BR_STRL("File"), &br->ui.expand_file)) {
       if (brui_button(BR_STRL("Import CSV"))) {
         br->ui.fm_state.is_inited = true;
@@ -934,9 +934,9 @@ static void draw_left_panel(br_plotter_t* br) {
     }
 
     if (brui_collapsable(BR_STRL("Optimizations"), &br->ui.expand_optimizations)) {
-      brui_sliderf3(BR_STRL("Min Something"), &br->ui.theme.ui.min_sampling, 4);
-      brui_sliderf2(BR_STRL("Cull Min"), &br->ui.theme.ui.cull_min);
-      brui_checkbox(BR_STRL("Debug"), &br->ui.theme.ui.debug);
+      brui_sliderf3(BR_STRL("Min Something"), &br->ui.min_sampling, 4);
+      brui_sliderf2(BR_STRL("Cull Min"), &br->ui.cull_min);
+      brui_checkbox(BR_STRL("Debug"), &br->ui.debug);
       if (brui_checkbox(BR_STRL("Multi sampling"), &br->ui.multisampling)) {
         if (br->ui.multisampling) brgl_enable_multisampling();
         else                      brgl_disable_multisampling();
@@ -946,17 +946,17 @@ static void draw_left_panel(br_plotter_t* br) {
 
     if (brui_collapsable(BR_STRL("UI Styles"), &br->ui.expand_ui_styles)) {
       if (brui_checkbox(BR_STRL("Dark Theme"), &br->ui.dark_theme)) {
-        if (br->ui.dark_theme) br_theme_dark(&br->ui.theme);
-        else br_theme_light(&br->ui.theme);
+        if (br->ui.dark_theme) br_theme_dark(&br->uiw.theme);
+        else br_theme_light(&br->uiw.theme);
       }
       brui_vsplit(2);
-        brui_sliderf(BR_STRL("padding.y"), &br->ui.theme.ui.padding.y);
+        brui_sliderf(BR_STRL("padding.y"), &br->uiw.def.padding.y);
       brui_vsplit_pop();
-        brui_sliderf(BR_STRL("padding.x"), &br->ui.theme.ui.padding.x);
+        brui_sliderf(BR_STRL("padding.x"), &br->uiw.def.padding.x);
       brui_vsplit_end();
-      brui_sliderf2(BR_STRL("thick"), &br->ui.theme.ui.border_thick);
-      brui_slideri(BR_STRL("Font Size"), &br->ui.theme.ui.font_size);
-      brui_sliderf2(BR_STRL("Animation Speed"), &br->ui.theme.ui.animation_speed);
+      brui_sliderf2(BR_STRL("thick"), &br->uiw.def.border_thick);
+      brui_slideri(BR_STRL("Font Size"), &br->uiw.def.font_size);
+      brui_sliderf2(BR_STRL("Animation Speed"), &br->uiw.def.animation_speed);
       if (brui_button(BR_STRL("Load font"))) {
         br->ui.fm_state.is_inited = true;
         br->ui.fm_state.action = brgui_file_manager_load_font;
@@ -979,7 +979,7 @@ static void draw_left_panel(br_plotter_t* br) {
       brfl_foreach(i, br->groups) {
         brui_push();
           br_data_t data = br_da_get(br->groups, i);
-          br_strv_t name = brsp_get(br->sp, data.name);
+          br_strv_t name = brsp_get(br->uiw.sp, data.name);
           brui_text_input(data.name);
           brui_textf("%.*s (%d) (%zu points)", name.len, name.str, data.group_id, data.len);
           brui_textf("%.2fms (%.3f %.3f)", br_resampling_get_draw_time(data.resampling)*1000.0f, br_resampling_get_something(data.resampling), br_resampling_get_something2(data.resampling));
@@ -1024,30 +1024,30 @@ static void draw_left_panel(br_plotter_t* br) {
     }
 
     if (brui_button(BR_STRL("Exit"))) {
-      br->should_close = true;
+      br->uiw.pl.should_close = true;
     }
   brui_resizable_pop();
 }
 
 static int brgui_resizable_log_id = 0;
 static bool brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth) {
-  brui_resizable_t r = br->resizables.arr[handle];
+  brui_resizable_t r = br->uiw.resizables.arr[handle];
   bool in_any = false;
   brui_push();
     if (r.title_id > 0) {
       brui_push();
         brui_text_color_set(BR_COLOR(250, 200, 200, 255));
-          br_strv_t title = brsp_get(br->sp, r.title_id);
+          br_strv_t title = brsp_get(br->uiw.sp, r.title_id);
           brui_textf("%.*s", title.len, title.str);
       brui_pop();
     }
     brui_textf("%*s%d Res: z: %d, max_z: %d, max_sib_z: %d, parent: %d", depth*2, "", handle, r.z, r.max_z, brui_resizable_sibling_max_z(handle), r.parent);
-    br_extent_t cur = br_animex(&br->anims, r.cur_extent_ah);
-    br_extent_t tar = br_animex_get_target(&br->anims, r.cur_extent_ah);
+    br_extent_t cur = br_animex(&br->uiw.anims, r.cur_extent_ah);
+    br_extent_t tar = br_animex_get_target(&br->uiw.anims, r.cur_extent_ah);
     brui_textf("target: %.2f,%.2f,%.2f,%.2f", BR_EXTENT_(cur));
     brui_textf("current: %.2f,%.2f,%.2f,%.2f", BR_EXTENT_(tar));
     brui_textf("tag: %d", r.tag);
-    brfl_foreach(i, br->resizables) if (i != 0 && br->resizables.arr[i].parent == handle) in_any |= brgui_draw_debug_window_rec(br, i, 1+depth);
+    brfl_foreach(i, br->uiw.resizables) if (i != 0 && br->uiw.resizables.arr[i].parent == handle) in_any |= brgui_draw_debug_window_rec(br, i, 1+depth);
   brui_pop_t s = brui_pop();
 
   if (s.hovered) {
@@ -1055,7 +1055,7 @@ static bool brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth)
       if (s.clicked) {
         brgui_resizable_log_id = handle;
       }
-      br_color_t color = br->ui.theme.colors.btn_hovered;
+      br_color_t color = br->uiw.theme.colors.btn_hovered;
       color.a = 12;
       br_extent_t e = brui_resizable_cur_extent(handle);
       br_bb_t bb = BR_EXTENT_TOBB(e);
@@ -1067,12 +1067,12 @@ static bool brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth)
 }
 
 static void brgui_draw_debug_window(br_plotter_t* br) {
-  if (false == br->ui.theme.ui.debug) return;
+  if (false == br->ui.debug) return;
   if (brgui_resizable_log_id > 0) {
     int h = brgui_resizable_log_id;
     brui_resizable_temp_push(br_scrach_printf("Debug %d", h));
       br_extent_t ex = brui_resizable_cur_extent(h);
-      brui_resizable_t r = br_da_get(br->resizables, h);
+      brui_resizable_t r = br_da_get(br->uiw.resizables, h);
       brui_textf("%d Res: z: %d, max_z: %d, max_sib_z: %d, parent: %d", h, r.z, r.max_z, brui_resizable_sibling_max_z(h), r.parent);
       brui_vsplit(5);
         brui_text(BR_STRL("Kind"));
@@ -1099,22 +1099,22 @@ static void brgui_draw_debug_window(br_plotter_t* br) {
     uint32_t chars_per_row = 8;
     brui_push();
       if (brui_button(BR_STRL("Compress"))) {
-        brsp_compress(&br->sp, 1.0f, 0);
+        brsp_compress(&br->uiw.sp, 1.0f, 0);
       }
-      brui_textf("Pool size: %d, elements: %d, free_len: %d", br->sp.pool.len, br->sp.len, br->sp.free_len);
-      for (int i = 0; i < br->sp.len; ++i) {
-        brsp_node_t node = br->sp.arr[i];
-        brui_textf("#%d |%c| start_index: %04x, len: %d, cap: %d", i, brfl_is_free(br->sp, i) ? ' ' : 'X', node.start_index, node.len, node.cap);
+      brui_textf("Pool size: %d, elements: %d, free_len: %d", br->uiw.sp.pool.len, br->uiw.sp.len, br->uiw.sp.free_len);
+      for (int i = 0; i < br->uiw.sp.len; ++i) {
+        brsp_node_t node = br->uiw.sp.arr[i];
+        brui_textf("#%d |%c| start_index: %04x, len: %d, cap: %d", i, brfl_is_free(br->uiw.sp, i) ? ' ' : 'X', node.start_index, node.len, node.cap);
       }
       char* buff = br_scrach_get(128);
-        for (uint32_t i = 0; i < br->sp.pool.len; i += chars_per_row) {
+        for (uint32_t i = 0; i < br->uiw.sp.pool.len; i += chars_per_row) {
           brui_vsplitvp(2, BRUI_SPLITA(70), BRUI_SPLITR(1));
-            brui_text_color_set(br->ui.theme.colors.btn_txt_inactive);
+            brui_text_color_set(br->uiw.theme.colors.btn_txt_inactive);
             brui_textf("0x%x", i);
           brui_vsplit_pop();
             char* cur = buff;
-            for (uint32_t j = 0; j < chars_per_row && i + j < br->sp.pool.len; ++j) {
-              unsigned char c = (unsigned char)br->sp.pool.str[i + j];
+            for (uint32_t j = 0; j < chars_per_row && i + j < br->uiw.sp.pool.len; ++j) {
+              unsigned char c = (unsigned char)br->uiw.sp.pool.str[i + j];
               if (c < 16) {
                 *cur++ = '0';
                 *cur++ = (char)((int)c >= 10 ? 'A'+(char)(c - 10) : ('0' + c));
@@ -1132,7 +1132,7 @@ static void brgui_draw_debug_window(br_plotter_t* br) {
         }
       br_scrach_free();
     brui_pop();
-  if (brui_resizable_temp_pop()) br->ui.theme.ui.debug = false;
+  if (brui_resizable_temp_pop()) br->ui.debug = false;
 }
 
 static void brgui_draw_license(br_plotter_t* br) {
@@ -1183,7 +1183,7 @@ static void brgui_draw_about(br_plotter_t* br) {
   if (brui_resizable_temp_pop()) br->ui.show_about = false;
 }
 
-void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, br_theme_t* theme) {
+void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, int font_size, br_color_t font_color) {
   // TODO 2D/3D
   //assert(plot->kind == br_plot_kind_2d);
   if(plot->kind != br_plot_kind_2d) return;
@@ -1191,7 +1191,6 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, br_theme_t
   BR_PROFILE_START("draw_grid_numbers");
   br_extent_t vpf = brui_resizable_cur_extent(plot->extent_handle);
   br_extentd_t r = br_plot2d_extent_to_plot(*plot, vpf);
-  int font_size = theme->ui.font_size;
   char* scrach = br_scrach_get(128);
   br_vec2d_t sz = BR_VEC2_TOD(vpf.size.vec);
   br_text_renderer_viewport_set(tr, BR_SIZE_TOI(vpf.size));
@@ -1217,7 +1216,7 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, br_theme_t
         s = br_strv_trim_zeros(s);
         double y = sz.y / r.height * (r.y - cur);
         if (y > sz.y) break;
-        br_text_renderer_push2(tr, BR_VEC3((float)x, (float)y, 0.9f), font_size, theme->colors.grid_nums, BR_COLOR(0,0,0,0), s, limitf, ancor);
+        br_text_renderer_push2(tr, BR_VEC3((float)x, (float)y, 0.9f), font_size, font_color, BR_COLOR(0,0,0,0), s, limitf, ancor);
       }
     }
   }
@@ -1242,7 +1241,7 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, br_theme_t
         s = br_strv_trim_zeros(s);
         double x = (sz.x / r.width) * (cur - r.x);
         if (x > sz.x) break;
-        br_text_renderer_push2(tr, BR_VEC3((float)x, (float)y, 0.9f), font_size, theme->colors.grid_nums, BR_COLOR(0,0,0,0), s, limitf, ancor);
+        br_text_renderer_push2(tr, BR_VEC3((float)x, (float)y, 0.9f), font_size, font_color, BR_COLOR(0,0,0,0), s, limitf, ancor);
       }
     }
   }

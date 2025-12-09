@@ -49,7 +49,7 @@ typedef struct br_anims_t {
 } br_anims_t;
 
 typedef struct br_theme_t br_theme_t;
-void br_anims_construct(br_theme_t* theme);
+void br_anims_construct(float* animation_speed);
 
 void br_anims_tick(br_anims_t* anims, float dt);
 

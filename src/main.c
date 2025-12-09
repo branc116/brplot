@@ -12,7 +12,7 @@
 static void* main_gui(void* plotter) {
   br_plotter_t* br = (br_plotter_t*)plotter;
   br_plotter_init(br);
-  while(br->should_close == false) {
+  while(br->uiw.pl.should_close == false) {
     br_plotter_one_iter(br);
   }
   // CLEAN UP

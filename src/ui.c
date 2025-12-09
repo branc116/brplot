@@ -3,7 +3,7 @@
 #include "src/br_ui.h"
 #include "src/br_icons.h"
 #include "src/br_math.h"
-#include "src/br_str.h"
+#include "include/br_str_header.h"
 #include "src/br_text_renderer.h"
 #include "src/br_theme.h"
 #include "src/br_da.h"
@@ -12,9 +12,8 @@
 #endif
 #include "src/br_platform.h"
 #include "src/br_shaders.h"
-#include "src/br_free_list.h"
+#include "include/br_free_list_header.h"
 #include "src/br_memory.h"
-#include "src/br_str.h"
 #include "src/br_anim.h"
 
 #include "external/stb_ds.h"
@@ -25,7 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#define BR_THEME (*brui_state.theme)
+#define BR_THEME (brui_state.uiw->theme)
+#define BRUI_DEF (brui_state.uiw->def)
 #define TOP (brui_state.arr[brui_state.len ? brui_state.len - 1 : 0])
 #define ACTION (brui_state.action.kind)
 #define ACPARM (brui_state.action)
@@ -108,6 +108,8 @@ typedef struct {
   brui_stack_el_t* arr;
   size_t len, cap;
 
+  brui_window_t* uiw;
+
   bruirs_t* rs;
   brsp_t* sp;
   br_theme_t* theme;
@@ -138,7 +140,7 @@ typedef struct {
 
 static BR_THREAD_LOCAL brui_state_t brui_state;
 
-void brui_construct(br_theme_t* theme, bruirs_t* rs, brsp_t* sp, br_text_renderer_t* tr, br_shaders_t* shaders, br_anims_t* anims) {
+void brui_construct(br_theme_t* theme, bruirs_t* rs, brsp_t* sp, br_text_renderer_t* tr, br_shaders_t* shaders, br_anims_t* anims, brui_window_t* uiw) {
   brui_state.theme = theme;
   brui_state.rs = rs;
   brui_state.sp = sp;
@@ -146,6 +148,15 @@ void brui_construct(br_theme_t* theme, bruirs_t* rs, brsp_t* sp, br_text_rendere
   brui_state.shaders = shaders;
   brui_state.anims = anims;
   brui_state.rs_temp_last = -1;
+  brui_state.uiw = uiw;
+  /*
+  uiw->min_sampling = 0.001f;
+  uiw->cull_min = 2.f;
+  */
+  uiw->def.padding = BR_VEC2(4, 2);
+  uiw->def.font_size = 20;
+  uiw->def.border_thick = 1;
+  uiw->def.animation_speed = 10.f;
   ACPARM.text.offset_ahandle = br_animf_new(anims, 0, 0);
 }
 
@@ -165,8 +176,8 @@ brui_stack_el_t brui_stack_el(void) {
     br_extent_t viewport = BRUI_ANIMEX(BRUI_RS(0).cur_extent_ah);
     brui_stack_el_t root = {
       .limit = BR_EXTENT_TOBB(viewport),
-      .padding = BR_THEME.ui.padding,
-      .font_size = BR_THEME.ui.font_size,
+      .padding = BRUI_DEF.padding,
+      .font_size = BRUI_DEF.font_size,
       .font_color = BR_THEME.colors.btn_txt_inactive,
       .text_ancor = br_text_renderer_ancor_left_up,
       .is_active = true
@@ -431,7 +442,7 @@ void brui_border2(br_bb_t bb, bool active) {
   br_color_t bc = BR_THEME.colors.ui_edge_bg_inactive;
 
   float edge = 0;
-  float thick = BR_THEME.ui.border_thick;
+  float thick = BRUI_DEF.border_thick;
 
   if (active) {
     ec = BR_THEME.colors.ui_edge_active;

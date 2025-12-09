@@ -54,6 +54,7 @@ void br_theme_light(br_theme_t* t) {
 }
 
 void br_theme_reset_ui(br_theme_t* t) {
+/*
   t->ui.min_sampling = 0.001f;
   t->ui.cull_min = 2.f;
   t->ui.padding = BR_VEC2(4, 2);
@@ -61,5 +62,5 @@ void br_theme_reset_ui(br_theme_t* t) {
   t->ui.border_thick = 1;
   t->ui.animation_speed = 10.f;
   t->ui.default_grid_line_thickenss = 1.5f;
+*/
 }
-

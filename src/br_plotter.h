@@ -37,18 +37,13 @@ typedef struct br_text_renderer_t br_text_renderer_t;
 typedef struct br_plotter_t {
   br_datas_t groups;
   br_plots_t plots;
-  br_shaders_t shaders;
   br_dagens_t dagens;
-  bruirs_t resizables;
   br_csv_parser_t csv_parser;
-  brsp_t sp;
-  br_anims_t anims;
 
-  br_text_renderer_t* text;
   // Any thread can write to this q, only render thread can pop
   q_commands* commands;
 
-  brpl_window_t win;
+  brui_window_t uiw;
 
   struct {
     br_plotter_entity_kind_t active;
@@ -59,40 +54,6 @@ typedef struct br_plotter_t {
     };
   } action, hovered;
 
-  struct {
-    brpl_touch_point_t* arr;
-    int* free_arr;
-
-    int len, cap;
-    int free_len;
-    int free_next;
-
-    double last_free_time;
-    double last_touch_time;
-  } touch_points;
-
-  struct {
-    br_vec2_t old_pos;
-    br_vec2_t pos;
-    br_vec2_t delta;
-    bool dragging_left;
-    bool dragging_right;
-    bool click;
-    bool active;
-  } mouse;
-
-  struct {
-    bool ctrl_down;
-    bool shift_down;
-    bool alt_down;
-    bool down[255];
-  } key;
-
-  struct {
-    double old;
-    double now;
-    double frame;
-  } time;
 
 #if BR_HAS_HOTRELOAD
   br_hotreload_state_t hot_state;
@@ -102,16 +63,17 @@ typedef struct br_plotter_t {
 #if BR_HAS_SHADER_RELOAD
   bool shaders_dirty;
 #endif
-  bool should_close;
   bool exited;
   struct {
-    br_theme_t theme;
     brsp_id_t csv_file_opened;
     brgui_file_manager_t fm_state;
     brgui_csv_reader_t csv_state;
     brsp_id_t font_path_id;
     brgui_add_expression_t add_expression;
     brgui_show_data_t show_data;
+    float min_sampling;
+    float cull_min;
+    float default_grid_line_thickenss;
     struct {
       bool show;
       bool key_bindings;
@@ -124,6 +86,7 @@ typedef struct br_plotter_t {
       int selected_nid;
       bool show;
     } memory;
+    bool debug;
     bool dark_theme;
     bool multisampling;
     bool expand_file;

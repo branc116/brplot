@@ -553,7 +553,7 @@ static void input_reduce_command(br_plotter_t* gv, lex_state_t* s) {
   } else if (0 == strcmp("screenshot", s->tokens[1].name)) {
     input_push_command_with_path(gv->commands, s->tokens[2].name, q_command_screenshot);
   } else if (0 == strcmp("exit", s->tokens[1].name)) {
-    gv->should_close = true;
+    gv->uiw.pl.should_close = true;
     exit(0);
   } else if (0 == strcmp("extract", s->tokens[1].name)) {
     if (extractor_is_valid(br_str_as_view(s->tokens[3].br_str))) {
