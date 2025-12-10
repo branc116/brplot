@@ -1,7 +1,6 @@
 #include "include/brui.h"
 #if !defined(BR_INCLUDE_UNITY_BRPLAT_C)
 #  define BR_INCLUDE_UNITY_BRPLAT_C
-#  define BRPLAT_IMPLEMENTATION
 #  include "tools/unity/brplat.c"
 #endif
 #if !defined(BR_INCLUDE_SHL_IMPLS_C)

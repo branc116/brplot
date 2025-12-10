@@ -77,6 +77,7 @@ typedef struct brpl_q_t {
 } brpl_q_t;
 
 typedef enum brpl_window_kind_t {
+  brpl_window_any,
   brpl_window_x11,
   brpl_window_win32,
   brpl_window_glfw,

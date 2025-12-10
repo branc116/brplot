@@ -7,7 +7,7 @@
 #include "src/br_resampling.h"
 #include "include/br_str_header.h"
 #include "src/br_math.h"
-#include "src/br_string_pool.h"
+#include "include/br_string_pool_header.h"
 #include "src/br_memory.h"
 #include "src/br_anim.h"
 

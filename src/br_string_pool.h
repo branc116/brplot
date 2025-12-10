@@ -1,4 +1,5 @@
 #if !defined(BR_INCLUDE_BR_STRING_POOL_H)
+#  define BR_INCLUDE_BR_STRING_POOL_H
 #  include "include/br_string_pool_header.h"
 #endif // !defined(BR_INCLUDE_BR_STRING_POOL_H)
 

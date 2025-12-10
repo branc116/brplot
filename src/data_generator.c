@@ -8,7 +8,6 @@
 #include "include/br_str_header.h"
 #include "src/br_memory.h"
 #include "src/br_platform.h"
-#include "src/br_string_pool.h"
 
 #include <stdio.h>
 #include <errno.h>

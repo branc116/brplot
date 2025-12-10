@@ -9,7 +9,7 @@
 #include "src/br_data_generator.h"
 #include "src/br_da.h"
 #include "include/br_free_list_header.h"
-#include "src/br_string_pool.h"
+#include "include/br_string_pool_header.h"
 #include "src/br_ui.h"
 #include "src/br_memory.h"
 

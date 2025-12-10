@@ -159,6 +159,7 @@ br_extent_t br_anim_rebase(br_anims_t* anims, int anim_handle, br_vec2_t rebase_
   BR_ASSERTF(anim->kind == br_anim_extent, "Anim kind should be extent, but it's: %d", anim->kind);
   anim->ex.target.pos = br_vec2_sub(anim->ex.target.pos, rebase_for);
   anim->ex.current.pos = br_vec2_sub(anim->ex.current.pos, rebase_for);
+  return anim->ex.current;
 }
 
 bool br_anim_save(FILE* file, const br_anims_t* anims) {

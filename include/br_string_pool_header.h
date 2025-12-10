@@ -1,4 +1,5 @@
 #if !defined(BR_INCLUDE_BR_STRING_POOL_HEADER_H)
+#define BR_INCLUDE_BR_STRING_POOL_HEADER_H
 #include "src/br_pp.h"
 #include "src/br_da.h"
 #include "include/br_str_header.h"

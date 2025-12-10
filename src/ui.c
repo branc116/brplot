@@ -1,5 +1,5 @@
 #include "src/br_pp.h"
-#include "src/br_string_pool.h"
+#include "include/br_string_pool_header.h"
 #include "src/br_ui.h"
 #include "src/br_icons.h"
 #include "src/br_math.h"
@@ -23,6 +23,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 #define BR_THEME (brui_state.uiw->theme)
 #define BRUI_DEF (brui_state.uiw->def)
@@ -139,6 +140,433 @@ typedef struct {
 } brui_state_t;
 
 static BR_THREAD_LOCAL brui_state_t brui_state;
+
+bool brui_window_init(brui_window_t* uiw) {
+  brgl_construct(&uiw->shaders);
+  if (false == brpl_window_open(&uiw->pl)) {
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__)
+    uiw->pl.kind = brpl_window_glfw;
+    if (false == brpl_window_open(&uiw->pl)) {
+      LOGF("Failed to open window either with x11 or glfw. Please install one of those two.");
+    }
+#elif defined(_WIN32) 
+    uiw->pl.kind = brpl_window_glfw;
+    if (false == brpl_window_open(&uiw->pl)) {
+      LOGF("Failed to open window either with native win32 windowing stuff or glfw. Please fix your PC.\n"
+           "Or download glfw:\n"
+           "  https://www.glfw.org/download\n"
+           "And place the glfw3.dll next to the brplot.exe file in the file explorer");
+    }
+#else
+    LOGF("Failed to open window with GLFW. Please install GLFW on your device.\nhttps://www.glfw.org/download");
+#endif
+  }
+  brgl_disable_back_face_cull();
+  brgl_enable_depth_test();
+  brgl_enable(GL_BLEND);
+  brgl_enable_clip_distance();
+  brgl_blend_func(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  brgl_blend_equation(GL_FUNC_ADD);
+  brgl_viewport(0, 0, uiw->pl.viewport.width, uiw->pl.viewport.height);
+  br_anims_construct(&uiw->def.animation_speed);
+
+  uiw->shaders = br_shaders_malloc();
+  uiw->text = br_text_renderer_malloc(1024, 1024, br_font_data, &uiw->shaders.font);
+  uiw->time.now = brpl_time();
+  br_theme_reset_ui(&uiw->theme);
+  br_theme_dark(&uiw->theme);
+  brui_resizable_init(&uiw->resizables, BR_EXTENTI_TOF(uiw->pl.viewport));
+
+  brui_construct(&uiw->theme, &uiw->resizables, &uiw->sp, uiw->text, &uiw->shaders, &uiw->anims, uiw);
+  uiw->inited = true;
+  return true;
+}
+
+brpl_event_t brui_event_next(brui_window_t* uiw) {
+  brpl_event_t ev = brpl_event_next(&uiw->pl);
+  uiw->mouse.click = false;
+  brui_action_t* ta = brui_action();
+  while (ev.kind != brpl_event_none) {
+    switch (ev.kind) {
+      case brpl_event_nop: break;
+      case brpl_event_key_press: {
+        if (ev.key == BR_KEY_LEFT_CONTROL)    uiw->key.ctrl_down = true;
+        else if (ev.key == BR_KEY_LEFT_SHIFT) uiw->key.shift_down = true;
+        else if (ev.key == BR_KEY_LEFT_ALT)   uiw->key.alt_down = true;
+        else {
+          if (ev.key < 255)                uiw->key.down[ev.key] = true;
+          if (ev.key == BR_KEY_ESCAPE) {
+            ta->kind = brui_action_none;
+            brui_resizable_mouse_releasel(&uiw->resizables, uiw->mouse.pos);
+          } else {
+            if (ta->kind == brui_action_typing) {
+              br_strv_t strv = brsp_get(uiw->sp, ta->text.id);
+              switch (ev.key) {
+                case BR_KEY_LEFT: {
+                  do {
+                    ta->text.cursor_pos = br_strv_utf8_add(strv, ta->text.cursor_pos, -1);
+                  } while (ta->text.cursor_pos > 0 && uiw->key.ctrl_down && isalnum(strv.str[ta->text.cursor_pos]));
+                } break;
+                case BR_KEY_RIGHT: {
+                  do {
+                    ta->text.cursor_pos = br_strv_utf8_add(strv, ta->text.cursor_pos, 1);
+                  } while (ta->text.cursor_pos < (int)strv.len && uiw->key.ctrl_down && isalnum(strv.str[ta->text.cursor_pos]));
+                } break;
+                case BR_KEY_ESCAPE: {
+                  ta->kind = brui_action_none;
+                } break;
+                case BR_KEY_DELETE: {
+                  ta->text.changed = brsp_remove_utf8_after(&uiw->sp, ta->text.id, ta->text.cursor_pos) > 0;
+                  br_strv_t s = brsp_get(uiw->sp, ta->text.id);
+                  char c;
+                  bool is_alnum;
+                  do {
+                    if (ta->text.cursor_pos == (int)s.len) break;
+                    c = s.str[ta->text.cursor_pos];
+                    is_alnum = isalnum(c) || isspace(c);
+                    if (brsp_remove_utf8_after(&uiw->sp, ta->text.id, ta->text.cursor_pos) > 0) {
+                      ta->text.changed = true;
+                    }
+                    if (false == is_alnum) break;
+                    s = brsp_get(uiw->sp, ta->text.id);
+                    c = s.str[ta->text.cursor_pos];
+                    is_alnum = isalnum(c);
+                  } while (ta->text.cursor_pos < (int)s.len && uiw->key.ctrl_down && is_alnum);
+                } break;
+                case BR_KEY_BACKSPACE: {
+                  br_strv_t s = brsp_get(uiw->sp, ta->text.id);
+                  char c;
+                  bool is_alnum;
+                  do {
+                    if (ta->text.cursor_pos == 0) break;
+                    ta->text.cursor_pos = br_strv_utf8_add(strv, ta->text.cursor_pos, -1);
+                    c = s.str[ta->text.cursor_pos];
+                    is_alnum = isalnum(c) || isspace(c);
+                    if (brsp_remove_utf8_after(&uiw->sp, ta->text.id, ta->text.cursor_pos) > 0) {
+                      ta->text.changed = true;
+                    }
+                    if (false == is_alnum) break;
+                    s = brsp_get(uiw->sp, ta->text.id);
+                    c = s.str[ta->text.cursor_pos - 1];
+                    is_alnum = isalnum(c);
+                  } while (ta->text.cursor_pos > 0 && uiw->key.ctrl_down && is_alnum);
+                } break;
+                case BR_KEY_HOME: {
+                  ta->text.cursor_pos = 0;
+                  ta->text.changed = true;
+                } break;
+                case BR_KEY_END: {
+                  ta->text.cursor_pos = (int)strv.len;
+                  ta->text.changed = true;
+                } break;
+                default: LOGI("text input %d (%d)", ev.key, ev.keycode); break;
+              }
+            } else {
+              BR_TODO("active: %d, ev key: %d, keycode: %d", ta->kind, ev.key, ev.keycode);
+            }
+          }
+        }
+      } break;
+      case brpl_event_key_release: {
+        if (ev.key == BR_KEY_LEFT_CONTROL) uiw->key.ctrl_down = false;
+        else if (ev.key == BR_KEY_LEFT_SHIFT) uiw->key.shift_down = false;
+        else if (ev.key == BR_KEY_LEFT_ALT) uiw->key.alt_down = false;
+        else if (ev.key < 255) uiw->key.down[ev.key] = false;
+      } break;
+      case brpl_event_input: {
+        if (ta->kind == brui_action_typing) {
+          if (ev.utf8_char < 32 || ev.utf8_char == 127) break;
+          brui_action_t* action = brui_action();
+          brsp_t* sp = &uiw->sp;
+          brsp_id_t str_id = action->text.id;
+          action->text.cursor_pos += brsp_insert_unicode(sp, str_id, action->text.cursor_pos, ev.utf8_char);
+          action->text.changed = true;
+        }
+      } break;
+      case brpl_event_mouse_press: {
+        if (uiw->time.now - uiw->touch_points.last_touch_time < 1) break;
+        if (ta->kind == brui_action_typing) {
+          ta->kind = brui_action_none;
+          brui_resizable_mouse_releasel(&uiw->resizables, uiw->mouse.pos);
+        } else {
+          if (ev.mouse_key == 0) {
+            uiw->mouse.dragging_left = true;
+            brui_resizable_mouse_pressl(&uiw->resizables, uiw->mouse.pos, uiw->key.ctrl_down);
+            if (false == uiw->key.ctrl_down) {
+              uiw->mouse.click = true;
+            }
+          } else if (ev.mouse_key == 3) {
+            uiw->mouse.dragging_right = true;
+          } else {
+            LOGI("Mouse Press: %d", ev.mouse_key);
+          }
+        }
+      } break;
+      case brpl_event_mouse_release: {
+        if (uiw->time.now - uiw->touch_points.last_touch_time < 1) break;
+        if (ta->kind != brui_action_typing) {
+          brui_resizable_mouse_releasel(&uiw->resizables, uiw->mouse.pos);
+        }
+        uiw->mouse.dragging_left = false;
+        uiw->mouse.dragging_right = false;
+      } break;
+      case brpl_event_mouse_move: {
+        if (uiw->time.now - uiw->touch_points.last_touch_time < 1) break;
+        if (br->uiw.pl.active) {
+          if (uiw->mouse.active) uiw->mouse.delta = br_vec2_sub(ev.pos, uiw->mouse.pos);
+          else                  uiw->mouse.delta = BR_VEC2(0, 0);
+          uiw->mouse.active = true;
+          uiw->mouse.pos = ev.pos;
+          if (uiw->mouse.dragging_right) {
+            if (br->action.active == br_plotter_entity_plot_2d) {
+              br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
+              br_plot2d_move_screen_space(plot, uiw->mouse.delta, br_animex(&br->uiw.anims, br->uiw.resizables.arr[plot->extent_handle].cur_extent_ah).size);
+            } else if (br->action.active == br_plotter_entity_plot_3d) {
+              br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
+              float speed = (float)uiw->time.frame / 2.f;
+              br_vec3_t zeroed = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
+              br_vec3_t zero_dir = br_vec3_normalize(zeroed);
+              br_vec3_t right = br_vec3_normalize(br_vec3_cross(plot->ddd.up, zero_dir));
+              br_vec2_t m = uiw->mouse.delta;
+              br_vec2_t md = br_vec2_scale(BR_VEC2(m.x, m.y), -speed);
+              br_vec3_t rotated_up = br_vec3_rot(zeroed, plot->ddd.up, md.x);
+              br_vec3_t rotated_right = br_vec3_rot(rotated_up, right, md.y);
+              float horizontal_factor = fabsf(br_vec3_dot(br_vec3_normalize(rotated_right), plot->ddd.up));
+              if (horizontal_factor > 0.94f) plot->ddd.eye = br_vec3_add(rotated_up,    plot->ddd.target);
+              else                           plot->ddd.eye = br_vec3_add(rotated_right, plot->ddd.target);
+            }
+          } else {
+            brui_resizable_mouse_move(&br->uiw.resizables, uiw->mouse.pos);
+          }
+          uiw->mouse.delta = BR_VEC2(0, 0);
+        } else uiw->mouse.active = false;
+      } break;
+      case brpl_event_mouse_scroll: {
+        if (br->action.active == br_plotter_entity_none) {
+          if (br->hovered.active == br_plotter_entity_plot_2d) {
+            br_plot_t* plot = &br->plots.arr[br->hovered.plot_id];
+            br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
+            br_vec2_t zoom = BR_VEC2(-ev.vec.y, -ev.vec.y);
+            if (uiw->key.down[BR_KEY_X]) zoom.y = 0.f;
+            if (uiw->key.down[BR_KEY_Y]) zoom.x = 0.f;
+            br_plot2d_zoom(plot, zoom, ex, uiw->mouse.pos);
+          } else if (br->hovered.active == br_plotter_entity_plot_3d) {
+            br_plot_t* plot = &br->plots.arr[br->hovered.plot_id];
+            float mw_scale = (1.0f + (float)uiw->time.frame*ev.vec.y*3.f);
+            br_vec3_t zeroed = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
+            br_vec3_t zero_dir = br_vec3_normalize(zeroed);
+            float len = br_vec3_len(zeroed);
+            len /= mw_scale;
+            plot->ddd.eye = br_vec3_add(plot->ddd.target, br_vec3_scale(zero_dir, len));
+          } else {
+            brui_resizable_mouse_scroll(&br->uiw.resizables, ev.vec);
+          }
+        } else {
+          LOGW("Scrolling %d", br->action.active);
+        }
+      } break;
+      case brpl_event_window_focused: br->uiw.pl.active = true; break;
+      case brpl_event_window_unfocused: br->uiw.pl.active = false; break;
+      case brpl_event_window_shown: {
+        LOGI("SHOW");
+      } break;
+      case brpl_event_window_hidden: {
+        br->uiw.pl.active = false;
+      } break;
+      case brpl_event_window_resize: {
+        br->uiw.pl.viewport.size = BR_SIZE_TOI(ev.size);
+        uiw->mouse.active = false;
+      } break;
+      case brpl_event_close: {
+        br->uiw.pl.should_close = true;
+      } return;
+      case brpl_event_frame_next: {
+        uiw->time.old = uiw->time.now;
+        uiw->time.now = ev.time;
+        uiw->time.frame = (uiw->time.now - uiw->time.old);
+
+        int found_plot = -1;
+        for (int j = 0; j < br->plots.len; ++j) {
+          br_plot_t* plot = br_da_getp(br->plots, j);
+          if (br->plots.arr[j].extent_handle == br->uiw.resizables.active_resizable) {
+            switch (br->plots.arr[j].kind) {
+              case br_plot_kind_2d: br->hovered.active = br_plotter_entity_plot_2d; break;
+              case br_plot_kind_3d: br->hovered.active = br_plotter_entity_plot_3d; break;
+              default: BR_TODO("Unknown plot kind %d", br->plots.arr[j].kind); break;
+            }
+            found_plot = j;
+          }
+        }
+
+        if (br->action.active == br_plotter_entity_none) {
+          if (found_plot > -1) {
+            br->hovered.plot_id = found_plot;
+            br_plot_t* plot = &br->plots.arr[br->hovered.plot_id];
+            if (br->hovered.active == br_plotter_entity_plot_2d) {
+              br_vec2_t zoom = { 0 };
+              if (uiw->key.down[BR_KEY_X]) {
+                if (uiw->key.ctrl_down) zoom.x += -1.f;
+                if (uiw->key.shift_down) zoom.x += 1.f;
+              }
+              if (uiw->key.down[BR_KEY_Y]) {
+                if (uiw->key.ctrl_down) zoom.y += -1.f;
+                if (uiw->key.shift_down) zoom.y += 1.f;
+              }
+              zoom.x *= 60.f*(float)uiw->time.frame;
+              zoom.y *= 60.f*(float)uiw->time.frame;
+              br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
+              br_plot2d_zoom(plot, zoom, ex, uiw->mouse.pos);
+            } else if (br->hovered.active == br_plotter_entity_plot_3d) {
+              br_vec3_t zeroed = br_vec3_sub(plot->ddd.eye, plot->ddd.target);
+              br_vec3_t zero_dir = br_vec3_normalize(zeroed);
+              br_vec3_t right = br_vec3_normalize(br_vec3_cross(plot->ddd.up, zero_dir));
+              br_vec3_t delta = { 0 };
+              float speed = 10.f;
+              float dt = (float)uiw->time.frame;
+              if (uiw->key.ctrl_down) speed *= 0.1f;
+              if (uiw->key.shift_down) speed *= 10.f;
+              if (uiw->key.down[BR_KEY_W]) delta = br_vec3_scale(zero_dir, -dt*speed);
+              if (uiw->key.down[BR_KEY_S]) delta = br_vec3_add(delta, br_vec3_scale(zero_dir, dt*speed));
+              if (uiw->key.down[BR_KEY_A]) delta = br_vec3_add(delta, br_vec3_scale(right, -dt*speed));
+              if (uiw->key.down[BR_KEY_D]) delta = br_vec3_add(delta, br_vec3_scale(right, dt*speed));
+              if (uiw->key.down[BR_KEY_Q]) delta = br_vec3_add(delta, br_vec3_scale(plot->ddd.up, -dt*speed));
+              if (uiw->key.down[BR_KEY_E]) delta = br_vec3_add(delta, br_vec3_scale(plot->ddd.up, dt*speed));
+              plot->ddd.target = br_vec3_add(plot->ddd.target, delta);
+              plot->ddd.eye = br_vec3_add(plot->ddd.eye, delta);
+            }
+          } else {
+            br->hovered.resizable_id = br->uiw.resizables.active_resizable;
+            br->hovered.active = br_plotter_entity_ui;
+          }
+        }
+
+        if (false == uiw->mouse.dragging_right) brui_resizable_update(&br->uiw.resizables, BR_EXTENTI_TOF(br->uiw.pl.viewport));
+
+        br_anims_tick(&br->uiw.anims, uiw->time.frame);
+        brpl_frame_start(&br->uiw.pl);
+#if BR_HAS_HOTRELOAD
+        br_hotreload_tick(&br->hot_state);
+#endif
+        br_plotter_draw(br);
+        br_dagens_handle(&br->groups, &br->dagens, &br->plots, brpl_time() + 0.010);
+        br_shaders_draw_all(br->uiw.shaders);
+        br_text_renderer_dump(br->uiw.text);
+        handle_all_commands(br, br->commands);
+#if BR_HAS_SHADER_RELOAD
+        if (br->uiw.shaders_dirty) {
+          br_shaders_refresh(br->uiw.shaders);
+          br->uiw.shaders_dirty = false;
+        }
+#endif
+        br_plotter_frame_end(br);
+        if (brui_action()->kind == brui_action_sliding) {
+          br->action.active = br_plotter_entity_ui;
+        } else if (brui_action()->kind == brui_action_typing) {
+          br->action.active = br_plotter_entity_text_input;
+        }
+        brpl_frame_end(&br->uiw.pl);
+        return;
+      } break;
+      case brpl_event_scale: {
+        LOGI("Window scale: %f %f", ev.size.width, ev.size.height);
+      } break;
+      case brpl_event_touch_begin: {
+        uiw->touch_points.last_touch_time = uiw->time.now;
+        brpl_touch_point_t* tpp = NULL;
+        brfl_foreach(i, uiw->touch_points) {
+          brpl_touch_point_t tp = uiw->touch_points.arr[i];
+          if (tp.id != ev.touch.id) continue;
+          tpp = &uiw->touch_points.arr[i];
+        }
+        if (tpp == NULL) (void)brfl_push(uiw->touch_points, ev.touch);
+      } break;
+      case brpl_event_touch_update: {
+        uiw->touch_points.last_touch_time = uiw->time.now;
+        brpl_touch_point_t* tpp = NULL;
+        brfl_foreach(i, uiw->touch_points) {
+          brpl_touch_point_t tp = uiw->touch_points.arr[i];
+          if (tp.id != ev.touch.id) continue;
+          tpp = &uiw->touch_points.arr[i];
+        }
+        if (tpp == NULL) break;
+        uiw->mouse.pos = tpp->pos;
+        if (br->hovered.active == br_plotter_entity_plot_2d) {
+          br_plot_t* plot = br_da_getp(br->plots, br->hovered.plot_id);
+          br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
+          if (uiw->touch_points.free_len == 1) {
+              br_vec2_t delta = br_vec2_sub(ev.touch.pos, tpp->pos);
+              br_plot2d_move_screen_space(plot, delta, ex.size);
+              tpp->pos = ev.touch.pos;
+          } else if (uiw->touch_points.free_len == 2) {
+            brpl_touch_point_t* other = NULL;
+            brfl_foreach(i, uiw->touch_points) {
+              brpl_touch_point_t tp = uiw->touch_points.arr[i];
+              if (tp.id == ev.touch.id) continue;
+              other = &uiw->touch_points.arr[i];
+            }
+            if (NULL == other) break;
+            br_vec2d_t middle_old = { 0 };
+            // Handle Zoom
+            {
+              br_vec2d_t pa = br_plot2d_to_plot(plot, tpp->pos, ex);
+              br_vec2d_t pb = br_plot2d_to_plot(plot, other->pos, ex);
+              br_vec2d_t pc = br_plot2d_to_plot(plot, ev.touch.pos, ex);
+              middle_old = br_vec2d_add(br_vec2d_scale(pa, 0.5f), br_vec2d_scale(pb, 0.5f));
+              float old_len = br_vec2_dist(BR_VEC2D_TOF(pb), BR_VEC2D_TOF(pa));
+              float new_len = br_vec2_dist(BR_VEC2D_TOF(pb), BR_VEC2D_TOF(pc));
+              float zoom = old_len/new_len;
+              plot->dd.zoom.x *= zoom;
+              plot->dd.zoom.y *= zoom;
+            }
+            // Handle offset
+            {
+              br_vec2d_t pb = br_plot2d_to_plot(plot, other->pos, ex);
+              br_vec2d_t pc = br_plot2d_to_plot(plot, ev.touch.pos, ex);
+              br_vec2d_t middle_new = br_vec2d_add(br_vec2d_scale(pb, 0.5f), br_vec2d_scale(pc, 0.5f));
+              br_vec2d_t delta = br_vec2d_sub(middle_new, middle_old);
+              plot->dd.offset = br_vec2d_sub(plot->dd.offset, delta);
+            }
+            tpp->pos = ev.touch.pos;
+          }
+        }
+      } break;
+      case brpl_event_touch_end: {
+        uiw->touch_points.last_touch_time = uiw->time.now;
+        int to_remove = -1;
+        brfl_foreach(i, uiw->touch_points) {
+          brpl_touch_point_t tp = uiw->touch_points.arr[i];
+          if (tp.id != ev.touch.id) continue;
+          to_remove = i;
+          break;
+        }
+        if (to_remove >= 0) {
+          brpl_touch_point_t point = br_da_get(uiw->touch_points, to_remove);
+          brfl_remove(uiw->touch_points, to_remove);
+          double diff = uiw->time.now - uiw->touch_points.last_free_time;
+          if (uiw->touch_points.free_len == 0) {
+            if (diff < 0.5) {
+              uiw->mouse.pos = ev.pos;
+              uiw->mouse.old_pos = uiw->mouse.pos;
+              brui_resizable_mouse_move(&br->uiw.resizables, point.pos);
+              brui_resizable_mouse_pressl(&br->uiw.resizables, point.pos, uiw->key.ctrl_down);
+              brui_resizable_mouse_releasel(&br->uiw.resizables, point.pos);
+            }
+            uiw->touch_points.last_free_time = uiw->time.now;
+          }
+        }
+      } break;
+      default: BR_TODO("br_plotter_update active: %d, event: %d", br->action.active, ev.kind);
+    }
+    ev = brpl_event_next(&br->uiw.pl);
+    ++n;
+  }
+
+}
+BR_EXPORT void brui_frame_start(brui_window_t* ui_window);
+BR_EXPORT void brui_frame_end(brui_window_t* ui_window);
+BR_EXPORT bool brui_buttonf(const char* fmt, ...) {
+}
+
 
 void brui_construct(br_theme_t* theme, bruirs_t* rs, brsp_t* sp, br_text_renderer_t* tr, br_shaders_t* shaders, br_anims_t* anims, brui_window_t* uiw) {
   brui_state.theme = theme;

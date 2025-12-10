@@ -424,6 +424,17 @@ static BR_THREAD_LOCAL struct {
 bool brpl_window_open(brpl_window_t* window) {
   brpl_time_init();
   bool loaded = false;
+  if (window->kind == brpl_window_any) {
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__)
+    window->kind = brpl_window_x11;
+#elif defined(_WIN32)
+    window->kind = brpl_window_win32;
+#else
+    window->kind = brpl_window_glfw;
+#endif
+  }
+  if (window->viewport.width == 0) window->viewport.width = 800;
+  if (window->viewport.height == 0) window->viewport.width = 800;
   switch (window->kind) {
 #if BR_HAS_X11
     case brpl_window_x11: loaded = brpl_x11_load(window); break;
@@ -863,27 +874,27 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
   int major, minor;
   if (!glXQueryVersion(d, &major, &minor)) return false;
 
-#define GLX_DOUBLEBUFFER	5
-#define GLX_RED_SIZE		8
-#define GLX_GREEN_SIZE		9
-#define GLX_BLUE_SIZE		10
-#define GLX_ALPHA_SIZE		11
-#define GLX_DEPTH_SIZE		12
-#define GLX_STENCIL_SIZE	13
-#define GLX_RENDER_TYPE			0x8011
-#define GLX_DRAWABLE_TYPE		0x8010
-#define GLX_RGBA_BIT			0x00000001
-#define GLX_WINDOW_BIT			0x00000001
-#define GLX_X_RENDERABLE		0x8012
+#define GLX_DOUBLEBUFFER  5
+#define GLX_RED_SIZE    8
+#define GLX_GREEN_SIZE    9
+#define GLX_BLUE_SIZE    10
+#define GLX_ALPHA_SIZE    11
+#define GLX_DEPTH_SIZE    12
+#define GLX_STENCIL_SIZE  13
+#define GLX_RENDER_TYPE      0x8011
+#define GLX_DRAWABLE_TYPE    0x8010
+#define GLX_RGBA_BIT      0x00000001
+#define GLX_WINDOW_BIT      0x00000001
+#define GLX_X_RENDERABLE    0x8012
 #define GLX_SAMPLE_BUFFERS              0x186a0 /*100000*/
 #define GLX_SAMPLES         0x186a1 /*100001*/
 #define GLX_RGBA_TYPE 0x8014
-#define GLX_X_VISUAL_TYPE		0x22
-#define GLX_TRUE_COLOR			0x8002
+#define GLX_X_VISUAL_TYPE    0x22
+#define GLX_TRUE_COLOR      0x8002
 
   int attrib_list[] = {
     GLX_SAMPLE_BUFFERS, 1,
-    GLX_X_RENDERABLE,	1,
+    GLX_X_RENDERABLE,  1,
     GLX_DOUBLEBUFFER, 1,
     GLX_RED_SIZE, 8,
     GLX_GREEN_SIZE, 8,
