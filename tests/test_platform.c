@@ -8,29 +8,16 @@ int main(void) {
   int mouse_x = 0.f;
   brpl_window_t window = {
     .title = "Test",
-    .kind = brpl_window_x11,
     .viewport = {
       .width = 800, .height = 600
     }
   };
 
-  bool is_open = brpl_window_open(&window)
-  BR_ASSERT(is_open);
+  brpl_window_open(&window)
   while (false == window.should_close) {
     brpl_event_t event = brpl_event_next(&window);
     switch (event.kind) {
-      case brpl_event_mouse_move: {
-        mouse_x = event.pos.x;
-      } break;
-      case brpl_event_window_resize: {
-        window.viewport.size = BR_SIZE_TOI(event.size);
-      } break;
-      case brpl_event_window_unfocused: {
-        LOGI("Unfocused"); break;
-      } break;
-      case brpl_event_close: {
-        window.should_close = true;
-      } break;
+      case brpl_event_mouse_move: mouse_x = event.pos.x; break;
       case brpl_event_frame_next: {
         up_x = 2 * (mouse_x / (float)window.viewport.width) - 1;
         brpl_frame_start(&window);
@@ -59,7 +46,4 @@ int main(void) {
   return 0;
 }
 
-void br_on_fatal_error(void) {
-}
-void brgui_push_log_line(const char* fmt, ...) {}
 // cc tests/test_platform.c src/platform2.c -I.

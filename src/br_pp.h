@@ -7,18 +7,42 @@
 
 // --------------------------------------------- DEFINES ---------------------------------------------
 
+
+#if defined(DEBUG) || defined(RELEASE) || defined(BR_RELEASE)
+#  error "Please don't define DEBUG or RELEASE or BR_RELEASE macros"
+#endif
+#if !defined(BR_DEBUG)
+#  define BR_RELEASE
+#endif
+
 void brgui_push_log_line(const char* fmt, ...);
 #if !defined(BR_DISABLE_LOG)
-#  define BR_LOG(SEVERITY, FMT, ...) do { \
+#if defined(BR_DEBUG)
+
+#define BR_LOG(SEVERITY, FMT, ...) do { \
   brgui_push_log_line(SEVERITY FMT, ##__VA_ARGS__); \
   fprintf(stderr, SEVERITY"[ " __FILE__ ":%d ] " FMT "\n", __LINE__, ##__VA_ARGS__); \
 } while(0)
 
-#  define LOGE(format, ...) do { \
+#define LOGE(format, ...) do { \
     fprintf(stderr, "[ERROR][ " __FILE__ ":%d ] " format "\n", __LINE__, ##__VA_ARGS__); \
     BR_STACKTRACE(); \
 } while(0)
-#  define BR_ON_FATAL_ERROR br_on_fatal_error
+#define BR_ON_FATAL_ERROR br_on_fatal_error
+
+#else
+
+#define BR_LOG(SEVERITY, FMT, ...) do { \
+  fprintf(stderr, SEVERITY"[ " __FILE__ ":%d ] " FMT "\n", __LINE__, ##__VA_ARGS__); \
+} while(0)
+
+#define LOGE(format, ...) do { \
+    fprintf(stderr, "[ERROR][ " __FILE__ ":%d ] " format "\n", __LINE__, ##__VA_ARGS__); \
+    BR_STACKTRACE(); \
+} while(0)
+#define BR_ON_FATAL_ERROR(...)
+
+#endif
 #else
 #  define BR_LOG(SEVERITY, FMT, ...)
 #  define LOGE(...)
@@ -75,13 +99,6 @@ void __sanitizer_print_stack_trace(void);
 
 #if defined(BRPLOT_IMPLEMENTATION)
 #  define BR_LIB
-#endif
-
-#if defined(DEBUG) || defined(RELEASE) || defined(BR_RELEASE)
-#  error "Please don't define DEBUG or RELEASE or BR_RELEASE macros"
-#endif
-#if !defined(BR_DEBUG)
-#  define BR_RELEASE
 #endif
 
 #if !defined(BR_HAS_MEMORY)

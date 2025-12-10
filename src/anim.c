@@ -28,9 +28,9 @@ void br_anims_tick(br_anims_t* anims, float dt) {
       } break;
       case br_anim_extent: {
         bool still_alive = false;
-        for (int i = 0; i < 4; ++i) {
-          anim->ex.current.arr[i] = br_float_lerp(anim->ex.current.arr[i], anim->ex.target.arr[i], lerp_factor);
-          if (fabsf(anim->ex.current.arr[i] - anim->ex.target.arr[i]) > 1e-7) still_alive = true;
+        for (int j = 0; j < 4; ++j) {
+          anim->ex.current.arr[j] = br_float_lerp(anim->ex.current.arr[j], anim->ex.target.arr[j], lerp_factor);
+          if (fabsf(anim->ex.current.arr[j] - anim->ex.target.arr[j]) > 1e-7) still_alive = true;
         }
         if (false == still_alive) to_kill = i;
       } break;

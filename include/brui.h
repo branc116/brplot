@@ -202,7 +202,6 @@ typedef struct brui_window_t {
   } touch_points;
 
   struct {
-    br_vec2_t old_pos;
     br_vec2_t pos;
     br_vec2_t delta;
     bool dragging_left;

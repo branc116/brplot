@@ -5,9 +5,9 @@ set -ex
 test -f nob || cc nob.c -O2 -I. -lm -o nob
 ./nob amalgam
 
-cc -ggdb -c -DBRUI_IMPLMENTATION -x c .generated/brui.h -o build/amal_brui.o
-
-cc -ggdb -DBR_DISABLE_LOG -o bin/ui -I.generated ./tests/test_ui.c build/amal_brui.o -lm
+cc -ggdb -c -DBRUI_IMPLEMENTATION -x c .generated/brui.h -o build/amal_brui.o
+cc -ggdb -o bin/ui -I.generated ./tests/test_ui.c build/amal_brui.o build/amal_brui.o -lm
+bin/ui
 
 cc -ggdb -c -DBRPLOT_IMPLEMENTATION  .generated/brplot.c -o build/amal_brplot.o
 

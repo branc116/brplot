@@ -6,8 +6,6 @@
 #define BRUI_SPLITR(VALUE) ((brui_split_t) { .kind = brui_split_relative, .relative = (VALUE) })
 #define BRUI_SPLITA(VALUE) ((brui_split_t) { .kind = brui_split_absolute, .absolute = (VALUE) })
 
-void brui_construct(br_theme_t* theme, bruirs_t* rs, brsp_t* sp, br_text_renderer_t* tr, br_shaders_t* shaders, br_anims_t* anims, brui_window_t* uiw);
-
 void brui_begin(void);
 void brui_end(void);
 
@@ -68,11 +66,7 @@ float brui_local_y(void);
 bool  brui_active(void);
 void  brui_debug(void);
 
-void brui_mouse_clicked(bool is_mouse_clicked);
-void brui_mouse_pos(br_vec2_t mouse_pos);
-void brui_ctrl_down(bool is_down);
 void brui_log(bool should_log);
-void brui_frame_time(float frame_time);
 
 brui_action_t* brui_action(void);
 void           brui_action_stop(void);

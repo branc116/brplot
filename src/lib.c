@@ -27,15 +27,12 @@ static void br_main_iter(br_plotter_t* br) {
 
 static BR_THREAD_RET_TYPE main_loop(void* plotterv) {
   br_plotter_t* plotter = plotterv;
-  br_data_construct(&plotter->sp, &plotter->anims);
-  br_resampling_construct(&plotter->shaders, &plotter->ui.theme.ui.min_sampling, &plotter->ui.theme.ui.cull_min);
   br_plotter_init(plotter);
-  while (plotter->should_close == false) {
+  while (plotter->uiw.pl.should_close == false) {
     br_main_iter(plotter);
   }
   br_plotter_deinit(plotter);
   plotter->exited = true;
-  plotter->should_close = true;
   return (BR_THREAD_RET_TYPE)0;
 }
 
@@ -72,7 +69,7 @@ br_plotter_t* br_plotter_new(br_plotter_ctor_t const* ctor) {
 
 // Platform specific
 void br_plotter_wait(br_plotter_t const* plotter) {
-  while (false == plotter->should_close) {
+  while (false == plotter->uiw.pl.should_close) {
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(__CYGWIN__)
       sleep(1);
 #elif defined(_WIN32)
@@ -203,7 +200,7 @@ static BR_THREAD_LOCAL br_plotter_t* g_brplot_br_plotter[BR_PLOTTERS_CAP] = { 0 
 #define TOP_PLOTTER g_brplot_br_plotter[g_brplot_br_plotter_id]
 
 static void brp_simp_create_plotter_if_no_exist(void) {
-  if (NULL == TOP_PLOTTER || true == TOP_PLOTTER->should_close) {
+  if (NULL == TOP_PLOTTER || true == TOP_PLOTTER->uiw.pl.should_close) {
     g_brplot_br_plotter_id = (g_brplot_br_plotter_id + 1) % BR_PLOTTERS_CAP;
     if (TOP_PLOTTER != NULL) {
       //if (TOP_PLOTTER->exited) br_plotter_free(TOP_PLOTTER);

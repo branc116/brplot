@@ -59,11 +59,6 @@ void br_plotter_draw(br_plotter_t* br) {
 #endif
   brsp_t* sp = &br->uiw.sp;
   BR_PROFILE("Plotter draw") {
-    brgl_enable_framebuffer(0, br->uiw.pl.viewport.width, br->uiw.pl.viewport.height);
-#if BR_HAS_HOTRELOAD
-    br_hotreload_tick(&br->hot_state);
-#endif
-    brgl_clear(BR_COLOR_COMPF(br->uiw.theme.colors.bg));
     BR_PROFILE("Draw Plots") {
       for (int i = 0; i < br->plots.len; ++i) {
 #define PLOT br_da_getp(br->plots, i)
@@ -120,95 +115,89 @@ void br_plotter_draw(br_plotter_t* br) {
     brgl_enable_framebuffer(0, br->uiw.pl.viewport.width, br->uiw.pl.viewport.height);
     br_text_renderer_viewport_set(br->uiw.text, br->uiw.pl.viewport.size);
     BR_PROFILE("UI") {
-      brui_begin();
-        brui_mouse_clicked(br->uiw.mouse.click);
-        brui_mouse_pos(br->uiw.mouse.pos);
-        brui_ctrl_down(br->uiw.key.ctrl_down);
-        brui_frame_time((float)br->uiw.time.frame);
-        br_shaders_draw_all(br->uiw.shaders);
+      br_shaders_draw_all(br->uiw.shaders);
 #if BR_HAS_HOTRELOAD
-        br_hotreload_tick_ui(&br->hot_state);
+      br_hotreload_tick_ui(&br->hot_state);
 #endif
-        int to_remove = -1;
-        for (int i = 0; i < br->plots.len; ++i) {
-          br_extent_t ex = brui_resizable_cur_extent(PLOT->extent_handle);
-          if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
-            brui_resizable_push(PLOT->extent_handle);
-              brui_img(PLOT->texture_id);
-              if (brgui_draw_plot_menu(&br->uiw.sp, PLOT, br->groups)) to_remove = i;
-              brgui_draw_legend(PLOT, br->groups, &br->uiw.theme, br);
-              if (PLOT->kind == br_plot_kind_2d) {
-                br_vec2d_t v = br_plot2d_to_plot(PLOT, br->uiw.mouse.pos, ex);
-                for (int j = 0; j < PLOT->data_info.len; ++j) {
-                  br_plot_data_t pd = PLOT->data_info.arr[j];
-                  if (false == br_plot_data_is_visible(pd)) continue;
-                  br_data_t* data = br_data_get(&br->groups, pd.group_id);
-                  float dist = (float)(PLOT->dd.zoom.x*0.05);
-                  br_u32 index = 0;
-                  bool has_any = br_resampling_get_point_at2(*data, v, &dist, &index);
-                  br_strv_t name = brsp_get(br->uiw.sp, data->name);
-                  if (has_any) {
-                    br_vec2d_t vreal = br_data_el_xy1(*data, index);
-                    br_vec2_t s = br_plot2d_to_screen(PLOT, vreal, ex);
-                    brui_text_at(br_scrach_printf("%.*s: %f, %f", name.len, name.str, vreal.x, vreal.y), s);
-                  }
-                }
-              } else if (PLOT->kind == br_plot_kind_3d) {
-                br_vec3d_t vec = br_plot3d_to_plot(PLOT, br->uiw.mouse.pos, ex);
+      int to_remove = -1;
+      for (int i = 0; i < br->plots.len; ++i) {
+        br_extent_t ex = brui_resizable_cur_extent(PLOT->extent_handle);
+        if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
+          brui_resizable_push(PLOT->extent_handle);
+            brui_img(PLOT->texture_id);
+            if (brgui_draw_plot_menu(&br->uiw.sp, PLOT, br->groups)) to_remove = i;
+            brgui_draw_legend(PLOT, br->groups, &br->uiw.theme, br);
+            if (PLOT->kind == br_plot_kind_2d) {
+              br_vec2d_t v = br_plot2d_to_plot(PLOT, br->uiw.mouse.pos, ex);
+              for (int j = 0; j < PLOT->data_info.len; ++j) {
+                br_plot_data_t pd = PLOT->data_info.arr[j];
+                if (false == br_plot_data_is_visible(pd)) continue;
+                br_data_t* data = br_data_get(&br->groups, pd.group_id);
+                float dist = (float)(PLOT->dd.zoom.x*0.05);
                 br_u32 index = 0;
-                for (int j = 0; j < PLOT->data_info.len; ++j) {
-                  br_plot_data_t pd = PLOT->data_info.arr[j];
-                  if (false == br_plot_data_is_visible(pd)) continue;
-                  br_data_t* data = br_data_get1(br->groups, pd.group_id);
-                  float dist = 3.5f;
-                  if (br_resampling_get_point_at3(*data, BR_VEC3_TOD(PLOT->ddd.eye), vec, &dist, &index)) {
-                    br_vec3d_t vreal = br_data_el_xyz2(*data, index);
-                    br_vec2_t s = br_plot3d_to_screen(PLOT, BR_VEC3D_TOF(vreal), ex);
-                    br_strv_t name = brsp_get(br->uiw.sp, data->name);
-                    brui_text_at(br_scrach_printf("%.*s: %f, %f, %f", name.len, name.str, vreal.x, vreal.y, vreal.z), s);
-                  }
+                bool has_any = br_resampling_get_point_at2(*data, v, &dist, &index);
+                br_strv_t name = brsp_get(br->uiw.sp, data->name);
+                if (has_any) {
+                  br_vec2d_t vreal = br_data_el_xy1(*data, index);
+                  br_vec2_t s = br_plot2d_to_screen(PLOT, vreal, ex);
+                  brui_text_at(br_scrach_printf("%.*s: %f, %f", name.len, name.str, vreal.x, vreal.y), s);
                 }
               }
-            brui_resizable_pop();
+            } else if (PLOT->kind == br_plot_kind_3d) {
+              br_vec3d_t vec = br_plot3d_to_plot(PLOT, br->uiw.mouse.pos, ex);
+              br_u32 index = 0;
+              for (int j = 0; j < PLOT->data_info.len; ++j) {
+                br_plot_data_t pd = PLOT->data_info.arr[j];
+                if (false == br_plot_data_is_visible(pd)) continue;
+                br_data_t* data = br_data_get1(br->groups, pd.group_id);
+                float dist = 3.5f;
+                if (br_resampling_get_point_at3(*data, BR_VEC3_TOD(PLOT->ddd.eye), vec, &dist, &index)) {
+                  br_vec3d_t vreal = br_data_el_xyz2(*data, index);
+                  br_vec2_t s = br_plot3d_to_screen(PLOT, BR_VEC3D_TOF(vreal), ex);
+                  br_strv_t name = brsp_get(br->uiw.sp, data->name);
+                  brui_text_at(br_scrach_printf("%.*s: %f, %f, %f", name.len, name.str, vreal.x, vreal.y, vreal.z), s);
+                }
+              }
+            }
+          brui_resizable_pop();
 #undef PLOT
+      }
+      if (to_remove != -1) br_plotter_remove_plot(br, to_remove);
+      draw_left_panel(br);
+      brgui_draw_license(br);
+      brgui_draw_log(br);
+      brgui_draw_about(br);
+      brgui_fm_result_t fs_r = brgui_draw_file_manager(&br->uiw.sp, &br->ui.fm_state);
+      if (fs_r.is_selected) {
+        switch (br->ui.fm_state.action) {
+          case brgui_file_manager_import_csv: {
+            brsp_remove(sp, br->ui.csv_state.read_id);
+            br->ui.csv_state.read_id = brsp_copy(sp, fs_r.selected_file);
+            brsp_insert_char_at_end(sp, br->ui.csv_state.read_id, '\0');
+            br->ui.csv_state.is_open = true;
+            brui_resizable_show(fs_r.resizable_handle, false);
+          } break;
+          case brgui_file_manager_load_font: {
+            br_strv_t strv = brsp_get(*sp, fs_r.selected_file);
+            if (br_text_renderer_load_font(br->uiw.text, strv)) {
+              brsp_remove(sp, br->ui.font_path_id);
+              br->ui.font_path_id = brsp_copy(sp, fs_r.selected_file);
+              brsp_insert_char_at_end(sp, br->ui.font_path_id, '\0');
+            };
+          } break;
+          default: {
+            LOGW("Unknown action: %d", br->ui.fm_state.action);
+          } break;
         }
-        if (to_remove != -1) br_plotter_remove_plot(br, to_remove);
-        draw_left_panel(br);
-        brgui_draw_license(br);
-        brgui_draw_log(br);
-        brgui_draw_about(br);
-        brgui_fm_result_t fs_r = brgui_draw_file_manager(&br->uiw.sp, &br->ui.fm_state);
-        if (fs_r.is_selected) {
-          switch (br->ui.fm_state.action) {
-            case brgui_file_manager_import_csv: {
-              brsp_remove(sp, br->ui.csv_state.read_id);
-              br->ui.csv_state.read_id = brsp_copy(sp, fs_r.selected_file);
-              brsp_insert_char_at_end(sp, br->ui.csv_state.read_id, '\0');
-              br->ui.csv_state.is_open = true;
-              brui_resizable_show(fs_r.resizable_handle, false);
-            } break;
-            case brgui_file_manager_load_font: {
-              br_strv_t strv = brsp_get(*sp, fs_r.selected_file);
-              if (br_text_renderer_load_font(br->uiw.text, strv)) {
-                brsp_remove(sp, br->ui.font_path_id);
-                br->ui.font_path_id = brsp_copy(sp, fs_r.selected_file);
-                brsp_insert_char_at_end(sp, br->ui.font_path_id, '\0');
-              };
-            } break;
-            default: {
-              LOGW("Unknown action: %d", br->ui.fm_state.action);
-            } break;
-          }
-        }
-        brgui_draw_csv_manager(&br->uiw.sp, &br->ui.csv_state, &br->csv_parser, &br->groups);
-        brgui_draw_add_expression(br);
-        brgui_draw_show_data(&br->ui.show_data, br->groups);
-        brgui_draw_help(br);
+      }
+      brgui_draw_csv_manager(&br->uiw.sp, &br->ui.csv_state, &br->csv_parser, &br->groups);
+      brgui_draw_add_expression(br);
+      brgui_draw_show_data(&br->ui.show_data, br->groups);
+      brgui_draw_help(br);
 #if defined(BR_HAS_MEMORY)
-        brgui_draw_memory(br);
+      brgui_draw_memory(br);
 #endif
-        brgui_draw_debug_window(br);
-      brui_end();
+      brgui_draw_debug_window(br);
     }
   }
 }

@@ -447,7 +447,9 @@ bool brpl_window_open(brpl_window_t* window) {
 #endif
     default: LOGE("Unknown kind: %d", window->kind); break;
   }
-  return loaded && window->f.window_open && window->f.window_open(window);
+  if (loaded) loaded = window->f.window_open && window->f.window_open(window);
+  window->should_close = loaded == false;
+  return loaded;
 }
 
 void brpl_window_close(brpl_window_t* window) {
@@ -456,6 +458,7 @@ void brpl_window_close(brpl_window_t* window) {
 
 void brpl_frame_start(brpl_window_t* window) {
   window->f.frame_start(window);
+  brgl_enable_framebuffer(0, window->viewport.width, window->viewport.height);
 }
 
 void brpl_frame_end(brpl_window_t* window) {
@@ -464,6 +467,16 @@ void brpl_frame_end(brpl_window_t* window) {
 
 brpl_event_t brpl_event_next(brpl_window_t* window) {
   brpl_event_t ev = window->f.event_next(window);
+  switch (ev.kind) {
+    case brpl_event_close:            window->should_close = true;                  break;
+    case brpl_event_scale:            window->scale = ev.size.vec;                  break;
+    case brpl_event_window_resize:    window->viewport.size = BR_SIZE_TOI(ev.size); break;
+    case brpl_event_window_shown:     window->active = true;                        break;
+    case brpl_event_window_hidden:    window->active = false;                       break;
+    case brpl_event_window_focused:   window->active = true;                        break;
+    case brpl_event_window_unfocused: window->active = false;                       break;
+    default: break;
+  }
 #if 0
   switch (ev.kind) {
     case brpl_event_none: { LOGI("brpl_event_none"); } break;
@@ -1072,7 +1085,7 @@ static void brpl_glfw_mousebuttonfun(GLFWwindow* window, int button, int action,
   (void)mods;
   brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
   LOGI("mousebutton but=%d, action=%d", button, action);
-  int ev = action == 0 ? brpl_event_mouse_release : brpl_event_mouse_press;
+  brpl_event_kind_t ev = action == 0 ? brpl_event_mouse_release : brpl_event_mouse_press;
   int key  = button == 0 ? 0 : 3;
   brpl_q_push(&win->q, (brpl_event_t) { .kind = ev, .mouse_key = key });
 }
@@ -1194,6 +1207,7 @@ typedef struct brpl_win32_window_t {
 static BR_THREAD_LOCAL brpl_q_t* brpl_win32_q;
 
 static void brpl_win32_frame_start(brpl_window_t* win) {
+  (void)win;
 }
 
 static void brpl_win32_frame_end(brpl_window_t* win) {
