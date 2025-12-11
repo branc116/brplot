@@ -18,9 +18,9 @@
 #include "src/data_generator.c"
 #include "src/data.c"
 #include "src/resampling.c"
-#include "tests/src/mock_platform.c"
-#include "tests/src/mock_mesh.c"
-#include "tests/src/mock_gl.c"
+#include "tests/src_tests/mock_platform.c"
+#include "tests/src_tests/mock_mesh.c"
+#include "tests/src_tests/mock_gl.c"
 
 void br_expr_debug(br_dagens_t dagens) {
   br_str_t dbg = { 0 };

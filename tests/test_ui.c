@@ -1,4 +1,3 @@
-#define BRUI_IMPLEMENTATION
 #include <brui.h>
 
 int main(void) {

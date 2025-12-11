@@ -5,10 +5,10 @@
 #include "src/br_free_list.h"
 #include "src/br_test.h"
 #include "src/resampling.c"
-#include "tests/src/mock_platform.c"
-#include "tests/src/mock_mesh.c"
+#include "tests/src_tests/mock_platform.c"
+#include "tests/src_tests/mock_mesh.c"
 #include "src/br_plotter.h"
-#include "tests/src/mock_data.c"
+#include "tests/src_tests/mock_data.c"
 
 void resampling(void) {
   float xs[] = { 0, 1, 2, 3 };

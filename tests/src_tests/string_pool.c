@@ -309,4 +309,4 @@ int main(void) {
 void br_on_fatal_error(void) {}
 void brgui_push_log_line(const char* fmt, ...) {(void)fmt;}
 
-// clang -fsanitize=address -ggdb -I. tests/src/string_pool.c -o bin/string_pool_tests && bin/string_pool_tests
+// clang -fsanitize=address -ggdb -I. tests/src_tests/string_pool.c -o bin/string_pool_tests && bin/string_pool_tests

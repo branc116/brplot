@@ -1091,16 +1091,16 @@ static bool n_unittests_do(void) {
   const char* compiler = get_compiler(get_target());
 
   static struct { char const *test_file, *out_bin; } test_programs[] = {
-    { .test_file = "./tests/src/data_generator.c", .out_bin  = "bin/data_generator" },
-    { .test_file = "./tests/src/resampling.c", .out_bin  = "bin/resampling" },
-    { .test_file = "./tests/src/read_input.c", .out_bin  = "bin/read_input" },
-    { .test_file = "./tests/src/filesystem.c", .out_bin  = "bin/memory" },
-    { .test_file = "./tests/src/memory.c", .out_bin  = "bin/memory" },
-    { .test_file = "./tests/src/str.c", .out_bin  = "bin/test_str" },
-    { .test_file = "./tests/src/free_list.c", .out_bin  = "bin/test_fl" },
-    { .test_file = "./tests/src/math.c", .out_bin  = "bin/test_math" },
-    { .test_file = "./tests/src/string_pool.c", .out_bin  = "bin/string_pool" },
-    { .test_file = "./tests/src/da.c", .out_bin  = "bin/da" },
+    { .test_file = "./tests/src_tests/data_generator.c", .out_bin  = "bin/data_generator" },
+    { .test_file = "./tests/src_tests/resampling.c", .out_bin  = "bin/resampling" },
+    { .test_file = "./tests/src_tests/read_input.c", .out_bin  = "bin/read_input" },
+    { .test_file = "./tests/src_tests/filesystem.c", .out_bin  = "bin/memory" },
+    { .test_file = "./tests/src_tests/memory.c", .out_bin  = "bin/memory" },
+    { .test_file = "./tests/src_tests/str.c", .out_bin  = "bin/test_str" },
+    { .test_file = "./tests/src_tests/free_list.c", .out_bin  = "bin/test_fl" },
+    { .test_file = "./tests/src_tests/math.c", .out_bin  = "bin/test_math" },
+    { .test_file = "./tests/src_tests/string_pool.c", .out_bin  = "bin/string_pool" },
+    { .test_file = "./tests/src_tests/da.c", .out_bin  = "bin/da" },
   };
 
   for (size_t i = 0; i < BR_ARR_LEN(test_programs); ++i) {
@@ -1129,7 +1129,7 @@ static bool n_fuzztests_do(void) {
 //  nob_cmd_append(&cmd, "./bin/fuzz_read_input", FUZZ_FLAGS);
 //  if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
 
-  nob_cmd_append(&cmd, compiler, "-fsanitize=fuzzer,address,leak,undefined", "-DFUZZ", "-o", "bin/fuzz_sp", "./tests/src/string_pool.c");
+  nob_cmd_append(&cmd, compiler, "-fsanitize=fuzzer,address,leak,undefined", "-DFUZZ", "-o", "bin/fuzz_sp", "./tests/src_tests/string_pool.c");
   compile_standard_flags(&cmd, false);
   if (false == br_cmd_run(&cmd)) return false;
   nob_cmd_append(&cmd, "./bin/fuzz_sp", FUZZ_FLAGS);

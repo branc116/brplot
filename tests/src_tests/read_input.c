@@ -7,7 +7,7 @@
 #include "src/br_str.h"
 #include "src/read_input.c"
 #include "src/q.c"
-#include "tests/src/mock_data.c"
+#include "tests/src_tests/mock_data.c"
 
 #if defined(FUZZ)
 #  include "src/br_data_generator.h"
