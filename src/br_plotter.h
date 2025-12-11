@@ -60,9 +60,6 @@ typedef struct br_plotter_t {
 #endif
 
   br_permastate_status_t loaded_status;
-#if BR_HAS_SHADER_RELOAD
-  bool shaders_dirty;
-#endif
   bool exited;
   struct {
     brsp_id_t csv_file_opened;

@@ -178,6 +178,10 @@ bool brui_window_init(brui_window_t* uiw) {
   br_theme_dark(&uiw->theme);
   br_icons_init(uiw->shaders.icon);
   brui_resizable_init(&uiw->resizables, BR_EXTENTI_TOF(uiw->pl.viewport));
+#if BR_HAS_SHADER_RELOAD
+  br_start_refreshing_shaders(&uiw->shaders_dirty, &uiw->pl.should_close);
+#endif
+
 
   uiw->inited = true;
   return true;

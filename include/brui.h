@@ -244,6 +244,7 @@ typedef struct brui_window_t {
   br_theme_t theme;
 
   bool inited;
+  bool shaders_dirty;
 } brui_window_t;
 
 // --------------------------------------------- BRUI_API ----------------------------------------------

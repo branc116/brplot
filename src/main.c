@@ -30,9 +30,6 @@ int main(void) {
     LOGE("Failed to malloc br plotter, exiting...\n");
     exit(1);
   }
-#if BR_HAS_SHADER_RELOAD
-  br_start_refreshing_shaders(&br->shaders_dirty, &br->should_close);
-#endif
   br_read_input_start(br);
   main_gui(br);
 
