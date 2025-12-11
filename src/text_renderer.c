@@ -59,7 +59,7 @@ br_text_renderer_t* br_text_renderer_malloc(int bitmap_width, int bitmap_height,
   size_t total_mem = sizeof(br_text_renderer_t) + (size_t)bitmap_width * (size_t)bitmap_height;
   struct tmp {
     br_text_renderer_t r;
-    unsigned char data[];
+    unsigned char data[1];
   };
 
   struct tmp* t = BR_MALLOC(total_mem);

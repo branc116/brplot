@@ -434,7 +434,8 @@ bool brpl_window_open(brpl_window_t* window) {
 #endif
   }
   if (window->viewport.width == 0) window->viewport.width = 800;
-  if (window->viewport.height == 0) window->viewport.width = 800;
+  if (window->viewport.height == 0) window->viewport.height = 800;
+  if (window->title == NULL) window->title = "Test Window";
   switch (window->kind) {
 #if BR_HAS_X11
     case brpl_window_x11: loaded = brpl_x11_load(window); break;
@@ -565,7 +566,7 @@ void* brpl_load_symbol(void* library, const char* name) {
 void* brpl_load_gl(void* module, const char* func_name) {
   void* ret = brpl_load_symbol(module, func_name);
   if (NULL == ret) {
-    void* (*wglGetProcAddress_l)(const char* name) = brpl_load_symbol(module, "wglGetProcAddress");
+    void* (*wglGetProcAddress_l)(const char* name) = (void* (*)(const char* name))brpl_load_symbol(module, "wglGetProcAddress");
     if (NULL == wglGetProcAddress_l) {
       LOGF("Failed to load GetProcAddress");
     }
@@ -1063,6 +1064,7 @@ static brpl_event_t brpl_glfw_event_next(brpl_window_t* win) {
 }
 
 static void brpl_glfw_error_callback(int error_code, const char* description) {
+  (void)error_code; (void)description;
   LOGE("GLFW error %d: %s", error_code, description);
 }
 static void brpl_glfw_windowsizefun(GLFWwindow* window, int width, int height) {
@@ -1171,6 +1173,7 @@ void brpl_window_size_set(brpl_window_t* window, int width, int height) {
 }
 
 void brpl_glfw_window_close(brpl_window_t* window) {
+  (void)window;
   BR_TODO("brpl_glfw_window_close");
 }
 
@@ -1312,7 +1315,19 @@ LRESULT CALLBACK brpl_win32_event_callback(HWND hwnd, UINT uMsg, WPARAM wParam, 
 static unsigned long brpl_win32_window_event_loop(void* arg) {
   brpl_window_t* win = arg;
   brpl_win32_window_t* win32 = win->win;
+  HDC hdc = 0;
+  MSG msg;
+  // TODO: Make WS_EX_NOREDIRECTIONBITMAP work with opengl.
+  //       ATM This is imposible out of the box.
+  //       One should most likely create Direct2D context. Draw
+  //       OpenGL frame, take the framebuffer from opengl. Draw
+  //       that framebuffer into the Direct2D context and then
+  //       swap manauly with Direct2D DirectRendering bullshit.
+  //DWORD ex_style = WS_EX_APPWINDOW | WS_EX_NOREDIRECTIONBITMAP;
+  DWORD ex_style = WS_EX_APPWINDOW;
   bool success = true;
+  HWND hwnd = 0;
+
   brpl_win32_q = &win32->q;
 
   WNDCLASS wc = {0};
@@ -1323,16 +1338,7 @@ static unsigned long brpl_win32_window_event_loop(void* arg) {
   wc.hCursor = LoadCursorA(NULL, IDC_ARROW);
   RegisterClassA(&wc);
 
-  // TODO: Make WS_EX_NOREDIRECTIONBITMAP work with opengl.
-  //       ATM This is imposible out of the box.
-  //       One should most likely create Direct2D context. Draw
-  //       OpenGL frame, take the framebuffer from opengl. Draw
-  //       that framebuffer into the Direct2D context and then
-  //       swap manauly with Direct2D DirectRendering bullshit.
-  //DWORD ex_style = WS_EX_APPWINDOW | WS_EX_NOREDIRECTIONBITMAP;
-  DWORD ex_style = WS_EX_APPWINDOW;
-
-  HWND hwnd = CreateWindowExA(ex_style, wc.lpszClassName, win->title,
+  hwnd = CreateWindowExA(ex_style, wc.lpszClassName, win->title,
     WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_SIZEBOX,
     CW_USEDEFAULT, CW_USEDEFAULT, win->viewport.width, win->viewport.height,
     NULL, NULL, wc.hInstance, NULL
@@ -1343,15 +1349,14 @@ static unsigned long brpl_win32_window_event_loop(void* arg) {
     BR_ERROR("Failed to create a window");
   }
 
-  HDC hdc = GetDC(hwnd);
+  hdc = GetDC(hwnd);
   win32->hwnd = hwnd;
   win32->hdc = hdc;
   SetEvent(win32->event_window_create_done);
 
-  MSG msg;
   while (false == win->should_close && GetMessageA(&msg, NULL, 0, 0)) {
-      TranslateMessage(&msg);
-      DispatchMessageA(&msg);
+    TranslateMessage(&msg);
+    DispatchMessageA(&msg);
   }
   brpl_q_push(&win32->q, (brpl_event_t) { .kind = brpl_event_close });
   goto done;

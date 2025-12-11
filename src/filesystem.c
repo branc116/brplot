@@ -209,6 +209,7 @@ DIR *opendir(const char *dirpath) {
 
   DIR* dir = NULL;
   bool success = true;
+  (void)success;
 
   snprintf(buffer, MAX_PATH, "%s\\*", dirpath);
 
@@ -341,6 +342,9 @@ bool br_fs_move(const char* from, const char* to) {
 }
 
 bool br_fs_read_internal(const char* path, br_str_t* out_content, const char* file_name, int line) {
+#if !defined(BR_DEBUG)
+  (void)file_name; (void)line;
+#endif
 #if defined(__EMSCRIPTEN__)
   LOGW("Failed to read %s on web at: %s:%d", path, file_name, line);
   return false;

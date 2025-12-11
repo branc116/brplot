@@ -22,6 +22,9 @@
  *
  * Brui - Brui is a cross platform UI library.
  * It should work on Linux, Windows, Mac and Web.
+ *
+ * Functions that are part of simple api can be found by following a tag *BRUI_API*
+ *
  * Example:
  * ```main.c
 #define BRUI_IMPLEMENTATION
@@ -29,7 +32,8 @@
 
 int main(void) {
   brui_window_t window = { 0 };
-  while (false == window->pl.should_close) {
+  brui_window_init(&window);
+  while (false == window.pl.should_close) {
     while (brpl_event_frame_next != brui_event_next(&window).kind); // You can also handle some of the events 
     brui_frame_start(&window);
       if (brui_buttonf("Hello")) printf("Hello world\n");
@@ -37,8 +41,15 @@ int main(void) {
   }
 }
  * ```
- * Compile as: cc main.c
- * Functions that are part of simple api can be found by following a tag *BRUI_API*
+ *
+ * File structure:
+ * Project Directory:
+ * ├─ main.c
+ * └─ brui.h
+ *
+ * Compile on GNU/Linux as: cc -I. main.c
+ * Compile on MS/Window as: cl.exe /I. main.c
+ *   NOTE: On Windows you have to run vcvars.bat in your cmd session before invoking tthe compiler
  * */
 #if !defined(BR_INCLUDE_BRUI_H)
 #define BR_INCLUDE_BRUI_H
@@ -220,7 +231,7 @@ typedef struct brui_window_t {
   struct {
     double old;
     double now;
-    double frame;
+    float frame;
   } time;
 
   struct {

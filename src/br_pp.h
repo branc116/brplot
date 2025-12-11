@@ -78,7 +78,6 @@ extern void br_on_fatal_error(void);
 
 #define BR_TODO(fmt, ...) do { \
    BR_UNREACHABLE("TODO: " fmt, ##__VA_ARGS__); \
-   LOGF("Exiting"); \
 } while (0)
 
 

@@ -470,6 +470,7 @@ void br_plotter_update(br_plotter_t* br) {
           }
         }
       } break;
+      default: break;
     }
     ev = brpl_event_next(&br->uiw.pl);
   }

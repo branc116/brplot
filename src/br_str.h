@@ -499,7 +499,6 @@ br_u32 br_strv_utf8_pop(br_strv_t* t) {
   if ((initial & 0b11111000) == 0b11110000) return ret;
 
   BR_UNREACHABLE("Bad UTF8 character...");
-  return 0;
 }
 
 br_strv_t br_str_printf(br_str_t* out_str, const char* fmt, ...) {
@@ -518,14 +517,15 @@ br_strv_t br_str_printf(br_str_t* out_str, const char* fmt, ...) {
 int br_str_printfvalloc(br_str_t* out_str, const char* fmt, va_list args) {
   int n = vsnprintf(NULL, 0, fmt, args);
   BR_ASSERT(n >= 0);
-  bool ok_realloc = br_str_realloc(out_str, out_str->len + n + 1);
-  BR_ASSERT(ok_realloc);
-  return n;
+  bool ok_realloc = br_str_realloc(out_str, out_str->len + (br_u32)n + 1);
+  if (ok_realloc) return n;
+  else return 0;
 }
 
 br_strv_t br_str_printfv(br_str_t* out_str, const char* fmt, va_list args) {
-  int n = vsnprintf(out_str->str + out_str->len, (size_t)n + 1, fmt, args);
-  out_str->len += n;
+  int n = vsnprintf(out_str->str + out_str->len, out_str->cap - out_str->len, fmt, args);
+  BR_ASSERT(n >= 0);
+  out_str->len += (br_u32)n;
   return br_str_as_view(*out_str);
 }
 
@@ -548,7 +548,7 @@ br_strv_t br_scrach_printf(const char* fmt, ...) {
 int br_scrach_printfvalloc(const char* fmt, va_list args) {
   int n = vsnprintf(NULL, 0, fmt, args);
   BR_ASSERT(n >= 0);
-  char *result = (char*)br_scrach_get((size_t)n + 1);
+  br_scrach_get((size_t)n + 1);
   br_scrach_free();
   return n;
 }

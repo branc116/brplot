@@ -54,6 +54,7 @@ void br_theme_light(br_theme_t* t) {
 }
 
 void br_theme_reset_ui(br_theme_t* t) {
+  (void)t;
 /*
   t->ui.min_sampling = 0.001f;
   t->ui.cull_min = 2.f;
