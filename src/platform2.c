@@ -450,6 +450,7 @@ bool brpl_window_open(brpl_window_t* window) {
   }
   if (loaded) loaded = window->f.window_open && window->f.window_open(window);
   window->should_close = loaded == false;
+  window->active = true;
   return loaded;
 }
 
@@ -484,7 +485,7 @@ brpl_event_t brpl_event_next(brpl_window_t* window) {
     case brpl_event_key_press: { LOGI("brpl_event_key_press"); } break;
     case brpl_event_key_release: { LOGI("brpl_event_key_release"); } break;
     case brpl_event_input: { LOGI("brpl_event_input"); } break;
-    case brpl_event_mouse_move: { LOGI("brpl_event_mouse_move"); } break;
+    //case brpl_event_mouse_move: { LOGI("brpl_event_mouse_move"); } break;
     case brpl_event_mouse_scroll: { LOGI("brpl_event_mouse_scroll"); } break;
     case brpl_event_mouse_press: { LOGI("brpl_event_mouse_press"); } break;
     case brpl_event_mouse_release: { LOGI("brpl_event_mouse_release"); } break;
@@ -494,7 +495,7 @@ brpl_event_t brpl_event_next(brpl_window_t* window) {
     case brpl_event_window_focused: { LOGI("brpl_event_window_focused"); } break;
     case brpl_event_window_unfocused: { LOGI("brpl_event_window_unfocused"); } break;
     case brpl_event_close: { LOGI("brpl_event_close"); } break;
-    case brpl_event_frame_next: { LOGI("brpl_event_frame_next: time=%f", ev.time); } break;
+    //case brpl_event_frame_next: { LOGI("brpl_event_frame_next: time=%f", ev.time); } break;
     case brpl_event_scale: { LOGI("brpl_event_scale"); } break;
     case brpl_event_touch_begin: { LOGI("brpl_event_touch_begin: id=%d", ev.touch.id); } break;
     case brpl_event_touch_end: { LOGI("brpl_event_touch_end: id=%d", ev.touch.id); } break;
@@ -502,6 +503,10 @@ brpl_event_t brpl_event_next(brpl_window_t* window) {
     case brpl_event_unknown: { LOGI("brpl_event_unknown"); } break;
   }
 #endif
+  if (false == window->active) {
+    if (ev.kind == brpl_event_frame_next) return ev;
+    else return (brpl_event_t){ .kind = brpl_event_nop };
+  }
   return ev;
 }
 

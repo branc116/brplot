@@ -189,6 +189,9 @@ bool brui_window_init(brui_window_t* uiw) {
 brpl_event_t brui_event_next(brui_window_t* uiw) {
   brpl_event_t ev = brpl_event_next(&uiw->pl);
   brui_action_t* ta = brui_action();
+  if (false == uiw->pl.active) {
+    ta->kind = brui_action_none;
+  }
   switch (ev.kind) {
     case brpl_event_key_press: {
       if (ev.key == BR_KEY_LEFT_CONTROL)    uiw->key.ctrl_down = true;
