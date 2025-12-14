@@ -759,7 +759,7 @@ bool brui_button(br_strv_t text) {
   float opt_height /* text + 2*1/2*padding */ = (float)TOP.font_size + TOP.padding.y;
   float opt_y = TOP.cur.y + opt_height + TOP.padding.y;
 
-  float button_max_x = TOP.limit.max_x - TOP.psum.x;
+  float button_max_x = TOP.limit.max_x - (TOP.psum.x + TOP.padding.x);
   float button_max_y = fminf(TOP.cur.y + opt_height, TOP.limit.max_y);
   br_bb_t button_limit = BR_BB(TOP.cur.x, TOP.cur.y, button_max_x, button_max_y);
   bool hovers = (br_col_vec2_bb(button_limit, brui_state.uiw->mouse.pos) && TOP.is_active);
@@ -773,12 +773,11 @@ bool brui_button(br_strv_t text) {
     TOP.limit.max_x = button_max_x;
     TOP.psum.x = 0;
     TOP.padding.y *= 0.5f;
+    TOP.background_color = is_selected ? BR_THEME.colors.btn_hovered : BR_THEME.colors.btn_inactive;
     brui_text_align_set(br_text_renderer_ancor_mid_mid);
     brui_text_color_set(is_selected ? BR_THEME.colors.btn_txt_hovered : BR_THEME.colors.btn_txt_inactive);
-    brui_background(BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_height),
-      is_selected ? BR_THEME.colors.btn_hovered : BR_THEME.colors.btn_inactive
-    );
-    brui_border2(BR_BB(TOP.cur.x, TOP.cur.y, TOP.limit.max_x - TOP.psum.x, TOP.cur.y + opt_height), is_selected);
+    brui_background(button_limit, TOP.background_color);
+    brui_border2(button_limit, is_selected);
     brui_text(text);
   brui_pop_simple();
   TOP.content_height += opt_height + TOP.padding.y;
