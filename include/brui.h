@@ -255,6 +255,9 @@ BR_EXPORT void brui_frame_end(brui_window_t* ui_window);
 
 BR_EXPORT bool brui_buttonf(const char* fmt, ...);
 
+BR_EXPORT brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id);
+BR_EXPORT bool brui_resizable_temp_pop(void);
+
 #endif
 
 #if defined(BRUI_IMPLEMENTATION)

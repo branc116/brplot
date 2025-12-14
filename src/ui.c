@@ -51,7 +51,7 @@
     printf("  "); \
   } \
   if (brui_state.len > 0) { \
-    printf("[CUR:%.3f,%.3f][LIMIT:%.2f,%.2f,%.2f,%.2f][PSUM:%.2f %.2f][TOPZ:%d] " fmt "\n", TOP.cur.x, TOP.cur.y, BR_BB_(TOP.limit), TOP.psum.x, TOP.psum.y, TOP.z, ##__VA_ARGS__); \
+    printf("[CUR:%.3f,%.3f][LIMIT:%.2f,%.2f,%.2f,%.2f][PSUM:%.2f %.2f][TOPZ:%d,STARTZ:%d] " fmt "\n", TOP.cur.x, TOP.cur.y, BR_BB_(TOP.limit), TOP.psum.x, TOP.psum.y, TOP.z, TOP.start_z, ##__VA_ARGS__); \
   } else { \
     printf(fmt "\n", ##__VA_ARGS__); \
   } \
@@ -103,7 +103,6 @@ typedef struct brui_resizable_temp_t {
   size_t key;
   brui_resizable_temp_state_t value;
 } brui_resizable_temp_t;
-
 
 typedef struct {
   brui_stack_el_t* arr;
@@ -423,11 +422,11 @@ brui_stack_el_t brui_stack_el(void) {
     new_el.content_height = new_el.padding.y;
     return new_el;
   } else {
-
     br_extent_t viewport = BRUI_ANIMEX(BRUI_RS(0).cur_extent_ah);
     brui_stack_el_t root = {
       .limit = BR_EXTENT_TOBB(viewport),
       .padding = BRUI_DEF.padding,
+      .psum = BRUI_DEF.padding,
       .font_size = BRUI_DEF.font_size,
       .font_color = BR_THEME.colors.btn_txt_inactive,
       .text_ancor = br_text_renderer_ancor_left_up,
@@ -451,6 +450,7 @@ void brui_begin(void) {
   BRUI_LOG("begin");
   brui_stack_el_t new_el = brui_stack_el();
   br_da_push(brui_state, new_el);
+  TOP.is_active = 0 == brui_state.uiw->resizables.active_resizable;
   BRUI_LOG("beginafter");
 }
 
@@ -759,11 +759,11 @@ bool brui_button(br_strv_t text) {
   float opt_height /* text + 2*1/2*padding */ = (float)TOP.font_size + TOP.padding.y;
   float opt_y = TOP.cur.y + opt_height + TOP.padding.y;
 
-  float button_max_x = TOP.limit.max_x - (TOP.psum.x + TOP.padding.x);
+  float button_max_x = TOP.limit.max_x - TOP.psum.x;
   float button_max_y = fminf(TOP.cur.y + opt_height, TOP.limit.max_y);
   br_bb_t button_limit = BR_BB(TOP.cur.x, TOP.cur.y, button_max_x, button_max_y);
   bool hovers = (br_col_vec2_bb(button_limit, brui_state.uiw->mouse.pos) && TOP.is_active);
-  bool is_selected = hovers || brui_state.select_next;
+  bool is_selected = ACTION != brui_action_sliding && (hovers || brui_state.select_next);
   brui_state.select_next = false;
   BRUI_LOG("button_limit: %.2f %.2f %.2f %.2f", BR_BB_(button_limit));
   brui_push_simple();
@@ -774,6 +774,7 @@ bool brui_button(br_strv_t text) {
     TOP.psum.x = 0;
     TOP.padding.y *= 0.5f;
     TOP.background_color = is_selected ? BR_THEME.colors.btn_hovered : BR_THEME.colors.btn_inactive;
+    TOP.start_z += 1;
     brui_text_align_set(br_text_renderer_ancor_mid_mid);
     brui_text_color_set(is_selected ? BR_THEME.colors.btn_txt_hovered : BR_THEME.colors.btn_txt_inactive);
     brui_background(button_limit, TOP.background_color);
@@ -1969,7 +1970,7 @@ brui_resizable_t* brui_resizable_push(int id) {
   if (res->title_enabled && false == brui_state.uiw->key.ctrl_down && TOP.is_active) {
     if (br_col_vec2_extent(BR_EXTENT2(cur_p, BR_SIZE(rex.width, title_full_height * 0.2f)), mp)) {
       new_title_height = title_full_height;
-    } else if (false == br_col_vec2_extent(BR_EXTENT2(cur_p, BR_SIZE(rex.width, title_full_height * 1.2f)), mp)) {
+    } else if (ACTION != brui_action_sliding && false == br_col_vec2_extent(BR_EXTENT2(cur_p, BR_SIZE(rex.width, title_full_height * 1.2f)), mp)) {
       new_title_height = 0;
     }
   } else if (brui_state.uiw->key.ctrl_down || !TOP.is_active) {
