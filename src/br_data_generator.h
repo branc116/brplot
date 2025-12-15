@@ -16,7 +16,7 @@ typedef enum {
 } br_dagen_kind_t;
 
 typedef struct {
-  FILE* file;
+  BR_FILE* file;
   size_t x_left, y_left, z_left;
   size_t num_points;
 } br_dagen_file_t;
@@ -78,6 +78,38 @@ typedef struct br_dagens_t {
   size_t len, cap;
 } br_dagens_t;
 
+#define TOKEN_KINDS(X) \
+  X(token_kind_invalid) \
+  X(token_kind_number) \
+  X(token_kind_ident) \
+  X(token_kind_hash) \
+  X(token_kind_plus) \
+  X(token_kind_star) \
+  X(token_kind_dot) \
+  X(token_kind_open_paren) \
+  X(token_kind_close_paren) \
+  X(token_kind_contant) \
+  X(token_kind_comma)
+
+typedef enum {
+#define X(name) name,
+  TOKEN_KINDS(X)
+#undef X
+} br_dagen_token_kind;
+
+typedef struct {
+  br_dagen_token_kind kind;
+  br_strv_t str;
+  size_t position;
+} br_dagen_token_t;
+
+typedef struct {
+  br_dagen_token_t* arr;
+  size_t len, cap;
+  size_t pos;
+} tokens_t;
+
+
 typedef struct br_plotter_t br_plotter_t;
 
 #if defined(__cplusplus)
@@ -85,10 +117,11 @@ extern "C" {
 #endif
 bool br_dagen_push_expr_xy(br_dagens_t* dagens, br_datas_t* datas, br_dagen_exprs_t arena, uint32_t x, uint32_t y, int group_id);
 bool br_dagens_add_expr_str(br_dagens_t* dagens, br_datas_t* datas, br_strv_t str, int group_id);
-bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* temp_data, FILE* file);
+bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* temp_data, BR_FILE* file);
 void br_dagens_remove_dependent(br_datas_t* datas, int group_id);
 void br_dagens_handle(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots, double until);
 void br_dagens_free(br_dagens_t* dagens);
+bool br_dagens_handle_once(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots);
 #if defined(__cplusplus)
 }
 #endif

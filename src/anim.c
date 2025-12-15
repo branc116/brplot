@@ -162,7 +162,7 @@ br_extent_t br_anim_rebase(br_anims_t* anims, int anim_handle, br_vec2_t rebase_
   return anim->ex.current;
 }
 
-bool br_anim_save(FILE* file, const br_anims_t* anims) {
+bool br_anim_save(BR_FILE* file, const br_anims_t* anims) {
   int error = 0;
   brfl_write(file, anims->all, error);
   if (error) return false;
@@ -171,7 +171,7 @@ bool br_anim_save(FILE* file, const br_anims_t* anims) {
   return true;
 }
 
-bool br_anim_load(FILE* file, br_anims_t* anims) {
+bool br_anim_load(BR_FILE* file, br_anims_t* anims) {
   int error = 0;
   brfl_read(file, anims->all, error);
   if (error) return false;

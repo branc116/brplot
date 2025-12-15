@@ -53,8 +53,7 @@ br_plotter_t* br_plotter_malloc(void) {
   return br;
 }
 
-static br_plot_t br_plot_2d(br_sizei_t window_size, float grid_line_thickness) {
-  int padding = 4;
+static br_plot_t br_plot_2d(float grid_line_thickness) {
   br_plot_t plot = {
     .kind = br_plot_kind_2d,
     .dd =  {
@@ -78,11 +77,11 @@ void br_plotter_init(br_plotter_t* br) {
   br_mesh_construct(&br->uiw.shaders, &br->ui.debug, &br->uiw.theme);
   br_plot_construct(&br->uiw.anims);
   br->ui.default_grid_line_thickenss = 1.5f;
-  brui_window_init(&br->uiw);
 
 #if BR_HAS_HOTRELOAD
   br_hotreload_start(&br->hot_state);
 #endif
+  brui_window_init(&br->uiw);
   br->loaded_status = br_permastate_load(br);
   if (br->ui.multisampling) brgl_enable_multisampling();
   else                      brgl_disable_multisampling();
@@ -93,7 +92,7 @@ void br_plotter_init(br_plotter_t* br) {
       float padding = 4.f;
       br_size_t window_size = BR_SIZEI_TOF(br->uiw.pl.viewport.size);
       br_extent_t plot_extent = BR_EXTENT(padding, padding, window_size.width - padding*2, window_size.height - padding*2);
-      br_plot_t plot = br_plot_2d(br->uiw.pl.viewport.size, br->ui.default_grid_line_thickenss);
+      br_plot_t plot = br_plot_2d(br->ui.default_grid_line_thickenss);
       br_plot_create_texture(&plot, plot_extent);
       bool found_resizable = false, found_menu_ex = false, found_legend_ex = false;
       brfl_foreach(i, br->uiw.resizables) {
@@ -135,7 +134,7 @@ void br_plotter_init(br_plotter_t* br) {
     for (int i = 0; i < br->plots.len; ++i) {
       br_plot_t* p = &br->plots.arr[i];
       br_extent_t ex = brui_resizable_cur_extent(p->extent_handle);
-      br->plots.arr[i].texture_id = brgl_create_framebuffer(ex.width, ex.height);
+      br->plots.arr[i].texture_id = brgl_create_framebuffer((int)roundf(ex.width), (int)roundf(ex.height));
     }
   }
   if (br->loaded_status < br_permastate_status_ui_loaded) {
@@ -332,12 +331,12 @@ void br_plotter_update(br_plotter_t* br) {
       case brpl_event_frame_next: {
         int found_plot = -1;
         for (int j = 0; j < br->plots.len; ++j) {
-          br_plot_t* plot = br_da_getp(br->plots, j);
-          if (br->plots.arr[j].extent_handle == br->uiw.resizables.active_resizable) {
-            switch (br->plots.arr[j].kind) {
+          br_plot_t plot = br_da_get(br->plots, j);
+          if (plot.extent_handle == br->uiw.resizables.active_resizable) {
+            switch (plot.kind) {
               case br_plot_kind_2d: br->hovered.active = br_plotter_entity_plot_2d; break;
               case br_plot_kind_3d: br->hovered.active = br_plotter_entity_plot_3d; break;
-              default: BR_TODO("Unknown plot kind %d", br->plots.arr[j].kind); break;
+              default: BR_TODO("Unknown plot kind %d", plot.kind); break;
             }
             found_plot = j;
           }
@@ -472,7 +471,7 @@ void br_plotter_update(br_plotter_t* br) {
       } break;
       default: break;
     }
-    ev = brui_event_next(&br->uiw.pl);
+    ev = brui_event_next(&br->uiw);
   }
 }
 
@@ -510,7 +509,7 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
   float padding = 4.f;
   br_size_t window_size = BR_SIZEI_TOF(br->uiw.pl.viewport.size);
   br_extent_t ex = BR_EXTENT(padding, padding, window_size.width - padding*2, window_size.height - padding*2);
-  br_plot_t plot = br_plot_2d(br->uiw.pl.viewport.size, br->ui.default_grid_line_thickenss);
+  br_plot_t plot = br_plot_2d(br->ui.default_grid_line_thickenss);
   br_plot_create_texture(&plot, ex);
   plot.extent_handle = brui_resizable_new2(&br->uiw.resizables, ex, 0, (brui_resizable_t) { .tag = 100, .title_enabled = true });
 #if defined(__EMSCRIPTEN__)
@@ -524,8 +523,8 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
 }
 
 int br_plotter_add_plot_3d(br_plotter_t* br) {
-  int padding = 4;
-  br_extent_t ex = BR_EXTENT(padding, padding, br->uiw.pl.viewport.width - 2 * padding, br->uiw.pl.viewport.height - 2 * padding);
+  float padding = 4;
+  br_extent_t ex = BR_EXTENT(padding, padding, (float)(br->uiw.pl.viewport.width) - 2.f * padding, (float)(br->uiw.pl.viewport.height) - 2.f * padding);
   br_plot_t plot = {
     .data_info = { 0 },
     .follow = false,

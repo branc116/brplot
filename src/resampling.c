@@ -694,40 +694,34 @@ static br_vec3_t br_data_3d_get_v3(br_data_3d_t const* data, uint32_t index) {
   return BR_VEC3(data->xs[index], data->ys[index], data->zs[index]);
 }
 
-static bool br_resampling_nodes_3d_is_inside(
-    br_resampling_nodes_3d_t const* res,
-    br_data_3d_t const* data,
-    br_mat_t mvp)
-{
-    br_vec3_t bb_min = {
+static bool br_resampling_nodes_3d_is_inside(br_resampling_nodes_3d_t const* res, br_data_3d_t const* data, br_mat_t mvp) {
+    br_vec3_t bb_min = BR_VEC3(
         br_data_3d_get_v3(data, res->base.min_index_x).x,
         br_data_3d_get_v3(data, res->base.min_index_y).y,
         br_data_3d_get_v3(data, res->min_index_z).z
-    };
-    br_vec3_t bb_max = {
+    );
+    br_vec3_t bb_max = BR_VEC3(
         br_data_3d_get_v3(data, res->base.max_index_x).x,
         br_data_3d_get_v3(data, res->base.max_index_y).y,
         br_data_3d_get_v3(data, res->max_index_z).z
-    };
+    );
 
     float min_x =  INFINITY;
     float max_x = -INFINITY;
     float min_y =  INFINITY;
     float max_y = -INFINITY;
 
-    // Test all 8 corners using your existing perfect function
     for (int i = 0; i < 8; ++i) {
-        br_vec3_t corner = {
+        br_vec3_t corner = BR_VEC3(
             (i & 1) ? bb_max.x : bb_min.x,
             (i & 2) ? bb_max.y : bb_min.y,
             (i & 4) ? bb_max.z : bb_min.z
-        };
+        );
 
         br_vec3_t ndc = br_vec3_transform_scale(corner, mvp);
 
         if (ndc.x == HUGE_VALF) return true;
 
-        // Early out: if any point is clearly inside viewport → visible
         if (ndc.x >= -1.0f && ndc.x <= 1.0f &&
             ndc.y >= -1.0f && ndc.y <= 1.0f &&
             ndc.z >= -1.0f && ndc.z <= 1.0f) {

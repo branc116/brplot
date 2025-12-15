@@ -1,10 +1,4 @@
-#include "src/br_pp.h"
-
-#define BR_MEMORY_TRACER_IMPLEMENTATION
-#include "src/br_memory.h"
-
-#include "src/br_math.h"
-#include "src/br_test.h"
+#include "tests/src_tests/shl.h"
 
 int main(void) {
   {
@@ -133,6 +127,3 @@ int main(void) {
     TEST_EQUAL(true, col);
   }
 }
-
-void br_on_fatal_error(void) {}
-void brgui_push_log_line(const char* fmt, ...) {(void)fmt;}

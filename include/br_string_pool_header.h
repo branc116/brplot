@@ -25,8 +25,8 @@
 #  define BR_FREAD fread
 #endif
 
-#if !defined(BR_FILE_T)
-#  define BR_FILE_T FILE
+#if !defined(BR_FILE)
+#  define BR_FILE FILE
 #endif
 
 #if !defined(BR_FWRITE)
@@ -70,7 +70,7 @@ brsp_id_t brsp_copy(brsp_t* sp, brsp_id_t id);
 bool brsp_compress(brsp_t* sp, float factor, int slack);
 void brsp_free(brsp_t* sp);
 
-bool brsp_write(BR_FILE_T* file, brsp_t* sp);
-bool brsp_read(BR_FILE_T* file, brsp_t* sp);
+bool brsp_write(BR_FILE* file, brsp_t* sp);
+bool brsp_read(BR_FILE* file, brsp_t* sp);
 
 #endif // !defined(BR_INCLUDE_BR_STRING_POOL_HEADER_H)

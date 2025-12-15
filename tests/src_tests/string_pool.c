@@ -1,65 +1,4 @@
-typedef struct {
-  unsigned char* arr;
-  int len, cap;
-  int read_index;
-} br_test_file_t;
-
-#if defined(FUZZ)
-#  define BR_DISABLE_LOG
-#endif
-
-
-#define BR_FREAD test_read
-#define BR_FWRITE test_write
-#define BR_FILE_T br_test_file_t
-#include "src/br_pp.h"
-#include "src/br_test.h"
-#include <stddef.h>
-static size_t test_read(void* dest, size_t el_size, size_t n, br_test_file_t* null);
-static size_t test_write(void* src, size_t el_size, size_t n, br_test_file_t* null);
-
-#include <errno.h>
-
-#define BR_MEMORY_TRACER_IMPLEMENTATION
-#include "src/br_memory.h"
-
-#define BRFL_IMPLEMENTATION
-#include "src/br_free_list.h"
-
-#define BR_STR_IMPLEMENTATION
-#include "src/br_str.h"
-
-#define BRSP_IMPLEMENTATION
-#include "src/br_string_pool.h"
-
-
-#define MEM_FILE_CAP 4096
-static BR_THREAD_LOCAL unsigned char mem_file[MEM_FILE_CAP];
-
-static size_t test_read(void* dest, size_t el_size, size_t n, br_test_file_t* d) {
-  size_t size = n * el_size;
-  if ((int)size + d->read_index > d->len) {
-    errno = 1;
-    return 0;
-  }
-  memcpy(dest, d->arr + d->read_index, size);
-  d->read_index += (int)size;
-  BR_ASSERT(d->read_index <= d->len);
-  return n;
-}
-
-static size_t test_write(void* src, size_t el_size, size_t n, br_test_file_t* d) {
-  size_t size = n * el_size;
-  if ((size_t)d->cap < (size_t)d->len + size) {
-    errno = 2;
-    return 0;
-  }
-  memcpy(d->arr + d->len, src, size);
-  d->len += (int)size;
-  BR_ASSERT(d->len <= d->cap);
-  return n;
-}
-
+#include "tests/src_tests/shl.h"
 
 static void brsp_debug(brsp_t sp) {
   int len_sum = 0;
@@ -140,16 +79,16 @@ void string_pool_read_write(void) {
     br_str_push_char(&s, 'c');
     brsp_set(&sp, t, br_str_as_view(s));
   }
-  br_test_file_t tf = { .arr = mem_file, .cap = sizeof(mem_file) };
+  BR_FILE* tf = BR_FOPEN("test", "rb"); 
   TEST_EQUAL(sp.free_len, 1);
-  brsp_write(&tf, &sp);
+  brsp_write(tf, &sp);
 
   brsp_remove(&sp, t);
   brsp_free(&sp);
   br_str_free(s);
 
   brsp_t sp2 = { 0 };
-  brsp_read(&tf, &sp2);
+  brsp_read(tf, &sp2);
   br_strv_t news = brsp_get(sp2, t);
   TEST_EQUAL(news.len, 129);
   TEST_EQUAL(sp2.free_len, 1);
@@ -166,12 +105,12 @@ void sp_read_write2(void) {
   brsp_push(&sp, BR_STRL("hehe"));
 
   brsp_remove(&sp, id);
-  br_test_file_t tf = { .arr = mem_file, .cap = sizeof(mem_file) };
-  brsp_write(&tf, &sp);
+  BR_FILE* tf = BR_FOPEN("test2", "rb");
+  brsp_write(tf, &sp);
   brsp_free(&sp);
 
   brsp_t sp2 = { 0 };
-  brsp_read(&tf, &sp2);
+  brsp_read(tf, &sp2);
   id = brsp_push(&sp2, BR_STRL("hehe"));
   br_strv_t s = brsp_get(sp2, id);
   TEST_EQUAL(s.len, 4);
@@ -183,7 +122,7 @@ void sp_read_write2(void) {
 }
 
 void string_pool_read_remove_write(void) {
-  br_test_file_t tf = { .arr = mem_file, .len = 0, .cap = sizeof(mem_file), .read_index = 0 };
+  BR_FILE* tf = BR_FOPEN("test3", "rb");
   brsp_t sp = { 0 };
   brsp_id_t t  = brsp_new(&sp);
   brsp_id_t t2 = brsp_new(&sp);
@@ -198,13 +137,13 @@ void string_pool_read_remove_write(void) {
   TEST_EQUAL(5, sp.free_len);
   brsp_remove(&sp, t);
   TEST_EQUAL(4, sp.free_len);
-  brsp_write(&tf, &sp);
+  brsp_write(tf, &sp);
 
   brsp_free(&sp);
   br_str_free(s);
 
   brsp_t sp2 = { 0 };
-  brsp_read(&tf, &sp2);
+  brsp_read(tf, &sp2);
   TEST_EQUAL(4, sp2.free_len);
   br_strv_t news = brsp_get(sp2, t2);
   TEST_EQUAL(news.str[0], 'd');
@@ -305,8 +244,5 @@ int main(void) {
   string_pool_compress();
 }
 #endif
-
-void br_on_fatal_error(void) {}
-void brgui_push_log_line(const char* fmt, ...) {(void)fmt;}
 
 // clang -fsanitize=address -ggdb -I. tests/src_tests/string_pool.c -o bin/string_pool_tests && bin/string_pool_tests

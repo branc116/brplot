@@ -41,15 +41,17 @@
 #  define BR_FWRITE fwrite
 #endif
 
-#define brfl_push(FL, VALUE) \
-  (brfl__ret_handle = brfl_push_internal_get_handle((void**)&((FL).arr), &((FL).free_arr), &((FL).len), &((FL).cap), &((FL).free_len), &((FL).free_next), sizeof((FL).arr[0]), __FILE__, __LINE__), \
-   (FL).arr[brfl__ret_handle] = (VALUE), \
-   brfl__ret_handle)
+#if defined(__GNUC__) || defined(__clang__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 
-#define brfl_push_end(FL, VALUE) \
-  (brfl__ret_handle = brfl_push_end_internal_get_handle((void**)&((FL).arr), &((FL).free_arr), &((FL).len), &((FL).cap), &((FL).free_len), &((FL).free_next), sizeof((FL).arr[0]), __FILE__, __LINE__), \
-   (FL).arr[brfl__ret_handle] = (VALUE), \
-   brfl__ret_handle)
+#define brfl_push(FL, VALUE) brfl_push_internal((void**)&((FL).arr), &((FL).free_arr), &((FL).len), &((FL).cap), &((FL).free_len), &((FL).free_next), sizeof((FL).arr[0]), &(VALUE), __FILE__, __LINE__);
+#define brfl_push_end(FL, VALUE) brfl_push_end_internal((void**)&((FL).arr), &((FL).free_arr), &((FL).len), &((FL).cap), &((FL).free_len), &((FL).free_next), sizeof((FL).arr[0]), &(VALUE), __FILE__, __LINE__);
+
+#if defined(__GNUC__) || defined(__clang__)
+#  pragma GCC diagnostic pop
+#endif
 
 #define brfl_remove(FL, HANDLE) do { \
   int fn = (FL).free_next; \
@@ -194,6 +196,8 @@
 extern BR_THREAD_LOCAL int brfl__ret_handle;
 int brfl_push_internal_get_handle(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, const char* file, int line);
 int brfl_push_end_internal_get_handle(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, const char* file, int line);
+int brfl_push_internal(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, void* value, const char* file, int line);
+int brfl_push_end_internal(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, void* value, const char* file, int line);
 int brfl_next_taken(int const* free_arr, int len, int index);
 bool brfl_is_valid(int const* free_arr, int len, int free_next, int free_len);
 

@@ -18,12 +18,13 @@
 
 #include "external/stb_ds.h"
 
+#include <ctype.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 
 #define BR_THEME (brui_state.uiw->theme)
 #define BRUI_DEF (brui_state.uiw->def)
@@ -132,17 +133,8 @@ static BR_THREAD_LOCAL brui_state_t brui_state;
 bool brui_window_init(brui_window_t* uiw) {
   brui_state.rs_temp_last = -1;
   brui_state.uiw = uiw;
-  /*
-  uiw->min_sampling = 0.001f;
-  uiw->cull_min = 2.f;
-  */
-  uiw->def.padding = BR_VEC2(4, 2);
-  uiw->def.font_size = 20;
-  uiw->def.border_thick = 1;
-  uiw->def.animation_speed = 10.f;
-  ACPARM.text.offset_ahandle = br_animf_new(&uiw->anims, 0, 0);
+  br_anims_construct(&uiw->def.animation_speed);
 
-  brgl_construct(&uiw->shaders);
   if (false == brpl_window_open(&uiw->pl)) {
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__)
     uiw->pl.kind = brpl_window_glfw;
@@ -161,6 +153,8 @@ bool brui_window_init(brui_window_t* uiw) {
     LOGF("Failed to open window with GLFW. Please install GLFW on your device.\nhttps://www.glfw.org/download");
 #endif
   }
+
+  brgl_construct(&uiw->shaders);
   brgl_disable_back_face_cull();
   brgl_enable_depth_test();
   brgl_enable(GL_BLEND);
@@ -168,21 +162,24 @@ bool brui_window_init(brui_window_t* uiw) {
   brgl_blend_func(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   brgl_blend_equation(GL_FUNC_ADD);
   brgl_viewport(0, 0, uiw->pl.viewport.width, uiw->pl.viewport.height);
-  br_anims_construct(&uiw->def.animation_speed);
 
   uiw->shaders = br_shaders_malloc();
   uiw->text = br_text_renderer_malloc(1024, 1024, br_font_data, &uiw->shaders.font);
   uiw->time.now = brpl_time();
-  br_theme_reset_ui(&uiw->theme);
-  br_theme_dark(&uiw->theme);
   br_icons_init(uiw->shaders.icon);
-  brui_resizable_init(&uiw->resizables, BR_EXTENTI_TOF(uiw->pl.viewport));
 #if BR_HAS_SHADER_RELOAD
   br_start_refreshing_shaders(&uiw->shaders_dirty, &uiw->pl.should_close);
 #endif
 
-
+  br_theme_reset_ui(&uiw->theme);
+  br_theme_dark(&uiw->theme);
+  brui_resizable_init(&uiw->resizables, BR_EXTENTI_TOF(uiw->pl.viewport));
+  uiw->def.padding = BR_VEC2(4, 2);
+  uiw->def.font_size = 20;
+  uiw->def.border_thick = 1;
+  uiw->def.animation_speed = 10.f;
   uiw->inited = true;
+  ACPARM.text.offset_ahandle = br_animf_new(&uiw->anims, 0, 0);
   return true;
 }
 
@@ -1490,17 +1487,17 @@ static void brui_resizable_check_parents(bruirs_t* rs) {
 #if BR_DEBUG
   brfl_foreach(i, *rs) {
     int parent = i;
-    for (int i = 0; i < 16; ++i) {
+    for (int j = 0; j < 16; ++j) {
       if (parent == 0) goto next;
       BR_ASSERT(false == brfl_is_free(*rs, parent));
       parent = rs->arr[parent].parent;
-      if (parent == i) goto next;
+      if (parent == j) goto next;
     }
     brui_resizable_t r = br_da_get(*rs, i);
 
-    br_strv_t title;
+    br_strv_t title = { 0 };
     if (r.title_id > 0) brsp_get(brui_state.uiw->sp, r.title_id);
-    if (r.title_id <= 0 || title.str == 0 && title.len == 0 || title.len > 0xFFFFFF) title = BR_STRL("Unnnamed");
+    if (r.title_id <= 0 || (title.str == 0 && title.len == 0) || title.len > 0xFFFFFF) title = BR_STRL("Unnnamed");
     BR_ASSERTF(0, "Resizable has no parent: id=%d, name=%.*s, parent_id=%d", i, title.len, title.str, parent);
 next:;
   }
@@ -1523,7 +1520,7 @@ next:;
         }
       }
       br_strv_t title = brsp_get(brui_state.uiw->sp, r.title_id);
-      if (r.title_id <= 0 || title.str == 0 && title.len == 0 || title.len > 0xFFFFFF) title = BR_STRL("Unnnamed");
+      if (r.title_id <= 0 || (title.str == 0 && title.len == 0) || title.len > 0xFFFFFF) title = BR_STRL("Unnnamed");
       BR_ASSERTF(count == 2, "Thing with id of %d `%.*s` had %d children ( %.*s )", i, title.len, title.str, count, s.len, s.str);
     }
   }
@@ -2173,6 +2170,49 @@ static int bruir_find_at(bruirs_t* rs, int index, br_vec2_t loc, br_vec2_t* out_
     return index;
   }
   return found;
+}
+
+bool brui_save(BR_FILE* file, brui_window_t* uiw) {
+  int fl_write_error = 0;
+  bool success = true;
+
+  brui_resizable_temp_delete_all();
+  brsp_compress(&uiw->sp, 1.0f, 0);
+
+  if (false == br_anim_save(file, &uiw->anims))                               BR_ERRORE("Failed to write anim.");
+  brfl_write(file, uiw->resizables, fl_write_error); if (fl_write_error != 0) BR_ERRORE("Failed to write resizables.");
+  if (false == brsp_write(file, &uiw->sp))                                    BR_ERRORE("Failed to write string pool.");
+  if (1 != BR_FWRITE(&uiw->theme, sizeof(uiw->theme), 1, file))                  BR_ERRORE("Failed to write theme.");
+  if (1 != BR_FWRITE(&uiw->def,   sizeof(uiw->def),   1, file))                  BR_ERRORE("Failed to write default ui values.");
+
+error:
+  return success;
+}
+
+bool brui_load(BR_FILE* file, brui_window_t* uiw) {
+  int fl_read_error = 0;
+  int success = true;
+
+  memset(uiw, 0, sizeof(*uiw));
+
+  if (false == br_anim_load(file, &uiw->anims))                            BR_ERRORE("Failed to load animations.");
+  brfl_read(file, uiw->resizables, fl_read_error); if (fl_read_error != 0) BR_ERRORE("Failed to read resizables.");
+  if (false == brsp_read(file, &uiw->sp))                                  BR_ERRORE("Failed to read string pool.");
+  if (1 != BR_FREAD(&uiw->theme, sizeof(uiw->theme), 1, file))                BR_ERRORE("Failed to read theme.");
+  if (1 != BR_FREAD(&uiw->def,   sizeof(uiw->def),   1, file))                BR_ERRORE("Failed to read default ui values.");
+
+  brsp_compress(&uiw->sp, 1.3f, 16);
+  goto done;
+
+error:
+  brfl_free(uiw->anims.all);
+  brfl_free(uiw->anims.alive);
+  brsp_free(&uiw->sp);
+  brfl_free(uiw->resizables);
+
+done:
+  ACPARM.text.offset_ahandle = br_animf_new(&uiw->anims, 0, 0);
+  return success;
 }
 
 #undef TOP

@@ -1,10 +1,4 @@
-#include "src/br_pp.h"
-
-#define BR_MEMORY_TRACER_IMPLEMENTATION
-#include "src/br_memory.h"
-
-#include "src/br_da.h"
-#include "src/br_test.h"
+#include "tests/src_tests/shl.h"
 
 int main(void) {
   typedef struct {
@@ -28,6 +22,3 @@ int main(void) {
   TEST_EQUAL(a.len, 0);
   br_da_free(a);
 }
-
-void br_on_fatal_error(void) {}
-void brgui_push_log_line(const char* fmt, ...) {(void)fmt;}

@@ -239,7 +239,7 @@ void brsp_free(brsp_t* sp) {
   brfl_free(*sp);
 }
 
-bool brsp_write(BR_FILE_T* file, brsp_t* sp) {
+bool brsp_write(BR_FILE* file, brsp_t* sp) {
   brsp_compress(sp, 1.f, 0);
 
   int error = false;
@@ -251,7 +251,7 @@ bool brsp_write(BR_FILE_T* file, brsp_t* sp) {
   return true;
 }
 
-bool brsp_read(BR_FILE_T* file, brsp_t* sp) {
+bool brsp_read(BR_FILE* file, brsp_t* sp) {
   int error = 0;
   bool success = true;
   int i = 0;

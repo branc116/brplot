@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-BR_THREAD_LOCAL int brfl__ret_handle;
 int brfl_push_internal_get_handle(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, const char* file, int line) {
   (void)file; (void)line;
   int* free_arr = *free_arrp;
@@ -137,6 +136,18 @@ int brfl_push_end_internal_get_handle(void** const arrp, int** const free_arrp, 
       return -1;
     }
   }
+}
+
+int brfl_push_internal(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, void* value, const char* file, int line) {
+  int handle = brfl_push_internal_get_handle(arrp, free_arrp, lenp, capp, free_lenp, free_nextp, value_size, file, line);
+  memcpy((char*)*arrp + (value_size * (size_t)handle), value, value_size);
+  return handle;
+}
+
+int brfl_push_end_internal(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, void* value, const char* file, int line) {
+  int handle = brfl_push_end_internal_get_handle(arrp, free_arrp, lenp, capp, free_lenp, free_nextp, value_size, file, line);
+  memcpy((char*)*arrp + (value_size * (size_t)handle), value, value_size);
+  return handle;
 }
 
 int brfl_next_taken(int const* free_arr, int len, int index) {

@@ -86,11 +86,10 @@ void br_plotter_draw(br_plotter_t* br) {
             }
           }
         }
-        brui_resizable_t* r = br_da_getp(br->uiw.resizables, PLOT->extent_handle);
         br_extent_t ex = brui_resizable_cur_extent(PLOT->extent_handle);
         if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
 
-        brgl_enable_framebuffer(PLOT->texture_id, ex.width, ex.height);
+        brgl_enable_framebuffer(PLOT->texture_id, (int)roundf(ex.width), (int)roundf(ex.height));
         brgl_clear(BR_COLOR_COMPF(br->uiw.theme.colors.plot_bg));
         if (br->ui.multisampling) brgl_enable_multisampling();
         else                      brgl_disable_multisampling();
@@ -1247,10 +1246,10 @@ void brgui_push_log_line(const char* fmt, ...) {
   va_end(args);
 
   BR_ASSERT(n >= 0);
-  br_str_t str = br_str_malloc(n + 1);
+  br_str_t str = br_str_malloc((size_t)n + 1);
   va_start(args, fmt);
   vsnprintf(str.str, (size_t)n + 1, fmt, args);
-  str.len = n;
+  str.len = (br_u32)n;
   va_end(args);
-  br_da_push(br_log_lines, str);
+  br_da_push_t(int, br_log_lines, str);
 }

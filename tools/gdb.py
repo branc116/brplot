@@ -17,6 +17,16 @@ class BrVec3P:
         z = self.val['z']
         return f'({x}, {y}, {z})'
 
+class BrColorP:
+    def __init__(self, val):
+        self.val = val
+    def to_string(self):
+        r = self.val['r']
+        g = self.val['g']
+        b = self.val['b']
+        a = self.val['a']
+        return f'({r}, {g}, {b}, {a})'
+
 class BrExtentP:
     def __init__(self, val):
         self.val = val
@@ -103,6 +113,7 @@ def my_pp_func(val):
     elif str(val.type) == 'br_vec2d_t': return BrVec2P(val)
     elif str(val.type) == 'br_vec3_t': return BrVec3P(val)
     elif str(val.type) == 'br_vec3d_t': return BrVec3P(val)
+    elif str(val.type) == 'br_color_t': return BrColorP(val)
     elif str(val.type) == 'br_extent_t': return BrExtentP(val)
     elif str(val.type) == 'br_extenti_t': return BrExtentP(val)
     elif str(val.type) == 'br_extentd_t': return BrExtentP(val)

@@ -47,37 +47,6 @@
   X(token_kind_close_paren, ')') \
   X(token_kind_comma, ',')
 
-#define TOKEN_KINDS(X) \
-  X(token_kind_invalid) \
-  X(token_kind_number) \
-  X(token_kind_ident) \
-  X(token_kind_hash) \
-  X(token_kind_plus) \
-  X(token_kind_star) \
-  X(token_kind_dot) \
-  X(token_kind_open_paren) \
-  X(token_kind_close_paren) \
-  X(token_kind_contant) \
-  X(token_kind_comma)
-
-typedef enum {
-#define X(name) name,
-  TOKEN_KINDS(X)
-#undef X
-} br_dagen_token_kind;
-
-typedef struct {
-  br_dagen_token_kind kind;
-  br_strv_t str;
-  size_t position;
-} br_dagen_token_t;
-
-typedef struct {
-  br_dagen_token_t* arr;
-  size_t len, cap;
-  size_t pos;
-} tokens_t;
-
 typedef struct br_dagen_expr_context_t {
 	float* data;
 } br_dagen_expr_context_t;
@@ -97,7 +66,7 @@ static batches_t batches;
 inline static size_t min_s(size_t a, size_t b) { return a < b ? a : b; }
 
 // INTERPRETER
-static bool br_dagens_handle_once(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots);
+bool br_dagens_handle_once(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots);
 static void br_dagen_handle(br_dagen_t* dagen, br_data_t* data, br_datas_t datas);
 static size_t expr_len(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index);
 static size_t br_dagen_expr_read_per_batch(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index);
@@ -109,11 +78,11 @@ static void br_dagen_expr_set_last_group(float* data, size_t len, double offset)
 static void pop_batch(void);
 
 // PARSER
-static bool tokens_get(tokens_t* tokens, br_strv_t str);
+bool br_dagen_tokens_get(tokens_t* tokens, br_strv_t str);
 static const char* token_to_str(br_dagen_token_kind kind);
 static bool expr_parse(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out);
 static bool expr_parse_ref(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* out);
-static void expr_to_str(br_str_t* out, br_dagen_exprs_t* arena, uint32_t index);
+void br_dagen_expr_to_str(br_str_t* out, br_dagen_exprs_t* arena, uint32_t index);
 
 static br_dagen_expr_t br_dagen_expr_iota(int start) {
   return (br_dagen_expr_t){ .kind = br_dagen_expr_kind_iota, .iota_state = start};
@@ -155,7 +124,7 @@ bool br_dagens_add_expr_str(br_dagens_t* dagens, br_datas_t* datas, br_strv_t st
   br_dagen_exprs_t arena = {0};
   uint32_t entry         = 0;
 
-  if (false == tokens_get(&tokens, str)) goto error;
+  if (false == br_dagen_tokens_get(&tokens, str)) goto error;
   if (false == expr_parse(&arena, &tokens, &entry)) goto error;
   br_dagen_expr_t t = br_da_get(arena, entry);
   switch (t.kind)
@@ -187,24 +156,24 @@ error:
   return false;
 }
 
-bool br_dagen_push_file_2d(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* desc, FILE* file) {
+bool br_dagen_push_file_2d(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* desc, BR_FILE* file) {
   size_t data_left = 0;
   bool success = true;
   br_color_t color;
   size_t cap;
 
   if (file == NULL)                               BR_ERRORE("File is null");
-  if (1 != fread(&color, sizeof(color), 1, file)) BR_ERRORE("Failed to read color");
-  if (1 != fread(&cap, sizeof(cap), 1, file))     BR_ERROR("Failed to read capacity");
+  if (1 != BR_FREAD(&color, sizeof(color), 1, file)) BR_ERRORE("Failed to read color");
+  if (1 != BR_FREAD(&cap, sizeof(cap), 1, file))     BR_ERROR("Failed to read capacity");
 
   br_data_t* data = br_datas_create2(datas, desc->group_id, br_data_kind_2d, color, cap, desc->name);
   if (NULL == data)                               BR_ERROR("Failed to create data");
 
   if (0 != cap) {
     data_left = cap;
-    if (1 != fread(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file)) BR_ERRORE("Failed to read bounding box");
-    if (1 != fread(&data->dd.rebase_x, sizeof(data->dd.rebase_x), 1, file)) BR_ERRORE("Failed to read rebase x");
-    if (1 != fread(&data->dd.rebase_y, sizeof(data->dd.rebase_y), 1, file)) BR_ERRORE("Failed to read rebase y");
+    if (1 != BR_FREAD(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file)) BR_ERRORE("Failed to read bounding box");
+    if (1 != BR_FREAD(&data->dd.rebase_x, sizeof(data->dd.rebase_x), 1, file)) BR_ERRORE("Failed to read rebase x");
+    if (1 != BR_FREAD(&data->dd.rebase_y, sizeof(data->dd.rebase_y), 1, file)) BR_ERRORE("Failed to read rebase y");
     br_dagen_t new = {
       .data_kind = br_data_kind_2d,
       .state = br_dagen_state_inprogress,
@@ -227,7 +196,7 @@ done:
   return success;
 }
 
-bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* desc, FILE* file) {
+bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* desc, BR_FILE* file) {
   br_save_state_command_t command = br_save_state_command_save_plots;
   size_t data_left = 0;
   br_data_kind_t kind;
@@ -236,14 +205,14 @@ bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* 
   bool success = true;
 
   if (file == NULL)                                   BR_ERRORE("File is null");
-  if (1 != fread(&command, sizeof(command), 1, file)) BR_ERRORE("Failed to read command");
+  if (1 != BR_FREAD(&command, sizeof(command), 1, file)) BR_ERRORE("Failed to read command");
   switch (command) {
     case br_save_state_command_save_data_2d: kind = br_data_kind_2d; break;
     case br_save_state_command_save_data_3d: kind = br_data_kind_3d; break;
     default:                                          BR_ERROR("Unknown save command: %d", command);
   }
-  if (1 != fread(&color, sizeof(color), 1, file))     BR_ERRORE("Failed to read color");
-  if (1 != fread(&cap, sizeof(cap), 1, file))         BR_ERROR("Failed to read capacity");
+  if (1 != BR_FREAD(&color, sizeof(color), 1, file))     BR_ERRORE("Failed to read color");
+  if (1 != BR_FREAD(&cap, sizeof(cap), 1, file))         BR_ERROR("Failed to read capacity");
 
   br_data_t* data = br_datas_create2(datas, desc->group_id, kind, color, cap, desc->name);
   if (NULL == data)                                   BR_ERROR("Failed to create data");
@@ -252,13 +221,13 @@ bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* 
     data_left = cap;
     switch (kind) {
       case br_data_kind_2d: {
-        if (1 != fread(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file)) BR_ERRORE("Failed to read bounding box");
-        if (1 != fread(&data->dd.rebase_x, sizeof(data->dd.rebase_x), 1, file))         BR_ERRORE("Failed to read rebase x");
-        if (1 != fread(&data->dd.rebase_y, sizeof(data->dd.rebase_y), 1, file))         BR_ERRORE("Failed to read rebase y");
+        if (1 != BR_FREAD(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file)) BR_ERRORE("Failed to read bounding box");
+        if (1 != BR_FREAD(&data->dd.rebase_x, sizeof(data->dd.rebase_x), 1, file))         BR_ERRORE("Failed to read rebase x");
+        if (1 != BR_FREAD(&data->dd.rebase_y, sizeof(data->dd.rebase_y), 1, file))         BR_ERRORE("Failed to read rebase y");
       } break;
       case br_data_kind_3d: {
-        if (1 != fread(&data->ddd.bounding_box, sizeof(data->ddd.bounding_box), 1, file)) BR_ERRORE("Failed to read bounding box");
-        if (1 != fread(&data->ddd.rebase, sizeof(data->ddd.rebase), 1, file))             BR_ERRORE("Failed to read rebase x");
+        if (1 != BR_FREAD(&data->ddd.bounding_box, sizeof(data->ddd.bounding_box), 1, file)) BR_ERRORE("Failed to read bounding box");
+        if (1 != BR_FREAD(&data->ddd.rebase, sizeof(data->ddd.rebase), 1, file))             BR_ERRORE("Failed to read rebase x");
       } break;
       default:                                                                            BR_ERROR("data kind unknown %d", kind);
     }
@@ -279,7 +248,7 @@ bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* 
   return success;
 
 error:
-  if (file != NULL) fclose(file);
+  if (file != NULL) BR_FCLOSE(file);
   return success;
 }
 
@@ -292,7 +261,7 @@ void br_dagens_handle(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots,
 
 void br_dagens_free(br_dagens_t* dagens) {
   for (size_t i = 0; i < dagens->len; ++i)
-    if (dagens->arr[i].kind == br_dagen_kind_file) fclose(dagens->arr[i].file.file);
+    if (dagens->arr[i].kind == br_dagen_kind_file) BR_FCLOSE(dagens->arr[i].file.file);
     else if (dagens->arr[i].kind == br_dagen_kind_expr) {
       for (size_t j = 0; j < dagens->arr[i].expr_2d.arena.len; ++j) {
         if (dagens->arr[i].expr_2d.arena.arr[j].kind == br_dagen_expr_kind_function_call) {
@@ -310,7 +279,7 @@ void br_dagens_free(br_dagens_t* dagens) {
   batches.max_len = 0;
 }
 
-static bool br_dagens_handle_once(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots) {
+bool br_dagens_handle_once(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots) {
   bool any = false;
   for (size_t i = 0; i < dagens->len;) {
     br_dagen_t* cur = &dagens->arr[i];
@@ -348,7 +317,7 @@ static void br_dagen_handle(br_dagen_t* dagen, br_data_t* data, br_datas_t datas
       if (*left == 0) {
         if (data->kind == br_data_kind_2d) {
           dagen->state = br_dagen_state_finished;
-          fclose(dagen->file.file);
+          BR_FCLOSE(dagen->file.file);
           return;
         }
         left = &dagen->file.z_left;
@@ -356,7 +325,7 @@ static void br_dagen_handle(br_dagen_t* dagen, br_data_t* data, br_datas_t datas
       }
       size_t index = dagen->file.num_points - *left;
       size_t read_n = 1024 < *left ? 1024 : *left;
-      if (read_n != fread(&d[index], sizeof(d[index]), read_n, dagen->file.file)) goto error;
+      if (read_n != BR_FREAD(&d[index], sizeof(d[index]), read_n, dagen->file.file)) goto error;
       *left -= read_n;
       if ((data->kind == br_data_kind_2d && d == data->dd.ys) || (data->kind == br_data_kind_3d && d == data->ddd.zs)) {
         data->len += read_n;
@@ -365,13 +334,13 @@ static void br_dagen_handle(br_dagen_t* dagen, br_data_t* data, br_datas_t datas
         }
         if (*left == 0) {
           dagen->state = br_dagen_state_finished;
-          fclose(dagen->file.file);
+          BR_FCLOSE(dagen->file.file);
         }
       }
       return;
 error:
       LOGE("Failed to read data for a plot %d: %d(%s)", data->group_id,  errno, strerror(errno));
-      fclose(dagen->file.file);
+      BR_FCLOSE(dagen->file.file);
       dagen->state = br_dagen_state_failed;
     } break;
     case br_dagen_kind_expr:
@@ -760,7 +729,7 @@ static void pop_batch(void) {
   --batches.len;
 }
 
-static bool tokens_get(tokens_t* tokens, br_strv_t str) {
+bool br_dagen_tokens_get(tokens_t* tokens, br_strv_t str) {
   br_dagen_token_t t;
 
   for (uint32_t i = 0; i < str.len; ++i) {
@@ -913,27 +882,27 @@ start:
   return true;
 }
 
-TEST_ONLY static void expr_to_str(br_str_t* out, br_dagen_exprs_t* arena, uint32_t index) {
+TEST_ONLY void br_dagen_expr_to_str(br_str_t* out, br_dagen_exprs_t* arena, uint32_t index) {
   br_dagen_expr_t t = arena->arr[index];
   switch (t.kind) {
     case br_dagen_expr_kind_reference_x: br_str_push_literal(out, "#"); br_str_push_int(out, t.group_id); br_str_push_literal(out, ".x"); return;
     case br_dagen_expr_kind_reference_y: br_str_push_literal(out, "#"); br_str_push_int(out, t.group_id); br_str_push_literal(out, ".y"); return;
     case br_dagen_expr_kind_reference_z: br_str_push_literal(out, "#"); br_str_push_int(out, t.group_id); br_str_push_literal(out, ".z"); return;
     case br_dagen_expr_kind_add: br_str_push_literal(out, "(");
-                                 expr_to_str(out, arena, t.operands.op1);
+                                 br_dagen_expr_to_str(out, arena, t.operands.op1);
                                  br_str_push_literal(out, " + ");
-                                 expr_to_str(out, arena, t.operands.op2);
+                                 br_dagen_expr_to_str(out, arena, t.operands.op2);
                                  br_str_push_literal(out, ")");
                                  return;
     case br_dagen_expr_kind_mul: br_str_push_literal(out, "(");
-                                 expr_to_str(out, arena, t.operands.op1);
+                                 br_dagen_expr_to_str(out, arena, t.operands.op1);
                                  br_str_push_literal(out, " * ");
-                                 expr_to_str(out, arena, t.operands.op2);
+                                 br_dagen_expr_to_str(out, arena, t.operands.op2);
                                  br_str_push_literal(out, ")");
                                  return;
-    case br_dagen_expr_kind_pair:expr_to_str(out, arena, t.operands.op1);
+    case br_dagen_expr_kind_pair:br_dagen_expr_to_str(out, arena, t.operands.op1);
                                  br_str_push_literal(out, ", ");
-                                 expr_to_str(out, arena, t.operands.op2);
+                                 br_dagen_expr_to_str(out, arena, t.operands.op2);
                                  return;
     case br_dagen_expr_kind_iota: br_str_push_literal(out, "0..4.8e9");
                                   return;
@@ -941,7 +910,7 @@ TEST_ONLY static void expr_to_str(br_str_t* out, br_dagen_exprs_t* arena, uint32
                                       return;
     case br_dagen_expr_kind_function_call: br_str_push_strv(out, br_str_as_view(t.function.func_name));
                                            br_str_push_char(out, '(');
-                                           expr_to_str(out, arena, t.function.arg);
+                                           br_dagen_expr_to_str(out, arena, t.function.arg);
                                            br_str_push_char(out, ')');
                                            return;
   }

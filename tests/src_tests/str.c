@@ -1,12 +1,4 @@
-#if !defined(BR_DEBUG)
-#  define BR_DEBUG
-#endif
-#include "src/br_pp.h"
-#define BR_MEMORY_TRACER_IMPLEMENTATION
-#include "src/br_memory.h"
-#define BR_STR_IMPLEMENTATION
-#include "src/br_str.h"
-#include "src/br_test.h"
+#include "tests/src_tests/shl.h"
 
 void str_tests(void) {
   char c[128];
@@ -134,6 +126,3 @@ int main(void) {
   str_replace();
   str_replace1();
 }
-
-void br_on_fatal_error(void) { }
-void brgui_push_log_line(const char* fmt, ...) {(void)fmt;}

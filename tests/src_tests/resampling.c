@@ -1,14 +1,4 @@
-#include "src/br_pp.h"
-#define BR_MEMORY_TRACER_IMPLEMENTATION
-#include "src/br_memory.h"
-#define BRFL_IMPLEMENTATION
-#include "src/br_free_list.h"
-#include "src/br_test.h"
-#include "src/resampling.c"
-#include "tests/src_tests/mock_platform.c"
-#include "tests/src_tests/mock_mesh.c"
-#include "src/br_plotter.h"
-#include "tests/src_tests/mock_data.c"
+#include "tests/src_tests/shl.h"
 
 void resampling(void) {
   float xs[] = { 0, 1, 2, 3 };
@@ -52,6 +42,3 @@ int main(void) {
   resampling();
   resampling2();
 }
-
-void br_on_fatal_error(void) {}
-void brgui_push_log_line(const char* fmt, ...) {(void)fmt;}

@@ -135,8 +135,8 @@ void br_mesh_3d_gen_line2(const br_mesh_line_3d_t* args, br_vec3_t p1, br_vec3_t
   if (right.x == 0 && right.y == 0 && right.z == 0) {
     return;
   }
-  float thick1 = br_vec3_dist(args->eye, p1) * 0.005 * args->line_thickness;
-  float thick2 = br_vec3_dist(args->eye, p2) * 0.005 * args->line_thickness;
+  float thick1 = br_vec3_dist(args->eye, p1) * 0.005f * args->line_thickness;
+  float thick2 = br_vec3_dist(args->eye, p2) * 0.005f * args->line_thickness;
   br_vec3_t right_scale1 = br_vec3_scale(right, thick1);
   br_vec3_t right_scale2 = br_vec3_scale(right, thick2);
   br_shader_line_3d_push_quad(br_mesh_state.shaders->line_3d, (br_shader_line_3d_el_t[4]) {
@@ -206,7 +206,7 @@ int get_points(int n, br_mesh_line_thick* arr, double to, double from, double ex
   double exp = floor(real_exp);
   double base = pow(10.0, exp);
   double start = floor(from / base) * base;
-  n = br_i_min(diff / base + 3, n);
+  n = br_i_min((int)(diff / base) + 3, n);
   double thickness_base = 2.0 - n / 20.0;
   if (thickness_base < 1.0) thickness_base = 1.0;
   for (int i = 0; i < n; ++i) {
@@ -235,6 +235,7 @@ br_vec3_t get_zero_z(br_vec3_t p1, br_vec4_t p2) {
 }
 
 static void br_mesh_grid_3d_line_draw2(br_vec3_t p1, br_vec3_t p2, br_vec3_t eye, br_vec3_t color, float far_plane, br_vec3_t normal) {
+  (void)far_plane;
   br_vec3_t diff = br_vec3_sub(p2, p1);
   float dist1 = br_vec3_dist(eye, p1);
   float dist2 = br_vec3_dist(eye, p2);
@@ -274,12 +275,12 @@ static void br_mesh_grid_3d_draw(br_vec3_t normal, br_vec3_t up, br_size_t size,
   start = br_vec3_sub(start, br_vec3_scale(up, size.height/2));
   start = br_vec3_sub(start, br_vec3_scale(right, size.width/2));
   for (int i = 1; i < (int)n.x; ++i) {
-    br_vec3_t p1 = br_vec3_add(start, br_vec3_scale(right, i*base.x));
+    br_vec3_t p1 = br_vec3_add(start, br_vec3_scale(right, ((float)i)*base.x));
     br_vec3_t p2 = br_vec3_add(p1, br_vec3_scale(up, size.height));
     br_mesh_grid_3d_line_draw(p1, p2, eye, color, 1000.f, normal);
   }
   for (int i = 1; i < (int)n.y; ++i) {
-    br_vec3_t p1 = br_vec3_add(start, br_vec3_scale(up, i*base.y));
+    br_vec3_t p1 = br_vec3_add(start, br_vec3_scale(up, ((float)i)*base.y));
     br_vec3_t p2 = br_vec3_add(p1, br_vec3_scale(right, size.width));
     br_mesh_grid_3d_line_draw(p1, p2, eye, color, 1000.f, normal);
   }
@@ -290,7 +291,6 @@ void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
   // TODO 2D/3D
 #define BR_MESH_LINE_THICK_N 32
   br_mesh_line_thick line_thicks[BR_MESH_LINE_THICK_N];
-  br_mesh_line_thick line_thicks2[BR_MESH_LINE_THICK_N];
   br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
   switch (plot->kind) {
     case br_plot_kind_2d: {

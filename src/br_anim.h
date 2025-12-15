@@ -74,5 +74,5 @@ br_extent_t br_animex(br_anims_t* anims, int anim_handle);
 br_extent_t br_animex_get_target(br_anims_t* anims, int anim_handle);
 br_extent_t br_anim_rebase(br_anims_t* anims, int anim_handle, br_vec2_t rebase_for);
 
-bool br_anim_save(FILE* file, const br_anims_t* anims);
-bool br_anim_load(FILE* file, br_anims_t* anims);
+bool br_anim_save(BR_FILE* file, const br_anims_t* anims);
+bool br_anim_load(BR_FILE* file, br_anims_t* anims);

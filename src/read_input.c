@@ -2,6 +2,7 @@
 #include "src/br_plotter.h"
 #include "src/br_q.h"
 #include "src/br_memory.h"
+#include "src/br_read_input.h"
 
 static void br_read_input_main_worker(br_plotter_t* br, void* read_state);
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
@@ -128,10 +129,6 @@ static int br_read_input_read_next(void* null) { (void)null; return -1; }
 #include <string.h>
 #include <math.h>
 
-#define MAX_REDUCE 6
-#define MAX_NAME 64
-#define REDUCTORS 10
-#define INPUT_TOKENS_COUNT MAX_REDUCE
 #define IS_VALID_NAME(c) ((c) >= 'a' && (c) <= 'z')
 #define IS_VALID_PATH(c) (((c) >= '0' && (c) <= '1') || \
       ((c) >= 'a' && (c) <= 'z') || \
@@ -140,88 +137,15 @@ static int br_read_input_read_next(void* null) { (void)null; return -1; }
       (c) == '/' || \
       (c) == '_')
 
-typedef enum {
-  input_token_any,
-  input_token_number,
-  input_token_name,
-  input_token_quoted_string,
-  input_token_path,
-  input_token_comma,
-  input_token_semicollon,
-  input_token_dashdash
-} input_token_kind_t;
-
-typedef enum {
-  input_lex_state_init,
-  input_lex_state_number,
-  input_lex_state_number_decimal,
-  input_lex_state_number_exp,
-  input_lex_state_number_reset,
-  input_lex_state_name,
-  input_lex_state_path,
-  input_lex_state_dash,
-  input_lex_state_quoted
-} input_lex_state_t;
-
-typedef struct input_token_t {
-  union {
-    struct {
-      double value_d;
-      long long value_l;
-    };
-    char name[MAX_NAME];
-    br_str_t br_str;
-  };
-  input_token_kind_t kind;
-} input_token_t;
-
-struct lex_state_s;
-
-typedef struct {
-  input_token_kind_t kinds[MAX_REDUCE];
-  void (*reduce_func)(br_plotter_t* commands, struct lex_state_s* s);
-} input_reduce_t;
-
-typedef struct {
-  br_str_t ex;
-  int group;
-} extractor_t;
-
-typedef struct {
-  extractor_t* arr;
-  size_t len;
-  size_t cap;
-} extractors_t;
-
-typedef struct lex_state_s {
-  double value_d;
-  long long decimall;
-  long long value_l;
-  char name[MAX_NAME];
-  size_t name_len;
-  bool is_neg_whole;
-  bool is_neg;
-  bool read_next;
-  br_str_t cur_line;
-  input_lex_state_t state;
-  int c;
-
-  input_token_t tokens[INPUT_TOKENS_COUNT];
-  size_t tokens_len;
-  extractors_t extractors;
-  bool should_push_eagre;
-  input_reduce_t reductors[REDUCTORS];
-} lex_state_t;
-
-static void input_reduce_y(br_plotter_t* gv, lex_state_t* s) {
+void br_input_reduce_y(br_plotter_t* gv, br_lex_state_t* s) {
   if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = 0, .y = s->tokens[0].value_d} });
 }
 
-static void input_reduce_xy(br_plotter_t* gv, lex_state_t* s) {
+void br_input_reduce_xy(br_plotter_t* gv, br_lex_state_t* s) {
   if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = 0, .x = s->tokens[0].value_d, .y = s->tokens[2].value_d} });
 }
 
-static void input_reduce_xyz(br_plotter_t* gv, lex_state_t* s) {
+void br_input_reduce_xyz(br_plotter_t* gv, br_lex_state_t* s) {
   if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_xyz,
       .push_point_xyz = {
         .group = 0,
@@ -231,11 +155,11 @@ static void input_reduce_xyz(br_plotter_t* gv, lex_state_t* s) {
   }});
 }
 
-static void input_reduce_xygroup(br_plotter_t* gv, lex_state_t* s) {
+void br_input_reduce_xygroup(br_plotter_t* gv, br_lex_state_t* s) {
   if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_xy, .push_point_xy = { .group = (int)s->tokens[4].value_l, .x = s->tokens[0].value_d, .y = s->tokens[2].value_d } });
 }
 
-static void input_reduce_ygroup(br_plotter_t* gv, lex_state_t* s) {
+void br_input_reduce_ygroup(br_plotter_t* gv, br_lex_state_t* s) {
   if (s->should_push_eagre) q_push(gv->commands, (q_command){.type = q_command_push_point_y, .push_point_y = { .group = (int)s->tokens[2].value_l, .y = s->tokens[0].value_d } });
 }
 
@@ -251,7 +175,7 @@ static void input_push_command_with_path(q_commands* commands, const char* path,
   q_push(commands, cmd);
 }
 
-static void extractors_push(extractors_t* exs, extractor_t ex) {
+static void extractors_push(br_extractors_t* exs, br_extractor_t ex) {
   if (exs->arr == NULL) {
     exs->arr = BR_CALLOC(8, sizeof(*exs->arr));
     exs->cap = 8;
@@ -264,21 +188,7 @@ static void extractors_push(extractors_t* exs, extractor_t ex) {
   exs->arr[exs->len++] = ex;
 }
 
-typedef enum {
-  extractor_state_init,
-  extractor_state_capture,
-  extractor_state_escape
-} extractor_state_t;
-
-typedef enum {
-  extractor_res_state_none = 0,
-  extractor_res_state_unfinished = 1,
-  extractor_res_state_x = 2,
-  extractor_res_state_y = 4,
-  extractor_res_state_xy = extractor_res_state_x | extractor_res_state_y
-} extractor_res_state_t;
-
-static bool extractor_is_valid(br_strv_t ex) {
+bool br_extractor_is_valid(br_strv_t ex) {
   bool is_cap = false;
   bool x_cap = false, y_cap = false;
   bool is_wild = false;
@@ -355,9 +265,9 @@ static bool extractor_is_valid(br_strv_t ex) {
   return true;
 }
 
-static int extractor_extract_number(br_strv_t view, float* outF) {
+int br_extractor_extract_number(br_strv_t view, float* outF) {
   bool is_neg = false, is_neg_whole = false;
-  input_lex_state_t state = input_lex_state_init;
+  br_input_br_lex_state_t state = br_input_br_lex_state_init;
   int i = 0;
   long value_i = 0;
   float value_f = 0;
@@ -369,30 +279,30 @@ static int extractor_extract_number(br_strv_t view, float* outF) {
     else read_next = true;
     char c = view.str[i];
     switch (state) {
-      case input_lex_state_init:
+      case br_input_br_lex_state_init:
         if (c >= '0' && c <= '9') {
-          state = input_lex_state_number;
+          state = br_input_br_lex_state_number;
           read_next = false;
         } else if (c == '.') {
-          state = input_lex_state_number_decimal;
+          state = br_input_br_lex_state_number_decimal;
         } else if (c == '-') {
-          state = input_lex_state_dash;
+          state = br_input_br_lex_state_dash;
         } else return -1;
         break;
-      case input_lex_state_dash:
+      case br_input_br_lex_state_dash:
         if (c >= '0' && c <= '9') {
           is_neg = true;
           is_neg_whole = true;
-          state = input_lex_state_number;
+          state = br_input_br_lex_state_number;
           read_next = false;
         } else return -1;
         break;
-      case input_lex_state_number:
+      case br_input_br_lex_state_number:
         if (c >= '0' && c <= '9') {
           value_i *= 10;
           value_i += c - '0';
         } else if (c == '.') {
-          state = input_lex_state_number_decimal;
+          state = br_input_br_lex_state_number_decimal;
           value_f = (float)value_i;
           value_i = 0;
           is_neg = false;
@@ -401,13 +311,13 @@ static int extractor_extract_number(br_strv_t view, float* outF) {
           value_i = 0;
           is_neg = false;
           decimal = 0;
-          state = input_lex_state_number_exp;
+          state = br_input_br_lex_state_number_exp;
         } else {
           *outF = is_neg_whole ? (float)-value_i : (float)value_i;
           return i;
         }
         break;
-      case input_lex_state_number_decimal:
+      case br_input_br_lex_state_number_decimal:
         if (c >= '0' && c <= '9') {
           value_i *= 10;
           value_i += c - '0';
@@ -416,14 +326,14 @@ static int extractor_extract_number(br_strv_t view, float* outF) {
           value_f += (float)value_i * powf(10.f, (float)decimal);
           value_i = 0;
           decimal = 0;
-          state = input_lex_state_number_exp;
+          state = br_input_br_lex_state_number_exp;
         } else {
           value_f += (float)value_i * powf(10.f, (float)decimal);
           *outF = is_neg_whole ? -value_f : value_f;
           return i;
         }
         break;
-      case input_lex_state_number_exp:
+      case br_input_br_lex_state_number_exp:
         if (c >= '0' && c <= '9') {
           value_i *= 10;
           value_i += c - '0';
@@ -441,16 +351,16 @@ static int extractor_extract_number(br_strv_t view, float* outF) {
     }
   }
   switch (state) {
-    case input_lex_state_init:
+    case br_input_br_lex_state_init:
       return -1;
-    case input_lex_state_number:
+    case br_input_br_lex_state_number:
       *outF = is_neg_whole ? (float)-value_i : (float)value_i;
       return (int)view.len;
-    case input_lex_state_number_decimal:
+    case br_input_br_lex_state_number_decimal:
       value_f += (float)value_i * powf(10.f, (float)decimal);
       *outF = is_neg_whole ? -value_f : value_f;
       return (int)view.len;
-    case input_lex_state_number_exp:
+    case br_input_br_lex_state_number_exp:
       value_f *= powf(10.f, is_neg ? (float)-value_i : (float)value_i);
       *outF = is_neg_whole ? -value_f : value_f;
       return (int)view.len;
@@ -461,74 +371,74 @@ static int extractor_extract_number(br_strv_t view, float* outF) {
   return -1;
 }
 
-static extractor_res_state_t extractor_extract(br_strv_t ex, br_strv_t view, float* x, float* y) {
+br_extractor_res_state_t br_extractor_extract(br_strv_t ex, br_strv_t view, float* x, float* y) {
   unsigned int ex_i = 0, view_i = 0;
-  extractor_state_t state = extractor_state_init;
-  extractor_res_state_t res = extractor_res_state_none;
+  br_extractor_state_t state = br_extractor_state_init;
+  br_extractor_res_state_t res = br_extractor_res_state_none;
 
   while (ex_i < ex.len && view_i < view.len) {
     char ex_c = ex.str[ex_i];
     char view_c = view.str[view_i];
     switch (state) {
-      case extractor_state_init:
+      case br_extractor_state_init:
         switch (ex_c) {
           case '*':
             ex_i++;
             for (unsigned int j = view_i; j < view.len; ++j) {
               float tmp_x, tmp_y;
-              extractor_res_state_t r = extractor_extract(br_str_sub1(ex, ex_i), br_str_sub1(view, j), &tmp_x, &tmp_y);
-              if (extractor_res_state_none != r && extractor_res_state_unfinished != r) {
-                if (r & extractor_res_state_x) *x = tmp_x;
-                if (r & extractor_res_state_y) *y = tmp_y;
+              br_extractor_res_state_t r = br_extractor_extract(br_str_sub1(ex, ex_i), br_str_sub1(view, j), &tmp_x, &tmp_y);
+              if (br_extractor_res_state_none != r && br_extractor_res_state_unfinished != r) {
+                if (r & br_extractor_res_state_x) *x = tmp_x;
+                if (r & br_extractor_res_state_y) *y = tmp_y;
                 return r | res;
               } else ++view_i;
             }
             break;
           case '\\':
-            state = extractor_state_escape;
+            state = br_extractor_state_escape;
             ++ex_i;
             break;
           case '%':
-            state = extractor_state_capture;
+            state = br_extractor_state_capture;
             ++ex_i;
             break;
           default:
             if (ex_c == view_c) {
               ++view_i;
               ++ex_i;
-            } else return extractor_res_state_none;
+            } else return br_extractor_res_state_none;
             break;
         }
         break;
-      case extractor_state_capture: {
+      case br_extractor_state_capture: {
         float temp_float = 0.f;
-        int r = extractor_extract_number(br_str_sub1(view, view_i), &temp_float);
+        int r = br_extractor_extract_number(br_str_sub1(view, view_i), &temp_float);
         if (r > 0) {
           if (ex_c == 'x') {
             *x = temp_float;
-            res |= extractor_res_state_x;
+            res |= br_extractor_res_state_x;
           } else if (ex_c == 'y') {
             *y = temp_float;
-            res |= extractor_res_state_y;
+            res |= br_extractor_res_state_y;
           } else BR_UNREACHABLE("Extracting unknown capture: %c(%u)", ex_c, (uint32_t)ex_c);
           ++ex_i;
           view_i += (unsigned int)r;
-          state = extractor_state_init;
-        } else return extractor_res_state_none;
+          state = br_extractor_state_init;
+        } else return br_extractor_res_state_none;
       }break;
-      case extractor_state_escape:
+      case br_extractor_state_escape:
         if (ex_c == view_c) {
           ++ex_i;
           ++view_i;
-          state = extractor_state_init;
-        } else return extractor_res_state_none;
+          state = br_extractor_state_init;
+        } else return br_extractor_res_state_none;
         break;
     }
   }
-  return ex_i < ex.len ? extractor_res_state_unfinished : res;
+  return ex_i < ex.len ? br_extractor_res_state_unfinished : res;
 }
 
-static void input_reduce_command(br_plotter_t* gv, lex_state_t* s) {
+void br_input_reduce_command(br_plotter_t* gv, br_lex_state_t* s) {
   if (0 == strcmp("zoomx", s->tokens[1].name)) {
     q_push(gv->commands, (q_command) { .type = q_command_set_zoom_x, .value = s->tokens[2].value_d});
   } else if (0 == strcmp("focus", s->tokens[1].name)) {
@@ -556,16 +466,16 @@ static void input_reduce_command(br_plotter_t* gv, lex_state_t* s) {
     gv->uiw.pl.should_close = true;
     exit(0);
   } else if (0 == strcmp("extract", s->tokens[1].name)) {
-    if (extractor_is_valid(br_str_as_view(s->tokens[3].br_str))) {
+    if (br_extractor_is_valid(br_str_as_view(s->tokens[3].br_str))) {
       br_str_t str = br_str_copy(s->tokens[3].br_str);
       --str.len;
-      extractors_push(&s->extractors, (extractor_t) { .ex =  str, .group = (int)s->tokens[2].value_l });
+      extractors_push(&s->extractors, (br_extractor_t) { .ex =  str, .group = (int)s->tokens[2].value_l });
       s->should_push_eagre = false;
     }
   } else if (0 == strcmp("expr", s->tokens[1].name)) {
     br_str_t str = br_str_copy(s->tokens[3].br_str);
     q_push(gv->commands, (q_command) { .type = q_command_add_expr, .add_expr = { .group = (int)s->tokens[2].value_l, .expr = str } });
-  } else if (s->tokens[3].kind == input_token_quoted_string && 0 == strcmp("setname", s->tokens[1].name)) {
+  } else if (s->tokens[3].kind == br_input_token_quoted_string && 0 == strcmp("setname", s->tokens[1].name)) {
     q_command cmd = {
       .type = q_command_set_name,
       .set_quoted_str = {
@@ -574,41 +484,41 @@ static void input_reduce_command(br_plotter_t* gv, lex_state_t* s) {
       }
     };
     q_push(gv->commands, cmd);
-    s->tokens[3].kind = input_token_any;
+    s->tokens[3].kind = br_input_token_any;
   } else
     LOGI("Execute %c%c%c...\n", s->tokens[1].name[0], s->tokens[1].name[1], s->tokens[1].name[2]);
 }
 
-static void input_tokens_pop(lex_state_t* s, size_t n) {
+static void input_tokens_pop(br_lex_state_t* s, size_t n) {
   if (n == 0) return;
   for (size_t i = 0; i < n; ++i) {
-    if (s->tokens[i].kind == input_token_quoted_string) {
+    if (s->tokens[i].kind == br_input_token_quoted_string) {
       br_str_free(s->tokens[i].br_str);
     }
   }
-  if (n >= INPUT_TOKENS_COUNT) {
+  if (n >= BR_INPUT_TOKENS_COUNT) {
     memset(s->tokens, 0, sizeof(s->tokens));
   }
-  memmove(s->tokens, &s->tokens[n], sizeof(input_token_t) * (INPUT_TOKENS_COUNT - n));
-  memset(&s->tokens[INPUT_TOKENS_COUNT - n], 0, sizeof(input_token_t) * n);
+  memmove(s->tokens, &s->tokens[n], sizeof(br_input_token_t) * (BR_INPUT_TOKENS_COUNT - n));
+  memset(&s->tokens[BR_INPUT_TOKENS_COUNT - n], 0, sizeof(br_input_token_t) * n);
   s->tokens_len -= n;
 }
 
-static bool input_tokens_match_count(const lex_state_t* s, input_reduce_t* r, size_t* match_count) {
+static bool input_tokens_match_count(const br_lex_state_t* s, br_input_reduce_t* r, size_t* match_count) {
   size_t i = 0;
-  for (; i < s->tokens_len && i < MAX_REDUCE && r->kinds[i] != input_token_any; ++i)
+  for (; i < s->tokens_len && i < BR_MAX_REDUCE && r->kinds[i] != br_input_token_any; ++i)
     if (s->tokens[i].kind != r->kinds[i]) return false;
   *match_count = i;
-  return r->kinds[i] == input_token_any;
+  return r->kinds[i] == br_input_token_any;
 }
 
-static bool input_tokens_can_next_be(const lex_state_t* s, input_token_kind_t kind) {
-  bool bad_reducor[REDUCTORS] = {0};
+static bool input_tokens_can_next_be(const br_lex_state_t* s, br_input_token_kind_t kind) {
+  bool bad_reducor[BR_REDUCTORS] = {0};
   size_t j = 0;
   bool any = false;
   for (; j < s->tokens_len; ++j) {
     any = false;
-    for (int i = 0; i < REDUCTORS; ++i) {
+    for (int i = 0; i < BR_REDUCTORS; ++i) {
       if (bad_reducor[i] == false && s->reductors[i].kinds[j] != s->tokens[j].kind) {
         bad_reducor[i] = true;
       } else {
@@ -617,10 +527,10 @@ static bool input_tokens_can_next_be(const lex_state_t* s, input_token_kind_t ki
     }
     if (any == false) return false;
   }
-  if (kind == input_token_any) {
+  if (kind == br_input_token_any) {
     return any;
   }
-  for (int i = 0; i < REDUCTORS; ++i) {
+  for (int i = 0; i < BR_REDUCTORS; ++i) {
     if (bad_reducor[i] == false && s->reductors[i].kinds[j] != kind) {
       bad_reducor[i] = true;
     } else {
@@ -630,14 +540,14 @@ static bool input_tokens_can_next_be(const lex_state_t* s, input_token_kind_t ki
   return false;
 }
 
-static void input_tokens_reduce(br_plotter_t* gv, lex_state_t* s, bool force_reduce) {
+void br_input_tokens_reduce(br_plotter_t* gv, br_lex_state_t* s, bool force_reduce) {
   if (s->tokens_len == 0) return;
   int best = -1;
   size_t best_c = 0, match_c = 0;
 
   int best_reduce = -1;
   size_t best_reduce_count = 0;
-  for (size_t i = 0; i < REDUCTORS; ++i) {
+  for (size_t i = 0; i < BR_REDUCTORS; ++i) {
     size_t count = 0;
     bool can_reduce = input_tokens_match_count(s, &s->reductors[i], &count);
     if (can_reduce) {
@@ -655,7 +565,7 @@ static void input_tokens_reduce(br_plotter_t* gv, lex_state_t* s, bool force_red
   }
   if (force_reduce == false) {
     if (best_c == 0) input_tokens_pop(s, 1);
-    else if ((match_c == 1 && best > -1 && s->reductors[best].kinds[best_c] == input_token_any)) {
+    else if ((match_c == 1 && best > -1 && s->reductors[best].kinds[best_c] == br_input_token_any)) {
       s->reductors[best].reduce_func(gv, s);
       input_tokens_pop(s, (size_t)best_c);
     }
@@ -668,82 +578,82 @@ static void input_tokens_reduce(br_plotter_t* gv, lex_state_t* s, bool force_red
   }
 }
 
-static void lex_state_init(lex_state_t* lex_state) {
-  *lex_state = (lex_state_t){ 0,
+void br_lex_state_init(br_lex_state_t* br_lex_state) {
+  *br_lex_state = (br_lex_state_t){ 0,
    .reductors = {
-    {{input_token_number}, input_reduce_y},
-    {{input_token_number, input_token_comma, input_token_number}, input_reduce_xy},
-    {{input_token_number, input_token_comma, input_token_number, input_token_comma, input_token_number}, input_reduce_xyz},
-    {{input_token_number, input_token_comma, input_token_number, input_token_semicollon, input_token_number}, input_reduce_xygroup},
-    {{input_token_number, input_token_semicollon, input_token_number}, input_reduce_ygroup},
-    {{input_token_dashdash, input_token_name, input_token_number}, input_reduce_command},
-    {{input_token_dashdash, input_token_name, input_token_path}, input_reduce_command},
-    {{input_token_dashdash, input_token_name, input_token_name}, input_reduce_command},
-    {{input_token_dashdash, input_token_name}, input_reduce_command},
-    {{input_token_dashdash, input_token_name, input_token_number, input_token_quoted_string}, input_reduce_command},
+    {{br_input_token_number}, br_input_reduce_y},
+    {{br_input_token_number, br_input_token_comma, br_input_token_number}, br_input_reduce_xy},
+    {{br_input_token_number, br_input_token_comma, br_input_token_number, br_input_token_comma, br_input_token_number}, br_input_reduce_xyz},
+    {{br_input_token_number, br_input_token_comma, br_input_token_number, br_input_token_semicollon, br_input_token_number}, br_input_reduce_xygroup},
+    {{br_input_token_number, br_input_token_semicollon, br_input_token_number}, br_input_reduce_ygroup},
+    {{br_input_token_dashdash, br_input_token_name, br_input_token_number}, br_input_reduce_command},
+    {{br_input_token_dashdash, br_input_token_name, br_input_token_path}, br_input_reduce_command},
+    {{br_input_token_dashdash, br_input_token_name, br_input_token_name}, br_input_reduce_command},
+    {{br_input_token_dashdash, br_input_token_name}, br_input_reduce_command},
+    {{br_input_token_dashdash, br_input_token_name, br_input_token_number, br_input_token_quoted_string}, br_input_reduce_command},
   }};
-  lex_state->read_next = true;
-  lex_state->c = -1;
-  lex_state->should_push_eagre = true;
+  br_lex_state->read_next = true;
+  br_lex_state->c = -1;
+  br_lex_state->should_push_eagre = true;
 }
 
-static void lex_state_deinit(lex_state_t* s) {
+void br_lex_state_deinit(br_lex_state_t* s) {
   for (size_t i = 0; i < s->tokens_len; ++i) {
-    if (s->tokens[i].kind == input_token_quoted_string) {
+    if (s->tokens[i].kind == br_input_token_quoted_string) {
       br_str_free(s->tokens[i].br_str);
     }
   }
   s->tokens_len = 0;
 }
 
-static void lex_step(br_plotter_t* br, lex_state_t* s) {
+void br_lex_step(br_plotter_t* br, br_lex_state_t* s) {
   switch (s->state) {
-    case input_lex_state_init:
-      input_tokens_reduce(br, s, false);
+    case br_input_br_lex_state_init:
+      br_input_tokens_reduce(br, s, false);
       if (s->c == '-') {
-        s->state = input_lex_state_dash;
+        s->state = br_input_br_lex_state_dash;
       } else if (s->c >= '0' && s->c <= '9') {
-        s->state = input_lex_state_number;
+        s->state = br_input_br_lex_state_number;
         s->read_next = false;
-      } else if (s->c >= 'a' && s->c <= 'z' && input_tokens_can_next_be(s, input_token_name)) {
-        s->state = input_lex_state_name;
+      } else if (s->c >= 'a' && s->c <= 'z' && input_tokens_can_next_be(s, br_input_token_name)) {
+        s->state = br_input_br_lex_state_name;
         s->read_next = false;
-      } else if (IS_VALID_PATH(s->c) && input_tokens_can_next_be(s, input_token_path)) {
-        s->state = input_lex_state_path;
+      } else if (IS_VALID_PATH(s->c) && input_tokens_can_next_be(s, br_input_token_path)) {
+        s->state = br_input_br_lex_state_path;
         s->read_next = false;
       } else if (s->c == '.') {
-        s->state = input_lex_state_number_decimal;
-      } else if (s->c == ',' && input_tokens_can_next_be(s, input_token_comma)) {
-        s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_comma };
-      } else if (s->c == ';' && input_tokens_can_next_be(s, input_token_semicollon)) {
-        s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_semicollon };
-      } else if (s->c == '"' && input_tokens_can_next_be(s, input_token_quoted_string)) {
-        s->tokens[s->tokens_len] = (input_token_t) {
-          .kind = input_token_quoted_string,
+        s->state = br_input_br_lex_state_number_decimal;
+      } else if (s->c == ',' && input_tokens_can_next_be(s, br_input_token_comma)) {
+        s->tokens[s->tokens_len++] = (br_input_token_t) { .kind = br_input_token_comma };
+      } else if (s->c == ';' && input_tokens_can_next_be(s, br_input_token_semicollon)) {
+        s->tokens[s->tokens_len++] = (br_input_token_t) { .kind = br_input_token_semicollon };
+      } else if (s->c == '"' && input_tokens_can_next_be(s, br_input_token_quoted_string)) {
+        s->tokens[s->tokens_len] = (br_input_token_t) {
+          .kind = br_input_token_quoted_string,
           .br_str = br_str_malloc(8),
         };
-        s->state = input_lex_state_quoted;
+        s->state = br_input_br_lex_state_quoted;
       }
       break;
-    case input_lex_state_dash:
+    case br_input_br_lex_state_dash:
       if (s->c == '-') {
-        s->tokens[s->tokens_len++] = (input_token_t){ .kind = input_token_dashdash };
-        s->state = input_lex_state_init;
+        s->tokens[s->tokens_len++] = (br_input_token_t){ .kind = br_input_token_dashdash };
+        s->state = br_input_br_lex_state_init;
       } else if (s->c >= '0' && s->c <= '9') {
         s->is_neg = true;
         s->is_neg_whole = true;
-        s->state = input_lex_state_number;
+        s->state = br_input_br_lex_state_number;
         s->read_next = false;
       } else {
-        s->state = input_lex_state_init;
+        s->state = br_input_br_lex_state_init;
       }
       break;
-    case input_lex_state_number:
+    case br_input_br_lex_state_number:
       if (s->c >= '0' && s->c <= '9') {
         s->value_l *= 10;
         s->value_l += (long long)(s->c - '0');
       } else if (s->c == '.') {
-        s->state = input_lex_state_number_decimal;
+        s->state = br_input_br_lex_state_number_decimal;
         s->value_d = (double)s->value_l;
         s->value_l = 0;
         s->is_neg = false;
@@ -752,15 +662,15 @@ static void lex_step(br_plotter_t* br, lex_state_t* s) {
         s->value_l = 0;
         s->is_neg = false;
         s->decimall = 0;
-        s->state = input_lex_state_number_exp;
+        s->state = br_input_br_lex_state_number_exp;
       } else {
         if (s->is_neg_whole) s->value_l *= -1;
-        s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_number, .value_d = (double)s->value_l, .value_l = s->value_l };
-        s->state = input_lex_state_number_reset;
+        s->tokens[s->tokens_len++] = (br_input_token_t) { .kind = br_input_token_number, .value_d = (double)s->value_l, .value_l = s->value_l };
+        s->state = br_input_br_lex_state_number_reset;
         s->read_next = false;
       }
       break;
-    case input_lex_state_number_decimal:
+    case br_input_br_lex_state_number_decimal:
       if (s->c >= '0' && s->c <= '9') {
         s->value_l *= 10;
         s->value_l += (long)(s->c - '0');
@@ -769,15 +679,15 @@ static void lex_step(br_plotter_t* br, lex_state_t* s) {
         s->value_d += (double)s->value_l * pow(10, (double)s->decimall);
         s->value_l = 0;
         s->decimall = 0;
-        s->state = input_lex_state_number_exp;
+        s->state = br_input_br_lex_state_number_exp;
       } else {
         s->value_d += (double)s->value_l * pow(10, (double)s->decimall);
-        s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_number, .value_d = s->is_neg_whole ? -s->value_d : s->value_d, .value_l = (int)s->value_l };
-        s->state = input_lex_state_number_reset;
+        s->tokens[s->tokens_len++] = (br_input_token_t) { .kind = br_input_token_number, .value_d = s->is_neg_whole ? -s->value_d : s->value_d, .value_l = (int)s->value_l };
+        s->state = br_input_br_lex_state_number_reset;
         s->read_next = false;
       }
       break;
-    case input_lex_state_number_exp:
+    case br_input_br_lex_state_number_exp:
       if (s->c >= '0' && s->c <= '9') {
         s->value_l *= 10;
         s->value_l += s->c - '0';
@@ -785,13 +695,13 @@ static void lex_step(br_plotter_t* br, lex_state_t* s) {
         s->is_neg = true;
       } else {
         s->value_d *= pow(10.f, s->is_neg ? (double)-s->value_l : (double)s->value_l);
-        s->tokens[s->tokens_len++] = (input_token_t) { .kind = input_token_number, .value_d = s->is_neg_whole ? -s->value_d : s->value_d, .value_l = s->value_l };
-        s->state = input_lex_state_number_reset;
+        s->tokens[s->tokens_len++] = (br_input_token_t) { .kind = br_input_token_number, .value_d = s->is_neg_whole ? -s->value_d : s->value_d, .value_l = s->value_l };
+        s->state = br_input_br_lex_state_number_reset;
         s->read_next = false;
       }
       break;
-    case input_lex_state_number_reset:
-      s->state = input_lex_state_init;
+    case br_input_br_lex_state_number_reset:
+      s->state = br_input_br_lex_state_init;
       s->read_next = false;
       s->value_d = 0;
       s->value_l = 0;
@@ -799,38 +709,38 @@ static void lex_step(br_plotter_t* br, lex_state_t* s) {
       s->is_neg = false;
       s->is_neg_whole = false;
       break;
-    case input_lex_state_name:
-      if (s->name_len + 1 < MAX_NAME && s->c >= 'a' && s->c <= 'z') {
+    case br_input_br_lex_state_name:
+      if (s->name_len + 1 < BR_MAX_NAME && s->c >= 'a' && s->c <= 'z') {
         s->name[s->name_len++] = (char)s->c;
-      } else if ((s->name_len + 1 < MAX_NAME) && IS_VALID_PATH(s->c)) {
+      } else if ((s->name_len + 1 < BR_MAX_NAME) && IS_VALID_PATH(s->c)) {
         s->read_next = false;
-        s->state = input_lex_state_path;
+        s->state = br_input_br_lex_state_path;
       } else {
         memcpy(s->tokens[s->tokens_len].name, s->name, s->name_len);
         s->tokens[s->tokens_len].name[s->name_len] = (char)0;
-        s->tokens[s->tokens_len++].kind = input_token_name;
-        s->state = input_lex_state_init;
+        s->tokens[s->tokens_len++].kind = br_input_token_name;
+        s->state = br_input_br_lex_state_init;
         s->name_len = 0;
         s->read_next = false;
       }
       break;
-    case input_lex_state_path:
-      if ((s->name_len + 1 < MAX_NAME) && IS_VALID_PATH(s->c)) {
+    case br_input_br_lex_state_path:
+      if ((s->name_len + 1 < BR_MAX_NAME) && IS_VALID_PATH(s->c)) {
         s->name[s->name_len++] = (char)s->c;
       } else {
         memcpy(s->tokens[s->tokens_len].name, s->name, s->name_len);
         s->tokens[s->tokens_len].name[s->name_len] = (char)0;
-        s->tokens[s->tokens_len++].kind = input_token_path;
-        s->state = input_lex_state_init;
+        s->tokens[s->tokens_len++].kind = br_input_token_path;
+        s->state = br_input_br_lex_state_init;
         s->name_len = 0;
         s->read_next = false;
       }
       break;
-    case input_lex_state_quoted:
+    case br_input_br_lex_state_quoted:
       if (s->c == '"' || s->c == '\0' || s->c == -1) {
         br_str_push_zero(&s->tokens[s->tokens_len].br_str);
         ++s->tokens_len;
-        s->state = input_lex_state_init;
+        s->state = br_input_br_lex_state_init;
       } else br_str_push_char(&s->tokens[s->tokens_len].br_str, (char)s->c);
       break;
     default:
@@ -838,18 +748,18 @@ static void lex_step(br_plotter_t* br, lex_state_t* s) {
   }
 }
 
-static void lex_step_extractor(br_plotter_t* br, lex_state_t* s) {
+void br_lex_step_extractor(br_plotter_t* br, br_lex_state_t* s) {
   if (s->extractors.len > 0) {
     if (s->c == '\n') {
       float x, y;
       for (size_t i = 0; i < s->extractors.len; ++i) {
         int group = s->extractors.arr[i].group;
-        extractor_res_state_t r = extractor_extract(br_str_as_view(s->extractors.arr[i].ex), br_str_as_view(s->cur_line), &x, &y);
-        if (r == extractor_res_state_x) {
+        br_extractor_res_state_t r = br_extractor_extract(br_str_as_view(s->extractors.arr[i].ex), br_str_as_view(s->cur_line), &x, &y);
+        if (r == br_extractor_res_state_x) {
           q_push(br->commands, (q_command) { .type = q_command_push_point_x, .push_point_x = { .x = x, .group = group }});
-        } else if (r == extractor_res_state_y) {
+        } else if (r == br_extractor_res_state_y) {
           q_push(br->commands, (q_command) { .type = q_command_push_point_y, .push_point_y = { .y = y, .group = group }});
-        } else if (r == extractor_res_state_xy) {
+        } else if (r == br_extractor_res_state_xy) {
           q_push(br->commands, (q_command) { .type = q_command_push_point_xy, .push_point_xy = { .x = x, .y = y, .group = group }});
         }
       }
@@ -861,26 +771,26 @@ static void lex_step_extractor(br_plotter_t* br, lex_state_t* s) {
 }
 
 static void lex(br_plotter_t* br, void* read_state) {
-  lex_state_t s;
-  lex_state_init(&s);
+  br_lex_state_t s;
+  br_lex_state_init(&s);
   while (true) {
     if (s.read_next) {
       s.c = br_read_input_read_next(read_state);
       if (s.c == -1) {
-        input_tokens_reduce(br, &s, true);
+        br_input_tokens_reduce(br, &s, true);
         LOGI("Exiting read_input thread");
         break;
       }
-      lex_step_extractor(br, &s);
+      br_lex_step_extractor(br, &s);
     } else s.read_next = true;
-    lex_step(br, &s);
+    br_lex_step(br, &s);
   }
   s.c = 0;
   do {
-    lex_step(br, &s);
-    input_tokens_reduce(br, &s, true);
+    br_lex_step(br, &s);
+    br_input_tokens_reduce(br, &s, true);
   } while (s.tokens_len > 0);
-  lex_state_deinit(&s);
+  br_lex_state_deinit(&s);
   q_push(br->commands, (q_command) { .type = q_command_flush });
   q_push(br->commands, (q_command) { .type = q_command_focus });
 }

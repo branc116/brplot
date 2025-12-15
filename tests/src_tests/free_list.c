@@ -1,38 +1,5 @@
-#include "src/br_pp.h"
-#define BR_MEMORY_TRACER_IMPLEMENTATION
-#include "src/br_memory.h"
-#define BR_FREAD test_read
-#define BR_FWRITE test_write
-#define BRFL_IMPLEMENTATION
-#include "src/br_free_list.h"
-#include "src/br_test.h"
-#include "src/br_da.h"
-
 #include <errno.h>
-#include <string.h>
-
-#define MEM_FILE_CAP 4096
-static BR_THREAD_LOCAL unsigned char mem_file[MEM_FILE_CAP];
-static BR_THREAD_LOCAL size_t mem_file_pointer_read;
-static BR_THREAD_LOCAL size_t mem_file_pointer_write;
-
-size_t test_read(void* dest, size_t el_size, size_t n, void* null) {
-  (void)null;
-  size_t size = n * el_size;
-  memcpy(dest, mem_file + mem_file_pointer_read, size);
-  mem_file_pointer_read += size;
-  BR_ASSERT(mem_file_pointer_read <= mem_file_pointer_write);
-  return n;
-}
-
-size_t test_write(void* src, size_t el_size, size_t n, void* null) {
-  (void)null;
-  size_t size = n * el_size;
-  memcpy(mem_file + mem_file_pointer_write, src, size);
-  mem_file_pointer_write += size;
-  BR_ASSERT(mem_file_pointer_write <= MEM_FILE_CAP);
-  return n;
-}
+#include "tests/src_tests/shl.h"
 
 void free_list_test0() {
   struct {
@@ -42,11 +9,15 @@ void free_list_test0() {
     int free_len;
     int free_next;
   } is = { 0 };
-  int zero_handle = brfl_push(is, 0);
-  int one_handle = brfl_push(is, 1);
-  int two_handle = brfl_push(is, 2);
+  int value = 0;
+  int zero_handle = brfl_push(is, value);
+  value = 1;
+  int one_handle = brfl_push(is, value);
+  value = 2;
+  int two_handle = brfl_push(is, value);
   brfl_remove(is, one_handle);
-  one_handle = brfl_push(is, 1);
+  value = 1;
+  one_handle = brfl_push(is, value);
   brfl_foreach_free(i, is) {
     BR_ASSERT(one_handle != i);
   }
@@ -60,9 +31,11 @@ void free_list_test() {
     int free_len;
     int free_next;
   } is = { 0 };
-  int one_handle = brfl_push(is, 1);
+  int value = 1;
+  int one_handle = brfl_push(is, value);
   TEST_EQUAL(one_handle, 0);
-  int two_handle = brfl_push(is, 2);
+  value = 2;
+  int two_handle = brfl_push(is, value);
   TEST_EQUAL(two_handle, 1);
   int one = br_da_get(is, one_handle);
   TEST_EQUAL(one, 1);
@@ -84,15 +57,21 @@ void free_list_test2() {
     int free_len;
     int free_next;
   } is = { 0 };
-  int one_handle = brfl_push(is, 1);
-  int two_handle = brfl_push(is, 2);
-  int three_handle = brfl_push(is, 3);
+  int value = 1;
+  int one_handle = brfl_push(is, value);
+  value = 2;
+  int two_handle = brfl_push(is, value);
+  value = 3;
+  int three_handle = brfl_push(is, value);
   brfl_remove(is, three_handle);
   brfl_remove(is, two_handle);
   brfl_remove(is, one_handle);
-  one_handle = brfl_push(is, 1);
-  two_handle = brfl_push(is, 2);
-  three_handle = brfl_push(is, 3);
+  value = 1;
+  one_handle = brfl_push(is, value);
+  value = 2;
+  two_handle = brfl_push(is, value);
+  value = 3;
+  three_handle = brfl_push(is, value);
   TEST_EQUAL(one_handle, 0);
   TEST_EQUAL(two_handle, 1);
   TEST_EQUAL(three_handle, 2);
@@ -105,22 +84,30 @@ void free_list_test3() {
     int len, cap;
     int free_len, free_next;
   } is = { 0 };
-  (void)brfl_push(is, -1);
-  (void)brfl_push(is, -1);
-  (void)brfl_push(is, -1);
-  int one_handle = brfl_push(is, 1);
-  int two_handle = brfl_push(is, 2);
-  int three_handle = brfl_push(is, 3);
-  (void)brfl_push(is, -1);
-  (void)brfl_push(is, -1);
-  (void)brfl_push(is, -1);
+  int value = -1;
+  (void)brfl_push(is, value);
+  (void)brfl_push(is, value);
+  (void)brfl_push(is, value);
+  value = 1;
+  int one_handle = brfl_push(is, value);
+  value = 2;
+  int two_handle = brfl_push(is, value);
+  value = 3;
+  int three_handle = brfl_push(is, value);
+  value = -1;
+  (void)brfl_push(is, value);
+  (void)brfl_push(is, value);
+  (void)brfl_push(is, value);
   brfl_remove(is, two_handle);
   brfl_remove(is, three_handle);
   brfl_remove(is, one_handle);
-  (void)brfl_push(is, -1);
-  one_handle = brfl_push(is, 1);
-  two_handle = brfl_push(is, 2);
-  three_handle = brfl_push(is, 3);
+  (void)brfl_push(is, value);
+  value = 1;
+  one_handle = brfl_push(is, value);
+  value = 2;
+  two_handle = brfl_push(is, value);
+  value = 3;
+  three_handle = brfl_push(is, value);
   TEST_EQUAL(one_handle, 5);
   TEST_EQUAL(two_handle, 4);
   TEST_EQUAL(three_handle, 9);
@@ -133,12 +120,15 @@ void free_list_test4() {
     int len, cap;
     int free_len, free_next;
   } is = { 0 };
-  int one_handle = brfl_push(is, 1);
-  int two_handle = brfl_push(is, 2);
+  int value = 1;
+  int one_handle = brfl_push(is, value);
+  value = 2;
+  int two_handle = brfl_push(is, value);
   int error = 0;
-  brfl_write(NULL, is, error);
+  BR_FILE* file = BR_FOPEN("test", "rb+");
+  brfl_write(file, is, error);
   brfl_free(is);
-  brfl_read(NULL, is, error);
+  brfl_read(file, is, error);
   TEST_EQUAL(0, error);
   TEST_EQUAL(2, is.len);
   TEST_EQUAL(1, br_da_get(is, one_handle));
@@ -154,5 +144,3 @@ int main(void) {
   free_list_test4();
 
 }
-void br_on_fatal_error(void) {}
-void brgui_push_log_line(const char* fmt, ...) {(void)fmt;}

@@ -1,38 +1,26 @@
-#include "src/br_pp.h"
-#include "src/br_test.h"
-#define BR_MEMORY_TRACER_IMPLEMENTATION
-#include "src/br_memory.h"
-#define BR_STR_IMPLEMENTATION
-
-#include "src/br_str.h"
-#include "src/read_input.c"
-#include "src/q.c"
-#include "tests/src_tests/mock_data.c"
+#include "tests/src_tests/shl.h"
+#include "src/br_read_input.h"
 
 #if defined(FUZZ)
-#  include "src/br_data_generator.h"
-#  include "src/br_plotter.h"
-#  include "src/br_gui.h"
-#  include "src/br_icons.h"
 
 int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
-  lex_state_t s = { 0 };
-  lex_state_init(&s);
+  br_lex_state_t s = { 0 };
+  br_lex_state_init(&s);
   br_plotter_t* br = br_plotter_malloc();
   br_plotter_init(br);
   for (size_t i = 0; i < str_len;) {
     if (s.read_next) {
       s.c = str[i++];
-      lex_step_extractor(br, &s);
+      br_lex_step_extractor(br, &s);
     } else s.read_next = true;
-    lex_step(br, &s);
+    br_lex_step(br, &s);
     br_plotter_draw(br);
     br_dagens_handle(&br->groups, &br->dagens, &br->plots, brpl_time() + 0.010);
   }
   s.c = 0;
   while (s.tokens_len > 0) {
-    lex_step(br, &s);
-    input_tokens_reduce(br, &s, true);
+    br_lex_step(br, &s);
+    br_input_tokens_reduce(br, &s, true);
     br_plotter_draw(br);
     br_dagens_handle(&br->groups, &br->dagens, &br->plots, brpl_time() + 0.010);
   }
@@ -91,44 +79,44 @@ int LLVMFuzzerTestOneInput(const char *str, size_t str_len) {
 } while(false)
 
 #define VAL(is_valid, ex) do { \
-  TEST_EQUAL(is_valid, extractor_is_valid(br_strv_from_c_str(ex))); \
+  TEST_EQUAL(is_valid, br_extractor_is_valid(br_strv_from_c_str(ex))); \
 } while(0)
 
 #define VALX(ex, v, x) do { \
   float rx; \
-  TEST_EQUAL(true, extractor_is_valid(br_strv_from_c_str(ex))); \
-  extractor_res_state_t r = extractor_extract(br_strv_from_c_str(ex), br_strv_from_c_str(v), &rx, NULL); \
-  TEST_EQUAL(r, extractor_res_state_x); \
+  TEST_EQUAL(true, br_extractor_is_valid(br_strv_from_c_str(ex))); \
+  br_extractor_res_state_t r = br_extractor_extract(br_strv_from_c_str(ex), br_strv_from_c_str(v), &rx, NULL); \
+  TEST_EQUAL(r, br_extractor_res_state_x); \
   TEST_EQUAL(rx, x); \
 } while(false)
 
 #define VALXY(ex, v, x, y) do { \
   float rx, ry; \
-  TEST_EQUAL(true, extractor_is_valid(br_strv_from_c_str(ex))); \
-  extractor_res_state_t r = extractor_extract(br_strv_from_c_str(ex), br_strv_from_c_str(v), &rx, &ry); \
-  TEST_EQUAL(r, extractor_res_state_xy); \
+  TEST_EQUAL(true, br_extractor_is_valid(br_strv_from_c_str(ex))); \
+  br_extractor_res_state_t r = br_extractor_extract(br_strv_from_c_str(ex), br_strv_from_c_str(v), &rx, &ry); \
+  TEST_EQUAL(r, br_extractor_res_state_xy); \
   TEST_EQUAL(rx, x); \
   TEST_EQUAL(ry, y); \
 } while(false)
 
 static void test_input(br_plotter_t* br, const char* str) {
-  lex_state_t s;
-  lex_state_init(&s);
+  br_lex_state_t s;
+  br_lex_state_init(&s);
   br->commands = q_malloc();
   size_t str_len = strlen(str);
   for (size_t i = 0; i <= str_len;) {
     if (s.read_next) {
       s.c = str[i++];
-      lex_step_extractor(br, &s);
+      br_lex_step_extractor(br, &s);
     } else s.read_next = true;
-    lex_step(br, &s);
+    br_lex_step(br, &s);
   }
   s.c = 0;
   while (s.tokens_len > 0) {
-    lex_step(br, &s);
-    input_tokens_reduce(br, &s, true);
+    br_lex_step(br, &s);
+    br_input_tokens_reduce(br, &s, true);
   }
-  lex_state_deinit(&s);
+  br_lex_state_deinit(&s);
 }
 
 void InputTestsExp(void) {
@@ -211,7 +199,4 @@ int main(void) {
   InputTests2();
   Extractors();
 }
-
-void br_on_fatal_error(void) {}
-void brgui_push_log_line(const char* fmt, ...) {(void)fmt;}
 

@@ -106,5 +106,5 @@ bool              brui_resizable_temp_pop(void);
 void              brui_resizable_temp_delete(br_strv_t id);
 void              brui_resizable_temp_delete_all(void);
 
-void brui_resizable_save(FILE* file);
-void brui_resizable_load(FILE* file);
+bool brui_save(BR_FILE* file, brui_window_t* uiw);
+bool brui_load(BR_FILE* file, brui_window_t* uiw);

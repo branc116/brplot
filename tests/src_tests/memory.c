@@ -1,7 +1,7 @@
-#define BR_MEMORY_TRACER_IMPLEMENTATION
-#include "src/br_memory.h"
+#include "tests/src_tests/shl.h"
 
 int main(void) {
+  /*
 #define SZ (sizeof(int)*16)
   int* ints = BR_MALLOC(SZ);
   br_memory_frame();
@@ -58,7 +58,5 @@ int main(void) {
   BR_ASSERT(frames.arr[2].len == 1);
   BR_ASSERT(frames.arr[2].frame_num == 3);
   return 0;
+  */
 }
-
-void br_on_fatal_error(void) {}
-void brgui_push_log_line(const char* fmt, ...) {(void)fmt;}

@@ -81,6 +81,7 @@ typedef enum brpl_window_kind_t {
   brpl_window_x11,
   brpl_window_win32,
   brpl_window_glfw,
+  brpl_window_headless,
 } brpl_window_kind_t;
 
 typedef struct brpl_window_t brpl_window_t;

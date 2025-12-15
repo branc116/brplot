@@ -1,33 +1,15 @@
-#include "src/br_pp.h"
-#include "src/br_test.h"
-#define BR_MEMORY_TRACER_IMPLEMENTATION
-#include "src/br_memory.h"
+#include "tests/src_tests/shl.h"
 
-#define BRFL_IMPLEMENTATION
-#include "src/br_free_list.h"
-
-#define BR_STR_IMPLEMENTATION
-#include "src/br_str.h"
-
-#define BRSP_IMPLEMENTATION
-#include "src/br_string_pool.h"
-
-#include "src/plot.c"
-#include "src/anim.c"
-
-#include "src/data_generator.c"
-#include "src/data.c"
-#include "src/resampling.c"
-#include "tests/src_tests/mock_platform.c"
-#include "tests/src_tests/mock_mesh.c"
-#include "tests/src_tests/mock_gl.c"
+TEST_ONLY void br_dagen_expr_to_str(br_str_t* out, br_dagen_exprs_t* arena, uint32_t index);
+bool br_dagen_tokens_get(tokens_t* tokens, br_strv_t str);
+#define MAX_BATCH_LEN (16*1024)
 
 void br_expr_debug(br_dagens_t dagens) {
   br_str_t dbg = { 0 };
-  expr_to_str(&dbg, &dagens.arr[0].expr_2d.arena, dagens.arr[0].expr_2d.x_expr_index);
+  br_dagen_expr_to_str(&dbg, &dagens.arr[0].expr_2d.arena, dagens.arr[0].expr_2d.x_expr_index);
   LOGI("xid = %d, yid = %d", dagens.arr[0].expr_2d.x_expr_index, dagens.arr[0].expr_2d.y_expr_index);
   br_str_push_char(&dbg, '|');
-  expr_to_str(&dbg, &dagens.arr[0].expr_2d.arena, dagens.arr[0].expr_2d.y_expr_index);
+  br_dagen_expr_to_str(&dbg, &dagens.arr[0].expr_2d.arena, dagens.arr[0].expr_2d.y_expr_index);
   br_str_free(dbg);
 }
 
@@ -51,7 +33,7 @@ void br_expr_debug(br_dagens_t dagens) {
   br_strv_t s = br_strv_from_literal(STR); \
   br_dagen_token_kind tokens[] = {__VA_ARGS__}; \
   size_t len = sizeof(tokens)/sizeof(tokens[0]); \
-  TEST_TRUE(tokens_get(&ts, s)); \
+  TEST_TRUE(br_dagen_tokens_get(&ts, s)); \
   TEST_EQUAL(ts.len, len); \
   for (size_t i = 0; i < len; ++i) { \
     TEST_EQUAL(ts.arr[i].kind, tokens[i]); \
@@ -483,6 +465,3 @@ int main(void) {
   dagen_parser_range();
   dagen_parser_range2();
 }
-
-void br_on_fatal_error(void) {}
-void brgui_push_log_line(const char* fmt, ...) {(void)fmt;}

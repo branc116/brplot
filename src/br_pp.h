@@ -242,15 +242,15 @@ void __sanitizer_print_stack_trace(void);
 
 #define BR_ARR_LEN(ARR) (sizeof((ARR)) / sizeof((ARR)[0]))
 
-#define BR_HAS_GL 1
-#define BR_HAS_GLFW 1
+#if !defined(HEADLESS)
+#  define BR_HAS_GL 1
+#  define BR_HAS_GLFW 1
+#endif
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
 #  if !defined(BR_NO_X11)
 #    define BR_HAS_GLX 1
 #    define BR_HAS_X11 1
-#  endif
-#  if defined(HEADLESS)
 #  endif
 #elif defined(__EMSCRIPTEN__)
 #  define BR_GL_STATIC
@@ -259,6 +259,29 @@ void __sanitizer_print_stack_trace(void);
 #  define BR_HAS_WIN32 1
 #endif
 
+#if !defined(BR_FREAD)
+#  define BR_FREAD fread
+#endif
+
+#if !defined(BR_FWRITE)
+#  define BR_FWRITE fwrite
+#endif
+
+#if !defined(BR_FILE)
+#  define BR_FILE FILE
+#endif
+
+#if !defined(BR_FOPEN)
+#  define BR_FOPEN fopen
+#endif
+
+#if !defined(BR_FCLOSE)
+#  define BR_FCLOSE fclose
+#endif
+
+#if !defined(BR_FEOF)
+#  define BR_FEOF feof
+#endif
 
 typedef unsigned long long br_u64;
 typedef signed long long br_i64;

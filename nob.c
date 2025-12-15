@@ -319,7 +319,7 @@ const char* compiler_set_output(Nob_Cmd* cmd, const char* output_name, compile_o
       case p_linux: {
         switch (kind) {
           case compile_output_obj: {
-            nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.o", output_name));
+            nob_cmd_append(cmd, "-c", "-o", nob_temp_sprintf("%s.o", output_name));
             return cmd->items[cmd->count - 1];
           } break;
           case compile_output_exe: {
@@ -346,7 +346,7 @@ const char* compiler_set_output(Nob_Cmd* cmd, const char* output_name, compile_o
       case p_wasm: {
         switch (kind) {
           case compile_output_obj: {
-            nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.o", output_name));
+            nob_cmd_append(cmd, "-c", "-o", nob_temp_sprintf("%s.o", output_name));
             return cmd->items[cmd->count - 1];
           } break;
           case compile_output_exe: BR_TODO("wasm exe"); break;
@@ -364,7 +364,7 @@ const char* compiler_set_output(Nob_Cmd* cmd, const char* output_name, compile_o
       } break;
       case p_mac: {
         switch (kind) {
-          case compile_output_obj: nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.o", output_name)); break;
+          case compile_output_obj: nob_cmd_append(cmd, "-c", "-o", nob_temp_sprintf("%s.o", output_name)); break;
           case compile_output_exe: nob_cmd_append(cmd, "-o", output_name); break;
           case compile_output_slib: nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.a", output_name)); break;
           case compile_output_dlib: nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.dylib", output_name)); break;
@@ -375,7 +375,7 @@ const char* compiler_set_output(Nob_Cmd* cmd, const char* output_name, compile_o
       case p_windows: {
         switch (kind) {
           case compile_output_obj: {
-            nob_cmd_append(cmd, "-DWIN32_LEAN_AND_MEAN");
+            nob_cmd_append(cmd, "-c", "-DWIN32_LEAN_AND_MEAN");
             nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.o", output_name));
           } break;
           case compile_output_exe: nob_cmd_append(cmd, "-static", "-o", nob_temp_sprintf("%s.exe", output_name)); break;
@@ -398,15 +398,28 @@ void compiler_base_flags(Nob_Cmd* cmd, const char* compiler) {
   }
 }
 
-const char* compiler_single_file_exe(platform_kind_t platform, const char* src_name, const char* output_file) {
+const char* compiler_single_file2(compile_output_kind_t output_kind, platform_kind_t platform, const char* src_name, const char* output_file, Nob_Cmd additional_libs) {
   static Nob_Cmd cmd = { 0 };
   cmd.count = 0;
   const char* compiler = get_compiler(platform);
   compiler_base_flags(&cmd, compiler);
   nob_cmd_append(&cmd, src_name);
-  const char* output = compiler_set_output(&cmd, output_file, compile_output_exe, platform, compiler);
-  if (false ==  nob_cmd_run_cache(&cmd)) return NULL;
+  const char* output = compiler_set_output(&cmd, output_file, output_kind, platform, compiler);
+  nob_cmd_extend(&cmd, &additional_libs);
+  if (false == nob_cmd_run_cache(&cmd)) return NULL;
   return output;
+}
+
+const char* compiler_single_file_exe2(platform_kind_t platform, const char* src_name, const char* output_file, Nob_Cmd additional_libs) {
+  return compiler_single_file2(compile_output_exe, platform, src_name, output_file, additional_libs);
+}
+
+const char* compiler_single_file_exe(platform_kind_t platform, const char* src_name, const char* output_file) {
+  return compiler_single_file_exe2(platform, src_name, output_file, (Nob_Cmd) {0});
+}
+
+const char* compiler_single_file_obj(platform_kind_t platform, const char* src_name, const char* output_file) {
+  return compiler_single_file2(compile_output_obj, platform, src_name, output_file, (Nob_Cmd) {0});
 }
 
 static bool create_all_dirs(void) {
@@ -1089,8 +1102,14 @@ static bool n_unittests_do(void) {
   is_debug = true;
   is_headless = true;
   const char* compiler = get_compiler(get_target());
+  Nob_Cmd additional = { 0 };
+
+  const char* shl_obj = compiler_single_file_obj(get_target(), "tests/src_tests/shl.c", "build/shl_test");
+  nob_cmd_append(&additional, shl_obj);
+  nob_cmd_append(&additional, "-lm");
 
   static struct { char const *test_file, *out_bin; } test_programs[] = {
+    { .test_file = "./tests/src_tests/ui.c", .out_bin  = "bin/ui" },
     { .test_file = "./tests/src_tests/data_generator.c", .out_bin  = "bin/data_generator" },
     { .test_file = "./tests/src_tests/resampling.c", .out_bin  = "bin/resampling" },
     { .test_file = "./tests/src_tests/read_input.c", .out_bin  = "bin/read_input" },
@@ -1106,7 +1125,7 @@ static bool n_unittests_do(void) {
   for (size_t i = 0; i < BR_ARR_LEN(test_programs); ++i) {
     LOGI("-------------- START TESTS ------------------");
     LOGI("------------- %15s -> %15s ------------------", test_programs[i].test_file, test_programs[i].out_bin);
-    const char* output = compiler_single_file_exe(get_target(), test_programs[i].test_file, test_programs[i].out_bin);
+    const char* output = compiler_single_file_exe2(get_target(), test_programs[i].test_file, test_programs[i].out_bin, additional);
     nob_cmd_append(&cmd, output);
     if (false == br_cmd_run(&cmd)) return false;
     LOGI("-------------- END TESTS ------------------");

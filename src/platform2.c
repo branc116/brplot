@@ -336,7 +336,8 @@ typedef union _XEvent {
    typedef const char* ccharp_t;
    typedef brpl_x11_XVisualInfo* XVisualInfop;
    typedef void* funcptr_t;
-GLXContext (*glXCreateContextAttribsARB)(brpl_x11_Display* dpy, GLXFBConfig config, GLXContext share_context, brpl_x11_Bool direct, const int* attrib_list);
+   typedef GLXContext (*glXCreateContextAttribsARB_t)(brpl_x11_Display* dpy, GLXFBConfig config, GLXContext share_context, brpl_x11_Bool direct, const int* attrib_list);
+   static BR_THREAD_LOCAL glXCreateContextAttribsARB_t glXCreateContextAttribsARB;
 #endif
 
 #if defined(BR_HAS_WIN32)
@@ -414,6 +415,7 @@ static bool brpl_glfw_load(brpl_window_t* window);
 #if BR_HAS_WIN32
 static bool brpl_win32_load(brpl_window_t* window);
 #endif
+static bool brpl_headless_load(brpl_window_t* window);
 
 static BR_THREAD_LOCAL struct {
   uint64_t start;
@@ -446,6 +448,7 @@ bool brpl_window_open(brpl_window_t* window) {
 #if BR_HAS_WIN32
     case brpl_window_win32: loaded = brpl_win32_load(window); break;
 #endif
+    case brpl_window_headless: loaded = brpl_headless_load(window); break;
     default: LOGE("Unknown kind: %d", window->kind); break;
   }
   if (loaded) loaded = window->f.window_open && window->f.window_open(window);
@@ -795,7 +798,7 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
 int brpl_x11_error_callback(brpl_x11_Display* d, brpl_x11_XErrorEvent* e) {
   char err_text[1024];
   brpl_x11_XGetErrorText(d, e->error_code, err_text, sizeof(err_text));
-  LOGE("X Error: %s, XID: %d", err_text, e->resourceid);
+  LOGE("X Error: %s, XID: %lu", err_text, e->resourceid);
   return 0;
 }
 
@@ -822,7 +825,14 @@ static bool brpl_x11_get_set_context(brpl_window_x11_t* x11, int* attrib_list, i
     GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
     0
   };
-  if (glXCreateContextAttribsARB == NULL) glXCreateContextAttribsARB = glXGetProcAddressARB("glXCreateContextAttribsARB");
+#if defined(__GNUC__) || defined(__clang__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+  if (glXCreateContextAttribsARB == NULL) glXCreateContextAttribsARB = (glXCreateContextAttribsARB_t)glXGetProcAddressARB("glXCreateContextAttribsARB");
+#if defined(__GNUC__) || defined(__clang__)
+#  pragma GCC diagnostic pop
+#endif
 
   for (int i = 0; i < out_ret; ++i) {
     GLXFBConfig config = configs[i];
@@ -1416,8 +1426,38 @@ static bool brpl_win32_load(brpl_window_t* window) {
   return true;
 }
 
+// -------------------------------
+// END OF WIN32 IMPL
+// -------------------------------
 #endif // BR_HAS_WIN32
 
 // -------------------------------
-// END OF WIN32 IMPL
+// HEADLESS IMPL
+// -------------------------------
+
+
+static bool brpl_headless_open_window(brpl_window_t* window) {
+  return true;
+}
+
+static void brpl_headless_frame_start(brpl_window_t* window) {
+}
+
+static void brpl_headless_frame_end(brpl_window_t* window) {
+}
+
+static brpl_event_t brpl_headless_event_next(brpl_window_t* window) {
+  return (brpl_event_t) { .kind = brpl_event_nop };
+}
+
+static bool brpl_headless_load(brpl_window_t* window) {
+  window->f.window_open = brpl_headless_open_window;
+  window->f.frame_start = brpl_headless_frame_start;
+  window->f.frame_end   = brpl_headless_frame_end;
+  window->f.event_next  = brpl_headless_event_next;
+  return true;
+}
+
+// -------------------------------
+// END OF HEADLESS IMPL
 // -------------------------------
