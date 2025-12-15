@@ -150,18 +150,13 @@ void br_plotter_init(br_plotter_t* br) {
 void br_plotter_deinit(br_plotter_t* br) {
   br_read_input_stop();
   br_permastate_save(br);
-  br_icons_deinit();
   for (int i = 0; i < br->plots.len; ++i) {
     br_plot_deinit(br_da_getp(br->plots, i));
   }
   br_datas_deinit(&br->groups);
-  brui_resizable_deinit();
-  br_text_renderer_free(br->uiw.text);
-  br_shaders_free(br->uiw.shaders);
-  brpl_window_close(&br->uiw.pl);
   BR_FREE(br->plots.arr);
   br_dagens_free(&br->dagens);
-  brsp_free(&br->uiw.sp);
+  brui_window_deinit(&br->uiw);
   LOGI("Plotter deinited");
 }
 
@@ -174,7 +169,6 @@ void br_plotter_free(br_plotter_t* br) {
   br_da_free(br->ui.fm_state.cur_dir);
   q_free(br->commands);
   br_scrach_finish();
-  brui_finish();
   //BR_FREE(br);
   LOGI("Plotter freed");
 }

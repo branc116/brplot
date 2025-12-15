@@ -384,7 +384,17 @@ end:
   if (NULL != path.str) br_str_free(path);
   if (NULL != f)        BR_FCLOSE(f);
   if (NULL != descs.arr)br_da_free(descs);
-  if (true == success) *br_initial = loaded_br;
+  if (true == success) {
+    br_initial->uiw.resizables = loaded_br.uiw.resizables;
+    br_initial->uiw.sp = loaded_br.uiw.sp;
+    br_initial->uiw.anims = loaded_br.uiw.anims;
+    br_initial->uiw.def = loaded_br.uiw.def;
+    br_initial->uiw.theme = loaded_br.uiw.theme;
+    br_initial->groups = loaded_br.groups;
+    br_initial->plots = loaded_br.plots;
+    br_initial->dagens = loaded_br.dagens;
+    br_initial->ui = loaded_br.ui;
+  }
   return status;
 }
 

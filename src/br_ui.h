@@ -9,9 +9,6 @@
 void brui_begin(void);
 void brui_end(void);
 
-/* Call this to clear all temp memory */
-void brui_finish(void);
-
 br_size_t brui_text(br_strv_t strv);
 br_size_t brui_textf(const char* str, ...);
 void brui_text_at(br_strv_t strv, br_vec2_t at);
@@ -72,7 +69,6 @@ brui_action_t* brui_action(void);
 void           brui_action_stop(void);
 
 void              brui_resizable_init(bruirs_t* rs, br_extent_t viewport);
-void              brui_resizable_deinit(void);
 int               brui_resizable_new(bruirs_t* rs, br_extent_t init_extent, int parent);
 int               brui_resizable_new2(bruirs_t* rs, br_extent_t init_extent, int parent, brui_resizable_t template);
 void              brui_resizable_delete(int handle);

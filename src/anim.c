@@ -66,6 +66,11 @@ int br_animex_new(br_anims_t* anims, br_extent_t current, br_extent_t target) {
   return handle;
 }
 
+void br_anims_delete(br_anims_t* anims) {
+  brfl_free(anims->all);
+  brfl_free(anims->alive);
+}
+
 void br_anim_delete(br_anims_t* anims, int anim_handle) {
   brfl_foreach(i, anims->alive) {
     if (br_da_get(anims->alive, i) == anim_handle) {

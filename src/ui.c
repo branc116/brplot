@@ -183,6 +183,22 @@ bool brui_window_init(brui_window_t* uiw) {
   return true;
 }
 
+bool brui_window_deinit(brui_window_t* uiw) {
+  BR_ASSERT(brui_state.len == 0);
+  br_da_free(brui_state);
+  br_da_free(brui_state.temp_children);
+  brfl_free(uiw->resizables);
+
+  br_icons_deinit();
+  brsp_free(&uiw->sp);
+  br_anims_delete(&uiw->anims);
+  if (uiw->text) br_text_renderer_free(uiw->text);
+  br_shaders_free(uiw->shaders);
+  brpl_window_close(&uiw->pl);
+  brfl_free(uiw->touch_points);
+  return true;
+}
+
 brpl_event_t brui_event_next(brui_window_t* uiw) {
   brpl_event_t ev = brpl_event_next(&uiw->pl);
   brui_action_t* ta = brui_action();
@@ -464,12 +480,6 @@ void brui_end(void) {
   brui_state.log = false;
 }
 
-void brui_finish(void) {
-  BR_ASSERT(brui_state.len == 0);
-  br_da_free(brui_state);
-  br_da_free(brui_state.temp_children);
-}
-
 void brui_push(void) {
   BRUI_LOG("push");
   brui_stack_el_t new_el = brui_stack_el();
@@ -521,7 +531,7 @@ void brui_select_next(void) {
   brui_state.select_next = true;
 }
 
-static inline bool brui_extent_is_good(br_extent_t e, br_extent_t parent) {
+BR_TEST_ONLY static inline bool brui_extent_is_good(br_extent_t e, br_extent_t parent) {
   return e.x >= 0 &&
     e.y >= 0 &&
     e.y + e.height <= parent.height &&
@@ -1261,10 +1271,6 @@ void brui_resizable_init(bruirs_t* rs, br_extent_t extent) {
   (void)brfl_push(*rs, screen);
 }
 
-void brui_resizable_deinit(void) {
-  brfl_free(brui_state.uiw->resizables);
-}
-
 static int brui_resizable_new0(bruirs_t* rs, brui_resizable_t* new, br_extent_t init_extent, int parent) {
   BR_ASSERTF(rs->len > parent, "Len: %d, parent: %d", rs->len > parent, parent);
   BR_ASSERT(rs->free_arr[parent] == -1);
@@ -1786,7 +1792,7 @@ static br_strv_t brui_ancor_to_str(brui_ancor_t ancor) {
   if (brui_ancor_right  & ancor) br_str_push_c_str(&brui_state.scrach, "right ");
   if (brui_ancor_top    & ancor) br_str_push_c_str(&brui_state.scrach, "top ");
   if (brui_ancor_bottom & ancor) br_str_push_c_str(&brui_state.scrach, "bottom ");
-  if (brui_state.scrach.len == 0) br_str_push_int(&brui_state.scrach, ancor);
+  if (brui_state.scrach.len == 0) br_str_push_int(&brui_state.scrach, (int)ancor);
   br_str_push_zero(&brui_state.scrach);
   return br_str_as_view(brui_state.scrach);
 }
@@ -2192,8 +2198,6 @@ error:
 bool brui_load(BR_FILE* file, brui_window_t* uiw) {
   int fl_read_error = 0;
   int success = true;
-
-  memset(uiw, 0, sizeof(*uiw));
 
   if (false == br_anim_load(file, &uiw->anims))                            BR_ERRORE("Failed to load animations.");
   brfl_read(file, uiw->resizables, fl_read_error); if (fl_read_error != 0) BR_ERRORE("Failed to read resizables.");

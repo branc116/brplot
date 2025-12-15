@@ -180,12 +180,12 @@ void __sanitizer_print_stack_trace(void);
 #if defined(_MSC_VER)
 #  define ssize_t long long int
 #  if defined(__clang__)
-#    define TEST_ONLY __attribute__((__unused__))
+#    define BR_TEST_ONLY __attribute__((__unused__))
 #  else
-#  define TEST_ONLY
+#  define BR_TEST_ONLY
 #  endif
 #else
-#  define TEST_ONLY __attribute__((__unused__))
+#  define BR_TEST_ONLY __attribute__((__unused__))
 #endif
 
 #define BR_CAT(A, B) BR_CAT2(A, B)

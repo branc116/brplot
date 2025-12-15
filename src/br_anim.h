@@ -55,6 +55,7 @@ void br_anims_tick(br_anims_t* anims, float dt);
 
 int br_animf_new(br_anims_t* anims, float current, float target);
 int br_animex_new(br_anims_t* anims, br_extent_t current, br_extent_t target);
+void br_anims_delete(br_anims_t* anims);
 
 void br_anim_delete(br_anims_t* anims, int anim_handle);
 bool br_anim_alive(br_anims_t* anims, int anim_handle);

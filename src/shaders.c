@@ -80,10 +80,12 @@ BR_ALL_SHADERS(X, NOP2, X_BUF)
 #define X_VEC(NAME, LEN) brgl_unload_shader(shader->id);
 #define X(NAME, CAP, U_VEC, BUFF) \
   inline static void br_shader_ ## NAME ## _free(br_shader_ ## NAME ## _t* shader) { \
-    brgl_unload_vao((uint32_t)shader->vao_id); \
-    BUFF \
-    U_VEC \
-    BR_FREE(shader); \
+    if (shader) { \
+      brgl_unload_vao((uint32_t)shader->vao_id); \
+      BUFF \
+      U_VEC \
+      BR_FREE(shader); \
+    } \
   }
 BR_ALL_SHADERS(X, X_VEC, X_BUF)
 #undef X

@@ -129,11 +129,13 @@ bool br_text_renderer_load_font(br_text_renderer_t* r, br_strv_t path) {
 }
 
 void br_text_renderer_free(br_text_renderer_t* r) {
-  stbds_hmfree(r->to_bake);
-  for (long i = 0; i < stbds_hmlen(r->sizes); ++i) {
-    stbds_hmfree(r->sizes[i].value);
+  if (r->to_bake != NULL) stbds_hmfree(r->to_bake);
+  if (r->sizes != NULL) {
+    for (long i = 0; i < stbds_hmlen(r->sizes); ++i) {
+      stbds_hmfree(r->sizes[i].value);
+    }
+    stbds_hmfree(r->sizes);
   }
-  stbds_hmfree(r->sizes);
   stbtt_PackEnd(&r->pack_cntx);
   brgl_unload_texture((*r->shader_f)->uvs.atlas_uv);
   br_da_free(r->tmp_quads);

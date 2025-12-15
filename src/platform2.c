@@ -1213,7 +1213,9 @@ static bool brpl_glfw_load(brpl_window_t* win) {
 // WIN32 IMPL
 // -------------------------------
 #if BR_HAS_WIN32
-#pragma comment(lib, "user32.lib")
+#if !defined(__GNUC__)
+#  pragma comment(lib, "user32.lib")
+#endif
 
 typedef struct brpl_win32_window_t {
   brpl_q_t q;
@@ -1437,24 +1439,33 @@ static bool brpl_win32_load(brpl_window_t* window) {
 
 
 static bool brpl_headless_open_window(brpl_window_t* window) {
+  (void)window;
   return true;
 }
 
+static void brpl_headless_window_close(brpl_window_t* window) {
+  (void)window;
+}
+
 static void brpl_headless_frame_start(brpl_window_t* window) {
+  (void)window;
 }
 
 static void brpl_headless_frame_end(brpl_window_t* window) {
+  (void)window;
 }
 
 static brpl_event_t brpl_headless_event_next(brpl_window_t* window) {
+  (void)window;
   return (brpl_event_t) { .kind = brpl_event_nop };
 }
 
 static bool brpl_headless_load(brpl_window_t* window) {
-  window->f.window_open = brpl_headless_open_window;
-  window->f.frame_start = brpl_headless_frame_start;
-  window->f.frame_end   = brpl_headless_frame_end;
-  window->f.event_next  = brpl_headless_event_next;
+  window->f.window_open  = brpl_headless_open_window;
+  window->f.window_close = brpl_headless_window_close;
+  window->f.frame_start  = brpl_headless_frame_start;
+  window->f.frame_end    = brpl_headless_frame_end;
+  window->f.event_next   = brpl_headless_event_next;
   return true;
 }
 

@@ -120,12 +120,10 @@ bool br_resampling_get_point_at2(br_data_t data, br_vec2d_t vecd, float* dist, b
   br_extent_t ex = BR_EXTENT(vec.x - *dist/2, vec.y + *dist/2, *dist, *dist);
   br_resampling_nodes_2d_allocator_t rns = data.resampling->dd;
   if (rns.len == 0) return false;
-  int n = 0;
   bool found = false;
 
   BR_STACK_PUSH(0);
   while (stack_len > 0) {
-    ++n;
     cur_node = BR_STACK_POP();
     br_resampling_nodes_2d_t node = rns.arr[cur_node];
     if (br_resampling_nodes_2d_is_inside(node.base, data.dd.xs, data.dd.ys, ex)) {
@@ -205,19 +203,16 @@ bool br_resampling_get_point_at3(br_data_t data, br_vec3d_t from, br_vec3d_t to,
   to =   br_vec3d_sub(to,   rebase);
   br_vec3_t fromf = BR_VEC3D_TOF(from);
   br_vec3_t tof =   BR_VEC3D_TOF(to);
-  int n = 0, m = 0;
   bool found = false;
 
   BR_STACK_PUSH(0);
   while (stack_len > 0) {
-    ++n;
     cur_node = BR_STACK_POP();
     br_bb3_t bb = br_resampling_get_bb3_rebased(data.resampling, data, cur_node);
     br_resampling_get_info(data.resampling, data.kind, cur_node, &child1, &child2, &depth, &index_start, &node_len);
     if (br_col_line_bb(fromf, tof, bb) || br_vec3_line_dist2(fromf, tof, br_vec3_scale(br_vec3_add(bb.min, bb.max), 0.5f)) < *dist) {
       if (depth == 0) {
         for (br_u32 i = 0; i < node_len; ++i) {
-          ++m;
           br_u32 index = i + index_start;
           float cur_dist = br_vec3_line_dist2(fromf, tof, br_data_el_xyz_rebased(data, index));
           if (cur_dist < *dist) {
@@ -740,7 +735,7 @@ static bool br_resampling_nodes_3d_is_inside(br_resampling_nodes_3d_t const* res
     return visible;
 }
 
-static void br_resampling_debug_3d(br_resampling_t const* r, br_resampling_nodes_3d_t const* res, br_data_3d_t const* data) {
+BR_TEST_ONLY static void br_resampling_debug_3d(br_resampling_t const* r, br_resampling_nodes_3d_t const* res, br_data_3d_t const* data) {
   br_vec3_t minx = br_data_3d_get_v3(data, res->base.min_index_x),
     miny = br_data_3d_get_v3(data, res->base.min_index_y),
     minz = br_data_3d_get_v3(data, res->min_index_z),

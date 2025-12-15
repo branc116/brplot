@@ -346,6 +346,7 @@ bool br_fs_read_internal(const char* path, br_str_t* out_content, const char* fi
   (void)file_name; (void)line;
 #endif
 #if defined(__EMSCRIPTEN__)
+  (void)path; (void)out_content; (void)file_name; (void)line;
   LOGW("Failed to read %s on web at: %s:%d", path, file_name, line);
   return false;
 #else

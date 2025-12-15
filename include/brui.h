@@ -249,6 +249,7 @@ typedef struct brui_window_t {
 
 // --------------------------------------------- BRUI_API ----------------------------------------------
 BR_EXPORT bool brui_window_init(brui_window_t* ui_window);
+BR_EXPORT bool brui_window_deinit(brui_window_t* ui_window);
 BR_EXPORT brpl_event_t brui_event_next(brui_window_t* ui_window);
 BR_EXPORT void brui_frame_start(brui_window_t* ui_window);
 BR_EXPORT void brui_frame_end(brui_window_t* ui_window);

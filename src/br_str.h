@@ -4,7 +4,6 @@
 #endif
 
 #if defined(BR_STR_IMPLEMENTATION)
-#undef BR_STR_IMPLEMENTATION
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

@@ -1,6 +1,8 @@
 #include "src/br_pp.h"
-#define BR_STR_IMPLEMENTATION
-#include "src/br_str.h"
+#if !defined(BR_STR_IMPLEMENTATION)
+#  define BR_STR_IMPLEMENTATION
+#  include "src/br_str.h"
+#endif
 #include "src/filesystem.c"
 #include "src/br_da.h"
 

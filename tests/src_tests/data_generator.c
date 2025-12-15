@@ -1,6 +1,6 @@
 #include "tests/src_tests/shl.h"
 
-TEST_ONLY void br_dagen_expr_to_str(br_str_t* out, br_dagen_exprs_t* arena, uint32_t index);
+BR_TEST_ONLY void br_dagen_expr_to_str(br_str_t* out, br_dagen_exprs_t* arena, uint32_t index);
 bool br_dagen_tokens_get(tokens_t* tokens, br_strv_t str);
 #define MAX_BATCH_LEN (16*1024)
 

@@ -882,7 +882,7 @@ start:
   return true;
 }
 
-TEST_ONLY void br_dagen_expr_to_str(br_str_t* out, br_dagen_exprs_t* arena, uint32_t index) {
+BR_TEST_ONLY void br_dagen_expr_to_str(br_str_t* out, br_dagen_exprs_t* arena, uint32_t index) {
   br_dagen_expr_t t = arena->arr[index];
   switch (t.kind) {
     case br_dagen_expr_kind_reference_x: br_str_push_literal(out, "#"); br_str_push_int(out, t.group_id); br_str_push_literal(out, ".x"); return;

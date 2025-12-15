@@ -117,7 +117,7 @@ void br_read_input_stop(void) {
 }
 
 #elif defined(__EMSCRIPTEN__)
-void br_read_input_start(br_plotter_t* br) { (void)br; }
+void br_read_input_start(br_plotter_t* br) { (void)br; (void)br_read_input_main_worker; }
 void br_read_input(void) { }
 void br_read_input_stop(void) { }
 static int br_read_input_read_next(void* null) { (void)null; return -1; }
