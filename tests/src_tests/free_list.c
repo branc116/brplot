@@ -134,6 +134,25 @@ void free_list_test4() {
   TEST_EQUAL(1, br_da_get(is, one_handle));
   TEST_EQUAL(2, br_da_get(is, two_handle));
   brfl_free(is);
+  TEST_IS_EOF(*file);
+}
+
+void free_list_read_empty() {
+  struct {
+    int* arr, *free_arr;
+    int len, cap;
+    int free_len, free_next;
+  } is = { 0 };
+  int error = 0;
+  BR_FILE* file = BR_FOPEN("test", "rb+");
+  brfl_write(file, is, error);
+  brfl_free(is);
+  brfl_read(file, is, error);
+  TEST_EQUAL(0, error);
+  TEST_EQUAL(0, is.len);
+  TEST_EQUAL(0, is.cap);
+  brfl_free(is);
+  TEST_IS_EOF(*file);
 }
 
 int main(void) {
@@ -142,5 +161,5 @@ int main(void) {
   free_list_test2();
   free_list_test3();
   free_list_test4();
-
+  free_list_read_empty();
 }

@@ -108,6 +108,8 @@ typedef struct brpl_window_t {
   br_vec2_t scale; // Think DPI
   bool active;
   bool should_close;
+  bool is_recording;
+  bool is_replaying;
 } brpl_window_t;
 
 bool brpl_window_open(brpl_window_t* window);

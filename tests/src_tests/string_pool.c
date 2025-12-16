@@ -79,7 +79,7 @@ void string_pool_read_write(void) {
     br_str_push_char(&s, 'c');
     brsp_set(&sp, t, br_str_as_view(s));
   }
-  BR_FILE* tf = BR_FOPEN("test", "rb"); 
+  BR_FILE* tf = BR_FOPEN("test", "rwb");
   TEST_EQUAL(sp.free_len, 1);
   brsp_write(tf, &sp);
 
@@ -96,6 +96,7 @@ void string_pool_read_write(void) {
     TEST_EQUAL(news.str[i], 'c');
   }
   brsp_free(&sp2);
+  TEST_IS_EOF(*tf);
 }
 
 void sp_read_write2(void) {
@@ -105,7 +106,7 @@ void sp_read_write2(void) {
   brsp_push(&sp, BR_STRL("hehe"));
 
   brsp_remove(&sp, id);
-  BR_FILE* tf = BR_FOPEN("test2", "rb");
+  BR_FILE* tf = BR_FOPEN("test2", "rwb");
   brsp_write(tf, &sp);
   brsp_free(&sp);
 
@@ -119,6 +120,20 @@ void sp_read_write2(void) {
   TEST_EQUAL(s.str[2], 'h');
   TEST_EQUAL(s.str[3], 'e');
   brsp_free(&sp2);
+  TEST_IS_EOF(*tf);
+}
+
+void sp_read_write_empty(void) {
+  brsp_t sp = { 0 };
+  brsp_t sp2 = { 0 };
+  BR_FILE* tf = BR_FOPEN("test2", "rwb");
+
+  brsp_write(tf, &sp);
+  brsp_read(tf, &sp2);
+
+  TEST_EQUAL(sp2.pool.len, 0);
+  brsp_free(&sp2);
+  TEST_IS_EOF(*tf);
 }
 
 void string_pool_read_remove_write(void) {
@@ -238,6 +253,7 @@ int main(void) {
   string_pool_resize2();
   string_pool_read_write();
   sp_read_write2();
+  sp_read_write_empty();
   string_pool_read_remove_write();
   string_pool_is_in();
   string_pool_copy();

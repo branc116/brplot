@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 #include <assert.h>
+#include <errno.h>
+#include <stdio.h>
 
 #if !defined(BR_WANTS_GL)
 #  define BR_WANTS_GL 1
@@ -421,13 +423,29 @@ static BR_THREAD_LOCAL struct {
   uint64_t start;
   double frequency;
   bool monotonic;
+  const char* record_path;
+  const char* replay_path;
+  int replay_skip_frames;
 } brpl__time;
 
+
 bool brpl_window_open(brpl_window_t* window) {
+  const char* rec_path = getenv("BRPL_RECORD");
+  const char* rep_path = getenv("BRPL_REPLAY");
+  const char* rep_skip = getenv("BRPL_REPLAY_SKIP");
+  if (rep_path && rec_path) LOGF("Can't record and replay at the same time...");
+  if (rec_path)             brpl__time.record_path = rec_path;
+  if (rep_path)             brpl__time.replay_path = rep_path;
+  if (rep_skip)             brpl__time.replay_skip_frames = atoi(rep_skip);
+  window->is_recording = brpl__time.record_path != NULL;
+  window->is_replaying = brpl__time.replay_path != NULL;
+
   brpl_time_init();
   bool loaded = false;
   if (window->kind == brpl_window_any) {
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__)
+#if defined(HEADLESS)
+    window->kind = brpl_window_headless;
+#elif defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__)
     window->kind = brpl_window_x11;
 #elif defined(_WIN32)
     window->kind = brpl_window_win32;
@@ -471,7 +489,44 @@ void brpl_frame_end(brpl_window_t* window) {
 }
 
 brpl_event_t brpl_event_next(brpl_window_t* window) {
+start:
   brpl_event_t ev = window->f.event_next(window);
+  if (brpl__time.replay_path) {
+    const char* rp = brpl__time.replay_path;
+    static FILE* file = NULL;
+    static bool was_read = false;
+    static int skip_frames = 0;
+    if (false == was_read) {
+      if (file == NULL) {
+        file = fopen(rp, "rb");
+        if (file == NULL) LOGF("Failed to open replay path %s: %s", rp, strerror(errno));
+      }
+      int n = fread(&ev, sizeof(ev), 1, file);
+      if (1 != n) {
+        LOGI("Closing replay file: %s", strerror(errno));
+        was_read = true;
+        fclose(file);
+      } else {
+        if (ev.kind == brpl_event_frame_next) {
+          if (skip_frames > 0) {
+            skip_frames -= 1;
+            goto start;
+          } else {
+            skip_frames = brpl__time.replay_skip_frames;
+          }
+        }
+      }
+    }
+  }
+  if (brpl__time.record_path) {
+    const char* rp = brpl__time.record_path;
+    FILE* file = fopen(rp, "ab+");
+    if (file == NULL) LOGF("Failed to open recrd path %s: %s", rp, strerror(errno));
+    if (1 != fwrite(&ev, sizeof(ev), 1, file)) {
+      LOGF("Failed to write to record path %s: %s", rp, strerror(errno));
+    }
+    fclose(file);
+  }
   switch (ev.kind) {
     case brpl_event_close:            window->should_close = true;                  break;
     case brpl_event_scale:            window->scale = ev.size.vec;                  break;
@@ -488,7 +543,7 @@ brpl_event_t brpl_event_next(brpl_window_t* window) {
     case brpl_event_key_press: { LOGI("brpl_event_key_press"); } break;
     case brpl_event_key_release: { LOGI("brpl_event_key_release"); } break;
     case brpl_event_input: { LOGI("brpl_event_input"); } break;
-    //case brpl_event_mouse_move: { LOGI("brpl_event_mouse_move"); } break;
+    case brpl_event_mouse_move: { LOGI("brpl_event_mouse_move"); } break;
     case brpl_event_mouse_scroll: { LOGI("brpl_event_mouse_scroll"); } break;
     case brpl_event_mouse_press: { LOGI("brpl_event_mouse_press"); } break;
     case brpl_event_mouse_release: { LOGI("brpl_event_mouse_release"); } break;
@@ -498,7 +553,7 @@ brpl_event_t brpl_event_next(brpl_window_t* window) {
     case brpl_event_window_focused: { LOGI("brpl_event_window_focused"); } break;
     case brpl_event_window_unfocused: { LOGI("brpl_event_window_unfocused"); } break;
     case brpl_event_close: { LOGI("brpl_event_close"); } break;
-    //case brpl_event_frame_next: { LOGI("brpl_event_frame_next: time=%f", ev.time); } break;
+    case brpl_event_frame_next: { LOGI("brpl_event_frame_next: time=%f", ev.time); } break;
     case brpl_event_scale: { LOGI("brpl_event_scale"); } break;
     case brpl_event_touch_begin: { LOGI("brpl_event_touch_begin: id=%d", ev.touch.id); } break;
     case brpl_event_touch_end: { LOGI("brpl_event_touch_end: id=%d", ev.touch.id); } break;
@@ -983,7 +1038,6 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
   };
   int status = XISelectEvents(x11.display, x11.window_handle, &evmask, 1);
   brpl_x11_XFlush(x11.display);
-  LOGI("brpl_x11_Status: %d", status);
 
   brpl_window_x11_t* win = BR_MALLOC(sizeof(brpl_window_x11_t));
   memcpy(win, &x11, sizeof(x11));

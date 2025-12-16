@@ -2188,8 +2188,8 @@ bool brui_save(BR_FILE* file, brui_window_t* uiw) {
   if (false == br_anim_save(file, &uiw->anims))                               BR_ERRORE("Failed to write anim.");
   brfl_write(file, uiw->resizables, fl_write_error); if (fl_write_error != 0) BR_ERRORE("Failed to write resizables.");
   if (false == brsp_write(file, &uiw->sp))                                    BR_ERRORE("Failed to write string pool.");
-  if (1 != BR_FWRITE(&uiw->theme, sizeof(uiw->theme), 1, file))                  BR_ERRORE("Failed to write theme.");
-  if (1 != BR_FWRITE(&uiw->def,   sizeof(uiw->def),   1, file))                  BR_ERRORE("Failed to write default ui values.");
+  if (1 != BR_FWRITE(&uiw->theme, sizeof(uiw->theme), 1, file))               BR_ERRORE("Failed to write theme.");
+  if (1 != BR_FWRITE(&uiw->def,   sizeof(uiw->def),   1, file))               BR_ERRORE("Failed to write default ui values.");
 
 error:
   return success;

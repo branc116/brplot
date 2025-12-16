@@ -247,15 +247,18 @@ bool br_permastate_load_plotter(BR_FILE* file, br_plotter_t* br, br_data_descs_t
   int success = true;
   (void)success;
 
-  if (false == brui_load(file, &br->uiw))                                 BR_ERROR("Failed to read brui");
-  if (1 != BR_FREAD(&datas_len, sizeof(datas_len), 1, file))                 BR_ERROR("Failed to read datas len");
-  if (datas_len < 0)                                                      BR_ERROR("datas_len is < 0");
+  if (false == brui_load(file, &br->uiw))                                        BR_ERROR("Failed to read brui");
+  if (1 != BR_FREAD(&datas_len, sizeof(datas_len), 1, file))                     BR_ERROR("Failed to read datas len");
+  if (datas_len < 0)                                                             BR_ERROR("datas_len is < 0");
   desc->len = (size_t)datas_len;
-  br_da_reserve(*desc, desc->len);
-  if (NULL == desc->arr)                                                   BR_ERROR("Failed to allocate data info array.");
-  if (desc->len != BR_FREAD(desc->arr, sizeof(desc->arr[0]), desc->len, file)) BR_ERROR("Failed to read datas info");
-  if (1 != BR_FREAD(&br->ui, sizeof(br->ui), 1, file))                       BR_ERROR("Failed to read UI state.");
-  if (0 != BR_FEOF(file))                                                    BR_ERROR("Expected eof.");
+  if (datas_len > 0) {
+    LOGI("datas_len: %d", datas_len);
+    br_da_reserve(*desc, desc->len);
+    if (NULL == desc->arr)                                                       BR_ERROR("Failed to allocate data info array.");
+    if (desc->len != BR_FREAD(desc->arr, sizeof(desc->arr[0]), desc->len, file)) BR_ERROR("Failed to read datas info");
+  }
+  if (1 != BR_FREAD(&br->ui, sizeof(br->ui), 1, file))                           BR_ERROR("Failed to read UI state.");
+  if (0 != BR_FEOF(file))                                                        BR_ERROR("Expected eof.");
   return true;
 
 error:

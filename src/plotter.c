@@ -82,7 +82,7 @@ void br_plotter_init(br_plotter_t* br) {
   br_hotreload_start(&br->hot_state);
 #endif
   brui_window_init(&br->uiw);
-  br->loaded_status = br_permastate_load(br);
+  if (!br->uiw.pl.is_recording && !br->uiw.pl.is_replaying) br->loaded_status = br_permastate_load(br);
   if (br->ui.multisampling) brgl_enable_multisampling();
   else                      brgl_disable_multisampling();
   if (br->loaded_status != br_permastate_status_ok) {

@@ -242,8 +242,8 @@ void __sanitizer_print_stack_trace(void);
 
 #define BR_ARR_LEN(ARR) (sizeof((ARR)) / sizeof((ARR)[0]))
 
+#define BR_HAS_GL 1
 #if !defined(HEADLESS)
-#  define BR_HAS_GL 1
 #  define BR_HAS_GLFW 1
 #endif
 

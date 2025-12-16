@@ -53,3 +53,5 @@
       LOGF("\"%.*s\" != \"%.*s\"", (int)(len), (a), (int)(len), (b)); \
     }                                                        \
   } while (0)
+
+#define TEST_IS_EOF(F) TEST_EQUAL((F).read_index, (F).len)

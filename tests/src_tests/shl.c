@@ -56,7 +56,11 @@ BR_FILE* test_open(const char* path, const char* mode) {
 }
 
 int test_close(BR_FILE* file) {
+  file->len = 0;
+  file->read_index = 0;
   return 0;
 }
 
-int test_feof(BR_FILE* file) { return true; }
+int test_feof(BR_FILE* file) {
+  return file->read_index == file->len;
+}

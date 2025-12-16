@@ -198,6 +198,13 @@ brsp_id_t brsp_copy(brsp_t* sp, brsp_id_t id) {
 }
 
 bool brsp_compress(brsp_t* sp, float factor, int slack) {
+  if (sp->free_len == 0) {
+    sp->len = 0;
+    sp->free_next = -1;
+  }
+  if (sp->len == 0) sp->pool.len = 0;
+  if (sp->pool.len == 0) return true;
+
   int full_len = 1;
   for (int i = 0; i < sp->len; ++i) {
     brsp_node_t* node = br_da_getp(*sp, i);
@@ -244,6 +251,7 @@ bool brsp_write(BR_FILE* file, brsp_t* sp) {
 
   int error = false;
   brfl_write(file, *sp, error); if (error != 0) return false;
+  if (sp->pool.len == 0) return true;
   if (sp->pool.len != BR_FWRITE(sp->pool.str, 1, sp->pool.len, file)) {
     LOGE("Failed to write pool from the string pool: %s", strerror(errno));
     return false;
