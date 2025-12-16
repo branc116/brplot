@@ -489,8 +489,9 @@ void brpl_frame_end(brpl_window_t* window) {
 }
 
 brpl_event_t brpl_event_next(brpl_window_t* window) {
+  brpl_event_t ev;
 start:
-  brpl_event_t ev = window->f.event_next(window);
+  ev = window->f.event_next(window);
   if (brpl__time.replay_path) {
     const char* rp = brpl__time.replay_path;
     static FILE* file = NULL;
@@ -501,7 +502,7 @@ start:
         file = fopen(rp, "rb");
         if (file == NULL) LOGF("Failed to open replay path %s: %s", rp, strerror(errno));
       }
-      int n = fread(&ev, sizeof(ev), 1, file);
+      size_t n = fread(&ev, sizeof(ev), 1, file);
       if (1 != n) {
         LOGI("Closing replay file: %s", strerror(errno));
         was_read = true;
@@ -1036,7 +1037,7 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
     .mask_len = sizeof(mask),
     .mask = (void*)&mask
   };
-  int status = XISelectEvents(x11.display, x11.window_handle, &evmask, 1);
+  XISelectEvents(x11.display, x11.window_handle, &evmask, 1);
   brpl_x11_XFlush(x11.display);
 
   brpl_window_x11_t* win = BR_MALLOC(sizeof(brpl_window_x11_t));
