@@ -1106,7 +1106,8 @@ static bool n_unittests_do(void) {
 
   const char* shl_obj = compiler_single_file_obj(get_target(), "tests/src_tests/shl.c", "build/shl_test");
   nob_cmd_append(&additional, shl_obj);
-  nob_cmd_append(&additional, "-lm");
+
+  if (target != p_windows) nob_cmd_append(&additional, "-lm");
 
   static struct { char const *test_file, *out_bin; } test_programs[] = {
     { .test_file = "./tests/src_tests/ui.c", .out_bin  = "bin/ui" },
@@ -1141,6 +1142,7 @@ static bool n_fuzztests_do(void) {
   is_headless = true;
   is_debug = true;
   const char* compiler = "clang"EXE_EXT;
+  const char* shl_obj = compiler_single_file_obj(get_target(), "tests/src_tests/shl.c", "build/shl_test");
 
 //  nob_cmd_append(&cmd, "clang", "-fsanitize=fuzzer,address,leak,undefined", "-DBR_DISABLE_LOG", "-DFUZZ", "-o", "bin/fuzz_read_input", "tools/unity/brplot.c");
 //  compile_standard_flags(&cmd);
@@ -1148,7 +1150,7 @@ static bool n_fuzztests_do(void) {
 //  nob_cmd_append(&cmd, "./bin/fuzz_read_input", FUZZ_FLAGS);
 //  if (false == nob_cmd_run_sync_and_reset(&cmd)) return false;
 
-  nob_cmd_append(&cmd, compiler, "-fsanitize=fuzzer,address,leak,undefined", "-DFUZZ", "-o", "bin/fuzz_sp", "./tests/src_tests/string_pool.c");
+  nob_cmd_append(&cmd, compiler, "-fsanitize=fuzzer,address,leak,undefined", "-DFUZZ", "-o", "bin/fuzz_sp", "./tests/src_tests/string_pool.c", shl_obj);
   compile_standard_flags(&cmd, false);
   if (false == br_cmd_run(&cmd)) return false;
   nob_cmd_append(&cmd, "./bin/fuzz_sp", FUZZ_FLAGS);
