@@ -3,17 +3,20 @@
 #include "src/br_plot.h"
 #include "src/br_math.h"
 #include "src/br_theme.h"
+#include "src/br_anim.h"
 
 static BR_THREAD_LOCAL struct {
   br_shaders_t* shaders;
   bool* debug;
   br_theme_t* theme;
+  br_anims_t* anims;
 } br_mesh_state;
 
-void br_mesh_construct(br_shaders_t* shaders, bool* debug, br_theme_t* theme) {
+void br_mesh_construct(br_shaders_t* shaders, bool* debug, br_theme_t* theme, br_anims_t* anims) {
   br_mesh_state.shaders = shaders;
   br_mesh_state.debug = debug;
   br_mesh_state.theme = theme;
+  br_mesh_state.anims = anims;
 }
 
 void br_mesh_gen_bb(br_mesh_line_t args, br_bb_t bb) {
@@ -331,20 +334,21 @@ void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
     } break;
     case br_plot_kind_3d: {
       BR_PROFILE("grid_draw_3d") {
+        br_vec3_t eye = br_anim3(br_mesh_state.anims, plot->ddd.eye_ah);
         br_vec2_t re = (br_vec2_t) { .x = ex.width, .y = ex.height };
         br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
-        br_mat_t look = br_mat_look_at(plot->ddd.eye, plot->ddd.target, plot->ddd.up);
+        br_mat_t look = br_mat_look_at(eye, plot->ddd.target, plot->ddd.up);
         br_mat_t mvp = br_mat_mul(look, per);
         br_mesh_state.shaders->grid_3d->uvs.m_mvp_uv = mvp;
         br_mesh_state.shaders->grid_3d->uvs.bg_color_uv = BR_COLOR_TO4(br_mesh_state.theme->colors.plot_bg).xyz;
-        br_mesh_state.shaders->grid_3d->uvs.eye_uv = plot->ddd.eye;
+        br_mesh_state.shaders->grid_3d->uvs.eye_uv = eye;
         br_mesh_state.shaders->grid_3d->uvs.target_uv = plot->ddd.target;
         br_vec3_t color = BR_COLOR_TO4(br_mesh_state.theme->colors.grid_lines).xyz;
         static float angle = 0;
         //angle += 0.01;
-        br_mesh_grid_3d_draw(br_vec3_rot(BR_VEC3(0, 0, 1), BR_VEC3(1, 0, 0), angle), br_vec3_rot(BR_VEC3(0, 1, 0), BR_VEC3(1, 0, 0), angle), BR_SIZE(100, 100), plot->ddd.eye, BR_VEC3(0, 0, 0), BR_VEC2(10, 10), color);
-        br_mesh_grid_3d_draw(br_vec3_rot(BR_VEC3(0, 1, 0), BR_VEC3(1, 0, 0), angle), br_vec3_rot(BR_VEC3(0, 0, 1), BR_VEC3(1, 0, 0), angle), BR_SIZE(100, 100), plot->ddd.eye, BR_VEC3(0, 0, 0), BR_VEC2(10, 10), color);
-        br_mesh_grid_3d_draw(br_vec3_rot(BR_VEC3(1, 0, 0), BR_VEC3(1, 0, 0), angle), br_vec3_rot(BR_VEC3(0, 1, 0), BR_VEC3(1, 0, 0), angle), BR_SIZE(100, 100), plot->ddd.eye, BR_VEC3(0, 0, 0), BR_VEC2(10, 10), color);
+        br_mesh_grid_3d_draw(br_vec3_rot(BR_VEC3(0, 0, 1), BR_VEC3(1, 0, 0), angle), br_vec3_rot(BR_VEC3(0, 1, 0), BR_VEC3(1, 0, 0), angle), BR_SIZE(100, 100), eye, BR_VEC3(0, 0, 0), BR_VEC2(10, 10), color);
+        br_mesh_grid_3d_draw(br_vec3_rot(BR_VEC3(0, 1, 0), BR_VEC3(1, 0, 0), angle), br_vec3_rot(BR_VEC3(0, 0, 1), BR_VEC3(1, 0, 0), angle), BR_SIZE(100, 100), eye, BR_VEC3(0, 0, 0), BR_VEC2(10, 10), color);
+        br_mesh_grid_3d_draw(br_vec3_rot(BR_VEC3(1, 0, 0), BR_VEC3(1, 0, 0), angle), br_vec3_rot(BR_VEC3(0, 1, 0), BR_VEC3(1, 0, 0), angle), BR_SIZE(100, 100), eye, BR_VEC3(0, 0, 0), BR_VEC2(10, 10), color);
       }
     } break;
     default: BR_UNREACHABLE("plot kind: %d", plot->kind);

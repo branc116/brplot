@@ -7,19 +7,25 @@
 
 typedef enum br_anim_kind_t {
   br_anim_float,
-  br_anim_extent
+  br_anim_extent,
+  br_anim_vec3
 } br_anim_kind_t;
 
 typedef struct br_anim_t {
   br_anim_kind_t kind:8;
   bool is_alive:1;
   bool is_instant:1;
+  bool is_slerp:1;
   bool trace:1;
   union {
     struct {
       float current;
       float target;
     } f;
+    struct {
+      br_vec3_t current;
+      br_vec3_t target;
+    } vec3;
     struct {
       br_extent_t current;
       br_extent_t target;
@@ -55,11 +61,13 @@ void br_anims_tick(br_anims_t* anims, float dt);
 
 int br_animf_new(br_anims_t* anims, float current, float target);
 int br_animex_new(br_anims_t* anims, br_extent_t current, br_extent_t target);
+int br_anim3_new(br_anims_t* anims, br_vec3_t current, br_vec3_t target);
 void br_anims_delete(br_anims_t* anims);
 
 void br_anim_delete(br_anims_t* anims, int anim_handle);
 bool br_anim_alive(br_anims_t* anims, int anim_handle);
 void br_anim_instant(br_anims_t* anims, int anim_handle);
+void br_anim_slerp(br_anims_t* anims, int anim_handle, bool should_slerp);
 #if BR_DEBUG
 void br_anim_trace(br_anims_t* anims, int anim_handle);
 #else
@@ -69,6 +77,10 @@ void br_anim_trace(br_anims_t* anims, int anim_handle);
 
 void br_animf_set(br_anims_t* anims, int anim_handle, float target_value);
 float br_animf(br_anims_t* anims, int anim_handle);
+
+void br_anim3_set(br_anims_t* anims, int anim_handle, br_vec3_t target_value);
+br_vec3_t br_anim3(br_anims_t* anims, int anim_handle);
+br_vec3_t br_anim3_get_target(br_anims_t* anims, int anim_handle);
 
 void br_animex_set(br_anims_t* anims, int anim_handle, br_extent_t target_value);
 br_extent_t br_animex(br_anims_t* anims, int anim_handle);

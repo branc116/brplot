@@ -150,7 +150,8 @@ void br_plotter_draw(br_plotter_t* br) {
                 if (false == br_plot_data_is_visible(pd)) continue;
                 br_data_t* data = br_data_get1(br->groups, pd.group_id);
                 float dist = 3.5f;
-                if (br_resampling_get_point_at3(*data, BR_VEC3_TOD(PLOT->ddd.eye), vec, &dist, &index)) {
+                br_vec3_t eye = br_anim3(&br->uiw.anims, PLOT->ddd.eye_ah);
+                if (br_resampling_get_point_at3(*data, BR_VEC3_TOD(eye), vec, &dist, &index)) {
                   br_vec3d_t vreal = br_data_el_xyz2(*data, index);
                   br_vec2_t s = br_plot3d_to_screen(PLOT, BR_VEC3D_TOF(vreal), ex);
                   br_strv_t name = brsp_get(br->uiw.sp, data->name);

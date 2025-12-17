@@ -271,44 +271,46 @@ bool br_permastate_load_plots(BR_FILE* file, br_plotter_t* br) {
   uint32_t calculated_crc = 0;
   br_plot_t* plots        = NULL;
   size_t read_plots       = 0;
+  bool success            = true;
 
-  if (1 != BR_FREAD(&plots_len, sizeof(plots_len), 1, file))                          goto error;
+  if (1 != BR_FREAD(&plots_len, sizeof(plots_len), 1, file))                          BR_ERRORE("Failed to read number of plots");
   if (plots_len != 0) {
-    if (NULL == (plots = BR_MALLOC(sizeof(*plots) * plots_len)))                   goto error;
-    if (plots_len != (read_plots = BR_FREAD(plots, sizeof(*plots), plots_len, file))) goto error;
+    if (NULL == (plots = BR_MALLOC(sizeof(*plots) * plots_len)))                      BR_ERRORE("Failed to allocated %zu plots", plots_len);
+    if (plots_len != (read_plots = BR_FREAD(plots, sizeof(*plots), plots_len, file))) BR_ERRORE("Failed to read %zu plots", plots_len);
   }
   if (br->plots.arr) BR_FREE(br->plots.arr);
   br->plots.arr = plots;
   br->plots.len = br->plots.cap = (int)plots_len;
   if (plots_len != 0) calculated_crc = br_fs_crc(plots, sizeof(*plots) * (size_t)plots_len, 0);
   for (size_t i = 0; i < plots_len; ++i) {
-    if (false == br_permastate_remove_pointers(&plots[i]))                         goto error;
+    if (false == br_permastate_remove_pointers(&plots[i]))                            BR_ERRORE("Failed to remove points from %zuth plot", i);
   }
   for (size_t i = 0; i < plots_len; ++i) {
     br_plot_t* p = &plots[i];
     int len = 0;
     br_plot_data_t* arr = NULL;
-    if (1 != BR_FREAD(&len, sizeof(len), 1, file))                                    goto error;
+    if (1 != BR_FREAD(&len, sizeof(len), 1, file))                                    BR_ERRORE("Failed to how much data is in plot %zu", i);
     if (len == 0) continue;
     p->data_info.len = len;
     p->data_info.cap = len;
     arr = BR_MALLOC(sizeof(*arr) * (size_t)len);
+    if (arr == NULL)                                                                  BR_ERRORE("Failed to alloc %d byts for plot %zu", len, i);
     p->data_info.arr = arr;
-    if ((uint32_t)len != BR_FREAD(arr, sizeof(*arr), (size_t)len, file))              goto error;
+    if ((uint32_t)len != BR_FREAD(arr, sizeof(*arr), (size_t)len, file))              BR_ERRORE("Failed to read arr of len %d", len);
     calculated_crc = br_fs_crc(arr, sizeof(*arr) * (size_t)len, calculated_crc);
   }
   if (plots_len != 0) {
-    if (1 != BR_FREAD(&read_crc, sizeof(read_crc), 1, file))                          goto error;
-    if (calculated_crc != read_crc)                                                goto error;
+    if (1 != BR_FREAD(&read_crc, sizeof(read_crc), 1, file))                          BR_ERROR("Failed to read the crc");
+    if (calculated_crc != read_crc)                                                   BR_ERROR("Crcs don't match %u != %u", read_crc, calculated_crc);
   }
-  return true;
+  return success;
 
 error:
   if (0 == plots_len)                  LOGI("Failed to read a file: %d(%s)", errno, strerror(errno));
   else if (NULL == plots)              LOGI("Failed to allocated memory for array of %zu plots", plots_len);
   else if (read_plots != plots_len)    LOGI("Failed to read right amount of plots, wanted %zu, but got %zu", plots_len, read_plots);
   else if (calculated_crc != read_crc) LOGE("Crc check failed expected %u, but got %u", calculated_crc, read_crc);
-  return false;
+  return success;
 }
 
 br_permastate_status_t br_permastate_load(br_plotter_t* br_initial) {

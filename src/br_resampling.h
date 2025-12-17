@@ -7,7 +7,8 @@
 typedef struct br_resampling_t br_resampling_t;
 typedef struct br_plot_t br_plot_t;
 typedef struct br_shaders_t br_shaders_t;
-void br_resampling_construct(br_shaders_t* shaders, float* min_something, float* cull_min);
+typedef struct br_anims_t br_anims_t;
+void br_resampling_construct(br_shaders_t* shaders, float* min_something, float* cull_min, br_anims_t* anims);
 
 br_resampling_t* br_resampling_malloc(br_data_kind_t kind);
 void br_resampling_empty(br_resampling_t* res);

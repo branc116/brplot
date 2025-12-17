@@ -19,7 +19,8 @@ typedef struct br_mesh_line_3d_t {
 
 typedef struct br_shaders_t br_shaders_t;
 typedef struct br_theme_t br_theme_t;
-void br_mesh_construct(br_shaders_t* shaders, bool* debug, br_theme_t* theme);
+typedef struct br_anims_t br_anims_t;
+void br_mesh_construct(br_shaders_t* shaders, bool* debug, br_theme_t* theme, br_anims_t* anims);
 
 void br_mesh_gen_bb(br_mesh_line_t args, br_bb_t bb);
 void br_mesh_gen_point(br_mesh_line_t args, br_vec2_t point);

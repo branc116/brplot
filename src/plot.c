@@ -32,6 +32,7 @@ void br_plot_deinit(br_plot_t* plot) {
   br_da_free(plot->data_info);
   brui_resizable_delete(plot->extent_handle);
   brgl_destroy_framebuffer(plot->texture_id);
+  br_anim_delete(br_plot_state.anims, plot->ddd.eye_ah);
 }
 
 void br_plot_create_texture(br_plot_t* br, br_extent_t extent) {
@@ -90,7 +91,8 @@ br_vec2_t br_plot2d_to_screen(br_plot_t* plot, br_vec2d_t vec, br_extent_t ex) {
 
 br_vec3d_t br_plot3d_to_plot(br_plot_t* plot, br_vec2_t mouse_pos, br_extent_t ex) {
   br_mat_t per = br_mat_perspective(plot->ddd.fov_y, ex.width / ex.height, plot->ddd.near_plane, plot->ddd.far_plane);
-  br_mat_t look = br_mat_look_at(plot->ddd.eye, plot->ddd.target, plot->ddd.up);
+  br_vec3_t eye = br_anim3(br_plot_state.anims, plot->ddd.eye_ah);
+  br_mat_t look = br_mat_look_at(eye, plot->ddd.target, plot->ddd.up);
   br_mat_t mvp = br_mat_mul(look, per);
   br_mat_t imvp = br_mat_transpose(br_mat_inverse(mvp));
   br_vec2_t mp_ndc = br_vec2_div(br_vec2_sub(mouse_pos, ex.pos), ex.size.vec);
@@ -104,7 +106,8 @@ br_vec3d_t br_plot3d_to_plot(br_plot_t* plot, br_vec2_t mouse_pos, br_extent_t e
 
 br_vec2_t br_plot3d_to_screen(br_plot_t* plot, br_vec3_t pos, br_extent_t ex) {
   br_mat_t per = br_mat_perspective(plot->ddd.fov_y, ex.width / ex.height, plot->ddd.near_plane, plot->ddd.far_plane);
-  br_mat_t look = br_mat_look_at(plot->ddd.eye, plot->ddd.target, plot->ddd.up);
+  br_vec3_t eye = br_anim3(br_plot_state.anims, plot->ddd.eye_ah);
+  br_mat_t look = br_mat_look_at(eye, plot->ddd.target, plot->ddd.up);
   br_mat_t mvp = br_mat_mul(look, per);
   br_vec3_t w = br_vec3_transform_scale(pos, mvp);
   br_vec2_t w2 = w.xy;
