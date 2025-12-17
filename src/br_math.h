@@ -731,11 +731,19 @@ static inline float br_vec3_line_dist2(br_vec3_t a, br_vec3_t b, br_vec3_t point
   return br_vec3_len2(cross) / ab2;
 }
 
+static inline br_vec3_t br_vec3_lerp(br_vec3_t a, br_vec3_t b, float t) {
+  return BR_VEC3(a.x*(1-t) + b.x*t,
+                 a.y*(1-t) + b.y*t,
+                 a.z*(1-t) + b.z*t);
+}
+
 static inline br_vec3_t br_vec3_slerp(br_vec3_t v0, br_vec3_t v1, float t) {
   if (t < 0.001f) return v0;
   if (t >= 1.f) return v1;
   float omega = br_vec3_angle(v0, v1);
-  if (fabsf(omega) < 0.00001f) return v1;
+  if (fabsf(omega) < 0.00001f) {
+    return br_vec3_lerp(v0, v1, t);
+  }
   float somega = sinf(omega);
   if (fabsf(somega) < 0.00001f) return br_vec3_add(v1, BR_VEC3(0.01f, 0.01f, 0.01f));
   return br_vec3_add(

@@ -24,13 +24,22 @@ void br_anims_tick(br_anims_t* anims, float dt) {
     switch (anim->kind) {
       case br_anim_float: {
         anim->f.current = br_float_lerp(anim->f.current, anim->f.target, lerp_factor);
-        if (fabsf(anim->f.current - anim->f.target) < 1e-7) to_kill = i;
+        if (fabsf(anim->f.current - anim->f.target) < 1e-7f) to_kill = i;
       } break;
       case br_anim_vec3: {
         bool still_alive = false;
         if (anim->is_slerp) {
-          anim->vec3.current = br_vec3_slerp(anim->vec3.current, anim->vec3.target, 0.5f*lerp_factor);
-          if (br_vec3_dist(anim->vec3.current, anim->vec3.target) >= 1e-8) still_alive = true;
+          if (anim->vec3.slerp_origin >= 0) {
+            br_vec3_t origin = br_anim3(anims, anim->vec3.slerp_origin);
+            br_vec3_t c = br_vec3_sub(anim->vec3.current, origin);
+            br_vec3_t t = br_vec3_sub(anim->vec3.target, origin);
+            c = br_vec3_slerp(c, t, 0.5f*lerp_factor);
+            anim->vec3.current = br_vec3_add(c, origin);
+            if (br_vec3_dist(c, t) >= 1e-8f) still_alive = true;
+          } else {
+            anim->vec3.current = br_vec3_slerp(anim->vec3.current, anim->vec3.target, 0.5f*lerp_factor);
+            if (br_vec3_dist(anim->vec3.current, anim->vec3.target) >= 1e-8) still_alive = true;
+          }
         } else {
           for (int j = 0; j < 3; ++j) {
             anim->vec3.current.arr[j] = br_float_lerp(anim->vec3.current.arr[j], anim->vec3.target.arr[j], lerp_factor);
@@ -80,7 +89,7 @@ int br_animex_new(br_anims_t* anims, br_extent_t current, br_extent_t target) {
 }
 
 int br_anim3_new(br_anims_t* anims, br_vec3_t current, br_vec3_t target) {
-  br_anim_t anim = { .kind = br_anim_vec3, .vec3 = {.current = current, .target = target } };
+  br_anim_t anim = { .kind = br_anim_vec3, .vec3 = {.current = current, .target = target, .slerp_origin = -1 } };
   anim.is_alive = false == br_vec3_dist2(current, target) <= 1e-8;
   int handle = brfl_push(anims->all, anim);
   if (anim.is_alive) {
@@ -124,6 +133,11 @@ void br_anim_instant(br_anims_t* anims, int anim_handle) {
 void br_anim_slerp(br_anims_t* anims, int anim_handle, bool should_slerp) {
   br_anim_t* anim = br_da_getp(anims->all, anim_handle);
   anim->is_slerp = should_slerp;
+}
+
+void br_anim_slerp_origin(br_anims_t* anims, int anim_handle, int origin) {
+  br_anim_t* anim = br_da_getp(anims->all, anim_handle);
+  anim->vec3.slerp_origin = origin;
 }
 
 #if BR_DEBUG
@@ -179,7 +193,7 @@ void br_anim3_set(br_anims_t* anims, int anim_handle, br_vec3_t target_value) {
     anim->vec3.target = target_value;
     anim->vec3.current = target_value;
   } else {
-    if (br_vec3_dist2(anim->vec3.target, target_value) < 1e-8) return;
+    if (br_vec3_dist2(anim->vec3.target, target_value) < 1e-8f) return;
     anim->vec3.target = target_value;
     if (anim->is_alive) return;
     anim->is_alive = true;

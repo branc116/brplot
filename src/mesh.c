@@ -335,14 +335,15 @@ void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
     case br_plot_kind_3d: {
       BR_PROFILE("grid_draw_3d") {
         br_vec3_t eye = br_anim3(br_mesh_state.anims, plot->ddd.eye_ah);
+        br_vec3_t target = br_anim3(br_mesh_state.anims, plot->ddd.target_ah);
         br_vec2_t re = (br_vec2_t) { .x = ex.width, .y = ex.height };
         br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
-        br_mat_t look = br_mat_look_at(eye, plot->ddd.target, plot->ddd.up);
+        br_mat_t look = br_mat_look_at(eye, target, plot->ddd.up);
         br_mat_t mvp = br_mat_mul(look, per);
         br_mesh_state.shaders->grid_3d->uvs.m_mvp_uv = mvp;
         br_mesh_state.shaders->grid_3d->uvs.bg_color_uv = BR_COLOR_TO4(br_mesh_state.theme->colors.plot_bg).xyz;
         br_mesh_state.shaders->grid_3d->uvs.eye_uv = eye;
-        br_mesh_state.shaders->grid_3d->uvs.target_uv = plot->ddd.target;
+        br_mesh_state.shaders->grid_3d->uvs.target_uv = target;
         br_vec3_t color = BR_COLOR_TO4(br_mesh_state.theme->colors.grid_lines).xyz;
         static float angle = 0;
         //angle += 0.01;

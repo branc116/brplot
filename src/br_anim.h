@@ -25,6 +25,7 @@ typedef struct br_anim_t {
     struct {
       br_vec3_t current;
       br_vec3_t target;
+      int slerp_origin;
     } vec3;
     struct {
       br_extent_t current;
@@ -68,6 +69,7 @@ void br_anim_delete(br_anims_t* anims, int anim_handle);
 bool br_anim_alive(br_anims_t* anims, int anim_handle);
 void br_anim_instant(br_anims_t* anims, int anim_handle);
 void br_anim_slerp(br_anims_t* anims, int anim_handle, bool should_slerp);
+void br_anim_slerp_origin(br_anims_t* anims, int anim_handle, int origin);
 #if BR_DEBUG
 void br_anim_trace(br_anims_t* anims, int anim_handle);
 #else

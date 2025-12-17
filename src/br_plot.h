@@ -27,8 +27,8 @@ typedef struct br_plot_3d_t {
   float grid_line_thickness;
   float grid_major_line_thickness;
 
-  int eye_ah;
-  br_vec3_t target, up;
+  int eye_ah, target_ah;
+  br_vec3_t up;
   float fov_y, near_plane, far_plane;
 } br_plot_3d_t;
 

@@ -431,7 +431,7 @@ static void br_resampling_draw33(br_resampling_t const* const res, size_t index,
   br_resampling_nodes_3d_t node = res->ddd.arr[index];
   br_mat_t mvp = res->args_3d.mvp;
   br_vec3_t eye = br_anim3(br_resampling.anims, plot->ddd.eye_ah);
-  br_vec3_t target = plot->ddd.target;
+  br_vec3_t target = br_anim3(br_resampling.anims, plot->ddd.target_ah);
   if (false == br_resampling_nodes_3d_is_inside(&node, &pg->ddd, mvp)) return;
   bool is_end = pg->len == node.base.index_start + node.base.len;
   if (node.base.depth == 0) { // This is the leaf node
@@ -497,7 +497,7 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           br_shader_line_draw(br_resampling.shaders->line);
         } break;
         case br_plot_kind_3d: {
-          br_vec3_t target = plot->ddd.target;
+          br_vec3_t target = br_anim3(br_resampling.anims, plot->ddd.target_ah);
           target.x -= (float)pg->dd.rebase_x;
           target.y -= (float)pg->dd.rebase_y;
           br_vec3_t eye = br_anim3(br_resampling.anims, plot->ddd.eye_ah);
@@ -507,7 +507,7 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
           br_mat_t look = br_mat_look_at(eye, target, plot->ddd.up);
           br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
-          br_resampling.shaders->line_3d->uvs.eye_uv = br_vec3_sub(eye, plot->ddd.target);
+          br_resampling.shaders->line_3d->uvs.eye_uv = br_vec3_sub(eye, target);
           br_resampling.shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
           res->args_3d.line_thickness = pd_thickness;
           res->args_3d.mvp = br_resampling.shaders->line_3d->uvs.m_mvp_uv;
@@ -523,8 +523,9 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
       switch (plot->kind) {
         case br_plot_kind_2d: BR_UNREACHABLE("Can't draw 3d data on 2d plot..");
         case br_plot_kind_3d: {
-          br_vec3d_t target = BR_VEC3_TOD(plot->ddd.target);
           br_vec3_t eyef = br_anim3(br_resampling.anims, plot->ddd.eye_ah);
+          br_vec3_t targetf = br_anim3(br_resampling.anims, plot->ddd.target_ah);
+          br_vec3d_t target = BR_VEC3_TOD(targetf);
           br_vec3d_t eye = BR_VEC3_TOD(eyef);
           target = br_vec3d_sub(target, pg->ddd.rebase);
           eye = br_vec3d_sub(eye, pg->ddd.rebase);
@@ -532,7 +533,7 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
           br_mat_t look = br_mat_look_at(BR_VEC3D_TOF(eye), BR_VEC3D_TOF(target), plot->ddd.up);
           br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
-          br_resampling.shaders->line_3d->uvs.eye_uv = br_vec3_sub(eyef, plot->ddd.target); //TODO: Is this realy eye or eye target vector?
+          br_resampling.shaders->line_3d->uvs.eye_uv = br_vec3_sub(eyef, targetf); //TODO: Is this realy eye or eye target vector?
           br_resampling.shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
           res->args_3d.line_thickness = pd_thickness;
           res->args_3d.mvp = br_resampling.shaders->line_3d->uvs.m_mvp_uv;
