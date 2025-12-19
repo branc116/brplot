@@ -303,7 +303,7 @@ void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
         br_vec2d_t from = br_plot2d_to_plot(plot, BR_VEC2(ex.x, ex.y + ex.height), ex);
         br_vec2d_t to = br_plot2d_to_plot(plot, BR_VEC2(ex.x + ex.width, ex.y), ex);
         {
-          int n = get_points(BR_MESH_LINE_THICK_N, line_thicks, to.x, from.x, ex.width, plot->dd.grid_line_thickness);
+          int n = get_points(BR_MESH_LINE_THICK_N, line_thicks, to.x, from.x, ex.width, plot->grid_line_thickness);
           for (int i = 0; i < n; ++i) {
             float thick = line_thicks[i].thick;
             float l = line_thicks[i].l;
@@ -317,7 +317,7 @@ void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
           }
         }
         {
-          int n = get_points(BR_MESH_LINE_THICK_N, line_thicks, to.y, from.y, ex.height, plot->dd.grid_line_thickness);
+          int n = get_points(BR_MESH_LINE_THICK_N, line_thicks, to.y, from.y, ex.height, plot->grid_line_thickness);
           for (int i = 0; i < n; ++i) {
             float thick = line_thicks[i].thick;
             float d = line_thicks[i].l;

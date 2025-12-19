@@ -26,6 +26,14 @@ void br_anims_tick(br_anims_t* anims, float dt) {
         anim->f.current = br_float_lerp(anim->f.current, anim->f.target, lerp_factor);
         if (fabsf(anim->f.current - anim->f.target) < 1e-7f) to_kill = i;
       } break;
+      case br_anim_vec2d: {
+        bool still_alive = false;
+        for (int j = 0; j < 2; ++j) {
+          anim->vec2d.current.arr[j] = br_double_lerp(anim->vec2d.current.arr[j], anim->vec2d.target.arr[j], lerp_factor);
+          if (fabs(anim->vec2d.current.arr[j] - anim->vec2d.target.arr[j]) > 1e-7) still_alive = true;
+        }
+        if (false == still_alive) to_kill = i;
+      } break;
       case br_anim_vec3: {
         bool still_alive = false;
         if (anim->is_slerp) {
@@ -71,6 +79,16 @@ void br_anims_tick(br_anims_t* anims, float dt) {
 int br_animf_new(br_anims_t* anims, float current, float target) {
   br_anim_t anim = { .kind = br_anim_float, .f = {.current = current, .target = target } };
   anim.is_alive = current != target;
+  int handle = brfl_push(anims->all, anim);
+  if (anim.is_alive) {
+    brfl_push(anims->alive, handle);
+  }
+  return handle;
+}
+
+int br_anim2d_new(br_anims_t* anims, br_vec2d_t current, br_vec2d_t target) {
+  br_anim_t anim = { .kind = br_anim_vec2d, .vec2d = {.current = current, .target = target } };
+  anim.is_alive = br_vec2d_dist2(current, target) <= 1e-8;
   int handle = brfl_push(anims->all, anim);
   if (anim.is_alive) {
     brfl_push(anims->alive, handle);
@@ -173,6 +191,40 @@ float br_animf(br_anims_t* anims, int anim_handle) {
   BR_ASSERTF(anim.kind == br_anim_float, "Anim kind should be float, but it's: %d", anim.kind);
   return anim.f.current;
 }
+
+void br_anim2d_set(br_anims_t* anims, int anim_handle, br_vec2d_t target_value) {
+  br_anim_t* anim = br_da_getp(anims->all, anim_handle);
+  BR_ASSERTF(anim->kind == br_anim_vec2d, "Anim kind should be vec2d, but it's: %d", anim->kind);
+#if BR_DEBUG
+  if (anim->trace) {
+    LOGI("ANIM %d: (%f,%f) -> (%f,%f) (current: %f,%f)", anim_handle, BR_VEC2_(anim->vec2d.target), BR_VEC2_(target_value), BR_VEC2_(anim->vec2d.current));
+    BR_STACKTRACE();
+  }
+#endif
+  if (anim->is_instant) {
+    anim->vec2d.target = target_value;
+    anim->vec2d.current = target_value;
+  } else {
+    if (br_vec2d_dist2(anim->vec2d.target, target_value) < 1e-8) return;
+    anim->vec2d.target = target_value;
+    if (anim->is_alive) return;
+    anim->is_alive = true;
+    brfl_push(anims->alive, anim_handle);
+  }
+}
+
+br_vec2d_t br_anim2d(br_anims_t* anims, int anim_handle) {
+  br_anim_t anim = br_da_get(anims->all, anim_handle);
+  BR_ASSERTF(anim.kind == br_anim_vec2d, "Expected the animation to be a vec2 but it's %d", anim.kind);
+  return anim.vec2d.current;
+}
+
+br_vec2d_t br_anim2d_get_target(br_anims_t* anims, int anim_handle) {
+  br_anim_t anim = br_da_get(anims->all, anim_handle);
+  BR_ASSERTF(anim.kind == br_anim_vec2d, "Expected the animation to be a vec2 but it's %d", anim.kind);
+  return anim.vec2d.target;
+}
+
 
 br_vec3_t br_anim3(br_anims_t* anims, int anim_handle) {
   br_anim_t anim = br_da_get(anims->all, anim_handle);

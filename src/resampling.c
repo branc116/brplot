@@ -475,22 +475,20 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
     case br_data_kind_2d: {
       switch (plot->kind) {
         case br_plot_kind_2d: {
+          br_vec2d_t zoom  = br_anim2d(br_resampling.anims, plot->dd.zoom_ah);
+          br_vec2d_t offset= br_anim2d(br_resampling.anims, plot->dd.offset_ah);
+
           res->culler.args.screen_size = BR_VEC2_TOD(extent.size.vec);
-          res->culler.args.zoom = plot->dd.zoom;
-          res->culler.args.offset = plot->dd.offset;
+          res->culler.args.zoom   = zoom;
+          res->culler.args.offset = offset;
           res->culler.args.offset.x -= pg->dd.rebase_x;
           res->culler.args.offset.y -= pg->dd.rebase_y;
-          res->culler.args.line_thickness = plot->dd.line_thickness * pd_thickness;
+          res->culler.args.line_thickness = plot->line_thickness * pd_thickness;
           res->culler.args.prev[0] = BR_VEC2(0, 0);
           res->culler.args.prev[1] = BR_VEC2(0, 0);
 
           br_resampling.shaders->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
-          float aspect = extent.width/extent.height;
-          br_extentd_t plot_rect = BR_EXTENTD(
-            -aspect*plot->dd.zoom.x/2.0 + plot->dd.offset.x - pg->dd.rebase_x,
-                    plot->dd.zoom.y/2.f + plot->dd.offset.y - pg->dd.rebase_y,
-            aspect*plot->dd.zoom.x,
-            plot->dd.zoom.y);
+          br_extentd_t plot_rect = br_plot2d_extent_to_plot(*plot, extent);
 
           br_resampling_draw22(&res->dd, 0, pg, BR_EXTENTD_TOF(plot_rect));
           br_line_culler_end(&res->culler);
@@ -564,8 +562,6 @@ void br_resampling_change_something(br_datas_t pg) {
     pg.arr[i].resampling->something *= (float)mul;
     pg.arr[i].resampling->something2 *= (float)mul;
     float mins = *br_resampling.min_sampling;
-  //pg.arr[i].resampling->something = mins;
-  //pg.arr[i].resampling->something2 = mins;
     if (pg.arr[i].resampling->something < mins) pg.arr[i].resampling->something = mins;
     if (pg.arr[i].resampling->something2 < mins) pg.arr[i].resampling->something2 = mins;
     pg.arr[i].resampling->draw_count = 0;

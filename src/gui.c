@@ -62,31 +62,8 @@ void br_plotter_draw(br_plotter_t* br) {
     BR_PROFILE("Draw Plots") {
       for (int i = 0; i < br->plots.len; ++i) {
 #define PLOT br_da_getp(br->plots, i)
-        if (PLOT->kind == br_plot_kind_2d) {
-          if (PLOT->follow) {
-            bool any = false;
-            br_bb_t bb = { 0 };
-            for (int j = 0; j < PLOT->data_info.len; ++j) {
-              br_plot_data_t pd = PLOT->data_info.arr[j];
-              br_data_t* data = br_data_get(&br->groups, pd.group_id);
-              if (br_plot_data_is_visible(pd)) {
-                if (any) {
-                  bb = br_bb_union(bb, data->dd.bounding_box);
-                } else {
-                  bb = data->dd.bounding_box;
-                  any = true;
-                }
-              }
-            }
-            if (any) {
-              float zoom = br_float_max(bb.max_x - bb.min_x, bb.max_y - bb.min_y);
-              br_vec2d_t offset = BR_VEC2D((bb.max_x + bb.min_x) / 2, (bb.max_y + bb.min_y) / 2);
-              PLOT->dd.zoom = br_vec2d_lerp(PLOT->dd.zoom, BR_VEC2D(zoom, zoom), 0.01f);
-              PLOT->dd.offset = br_vec2d_lerp(PLOT->dd.offset, offset, 0.01f);
-            }
-          }
-        }
         br_extent_t ex = brui_resizable_cur_extent(PLOT->extent_handle);
+        if (PLOT->follow) br_plot_focus_visible(PLOT, br->groups, ex);
         if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
 
         brgl_enable_framebuffer(PLOT->texture_id, (int)roundf(ex.width), (int)roundf(ex.height));
@@ -132,7 +109,8 @@ void br_plotter_draw(br_plotter_t* br) {
                 br_plot_data_t pd = PLOT->data_info.arr[j];
                 if (false == br_plot_data_is_visible(pd)) continue;
                 br_data_t* data = br_data_get(&br->groups, pd.group_id);
-                float dist = (float)(PLOT->dd.zoom.x*0.05);
+                br_vec2d_t zoom = br_anim2d(&br->uiw.anims, PLOT->dd.zoom_ah);
+                float dist = (float)(zoom.x*0.05);
                 br_u32 index = 0;
                 bool has_any = br_resampling_get_point_at2(*data, v, &dist, &index);
                 br_strv_t name = brsp_get(br->uiw.sp, data->name);
@@ -231,7 +209,6 @@ static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas, br_theme_t* the
       active &= brui_y() >= mp.y;
       if (active) {
         active = false;
-        br_anim_trace(&br->uiw.anims, cdi.thickness_multiplyer_ah);
         if (br_plot_data_is_visible(cdi)) {
           if (pressed) {
             br_animf_set(&br->uiw.anims, cdi.thickness_multiplyer_ah, 0.f);
@@ -843,14 +820,14 @@ static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_datas_t datas) 
       if (brui_button(BR_STRL("Remove Plot"))) {
         ret = true;
       }
-      if (plot->kind == br_plot_kind_2d) {
-        brui_sliderf2(BR_STRL("Line Thickness"), &plot->dd.line_thickness);
-        brui_vsplit(2);
-          brui_sliderf2(BR_STRL("Grid Thick"), &plot->dd.grid_line_thickness);
-        brui_vsplit_pop();
-          brui_sliderf2(BR_STRL("Major Grid Thick"), &plot->dd.grid_major_line_thickness);
-        brui_vsplit_end();
-      }
+
+      brui_sliderf2(BR_STRL("Line Thickness"), &plot->line_thickness);
+      brui_vsplit(2);
+        brui_sliderf2(BR_STRL("Grid Thick"), &plot->grid_line_thickness);
+      brui_vsplit_pop();
+        brui_sliderf2(BR_STRL("Major Grid Thick"), &plot->grid_major_line_thickness);
+      brui_vsplit_end();
+
       brui_text_size_set(og_text_size/5*4);
       brui_checkbox(BR_STRL("Follow"), &plot->follow);
       bool show_legend = false == brui_resizable_is_hidden(plot->legend_extent_handle);
@@ -875,8 +852,6 @@ static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_datas_t datas) 
       }
       br_scrach_free();
       if (plot->kind == br_plot_kind_2d) {
-        brui_textf("Offset: %f %f", BR_VEC2_(plot->dd.offset));
-        brui_textf("Zoom: %f %f", BR_VEC2_(plot->dd.zoom));
       } else if (plot->kind == br_plot_kind_3d) {
         brui_sliderf2(BR_STRL("Fov"), &plot->ddd.fov_y);
         brui_sliderf2(BR_STRL("Far"), &plot->ddd.far_plane);

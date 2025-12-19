@@ -39,6 +39,9 @@ br_plotter_t* br_plotter_malloc(void) {
         .file_selected = -1,
         .path_id = -1,
       },
+      .min_sampling = 0.001f,
+      .cull_min = 0.01f,
+      .default_grid_line_thickenss = 1.f,
       .dark_theme = true,
     },
   };
@@ -53,21 +56,20 @@ br_plotter_t* br_plotter_malloc(void) {
   return br;
 }
 
-static br_plot_t br_plot_2d(float grid_line_thickness) {
+static br_plot_t br_plot_2d(br_anims_t* anims, float grid_line_thickness) {
   br_plot_t plot = {
     .kind = br_plot_kind_2d,
-    .dd =  {
-#if defined(__EMSCRIPTEN__)
-      .zoom = BR_VEC2D(10.f, 10.f),
-#else
-      .zoom = BR_VEC2D(1.f, 1.f),
-#endif
-      .offset = BR_VEC2D(0.f, 0.f),
-      .grid_line_thickness =  grid_line_thickness,
-      .grid_major_line_thickness = 2.f,
-      .line_thickness = 0.05f
-    }
+    .grid_line_thickness =  grid_line_thickness,
+    .grid_major_line_thickness = 2.f,
+    .line_thickness = 0.05f
   };
+#if defined(__EMSCRIPTEN__)
+  float def_zoom = 10.f;
+#else
+  float def_zoom = 1.f;
+#endif
+  plot.dd.zoom_ah = br_anim2d_new(anims, BR_VEC2D(def_zoom, def_zoom), BR_VEC2D(def_zoom, def_zoom));
+  plot.dd.offset_ah = br_anim2d_new(anims, BR_VEC2D(0.f, 0.f), BR_VEC2D(0.f, 0.f));
   return plot;
 }
 
@@ -92,7 +94,7 @@ void br_plotter_init(br_plotter_t* br) {
       float padding = 4.f;
       br_size_t window_size = BR_SIZEI_TOF(br->uiw.pl.viewport.size);
       br_extent_t plot_extent = BR_EXTENT(padding, padding, window_size.width - padding*2, window_size.height - padding*2);
-      br_plot_t plot = br_plot_2d(br->ui.default_grid_line_thickenss);
+      br_plot_t plot = br_plot_2d(&br->uiw.anims, br->ui.default_grid_line_thickenss);
       br_plot_create_texture(&plot, plot_extent);
       bool found_resizable = false, found_menu_ex = false, found_legend_ex = false;
       brfl_foreach(i, br->uiw.resizables) {
@@ -191,6 +193,7 @@ void br_plotter_one_iter(br_plotter_t* br) {
 
 void br_plotter_update(br_plotter_t* br) {
   brpl_event_t ev = brui_event_next(&br->uiw);
+  br_anims_t* anims = &br->uiw.anims;
   while (ev.kind != brpl_event_none) {
     switch (ev.kind) {
       case brpl_event_key_press: {
@@ -236,13 +239,14 @@ void br_plotter_update(br_plotter_t* br) {
               case BR_KEY_R: {
                 if (br->hovered.active == br_plotter_entity_plot_2d) {
                   br_plot_t* plot = br_da_getp(br->plots, br->hovered.plot_id);
-                  if (!br->uiw.key.ctrl_down) plot->dd.zoom.x = plot->dd.zoom.y = 1;
-                  if (!br->uiw.key.ctrl_down) plot->dd.offset.x = plot->dd.offset.y = 0;
+                  if (!br->uiw.key.ctrl_down) br_anim2d_set(anims, plot->dd.zoom_ah, BR_VEC2D(1.f, 1.f));
+                  if (!br->uiw.key.ctrl_down) br_anim2d_set(anims, plot->dd.offset_ah, BR_VEC2D(0.f, 0.f));
+                  plot->follow = false;
                 } else if (br->hovered.active == br_plotter_entity_plot_3d) {
                   br_plot_t* plot = br_da_getp(br->plots, br->hovered.plot_id);
                   br_plot_3d_t* pi3 = &plot->ddd;
-                  br_anim3_set(&br->uiw.anims, pi3->eye_ah, BR_VEC3(0, 0, 100));
-                  br_anim3_set(&br->uiw.anims, pi3->target_ah, BR_VEC3(0, 0, 0));
+                  br_anim3_set(anims, pi3->eye_ah, BR_VEC3(0, 0, 100));
+                  br_anim3_set(anims, pi3->target_ah, BR_VEC3(0, 0, 0));
                   pi3->up = BR_VEC3(0, 1, 0);
                 }
               } break;
@@ -287,12 +291,13 @@ void br_plotter_update(br_plotter_t* br) {
         if (br->action.active == br_plotter_entity_plot_2d) {
           br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
           //LOGI("br->uiw.mouse.delta: %f %f", BR_VEC2_(br->uiw.mouse.delta));
-          br_plot2d_move_screen_space(plot, br->uiw.mouse.delta, br_animex(&br->uiw.anims, br_da_get(br->uiw.resizables, plot->extent_handle).cur_extent_ah).size);
+          br_plot2d_move_screen_space(plot, br->uiw.mouse.delta, br_animex(anims, br_da_get(br->uiw.resizables, plot->extent_handle).cur_extent_ah).size);
+          plot->follow = false;
         } else if (br->action.active == br_plotter_entity_plot_3d) {
           br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
           float speed = (float)br->uiw.time.frame / 2.f;
-          br_vec3_t eye = br_anim3_get_target(&br->uiw.anims, plot->ddd.eye_ah);
-          br_vec3_t target = br_anim3_get_target(&br->uiw.anims, plot->ddd.target_ah);
+          br_vec3_t eye = br_anim3_get_target(anims, plot->ddd.eye_ah);
+          br_vec3_t target = br_anim3_get_target(anims, plot->ddd.target_ah);
           br_vec3_t zeroed = br_vec3_sub(eye, target);
           br_vec3_t zero_dir = br_vec3_normalize(zeroed);
           br_vec3_t right = br_vec3_normalize(br_vec3_cross(plot->ddd.up, zero_dir));
@@ -301,8 +306,8 @@ void br_plotter_update(br_plotter_t* br) {
           br_vec3_t rotated_up = br_vec3_rot(zeroed, plot->ddd.up, md.x*0.5f);
           br_vec3_t rotated_right = br_vec3_rot(rotated_up, right, md.y*0.5f);
           float horizontal_factor = fabsf(br_vec3_dot(br_vec3_normalize(rotated_right), plot->ddd.up));
-          if (horizontal_factor > 0.94f) br_anim3_set(&br->uiw.anims, plot->ddd.eye_ah, br_vec3_add(rotated_up,    target));
-          else                           br_anim3_set(&br->uiw.anims, plot->ddd.eye_ah, br_vec3_add(rotated_right, target));
+          if (horizontal_factor > 0.94f) br_anim3_set(anims, plot->ddd.eye_ah, br_vec3_add(rotated_up,    target));
+          else                           br_anim3_set(anims, plot->ddd.eye_ah, br_vec3_add(rotated_right, target));
         }
       } break;
       case brpl_event_mouse_scroll: {
@@ -310,20 +315,21 @@ void br_plotter_update(br_plotter_t* br) {
         if (br->hovered.active == br_plotter_entity_plot_2d) {
           br_plot_t* plot = &br->plots.arr[br->hovered.plot_id];
           br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
-          br_vec2_t zoom = BR_VEC2(-ev.vec.y, -ev.vec.y);
+          br_vec2_t zoom = BR_VEC2(-ev.vec.y*2, -ev.vec.y*2);
           if (br->uiw.key.down[BR_KEY_X]) zoom.y = 0.f;
           if (br->uiw.key.down[BR_KEY_Y]) zoom.x = 0.f;
           br_plot2d_zoom(plot, zoom, ex, br->uiw.mouse.pos);
+          plot->follow = false;
         } else if (br->hovered.active == br_plotter_entity_plot_3d) {
           br_plot_t* plot = &br->plots.arr[br->hovered.plot_id];
           float mw_scale = (1.0f + (float)br->uiw.time.frame*ev.vec.y*3.0f);
-          br_vec3_t eye = br_anim3(&br->uiw.anims, plot->ddd.eye_ah);
-          br_vec3_t target = br_anim3(&br->uiw.anims, plot->ddd.target_ah);
+          br_vec3_t eye = br_anim3(anims, plot->ddd.eye_ah);
+          br_vec3_t target = br_anim3(anims, plot->ddd.target_ah);
           br_vec3_t zeroed = br_vec3_sub(eye, target);
           br_vec3_t zero_dir = br_vec3_normalize(zeroed);
           float len = br_vec3_len(zeroed);
           len /= mw_scale;
-          br_anim3_set(&br->uiw.anims, plot->ddd.eye_ah, br_vec3_add(target, br_vec3_scale(zero_dir, len)));
+          br_anim3_set(anims, plot->ddd.eye_ah, br_vec3_add(target, br_vec3_scale(zero_dir, len)));
         }
       } break;
       case brpl_event_frame_next: {
@@ -359,8 +365,8 @@ void br_plotter_update(br_plotter_t* br) {
               br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
               br_plot2d_zoom(plot, zoom, ex, br->uiw.mouse.pos);
             } else if (br->hovered.active == br_plotter_entity_plot_3d) {
-              br_vec3_t eye = br_anim3_get_target(&br->uiw.anims, plot->ddd.eye_ah);
-              br_vec3_t target = br_anim3_get_target(&br->uiw.anims, plot->ddd.target_ah);
+              br_vec3_t eye = br_anim3_get_target(anims, plot->ddd.eye_ah);
+              br_vec3_t target = br_anim3_get_target(anims, plot->ddd.target_ah);
               br_vec3_t zeroed = br_vec3_sub(eye, target);
               br_vec3_t zero_dir = br_vec3_normalize(zeroed);
               br_vec3_t right = br_vec3_normalize(br_vec3_cross(plot->ddd.up, zero_dir));
@@ -375,8 +381,8 @@ void br_plotter_update(br_plotter_t* br) {
               if (br->uiw.key.down[BR_KEY_D]) delta = br_vec3_add(delta, br_vec3_scale(right, dt*speed));
               if (br->uiw.key.down[BR_KEY_Q]) delta = br_vec3_add(delta, br_vec3_scale(plot->ddd.up, -dt*speed));
               if (br->uiw.key.down[BR_KEY_E]) delta = br_vec3_add(delta, br_vec3_scale(plot->ddd.up, dt*speed));
-              br_anim3_set(&br->uiw.anims, plot->ddd.target_ah, br_vec3_add(target, delta));
-              br_anim3_set(&br->uiw.anims, plot->ddd.eye_ah, br_vec3_add(eye, delta));
+              br_anim3_set(anims, plot->ddd.target_ah, br_vec3_add(target, delta));
+              br_anim3_set(anims, plot->ddd.eye_ah, br_vec3_add(eye, delta));
             }
           } else {
             br->hovered.resizable_id = br->uiw.resizables.active_resizable;
@@ -430,8 +436,8 @@ void br_plotter_update(br_plotter_t* br) {
               float old_len = br_vec2_dist(BR_VEC2D_TOF(pb), BR_VEC2D_TOF(pa));
               float new_len = br_vec2_dist(BR_VEC2D_TOF(pb), BR_VEC2D_TOF(pc));
               float zoom = old_len/new_len;
-              plot->dd.zoom.x *= zoom;
-              plot->dd.zoom.y *= zoom;
+              br_vec2d_t z = br_anim2d_get_target(anims, plot->dd.zoom_ah);
+              br_anim2d_set(anims, plot->dd.zoom_ah, br_vec2d_scale(z, zoom));
             }
             // Handle offset
             {
@@ -439,7 +445,8 @@ void br_plotter_update(br_plotter_t* br) {
               br_vec2d_t pc = br_plot2d_to_plot(plot, ev.touch.pos, ex);
               br_vec2d_t middle_new = br_vec2d_add(br_vec2d_scale(pb, 0.5f), br_vec2d_scale(pc, 0.5f));
               br_vec2d_t delta = br_vec2d_sub(middle_new, middle_old);
-              plot->dd.offset = br_vec2d_sub(plot->dd.offset, delta);
+              br_vec2d_t new_offset = br_vec2d_sub(br_anim2d_get_target(anims, plot->dd.offset_ah), delta);
+              br_anim2d_set(anims, plot->dd.offset_ah, new_offset);
             }
             tpp->pos = ev.touch.pos;
           }
@@ -509,7 +516,7 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
   float padding = 4.f;
   br_size_t window_size = BR_SIZEI_TOF(br->uiw.pl.viewport.size);
   br_extent_t ex = BR_EXTENT(padding, padding, window_size.width - padding*2, window_size.height - padding*2);
-  br_plot_t plot = br_plot_2d(br->ui.default_grid_line_thickenss);
+  br_plot_t plot = br_plot_2d(&br->uiw.anims, br->ui.default_grid_line_thickenss);
   br_plot_create_texture(&plot, ex);
   plot.extent_handle = brui_resizable_new2(&br->uiw.resizables, ex, 0, (brui_resizable_t) { .tag = 100, .title_enabled = true });
 #if defined(__EMSCRIPTEN__)

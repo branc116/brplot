@@ -42,28 +42,49 @@ void br_plot_create_texture(br_plot_t* br, br_extent_t extent) {
 
 void br_plot2d_move_screen_space(br_plot_t* plot, br_vec2_t delta, br_size_t plot_screen_size) {
   float height = plot_screen_size.height;
-  plot->dd.offset.x -= plot->dd.zoom.x*delta.x/height;
-  plot->dd.offset.y += plot->dd.zoom.y*delta.y/height;
+  br_vec2d_t zoom = br_anim2d(br_plot_state.anims, plot->dd.zoom_ah);
+  br_vec2d_t real_delta = br_vec2d_mul(zoom, br_vec2d_mul(BR_VEC2_TOD(delta), BR_VEC2D(-1.0/height, 1.0/height)));
+  br_vec2d_t new_offset = br_vec2d_add(real_delta, br_anim2d_get_target(br_plot_state.anims, plot->dd.offset_ah));
+  br_anim2d_set(br_plot_state.anims, plot->dd.offset_ah, new_offset);
+}
+
+static br_vec2d_t br_plot2d_to_plot_target(br_plot_t* plot, br_vec2_t vec, br_extent_t ex) {
+  br_vec2_t vec_in_resizable = br_vec2_sub(vec, ex.pos);
+  br_vec2_t vec_in_resizable2 = br_vec2_scale(vec_in_resizable, 2);
+  br_vec2_t b = br_vec2_sub(ex.size.vec, vec_in_resizable2);
+  br_vec2_t c = br_vec2_scale(b, 1.f/(float)ex.height);
+  br_vec2d_t zoom = br_anim2d_get_target(br_plot_state.anims, plot->dd.zoom_ah);
+  br_vec2d_t offset = br_anim2d_get_target(br_plot_state.anims, plot->dd.offset_ah);
+  return BR_VEC2D(
+    -(double)c.x*zoom.x/2.0 + offset.x,
+     (double)c.y*zoom.y/2.0 + offset.y
+  );
 }
 
 void br_plot2d_zoom(br_plot_t* plot, br_vec2_t vec, br_extent_t screen_extent, br_vec2_t mouse_pos_screen) {
-  br_vec2d_t old = br_plot2d_to_plot(plot, mouse_pos_screen, screen_extent);
+  // TODO: br_plot2d_to_plot should prob be br_plot2d_to_plot_target...
+  br_vec2d_t old = br_plot2d_to_plot_target(plot, mouse_pos_screen, screen_extent);
   bool any = false;
+  br_vec2d_t zoom = br_anim2d(br_plot_state.anims, plot->dd.zoom_ah);
   if (false == br_float_near_zero(vec.x)) {
     float mw_scale = (1 + vec.x/10);
-    plot->dd.zoom.x *= mw_scale;
+    zoom.x *= mw_scale;
     any = true;
   }
   if (false == br_float_near_zero(vec.y)) {
     float mw_scale = (1 + vec.y/10);
-    plot->dd.zoom.y *= mw_scale;
+    zoom.y *= mw_scale;
     any = true;
   }
   if (false == any) return;
 
-  br_vec2d_t now = br_plot2d_to_plot(plot, mouse_pos_screen, screen_extent);
-  plot->dd.offset.x -= now.x - old.x;
-  plot->dd.offset.y -= now.y - old.y;
+  br_anim2d_set(br_plot_state.anims, plot->dd.zoom_ah, zoom);
+  br_vec2d_t now = br_plot2d_to_plot_target(plot, mouse_pos_screen, screen_extent);
+
+  br_vec2d_t offset = br_anim2d_get_target(br_plot_state.anims, plot->dd.offset_ah);
+  offset.x -= now.x - old.x;
+  offset.y -= now.y - old.y;
+  br_anim2d_set(br_plot_state.anims, plot->dd.offset_ah, offset);
 }
 
 br_vec2d_t br_plot2d_to_plot(br_plot_t* plot, br_vec2_t vec, br_extent_t ex) {
@@ -71,17 +92,21 @@ br_vec2d_t br_plot2d_to_plot(br_plot_t* plot, br_vec2_t vec, br_extent_t ex) {
   br_vec2_t vec_in_resizable2 = br_vec2_scale(vec_in_resizable, 2);
   br_vec2_t b = br_vec2_sub(ex.size.vec, vec_in_resizable2);
   br_vec2_t c = br_vec2_scale(b, 1.f/(float)ex.height);
+  br_vec2d_t zoom = br_anim2d(br_plot_state.anims, plot->dd.zoom_ah);
+  br_vec2d_t offset = br_anim2d(br_plot_state.anims, plot->dd.offset_ah);
   return BR_VEC2D(
-    -(double)c.x*plot->dd.zoom.x/2.0 + plot->dd.offset.x,
-     (double)c.y*plot->dd.zoom.y/2.0 + plot->dd.offset.y
+    -(double)c.x*zoom.x/2.0 + offset.x,
+     (double)c.y*zoom.y/2.0 + offset.y
   );
 }
 
 br_vec2_t br_plot2d_to_screen(br_plot_t* plot, br_vec2d_t vec, br_extent_t ex) {
   br_vec2d_t d = vec;
-  d = br_vec2d_sub(d, plot->dd.offset);
+  br_vec2d_t zoom = br_anim2d(br_plot_state.anims, plot->dd.zoom_ah);
+  br_vec2d_t offset = br_anim2d(br_plot_state.anims, plot->dd.offset_ah);
+  d = br_vec2d_sub(d, offset);
   d = br_vec2d_scale(d, 2.0);
-  d = br_vec2d_mul(d, BR_VEC2D(-1/plot->dd.zoom.x, 1/plot->dd.zoom.y));
+  d = br_vec2d_mul(d, BR_VEC2D(-1/zoom.x, 1/zoom.y));
   br_vec2_t f = BR_VEC2((float)d.x, (float)d.y);
   f = br_vec2_scale(f, ex.height);
   f = br_vec2_sub(ex.size.vec, f);
@@ -123,12 +148,14 @@ br_vec2_t br_plot3d_to_screen(br_plot_t* plot, br_vec3_t pos, br_extent_t ex) {
 
 br_extentd_t br_plot2d_extent_to_plot(br_plot_t plot, br_extent_t screen_extent) {
   BR_ASSERT(plot.kind == br_plot_kind_2d);
+  br_vec2d_t zoom = br_anim2d(br_plot_state.anims, plot.dd.zoom_ah);
+  br_vec2d_t offset = br_anim2d(br_plot_state.anims, plot.dd.offset_ah);
   float aspect = screen_extent.width/screen_extent.height;
   return BR_EXTENTD(
-    (-aspect*plot.dd.zoom.x/2.0 + plot.dd.offset.x),
-    (plot.dd.zoom.y/2.0 + plot.dd.offset.y),
-    (aspect*plot.dd.zoom.x),
-    (plot.dd.zoom.y));
+    (-aspect*zoom.x/2.0 + offset.x),
+    (zoom.y/2.0 + offset.y),
+    aspect*zoom.x,
+    zoom.y);
 }
 
 void br_plot_remove_group(br_plot_t* plot, int group_id) {
@@ -154,7 +181,7 @@ void br_plots_focus_visible(br_plots_t plots, br_datas_t const groups) {
 
 void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups, br_extent_t ex) {
   // TODO 2D/3D
-  BR_ASSERT(plot->kind == br_plot_kind_2d);
+  BR_ASSERTF(plot->kind == br_plot_kind_2d, "Plot kind: %d", plot->kind);
   if (plot->data_info.len == 0) return;
 
   br_bb_t bb = { 0 };
@@ -187,17 +214,10 @@ void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups, br_extent_t
   new_width = BR_BBW(bb);
   new_height = BR_BBH(bb);
   br_vec2_t bl = bb.min;
-  if (0) {
-    float maxSize = fmaxf(new_width, new_height);
-    plot->dd.zoom.x = BR_EXTENTD_ASPECT(ex) * maxSize;
-    plot->dd.zoom.y = new_height;
-    plot->dd.offset.x = bl.x + maxSize / 2.f;
-    plot->dd.offset.y = bl.y + maxSize / 2.f;
-  } else {
-    plot->dd.offset.x = bl.x + new_width / 2.f;
-    plot->dd.offset.y = bl.y + new_height / 2.f;
-    plot->dd.zoom.x = new_width;
-    plot->dd.zoom.y = new_height;
-  }
+
+  br_vec2d_t offset = BR_VEC2D(bl.x + new_width / 2.0, bl.y + new_height / 2.0);
+  br_vec2d_t zoom  = BR_VEC2D(new_width, new_height);
+  br_anim2d_set(br_plot_state.anims, plot->dd.offset_ah, offset);
+  br_anim2d_set(br_plot_state.anims, plot->dd.zoom_ah, zoom);
 }
 

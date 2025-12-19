@@ -13,20 +13,11 @@ typedef enum {
 #endif
 
 typedef struct br_plot_2d_t {
-  float line_thickness;
-  float grid_line_thickness;
-  float grid_major_line_thickness;
-
-  br_vec2d_t zoom;
-  br_vec2d_t offset;
+  int zoom_ah, offset_ah;
   bool show_closest, show_x_closest, show_y_closest;
 } br_plot_2d_t;
 
 typedef struct br_plot_3d_t {
-  float line_thickness;
-  float grid_line_thickness;
-  float grid_major_line_thickness;
-
   int eye_ah, target_ah;
   br_vec3_t up;
   float fov_y, near_plane, far_plane;
@@ -42,6 +33,11 @@ typedef struct br_plot_t {
     br_plot_data_t* arr;
     int len, cap; 
   } data_info;
+
+  float line_thickness;
+  float grid_line_thickness;
+  float grid_major_line_thickness;
+
   int extent_handle;
   int menu_extent_handle;
   int legend_extent_handle;
@@ -50,6 +46,7 @@ typedef struct br_plot_t {
 
   int selected_data_old;
   int selected_data;
+
 
   bool follow;
   bool jump_around;
