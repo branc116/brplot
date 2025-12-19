@@ -1107,7 +1107,7 @@ static bool n_unittests_do(void) {
   const char* shl_obj = compiler_single_file_obj(get_target(), "tests/src_tests/shl.c", "build/shl_test");
   nob_cmd_append(&additional, shl_obj);
 
-  if (target != p_windows) nob_cmd_append(&additional, "-lm");
+  if (get_target() != p_windows) nob_cmd_append(&additional, "-lm");
 
   static struct { char const *test_file, *out_bin; } test_programs[] = {
     { .test_file = "./tests/src_tests/ui.c", .out_bin  = "bin/ui" },
