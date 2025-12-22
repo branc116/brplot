@@ -207,8 +207,12 @@ $(PREFIX_BUILD)/%.o: %.c
 
 $(OBJS): $(NOBS)
 
-src/*.c: .generated/icons.h .generated/icons.c .generated/gl.c .generated/icons.h .generated/icons.c .generated/default_font.h
+src/*.c: .generated/br_version.h .generated/icons.h .generated/icons.c .generated/gl.c .generated/icons.h .generated/icons.c .generated/default_font.h
 src/shaders.c: $(SHADERS_HEADER)
+
+.generated/br_version.h:
+	echo '#define BR_GIT_BRANCH "master"' > .generated/br_version.h
+	echo '#define BR_GIT_HASH "1c26657d990e32cbfbaf55508050b932120756d1"' >> .generated/br_version.h
 
 .PHONY: clean
 clean:
