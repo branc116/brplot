@@ -19,6 +19,7 @@
 #include "src/gui.c"
 #include "src/permastate.c"
 #include "src/read_input.c"
+#include "src/threads.c"
 
 static unsigned char buffer[4096];
 br_test_file_t test_file;
