@@ -660,6 +660,7 @@ static bool apply_flag(n_command comm, char alias, bool turn_on, int argc, char*
       } else {
         *fs.arr[j].is_set = turn_on;
       }
+      found = true;
     }
   }
 
