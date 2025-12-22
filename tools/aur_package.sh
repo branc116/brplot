@@ -25,7 +25,7 @@ git add PKGBUILD .SRCINFO
 
 echo "Write a commit message: "
 read MESSAGE
-git commit "$MESSAGE"
+git commit -m "$MESSAGE"
 
 echo "Git push? "
 git push origin master

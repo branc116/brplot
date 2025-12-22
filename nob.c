@@ -39,6 +39,7 @@
   X(dist, "Create distribution zip") \
   X(publish, "Publish to the things..") \
   X(pip, "Create pip egg") \
+  X(aur, "Publish to aur.") \
   X(unittests, "Run unit tests") \
   X(fuzztests, "Run fuzz tests") \
   X(compile_commands, "Create compile_commands.json file") \
@@ -905,11 +906,10 @@ error:
   return success;
 }
 
-static bool generate_version_file(void) {
+static bool generate_version_file(br_str_t* out_hash) {
   bool success = true;
   Nob_Cmd cmd = { 0 };
   br_str_t value1 = { 0 };
-  br_str_t value2 = { 0 };
   FILE* out_file = NULL;
   bool rebuild = false;
 
@@ -918,14 +918,14 @@ static bool generate_version_file(void) {
   if (false == cache.was_last_cached) rebuild = true;
 
   nob_cmd_append(&cmd, "git", "rev-parse", "HEAD");
-  if (false == nob_cmd_run_sync_str_and_reset(".generated/temp2", &cmd, &value2)) BR_ERROR("Failed to run a command");
+  if (false == nob_cmd_run_sync_str_and_reset(".generated/temp2", &cmd, out_hash)) BR_ERROR("Failed to run a command");
   if (false == cache.was_last_cached) rebuild = true;
 
   if (rebuild) {
     LOGI("Rebuilding git version");
     if (NULL == (out_file = fopen(".generated/br_version.h", "wb"))) BR_ERROR("Failed to open file: %s", strerror(errno));
     fprintf(out_file, "#define BR_GIT_BRANCH \"%.*s\"\n", value1.len - 1, value1.str);
-    fprintf(out_file, "#define BR_GIT_HASH \"%.*s\"\n", value2.len - 1, value2.str);
+    fprintf(out_file, "#define BR_GIT_HASH \"%.*s\"\n", out_hash->len - 1, out_hash->str);
   }
 
   goto done;
@@ -937,7 +937,6 @@ done:
   if (NULL != out_file) fclose(out_file);
   nob_cmd_free(cmd);
   br_str_free(value1);
-  br_str_free(value2);
   return success;
 }
 
@@ -949,7 +948,8 @@ static bool n_generate_do(void) {
   if (false == gl_gen())           return false;
   if (false == cat_files((const char*[]){"LICENSE", "./external/LICENCES"}, 2, ".generated/FULL_LICENSE")) return false;
   if (false == embed_file_as_string(".generated/FULL_LICENSE", "br_license")) return false;
-  if (false == generate_version_file()) return false;
+  br_str_t out_hash = { 0 };
+  if (false == generate_version_file(&out_hash)) return false;
   LOGI("Generate OK");
   return true;
 }
@@ -1115,15 +1115,22 @@ static bool n_dist_do(void) {
 }
 
 static bool n_publish_do(void) {
+  disable_logs = true;
+  is_debug = false;
   if (false == n_unittests_do()) return false;
   if (false == n_dist_do()) return false;
+  if (false == n_pip_do()) return false;
+
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "./tools/is_clean.sh");
   if (false == nob_cmd_run(&cmd) && false == is_ignore_dirty) LOGF("Can't publish because the repo is not clean.");
   nob_cmd_append(&cmd, "git", "tag", "v" BR_VERSION_STR);
   if (false == nob_cmd_run(&cmd)) LOGF("Can't publish because the version v" BR_VERSION_STR " is already publish. Increment the version in include/brplot.h:48");
-  nob_cmd_append(&cmd, "gh", "release", "create", "-R", "Bump.", "--target", "v" BR_VERSION_STR, ".generated/brplot-v" BR_VERSION_STR ".tar.gz", "--generate-notes");
+  nob_cmd_append(&cmd, "gh", "release", "create", "v" BR_VERSION_STR, "--target", "master", "--notes", "Bump.", "--generate-notes");
   if (false == nob_cmd_run(&cmd)) LOGF("Failed to publish..");
+  nob_cmd_append(&cmd, "gh", "release", "upload", "v" BR_VERSION_STR, ".generated/brplot-v" BR_VERSION_STR "/include/brplot.h");
+  if (false == nob_cmd_run(&cmd)) LOGF("Failed to publish..");
+  if (false == n_aur_do()) return false;
   return true;
 }
 
@@ -1154,16 +1161,16 @@ static bool build_no_set(const char* file_name, int build_no) {
 
 static bool n_pip_do(void) {
   if (false == pip_skip_build) {
-    is_rebuild = true;
+    //is_rebuild = true;
     is_debug = false;
     disable_logs = true;
     if (false == n_dist_do()) return false;
     if (false == nob_mkdir_if_not_exists("packages/pip/src")) return false;
     if (false == nob_mkdir_if_not_exists("packages/pip/src/brplot")) return false;
     Nob_String_Builder pytoml = { 0 };
-    if (false == nob_copy_file(PSHARE "/licenses/brplot/LICENSE", "packages/pip/LICENSE")) return false;
+    if (false == nob_copy_file(".generated/brplot-v" BR_VERSION_STR "/share/licenses/brplot/LICENSE", "packages/pip/LICENSE")) return false;
     if (false == nob_copy_file("README.md", "packages/pip/README.md")) return false;
-    if (false == nob_copy_file(".generated/brplot.h", "packages/pip/src/brplot/brplot.h")) return false;
+    if (false == nob_copy_file(".generated/brplot-v" BR_VERSION_STR "/include/brplot.h", "packages/pip/src/brplot/brplot.h")) return false;
     if (false == nob_read_entire_file("packages/pip/pyproject.toml.in", &pytoml)) return false;
     br_str_t out_toml = { .str = pytoml.items, .len = (uint32_t)pytoml.count, .cap = (uint32_t)pytoml.capacity };
     br_str_t build_no_str = { 0 };
@@ -1180,6 +1187,59 @@ static bool n_pip_do(void) {
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "python", "-m", "build", "-s", "packages/pip");
   return nob_cmd_run_cache(&cmd);
+}
+
+static bool n_aur_do(void) {
+  Nob_Cmd cmd = { 0 };
+  Nob_String_Builder aur = { 0 };
+  br_str_t hash = { 0 };
+  if (false == generate_version_file(&hash)) return false;
+
+  if (false == nob_read_entire_file("packages/aur/PKGBUILD", &aur)) return false;
+  br_str_t aur_br_str = { .str = aur.items, .len = aur.count, .cap = aur.capacity };
+
+  if (false == br_str_replace_one1(&aur_br_str, BR_STRL("{VERSION}"), BR_STRL(BR_VERSION_STR))) return false;
+  if (false == br_str_replace_one1(&aur_br_str, BR_STRL("{VERSION}"), BR_STRL(BR_VERSION_STR))) return false;
+  if (false == br_str_replace_one1(&aur_br_str, BR_STRL("{HASH}"), br_str_as_view(hash))) return false;
+
+  nob_cmd_append(&cmd, "git", "clone", "ssh://aur@aur.archlinux.org/brplot-git.git", "--", "packages/aur/brplot-git");
+  nob_cmd_run(&cmd);
+  nob_cmd_append(&cmd, "git", "pull", "ssh://aur@aur.archlinux.org/brplot-git.git", "--", "packages/aur/brplot-git");
+  nob_cmd_run(&cmd);
+  if (false == nob_write_entire_file("packages/aur/brplot-git/PKGBUILD", aur_br_str.str, aur_br_str.len)) return false;
+
+  Nob_File_Paths children = { 0 };
+  nob_read_entire_dir("packages/aur/brplot-git", &children);
+  for (int i = 0; i < children.count; ++i) {
+    if (NULL != strstr(children.items[i], ".zst")) {
+      nob_delete_file(nob_temp_sprintf("packages/aur/brplot-git/%s", children.items[i]));
+    }
+  }
+  nob_da_free(children);
+
+  nob_cmd_append(&cmd, "namcap", "packages/aur/brplot-git/PKGBUILD");
+  if (false == nob_cmd_run(&cmd)) return false;
+
+  nob_cmd_append(&cmd, "makepkg", "-D", "packages/aur/brplot-git", "-si");
+  if (false == nob_cmd_run(&cmd)) return false;
+  return false;
+
+  nob_cmd_append(&cmd, "namcap", "packages/aur/brplot-git/*.zst");
+  if (false == nob_cmd_run(&cmd)) return false;
+
+  nob_cmd_append(&cmd, "makepkg", "-D", "packages/aur/brplot-git/", "--printsrcinfo");
+  if (false == nob_cmd_run(&cmd, .stdout_path = "packages/aur/brplot-git/.SRCINFO")) return false;
+
+  nob_cmd_append(&cmd, "git", "add", "PKGBUILD", ".SRCINFO", "--",  "packages/aur/brplot-git/");
+  if (false == nob_cmd_run(&cmd)) return false;
+
+  nob_cmd_append(&cmd, "git", "commit", "-m", "Vesion bump.", "--",  "packages/aur/brplot-git/");
+  if (false == nob_cmd_run(&cmd)) return false;
+
+  nob_cmd_append(&cmd, "git", "push", "origin", "master", "--",  "packages/aur/brplot-git/");
+  if (false == nob_cmd_run(&cmd)) return false;
+
+  return true;
 }
 
 static bool n_unittests_do(void) {
