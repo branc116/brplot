@@ -39,7 +39,8 @@
   X(dist, "Create distribution zip") \
   X(publish, "Publish to the things..") \
   X(pip, "Create pip egg") \
-  X(pip_upload, "Upload pip egg") \
+  X(pip_upload, "Upload pip egg.") \
+  X(npm_upload, "Upload npm package.") \
   X(aur, "Publish to aur.") \
   X(unittests, "Run unit tests") \
   X(fuzztests, "Run fuzz tests") \
@@ -1134,6 +1135,7 @@ static bool n_publish_do(void) {
   if (false == nob_cmd_run(&cmd)) LOGF("Failed to publish..");
   if (false == n_aur_do()) return false;
   if (false == n_pip_upload_do()) return false;
+  if (false == n_npm_upload_do()) return false;
   return true;
 }
 
@@ -1190,6 +1192,32 @@ static bool n_pip_do(void) {
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "python", "-m", "build", "-s", "packages/pip");
   return nob_cmd_run(&cmd);
+}
+
+static bool n_npm_upload_do(void) {
+  bool old_is_wasm = is_wasm;
+  bool old_is_lib = is_lib;
+  is_wasm = true;
+  is_lib = true;
+  if (false == n_build_do()) return false;
+  if (false == nob_copy_file("bin/brplot.js", "packages/npm/brplot.js")) return false;
+  if (false == nob_copy_file("bin/brplot.wasm", "packages/npm/brplot.wasm")) return false;
+  Nob_String_Builder file = { 0 };
+  if (false == nob_read_entire_file("packages/npm/package.json.in", &file)) return false;
+  br_str_t file_bs = { .str = file.items, .len = file.count, .cap = file.capacity };
+#if BR_VERSION_MINOR != 0
+#  error "Npm is fucked if the minor is not 0. printf something like '0.2.%d%d', MINOR, PATCH"
+#endif
+  if (false == br_str_replace_one1(&file_bs, BR_STRL("{VERSION}"), br_scrach_printf("0.2.%d", BR_PATCH_VERSION))) return false;
+  if (false == nob_write_entire_file("packages/npm/package.json", file_bs.str, file_bs.len)) return false;
+  if (false == nob_set_current_dir("packages/npm")) return false;
+  Nob_Cmd cmd = { 0 };
+  nob_cmd_append(&cmd, "npm", "publish");
+  if (false == nob_cmd_run(&cmd)) return false;
+  if (false == nob_set_current_dir("../..")) return false;
+  is_wasm = old_is_wasm;
+  is_lib = old_is_lib;
+  return true;
 }
 
 static bool n_pip_upload_do(void) {

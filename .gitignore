@@ -24,3 +24,4 @@ nob
 nob.cache
 tags
 packages/pip/src/brplot
+packages/npm/package.json
