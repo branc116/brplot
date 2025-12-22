@@ -1122,7 +1122,7 @@ static bool n_publish_do(void) {
   if (false == nob_cmd_run(&cmd) && false == is_ignore_dirty) LOGF("Can't publish because the repo is not clean.");
   nob_cmd_append(&cmd, "git", "tag", "v" BR_VERSION_STR);
   if (false == nob_cmd_run(&cmd)) LOGF("Can't publish because the version v" BR_VERSION_STR " is already publish. Increment the version in include/brplot.h:48");
-  nob_cmd_append(&cmd, "gh", "release", "create", "--target", "v" BR_VERSION_STR, ".generated/brplot-v" BR_VERSION_STR ".tar.gz", "--generate-notes");
+  nob_cmd_append(&cmd, "gh", "release", "create", "-R", "Bump.", "--target", "v" BR_VERSION_STR, ".generated/brplot-v" BR_VERSION_STR ".tar.gz", "--generate-notes");
   if (false == nob_cmd_run(&cmd)) LOGF("Failed to publish..");
   return true;
 }
