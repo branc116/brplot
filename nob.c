@@ -37,6 +37,7 @@
   X(amalgam, "Create amalgamation file that will be shipped to users") \
   X(install, "Install the files into prefix folder") \
   X(dist, "Create distribution zip") \
+  X(publish, "Publish to the things..") \
   X(pip, "Create pip egg") \
   X(unittests, "Run unit tests") \
   X(fuzztests, "Run fuzz tests") \
@@ -1110,6 +1111,16 @@ static bool n_dist_do(void) {
   return true;
 }
 
+static bool n_publish_do(void) {
+  if (false == n_unittests_do()) return false;
+  if (false == n_dist_do()) return false;
+  Nob_Cmd cmd = { 0 };
+  nob_cmd_append(&cmd, "./tools/is_clean.sh");
+  if (false == nob_cmd_run(&cmd)) LOGF("Can't publish because the repo is not clean.");
+  nob_cmd_append(&cmd, "git", "tag", "v" BR_VERSION_STR);
+  if (false == nob_cmd_run(&cmd)) LOGF("Can't publish because the version v" BR_VERSION_STR " is already publish. Increment the version in include/brplot.h:48");
+}
+
 static bool build_no_get_next(const char* file_name, int* build_no) {
   FILE* build_no_file = fopen(file_name, "rb");
   if (NULL != build_no_file) {
@@ -1166,6 +1177,8 @@ static bool n_pip_do(void) {
 }
 
 static bool n_unittests_do(void) {
+  if (false == n_generate_do()) return false;
+
   Nob_Cmd cmd = { 0 };
   is_debug = true;
   is_headless = true;
