@@ -1,1 +1,1 @@
-include src/brplot/brplot.h
+include src/brplot/brplot.c

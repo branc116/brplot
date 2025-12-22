@@ -1171,7 +1171,7 @@ static bool n_pip_do(void) {
     Nob_String_Builder pytoml = { 0 };
     if (false == nob_copy_file(".generated/brplot-v" BR_VERSION_STR "/share/licenses/brplot/LICENSE", "packages/pip/LICENSE")) return false;
     if (false == nob_copy_file("README.md", "packages/pip/README.md")) return false;
-    if (false == nob_copy_file(".generated/brplot-v" BR_VERSION_STR "/include/brplot.h", "packages/pip/src/brplot/brplot.h")) return false;
+    if (false == nob_copy_file(".generated/brplot-v" BR_VERSION_STR "/include/brplot.h", "packages/pip/src/brplot/brplot.c")) return false;
     if (false == nob_read_entire_file("packages/pip/pyproject.toml.in", &pytoml)) return false;
     br_str_t out_toml = { .str = pytoml.items, .len = (uint32_t)pytoml.count, .cap = (uint32_t)pytoml.capacity };
     br_str_t build_no_str = { 0 };
@@ -1207,9 +1207,10 @@ static bool n_aur_do(void) {
   if (false == br_str_replace_one1(&aur_br_str, BR_STRL("{VERSION}"), BR_STRL(BR_VERSION_STR))) return false;
   if (false == br_str_replace_one1(&aur_br_str, BR_STRL("{HASH}"), br_str_as_view(hash))) return false;
 
-  nob_set_current_dir("packages/aur/brplot-git");
+  nob_set_current_dir("packages/aur");
   nob_cmd_append(&cmd, "git", "clone", "ssh://aur@aur.archlinux.org/brplot-git.git");
   nob_cmd_run(&cmd);
+  nob_set_current_dir("brplot-git");
   nob_cmd_append(&cmd, "git", "pull", "ssh://aur@aur.archlinux.org/brplot-git.git");
   nob_cmd_run(&cmd);
   if (false == nob_write_entire_file("PKGBUILD", aur_br_str.str, aur_br_str.len)) return false;
