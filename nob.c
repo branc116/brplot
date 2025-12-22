@@ -19,6 +19,7 @@
 #define BR_STR_IMPLEMENTATION
 #include "src/br_str.h"
 #include "src/br_da.h"
+#include "include/brplot.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -1100,37 +1101,12 @@ static bool write_entire_file(const char* file_name, br_strv_t content) {
 }
 
 static bool n_dist_do(void) {
-  if (false == n_generate_do()) return false;
-  if (false == nob_mkdir_if_not_exists(DIST)) return false;
-  if (false == nob_mkdir_if_not_exists(PREFIX)) return false;
-  if (false == nob_mkdir_if_not_exists(PLIB)) return false;
-  if (false == nob_mkdir_if_not_exists(PBIN)) return false;
-  if (false == nob_mkdir_if_not_exists(PINC)) return false;
-  if (false == nob_mkdir_if_not_exists(PSHARE)) return false;
-  if (false == nob_mkdir_if_not_exists(PSHARE "/licenses")) return false;
-  if (false == nob_mkdir_if_not_exists(PSHARE "/licenses/brplot")) return false;
-  is_debug = false;
-  is_slib = false;
-  is_lib = false;
-  if (false == n_compile_do()) return false;
-  is_slib = true;
-  if (false == n_compile_do()) return false;
-  is_slib = false;
-  is_lib = true;
-  if (false == n_compile_do()) return false;
-  if (false == nob_copy_file("bin/brplot" EXE_EXT, PBIN "/brplot" EXE_EXT)) return false;
-  if (false == nob_copy_file("bin/brplot" SLIB_EXT, PLIB "/brplot" SLIB_EXT)) return false;
-  if (false == nob_copy_file("bin/brplot" LIB_EXT, PLIB "/brplot" LIB_EXT)) return false;
-  if (false == n_amalgam_do()) return false;
-  if (false == nob_copy_file(".generated/brplot.h", PINC "/brplot.h")) return false;
-  if (false == nob_copy_file(".generated/FULL_LICENSE", PSHARE "/licenses/brplot/LICENSE")) return false;
-
+  g_install_prefix = ".generated/brplot-v"BR_VERSION_STR;
+  n_install_do();
   Nob_Cmd cmd = { 0 };
-  nob_cmd_append(&cmd, "tar", "czf", "brplot-" BR_VERSION_STR ".tar.gz", "-C", DIST, "brplot-" BR_VERSION_STR);
+  nob_cmd_append(&cmd, "tar", "czf", "brplot-v" BR_VERSION_STR ".tar.gz", "-C", ".generated", "brplot-v" BR_VERSION_STR);
   if (false == nob_cmd_run_cache(&cmd)) return false;
   nob_cmd_free(cmd);
-
-
   return true;
 }
 

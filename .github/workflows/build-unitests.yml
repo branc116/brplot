@@ -30,7 +30,7 @@ jobs:
 
       - run: |
           ./nob amalgam
-          clang -fPIC -shared -DBRPLOT_IMPLEMENTATION -x .generated/brplot.h -o libbrplot.dylib
+          clang -fPIC -shared -DBRPLOT_IMPLEMENTATION -x c .generated/brplot.h -o libbrplot.dylib
           clang -I.generated tests/hello_world.c -lm -L. -lbrplot
           clang -I.generated tests/animations.c -lm -L. -lbrplot
 
@@ -59,7 +59,7 @@ jobs:
 
       - run: |
           ./nob amalgam
-          clang -g -fPIC -shared -DBRPLOT_IMPLEMENTATION -x .generated/brplot.c -o libbrplot.so
+          clang -g -fPIC -shared -DBRPLOT_IMPLEMENTATION -x c .generated/brplot.h -o libbrplot.so
           cc -g -I.generated tests/hello_world.c -lm -L. -lbrplot
           cc -g -I.generated tests/animations.c -lm -L. -lbrplot
 
@@ -82,7 +82,7 @@ jobs:
 
       - run: |
           ./nob amalgam
-          clang -DBRPLOT_IMPLEMENTATION -x .generated/brplot.c -o brplot.lib -c
+          clang -DBRPLOT_IMPLEMENTATION -x c .generated/brplot.h -o brplot.lib -c
           clang -I.generated tests/hello_world.c -L. -lbrplot
           clang -I.generated tests/animations.c -L. -lbrplot
 
