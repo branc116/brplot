@@ -1,0 +1,22 @@
+.Dd $Mdocdate: December 19 2025
+.Dt BRPLOT 1
+.Os
+.Sh NAME
+.Nm brplot
+.Nd Open a brplot
+.Sh SYNOPSIS
+.Nm brplot
+Better real-time plot.
+Pipe stuff into it and they will be displayed.
+.Sh EXAMPLES
+.Nm Plot first 100 numbers
+.Bd -literal -offset indent
+$ seq 100 | brplot
+.Ed
+.Sh SEE ALSO
+.Xr brplot 3
+.Xr brplot 7
+.Sh AUTHORS
+.An Branimir Ričko rickobranimir@gmail.com
+.Sh BUGS
+Report to https://github.com/branc116/brplot

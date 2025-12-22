@@ -34,6 +34,7 @@
   X(debug, "Build and run brplot with gdb") \
   X(cdebug, "Compile (don't generate files) and run brplot with gdb") \
   X(amalgam, "Create amalgamation file that will be shipped to users") \
+  X(install, "Install the files into prefix folder") \
   X(dist, "Create distribution zip") \
   X(pip, "Create pip egg") \
   X(unittests, "Run unit tests") \
@@ -71,7 +72,11 @@ typedef struct {
   br_strv_t name;
   char alias;
   br_strv_t description;
-  bool* is_set;
+  bool is_string;
+  union {
+    bool* is_set;
+    const char** cstr_value;
+  };
 } command_flag_t;
 
 typedef struct {
@@ -168,6 +173,7 @@ static bool is_fatal_error = false;
 static bool is_tracy = false;
 static bool is_pg = false;
 static bool is_help_subcommands = false;
+static const char* g_install_prefix = NULL;
 
 #define X(name, desc) [n_ ## name] = { 0 },
 static command_flags_t command_flags[] = {
@@ -205,6 +211,8 @@ static void fill_command_flag_data(void) {
   command_flag_t pip_skip_build_flag = (command_flag_t) {.name = BR_STRL("skip-build"), .alias = '\0', .description = BR_STRL("Don't do anything except call pip to create a package"),                                          .is_set = &pip_skip_build};
   command_flag_t unittest_no_gen     = (command_flag_t) {.name = BR_STRL("no-gen"),     .alias = 'n',  .description = BR_STRL("Don't generate files when running unittests"),                                                    .is_set = &no_gen};
   command_flag_t build_no_gen        = (command_flag_t) {.name = BR_STRL("no-gen"),     .alias = '\0', .description = BR_STRL("Don't generate files whild building"),                                                            .is_set = &no_gen};
+  g_install_prefix = "/usr";
+  command_flag_t install_prefix      = (command_flag_t) {.name = BR_STRL("prefix"),     .alias = '\0', .description = BR_STRL("Where to install the files"),                                                                     .is_string = true, .cstr_value = &g_install_prefix};
   br_da_push(command_flags[n_compile], debug_flag);
   br_da_push(command_flags[n_compile], has_hotreload_flag);
   br_da_push(command_flags[n_compile], pedantic_flag);
@@ -225,6 +233,7 @@ static void fill_command_flag_data(void) {
   br_da_push(command_flags[n_pip], pip_skip_build_flag);
   br_da_push(command_flags[n_unittests], unittest_no_gen);
   br_da_push(command_flags[n_build], build_no_gen);
+  br_da_push(command_flags[n_install], install_prefix);
 
   br_da_push(command_deps[n_debug], n_build);
   br_da_push(command_deps[n_cdebug], n_compile);
@@ -332,7 +341,7 @@ const char* compiler_set_output(Nob_Cmd* cmd, const char* output_name, compile_o
             return ret;
           } break;
           case compile_output_slib: {
-            nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.a", output_name));
+            nob_cmd_append(cmd, nob_temp_sprintf("%s.a", output_name));
             return cmd->items[cmd->count - 1];
           } break;
           case compile_output_dlib: {
@@ -572,21 +581,19 @@ static bool compile_and_link(platform_kind_t target, Nob_Cmd* cmd) {
   const char* compiler = get_compiler(target);
 
   compile_output_kind_t out_kind;
-  if (is_slib)          out_kind = compile_output_slib;
-  else if (is_lib)      out_kind = compile_output_dlib;
-  else                  out_kind = compile_output_exe;
+  if (is_slib)     out_kind = compile_output_slib;
+  else if (is_lib) out_kind = compile_output_dlib;
+  else             out_kind = compile_output_exe;
 
-  if (is_slib)      nob_cmd_append(&link_command, "ar", "rcs");
-  else {
-    compiler_base_flags(&link_command, compiler);
-  }
+  if (is_slib) nob_cmd_append(&link_command, "ar", "rcs");
+  else         compiler_base_flags(&link_command, compiler);
+  compiler_set_output(&link_command, "bin/brplot", out_kind, target, compiler);
 
   for (size_t i = 0; i < NOB_ARRAY_LEN(sources); ++i) {
     br_str_t build_dir = { 0 };
     if (false == compile_one(target, cmd, nob_sv_from_cstr(sources[i]), &link_command, &build_dir)) return false;
   }
 
-  compiler_set_output(&link_command, "bin/brplot", out_kind, target, compiler);
   bool ret = nob_cmd_run_cache(&link_command);
   nob_cmd_free(link_command);
   return ret;
@@ -599,7 +606,11 @@ static void print_command_flags_usage(n_command command, int depth, bool visited
   command_flags_t flags = command_flags[command];
   for (size_t i = 0; i < flags.len; ++i) {
     command_flag_t flag = flags.arr[i];
-    printf("%*s-%c, --%.*s - %.*s (%s)\n", depth*4, "", flag.alias, flag.name.len, flag.name.str, flag.description.len, flag.description.str, *flag.is_set ? "ON" : "OFF");
+    if (flag.is_string) {
+      printf("%*s-%c <value>, --%.*s <value> - %.*s (%s)\n", depth*4, "", flag.alias, flag.name.len, flag.name.str, flag.description.len, flag.description.str, *flag.cstr_value);
+    } else {
+      printf("%*s-%c, --%.*s - %.*s (%s)\n", depth*4, "", flag.alias, flag.name.len, flag.name.str, flag.description.len, flag.description.str, *flag.is_set ? "ON" : "OFF");
+    }
   }
 
   for (size_t i = 0; i < command_deps[command].len; ++i) {
@@ -631,7 +642,7 @@ static void print_usage(void) {
 #undef X
 }
 
-static bool apply_flag(n_command comm, char alias, bool turn_on, bool visited[n_count]) {
+static bool apply_flag(n_command comm, char alias, bool turn_on, int argc, char** argv, int* i, bool visited[n_count]) {
   if (true == visited[comm]) return false;
   visited[comm] = true;
 
@@ -639,19 +650,26 @@ static bool apply_flag(n_command comm, char alias, bool turn_on, bool visited[n_
   command_flags_t fs = command_flags[comm];
   for (size_t j = 0; j < fs.len; ++j) {
     if (fs.arr[j].alias == alias) {
-      *fs.arr[j].is_set = turn_on;
-      found = true;
-      break;
+      if (fs.arr[j].is_string) {
+        if (*i + 1 >= argc) {
+          LOGE("Value for %c flag is not specified..", alias);
+          print_usage();
+          LOGF("Error while reading comand line arguments.");
+        }
+        *fs.arr[j].cstr_value = argv[++*i]; // TODO: This will fail if there are multiple flags with the same name
+      } else {
+        *fs.arr[j].is_set = turn_on;
+      }
     }
   }
 
-  for (size_t i = 0; i < command_deps[comm].len; ++i) {
-    found |= apply_flag(command_deps[comm].arr[i], alias, turn_on, visited);
+  for (size_t j = 0; j < command_deps[comm].len; ++j) {
+    found |= apply_flag(command_deps[comm].arr[j], alias, turn_on, argc, argv, i, visited);
   }
   return found;
 }
 
-static bool apply_flag1(n_command comm, br_strv_t name, bool turn_on, bool visited[n_count]) {
+static bool apply_flag1(n_command comm, br_strv_t name, bool turn_on, int argc, char** argv, int* i, bool visited[n_count]) {
   if (true == visited[comm]) return false;
   visited[comm] = true;
 
@@ -659,14 +677,23 @@ static bool apply_flag1(n_command comm, br_strv_t name, bool turn_on, bool visit
   command_flags_t fs = command_flags[comm];
   for (size_t j = 0; j < fs.len; ++j) {
     if (br_strv_eq(fs.arr[j].name, name)) {
-      *fs.arr[j].is_set = turn_on;
+      if (fs.arr[j].is_string) {
+        if (*i + 1 >= argc) {
+          LOGE("Value for %.*s flag is not specified..", name.len, name.str);
+          print_usage();
+          LOGF("Error while reading comand line arguments.");
+        }
+        *fs.arr[j].cstr_value = argv[++*i]; // TODO: This will fail if there are multiple flags with the same name
+      } else {
+        *fs.arr[j].is_set = turn_on;
+      }
       found = true;
       break;
     }
   }
 
-  for (size_t i = 0; i < command_deps[comm].len; ++i) {
-    found |= apply_flag1(command_deps[comm].arr[i], name, turn_on, visited);
+  for (size_t j = 0; j < command_deps[comm].len; ++j) {
+    found |= apply_flag1(command_deps[comm].arr[j], name, turn_on, argc, argv, i, visited);
   }
   return found;
 }
@@ -683,7 +710,7 @@ static bool apply_flags(n_command comm, int argc, char** argv) {
         turn_on = false;
         arg_name = br_str_sub1(arg_name, 1);
       }
-      bool found = apply_flag1(comm, arg_name, turn_on, (bool[n_count]) { 0 });
+      bool found = apply_flag1(comm, arg_name, turn_on, argc, argv, &i, (bool[n_count]) { 0 });
       if (false == found) {
         LOGE("Bad flag `%s`", arg);
         print_usage();
@@ -695,7 +722,7 @@ static bool apply_flags(n_command comm, int argc, char** argv) {
       cur = &arg[2];
     }
     while (*cur) {
-      bool found = apply_flag(comm, *cur, turn_on, (bool[n_count]) { 0 });
+      bool found = apply_flag(comm, *cur, turn_on, argc, argv, &i, (bool[n_count]) { 0 });
       if (false == found) {
         LOGE("Bad flag `%s`", arg);
         print_usage();
@@ -976,7 +1003,7 @@ static bool n_amalgam_do(void) {
   const char* output = compiler_single_file_exe(p_native, "tools/create_single_header_lib.c", "bin/cshl");
   if (NULL == output) return false;
 
-  nob_cmd_append(&cmd, output, "include/brplot.h", ".generated/brplot.c");
+  nob_cmd_append(&cmd, output, "include/brplot.h", ".generated/brplot.h");
   if (false == nob_cmd_run_cache(&cmd)) return false;
 
   nob_cmd_append(&cmd, output, "include/brplat.h", ".generated/brplat.h");
@@ -987,6 +1014,71 @@ static bool n_amalgam_do(void) {
 
   nob_cmd_free(cmd);
   return true;
+}
+
+typedef struct {
+  const char* name;
+  int section;
+} doc_file_t;
+
+static doc_file_t g_doc_files[] = {
+  { "brplot", 1 }
+};
+
+static bool n_compress_docs_do(void) {
+  LOGI("Compressing docs");
+
+  Nob_Cmd cmd = { 0 };
+  for (int i = 0; i < sizeof(g_doc_files)/sizeof(g_doc_files[0]); ++i) {
+    nob_cmd_append(&cmd, "gzip");
+    nob_cmd_append(&cmd, "-c");
+    nob_cmd_append(&cmd, nob_temp_sprintf("content/docs/%s.%d.mdoc", g_doc_files[i].name, g_doc_files[i].section));
+    if (false == nob_cmd_run_cache(&cmd, .stdout_path = nob_temp_sprintf(".generated/%s.%d.gz", g_doc_files[i].name, g_doc_files[i].section))) return false;
+  }
+  nob_cmd_free(cmd);
+  LOGI("Everything compressed.");
+  return true;
+}
+
+static bool n_install_do(void) {
+  bool has_docs = n_compress_docs_do();
+  if (false == has_docs) {
+    LOGE("Couldn't compress the man pages. Installing without man pages.. :/");
+  }
+  if (false == n_amalgam_do()) return false;
+  if (false == nob_mkdir_if_not_exists(g_install_prefix)) return false;
+  if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/lib",                   g_install_prefix))) return false;
+  if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/bin",                   g_install_prefix))) return false;
+  if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/include",               g_install_prefix))) return false;
+  if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/share",                 g_install_prefix))) return false;
+  if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/share/licenses",        g_install_prefix))) return false;
+  if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/share/licenses/brplot", g_install_prefix))) return false;
+  if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/share/man1",            g_install_prefix))) has_docs = false;
+  if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/share/man3",            g_install_prefix))) has_docs = false;
+  if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/share/man7",            g_install_prefix))) has_docs = false;
+  is_debug = false;
+  is_slib = false;
+  is_lib = false;
+  if (false == n_compile_do()) return false;
+  is_slib = true;
+  if (false == n_compile_do()) return false;
+  is_slib = false;
+  is_lib = true;
+  if (false == n_compile_do()) return false;
+  if (false == nob_copy_file("bin/brplot" EXE_EXT,      nob_temp_sprintf("%s/bin/brplot"    EXE_EXT,         g_install_prefix))) return false;
+  if (false == nob_copy_file("bin/brplot" SLIB_EXT,     nob_temp_sprintf("%s/lib/libbrplot" SLIB_EXT,        g_install_prefix))) return false;
+  if (false == nob_copy_file("bin/brplot" LIB_EXT,      nob_temp_sprintf("%s/lib/libbrplot" LIB_EXT,         g_install_prefix))) return false;
+  if (false == nob_copy_file(".generated/brplot.h",     nob_temp_sprintf("%s/include/brplot.h",              g_install_prefix))) return false;
+  if (false == nob_copy_file(".generated/brui.h",       nob_temp_sprintf("%s/include/brui.h",                g_install_prefix))) return false;
+  if (false == nob_copy_file(".generated/brplat.h",     nob_temp_sprintf("%s/include/brplat.h",              g_install_prefix))) return false;
+  if (false == nob_copy_file(".generated/FULL_LICENSE", nob_temp_sprintf("%s/share/licenses/brplot/LICENSE", g_install_prefix))) return false;
+  if (has_docs) {
+    for (int i = 0; i < sizeof(g_doc_files)/sizeof(g_doc_files[0]); ++i) {
+      char* infile = strdup(nob_temp_sprintf(".generated/%s.%d.gz", g_doc_files[i].name, g_doc_files[i].section));
+      char* outfile = strdup(nob_temp_sprintf("%s/share/man%d/%s.%d.gz", g_install_prefix, g_doc_files[i].section, g_doc_files[i].name, g_doc_files[i].section));
+      nob_copy_file(infile, outfile);
+    }
+  }
 }
 
 static bool n_help_do(void) {
@@ -1218,24 +1310,13 @@ int main(int argc, char** argv) {
   if (argc == 1) {
     do_command = n_default;
   } else {
-    bool command_found = false;
     for (int i = 1; i < argc; ++i) {
       const char* command = argv[i];
       if (command[0] == '-') continue; // Skip flags
-      if (command_found == true) {
-        LOGE("Unknown command: `%s`", command);
-        print_usage();
-        return 1;
-      }
-#define X(name, desc) if (0 == strcmp(command, #name)) do_command = n_ ## name; else
+#define X(name, desc) if (0 == strcmp(command, #name)) { do_command = n_ ## name; } else
       COMMANDS(X)
 #undef X
-      /* else */ {
-        LOGE("Bad argument: %s", command);
-        print_usage();
-        return 1;
-      }
-      command_found = true;
+      /* else */ {}
     }
   }
   if (false == apply_flags(do_command, argc, argv)) return 1;
