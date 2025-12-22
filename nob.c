@@ -39,6 +39,7 @@
   X(dist, "Create distribution zip") \
   X(publish, "Publish to the things..") \
   X(pip, "Create pip egg") \
+  X(pip_upload, "Upload pip egg") \
   X(aur, "Publish to aur.") \
   X(unittests, "Run unit tests") \
   X(fuzztests, "Run fuzz tests") \
@@ -1132,6 +1133,7 @@ static bool n_publish_do(void) {
   nob_cmd_append(&cmd, "gh", "release", "upload", "v" BR_VERSION_STR, ".generated/brplot-v" BR_VERSION_STR "/include/brplot.h");
   if (false == nob_cmd_run(&cmd)) LOGF("Failed to publish..");
   if (false == n_aur_do()) return false;
+  if (false == n_pip_upload_do()) return false;
   return true;
 }
 
@@ -1160,6 +1162,7 @@ static bool build_no_set(const char* file_name, int build_no) {
   return false;
 }
 
+int g_build_no = 0;
 static bool n_pip_do(void) {
   if (false == pip_skip_build) {
     //is_rebuild = true;
@@ -1175,23 +1178,31 @@ static bool n_pip_do(void) {
     if (false == nob_read_entire_file("packages/pip/pyproject.toml.in", &pytoml)) return false;
     br_str_t out_toml = { .str = pytoml.items, .len = (uint32_t)pytoml.count, .cap = (uint32_t)pytoml.capacity };
     br_str_t build_no_str = { 0 };
-    int build_no = 0;
 
     const char* build_no_file_name = "packages/pip/buildno";
-    build_no_get_next(build_no_file_name, &build_no);
-    br_str_push_int(&build_no_str, build_no);
+    build_no_get_next(build_no_file_name, &g_build_no);
+    br_str_push_int(&build_no_str, g_build_no);
     if (false == br_str_replace_one1(&out_toml, BR_STRL("{VERSION}"), BR_STRL(BR_VERSION_STR))) return false;
     if (false == br_str_replace_one1(&out_toml, BR_STRL("{BUILDNO}"), br_str_as_view(build_no_str))) return false;
     if (false == write_entire_file("packages/pip/pyproject.toml", br_str_as_view(out_toml))) return false;
-    if (false == build_no_set(build_no_file_name, build_no)) return false;
+    if (false == build_no_set(build_no_file_name, g_build_no)) return false;
   }
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "python", "-m", "build", "-s", "packages/pip");
-  return nob_cmd_run_cache(&cmd);
+  return nob_cmd_run(&cmd);
 }
 
 static bool n_pip_upload_do(void) {
-
+  Nob_File_Paths paths = { 0 };
+  if (nob_read_entire_dir("packages/pip/dist", &paths)) {
+    for (int i = 0; i < paths.count; ++i) {
+      nob_delete_file(nob_temp_sprintf("packages/pip/dist/%s", paths.items[i]));
+    }
+  }
+  if (false == n_pip_do()) return false;
+  Nob_Cmd cmd = { 0 };
+  nob_cmd_append(&cmd, "python", "-m", "twine", "upload", "packages/pip/dist/*");
+  return nob_cmd_run(&cmd);
 }
 
 static bool n_aur_do(void) {
