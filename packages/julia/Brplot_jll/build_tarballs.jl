@@ -15,10 +15,10 @@ script = raw"""
 cd $WORKSPACE/srcdir
 
 echo "Target = '$target'"
-AMALGAM="brplot-0.0.4/include/brplot.c" 
+AMALGAM="brplot-0.0.4/include/brplot.h"
 LIBBRPLOT="$libdir/libbrplot.$dlext"
-FLAGS="-O3 -o $LIBBRPLOT -shared -fpie -fPIC -DBRPLOT_IMPLEMENTATION $AMALGAM"
-MAC_FLAGS="-ObjC $FLAGS -lm -framework Foundation -framework CoreServices -framework CoreGraphics -framework AppKit -framework IOKit" 
+FLAGS="-O3 -o $LIBBRPLOT -shared -fpie -fPIC -DBRPLOT_IMPLEMENTATION -x $AMALGAM"
+MAC_FLAGS="-ObjC $FLAGS -lm -framework Foundation -framework CoreServices -framework CoreGraphics -framework AppKit -framework IOKit"
 
 mkdir $libdir
 

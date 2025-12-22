@@ -16,6 +16,6 @@
 /*
 */
 
-// cc -I. -o brploto tools/unity/brplot.c -lm
+// cc -I. -o brploto tools/unity/brplat.c -lm
 
 

@@ -1121,9 +1121,8 @@ static bool n_dist_do(void) {
   if (false == nob_copy_file("bin/brplot" EXE_EXT, PBIN "/brplot" EXE_EXT)) return false;
   if (false == nob_copy_file("bin/brplot" SLIB_EXT, PLIB "/brplot" SLIB_EXT)) return false;
   if (false == nob_copy_file("bin/brplot" LIB_EXT, PLIB "/brplot" LIB_EXT)) return false;
-  if (false == nob_copy_file("include/brplot.h", PINC "/brplot.h")) return false;
   if (false == n_amalgam_do()) return false;
-  if (false == nob_copy_file(".generated/brplot.c", PINC "/brplot.c")) return false;
+  if (false == nob_copy_file(".generated/brplot.h", PINC "/brplot.h")) return false;
   if (false == nob_copy_file(".generated/FULL_LICENSE", PSHARE "/licenses/brplot/LICENSE")) return false;
 
   Nob_Cmd cmd = { 0 };
@@ -1171,7 +1170,7 @@ static bool n_pip_do(void) {
     Nob_String_Builder pytoml = { 0 };
     if (false == nob_copy_file(PSHARE "/licenses/brplot/LICENSE", "packages/pip/LICENSE")) return false;
     if (false == nob_copy_file("README.md", "packages/pip/README.md")) return false;
-    if (false == nob_copy_file(".generated/brplot.c", "packages/pip/src/brplot/brplot.c")) return false;
+    if (false == nob_copy_file(".generated/brplot.h", "packages/pip/src/brplot/brplot.h")) return false;
     if (false == nob_read_entire_file("packages/pip/pyproject.toml.in", &pytoml)) return false;
     br_str_t out_toml = { .str = pytoml.items, .len = (uint32_t)pytoml.count, .cap = (uint32_t)pytoml.capacity };
     br_str_t build_no_str = { 0 };

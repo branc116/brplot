@@ -184,7 +184,7 @@ int main(void) {
 ```c
 /* Animated plots */
 #define BRPLOT_IMPLEMENTATION
-#include "brplot.c"
+#include "brplot.h"
 
 int main(void) {
   br_data_id circle = 2, standing_wave = 3;

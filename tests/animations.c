@@ -1,4 +1,4 @@
-#include <brplot.c>
+#include <brplot.h>
 #include <math.h>
 
 int main(void) {

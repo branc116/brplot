@@ -21,7 +21,7 @@ dependencies = ["setuptools", "wheel"]
 where = ["src"]
 
 [tool.setuptools.package-data]
-brplot = ["brplot.c"]
+brplot = ["brplot.h"]
 
 [project.urls]
 Homepage = "https://github.com/branc116/brplot"

@@ -247,14 +247,6 @@ bin/pack_icons: tools/pack_icons.c $(NOBS)
 bin/gl_gen: tools/gl_gen.c $(NOBS)
 	$(NATIVE_CC) -I. -O0 -ggdb -g3 -o bin/gl_gen tools/gl_gen.c
 
-.generated/brplot.c: bin/cshl
-	./bin/cshl
--include .generated/brplot.c.d
-
-bin/cshl: tools/create_single_header_lib.c
-	$(NATIVE_CC) -I. -O3 -o bin/cshl  tools/create_single_header_lib.c
-
-
 .PHONY: bench
 bench: bin/bench
 	date >> bench.txt

@@ -1247,8 +1247,8 @@ void brpl_glfw_window_close(brpl_window_t* window) {
   BR_TODO("brpl_glfw_window_close");
 }
 
-// /usr/include/GLFW/glfw3.h
 static bool brpl_glfw_load(brpl_window_t* win) {
+// /usr/include/GLFW/glfw3.h
   bool ok = br_glfw_load();
   win->f.frame_start = brpl_glfw_frame_start;
   win->f.frame_end   = brpl_glfw_frame_end;
