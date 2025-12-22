@@ -103,4 +103,4 @@ jobs:
         run: |
           call "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
           nobcl.exe amalgam
-          cl.exe /DBRPLOT_APP /Fe:brplot.exe /Tc:.generated/brplot.h
+          cl.exe /DBRPLOT_APP /Fe:brplot.exe /Tc .generated/brplot.h

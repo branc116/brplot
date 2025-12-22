@@ -175,6 +175,7 @@ static bool is_fatal_error = false;
 static bool is_tracy = false;
 static bool is_pg = false;
 static bool is_help_subcommands = false;
+static bool is_ignore_dirty = false;
 static const char* g_install_prefix = NULL;
 
 #define X(name, desc) [n_ ## name] = { 0 },
@@ -213,6 +214,7 @@ static void fill_command_flag_data(void) {
   command_flag_t pip_skip_build_flag = (command_flag_t) {.name = BR_STRL("skip-build"), .alias = '\0', .description = BR_STRL("Don't do anything except call pip to create a package"),                                          .is_set = &pip_skip_build};
   command_flag_t unittest_no_gen     = (command_flag_t) {.name = BR_STRL("no-gen"),     .alias = 'n',  .description = BR_STRL("Don't generate files when running unittests"),                                                    .is_set = &no_gen};
   command_flag_t build_no_gen        = (command_flag_t) {.name = BR_STRL("no-gen"),     .alias = '\0', .description = BR_STRL("Don't generate files whild building"),                                                            .is_set = &no_gen};
+  command_flag_t ignore_dirty        = (command_flag_t) {.name = BR_STRL("ignore-dirty"),.alias = '\0', .description = BR_STRL("Don't stop if the repo is dirty."),                                                              .is_set = &is_ignore_dirty};
   g_install_prefix = "/usr";
   command_flag_t install_prefix      = (command_flag_t) {.name = BR_STRL("prefix"),     .alias = '\0', .description = BR_STRL("Where to install the files"),                                                                     .is_string = true, .cstr_value = &g_install_prefix};
   br_da_push(command_flags[n_compile], debug_flag);
@@ -236,6 +238,7 @@ static void fill_command_flag_data(void) {
   br_da_push(command_flags[n_unittests], unittest_no_gen);
   br_da_push(command_flags[n_build], build_no_gen);
   br_da_push(command_flags[n_install], install_prefix);
+  br_da_push(command_flags[n_publish], ignore_dirty);
 
   br_da_push(command_deps[n_debug], n_build);
   br_da_push(command_deps[n_cdebug], n_compile);
@@ -1105,8 +1108,8 @@ static bool n_dist_do(void) {
   g_install_prefix = ".generated/brplot-v"BR_VERSION_STR;
   n_install_do();
   Nob_Cmd cmd = { 0 };
-  nob_cmd_append(&cmd, "tar", "czf", "brplot-v" BR_VERSION_STR ".tar.gz", "-C", ".generated", "brplot-v" BR_VERSION_STR);
-  if (false == nob_cmd_run_cache(&cmd)) return false;
+  nob_cmd_append(&cmd, "tar", "czf", ".generated/brplot-v" BR_VERSION_STR ".tar.gz", "-C", ".generated", "brplot-v" BR_VERSION_STR);
+  if (false == nob_cmd_run(&cmd)) return false;
   nob_cmd_free(cmd);
   return true;
 }
@@ -1116,9 +1119,10 @@ static bool n_publish_do(void) {
   if (false == n_dist_do()) return false;
   Nob_Cmd cmd = { 0 };
   nob_cmd_append(&cmd, "./tools/is_clean.sh");
-  if (false == nob_cmd_run(&cmd)) LOGF("Can't publish because the repo is not clean.");
+  if (false == nob_cmd_run(&cmd) && false == is_ignore_dirty) LOGF("Can't publish because the repo is not clean.");
   nob_cmd_append(&cmd, "git", "tag", "v" BR_VERSION_STR);
   if (false == nob_cmd_run(&cmd)) LOGF("Can't publish because the version v" BR_VERSION_STR " is already publish. Increment the version in include/brplot.h:48");
+  return true;
 }
 
 static bool build_no_get_next(const char* file_name, int* build_no) {
