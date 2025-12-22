@@ -1059,9 +1059,10 @@ static bool n_install_do(void) {
   if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/share",                 g_install_prefix))) return false;
   if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/share/licenses",        g_install_prefix))) return false;
   if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/share/licenses/brplot", g_install_prefix))) return false;
-  if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/share/man1",            g_install_prefix))) has_docs = false;
-  if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/share/man3",            g_install_prefix))) has_docs = false;
-  if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/share/man7",            g_install_prefix))) has_docs = false;
+  if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/share/man",             g_install_prefix))) has_docs = false;
+  if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/share/man/man1",        g_install_prefix))) has_docs = false;
+  if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/share/man/man3",        g_install_prefix))) has_docs = false;
+  if (false == nob_mkdir_if_not_exists(nob_temp_sprintf("%s/share/man/man7",        g_install_prefix))) has_docs = false;
   is_debug = false;
   is_slib = false;
   is_lib = false;
@@ -1081,7 +1082,7 @@ static bool n_install_do(void) {
   if (has_docs) {
     for (int i = 0; i < sizeof(g_doc_files)/sizeof(g_doc_files[0]); ++i) {
       char* infile = strdup(nob_temp_sprintf(".generated/%s.%d.gz", g_doc_files[i].name, g_doc_files[i].section));
-      char* outfile = strdup(nob_temp_sprintf("%s/share/man%d/%s.%d.gz", g_install_prefix, g_doc_files[i].section, g_doc_files[i].name, g_doc_files[i].section));
+      char* outfile = strdup(nob_temp_sprintf("%s/share/man/man%d/%s.%d.gz", g_install_prefix, g_doc_files[i].section, g_doc_files[i].name, g_doc_files[i].section));
       nob_copy_file(infile, outfile);
     }
   }
@@ -1126,7 +1127,7 @@ static bool n_publish_do(void) {
   if (false == nob_cmd_run(&cmd) && false == is_ignore_dirty) LOGF("Can't publish because the repo is not clean.");
   nob_cmd_append(&cmd, "git", "tag", "v" BR_VERSION_STR);
   if (false == nob_cmd_run(&cmd)) LOGF("Can't publish because the version v" BR_VERSION_STR " is already publish. Increment the version in include/brplot.h:48");
-  nob_cmd_append(&cmd, "gh", "release", "create", "v" BR_VERSION_STR, "--target", "master", "--notes", "Bump.", "--generate-notes");
+  nob_cmd_append(&cmd, "gh", "release", "create", "v" BR_VERSION_STR, "--target", "master", "--notes", "Bump.", "--generate-notes", ".generated/brplot-v" BR_VERSION_STR ".tar.gz");
   if (false == nob_cmd_run(&cmd)) LOGF("Failed to publish..");
   nob_cmd_append(&cmd, "gh", "release", "upload", "v" BR_VERSION_STR, ".generated/brplot-v" BR_VERSION_STR "/include/brplot.h");
   if (false == nob_cmd_run(&cmd)) LOGF("Failed to publish..");
@@ -1189,6 +1190,10 @@ static bool n_pip_do(void) {
   return nob_cmd_run_cache(&cmd);
 }
 
+static bool n_pip_upload_do(void) {
+
+}
+
 static bool n_aur_do(void) {
   Nob_Cmd cmd = { 0 };
   Nob_String_Builder aur = { 0 };
@@ -1202,43 +1207,44 @@ static bool n_aur_do(void) {
   if (false == br_str_replace_one1(&aur_br_str, BR_STRL("{VERSION}"), BR_STRL(BR_VERSION_STR))) return false;
   if (false == br_str_replace_one1(&aur_br_str, BR_STRL("{HASH}"), br_str_as_view(hash))) return false;
 
-  nob_cmd_append(&cmd, "git", "clone", "ssh://aur@aur.archlinux.org/brplot-git.git", "--", "packages/aur/brplot-git");
+  nob_set_current_dir("packages/aur/brplot-git");
+  nob_cmd_append(&cmd, "git", "clone", "ssh://aur@aur.archlinux.org/brplot-git.git");
   nob_cmd_run(&cmd);
-  nob_cmd_append(&cmd, "git", "pull", "ssh://aur@aur.archlinux.org/brplot-git.git", "--", "packages/aur/brplot-git");
+  nob_cmd_append(&cmd, "git", "pull", "ssh://aur@aur.archlinux.org/brplot-git.git");
   nob_cmd_run(&cmd);
-  if (false == nob_write_entire_file("packages/aur/brplot-git/PKGBUILD", aur_br_str.str, aur_br_str.len)) return false;
+  if (false == nob_write_entire_file("PKGBUILD", aur_br_str.str, aur_br_str.len)) return false;
 
   Nob_File_Paths children = { 0 };
-  nob_read_entire_dir("packages/aur/brplot-git", &children);
+  nob_read_entire_dir(".", &children);
   for (int i = 0; i < children.count; ++i) {
     if (NULL != strstr(children.items[i], ".zst")) {
-      nob_delete_file(nob_temp_sprintf("packages/aur/brplot-git/%s", children.items[i]));
+      nob_delete_file(children.items[i]);
     }
   }
   nob_da_free(children);
 
-  nob_cmd_append(&cmd, "namcap", "packages/aur/brplot-git/PKGBUILD");
+  nob_cmd_append(&cmd, "namcap", "PKGBUILD");
   if (false == nob_cmd_run(&cmd)) return false;
 
-  nob_cmd_append(&cmd, "makepkg", "-D", "packages/aur/brplot-git", "-si");
-  if (false == nob_cmd_run(&cmd)) return false;
-  return false;
-
-  nob_cmd_append(&cmd, "namcap", "packages/aur/brplot-git/*.zst");
+  nob_cmd_append(&cmd, "makepkg", "-si");
   if (false == nob_cmd_run(&cmd)) return false;
 
-  nob_cmd_append(&cmd, "makepkg", "-D", "packages/aur/brplot-git/", "--printsrcinfo");
-  if (false == nob_cmd_run(&cmd, .stdout_path = "packages/aur/brplot-git/.SRCINFO")) return false;
-
-  nob_cmd_append(&cmd, "git", "add", "PKGBUILD", ".SRCINFO", "--",  "packages/aur/brplot-git/");
+  nob_cmd_append(&cmd, "namcap", "*.zst");
   if (false == nob_cmd_run(&cmd)) return false;
 
-  nob_cmd_append(&cmd, "git", "commit", "-m", "Vesion bump.", "--",  "packages/aur/brplot-git/");
+  nob_cmd_append(&cmd, "makepkg", "--printsrcinfo");
+  if (false == nob_cmd_run(&cmd, .stdout_path = ".SRCINFO")) return false;
+
+  nob_cmd_append(&cmd, "git", "add", "PKGBUILD", ".SRCINFO");
   if (false == nob_cmd_run(&cmd)) return false;
 
-  nob_cmd_append(&cmd, "git", "push", "origin", "master", "--",  "packages/aur/brplot-git/");
+  nob_cmd_append(&cmd, "git", "commit", "-m", "Vesion bump.");
   if (false == nob_cmd_run(&cmd)) return false;
 
+  nob_cmd_append(&cmd, "git", "push", "origin", "master");
+  if (false == nob_cmd_run(&cmd)) return false;
+
+  nob_set_current_dir("../../..");
   return true;
 }
 
