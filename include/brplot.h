@@ -109,8 +109,6 @@ BR_EXPORT void brp_wait(void);
   }; \
 } name
 
-
-
 typedef struct br_plotter_t br_plotter_t;
 typedef int br_plot_id;
 

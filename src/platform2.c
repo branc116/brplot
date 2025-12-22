@@ -831,7 +831,6 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
       };
     } break;
     case brpl_x11_PropertyNotify: {
-      LOGI("Prop %lu changed: %d", event.xproperty.generic.atom, event.xproperty.state);
       return (brpl_event_t) { .kind = brpl_event_nop };
     } break;
     case brpl_x11_Expose: {

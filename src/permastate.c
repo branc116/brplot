@@ -252,7 +252,6 @@ bool br_permastate_load_plotter(BR_FILE* file, br_plotter_t* br, br_data_descs_t
   if (datas_len < 0)                                                             BR_ERROR("datas_len is < 0");
   desc->len = (size_t)datas_len;
   if (datas_len > 0) {
-    LOGI("datas_len: %d", datas_len);
     br_da_reserve(*desc, desc->len);
     if (NULL == desc->arr)                                                       BR_ERROR("Failed to allocate data info array.");
     if (desc->len != BR_FREAD(desc->arr, sizeof(desc->arr[0]), desc->len, file)) BR_ERROR("Failed to read datas info");
