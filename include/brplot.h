@@ -45,7 +45,7 @@ int main(void) {
 
 #define BR_MAJOR_VERSION 0
 #define BR_MINOR_VERSION 0
-#define BR_PATCH_VERSION 11
+#define BR_PATCH_VERSION 12
 
 #if !defined(BR_EXPORT)
 #  if defined(__EMSCRIPTEN__)
