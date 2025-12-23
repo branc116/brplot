@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RPN Calculator</title>
+<style>
+  body {
+    margin: 0px;
+    padding: 0px;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+  }
+</style>
+</head>
+<body>
+  <canvas id="canv" width="800" height="800"></canvas>
+  <script type="module">
+    import { Brplot } from "./rpn_calculator.js"
+    const br = new Brplot("canv");
+    await br.initializeAsync();
+    br.startDrawing();
+  </script>
+</body>
