@@ -1199,6 +1199,7 @@ static bool n_npm_upload_do(void) {
   bool old_is_lib = is_lib;
   is_wasm = true;
   is_lib = true;
+  is_headless = false;
   if (false == n_build_do()) return false;
   if (false == nob_copy_file("bin/brplot.js", "packages/npm/brplot.js")) return false;
   if (false == nob_copy_file("bin/brplot.wasm", "packages/npm/brplot.wasm")) return false;
