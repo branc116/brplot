@@ -32,7 +32,7 @@ typedef struct br_lines_t {
 static BR_THREAD_LOCAL br_lines_t br_log_lines;
 
 static void draw_left_panel(br_plotter_t* br);
-static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_datas_t datas);
+static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_anims_t* anims, br_datas_t datas);
 static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas, br_theme_t* theme, br_plotter_t* br);
 static void brgui_draw_debug_window(br_plotter_t* br);
 static void brgui_draw_license(br_plotter_t* br);
@@ -101,7 +101,7 @@ void br_plotter_draw(br_plotter_t* br) {
         if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
           brui_resizable_push(PLOT->extent_handle);
             brui_img(PLOT->texture_id);
-            if (brgui_draw_plot_menu(&br->uiw.sp, PLOT, br->groups)) to_remove = i;
+            if (brgui_draw_plot_menu(&br->uiw.sp, PLOT, &br->uiw.anims, br->groups)) to_remove = i;
             brgui_draw_legend(PLOT, br->groups, &br->uiw.theme, br);
             if (PLOT->kind == br_plot_kind_2d) {
               br_vec2d_t v = br_plot2d_to_plot(PLOT, br->uiw.mouse.pos, ex);
@@ -799,7 +799,7 @@ void brgui_draw_add_expression(br_plotter_t* br) {
   }
 }
 
-static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_datas_t datas) {
+static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_anims_t* anims, br_datas_t datas) {
   int og_text_size = brui_text_size();
   int icon_size = og_text_size;
   bool ret = false;
@@ -856,6 +856,10 @@ static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_datas_t datas) 
         brui_sliderf2(BR_STRL("Fov"), &plot->ddd.fov_y);
         brui_sliderf2(BR_STRL("Far"), &plot->ddd.far_plane);
         brui_sliderf2(BR_STRL("Near"), &plot->ddd.near_plane);
+        br_vec3_t eye_c = br_anim3(anims,  plot->ddd.eye_ah);
+        br_vec3_t eye_t = br_anim3_get_target(anims,  plot->ddd.eye_ah);
+        brui_textf("eye_c: %f %f %f", BR_VEC3_(eye_c));
+        brui_textf("eye_t: %f %f %f", BR_VEC3_(eye_t));
       }
     brui_resizable_pop();
   }

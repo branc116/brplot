@@ -162,6 +162,7 @@ struct {
       "void glfwSwapBuffers(GLFWwindowp win)"
       "GLFWwindowp glfwCreateWindow(int width, int height, const char* title, void* bs1, void* bs2)"
       "GLFWerrorfun glfwSetErrorCallback(GLFWerrorfun callback)"
+      "void glfwGetWindowContentScale(GLFWwindowp window, float* x, float* y)"
       "void glfwMakeContextCurrent(GLFWwindowp window)"
       "void glfwSetWindowSize(GLFWwindowp glfw, int width, int height)"
       "void glfwPollEvents(void)"

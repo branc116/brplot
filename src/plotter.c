@@ -415,9 +415,10 @@ void br_plotter_update(br_plotter_t* br) {
           br_plot_t* plot = br_da_getp(br->plots, br->hovered.plot_id);
           br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
           if (br->uiw.touch_points.free_len == 1) {
-              br_vec2_t delta = br_vec2_sub(ev.touch.pos, tpp->pos);
-              br_plot2d_move_screen_space(plot, delta, ex.size);
-              tpp->pos = ev.touch.pos;
+            br_vec2_t delta = br_vec2_sub(ev.touch.pos, tpp->pos);
+            br_plot2d_move_screen_space(plot, delta, ex.size);
+            tpp->pos = ev.touch.pos;
+            plot->follow = false;
           } else if (br->uiw.touch_points.free_len == 2) {
             brpl_touch_point_t* other = NULL;
             brfl_foreach(i, br->uiw.touch_points) {
@@ -438,6 +439,7 @@ void br_plotter_update(br_plotter_t* br) {
               float zoom = old_len/new_len;
               br_vec2d_t z = br_anim2d_get_target(anims, plot->dd.zoom_ah);
               br_anim2d_set(anims, plot->dd.zoom_ah, br_vec2d_scale(z, zoom));
+              plot->follow = false;
             }
             // Handle offset
             {
@@ -447,6 +449,7 @@ void br_plotter_update(br_plotter_t* br) {
               br_vec2d_t delta = br_vec2d_sub(middle_new, middle_old);
               br_vec2d_t new_offset = br_vec2d_sub(br_anim2d_get_target(anims, plot->dd.offset_ah), delta);
               br_anim2d_set(anims, plot->dd.offset_ah, new_offset);
+              plot->follow = false;
             }
             tpp->pos = ev.touch.pos;
           }

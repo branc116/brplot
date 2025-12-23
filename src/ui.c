@@ -364,6 +364,9 @@ brpl_event_t brui_event_next(brui_window_t* uiw) {
         if (tp.id != ev.touch.id) continue;
         tpp = &uiw->touch_points.arr[i];
       }
+      if (uiw->touch_points.free_len == 0) {
+        uiw->touch_points.last_free_time = uiw->time.now;
+      }
       if (tpp == NULL) (void)brfl_push(uiw->touch_points, ev.touch);
     } break;
     case brpl_event_touch_update: {
@@ -382,15 +385,15 @@ brpl_event_t brui_event_next(brui_window_t* uiw) {
       if (to_remove >= 0) {
         brpl_touch_point_t point = br_da_get(uiw->touch_points, to_remove);
         brfl_remove(uiw->touch_points, to_remove);
-        double diff = uiw->time.now - uiw->touch_points.last_free_time;
         if (uiw->touch_points.free_len == 0) {
+          double diff = uiw->time.now - uiw->touch_points.last_free_time;
           if (diff < 0.5) {
             uiw->mouse.pos = ev.pos;
+            uiw->mouse.click = true;
             brui_resizable_mouse_move(&uiw->resizables, point.pos);
             brui_resizable_mouse_pressl(&uiw->resizables, point.pos, uiw->key.ctrl_down);
             brui_resizable_mouse_releasel(&uiw->resizables, point.pos);
           }
-          uiw->touch_points.last_free_time = uiw->time.now;
         }
       }
     } break;
@@ -1033,6 +1036,62 @@ void brui_vsplit(int n) {
     new_el.vsplit_max_height = 0;
     new_el.content_height = 0;
     br_da_push(brui_state, new_el);
+  }
+}
+
+void brui_vsplitarr(int n, brui_split_t* splits) {
+  float absolute = 0;
+  float relative = 0;
+
+  for (int i = 0; i < n; ++i) {
+    brui_split_t t = splits[i];
+    switch (t.kind) {
+      case brui_split_absolute: absolute += t.absolute; break;
+      case brui_split_relative: relative += t.relative; break;
+      default: BR_UNREACHABLE("kind: %d", t.kind);
+    }
+  }
+
+  float off = TOP.cur.x - (TOP.limit.min_x + TOP.psum.x);
+  float space_left = BR_BBW(TOP.limit) - off - TOP.psum.x * 2;
+  float space_after_abs = space_left - absolute;
+  if (space_after_abs < 0) {
+    brui_vsplit(n);
+    return;
+  }
+
+  brui_stack_el_t top = TOP;
+  top.z += 5;
+  top.psum.x = 0;
+  top.hide_border = true;
+  top.vsplit_max_height = 0;
+  top.content_height = 0;
+  float cur_x = TOP.cur.x;
+  for (int i = 0; i < n; ++i) {
+    brui_stack_el_t new_el = top;
+    brui_split_t t = splits[i];
+    float width = 0;
+    switch (t.kind) {
+      case brui_split_relative: width = space_after_abs * (t.relative / relative); break;
+      case brui_split_absolute: width = t.absolute; break;
+      default: BR_UNREACHABLE("kind: %d", t.kind);
+    }
+    new_el.limit.min_x = cur_x;
+    new_el.limit.max_x = new_el.limit.min_x + width;
+    new_el.cur.x = new_el.limit.min.x;
+    cur_x += width;
+    br_da_push(brui_state, new_el);
+  }
+  
+  { // REVERSE
+    size_t start = brui_state.len - (size_t)n, end = brui_state.len - 1;
+    while (start < end) {
+      brui_stack_el_t tmp = br_da_get(brui_state, start);
+      br_da_set(brui_state, start, br_da_get(brui_state, end));
+      br_da_set(brui_state, end, tmp);
+      start += 1;
+      end -= 1;
+    }
   }
 }
 

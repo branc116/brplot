@@ -9,8 +9,25 @@ typedef void* voidp;
 #  define BR_WANTS_GL 1
 #endif
 
+
 #if BR_WANTS_GL
 #  include "src/br_gl.h"
+#endif
+
+#if defined(BR_HAS_GLFW)
+#  define BR_WANTS_GLFW 1
+   typedef struct GLFWwindow GLFWwindow;
+   typedef GLFWwindow* GLFWwindowp;
+   typedef void (* GLFWerrorfun)(int error_code, const char* description);
+   typedef void (* GLFWwindowsizefun)(GLFWwindow* window, int width, int height);
+   typedef void (* GLFWwindowclosefun)(GLFWwindow* window);
+   typedef void (* GLFWwindowfocusfun)(GLFWwindow* window, int focused);
+   typedef void (* GLFWwindowcontentscalefun)(GLFWwindow* window, float xscale, float yscale);
+   typedef void (* GLFWmousebuttonfun)(GLFWwindow* window, int button, int action, int mods);
+   typedef void (* GLFWcursorposfun)(GLFWwindow* window, double xpos, double ypos);
+   typedef void (* GLFWscrollfun)(GLFWwindow* window, double xoffset, double yoffset);
+   typedef void (* GLFWkeyfun)(GLFWwindow* window, int key, int scancode, int action, int mods);
+   typedef void (* GLFWcharfun)(GLFWwindow* window, unsigned int codepoint);
 #endif
 
 #if defined(_WIN32)

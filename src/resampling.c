@@ -489,6 +489,7 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
 
           br_resampling.shaders->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
           br_extentd_t plot_rect = br_plot2d_extent_to_plot(*plot, extent);
+          plot_rect.pos = br_vec2d_sub(plot_rect.pos, BR_VEC2D(pg->dd.rebase_x, pg->dd.rebase_y));
 
           br_resampling_draw22(&res->dd, 0, pg, BR_EXTENTD_TOF(plot_rect));
           br_line_culler_end(&res->culler);

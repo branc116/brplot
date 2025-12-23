@@ -26,6 +26,7 @@ bool brui_sliderf2(br_strv_t text, float* value);
 bool brui_sliderf3(br_strv_t text, float* value, int percision);
 bool brui_slideri(br_strv_t text, int* value);
 void brui_vsplit(int n);
+void brui_vsplitarr(int n, brui_split_t* arr);
 void brui_vsplitvp(int n, ...);
 void brui_vsplit_pop(void);
 void brui_vsplit_end(void);

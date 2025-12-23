@@ -1,5 +1,4 @@
 #version 330
-
 precision mediump float;
 
 in vec4 pos;

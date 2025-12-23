@@ -88,7 +88,7 @@ int br_animf_new(br_anims_t* anims, float current, float target) {
 
 int br_anim2d_new(br_anims_t* anims, br_vec2d_t current, br_vec2d_t target) {
   br_anim_t anim = { .kind = br_anim_vec2d, .vec2d = {.current = current, .target = target } };
-  anim.is_alive = br_vec2d_dist2(current, target) <= 1e-8;
+  anim.is_alive = br_vec2d_dist2(current, target) >= 1e-8;
   int handle = brfl_push(anims->all, anim);
   if (anim.is_alive) {
     brfl_push(anims->alive, handle);
@@ -108,7 +108,7 @@ int br_animex_new(br_anims_t* anims, br_extent_t current, br_extent_t target) {
 
 int br_anim3_new(br_anims_t* anims, br_vec3_t current, br_vec3_t target) {
   br_anim_t anim = { .kind = br_anim_vec3, .vec3 = {.current = current, .target = target, .slerp_origin = -1 } };
-  anim.is_alive = br_vec3_dist2(current, target) <= 1e-8;
+  anim.is_alive = br_vec3_dist2(current, target) >= 1e-8;
   int handle = brfl_push(anims->all, anim);
   if (anim.is_alive) {
     brfl_push(anims->alive, handle);

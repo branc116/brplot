@@ -241,7 +241,7 @@ void embed_tokens(FILE* out, br_str_t name, br_str_t name_postfix, tokens_t toke
       fprintf(out, "#define BR_CULL\\n");
     } break;
     case shader_output_kind_web: {
-      fprintf(out, "#version 300 es\\n");
+      fprintf(out, "#version 330 es\\n");
       fprintf(out, "#ifdef GL_ANGLE_clip_cull_distance\\n");
       fprintf(out, "#  define BR_CULL\\n");
       fprintf(out, "#endif\\n");
