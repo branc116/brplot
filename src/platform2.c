@@ -143,18 +143,8 @@ typedef struct {
 typedef struct {
   int            type;       /* of event. Always GenericEvent */
   unsigned long  serial;     /* # of last request processed */
-  brpl_x11_Bool           send_event; /* true if from SendEvent request */
-  brpl_x11_Display        *display;   /* brpl_x11_Display the event was read from */
-  union {
-    int    extension; /* major opcode of extension that caused the event */
-    brpl_x11_Window window;    /* "event" window it is reported relative to */
-  };
-  union {
-    int    evtype;       /* actual event type. */
-    brpl_x11_Window root;         /* root window that the event occurred on */
-    brpl_x11_Atom   atom;
-    brpl_x11_Atom   message_type;
-  };
+  brpl_x11_Bool    send_event; /* true if from SendEvent request */
+  brpl_x11_Display *display;   /* brpl_x11_Display the event was read from */
 } brpl_x11_XGenericEvent;
 
 typedef struct {
@@ -225,6 +215,7 @@ typedef struct {
 
 typedef struct {
   brpl_x11_XGenericEvent generic;
+  int extension, evtype;
   brpl_x11_Time   time;
   int    deviceid, sourceid, detail;
   brpl_x11_Window root, event, child;
@@ -239,6 +230,8 @@ typedef struct {
 
 typedef struct {
   brpl_x11_XGenericEvent generic;
+  brpl_x11_Window window;          /* "event" window it is reported relative to */
+  brpl_x11_Window root;          /* root window that the event occurred on */
   brpl_x11_Window subwindow;  /* child window */
   brpl_x11_Time time;    /* milliseconds */
   int x, y;    /* pointer x, y coordinates in event window */
@@ -252,6 +245,8 @@ typedef brpl_x11_XKeyEvent brpl_x11_XKeyPressedEvent;
 
 typedef struct {
   brpl_x11_XGenericEvent generic;
+  brpl_x11_Window window;          /* "event" window it is reported relative to */
+  brpl_x11_Window root;          /* root window that the event occurred on */
   brpl_x11_Window subwindow;  /* child window */
   brpl_x11_Time time;    /* milliseconds */
   int x, y;    /* pointer x, y coordinates in event window */
@@ -263,6 +258,8 @@ typedef struct {
 
 typedef struct {
   brpl_x11_XGenericEvent generic;
+  brpl_x11_Window window;          /* "event" window reported relative to */
+  brpl_x11_Window root;          /* root window that the event occurred on */
   brpl_x11_Window subwindow;  /* child window */
   brpl_x11_Time time;    /* milliseconds */
   int x, y;    /* pointer x, y coordinates in event window */
@@ -274,6 +271,8 @@ typedef struct {
 
 typedef struct {
   brpl_x11_XGenericEvent generic;
+  brpl_x11_Window event;
+  brpl_x11_Window window;
   int x, y;
   int width, height;
   int border_width;
@@ -283,18 +282,23 @@ typedef struct {
 
 typedef struct {
   brpl_x11_XGenericEvent generic;
+  brpl_x11_Window window;
+  brpl_x11_Atom atom;
   brpl_x11_Time time;
   int state;    /* NewValue, Deleted */
 } brpl_x11_XPropertyEvent;
 
 typedef struct {
   brpl_x11_XGenericEvent generic;
+  brpl_x11_Window window;
+  brpl_x11_Atom message_type;
   int format;
   long msg;
 } brpl_x11_XClientMessageEvent;
 
 typedef struct {
   brpl_x11_XGenericEvent generic;
+  int            extension, evtype;
   unsigned int   cookie;
   void           *data;
 } brpl_x11_XGenericEventCookie;
@@ -529,11 +533,11 @@ start:
     case brpl_event_key_press: { LOGI("brpl_event_key_press"); } break;
     case brpl_event_key_release: { LOGI("brpl_event_key_release"); } break;
     case brpl_event_input: { LOGI("brpl_event_input"); } break;
-    case brpl_event_mouse_move: { LOGI("brpl_event_mouse_move"); } break;
+    case brpl_event_mouse_move: { LOGI("brpl_event_mouse_move %f %f", ev.pos.x, ev.pos.y); } break;
     case brpl_event_mouse_scroll: { LOGI("brpl_event_mouse_scroll"); } break;
     case brpl_event_mouse_press: { LOGI("brpl_event_mouse_press"); } break;
     case brpl_event_mouse_release: { LOGI("brpl_event_mouse_release"); } break;
-    case brpl_event_window_resize: { LOGI("brpl_event_window_resize"); } break;
+    case brpl_event_window_resize: { LOGI("brpl_event_window_resize %f %f", ev.size.width, ev.size.height); } break;
     case brpl_event_window_shown: { LOGI("brpl_event_window_shown"); } break;
     case brpl_event_window_hidden: { LOGI("brpl_event_window_hidden"); } break;
     case brpl_event_window_focused: { LOGI("brpl_event_window_focused"); } break;
@@ -628,7 +632,7 @@ void* brpl_load_gl(void* module, const char* func_name) {
 void brpl_q_push(brpl_q_t* q, brpl_event_t event) {
   int index = q->write_index;
   q->events[index] = event;
-  static_assert(sizeof(q->events) / sizeof(q->events[0]) == 1024, "events queue must be 1024 or changed the bit patter on the nextline");
+  //_Static_Assert(sizeof(q->events) / sizeof(q->events[0]) == 1024, "events queue must be 1024 or changed the bit patter on the nextline");
   int next_index = (index + 1) & 0x2FF;
   BR_ASSERT(next_index != q->read_index);
   q->write_index = next_index;
@@ -638,7 +642,7 @@ brpl_event_t brpl_q_pop(brpl_q_t* q) {
   if (q->read_index == q->write_index) return (brpl_event_t) { .kind = brpl_event_none };
   int index = q->read_index;
   brpl_event_t ret = q->events[index];
-  static_assert(sizeof(q->events) / sizeof(q->events[0]) == 1024, "events queue must be 1024 or changed the bit patter on the next line");
+  //_Static_Assert(sizeof(q->events) / sizeof(q->events[0]) == 1024, "events queue must be 1024 or changed the bit patter on the next line");
   q->read_index = (index + 1) & 0x2FF;
   return ret;
 }
@@ -699,26 +703,27 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
   brpl_x11_XEvent event;
   brpl_x11_XNextEvent(d, &event);
 
-  if (w->xi_opcode == event.xcookie.generic.extension) {
-    brpl_x11_XGetEventData(w->display, &event.xcookie);
-    brpl_x11_XIDeviceEvent* de = (brpl_x11_XIDeviceEvent*)event.xcookie.data;
+  if (w->xi_opcode == event.xcookie.extension) {
     brpl_event_t e = { .kind = brpl_event_nop };
-    switch (event.xcookie.generic.evtype) {
-      case brpl_x11_XI_TouchBegin: {
-        e.kind = brpl_event_touch_begin;
-        e.touch.id = de->detail;
-        e.touch.pos = BR_VEC2((float)de->event_x, (float)de->event_y);
-      } break;
-      case brpl_x11_XI_TouchUpdate: {
-        e.kind = brpl_event_touch_update;
-        e.touch.id = de->detail;
-        e.touch.pos = BR_VEC2((float)de->event_x, (float)de->event_y);
-      } break;
-      case brpl_x11_XI_TouchEnd: {
-        e.kind = brpl_event_touch_end;
-        e.touch.id = de->detail;
-        e.touch.pos = BR_VEC2((float)de->event_x, (float)de->event_y);
-      } break;
+    if (brpl_x11_XGetEventData(w->display, &event.xcookie)) {
+      brpl_x11_XIDeviceEvent* de = (brpl_x11_XIDeviceEvent*)event.xcookie.data;
+      switch (event.xcookie.evtype) {
+        case brpl_x11_XI_TouchBegin: {
+          e.kind = brpl_event_touch_begin;
+          e.touch.id = de->detail;
+          e.touch.pos = BR_VEC2((float)de->event_x, (float)de->event_y);
+        } break;
+        case brpl_x11_XI_TouchUpdate: {
+          e.kind = brpl_event_touch_update;
+          e.touch.id = de->detail;
+          e.touch.pos = BR_VEC2((float)de->event_x, (float)de->event_y);
+        } break;
+        case brpl_x11_XI_TouchEnd: {
+          e.kind = brpl_event_touch_end;
+          e.touch.id = de->detail;
+          e.touch.pos = BR_VEC2((float)de->event_x, (float)de->event_y);
+        } break;
+      }
     }
     brpl_x11_XFreeEventData(w->display, &event.xcookie);
     return e;
@@ -1140,7 +1145,6 @@ static void brpl_glfw_windowcontentscalefun(GLFWwindow* window, float xscale, fl
 static void brpl_glfw_mousebuttonfun(GLFWwindow* window, int button, int action, int mods) {
   (void)mods;
   brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
-  LOGI("mousebutton but=%d, action=%d", button, action);
   brpl_event_kind_t ev = action == 0 ? brpl_event_mouse_release : brpl_event_mouse_press;
   int key  = button == 0 ? 0 : 3;
   brpl_q_push(&win->q, (brpl_event_t) { .kind = ev, .mouse_key = key });

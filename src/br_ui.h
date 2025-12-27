@@ -82,7 +82,8 @@ void              brui_resizable_mouse_pressl(bruirs_t* resizables, br_vec2_t mo
 void              brui_resizable_mouse_pressr(bruirs_t* resizables, br_vec2_t mouse_pos);
 void              brui_resizable_mouse_releasel(bruirs_t* resizables, br_vec2_t mouse_pos);
 void              brui_resizable_mouse_releaser(bruirs_t* resizables, br_vec2_t mouse_pos);
-void              brui_resizable_mouse_scroll(bruirs_t* resizables, br_vec2_t delta);
+bool              brui_resizable_mouse_scroll_px(bruirs_t* resizables, br_vec2_t delta);
+bool              brui_resizable_mouse_scroll(bruirs_t* resizables, br_vec2_t delta);
 void              brui_resizable_page(bruirs_t* resizables, br_vec2_t delta);
 void              brui_resizable_scroll_percent_set(bruirs_t* resizables, float percent);
 br_vec2_t         brui_resizable_local(bruirs_t* resizables, int id, br_vec2_t global_pos);

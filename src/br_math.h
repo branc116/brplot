@@ -85,7 +85,7 @@
 #define BR_DARKPURPLE BR_COLOR(80, 10, 80, 255)
 
 #define BR_PI 3.14159265358979323846f
-#define BR_Z_MAX 100000
+#define BR_Z_MAX 10000
 #define BR_Z_TO_GL(__Z) (1 - 2.f*((float)(__Z)/(float)BR_Z_MAX))
 #define BR_SCREEN_TO_GL(point, screen) BR_VEC2((float)(point).x / (float)(screen).width * 2.f - 1.f, (float)(point).y / (float)(screen).height * 2.f - 1.f)
 

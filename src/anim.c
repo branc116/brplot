@@ -192,6 +192,12 @@ float br_animf(br_anims_t* anims, int anim_handle) {
   return anim.f.current;
 }
 
+float br_animf_get_target(br_anims_t* anims, int anim_handle) {
+  br_anim_t anim = br_da_get(anims->all, anim_handle);
+  BR_ASSERTF(anim.kind == br_anim_float, "Anim kind should be float, but it's: %d", anim.kind);
+  return anim.f.target;
+}
+
 void br_anim2d_set(br_anims_t* anims, int anim_handle, br_vec2d_t target_value) {
   br_anim_t* anim = br_da_getp(anims->all, anim_handle);
   BR_ASSERTF(anim->kind == br_anim_vec2d, "Anim kind should be vec2d, but it's: %d", anim->kind);

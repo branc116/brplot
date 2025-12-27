@@ -123,7 +123,7 @@ typedef struct {
   float snap_cooldown;
 
   brui_action_t action;
-  
+
   bool select_next;
   bool log;
 } brui_state_t;
@@ -141,7 +141,7 @@ bool brui_window_init(brui_window_t* uiw) {
     if (false == brpl_window_open(&uiw->pl)) {
       LOGF("Failed to open window either with x11 or glfw. Please install one of those two.");
     }
-#elif defined(_WIN32) 
+#elif defined(_WIN32)
     uiw->pl.kind = brpl_window_glfw;
     if (false == brpl_window_open(&uiw->pl)) {
       LOGF("Failed to open window either with native win32 windowing stuff or glfw. Please fix your PC.\n"
@@ -164,7 +164,7 @@ bool brui_window_init(brui_window_t* uiw) {
   brgl_viewport(0, 0, uiw->pl.viewport.width, uiw->pl.viewport.height);
 
   uiw->shaders = br_shaders_malloc();
-  uiw->text = br_text_renderer_malloc(1024, 1024, br_font_data, &uiw->shaders.font);
+  uiw->text = br_text_renderer_malloc(2*1024, 2*1024, br_font_data, &uiw->shaders.font);
   uiw->time.now = brpl_time();
   br_icons_init(uiw->shaders.icon);
 #if BR_HAS_SHADER_RELOAD
@@ -199,6 +199,8 @@ bool brui_window_deinit(brui_window_t* uiw) {
   return true;
 }
 
+static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t ancor);
+static int bruir_find_at(bruirs_t* rs, int index, br_vec2_t loc, br_vec2_t* out_local_pos);
 brpl_event_t brui_event_next(brui_window_t* uiw) {
   brpl_event_t ev = brpl_event_next(&uiw->pl);
   brui_action_t* ta = brui_action();
@@ -371,7 +373,79 @@ brpl_event_t brui_event_next(brui_window_t* uiw) {
     } break;
     case brpl_event_touch_update: {
       uiw->touch_points.last_touch_time = uiw->time.now;
-      uiw->mouse.pos = ev.touch.pos;
+
+      brpl_touch_point_t* tpp = NULL;
+      brfl_foreach(i, uiw->touch_points) {
+        brpl_touch_point_t tp = uiw->touch_points.arr[i];
+        if (tp.id != ev.touch.id) continue;
+        tpp = &uiw->touch_points.arr[i];
+      }
+      if (tpp == NULL) break;
+      if (uiw->touch_points.free_len == 3) {
+        br_vec2_t points_old[3] = { tpp->pos };
+        br_vec2_t points_new[3] = { ev.touch.pos };
+        int index = 1;
+        brfl_foreach(i, uiw->touch_points) {
+          brpl_touch_point_t tp = uiw->touch_points.arr[i];
+          if (tp.id == ev.touch.id) continue;
+          points_new[index] = points_old[index] = uiw->touch_points.arr[i].pos;
+          ++index;
+        }
+        float old_max_x = br_float_max3(points_old[0].x, points_old[1].x, points_old[2].x);
+        float old_min_x = br_float_min3(points_old[0].x, points_old[1].x, points_old[2].x);
+        float new_max_x = br_float_max3(points_new[0].x, points_new[1].x, points_new[2].x);
+        float new_min_x = br_float_min3(points_new[0].x, points_new[1].x, points_new[2].x);
+
+        float old_max_y = br_float_max3(points_old[0].y, points_old[1].y, points_old[2].y);
+        float old_min_y = br_float_min3(points_old[0].y, points_old[1].y, points_old[2].y);
+        float new_max_y = br_float_max3(points_new[0].y, points_new[1].y, points_new[2].y);
+        float new_min_y = br_float_min3(points_new[0].y, points_new[1].y, points_new[2].y);
+
+        float new_x_mid = new_max_x*0.5f + new_min_x*0.5f;
+        float new_y_mid = new_max_y*0.5f + new_min_y*0.5f;
+        int drag_index = uiw->resizables.drag_index;
+        if (uiw->resizables.drag_mode == brui_drag_mode_none) {
+          uiw->mouse.pos = ev.pos;
+          uiw->resizables.drag_mode = brui_drag_mode_touch;
+          uiw->resizables.active_resizable = bruir_find_at(&uiw->resizables, 0, BR_VEC2(new_x_mid, new_y_mid), &(br_vec2_t) {0});
+          drag_index = uiw->resizables.drag_index = uiw->resizables.active_resizable;
+          brui_resizable_set_ancor(drag_index, 0, brui_ancor_none);
+        }
+        brui_resizable_t* r = br_da_getp(uiw->resizables, drag_index);
+        br_extent_t ex = br_animex_get_target(&brui_state.uiw->anims, r->cur_extent_ah);
+        br_extent_t old_ex = ex;
+        // Handle Zoom
+        {
+          float old_w = old_max_x - old_min_x;
+          float new_w = new_max_x - new_min_x;
+          float old_h = old_max_y - old_min_y;
+          float new_h = new_max_y - new_min_y;
+          float dw = new_w - old_w;
+          float dh = new_h - old_h;
+          LOGI("dw: %f, dh: %f", dw, dh);
+          ex.width += dw;
+          ex.height += dh;
+        }
+        // Handle offset
+        {
+          float old_x_mid = old_max_x*0.5f + old_min_x*0.5f;
+          float old_y_mid = old_max_y*0.5f + old_min_y*0.5f;
+          ex.x += new_x_mid - old_x_mid;
+          ex.y += new_y_mid - old_y_mid;
+        }
+        LOGI("ex %f %f %f %f -> %f %f %f %f", BR_EXTENT_(old_ex), BR_EXTENT_(ex));
+        br_animex_set(&uiw->anims, r->cur_extent_ah, ex);
+        tpp->pos = ev.touch.pos;
+      } else if (uiw->touch_points.free_len == 1) {
+        //uiw->resizables.active_resizable = bruir_find_at(&uiw->resizables, 0, ev.touch.pos, &(br_vec2_t) {0});
+        br_vec2_t diff = br_vec2_sub(ev.touch.pos, tpp->pos);
+        LOGI("diff %f %f", BR_VEC2_(diff));
+        brui_resizable_mouse_scroll_px(&uiw->resizables, diff);
+        tpp->pos = ev.touch.pos;
+        uiw->mouse.pos = ev.touch.pos;
+      } else {
+        uiw->resizables.drag_mode = brui_drag_mode_none;
+      }
     } break;
     case brpl_event_touch_end: {
       uiw->touch_points.last_touch_time = uiw->time.now;
@@ -471,9 +545,13 @@ void brui_begin(void) {
   br_da_push(brui_state, new_el);
   TOP.is_active = 0 == brui_state.uiw->resizables.active_resizable;
   BRUI_LOG("beginafter");
+  // TODO: This should be pushed but rn, something breaks and I get the balck screen after a few seconds.
+  //       Most likely z buffer shit..
+  //brui_resizable_push(0);
 }
 
 void brui_end(void) {
+  //brui_resizable_pop();
   BR_ASSERT(brui_state.len == 1);
   brui_state.len = 0;
   BRUI_LOG("end");
@@ -1082,7 +1160,7 @@ void brui_vsplitarr(int n, brui_split_t* splits) {
     cur_x += width;
     br_da_push(brui_state, new_el);
   }
-  
+
   { // REVERSE
     size_t start = brui_state.len - (size_t)n, end = brui_state.len - 1;
     while (start < end) {
@@ -1224,7 +1302,6 @@ void brui_text_color_set(br_color_t color) {
   TOP.font_color = color;
 }
 
-static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t ancor);
 void brui_ancor_set(brui_ancor_t ancor) {
   brui_resizable_set_ancor(TOP.cur_resizable, 0, ancor);
 }
@@ -1290,6 +1367,14 @@ float brui_width(void) {
   return TOP.limit.max_x - TOP.limit.min_x;
 }
 
+float brui_height(void) {
+  return TOP.limit.max_y - TOP.limit.min_y;
+}
+
+float brui_height_left(void) {
+  return TOP.limit.max_y - TOP.cur.y - TOP.padding.y;
+}
+
 float brui_local_y(void) {
   return TOP.cur.y - TOP.limit.min_y;
 }
@@ -1323,6 +1408,7 @@ static void bruir_update_extent(bruirs_t* rs, int index, br_extent_t new_ex);
 void brui_resizable_init(bruirs_t* rs, br_extent_t extent) {
   brui_resizable_t screen = { 0 };
   screen.cur_extent_ah = br_animex_new(&brui_state.uiw->anims, extent, extent);
+  screen.scroll_offset_percent_ah = br_animf_new(&brui_state.uiw->anims, 0, 0);
   br_anim_instant(&brui_state.uiw->anims, screen.cur_extent_ah);
 
   screen.ancor = brui_ancor_all;
@@ -1601,7 +1687,9 @@ void brui_resizable_mouse_move(bruirs_t* rs, br_vec2_t mouse_pos) {
   int drag_index = rs->drag_index;
   brui_resizable_t* r = br_da_getp(*rs, drag_index);
   br_extent_t new_extent = rs->drag_old_ex;
-  if (rs->drag_mode == brui_drag_mode_move) {
+  if (rs->drag_mode == brui_drag_mode_touch) {
+    return;
+  } else if (rs->drag_mode == brui_drag_mode_move) {
     new_extent.pos = br_vec2_sub(rs->drag_old_ex.pos, br_vec2_sub(rs->drag_point, mouse_pos));
     if (r->ancor != brui_ancor_none) {
       if (br_vec2_len2(br_vec2_sub(new_extent.pos, rs->drag_old_ex.pos)) > 10*10) {
@@ -1638,7 +1726,7 @@ static br_strv_t brui_ancor_to_str(brui_ancor_t ancor);
 void brui_resizable_mouse_pressl(bruirs_t* rs, br_vec2_t mouse_pos, bool ctrl_down) {
   if (rs->active_resizable < 0) return;
   brui_resizable_t* hovered = br_da_getp(*rs, rs->active_resizable);
-  bool title_shown = BRUI_ANIMF(hovered->title_height_ah) > 0.1f;
+  bool title_shown = rs->active_resizable == 0 ? false : BRUI_ANIMF(hovered->title_height_ah) > 0.1f;
   brui_drag_mode_t new_mode = brui_drag_mode_none;
   if ((ctrl_down || title_shown)) {
     float slack = 20;
@@ -1692,16 +1780,31 @@ void brui_resizable_mouse_releasel(bruirs_t* rs, br_vec2_t mouse_pos) {
   ACTION = brui_action_none;
 }
 
-void brui_resizable_mouse_scroll(bruirs_t* rs, br_vec2_t delta) {
+bool brui_resizable_mouse_scroll_px(bruirs_t* rs, br_vec2_t delta) {
+  brui_resizable_t hovered = rs->arr[rs->active_resizable];
+  LOGI("ar: %d, delta: %f %f", rs->active_resizable, BR_VEC2_(delta));
+  float new = 0.f;
+  float hidden_height = hovered.full_height - (float)BRUI_ANIMEX(hovered.cur_extent_ah).height;
+  if (hidden_height > 0.f) {
+    float cur = br_animf_get_target(&brui_state.uiw->anims, hovered.scroll_offset_percent_ah);
+    cur -= delta.y / hidden_height;
+    new = br_float_clamp(cur, 0.f, 1.f);
+  }
+  BRUI_ANIMFS(hovered.scroll_offset_percent_ah, new);
+  return br_anim_alive(&brui_state.uiw->anims, hovered.scroll_offset_percent_ah);
+}
+
+bool brui_resizable_mouse_scroll(bruirs_t* rs, br_vec2_t delta) {
   brui_resizable_t hovered = rs->arr[rs->active_resizable];
   float new = 0.f;
   float hidden_height = hovered.full_height - (float)BRUI_ANIMEX(hovered.cur_extent_ah).height;
   if (hidden_height > 0.f) {
     float cur = BRUI_ANIMF(hovered.scroll_offset_percent_ah) * hidden_height;
-    cur += delta.y * 20.f;
+    cur -= delta.y * 20.f;
     new = br_float_clamp(cur / hidden_height, 0.f, 1.f);
   }
   BRUI_ANIMFS(hovered.scroll_offset_percent_ah, new);
+  return br_anim_alive(&brui_state.uiw->anims, hovered.scroll_offset_percent_ah);
 }
 
 void brui_resizable_page(bruirs_t* rs, br_vec2_t delta) {
@@ -2000,7 +2103,7 @@ brui_resizable_t* brui_resizable_push(int id) {
   res->was_draw_last_frame = true;
   br_extent_t rex = BRUI_ANIMEX(res->cur_extent_ah);
   int cur_z = TOP.z;
-  float title_height = BRUI_ANIMF(res->title_height_ah);
+  float title_height = id == 0 ? 0 : BRUI_ANIMF(res->title_height_ah);
   bool is_menu_shown = title_height > .01f;
   brui_push();
   TOP.psum = BR_VEC2(0, 0);
@@ -2041,7 +2144,7 @@ brui_resizable_t* brui_resizable_push(int id) {
   } else if (brui_state.uiw->key.ctrl_down || !TOP.is_active) {
     new_title_height = 0.f;
   }
-  BRUI_ANIMFS(res->title_height_ah, new_title_height);
+  if (id != 0) BRUI_ANIMFS(res->title_height_ah, new_title_height);
   if (is_menu_shown) {
     brui_push_simple();
       TOP.start_z = res->max_z + 2;

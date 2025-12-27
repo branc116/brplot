@@ -84,6 +84,7 @@ void br_anim_trace(br_anims_t* anims, int anim_handle);
 
 void br_animf_set(br_anims_t* anims, int anim_handle, float target_value);
 float br_animf(br_anims_t* anims, int anim_handle);
+float br_animf_get_target(br_anims_t* anims, int anim_handle);
 
 void br_anim2d_set(br_anims_t* anims, int anim_handle, br_vec2d_t target_value);
 br_vec2d_t br_anim2d(br_anims_t* anims, int anim_handle);

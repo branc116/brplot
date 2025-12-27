@@ -84,6 +84,7 @@ typedef enum {
   brui_drag_mode_top = 4,
   brui_drag_mode_bottom = 8,
   brui_drag_mode_move = 16,
+  brui_drag_mode_touch = 32,
   brui_drag_mode_left_top = brui_drag_mode_left | brui_drag_mode_top,
   brui_drag_mode_right_top = brui_drag_mode_right | brui_drag_mode_top,
   brui_drag_mode_left_bottom = brui_drag_mode_left | brui_drag_mode_bottom,
