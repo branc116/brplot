@@ -521,8 +521,9 @@ void check_set_precision(shader_t const* shader) {
     token_t t = shader->tokens.arr[i];
     if (strcmp("precision", br_strv_to_c_str(t.view))) continue;
     t = shader->tokens.arr[i + 1];
-    if (strcmp("mediump", br_strv_to_c_str(t.view))) {
-      FATAL(shader, shader->tokens.arr[i].line, shader->tokens.arr[i].start, "Bad precision `%s`, only supported is mediump",
+    if (0 != strcmp("mediump", br_strv_to_c_str(t.view)) &&
+        0 != strcmp("highp", br_strv_to_c_str(t.view))) {
+      FATAL(shader, shader->tokens.arr[i].line, shader->tokens.arr[i].start, "Bad precision `%s`, only supported is mediump and highp",
           br_strv_to_c_str(t.view));
     }
     t = shader->tokens.arr[i + 2];
@@ -532,7 +533,7 @@ void check_set_precision(shader_t const* shader) {
     }
     return;
   }
-  FATAL(shader, 0, 0, "precision mediump float missing!%d", 69);
+  FATAL(shader, 0, 0, "precision mediump|highp float missing!%d", 69);
 }
 
 void check_programs(programs_t programs) {

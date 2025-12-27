@@ -92,6 +92,17 @@ extern void br_on_fatal_error(void);
 #if defined(BR_ASAN)
 void __sanitizer_print_stack_trace(void);
 #  define BR_STACKTRACE() __sanitizer_print_stack_trace()
+#elif defined(__TINYC__)
+#  include <unistd.h>
+#  include <assert.h>
+#  include <execinfo.h>
+#  define BR_STACKTRACE() do { \
+  void* BR__ELS[32] = { 0 }; \
+  int BR__N = backtrace (BR__ELS, 32); \
+  LOGI("Start of backtrace"); \
+  backtrace_symbols_fd (BR__ELS, BR__N, STDERR_FILENO); \
+  LOGI("End of backtrace"); \
+} while (0);
 #else
 #  define BR_STACKTRACE()
 #endif

@@ -1,6 +1,6 @@
 #version 330
 
-precision mediump float;
+precision highp float;
 
 in float edge_dist;
 

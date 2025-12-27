@@ -60,6 +60,8 @@ float brui_padding_y(void);
 void  brui_padding_y_set(float value);
 float brui_y(void);
 float brui_width(void);
+float brui_height(void);
+float brui_height_left(void);
 float brui_local_y(void);
 bool  brui_active(void);
 void  brui_debug(void);

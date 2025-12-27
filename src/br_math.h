@@ -336,12 +336,20 @@ static inline float br_float_max(float a, float b) {
   return a > b ? a : b;
 }
 
+static inline float br_float_max3(float a, float b, float c) {
+  return br_float_max(br_float_max(a, b), c);
+}
+
 static inline float br_float_max4(float a, float b, float c, float d) {
   return br_float_max(br_float_max(a, b), br_float_max(c, d));
 }
 
 static inline float br_float_min(float a, float b) {
   return a < b ? a : b;
+}
+
+static inline float br_float_min3(float a, float b, float c) {
+  return br_float_min(br_float_min(a, b), c);
 }
 
 static inline float br_float_min4(float a, float b, float c, float d) {

@@ -1,6 +1,6 @@
 #version 330
 
-precision mediump float;
+precision highp float;
 
 in vec2 out_tpos;
 in vec4 outin_fg;

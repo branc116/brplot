@@ -1,5 +1,5 @@
 #version 330
-precision mediump float;
+precision highp float;
 
 in vec3 v_color;
 in float v_edge;

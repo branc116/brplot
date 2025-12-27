@@ -4,7 +4,7 @@
 #  extension GL_ANGLE_clip_cull_distance : enable
 #endif
 
-precision mediump float;
+precision highp float;
 
 in vec4 pos;
 in vec4 fg;
