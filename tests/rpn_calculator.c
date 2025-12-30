@@ -27,9 +27,10 @@ typedef struct {
   int len, cap;
 } stack_t;
 
-brui_window_t win = { 0 };
+static brui_window_t win = { 0 };
 static stack_t stack;
-bool insert_mode = false;
+static bool insert_mode = false;
+static float scale = 2.7;
 
 #define X(NAME, MIN_ARGS, INSERT_AFTER) static void rpn_##NAME##_unsafe(void);
   RPN_FUNCS(X)
@@ -163,7 +164,7 @@ void grid_end(grid_t* g) {
 
 static void draw_functions(void) {
   brui_push();
-    brui_text_size_set(20);
+    brui_text_size_set(32*scale);
     grid_t g = grid_begin(5);
 #define X(NAME, MIN_ARGS, INSERT_AFTER) grid_next(&g); \
     if (brui_button(BR_STRL(#NAME))) { \
@@ -178,10 +179,11 @@ static void draw_functions(void) {
 
 
 static void draw_buttons(void) {
-  int ts = 92;
   brui_push(); // Buttons
+    float ts = 62*scale; //(brui_height_left() - brui_padding_y()*10) / 3.f;
+    if (brui_width() / 4.f < ts) ts = brui_width() / 4.f;
     brui_text_size_set(ts);
-    brui_text_align_set(br_text_renderer_ancor_x_mid);
+    brui_text_align_set(brtr_ancor_x_mid);
     brui_vsplitvp(6, BRUI_SPLITR(1), BRUI_SPLITA(ts), BRUI_SPLITA(ts), BRUI_SPLITA(ts), BRUI_SPLITA(ts), BRUI_SPLITR(1));
     brui_vsplit_pop();
       calc_button_append(BR_STRL("1"));
@@ -226,23 +228,30 @@ static void draw_buttons(void) {
   brui_pop();
 }
 
-BR_EXPORT void rpn_init(void) {
+static int res[3];
+BR_EXPORT void rpn_init(float device_scale) {
+  scale = device_scale;
   brui_window_init(&win);
+  res[0] = brui_resizable_new(&win.resizables, BR_EXTENT(0, 0, 400, 800), 0);
+  //res[1] = brui_resizable_new(&win.resizables, BR_EXTENT(0, 110, 400, 100), 0);
+  //res[2] = brui_resizable_new(&win.resizables, BR_EXTENT(0, 220, 400, 100), 0);
+  brui_resizable_set_ancor(res[0], 0, brui_ancor_all);
 }
 
 BR_EXPORT void rpn_one_frame(void) {
   while (brui_event_next(&win).kind != brpl_event_frame_next);
   brui_frame_start(&win);
-    brui_text_size_set(32);
-    draw_display();
-    draw_functions();
-    draw_buttons();
+    brui_resizable_push(res[0]);
+      draw_display();
+      draw_functions();
+      draw_buttons();
+    brui_resizable_pop();
   brui_frame_end(&win);
 }
 
 #if !defined(__EMSCRIPTEN__)
 int main(void) {
-  rpn_init();
+  rpn_init(1);
   while (false == win.pl.should_close) {
     rpn_one_frame();
   }
@@ -258,6 +267,8 @@ BR_EXPORT void rpn_wasm_touch_event(int kind, float x, float y, int id) {
   brpl_additional_event_touch(&win.pl, kind, x, y, id);
 }
 #endif
+void br_on_fatal_error(void) {}
+void brgui_push_log_line(const char* fmt, ...) {}
 
 static void rpn_clear_unsafe(void) {
   brsp_set(&win.sp, stack.arr[stack.len - 1].value, BR_STRL(""));
@@ -314,12 +325,11 @@ static void rpn_log10_unsafe(void) {
 
 // tcc tests/rpn_calculator.c -I. -Iinclude -o bin/rpn_calculator -lm && bin/calculator
 // emcc tests/rpn_calculator.c -DBR_LIB -DGRAPHICS_API_OPENGL_ES3=1 -ggdb -DBR_LIB -I. -Iinclude -o bin/rpn_calculator.js -sWASM_BIGINT -sALLOW_MEMORY_GROWTH -sUSE_GLFW=3 -sUSE_WEBGL2=1 -sGL_ENABLE_GET_PROC_ADDRESS -sCHECK_NULL_WRITES=0 -sDISABLE_EXCEPTION_THROWING=1 -sFILESYSTEM=0 -sDYNAMIC_EXECUTION=0 -sMODULARIZE=1 -sEXPORT_ES6=1 -lm
-            
-                                          
-                                          
-            
+
+
 // TODOs:
-// * br_text_renderer_ancor_x_right does not work..
+// * brtr_ancor_x_right does not work..
 // * Add scrollable componen
 // * Text input cursor on the exact mouse position.
+// * When no more font's can be baked clean the font texture
 //
