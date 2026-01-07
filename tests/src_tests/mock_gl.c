@@ -32,7 +32,7 @@ void brgl_blend_func(GLenum sfactor, GLenum dfactor) { (void)sfactor; (void)dfac
 void brgl_blend_equation(GLenum mode) { (void)mode; }
 void brgl_viewport(GLint x, GLint y, GLsizei width, GLsizei height) { (void)x; (void)y; (void)width; (void)height; }
 void brgl_enable_framebuffer(GLuint fb_id, int new_width, int new_height) { (void)fb_id; (void)new_width; (void)new_height; }
-GLuint brgl_load_texture(const void* data, int width, int height, int format) { (void)data; (void)width; (void)height; (void)format; return 1; }
+GLuint brgl_load_texture(const void* data, int width, int height, int format, bool mipmap) { (void)data; (void)width; (void)height; (void)format; (void)mipmap; return 1; }
 void brgl_unload_texture(GLuint tex_id) { (void)tex_id; }
 GLuint brgl_framebuffer_to_texture(GLuint br_id) { (void)br_id; return 1; }
 void brgl_clear(float r, float g, float b, float a) { (void)r; (void)g; (void)b; (void)a; }

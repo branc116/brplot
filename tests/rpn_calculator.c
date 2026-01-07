@@ -17,6 +17,7 @@
   X(log,   1, false) \
   X(log2,  1, false) \
   X(log10, 1, false) \
+  X(atlas, 0, false) \
 
 typedef struct stack_el {
   brsp_id_t value;
@@ -99,7 +100,7 @@ static void draw_display(void) {
             stack_el_t cur = stack.arr[index];
             brui_text_input(cur.value);
           }
-        brui_vsplit_end();
+        brui_vsplit_pop();
       if (i == 0 && insert_mode) brui_pop();
     }
   brui_pop();
@@ -141,7 +142,7 @@ void grid_next(grid_t* g) {
   } else {
     brui_pop();
     brui_vsplit_pop(); // PADDING
-    brui_vsplit_end();
+    brui_vsplit_pop();
     brui_vsplitarr(g->splits.len, g->splits.arr);
     brui_vsplit_pop(); // PADDING
     brui_push();
@@ -152,19 +153,14 @@ void grid_next(grid_t* g) {
 void grid_end(grid_t* g) {
   if (g->cur > 0) {
     brui_pop();
-    while (g->cur <= g->cols) {
-      brui_vsplit_pop();
-      g->cur += 1;
-    }
-
-    brui_vsplit_end();
+    while (brui_vsplit_pop());
   }
   br_da_free(g->splits);
 }
 
 static void draw_functions(void) {
   brui_push();
-    brui_text_size_set(32*scale);
+    brui_text_size_set(32.f*scale);
     grid_t g = grid_begin(5);
 #define X(NAME, MIN_ARGS, INSERT_AFTER) grid_next(&g); \
     if (brui_button(BR_STRL(#NAME))) { \
@@ -180,10 +176,10 @@ static void draw_functions(void) {
 
 static void draw_buttons(void) {
   brui_push(); // Buttons
-    float ts = 62*scale; //(brui_height_left() - brui_padding_y()*10) / 3.f;
+    float ts = 62.f*scale; //(brui_height_left() - brui_padding_y()*10) / 3.f;
     if (brui_width() / 4.f < ts) ts = brui_width() / 4.f;
     brui_text_size_set(ts);
-    brui_text_align_set(brtr_ancor_x_mid);
+    brui_text_ancor_set(br_dir_mid_x);
     brui_vsplitvp(6, BRUI_SPLITR(1), BRUI_SPLITA(ts), BRUI_SPLITA(ts), BRUI_SPLITA(ts), BRUI_SPLITA(ts), BRUI_SPLITR(1));
     brui_vsplit_pop();
       calc_button_append(BR_STRL("1"));
@@ -224,7 +220,7 @@ static void draw_buttons(void) {
         }
       }
     brui_vsplit_pop();
-    brui_vsplit_end();
+    brui_vsplit_pop();
   brui_pop();
 }
 
@@ -233,11 +229,12 @@ BR_EXPORT void rpn_init(float device_scale) {
   scale = device_scale;
   brui_window_init(&win);
   res[0] = brui_resizable_new(&win.resizables, BR_EXTENT(0, 0, 400, 800), 0);
-  //res[1] = brui_resizable_new(&win.resizables, BR_EXTENT(0, 110, 400, 100), 0);
+  res[1] = brui_resizable_new(&win.resizables, BR_EXTENT(0, 110, 400, 100), 0);
   //res[2] = brui_resizable_new(&win.resizables, BR_EXTENT(0, 220, 400, 100), 0);
   brui_resizable_set_ancor(res[0], 0, brui_ancor_all);
 }
 
+bool g_show_atlas;
 BR_EXPORT void rpn_one_frame(void) {
   while (brui_event_next(&win).kind != brpl_event_frame_next);
   brui_frame_start(&win);
@@ -246,6 +243,11 @@ BR_EXPORT void rpn_one_frame(void) {
       draw_functions();
       draw_buttons();
     brui_resizable_pop();
+    if (g_show_atlas) {
+      brui_resizable_push(res[1]);
+        brui_texture(brtr_texture_id());
+      brui_resizable_pop();
+    }
   brui_frame_end(&win);
 }
 
@@ -320,6 +322,10 @@ static void rpn_log2_unsafe(void) {
 
 static void rpn_log10_unsafe(void) {
   rpn_set(log10f(rpn_get1()));
+}
+
+static void rpn_atlas_unsafe(void) {
+  g_show_atlas = !g_show_atlas;
 }
 
 

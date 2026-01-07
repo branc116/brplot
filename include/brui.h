@@ -71,7 +71,6 @@ int main(void) {
 #include "include/brplat_header.h"
 #include "include/br_str_header.h"
 #include "include/br_string_pool_header.h"
-#include "src/br_text_renderer.h"
 #include "src/br_math.h"
 #include "src/br_shaders.h"
 #include "src/br_anim.h"
@@ -192,14 +191,12 @@ typedef struct brui_split_t {
   };
 } brui_split_t;
 
-
 typedef struct brui_window_t {
   brpl_window_t pl; // Platform window
   br_shaders_t shaders;
   bruirs_t resizables;
   brsp_t sp;
   br_anims_t anims;
-  br_text_renderer_t* text;
 
   struct {
     brpl_touch_point_t* arr;
@@ -263,8 +260,44 @@ BR_EXPORT bool brui_resizable_temp_pop(void);
 #endif
 
 #if defined(BRUI_IMPLEMENTATION)
-#  if !defined(BR_INCLUDE_UNITY_BRUI_C)
-#    define BR_INCLUDE_UNITY_BRUI_C
-#    include "tools/unity/brui.c"
+
+#  define BR_GL_DRAW_ALL_CB br_shaders_draw_all
+#  if !defined(BR_INCLUDE_UNITY_BRPLAT_C)
+#    define BR_INCLUDE_UNITY_BRPLAT_C
+#    define BRPLAT_IMPLEMENTATION
+#    include "include/brplat.h"
+#  endif
+
+#  if !defined(BR_INCLUDE_THREADS_C)
+#    define BR_INCLUDE_THREADS_C
+#    include "src/threads.c"
+#  endif
+#  if !defined(BR_INCLUDE_FILESYSTEM_C)
+#    define BR_INCLUDE_FILESYSTEM_C
+#    include "src/filesystem.c"
+#  endif
+#  if !defined(BR_INCLUDE_SHADERS_C)
+#    define BR_INCLUDE_SHADERS_C
+#    include "src/shaders.c"
+#  endif
+#  if !defined(BR_INCLUDE_TEXT_RENDERER_C)
+#    define BR_INCLUDE_TEXT_RENDERER_C
+#    include "src/text_renderer.c"
+#  endif
+#  if !defined(BR_INCLUDE_THEME_C)
+#    define BR_INCLUDE_THEME_C
+#    include "src/theme.c"
+#  endif
+#  if !defined(BR_INCLUDE_UI_C)
+#    define BR_INCLUDE_UI_C
+#    include "src/ui.c"
+#  endif
+#  if !defined(BR_INCLUDE_ANIM_C)
+#    define BR_INCLUDE_ANIM_C
+#    include "src/anim.c"
+#  endif
+#  if !defined(BR_INCLUDE_SHL_IMPLS_C)
+#    define BR_INCLUDE_SHL_IMPLS_C
+#    include "external/shl_impls.c"
 #  endif
 #endif

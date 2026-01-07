@@ -20,7 +20,7 @@ void brgui_push_log_line(const char* fmt, ...);
 #if defined(BR_DEBUG)
 
 #define BR_LOG(SEVERITY, FMT, ...) do { \
-  brgui_push_log_line(SEVERITY FMT, ##__VA_ARGS__); \
+  BRGUI_PUSH_LOG_LINE(SEVERITY FMT, ##__VA_ARGS__); \
   fprintf(stderr, SEVERITY"[ " __FILE__ ":%d ] " FMT "\n", __LINE__, ##__VA_ARGS__); \
 } while(0)
 
@@ -28,7 +28,10 @@ void brgui_push_log_line(const char* fmt, ...);
     fprintf(stderr, "[ERROR][ " __FILE__ ":%d ] " format "\n", __LINE__, ##__VA_ARGS__); \
     BR_STACKTRACE(); \
 } while(0)
-#define BR_ON_FATAL_ERROR br_on_fatal_error
+//#define BR_ON_FATAL_ERROR br_on_fatal_error
+//#define BRGUI_PUSH_LOG_LINE brgui_push_log_line
+#define BR_ON_FATAL_ERROR(...)
+#define BRGUI_PUSH_LOG_LINE(...)
 
 #else
 
@@ -63,10 +66,16 @@ extern void br_on_fatal_error(void);
   abort(); \
 } while(0)
 
+#if defined(__TINYC__)
+#  define BR_RETURN_IF_TINY_C(EXPR) return (EXPR)
+#else
+#  define BR_RETURN_IF_TINY_C(EXPR)
+#endif
+
 #define BR_UNREACHABLE(fmt, ...) do { \
   LOGE("Reached unreachable state: " fmt, ##__VA_ARGS__); \
   BR_ASSERTF(0, "Exiting"); \
-  exit(1); \
+  abort(); \
 } while(0)
 
 #define BR_LOG_GL_ERROR(ERROR) do { \
@@ -98,8 +107,8 @@ void __sanitizer_print_stack_trace(void);
 #  include <execinfo.h>
 #  define BR_STACKTRACE() do { \
   void* BR__ELS[32] = { 0 }; \
-  int BR__N = backtrace (BR__ELS, 32); \
-  LOGI("Start of backtrace"); \
+  int BR__N = backtrace (BR__ELS, 8); \
+  LOGI("Start of backtrace %d", BR__N); \
   backtrace_symbols_fd (BR__ELS, BR__N, STDERR_FILENO); \
   LOGI("End of backtrace"); \
 } while (0);
@@ -295,7 +304,11 @@ void __sanitizer_print_stack_trace(void);
 #endif
 
 typedef unsigned long long br_u64;
-typedef signed long long br_i64;
-typedef unsigned int br_u32;
-typedef signed int br_i32;
+typedef unsigned       int br_u32;
+typedef unsigned     short br_u16;
+typedef unsigned      char br_u8;
+typedef   signed long long br_i64;
+typedef   signed       int br_i32;
+typedef   signed     short br_i16;
+typedef   signed      char br_i8;
 

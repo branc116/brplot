@@ -105,6 +105,7 @@ br_plot_id br_plot_new(br_plotter_t* plotter, br_plot_ctor_t const* ctor) {
   }
   return ret;
   BR_ASSERT(0);
+  BR_RETURN_IF_TINY_C(0);
 }
 
 void br_plot_free(br_plotter_t* plotter, br_plot_id plot) {

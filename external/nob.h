@@ -2261,6 +2261,8 @@ static bool nob__ptrace_cache_node_remove_file(Nob_Ptrace_Cache* cache, Nob__Int
 
 static void nob__ptrace_append_file(Nob_Ptrace_Cache* cache, Nob__Ptrace_Cache_Node* node, Nob_String_View file_path, int mode, bool exists, bool absolute_paths)
 {
+    if (absolute_paths) file_path = nob__sv_relative_to_absolute(file_path);
+
     if (nob_sv_starts_with(file_path, nob_sv_from_cstr("/usr/")))  return;
     if (nob_sv_starts_with(file_path, nob_sv_from_cstr("/etc/")))  return;
     if (nob_sv_starts_with(file_path, nob_sv_from_cstr("/tmp/")))  return;
@@ -2270,8 +2272,6 @@ static void nob__ptrace_append_file(Nob_Ptrace_Cache* cache, Nob__Ptrace_Cache_N
     if (nob__sv_contains(file_path, nob_sv_from_cstr("/run/")))    return;
     if (nob_sv_starts_with(file_path, nob_sv_from_cstr("/dev/")))  return;
     if (nob_sv_starts_with(file_path, nob_sv_from_cstr("/opt/")))  return;
-
-    if (absolute_paths) file_path = nob__sv_relative_to_absolute(file_path);
 
     int output_mask = O_APPEND | O_CREAT | O_WRONLY;
     if (output_mask & mode) nob__ptrace_cache_node_push_file(cache, &node->output_paths, file_path.data);
@@ -2287,7 +2287,6 @@ static void nob__ptrace_rename_file(Nob_Ptrace_Cache* cache, Nob__Ptrace_Cache_N
   // For input files just remove src, because it is no longer an input? IG..
   nob__ptrace_cache_node_remove_file(cache, &node->input_paths, file_path_src);
 }
-
 
 static void nob__ptrace_read_cstr_from_inferior(Nob_String_Builder* out, Nob_Fd inferior, long* addr)
 {
@@ -2591,7 +2590,7 @@ static Nob__Ptrace_Cache_Run_Status nob__cmd_run_ptrace(Nob_Cmd *cmd, Nob_Cmd_Op
         Nob_Fd cur_child = waitpid(-1, &status, 0);
         Nob_String_Builder file_path = { 0 };
         Nob_String_Builder file_path2 = { 0 };
-
+        nob__ptrace_append_file(cache, node, nob_sv_from_cstr(cmd->items[0]), 0, nob_file_exists(cmd->items[0]), true);
 
         ret = ptrace(PTRACE_SETOPTIONS, cur_child, 1, PTRACE_O_TRACEVFORK | PTRACE_O_TRACEFORK | PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACECLONE);
         if (ret < 0) {

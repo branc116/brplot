@@ -137,7 +137,6 @@ const char* sources[] = {
  "src/platform2.c",
  "src/threads.c",
  "src/gl.c",
- "src/icons.c",
  "src/theme.c",
 };
 
@@ -943,6 +942,8 @@ done:
 }
 
 static bool n_generate_do(void) {
+  bool old = enable_asan;
+  enable_asan = false;
   if (false == create_all_dirs())  return false;
   if (false == bake_font())        return false;
   if (false == generate_shaders()) return false;
@@ -952,6 +953,7 @@ static bool n_generate_do(void) {
   if (false == embed_file_as_string(".generated/FULL_LICENSE", "br_license")) return false;
   br_str_t out_hash = { 0 };
   if (false == generate_version_file(&out_hash)) return false;
+  enable_asan = old;
   LOGI("Generate OK");
   return true;
 }

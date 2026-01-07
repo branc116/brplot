@@ -153,6 +153,7 @@ br_vec3d_t br_data_el_xyz2(br_data_t data, br_u32 index) {
     case br_data_kind_3d: return br_data_el_xyz1(data, index);
     default: BR_UNREACHABLE("Data kind: %d", data.kind);
   }
+  BR_RETURN_IF_TINY_C((br_vec3d_t){0});
 }
 
 br_vec3_t  br_data_el_xyz_rebased(br_data_t data, br_u32 index) {
@@ -161,6 +162,7 @@ br_vec3_t  br_data_el_xyz_rebased(br_data_t data, br_u32 index) {
     case br_data_kind_3d: return BR_VEC3(data.dd.xs[index], data.dd.ys[index], data.ddd.zs[index]);
     default: BR_UNREACHABLE("Data kind: %d", data.kind);
   }
+  BR_RETURN_IF_TINY_C((br_vec3_t){0});
 }
 
 void br_data_empty(br_data_t* pg) {

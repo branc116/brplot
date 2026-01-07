@@ -23,6 +23,7 @@
 #include "src/br_theme.h"
 #include "src/br_ui.h"
 #include "src/br_memory.h"
+#include "src/br_text_renderer.h"
 
 typedef struct br_lines_t {
   br_str_t* arr;
@@ -41,7 +42,7 @@ static void brgui_draw_about(br_plotter_t* br);
 static void brgui_draw_add_expression(br_plotter_t* br);
 static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas);
 static void brgui_draw_help(br_plotter_t* br);
-static void brgui_draw_grid_numbers(br_text_renderer_t* r, br_plot_t* br, int font_size, br_color_t text_color);
+static void brgui_draw_grid_numbers(br_plot_t* plot);
 static void brgui_draw_csv_manager(brsp_t* sp, brgui_csv_reader_t* reader, br_csv_parser_t* parser, br_datas_t* datas);
 
 #if defined(BR_HAS_MEMORY)
@@ -70,26 +71,30 @@ void br_plotter_draw(br_plotter_t* br) {
         brgl_clear(BR_COLOR_COMPF(br->uiw.theme.colors.plot_bg));
         if (br->ui.multisampling) brgl_enable_multisampling();
         else                      brgl_disable_multisampling();
-        if (PLOT->kind == br_plot_kind_2d) {
-          br_mesh_grid_draw(PLOT, &br->uiw.theme);
-          br_shaders_draw_all(br->uiw.shaders); // TODO: This should be called whenever a other shader are being drawn.
-          br_datas_draw(br->groups, PLOT, ex);
-          br_shaders_draw_all(br->uiw.shaders);
-          brgui_draw_grid_numbers(br->uiw.text, PLOT, br->uiw.def.font_size, br->uiw.theme.colors.grid_nums);
-          br_shaders_draw_all(br->uiw.shaders);
-        } else if (PLOT->kind == br_plot_kind_3d) {
-          br_datas_draw(br->groups, PLOT, ex);
-          br_shaders_draw_all(br->uiw.shaders);
-          br_mesh_grid_draw(PLOT, &br->uiw.theme);
-          br_shaders_draw_all(br->uiw.shaders);
-          brgui_draw_grid_numbers(br->uiw.text, PLOT, br->uiw.def.font_size, br->uiw.theme.colors.grid_nums);
-          br_shaders_draw_all(br->uiw.shaders);
-        }
+
+        brtr_stack_el_t* el = brtr_state_push();
+          el->forground  = br->uiw.theme.colors.grid_nums;
+          el->background = br->uiw.theme.colors.grid_nums_bg;
+          el->font_size  = br->uiw.def.font_size;
+          el->viewport.size = ex.size;
+          if (PLOT->kind == br_plot_kind_2d) {
+            br_mesh_grid_draw(PLOT, &br->uiw.theme);
+            br_shaders_draw_all(br->uiw.shaders); // TODO: This should be called whenever a other shader are being drawn.
+            br_datas_draw(br->groups, PLOT, ex);
+            brgui_draw_grid_numbers(PLOT);
+          } else if (PLOT->kind == br_plot_kind_3d) {
+            br_datas_draw(br->groups, PLOT, ex);
+            br_shaders_draw_all(br->uiw.shaders);
+            br_mesh_grid_draw(PLOT, &br->uiw.theme);
+            br_shaders_draw_all(br->uiw.shaders);
+            brgui_draw_grid_numbers(PLOT);
+          }
+        brtr_state_pop();
+        br_shaders_draw_all(br->uiw.shaders);
       }
     }
 
     brgl_enable_framebuffer(0, br->uiw.pl.viewport.width, br->uiw.pl.viewport.height);
-    br_text_renderer_viewport_set(br->uiw.text, br->uiw.pl.viewport.size);
     BR_PROFILE("UI") {
       br_shaders_draw_all(br->uiw.shaders);
 #if BR_HAS_HOTRELOAD
@@ -99,45 +104,48 @@ void br_plotter_draw(br_plotter_t* br) {
       for (int i = 0; i < br->plots.len; ++i) {
         br_extent_t ex = brui_resizable_cur_extent(PLOT->extent_handle);
         if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
-          brui_resizable_push(PLOT->extent_handle);
-            brui_img(PLOT->texture_id);
-            if (brgui_draw_plot_menu(&br->uiw.sp, PLOT, &br->uiw.anims, br->groups)) to_remove = i;
-            brgui_draw_legend(PLOT, br->groups, &br->uiw.theme, br);
-            if (PLOT->kind == br_plot_kind_2d) {
-              br_vec2d_t v = br_plot2d_to_plot(PLOT, br->uiw.mouse.pos, ex);
-              for (int j = 0; j < PLOT->data_info.len; ++j) {
-                br_plot_data_t pd = PLOT->data_info.arr[j];
-                if (false == br_plot_data_is_visible(pd)) continue;
-                br_data_t* data = br_data_get(&br->groups, pd.group_id);
-                br_vec2d_t zoom = br_anim2d(&br->uiw.anims, PLOT->dd.zoom_ah);
-                float dist = (float)(zoom.x*0.05);
-                br_u32 index = 0;
-                bool has_any = br_resampling_get_point_at2(*data, v, &dist, &index);
-                br_strv_t name = brsp_get(br->uiw.sp, data->name);
-                if (has_any) {
-                  br_vec2d_t vreal = br_data_el_xy1(*data, index);
-                  br_vec2_t s = br_plot2d_to_screen(PLOT, vreal, ex);
-                  brui_text_at(br_scrach_printf("%.*s: %f, %f", name.len, name.str, vreal.x, vreal.y), s);
-                }
-              }
-            } else if (PLOT->kind == br_plot_kind_3d) {
-              br_vec3d_t vec = br_plot3d_to_plot(PLOT, br->uiw.mouse.pos, ex);
-              br_u32 index = 0;
-              for (int j = 0; j < PLOT->data_info.len; ++j) {
-                br_plot_data_t pd = PLOT->data_info.arr[j];
-                if (false == br_plot_data_is_visible(pd)) continue;
-                br_data_t* data = br_data_get1(br->groups, pd.group_id);
-                float dist = 3.5f;
-                br_vec3_t eye = br_anim3(&br->uiw.anims, PLOT->ddd.eye_ah);
-                if (br_resampling_get_point_at3(*data, BR_VEC3_TOD(eye), vec, &dist, &index)) {
-                  br_vec3d_t vreal = br_data_el_xyz2(*data, index);
-                  br_vec2_t s = br_plot3d_to_screen(PLOT, BR_VEC3D_TOF(vreal), ex);
+          brui_push();
+            brui_padding_set(BR_VEC2(0,0));
+            brui_resizable_push(PLOT->extent_handle);
+              brui_framebuffer(PLOT->texture_id);
+              if (brgui_draw_plot_menu(&br->uiw.sp, PLOT, &br->uiw.anims, br->groups)) to_remove = i;
+              brgui_draw_legend(PLOT, br->groups, &br->uiw.theme, br);
+              if (PLOT->kind == br_plot_kind_2d) {
+                br_vec2d_t v = br_plot2d_to_plot(PLOT, br->uiw.mouse.pos, ex);
+                for (int j = 0; j < PLOT->data_info.len; ++j) {
+                  br_plot_data_t pd = PLOT->data_info.arr[j];
+                  if (false == br_plot_data_is_visible(pd)) continue;
+                  br_data_t* data = br_data_get(&br->groups, pd.group_id);
+                  br_vec2d_t zoom = br_anim2d(&br->uiw.anims, PLOT->dd.zoom_ah);
+                  float dist = (float)(zoom.x*0.05);
+                  br_u32 index = 0;
+                  bool has_any = br_resampling_get_point_at2(*data, v, &dist, &index);
                   br_strv_t name = brsp_get(br->uiw.sp, data->name);
-                  brui_text_at(br_scrach_printf("%.*s: %f, %f, %f", name.len, name.str, vreal.x, vreal.y, vreal.z), s);
+                  if (has_any) {
+                    br_vec2d_t vreal = br_data_el_xy1(*data, index);
+                    br_vec2_t s = br_plot2d_to_screen(PLOT, vreal, ex);
+                    brui_text_at(br_scrach_printf("%.*s: %f, %f", name.len, name.str, vreal.x, vreal.y), s);
+                  }
+                }
+              } else if (PLOT->kind == br_plot_kind_3d) {
+                br_vec3d_t vec = br_plot3d_to_plot(PLOT, br->uiw.mouse.pos, ex);
+                br_u32 index = 0;
+                for (int j = 0; j < PLOT->data_info.len; ++j) {
+                  br_plot_data_t pd = PLOT->data_info.arr[j];
+                  if (false == br_plot_data_is_visible(pd)) continue;
+                  br_data_t* data = br_data_get1(br->groups, pd.group_id);
+                  float dist = 3.5f;
+                  br_vec3_t eye = br_anim3(&br->uiw.anims, PLOT->ddd.eye_ah);
+                  if (br_resampling_get_point_at3(*data, BR_VEC3_TOD(eye), vec, &dist, &index)) {
+                    br_vec3d_t vreal = br_data_el_xyz2(*data, index);
+                    br_vec2_t s = br_plot3d_to_screen(PLOT, BR_VEC3D_TOF(vreal), ex);
+                    br_strv_t name = brsp_get(br->uiw.sp, data->name);
+                    brui_text_at(br_scrach_printf("%.*s: %f, %f, %f", name.len, name.str, vreal.x, vreal.y, vreal.z), s);
+                  }
                 }
               }
-            }
-          brui_resizable_pop();
+            brui_resizable_pop();
+          brui_pop();
 #undef PLOT
       }
       if (to_remove != -1) br_plotter_remove_plot(br, to_remove);
@@ -157,7 +165,7 @@ void br_plotter_draw(br_plotter_t* br) {
           } break;
           case brgui_file_manager_load_font: {
             br_strv_t strv = brsp_get(*sp, fs_r.selected_file);
-            if (br_text_renderer_load_font(br->uiw.text, strv)) {
+            if (brtr_font_load(strv)) {
               brsp_remove(sp, br->ui.font_path_id);
               br->ui.font_path_id = brsp_copy(sp, fs_r.selected_file);
               brsp_insert_char_at_end(sp, br->ui.font_path_id, '\0');
@@ -176,12 +184,18 @@ void br_plotter_draw(br_plotter_t* br) {
       brgui_draw_memory(br);
 #endif
       brgui_draw_debug_window(br);
+      if (br->ui.show_atlas) {
+        brui_resizable_temp_push(BR_STRL("Atlas"));
+          brui_texture(brtr_texture_id());
+        if (brui_resizable_temp_pop()) br->ui.show_atlas = false;
+      }
     }
   }
 }
 
 static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas, br_theme_t* theme, br_plotter_t* br) {
   if (brui_resizable_is_hidden(plot->legend_extent_handle)) return;
+  float text_size = brui_text_size();
   brui_resizable_push(plot->legend_extent_handle);
     bool is_active = brui_active();
     int active_group = -1;
@@ -195,17 +209,17 @@ static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas, br_theme_t* the
       cdi = plot->data_info.arr[i];
       br_data_t* data = br_data_get1(datas, cdi.group_id);
       active &= brui_y() < mp.y;
-      brui_vsplitvp(3, BRUI_SPLITA((float)brui_text_size()), BRUI_SPLITA(brui_padding_x()), BRUI_SPLITR(1));
+      brui_vsplitvp(3, BRUI_SPLITA(text_size), BRUI_SPLITA(brui_padding_x()), BRUI_SPLITR(1));
         if (plot->selected_data == data->group_id) {
-          brui_icon((float)brui_text_size(), BR_EXTENT_TOBB(br_icon_cb_0((float)brui_text_size())), theme->colors.btn_hovered, data->color);
+          brui_icon(text_size, br_icon_cb_0(text_size), theme->colors.btn_hovered, data->color);
         } else {
-          brui_icon((float)brui_text_size(), BR_BB(0,0,0,0), data->color, data->color);
+          brui_icon(text_size, BR_EXTENT(0,0,0,0), data->color, data->color);
         }
       brui_vsplit_pop();
       brui_vsplit_pop();
-        brui_height_set((float)brui_text_size());
+        brui_height_set(text_size);
         brui_text_input(data->name);
-      brui_vsplit_end();
+      brui_vsplit_pop();
       active &= brui_y() >= mp.y;
       if (active) {
         active = false;
@@ -292,11 +306,11 @@ brgui_fm_result_t brgui_draw_file_manager(brsp_t* sp, brgui_file_manager_t* stat
     uint32_t cur_dir_name_len = cur_dir.len;
     bool dir_changed = false;
     brui_push();
-      int ts = brui_text_size();
-      brui_vsplitvp(3, BRUI_SPLITA((float)ts + 5.f), BRUI_SPLITA((float)ts + 5.f), BRUI_SPLITR(1));
-        if (brui_button_icon(BR_SIZEI(ts, ts), state->show_hidden_files ? br_icon_hidden_1((float)ts) : br_icon_hidden_0((float)ts))) state->show_hidden_files = !state->show_hidden_files;
+      float ts = brui_text_size();
+      brui_vsplitvp(3, BRUI_SPLITA(ts + 5.f), BRUI_SPLITA(ts + 5.f), BRUI_SPLITR(1));
+        if (brui_button_icon(BR_SIZE(ts, ts), state->show_hidden_files ? br_icon_hidden_1(ts) : br_icon_hidden_0(ts))) state->show_hidden_files = !state->show_hidden_files;
       brui_vsplit_pop();
-        if (brui_button_icon(BR_SIZEI(ts, ts), br_icon_back((float)ts))) {
+        if (brui_button_icon(BR_SIZE(ts, ts), br_icon_back(ts))) {
           if (cur_path.len > 1) {
             brsp_remove_char_end(sp, state->path_id);
             cur_path = brsp_get(*sp, state->path_id);
@@ -314,7 +328,7 @@ brgui_fm_result_t brgui_draw_file_manager(brsp_t* sp, brgui_file_manager_t* stat
           dir_changed = true;
           cur_path = brsp_get(*sp, state->path_id);
         }
-      brui_vsplit_end();
+      brui_vsplit_pop();
     brui_pop();
     brui_new_lines(1);
     brui_push();
@@ -343,15 +357,15 @@ brgui_fm_result_t brgui_draw_file_manager(brsp_t* sp, brgui_file_manager_t* stat
             state->has_tabed = false;
             float ly = brui_local_y();
             float y = brui_y();
-            float slack = (float)(2*brui_text_size());
+            float slack = 2.f*brui_text_size();
             if (ly < 0) brui_scroll_move(ly - slack);
             if (y + slack > brui_max_y()) brui_scroll_move(y + slack -brui_max_y());
           }
           entered = state->has_entered;
           state->has_entered = false;
         }
-        brui_vsplitvp(2, BRUI_SPLITA((float)ts), BRUI_SPLITR(1));
-          if (brui_button_icon(BR_SIZEI(ts, ts), listing_dirs ? br_icon_folder((float)ts) : br_icon_file((float)ts))) entered = true;
+        brui_vsplitvp(2, BRUI_SPLITA(ts), BRUI_SPLITR(1));
+          if (brui_button_icon(BR_SIZE(ts, ts), listing_dirs ? br_icon_folder(ts) : br_icon_file(ts))) entered = true;
         brui_vsplit_pop();
           if (is_selected) brui_select_next();
           if (brui_button(br_str_as_view(file.name)) || entered) {
@@ -379,14 +393,14 @@ brgui_fm_result_t brgui_draw_file_manager(brsp_t* sp, brgui_file_manager_t* stat
               i = 10000;
             }
           }
-        brui_vsplit_end();
+        brui_vsplit_pop();
       }
       if (split) {
         if (listing_dirs) {
           brui_vsplit_pop();
           brui_vsplit_pop();
         }
-        brui_vsplit_end();
+        brui_vsplit_pop();
       }
       if (state->select_index >= real_i) state->select_index = -1;
     brui_pop();
@@ -501,7 +515,7 @@ void brgui_draw_csv_manager(brsp_t* sp, brgui_csv_reader_t* reader, br_csv_parse
     brui_vsplit_pop();
     brui_vsplit_pop();
       brui_text(brsp_get(*sp, reader->read_id));
-    brui_vsplit_end();
+    brui_vsplit_pop();
     switch (parser->state) {
       case br_csv_state_init: {
         brui_textf("Init");
@@ -532,7 +546,7 @@ void brgui_draw_csv_manager(brsp_t* sp, brgui_csv_reader_t* reader, br_csv_parse
             }
             if (j + 1 < parser->header.len) brui_vsplit_pop();
           }
-        brui_vsplit_end();
+        brui_vsplit_pop();
       } break;
       case br_csv_state_file_read_error: brui_text(BR_STRL("File read error")); break;
       case br_csv_state_parse_error: brui_text(BR_STRL("Parse error")); break;
@@ -547,7 +561,7 @@ static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas) {
     br_data_t* data = br_data_get1(datas, d->data_id);
     if (NULL != data) {
       float local_y = brui_local_y();
-      float ts = (float)brui_text_size() + brui_padding_y();
+      float ts = brui_text_size() + brui_padding_y();
       br_u32 i = 0;
       if (local_y < -ts) {
         br_u32 n = (br_u32)(-(local_y + 2.f*ts)/ts);
@@ -567,7 +581,7 @@ static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas) {
             for (j = 0; j < max_n && j + i < lines; ++j) v2 = br_data_el_xy1(*data, i + j), brui_textf("%f", v2.x);
           brui_vsplit_pop();
             for (j = 0; j < max_n && j + i < lines; ++j) v2 = br_data_el_xy1(*data, i + j), brui_textf("%f", v2.y);
-          brui_vsplit_end();
+          brui_vsplit_pop();
         } break;
         case br_data_kind_3d: {
           br_vec3d_t v2;
@@ -577,7 +591,7 @@ static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas) {
             for (j = 0; j < max_n && j + i < lines; ++j) v2 = br_data_el_xyz1(*data, i + j), brui_textf("%f", v2.y);
           brui_vsplit_pop();
             for (j = 0; j < max_n && j + i < lines; ++j) v2 = br_data_el_xyz1(*data, i + j), brui_textf("%f", v2.z);
-          brui_vsplit_end();
+          brui_vsplit_pop();
         } break;
         default: BR_UNREACHABLE("Kind %d not handled", data->kind);
       }
@@ -715,12 +729,12 @@ static void brgui_draw_memory(br_plotter_t* br) {
       }
 
       for (size_t i = 0; i < tr.frames.len; ++i) {
-        brui_vsplitvp(2, BRUI_SPLITA(1.f * (float)brui_text_size()), BRUI_SPLITR(1.f));
+        brui_vsplitvp(2, BRUI_SPLITA(brui_text_size()), BRUI_SPLITR(1.f));
           brui_textf("%zu", i);
         brui_vsplit_pop();
           int n = sprintf(scrach, "Frame %d len=%d", tr.frames.arr[i].frame_num, tr.frames.arr[i].len);
           if (brui_button(BR_STRV(scrach, (uint32_t)n))) br->ui.memory.selected_frame = (int)i;
-        brui_vsplit_end();
+        brui_vsplit_pop();
       }
 
       if (sel_frame == -1) {
@@ -765,7 +779,7 @@ static void brgui_draw_memory(br_plotter_t* br) {
               cur_nid = mem_node.prev_nid;
             }
           }
-        brui_vsplit_end();
+        brui_vsplit_pop();
       }
 
       br_scrach_free();
@@ -800,22 +814,22 @@ void brgui_draw_add_expression(br_plotter_t* br) {
 }
 
 static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_anims_t* anims, br_datas_t datas) {
-  int og_text_size = brui_text_size();
-  int icon_size = og_text_size;
+  float og_text_size = brui_text_size();
+  float icon_size = og_text_size;
   bool ret = false;
   if (brui_resizable_is_hidden(plot->menu_extent_handle)) {
-    if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icon_menu((float)og_text_size))) brui_resizable_show(plot->menu_extent_handle, true);
+    if (brui_button_icon(BR_SIZE(icon_size, icon_size), br_icon_menu(og_text_size))) brui_resizable_show(plot->menu_extent_handle, true);
   } else {
     brui_resizable_push(plot->menu_extent_handle);
-      brui_vsplitvp(2, BRUI_SPLITA((float)icon_size), BRUI_SPLITR(1));
+      brui_vsplitvp(2, BRUI_SPLITA(icon_size), BRUI_SPLITR(1));
         char* c = br_scrach_get(4096);
-        if (brui_button_icon(BR_SIZEI(icon_size, icon_size), br_icon_back((float)og_text_size))) brui_resizable_show(plot->menu_extent_handle, false);
+        if (brui_button_icon(BR_SIZE(icon_size, icon_size), br_icon_back(og_text_size))) brui_resizable_show(plot->menu_extent_handle, false);
       brui_vsplit_pop();
         brui_text_size_set(og_text_size);
-        brui_text_align_set(br_text_renderer_ancor_mid_mid);
-        brui_maxy_set(brui_min_y() + (float)icon_size);
+        brui_text_ancor_set(br_dir_mid_mid);
+        brui_maxy_set(brui_min_y() + icon_size);
         brui_textf("%s Plot", plot->kind == br_plot_kind_2d ? "2D" : "3D");
-      brui_vsplit_end();
+      brui_vsplit_pop();
       brui_text(BR_STRL("_______________________________________________________"));
       if (brui_button(BR_STRL("Remove Plot"))) {
         ret = true;
@@ -826,9 +840,9 @@ static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_anims_t* anims,
         brui_sliderf2(BR_STRL("Grid Thick"), &plot->grid_line_thickness);
       brui_vsplit_pop();
         brui_sliderf2(BR_STRL("Major Grid Thick"), &plot->grid_major_line_thickness);
-      brui_vsplit_end();
+      brui_vsplit_pop();
 
-      brui_text_size_set(og_text_size/5*4);
+      brui_text_size_set(og_text_size*1.2f);
       brui_checkbox(BR_STRL("Follow"), &plot->follow);
       bool show_legend = false == brui_resizable_is_hidden(plot->legend_extent_handle);
       if (brui_checkbox(BR_STRL("Show Legend"), &show_legend)) {
@@ -885,7 +899,7 @@ static void draw_left_panel(br_plotter_t* br) {
         if (brui_button(BR_STRL("Add 3D"))) {
           br_plotter_add_plot_3d(br);
         }
-      brui_vsplit_end();
+      brui_vsplit_pop();
       if (brui_button(BR_STRL("Add Expression"))) {
         br->ui.add_expression.show = true;
       }
@@ -921,7 +935,7 @@ static void draw_left_panel(br_plotter_t* br) {
         brui_sliderf(BR_STRL("padding.y"), &br->uiw.def.padding.y);
       brui_vsplit_pop();
         brui_sliderf(BR_STRL("padding.x"), &br->uiw.def.padding.x);
-      brui_vsplit_end();
+      brui_vsplit_pop();
       brui_sliderf2(BR_STRL("thick"), &br->uiw.def.border_thick);
       brui_slideri(BR_STRL("Font Size"), &br->uiw.def.font_size);
       brui_sliderf2(BR_STRL("Animation Speed"), &br->uiw.def.animation_speed);
@@ -943,7 +957,7 @@ static void draw_left_panel(br_plotter_t* br) {
     }
 
     if (brui_collapsable(BR_STRL("Data"), &br->ui.expand_data)) {
-      brui_text_size_set((int)((float)brui_text_size() * 0.8f));
+      brui_text_size_set(brui_text_size() * 0.8f);
       brfl_foreach(i, br->groups) {
         brui_push();
           br_data_t data = br_da_get(br->groups, i);
@@ -988,6 +1002,7 @@ static void draw_left_panel(br_plotter_t* br) {
       if (brui_button(BR_STRL("Log"))) {
         br->ui.show_log = true;
       }
+      if (brui_button(BR_STRL("Atlas"))) br->ui.show_atlas = true;
       brui_collapsable_end();
     }
 
@@ -1027,7 +1042,7 @@ static bool brgui_draw_debug_window_rec(br_plotter_t* br, int handle, int depth)
       color.a = 12;
       br_extent_t e = brui_resizable_cur_extent(handle);
       br_bb_t bb = BR_EXTENT_TOBB(e);
-      brui_rectangle(bb, bb, color, 10000);
+      brui_rectangle(bb, color, 10000);
     }
     return true;
   }
@@ -1057,7 +1072,7 @@ static void brgui_draw_debug_window(br_plotter_t* br) {
       brui_vsplit_pop();
         brui_text(BR_STRL("Height"));
         brui_textf("%.2f", ex.height);
-      brui_vsplit_end();
+      brui_vsplit_pop();
     if (brui_resizable_temp_pop()) brgui_resizable_log_id = 0;
   }
   if (brui_resizable_temp_push(BR_STRL("Debug")).just_created) {
@@ -1096,7 +1111,7 @@ static void brgui_draw_debug_window(br_plotter_t* br) {
               }
             }
             brui_text(BR_STRV(buff, (uint32_t)(cur - buff)));
-          brui_vsplit_end();
+          brui_vsplit_pop();
         }
       br_scrach_free();
     brui_pop();
@@ -1110,7 +1125,7 @@ static void brgui_draw_license(br_plotter_t* br) {
       for (int i = 0; i < br_license_lines; ++i) printf("%.*s\n", br_license[i].len, br_license[i].str);
     }
     float local_y = brui_local_y();
-    float ts = (float)brui_text_size() + brui_padding_y();
+    float ts = brui_text_size() + brui_padding_y();
     int i = 0;
     if (local_y < -ts) {
       int n = (int)(-(local_y + 2.f*ts)/ts);
@@ -1120,7 +1135,7 @@ static void brgui_draw_license(br_plotter_t* br) {
       }
     }
     float space_left = brui_max_y() - brui_y();
-    int max_n = (int)(space_left / ts) + 1;
+    int max_n = (int)(space_left / ts) + 10;
 
     for (int j = 0; j < max_n && i < br_license_lines; ++j, ++i) brui_text(br_license[i]);
 
@@ -1151,7 +1166,7 @@ static void brgui_draw_about(br_plotter_t* br) {
   if (brui_resizable_temp_pop()) br->ui.show_about = false;
 }
 
-void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, int font_size, br_color_t font_color) {
+void brgui_draw_grid_numbers(br_plot_t* plot) {
   // TODO 2D/3D
   //assert(plot->kind == br_plot_kind_2d);
   if(plot->kind != br_plot_kind_2d) return;
@@ -1161,8 +1176,8 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, int font_s
   br_extentd_t r = br_plot2d_extent_to_plot(*plot, vpf);
   char* scrach = br_scrach_get(128);
   br_vec2d_t sz = BR_VEC2_TOD(vpf.size.vec);
-  br_text_renderer_viewport_set(tr, BR_SIZE_TOI(vpf.size));
-  br_bb_t limitf = BR_BB(0,0,10000,10000);
+  brtr_stack_el_t* el = brtr_state();
+  el->z = BR_Z_MAX/2;
 
   if (r.height > 0.f) {
     double exp = floor(log10(r.height / 2.f));
@@ -1172,10 +1187,11 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, int font_s
 
       double i = 0.f;
       double x = -r.x * sz.x / r.width;
-      br_text_renderer_ancor_t ancor = br_text_renderer_ancor_mid_mid;
+
+      el->ancor = br_dir_mid_mid;
       const float padding = 10.f;
-      if (x < padding) x = padding, ancor = br_text_renderer_ancor_left_mid;
-      else if (x > sz.x - padding) x = sz.x - padding, ancor = br_text_renderer_ancor_right_mid;
+      if (x < padding) x = padding, el->ancor = br_dir_left_mid;
+      else if (x > sz.x - padding) x = sz.x - padding, el->ancor = br_dir_right_mid;
       while (i < 50.f) {
         double cur = start - base * i;
         i += 1.f;
@@ -1184,7 +1200,8 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, int font_s
         s = br_strv_trim_zeros(s);
         double y = sz.y / r.height * (r.y - cur);
         if (y > sz.y) break;
-        br_text_renderer_push2(tr, BR_VEC3((float)x, (float)y, 0.9f), font_size, font_color, BR_COLOR(0,0,0,0), s, limitf, ancor);
+        el->pos = BR_VEC2((float)x, (float)y);
+        brtr_push(s);
       }
     }
   }
@@ -1198,9 +1215,9 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, int font_s
       double i = 0;
       double y = r.y * sz.y / r.height;
       const float padding = 10.f;
-      br_text_renderer_ancor_t ancor = br_text_renderer_ancor_mid_mid;
-      if (y < padding) y = padding, ancor = br_text_renderer_ancor_mid_up;
-      else if (y > sz.y - padding) y = sz.y - padding, ancor = br_text_renderer_ancor_mid_down;
+      el->ancor = br_dir_mid_mid;
+      if (y < padding) y = padding, el->ancor = br_dir_mid_up;
+      else if (y > sz.y - padding) y = sz.y - padding, el->ancor = br_dir_mid_down;
       while (i < 50.0) {
         double cur = start + base * i;
         i += 1.0;
@@ -1209,7 +1226,8 @@ void brgui_draw_grid_numbers(br_text_renderer_t* tr, br_plot_t* plot, int font_s
         s = br_strv_trim_zeros(s);
         double x = (sz.x / r.width) * (cur - r.x);
         if (x > sz.x) break;
-        br_text_renderer_push2(tr, BR_VEC3((float)x, (float)y, 0.9f), font_size, font_color, BR_COLOR(0,0,0,0), s, limitf, ancor);
+        el->pos = BR_VEC2((float)x, (float)y);
+        brtr_push(s);
       }
     }
   }

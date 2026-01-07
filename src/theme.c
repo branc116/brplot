@@ -16,6 +16,7 @@ void br_theme_dark(br_theme_t* t) {
 
   t->colors.grid_nums = txt;
   t->colors.grid_nums_bg = t->colors.plot_bg;
+  t->colors.grid_nums_bg.a = 0;
   t->colors.grid_lines = br_color_greener(br_color_darker(txt, 0.7f), 0.02f);
 
   t->colors.ui_edge_inactive = br_color_lighter(t->colors.btn_inactive, 0.8f);
@@ -45,6 +46,7 @@ void br_theme_light(br_theme_t* t) {
 
   t->colors.grid_nums = txt;
   t->colors.grid_nums_bg = t->colors.plot_bg;
+  t->colors.grid_nums_bg.a = 0;
   t->colors.grid_lines = br_color_greener(br_color_darker(bg, 0.4f), 0.02f);
 
   t->colors.bg = bg;

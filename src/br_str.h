@@ -499,6 +499,7 @@ br_u32 br_strv_utf8_pop(br_strv_t* t) {
   if ((initial & 0b11111000) == 0b11110000) return ret;
 
   BR_UNREACHABLE("Bad UTF8 character...");
+  BR_RETURN_IF_TINY_C(0);
 }
 
 br_strv_t br_str_printf(br_str_t* out_str, const char* fmt, ...) {

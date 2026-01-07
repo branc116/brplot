@@ -25,6 +25,7 @@
 #define GL_TEXTURE_MIN_FILTER 0x2801
 #define GL_NEAREST 0x2600
 #define GL_LINEAR 0x2601
+#define GL_LINEAR_MIPMAP_LINEAR 0x2703
 #define GL_TEXTURE_RECTANGLE 0x84F5
 #define GL_FRAMEBUFFER_DEFAULT_WIDTH 0x9310
 #define GL_FRAMEBUFFER_DEFAULT_HEIGHT 0x9311
@@ -130,7 +131,7 @@ void brgl_disable_clip_distance(void);
 void brgl_enable_multisampling(void);
 void brgl_disable_multisampling(void);
 void brgl_viewport(GLint x, GLint y, GLsizei width, GLsizei height);
-GLuint brgl_load_texture(const void* data, int width, int height, int format);
+GLuint brgl_load_texture(const void* data, int width, int height, int format, bool mipmap);
 void brgl_unload_texture(GLuint tex_id);
 
 GLuint brgl_create_framebuffer(int width, int height);

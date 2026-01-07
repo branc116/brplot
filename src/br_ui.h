@@ -16,11 +16,12 @@ bool brui_text_input(brsp_id_t str_id);
 void brui_new_lines(int n);
 bool brui_button(br_strv_t text);
 bool brui_checkbox(br_strv_t text, bool* checked);
-void brui_img(unsigned int texture_id);
-void brui_icon(float size, br_bb_t icon, br_color_t forground, br_color_t background);
-bool brui_button_icon(br_sizei_t size, br_extent_t icon);
-bool brui_triangle(br_vec2_t a, br_vec2_t b, br_vec2_t c, br_bb_t limit, br_color_t color, int z);
-bool brui_rectangle(br_bb_t bb, br_bb_t limit, br_color_t color, int z);
+void brui_texture(unsigned int texture_id);
+void brui_framebuffer(unsigned int framebuffer_id);
+void brui_icon(float size, br_extent_t icon, br_color_t forground, br_color_t background);
+bool brui_button_icon(br_size_t size, br_extent_t icon);
+bool brui_triangle(br_vec2_t a, br_vec2_t b, br_vec2_t c, br_color_t color, int z);
+bool brui_rectangle(br_bb_t bb, br_color_t color, int z);
 bool brui_sliderf(br_strv_t text, float* val);
 bool brui_sliderf2(br_strv_t text, float* value);
 bool brui_sliderf3(br_strv_t text, float* value, int percision);
@@ -28,8 +29,7 @@ bool brui_slideri(br_strv_t text, int* value);
 void brui_vsplit(int n);
 void brui_vsplitarr(int n, brui_split_t* arr);
 void brui_vsplitvp(int n, ...);
-void brui_vsplit_pop(void);
-void brui_vsplit_end(void);
+bool brui_vsplit_pop(void);
 void brui_background(br_bb_t bb, br_color_t color);
 void brui_border1(br_bb_t bb);
 void brui_border2(br_bb_t bb, bool active);
@@ -38,15 +38,20 @@ void brui_collapsable_end(void);
 
 void brui_push(void);
 brui_pop_t brui_pop(void);
-void brui_push_simple(void);
 void brui_pop_simple(void);
-void brui_push_y(float y);
 
 void brui_select_next(void);
 
-int   brui_text_size(void);
-void  brui_text_size_set(int size);
-void  brui_text_align_set(br_text_renderer_ancor_t ancor);
+// TODO: brui_text_ should be moved to text_rendere and renamed to brtr_
+// NOTE: Text size is font size, just in floats..
+//       It's a bit strange to have it be called text size, because text can be
+//       arbitrarely bit so this just don't make sense. But I don't wanna call
+//       this function font_size.
+// NOTE: Text should be able to have fractional size. 20.5 px. Just oversample or undersample glyphs of size 20 or 21..
+float brui_text_size(void);
+void  brui_text_size_set(float size);
+void  brui_text_justify_set(br_dir_t ancor);
+void  brui_text_ancor_set(br_dir_t ancor);
 void  brui_text_color_set(br_color_t color);
 void  brui_ancor_set(brui_ancor_t ancor);
 void  brui_z_set(int z);

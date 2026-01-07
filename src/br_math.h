@@ -311,6 +311,26 @@ typedef struct {
   };
 } br_mat2_t;
 
+typedef enum br_dir_t {
+  br_dir_none  = 0,
+  br_dir_left  = 1 << 1,
+  br_dir_mid_x = 1 << 2,
+  br_dir_right = 1 << 3,
+  br_dir_up    = 1 << 4,
+  br_dir_mid_y = 1 << 5,
+  br_dir_down  = 1 << 6,
+
+  br_dir_left_up    = br_dir_left  | br_dir_up,
+  br_dir_left_mid   = br_dir_left  | br_dir_mid_y,
+  br_dir_left_down  = br_dir_left  | br_dir_down,
+  br_dir_mid_up     = br_dir_mid_x | br_dir_up,
+  br_dir_mid_mid    = br_dir_mid_x | br_dir_mid_y,
+  br_dir_mid_down   = br_dir_mid_x | br_dir_down,
+  br_dir_right_up   = br_dir_right | br_dir_up,
+  br_dir_right_mid  = br_dir_right | br_dir_mid_y,
+  br_dir_right_down = br_dir_right | br_dir_down,
+} br_dir_t;
+
 //------------------------float----------------------------------
 
 static inline float br_float_clamp(float x, float m, float M) {
@@ -499,8 +519,8 @@ static inline br_vec3_t br_vec2_transform_scale(br_vec2_t v, br_mat_t mat) {
   return result;
 }
 
-static inline br_vec2_t br_vec2_stog(br_vec2_t v, br_sizei_t screen) {
-  return BR_VEC2(v.x / (float)screen.width * 2.f - 1.f, (1.f - v.y / (float)screen.height) * 2.f - 1.f);
+static inline br_vec2_t br_vec2_stog(br_vec2_t v, br_size_t screen) {
+  return BR_VEC2(v.x / screen.width * 2.f - 1.f, (1.f - v.y / screen.height) * 2.f - 1.f);
 }
 
 static inline br_vec2_t br_vec2_normalize(br_vec2_t a) {
@@ -1159,6 +1179,14 @@ static inline br_vec2_t br_bb_tr(br_bb_t bb) {
 
 static inline br_vec2_t br_bb_bl(br_bb_t bb) {
   return BR_VEC2(bb.min.x, bb.max.y);
+}
+
+static inline float br_bb_width(br_bb_t bb) {
+  return bb.max.x - bb.min.x;
+}
+
+static inline float br_bb_height(br_bb_t bb) {
+  return bb.max.y - bb.min.y;
 }
 
 static inline br_bb_t br_bb_sub(br_bb_t bb, br_vec2_t vec) {

@@ -123,6 +123,7 @@ int brsp_insert_unicode(brsp_t* sp, brsp_id_t t, int at, uint32_t u) {
     return 4;
   }
   BR_UNREACHABLE("Don't know how to encode character %u", u);
+  BR_RETURN_IF_TINY_C(0);
 }
 
 void brsp_insert_char_at_end(brsp_t* sp, brsp_id_t id, char c) {

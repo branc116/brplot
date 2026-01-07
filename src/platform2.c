@@ -834,7 +834,7 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
       }
     } break;
     default: {
-      LOGI("Unknown x11 event type: %d", event.type);
+      //LOGI("Unknown x11 event type: %d", event.type);
       return (brpl_event_t) { .kind = brpl_event_nop };
     } break;
   }
@@ -938,7 +938,7 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
                                     xpos, ypos,
                                     width, height,
                                     0,      // Border width
-                                    depth,  // Color depth
+                                    depth,
                                     brpl_x11_InputOutput,
                                     visual,
                                     brpl_x11_CWBorderPixel | brpl_x11_CWColormap | brpl_x11_CWEventMask,

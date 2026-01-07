@@ -5,10 +5,12 @@
 #endif
 #include "src/br_platform.h"
 #include "include/br_str_header.h"
-#include "src/br_shaders.h"
 
 #include <string.h>
 #include <stdio.h>
+
+// TODO: Handle this some other way...
+#if defined(BR_GL_DRAW_ALL_CB)
 
 static BR_THREAD_LOCAL struct {
   br_shaders_t* shaders;
@@ -17,6 +19,8 @@ static BR_THREAD_LOCAL struct {
 void brgl_construct(br_shaders_t* shaders) {
   brgl_state.shaders = shaders;
 }
+
+#endif
 
 unsigned int brgl_load_shader(const char* vs, const char* fs, int* ok) {
   GLuint vsid = brgl_compile_shader(vs, GL_VERTEX_SHADER);
@@ -153,7 +157,7 @@ void brgl_viewport(GLint x, GLint y, GLsizei width, GLsizei height) {
   glViewport(x, y, width, height);
 }
 
-GLuint brgl_load_texture(const void* data, int width, int height, int format) {
+GLuint brgl_load_texture(const void* data, int width, int height, int format, bool mipmap) {
   (void)format;
   BR_ASSERT(format == BRGL_TEX_GRAY);
   GLuint id = 0;
@@ -163,7 +167,8 @@ GLuint brgl_load_texture(const void* data, int width, int height, int format) {
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glGenTextures(1, &id);
   glBindTexture(GL_TEXTURE_2D, id);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  if (mipmap) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  else        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
@@ -171,6 +176,8 @@ GLuint brgl_load_texture(const void* data, int width, int height, int format) {
   GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_ONE };
   glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
 #endif
+
+  if (mipmap) glGenerateMipmap(GL_TEXTURE_2D);
 
   glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -221,7 +228,11 @@ GLuint brgl_framebuffer_to_texture(GLuint br_id) {
 }
 
 void brgl_enable_framebuffer(GLuint br_id, int new_width, int new_height) {
-  br_shaders_draw_all(*brgl_state.shaders); // Draw everything that was not already
+   // Draw everything that was not already
+#if defined(BR_GL_DRAW_ALL_CB)
+  BR_GL_DRAW_ALL_CB(*brgl_state.shaders);
+#endif
+  //br_shaders_draw_all(*brgl_state.shaders);
 
   GLuint fb_id = br_framebuffers[br_id].fb_id;
   int width = br_framebuffers[br_id].width;

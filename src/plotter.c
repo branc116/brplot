@@ -10,7 +10,6 @@
 #include "src/br_text_renderer.h"
 #include "src/br_theme.h"
 #include "src/br_ui.h"
-#include "src/br_icons.h"
 #include "src/br_gl.h"
 #include "include/br_free_list_header.h"
 #include "src/br_memory.h"
@@ -144,7 +143,7 @@ void br_plotter_init(br_plotter_t* br) {
     br_theme_dark(&br->uiw.theme);
     br_theme_reset_ui(&br->uiw.theme);
   } else {
-    br_text_renderer_load_font(br->uiw.text, brsp_try_get(br->uiw.sp, br->ui.font_path_id));
+    brtr_font_load(brsp_try_get(br->uiw.sp, br->ui.font_path_id));
   }
   memset(&br->ui.fm_state.cur_dir, 0, sizeof(br->ui.fm_state.cur_dir));
 }

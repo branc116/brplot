@@ -33,13 +33,13 @@ int main(void) {
   while (false == window->should_close) {
     while (brpl_event_frame_next != brpl_event_next(&window).kind); // You can also handle some of the events 
     brpl_frame_start(&window);
-      if (brui_buttonf("Hello")) printf("Hello world\n");
     brpl_frame_end(&window);
   }
 }
  * ```
  * Compile as: cc main.c
  * Functions that are part of simple api can be found by following a tag *BRUI_API*
+ *
  * */
 #if !defined(BR_INCLUDE_BR_PLAT_H)
 #define BR_INCLUDE_BR_PLAT_H
@@ -47,9 +47,25 @@ int main(void) {
 #endif // !defined(BR_INCLUDE_BR_PLAT_H)
 
 #if defined(BRPLAT_IMPLEMENTATION)
-#  include "src/br_pp.h"
-#  if !defined(BR_INCLUDE_UNITY_BRPLAT_C)
-#    define BR_INCLUDE_UNITY_BRPLAT_C
-#    include "tools/unity/brplat.c"
+
+#  if !defined(BR_INCLUDE_BR_STR_IMPL_H)
+#    define BR_INCLUDE_BR_STR_IMPL_H
+#    if !defined(BR_STR_IMPLEMENTATION)
+#      define BR_STR_IMPLEMENTATION
+#      include "src/br_str.h"
+#    endif
 #  endif
+
+#  if !defined(BR_INCLUDE_GL_C)
+#    define BR_INCLUDE_GL_C
+#    include "src/gl.c"
+#  endif
+
+#  if !defined(BR_INCLUDE_PLATFORM2_C)
+#    define BR_INCLUDE_PLATFORM2_C
+#    include "src/platform2.c"
+#  endif
+
 #endif
+
+

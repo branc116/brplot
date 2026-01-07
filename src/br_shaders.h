@@ -16,12 +16,10 @@
 #  define grid_3d_vs        "src/shaders/grid_3d.vs"
 #  define line_3d_fs        "src/shaders/line_3d.fs"
 #  define line_3d_vs        "src/shaders/line_3d.vs"
-#  define font_fs           "src/shaders/font.fs"
-#  define font_vs           "src/shaders/font.vs"
 #  define img_fs            "src/shaders/img.fs"
 #  define img_vs            "src/shaders/img.vs"
-#  define icon_fs           "src/shaders/icon.fs"
-#  define icon_vs           "src/shaders/icon.vs"
+#  define glyph_vs          "src/shaders/glyph.vs"
+#  define glyph_fs          "src/shaders/glyph.fs"
 #endif
 
 #define NOP2(N, M)
@@ -56,16 +54,7 @@
                                         \
       X_BUF(pos_delta, 4)               \
     )                                   \
-  X(icon, 1024,                         \
-      X_VEC(atlas, _TEX),               \
-                                        \
-      X_BUF(pos, 4)                     \
-      X_BUF(fg, 4)                      \
-      X_BUF(bg, 4)                      \
-      X_BUF(clip_dists, 4)              \
-      X_BUF(z, 1)                       \
-    )                                   \
-  X(font, 1024,                         \
+  X(glyph, 1024,                        \
       X_VEC(atlas, _TEX),               \
                                         \
       X_BUF(pos, 4)                     \

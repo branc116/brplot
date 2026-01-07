@@ -1,5 +1,5 @@
 #define BRPLAT_IMPLEMENTATION
-#include "include/brplat.h"
+#include <brplat.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -13,7 +13,7 @@ int main(void) {
     }
   };
 
-  brpl_window_open(&window)
+  brpl_window_open(&window);
   while (false == window.should_close) {
     brpl_event_t event = brpl_event_next(&window);
     switch (event.kind) {
@@ -46,4 +46,4 @@ int main(void) {
   return 0;
 }
 
-// cc tests/test_platform.c src/platform2.c -I.
+// tcc -I. -Iinclude -o bin/test_platform tests/test_platform.c && bin/test_platform

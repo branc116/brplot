@@ -1,7 +1,13 @@
 #version 330
 
-#ifdef BR_CULL
+#ifdef GL_EXT_clip_cull_distance
 #  extension GL_ANGLE_clip_cull_distance : enable
+#  define BR_CULL
+#endif
+
+#ifdef GL_EXT_clip_cull_distance
+#  extension GL_EXT_clip_cull_distance : enable
+#  define BR_CULL
 #endif
 
 precision highp float;
@@ -15,11 +21,13 @@ in float z;
 out vec2 vs_tpos;
 out vec4 vs_fg;
 out vec4 vs_bg;
+out vec4 vs_clits;
 
 void main() {
   vs_tpos = pos.zw;
   vs_fg = fg;
   vs_bg = bg;
+  vs_clits = clip_dists;
 
   gl_Position = vec4(pos.xy, z, 1.0);
 #ifdef BR_CULL

@@ -33,7 +33,6 @@ typedef enum br_plotter_entity_kind_t {
 } br_plotter_entity_kind_t;
 
 typedef struct q_commands q_commands;
-typedef struct br_text_renderer_t br_text_renderer_t;
 typedef struct br_plotter_t {
   br_datas_t groups;
   br_plots_t plots;
@@ -96,6 +95,7 @@ typedef struct br_plotter_t {
     bool show_license;
     bool show_about;
     bool show_log;
+    bool show_atlas;
   } ui;
 } br_plotter_t;
 

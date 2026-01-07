@@ -21,10 +21,12 @@ struct {
     .functions =
       "void glBegin(GLenum mode)"
       "void glColor3f(GLfloat r, GLfloat g, GLfloat b)"
+      "void glColor4f(GLfloat r, GLfloat g, GLfloat b, GLfloat a)"
       "void glVertex3f(GLfloat x, GLfloat y, GLfloat z)"
       "void glEnd(void)"
       "void glFlush(void)"
       "void glActiveTexture(GLenum texture)"
+      "void glGenerateMipmap(GLenum target)"
       "void glAttachShader(GLuint program, GLuint shader)"
       "void glBindBuffer(GLenum target, GLuint buffer)"
       "void glBindFramebuffer(GLenum target, GLuint framebuffer)"

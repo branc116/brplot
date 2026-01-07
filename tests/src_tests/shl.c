@@ -7,7 +7,6 @@
 #include "src/text_renderer.c"
 #include "src/platform2.c"
 #include "src/shaders.c"
-#include "src/icons.c"
 #include "src/theme.c"
 #include "src/data_generator.c"
 #include "src/data.c"

@@ -1,9 +1,9 @@
+#define BRUI_IMPLEMENTATION
 #include <brui.h>
 
 // TODO: Export this
 void brui_vsplit(int);
-void brui_vsplit_pop();
-void brui_vsplit_end();
+bool brui_vsplit_pop(void);
 int main(void) {
   brui_window_t window = { 0 };
   brui_window_init(&window);
@@ -11,12 +11,11 @@ int main(void) {
     while (brpl_event_frame_next != brui_event_next(&window).kind); // You can also handle some of the events
     brui_frame_start(&window);
       const char* texts[] = { "Hello", "haaalo", "yooo", "hihi" };
-      int n = sizeof(texts)/sizeof(texts[0]);
+      int n = 3, i = 0;
       brui_vsplit(n);
-      for (int i = 0; i < n; ++i, brui_vsplit_pop()) {
-        if (brui_buttonf(texts[i])) printf("Hello %s\n", texts[i]);
-      }
-      brui_vsplit_end();
+      do {
+        if (brui_buttonf(texts[i])) printf("Hello %s\n", texts[i++]);
+      } while (brui_vsplit_pop());
 
     brui_frame_end(&window);
   }

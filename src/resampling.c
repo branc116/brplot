@@ -155,6 +155,7 @@ br_vec3d_t br_resampling_get_rebase3(br_data_t data) {
     case br_data_kind_2d: return BR_VEC3D(data.dd.rebase_x, data.dd.rebase_y, 0.0);
     default: BR_UNREACHABLE("Data kind: %d", data.kind);
   }
+  BR_RETURN_IF_TINY_C((br_vec3d_t){0});
 }
 
 br_bb3_t br_resampling_get_bb3_rebased(br_resampling_t* res, br_data_t data, br_u32 node_index) {
@@ -173,6 +174,7 @@ br_bb3_t br_resampling_get_bb3_rebased(br_resampling_t* res, br_data_t data, br_
     } break;
     default: BR_UNREACHABLE("Data kind: %d", data.kind); break;
   }
+  BR_RETURN_IF_TINY_C((br_bb3_t){0});
 }
 
 static void br_resampling_get_info(br_resampling_t* res, br_data_kind_t kind, br_u32 node_index, br_u32* child1, br_u32* child2, br_u32* depth, br_u32* index_start, br_u32* node_len) {

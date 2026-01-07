@@ -1,5 +1,5 @@
 #define BRPLOT_IMPLEMENTATION
-#include "brplot.h"
+#include <brplot.h>
 #include <math.h>
 
 int main(void) {
