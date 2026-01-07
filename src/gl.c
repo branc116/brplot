@@ -9,19 +9,6 @@
 #include <string.h>
 #include <stdio.h>
 
-// TODO: Handle this some other way...
-#if defined(BR_GL_DRAW_ALL_CB)
-
-static BR_THREAD_LOCAL struct {
-  br_shaders_t* shaders;
-} brgl_state;
-
-void brgl_construct(br_shaders_t* shaders) {
-  brgl_state.shaders = shaders;
-}
-
-#endif
-
 unsigned int brgl_load_shader(const char* vs, const char* fs, int* ok) {
   GLuint vsid = brgl_compile_shader(vs, GL_VERTEX_SHADER);
   GLuint fsid = brgl_compile_shader(fs, GL_FRAGMENT_SHADER);
@@ -228,12 +215,6 @@ GLuint brgl_framebuffer_to_texture(GLuint br_id) {
 }
 
 void brgl_enable_framebuffer(GLuint br_id, int new_width, int new_height) {
-   // Draw everything that was not already
-#if defined(BR_GL_DRAW_ALL_CB)
-  BR_GL_DRAW_ALL_CB(*brgl_state.shaders);
-#endif
-  //br_shaders_draw_all(*brgl_state.shaders);
-
   GLuint fb_id = br_framebuffers[br_id].fb_id;
   int width = br_framebuffers[br_id].width;
   int height = br_framebuffers[br_id].height;

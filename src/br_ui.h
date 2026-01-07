@@ -60,6 +60,7 @@ void  brui_scroll_move(float value);
 float brui_min_y(void);
 float brui_max_y(void);
 void  brui_height_set(float value);
+void  brui_padding_set(br_vec2_t value);
 float brui_padding_x(void);
 float brui_padding_y(void);
 void  brui_padding_y_set(float value);

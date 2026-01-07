@@ -110,9 +110,6 @@ typedef unsigned long  int     khronos_uintptr_t;
 
 typedef void (*glDebugProc)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
 
-typedef struct br_shaders_t br_shaders_t;
-void brgl_construct(br_shaders_t* shaders);
-
 unsigned int brgl_load_shader(const char* vs, const char* fs, int* out_ok);
 unsigned int brgl_compile_shader(const char* code, GLenum type);
 void brgl_unload_shader(GLuint id);

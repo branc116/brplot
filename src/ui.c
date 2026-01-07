@@ -151,7 +151,6 @@ bool brui_window_init(brui_window_t* uiw) {
 #endif
   }
 
-  brgl_construct(&uiw->shaders);
   brgl_disable_back_face_cull();
   brgl_enable_depth_test();
   brgl_enable(GL_BLEND);
@@ -1315,6 +1314,10 @@ void brui_height_set(float value) {
   brtr_state()->limits = TOP.limit;
 }
 
+void brui_padding_set(br_vec2_t value) {
+  TOP.padding = value;
+}
+
 float brui_padding_x(void) {
   return TOP.padding.x;
 }
@@ -1323,9 +1326,6 @@ float brui_padding_y(void) {
   return TOP.padding.y;
 }
 
-void brui_padding_set(br_vec2_t value) {
-  TOP.padding = value;
-}
 void brui_padding_y_set(float value) {
   TOP.padding.y = value;
 }
