@@ -105,7 +105,7 @@ void br_plotter_draw(br_plotter_t* br) {
         br_extent_t ex = brui_resizable_cur_extent(PLOT->extent_handle);
         if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
           brui_push();
-            brui_padding_set(BR_VEC2(0,0));
+            //brui_padding_set(BR_VEC2(0,0));
             brui_resizable_push(PLOT->extent_handle);
               brui_framebuffer(PLOT->texture_id);
               if (brgui_draw_plot_menu(&br->uiw.sp, PLOT, &br->uiw.anims, br->groups)) to_remove = i;
@@ -820,13 +820,14 @@ static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_anims_t* anims,
   if (brui_resizable_is_hidden(plot->menu_extent_handle)) {
     if (brui_button_icon(BR_SIZE(icon_size, icon_size), br_icon_menu(og_text_size))) brui_resizable_show(plot->menu_extent_handle, true);
   } else {
+    char* c = br_scrach_get(4096);
     brui_resizable_push(plot->menu_extent_handle);
       brui_vsplitvp(2, BRUI_SPLITA(icon_size), BRUI_SPLITR(1));
-        char* c = br_scrach_get(4096);
         if (brui_button_icon(BR_SIZE(icon_size, icon_size), br_icon_back(og_text_size))) brui_resizable_show(plot->menu_extent_handle, false);
       brui_vsplit_pop();
         brui_text_size_set(og_text_size);
-        brui_text_ancor_set(br_dir_mid_mid);
+        brui_text_ancor_set(br_dir_mid_up);
+        brui_text_justify_set(br_dir_mid_up);
         brui_maxy_set(brui_min_y() + icon_size);
         brui_textf("%s Plot", plot->kind == br_plot_kind_2d ? "2D" : "3D");
       brui_vsplit_pop();

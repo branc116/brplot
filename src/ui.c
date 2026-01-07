@@ -935,6 +935,7 @@ bool brui_button_icon(br_size_t size, br_extent_t icon) {
   br_bb_t bb = BR_BB(TOP.cur_pos.x, TOP.cur_pos.y, TOP.cur_pos.x + size.width, TOP.cur_pos.y + height);
 
   brtr_stack_el_t* el = brtr_state_push();
+    el->z = Z;
     if (bb.max_y > bb.min_y && bb.max_x > bb.min_x) {
       bool hovered = (TOP.is_active && br_col_vec2_bb(bb, brui_state.uiw->mouse.pos));
       if (brui_state.select_next || hovered) {
@@ -1067,8 +1068,8 @@ bool brui_sliderf3(br_strv_t text, float* value, int percision) {
     TOP.limit.max_y = fminf(TOP.limit.min_y + opt_height, TOP.limit.max_y);
     brtr_stack_el_t* el = brtr_state_push();
       el->limits = TOP.limit;
-      el->ancor = br_dir_mid_mid;
-      el->justify = br_dir_mid_mid;
+      el->ancor = br_dir_left_up;
+      el->justify = br_dir_left_up;
       if (size.width < avaliable_width) {
         brui_vsplitvp(2, BRUI_SPLITR(1), BRUI_SPLITA(size.width));
           brui_text(text);
