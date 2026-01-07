@@ -20,31 +20,9 @@ jobs:
         os: [ {name: ubuntu-22.04}, {name: ubuntu-24.04} ]
     steps:
     - uses: actions/checkout@v4.1.7
-    - run: | # libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev
+    - run: |
         sudo apt-get update -qq
         sudo apt-get install -y --no-install-recommends gcc mingw-w64 clang
-    - run: make -j8 PLATFORM=LINUX CONFIG=DEBUG COMPILER=GCC -B
-    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE COMPILER=GCC LTO=YES -B
-    - run: make -j8 PLATFORM=LINUX CONFIG=DEBUG COMPILER=CLANG -B
-    - run: make -j8 PLATFORM=LINUX CONFIG=RELEASE COMPILER=CLANG LTO=YES -B
-    - run: make -j8 PLATFORM=WINDOWS CONFIG=RELEASE -B
-
-    - run: |
-        git clone https://github.com/emscripten-core/emsdk.git
-        cd emsdk
-        ./emsdk install latest
-        ./emsdk activate latest
-        source ./emsdk_env.sh
-        cd ..
-
-    - run: |
-        make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE -B
-
-    - run: |
-        make -j8 EMSCRIPTEN=/home/runner/work/brplot/brplot/emsdk/upstream/emscripten/ PLATFORM=WEB CONFIG=RELEASE 
-
-    - run: |
-        test -f www/index.wasm && ls -alFh www
-        ls -alFh bin && strip bin/* && ls -alFh bin
-        file bin/*
+    - run: ./nob -d
+    - run: ./nob --win32
 

@@ -229,8 +229,6 @@ BR_EXPORT void rpn_init(float device_scale) {
   scale = device_scale;
   brui_window_init(&win);
   res[0] = brui_resizable_new(&win.resizables, BR_EXTENT(0, 0, 400, 800), 0);
-  res[1] = brui_resizable_new(&win.resizables, BR_EXTENT(0, 110, 400, 100), 0);
-  //res[2] = brui_resizable_new(&win.resizables, BR_EXTENT(0, 220, 400, 100), 0);
   brui_resizable_set_ancor(res[0], 0, brui_ancor_all);
 }
 
@@ -244,9 +242,9 @@ BR_EXPORT void rpn_one_frame(void) {
       draw_buttons();
     brui_resizable_pop();
     if (g_show_atlas) {
-      brui_resizable_push(res[1]);
+      brui_resizable_temp_push(BR_STRL("Atlas"));
         brui_texture(brtr_texture_id());
-      brui_resizable_pop();
+      if (brui_resizable_temp_pop()) g_show_atlas = false;
     }
   brui_frame_end(&win);
 }
