@@ -943,6 +943,12 @@ static void draw_left_panel(br_plotter_t* br) {
         br->ui.fm_state.is_inited = true;
         br->ui.fm_state.action = brgui_file_manager_load_font;
       }
+      if (brui_collapsable(BR_STRL("Shadows"), &br->ui.expand_ui_styles_shadows)) {
+        brui_sliderf2(BR_STRL("Intensity"), &br->uiw.theme.shadow_intesity);
+        brui_sliderf2(BR_STRL("Spred"), &br->uiw.theme.shadow_spred);
+        brui_sliderf2(BR_STRL("Round"), &br->uiw.theme.px_round);
+        brui_collapsable_end();
+      }
       brui_collapsable_end();
     }
 

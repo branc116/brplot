@@ -89,6 +89,7 @@ typedef struct br_plotter_t {
     bool expand_plots;
     bool expand_optimizations;
     bool expand_ui_styles;
+    bool expand_ui_styles_shadows;
     bool expand_export;
     bool expand_data;
     bool expand_about;

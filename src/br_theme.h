@@ -25,6 +25,10 @@ typedef struct br_theme_t {
     br_color_t bg;
     float highlite_factor;
   } colors;
+
+  float shadow_spred;
+  float px_round;
+  float shadow_intesity;
 } br_theme_t;
 
 void br_theme_dark(br_theme_t* theme);

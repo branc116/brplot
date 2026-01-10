@@ -56,7 +56,9 @@ void br_theme_light(br_theme_t* t) {
 }
 
 void br_theme_reset_ui(br_theme_t* t) {
-  (void)t;
+  t->shadow_intesity = 0.1f;
+  t->shadow_spred = 5.f;
+  t->px_round = 3.f;
 /*
   t->ui.min_sampling = 0.001f;
   t->ui.cull_min = 2.f;

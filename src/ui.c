@@ -539,6 +539,9 @@ void brui_begin(void) {
   el->z = 1;
   el->forground = BR_THEME.colors.btn_txt_inactive;
   el->background = BR_THEME.colors.plot_menu_color;
+  brui_state.uiw->shaders.rect->uvs.spred_uv = brui_state.uiw->theme.shadow_spred;
+  brui_state.uiw->shaders.rect->uvs.px_round_uv = brui_state.uiw->theme.px_round;
+  brui_state.uiw->shaders.rect->uvs.shadow_intesity_uv = brui_state.uiw->theme.shadow_intesity * (brui_state.uiw->theme.colors.highlite_factor > 0 ? 1.f : -1.f);
 
   TOP.is_active = 0 == brui_state.uiw->resizables.active_resizable;
   // TODO: This should be pushed but rn, something breaks and I get the balck screen after a few seconds.

@@ -62,7 +62,10 @@
       X_BUF(z, 1)                       \
     )                                   \
   X(rect, 1024,                         \
-      X_VEC(viewport, 4),               \
+      X_VEC(viewport, 4)                \
+      X_VEC(spred, 1)                   \
+      X_VEC(px_round, 1)                \
+      X_VEC(shadow_intesity, 1),        \
       X_BUF(pos, 4)                     \
       X_BUF(color, 4)                   \
       X_BUF(clip_dists, 4)              \
