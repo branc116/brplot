@@ -64,6 +64,8 @@ void  brui_padding_set(br_vec2_t value);
 float brui_padding_x(void);
 float brui_padding_y(void);
 void  brui_padding_y_set(float value);
+int   brui_z(void);
+br_vec2_t brui_pos(void);
 float brui_y(void);
 float brui_width(void);
 float brui_height(void);

@@ -310,6 +310,7 @@ br_extent_t brtr_push(br_strv_t text) {
     br_size_t sz = el->viewport.size;
     br_vec4_t fg = BR_COLOR_TO4(el->forground);
     br_vec4_t bg = BR_COLOR_TO4(el->background);
+    bg.a = 0;
     br_shader_glyph_t* glyph = brtr.shaders->glyph;
     br_bb_t limit = el->limits;
 

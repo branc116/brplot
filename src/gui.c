@@ -212,6 +212,8 @@ static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas, br_theme_t* the
         if (plot->selected_data == data->group_id) {
           brui_icon(text_size, br_icon_cb_0(text_size), theme->colors.btn_hovered, data->color);
         } else {
+          br_vec2_t pos = brui_pos();
+          brui_rectangle(BR_BB(pos.x, pos.y, pos.x + text_size, pos.y + text_size), data->color, brui_z());
           brui_icon(text_size, BR_EXTENT(0,0,0,0), data->color, data->color);
         }
       brui_vsplit_pop();

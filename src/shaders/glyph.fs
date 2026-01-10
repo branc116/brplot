@@ -25,6 +25,6 @@ void main() {
 
   float v0 = texture(atlas, vs_tpos).x;
   float sum = pow(v0, 0.5);
-  if (sum < 0.01) discard;
   out_color = mix(vs_bg, vs_fg, sum);
+  if (out_color.a < 0.4) discard;
 }

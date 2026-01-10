@@ -1322,6 +1322,14 @@ void brui_padding_y_set(float value) {
   TOP.padding.y = value;
 }
 
+int brui_z(void) {
+  return Z;
+}
+
+br_vec2_t brui_pos(void) {
+  return TOP.cur_pos;
+}
+
 float brui_y(void) {
   return TOP.cur_pos.y;
 }
