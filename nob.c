@@ -495,11 +495,8 @@ static bool gl_gen(void) {
   nob_cmd_append(&cmd, NOB_REBUILD_URSELF(gl_gen_bin, gl_gen_src));
   if (false == nob_cmd_run_cache(&cmd)) return false;
 
-  // TODO: THis is not cached properly. Investigate...
-  if (false == cache.was_last_cached) {
-    nob_cmd_append(&cmd, gl_gen_bin, "--no-tracy");
-    if (false == br_cmd_run(&cmd)) return false;
-  }
+  nob_cmd_append(&cmd, gl_gen_bin, "--no-tracy");
+  if (false == nob_cmd_run_cache(&cmd)) return false;
 
   nob_cmd_free(cmd);
   return true;
