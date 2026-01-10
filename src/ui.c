@@ -822,6 +822,7 @@ bool brui_button(br_strv_t text) {
     el->justify = br_dir_mid_up;
     el->ancor = br_dir_mid_up;
     brui_text(text);
+    el = brtr_state();
     brui_cur_push((float)el->font_size*0.2f);
   bool is_click = brui_pop().clicked;
   return TOP.is_active && hovers && false == brui_state.uiw->key.ctrl_down && is_click;

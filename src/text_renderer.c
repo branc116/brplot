@@ -118,6 +118,26 @@ void brtr_construct(int bitmap_width, int bitmap_height, br_shaders_t* shaders) 
   brtr_icons_load();
 }
 
+static bool brtr_free_internal(bool keep_the_stack) {
+  if (brtr.sizes != NULL) {
+    for (long i = 0; i < stbds_hmlen(brtr.sizes); ++i) {
+      stbds_hmfree(brtr.sizes[i].value);
+    }
+    stbds_hmfree(brtr.sizes);
+  }
+  stbtt_PackEnd(&brtr.pack_cntx);
+  if (brtr.shaders->glyph) {
+    brgl_unload_texture(brtr.shaders->glyph->uvs.atlas_uv);
+    brtr.shaders->glyph->uvs.atlas_uv = 0;
+  }
+  br_da_free(brtr.baking_chars);
+  if (brtr.custom_font_data) BR_FREE(brtr.custom_font_data);
+  brfl_free(brtr.icons);
+  BR_FREE(brtr.bitmap_pixels);
+  brtr.bitmap_pixels = NULL;
+  if (false == keep_the_stack) br_da_free(brtr.stack);
+}
+
 bool brtr_font_load(br_strv_t path) {
   br_str_t content = { 0 };
   if (false == br_fs_read(path.str, &content)) return false;
@@ -135,7 +155,7 @@ bool brtr_font_load(br_strv_t path) {
   }
 
   // Free old
-  brtr_free();
+  brtr_free_internal(true);
 
   // Set everythin to zero
   brtr.sizes = NULL;
@@ -158,23 +178,7 @@ bool brtr_font_load(br_strv_t path) {
 }
 
 void brtr_free(void) {
-  if (brtr.sizes != NULL) {
-    for (long i = 0; i < stbds_hmlen(brtr.sizes); ++i) {
-      stbds_hmfree(brtr.sizes[i].value);
-    }
-    stbds_hmfree(brtr.sizes);
-  }
-  stbtt_PackEnd(&brtr.pack_cntx);
-  if (brtr.shaders->glyph) {
-    brgl_unload_texture(brtr.shaders->glyph->uvs.atlas_uv);
-    brtr.shaders->glyph->uvs.atlas_uv = 0;
-  }
-  br_da_free(brtr.baking_chars);
-  if (brtr.custom_font_data) BR_FREE(brtr.custom_font_data);
-  brfl_free(brtr.icons);
-  BR_FREE(brtr.bitmap_pixels);
-  brtr.bitmap_pixels = NULL;
-  br_da_free(brtr.stack);
+  brtr_free_internal(false);
 }
 
 static void brtr_bake_range(brtr_t* r, int size, br_u32 start, br_u32 len) {
