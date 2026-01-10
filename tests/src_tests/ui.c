@@ -13,8 +13,8 @@ int main(void) {
 
   {
     brui_window_t win = { .pl = { .kind = brpl_window_headless } };
-    brui_window_init(&win);
     bool is_ok = brui_load(file, &win);
+    brui_window_init(&win);
     TEST_EQUAL(is_ok, true);
     brui_resizable_t rs = br_da_get(win.resizables, res_handle);
     {
