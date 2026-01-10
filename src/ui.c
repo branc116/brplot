@@ -1748,7 +1748,7 @@ bool brui_resizable_mouse_scroll(bruirs_t* rs, br_vec2_t delta) {
   float new = 0.f;
   float hidden_height = hovered.full_height - (float)BRUI_ANIMEX(hovered.cur_extent_ah).height;
   if (hidden_height > 0.f) {
-    float cur = BRUI_ANIMF(hovered.scroll_offset_percent_ah) * hidden_height;
+    float cur = br_animf_get_target(&brui_state.uiw->anims, hovered.scroll_offset_percent_ah) * hidden_height;
     cur -= delta.y * 20.f;
     new = br_float_clamp(cur / hidden_height, 0.f, 1.f);
   }
