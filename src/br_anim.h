@@ -2,9 +2,6 @@
 #include "src/br_pp.h"
 #include "src/br_math.h"
 
-#include <stdbool.h>
-#include <stdio.h>
-
 typedef enum br_anim_kind_t {
   br_anim_float,
   br_anim_vec2d,

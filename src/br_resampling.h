@@ -2,8 +2,6 @@
 #include "src/br_data.h"
 #include "src/br_mesh.h"
 
-#include <stdint.h>
-
 typedef struct br_resampling_t br_resampling_t;
 typedef struct br_plot_t br_plot_t;
 typedef struct br_shaders_t br_shaders_t;

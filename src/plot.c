@@ -1,13 +1,12 @@
+#include "src/br_plot.h"
+#include "src/br_anim.h"
 #include "src/br_da.h"
 #include "src/br_data.h"
 #include "src/br_gl.h"
-#include "src/br_gui.h"
 #include "src/br_math.h"
-#include "src/br_plot.h"
+#include "src/br_memory.h"
 #include "src/br_resampling.h"
 #include "src/br_ui.h"
-#include "src/br_memory.h"
-#include "src/br_anim.h"
 
 static BR_THREAD_LOCAL struct {
   br_anims_t* anims;

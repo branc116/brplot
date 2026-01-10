@@ -1,8 +1,5 @@
 #pragma once
-#include <math.h>
-#include <stddef.h>
-#include <float.h>
-#include <stdbool.h>
+#include "src/br_pp.h"
 
 #define BR_MAX(X, Y) ((X) > (Y) ? (X) : (Y))
 #define BR_MIN(X, Y) ((X) < (Y) ? (X) : (Y))

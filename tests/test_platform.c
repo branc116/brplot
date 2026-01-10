@@ -1,11 +1,9 @@
 #define BRPLAT_IMPLEMENTATION
 #include <brplat.h>
-#include <stdlib.h>
-#include <stdio.h>
 
 int main(void) {
   float up_x = 0.f;
-  int mouse_x = 0.f;
+  float mouse_x = 0.f;
   brpl_window_t window = {
     .title = "Test",
     .viewport = {
@@ -35,7 +33,7 @@ int main(void) {
             glColor3f(0.0f, 1.0f, 0.0f);
             glVertex3f(-.1f, -.1f, 0.0);
             glColor3f(0.0f, 0.0f, 1.0f);
-            glVertex3f(.10, -.10, 0.0);
+            glVertex3f(.10f, -.10f, 0.0);
           glEnd();
           glFlush();
         brpl_frame_end(&window);

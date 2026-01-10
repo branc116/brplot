@@ -54,8 +54,6 @@ int main(void) {
 #if !defined(BR_INCLUDE_BRUI_H)
 #define BR_INCLUDE_BRUI_H
 
-#include <stdbool.h>
-
 #if !defined(BR_EXPORT)
 #  if defined(__EMSCRIPTEN__)
 #    include <emscripten.h>

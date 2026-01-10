@@ -18,13 +18,12 @@ BR_FILE* test_open(const char* path, const char* mode);
 int test_close(BR_FILE* file);
 int test_feof(BR_FILE* file);
 
-
 #include "src/br_pp.h"
 #include "src/br_da.h"
 #include "src/br_ui.h"
 #include "src/br_anim.h"
 #include "src/br_text_renderer.h"
-#include "src/br_platform.h"
+#include "include/brplat.h"
 #include "src/br_shaders.h"
 #include "src/br_test.h"
 #include "src/br_data_generator.h"

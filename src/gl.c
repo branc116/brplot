@@ -3,11 +3,8 @@
 #if !defined(BR_WANTS_GL)
 #  define BR_WANTS_GL 1
 #endif
-#include "src/br_platform.h"
+#include "include/brplat.h"
 #include "include/br_str_header.h"
-
-#include <string.h>
-#include <stdio.h>
 
 unsigned int brgl_load_shader(const char* vs, const char* fs, int* ok) {
   GLuint vsid = brgl_compile_shader(vs, GL_VERTEX_SHADER);

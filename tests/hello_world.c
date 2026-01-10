@@ -1,7 +1,7 @@
 #include <brplot.h>
 #include <math.h>
 
-int main() {
+int main(void) {
   for (float i = -10; i < 10; i+=0.1f) brp_1(i*i, 1);
   for (float i = -10; i < 10; i+=0.1f) brp_2(0.1f*sinf(i), 0.1f*cosf(i), 2);
   for (float i = -10; i < 10; i+=0.1f) brp_2(0.5f + 0.1f*sinf(i), 0.1f*cosf(i), 3);

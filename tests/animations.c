@@ -14,7 +14,7 @@ int main(void) {
     brp_empty(circle);
     brp_empty(standing_wave);
     if (radius > 1 || radius < 0.0) dr *= -1.f;
-    time_left -= 0.016;
+    time_left -= 0.016f;
   }
   brp_focus_all();
   brp_wait();

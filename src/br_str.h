@@ -4,11 +4,6 @@
 #endif
 
 #if defined(BR_STR_IMPLEMENTATION)
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
 
 br_str_t br_str_malloc(size_t size) {
   br_str_t br = {

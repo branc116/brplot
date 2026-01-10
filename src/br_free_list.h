@@ -5,7 +5,6 @@
 #if defined(BRFL_IMPLEMENTATION)
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
 int brfl_push_internal_get_handle(void** const arrp, int** const free_arrp, int* const lenp, int* const capp, int* const free_lenp, int* const free_nextp, size_t value_size, const char* file, int line) {
   (void)file; (void)line;

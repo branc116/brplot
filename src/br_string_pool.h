@@ -5,8 +5,6 @@
 
 
 #if defined(BRSP_IMPLEMENTATION)
-#include <string.h>
-#include <errno.h>
 static bool brsp_resize(brsp_t* sp, brsp_id_t t, int new_size);
 
 brsp_id_t brsp_new(brsp_t* sp) {

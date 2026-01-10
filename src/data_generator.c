@@ -1,17 +1,12 @@
 #include "src/br_data_generator.h"
+#include "include/br_str_header.h"
+#include "include/brplat.h"
 #include "src/br_da.h"
 #include "src/br_data.h"
+#include "src/br_memory.h"
 #include "src/br_permastate.h"
 #include "src/br_plot.h"
-#include "src/br_pp.h"
 #include "src/br_resampling.h"
-#include "include/br_str_header.h"
-#include "src/br_memory.h"
-#include "src/br_platform.h"
-
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
 
 #define MAX_BATCH_LEN (16*1024)
 

@@ -1,11 +1,6 @@
 #include "src/br_pp.h"
 #include "src/br_threads.h"
 
-#include <stdint.h>
-#include <assert.h>
-#include <errno.h>
-#include <stdio.h>
-
 #if !defined(BR_WANTS_GL)
 #  define BR_WANTS_GL 1
 #endif
@@ -345,7 +340,7 @@ const char* br_gdi_library_names[] = {
 };
 #endif
 
-#include "src/br_platform.h"
+#include "include/brplat.h"
 #include "src/br_gl.h"
 #include "src/br_memory.h"
 #include "include/br_str_header.h"
@@ -379,22 +374,6 @@ const char* br_glfw_library_names[] = {
 };
 
 #include ".generated/gl.c"
-
-#if defined(__APPLE__)
-#  include <mach/mach_time.h>
-#  include <dlfcn.h>
-#elif defined(_WIN32)
-#  include <windows.h>
-#else
-#  include <unistd.h>
-#  include <time.h>
-#  include <sys/time.h>
-#  include <dlfcn.h>
-#endif
-
-
-#include <string.h>
-#include <stdlib.h>
 
 static void brpl_time_init(void);
 #if BR_HAS_X11

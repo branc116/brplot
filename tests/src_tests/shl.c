@@ -1,6 +1,7 @@
+#define HEADLESS 1
+#define BR_NO_X11 1
 #include "tests/src_tests/shl.h"
-#include "external/shl_impls.c"
-#include "tests/src_tests/mock_gl.c"
+#include "src/gl.c"
 #include "src/filesystem.c"
 #include "src/ui.c"
 #include "src/anim.c"
@@ -19,6 +20,7 @@
 #include "src/permastate.c"
 #include "src/read_input.c"
 #include "src/threads.c"
+#include "external/shl_impls.c"
 
 static unsigned char buffer[4096];
 br_test_file_t test_file;

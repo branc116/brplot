@@ -1,20 +1,13 @@
 #include "src/br_data.h"
+#include "include/br_str_header.h"
+#include "include/br_string_pool_header.h"
+#include "src/br_anim.h"
 #include "src/br_da.h"
 #include "src/br_data_generator.h"
-#include "src/br_gui.h"
-#include "src/br_plot.h"
-#include "src/br_pp.h"
-#include "src/br_resampling.h"
-#include "include/br_str_header.h"
 #include "src/br_math.h"
-#include "include/br_string_pool_header.h"
 #include "src/br_memory.h"
-#include "src/br_anim.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
+#include "src/br_plot.h"
+#include "src/br_resampling.h"
 
 #define DEF_CAP 1024
 

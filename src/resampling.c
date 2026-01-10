@@ -1,19 +1,14 @@
-#include "src/br_pp.h"
 #include "src/br_resampling.h"
 #include "src/br_da.h"
 #include "src/br_data.h"
 #include "src/br_math.h"
 #include "src/br_memory.h"
 #include "src/br_mesh.h"
-#include "src/br_platform.h"
+#include "include/brplat.h"
 #include "src/br_plot.h"
 #include "src/br_shaders.h"
 #include "src/br_anim.h"
 #include "include/br_free_list_header.h"
-
-#include <stdint.h>
-#include <math.h>
-#include <string.h>
 
 // Memory[MB] - MAX_LEN
 // 53         - 128

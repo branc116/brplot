@@ -1,10 +1,6 @@
 #pragma once
 #include "src/br_pp.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdbool.h>
-
 #define DECLTYPE(VALUE) void
 
 #define br_da_reserve_t(SIZE_T, ARR, N) do { \

@@ -31,7 +31,7 @@ typedef struct {
 static brui_window_t win = { 0 };
 static stack_t stack;
 static bool insert_mode = false;
-static float scale = 2.7;
+static float scale = 2.7f;
 
 #define X(NAME, MIN_ARGS, INSERT_AFTER) static void rpn_##NAME##_unsafe(void);
   RPN_FUNCS(X)

@@ -1,8 +1,6 @@
 #pragma once
 #include "src/br_math.h"
 
-#include <sys/types.h>
-
 typedef struct br_mesh_line_t {
   br_vec2d_t zoom, offset, screen_size;
   float line_thickness;

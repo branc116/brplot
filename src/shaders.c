@@ -5,7 +5,6 @@
 #  include "src/br_gl.h"
 #  include "src/br_filesystem.h"
 #  include "src/br_memory.h"
-#  include "src/br_da.h"
 #  if defined(BR_RELEASE)
 #    if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(_WIN32) || defined(__CYGWIN__)
 #      include ".generated/shaders.h"
@@ -15,11 +14,6 @@
 #      error "Shaders for this platform arn't defined"
 #    endif
 #  endif
-
-#  include <stdio.h>
-#  include <stdint.h>
-#  include <stdlib.h>
-#  include <stdbool.h>
 #endif
 
 

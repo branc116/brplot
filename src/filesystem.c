@@ -1,20 +1,7 @@
 #include "src/br_filesystem.h"
-#include "src/br_pp.h"
 #include "include/br_str_header.h"
 #include "src/br_da.h"
 #include "src/br_memory.h"
-
-#include <stdio.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-
-#include <sys/types.h>
-
-#if BR_HAS_INCLUDE(<dirent.h>)
-#  include <dirent.h>
-#endif
 
 
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(__MINGW32__)
@@ -106,7 +93,6 @@ bool br_fs_exists(br_strv_t path) {
   return 0 != ((s.st_mode & S_IFMT) & (S_IFDIR | S_IFCHR | S_IFBLK | S_IFREG));
 }
 #elif defined(_WIN32) || defined(__CYGWIN__)
-#include <windows.h>
 
 #define BR_IS_SEP(X) (((X) == '/') || ((X) == '\\'))
 

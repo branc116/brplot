@@ -8,13 +8,12 @@
 #if !defined(BR_WANTS_GL)
 #  define BR_WANTS_GL 1
 #endif
-#include "src/br_platform.h"
+#include "include/brplat.h"
 #include "src/br_license.h"
 #include "src/br_math.h"
 #include "src/br_permastate.h"
 #include "src/br_plot.h"
 #include "src/br_plotter.h"
-#include "src/br_pp.h"
 #include "src/br_resampling.h"
 #include "src/br_shaders.h"
 #include "src/br_mesh.h"

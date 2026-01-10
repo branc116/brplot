@@ -6,7 +6,7 @@
 #include "src/br_gui.h"
 #include "src/br_math.h"
 #include "src/br_permastate.h"
-#include "src/br_platform.h"
+#include "include/brplat.h"
 #include "src/br_plot.h"
 #include "src/br_theme.h"
 #include "src/br_ui.h"

@@ -1,11 +1,9 @@
 #include "src/br_plotter.h"
-#include "src/br_pp.h"
 #include "src/br_q.h"
 #include "src/br_permastate.h"
 #include "src/br_memory.h"
 
 #if !defined(BR_LIB)
-#include "src/br_plot.h"
 #include "src/br_pp.h"
 
 

@@ -1,10 +1,6 @@
 #include "src/br_anim.h"
-#include "src/br_theme.h"
 #include "src/br_da.h"
 #include "include/br_free_list_header.h"
-
-#include <errno.h>
-#include <string.h>
 
 static BR_THREAD_LOCAL struct br_anims_state {
   float* animation_speed;

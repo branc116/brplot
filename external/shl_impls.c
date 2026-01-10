@@ -37,11 +37,7 @@
 #  endif
 #endif
 
-#define BR_LICENSE_IMPLEMENTATION
-#include "src/br_license.h"
-
-#define BR_LICENSE_IMPLEMENTATION
-#include "src/br_license.h"
+#include ".generated/br_license.c"
 
 #define BRFL_IMPLEMENTATION
 #include "src/br_free_list.h"

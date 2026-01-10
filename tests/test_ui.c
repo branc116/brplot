@@ -11,7 +11,7 @@ int main(void) {
   while (false == win.pl.should_close) {
     while (brpl_event_frame_next != brui_event_next(&win).kind); // You can also handle some of the events
     brui_frame_start(&win);
-      brui_text_size_set((float)font_size);
+      brui_text_size_set(font_size);
       brui_checkbox(BR_STRL("Settings"), &settings);
       br_shaders_draw_all(win.shaders);
       if (brui_collapsable(BR_STRL("Settings"), &settings)) {

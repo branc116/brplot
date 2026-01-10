@@ -1,29 +1,16 @@
-#include "src/br_pp.h"
-#include "include/br_string_pool_header.h"
 #include "src/br_ui.h"
-#include "src/br_math.h"
+#include "include/br_free_list_header.h"
 #include "include/br_str_header.h"
+#include "include/br_string_pool_header.h"
+#include "src/br_anim.h"
+#include "src/br_da.h"
+#include "src/br_math.h"
+#include "src/br_memory.h"
+#include "src/br_shaders.h"
 #include "src/br_text_renderer.h"
 #include "src/br_theme.h"
-#include "src/br_da.h"
-#if !defined(BR_WANTS_GL)
-#  define BR_WANTS_GL 1
-#endif
-#include "src/br_platform.h"
-#include "src/br_shaders.h"
-#include "include/br_free_list_header.h"
-#include "src/br_memory.h"
-#include "src/br_anim.h"
 
 #include "external/stb_ds.h"
-
-#include <ctype.h>
-#include <errno.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
 
 #define BR_THEME (brui_state.uiw->theme)
 #define BRUI_DEF (brui_state.uiw->def)
@@ -738,6 +725,7 @@ void brui_new_lines(int n) {
 }
 
 void brui_background(br_bb_t bb, br_color_t color) {
+  Z;
   brtr_stack_el_t* el = brtr_state_push();
     el->background = color;
     el->z = TOP.start_z;
@@ -896,7 +884,8 @@ void brui_texture(unsigned int texture_id) {
     TOP.limit.max.x -= TOP.psum.x;
     br_shader_img_t* img = brui_state.uiw->shaders.img;
     img->uvs.image_uv = texture_id;
-    float gl_z = BR_Z_TO_GL(TOP.start_z + 1);
+    
+    float gl_z = BR_Z_TO_GL(Z);
     br_size_t viewport = BRUI_ANIMEX(BRUI_RS(0).cur_extent_ah).size;
     br_vec2_t a = TOP.cur_pos;
     br_vec2_t b = BR_VEC2(TOP.limit.max.x, a.y);

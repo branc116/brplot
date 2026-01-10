@@ -1,5 +1,9 @@
 #if !defined(BR_INCLUDE_BR_TEXT_RENDERER_H)
 #define BR_INCLUDE_BR_TEXT_RENDERER_H
+
+#include "include/br_str_header.h"
+#include "src/br_math.h"
+
 // Imagine a stack on which some properties as written.
 // You can change those properties using this functions
 // When you pop the current state. Values reset to
@@ -31,9 +35,6 @@ void foo(void) {
   }
 }
 #endif
-
-#include "include/br_str_header.h"
-#include "src/br_math.h"
 
 typedef struct brtr_t brtr_t;
 typedef struct br_shaders_t br_shaders_t;

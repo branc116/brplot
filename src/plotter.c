@@ -1,6 +1,5 @@
 #include "src/br_pp.h"
 #include "src/br_plotter.h"
-#include "src/br_platform.h"
 #include "src/br_plot.h"
 #include "src/br_gui.h"
 #include "src/br_da.h"
@@ -13,10 +12,6 @@
 #include "src/br_gl.h"
 #include "include/br_free_list_header.h"
 #include "src/br_memory.h"
-
-#include <math.h>
-#include <string.h>
-#include <ctype.h>
 
 #if BR_HAS_HOTRELOAD
 #  include "src/desktop/hotreload.c"

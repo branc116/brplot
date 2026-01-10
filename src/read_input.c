@@ -7,13 +7,6 @@
 static void br_read_input_main_worker(br_plotter_t* br, void* read_state);
 #if defined (__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
 
-#include <pthread.h>
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
-#include <unistd.h>
-#include <poll.h>
-
 static BR_THREAD_LOCAL int br_read_input_pipes[2];
 static BR_THREAD_LOCAL pthread_t br_read_input_thread;
 static void* br_indirection_function(void* gv);
@@ -89,12 +82,6 @@ static void* br_indirection_function(void* gv) {
 }
 
 #elif defined(_WIN32) || defined(__CYGWIN__)
-#if !defined(WIN32_LEAN_AND_MEAN)
-#  define _WIN32_LEAN_AND_MEAN 1
-#endif
-#include <windows.h>
-#include <processthreadsapi.h>
-
 typedef struct br_plotter_t br_plotter_t;
 static BR_THREAD_LOCAL void* thandle;
 
@@ -124,10 +111,6 @@ static int br_read_input_read_next(void* null) { (void)null; return -1; }
 #else
 #  error "Unsupported platform"
 #endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
 
 #define IS_VALID_NAME(c) ((c) >= 'a' && (c) <= 'z')
 #define IS_VALID_PATH(c) (((c) >= '0' && (c) <= '1') || \

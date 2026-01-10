@@ -1,8 +1,5 @@
 #include "include/br_str_header.h"
 
-#include <stddef.h>
-#include <stdbool.h>
-
 #define BR_MAX_REDUCE 6
 #define BR_MAX_NAME 64
 #define BR_REDUCTORS 10

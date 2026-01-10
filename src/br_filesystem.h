@@ -1,8 +1,6 @@
 #pragma once
 #include "include/br_str_header.h"
 
-#include <stdint.h>
-
 typedef enum br_fs_file_kind_t {
   br_fs_file_kind_unknown,
   br_fs_file_kind_file,

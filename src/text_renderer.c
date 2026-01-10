@@ -1,11 +1,10 @@
+#include "src/br_text_renderer.h"
 #include "src/br_da.h"
 #include "src/br_free_list.h"
 #include "src/br_gl.h"
 #include "src/br_math.h"
-#include "src/br_pp.h"
 #include "src/br_shaders.h"
 #include "include/br_str_header.h"
-#include "src/br_text_renderer.h"
 #include "src/br_filesystem.h"
 #include "src/br_memory.h"
 #if !defined(BR_INCLUDE_ICONS_GEN_C)
@@ -17,10 +16,6 @@
 #include "external/stb_rect_pack.h"
 #include "external/stb_truetype.h"
 #include "external/stb_ds.h"
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <float.h>
 
 typedef struct {
   br_u32 key;

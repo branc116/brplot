@@ -101,9 +101,7 @@ extern void br_on_fatal_error(void);
 #if defined(BR_ASAN)
 void __sanitizer_print_stack_trace(void);
 #  define BR_STACKTRACE() __sanitizer_print_stack_trace()
-#elif defined(__TINYC__)
-#  include <unistd.h>
-#  include <assert.h>
+#elif defined(__TINYC__) || defined(__GNUC__)
 #  include <execinfo.h>
 #  define BR_STACKTRACE() do { \
   void* BR__ELS[32] = { 0 }; \
@@ -311,4 +309,44 @@ typedef   signed long long br_i64;
 typedef   signed       int br_i32;
 typedef   signed     short br_i16;
 typedef   signed      char br_i8;
+
+#include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+#include <float.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
+#  include <unistd.h>
+#  include <time.h>
+#  include <sys/time.h>
+#  include <dlfcn.h>
+#  include <pthread.h>
+#  include <poll.h>
+#endif
+
+#if BR_HAS_INCLUDE(<dirent.h>)
+#  include <dirent.h>
+#endif
+
+#if defined(_WIN32)
+#  if !defined(WIN32_LEAN_AND_MEAN)
+#    define _WIN32_LEAN_AND_MEAN 1
+#  endif
+#  include <windows.h>
+#  include <processthreadsapi.h>
+#endif
+
+#if defined(__APPLE__)
+#  include <mach/mach_time.h>
+#endif
 

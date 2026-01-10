@@ -1,8 +1,6 @@
 #pragma once
 #ifndef DEBUG_MACROS
 #  include "src/br_math.h"
-
-#  include <stdlib.h>
 #endif
 
 #if defined(BR_SHADER_TOOL) || defined(BR_DEBUG)

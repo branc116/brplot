@@ -1,8 +1,6 @@
 #pragma once
 #include "src/br_data.h"
 
-#include <stdio.h>
-
 typedef enum {
   br_dagen_state_inprogress,
   br_dagen_state_paused,

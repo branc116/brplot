@@ -1,7 +1,6 @@
-#include <errno.h>
 #include "tests/src_tests/shl.h"
 
-void free_list_test0() {
+void free_list_test0(void) {
   struct {
     int* arr;
     int* free_arr;
@@ -23,7 +22,7 @@ void free_list_test0() {
   }
   brfl_free(is);
 }
-void free_list_test() {
+void free_list_test(void) {
   struct {
     int* arr;
     int* free_arr;
@@ -49,7 +48,7 @@ void free_list_test() {
   brfl_free(is);
 }
 
-void free_list_test2() {
+void free_list_test2(void) {
   struct {
     int* arr;
     int* free_arr;
@@ -78,7 +77,7 @@ void free_list_test2() {
   brfl_free(is);
 }
 
-void free_list_test3() {
+void free_list_test3(void) {
   struct {
     int* arr, * free_arr;
     int len, cap;
@@ -114,7 +113,7 @@ void free_list_test3() {
   brfl_free(is);
 }
 
-void free_list_test4() {
+void free_list_test4(void) {
   struct {
     int* arr, *free_arr;
     int len, cap;
@@ -137,7 +136,7 @@ void free_list_test4() {
   TEST_IS_EOF(*file);
 }
 
-void free_list_read_empty() {
+void free_list_read_empty(void) {
   struct {
     int* arr, *free_arr;
     int len, cap;

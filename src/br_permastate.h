@@ -1,5 +1,5 @@
 #pragma once
-#include <stdbool.h>
+#include "src/br_pp.h"
 
 typedef struct br_plotter_t br_plotter_t;
 

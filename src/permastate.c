@@ -1,25 +1,15 @@
-#include "src/br_pp.h"
+#include "src/br_permastate.h"
 #include "src/br_plotter.h"
 #include "include/br_str_header.h"
 #include "src/br_plot.h"
 #include "src/br_filesystem.h"
 #include "src/br_resampling.h"
-#include "src/br_permastate.h"
 #include "src/br_data.h"
 #include "src/br_data_generator.h"
 #include "src/br_da.h"
 #include "include/br_free_list_header.h"
-#include "include/br_string_pool_header.h"
 #include "src/br_ui.h"
 #include "src/br_memory.h"
-
-#include <stdint.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
-#  include <unistd.h>
-#endif
 
 bool br_permastate_savef_plots(BR_FILE* f, br_plots_t plots) {
   size_t plots_len                = (size_t)plots.len;

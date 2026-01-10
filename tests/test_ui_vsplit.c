@@ -1,9 +1,6 @@
 #define BRUI_IMPLEMENTATION
 #include <brui.h>
 
-// TODO: Export this
-void brui_vsplit(int);
-bool brui_vsplit_pop(void);
 int main(void) {
   brui_window_t window = { 0 };
   brui_window_init(&window);
