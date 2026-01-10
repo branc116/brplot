@@ -581,6 +581,9 @@ static void brpl_time_init(void) {
 void* brpl_load_library(const char* path) {
 #if defined(_WIN32)
   return LoadLibraryA(path);
+#elif defined (__EMSCRIPTEN__)
+  (void)path;
+  return NULL;
 #else
   return dlopen(path, RTLD_LAZY | RTLD_GLOBAL);
 #endif
@@ -589,6 +592,9 @@ void* brpl_load_library(const char* path) {
 void* brpl_load_symbol(void* library, const char* name) {
 #if defined(_WIN32)
   return (void*)GetProcAddress((HMODULE) library, name);
+#elif defined (__EMSCRIPTEN__)
+  (void)library; (void)name;
+  return NULL;
 #else
   return (void*)dlsym(library, name);
 #endif

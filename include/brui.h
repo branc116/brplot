@@ -258,6 +258,10 @@ BR_EXPORT bool brui_resizable_temp_pop(void);
 #endif
 
 #if defined(BRUI_IMPLEMENTATION)
+#  if !defined(BR_INCLUDE_SHL_IMPLS_C)
+#    define BR_INCLUDE_SHL_IMPLS_C
+#    include "external/shl_impls.c"
+#  endif
 
 #  define BR_GL_DRAW_ALL_CB br_shaders_draw_all
 #  if !defined(BR_INCLUDE_UNITY_BRPLAT_C)
@@ -293,9 +297,5 @@ BR_EXPORT bool brui_resizable_temp_pop(void);
 #  if !defined(BR_INCLUDE_ANIM_C)
 #    define BR_INCLUDE_ANIM_C
 #    include "src/anim.c"
-#  endif
-#  if !defined(BR_INCLUDE_SHL_IMPLS_C)
-#    define BR_INCLUDE_SHL_IMPLS_C
-#    include "external/shl_impls.c"
 #  endif
 #endif

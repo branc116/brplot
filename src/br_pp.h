@@ -101,7 +101,7 @@ extern void br_on_fatal_error(void);
 #if defined(BR_ASAN)
 void __sanitizer_print_stack_trace(void);
 #  define BR_STACKTRACE() __sanitizer_print_stack_trace()
-#elif defined(__TINYC__) || defined(__GNUC__)
+#elif defined(__linux__)
 #  include <execinfo.h>
 #  define BR_STACKTRACE() do { \
   void* BR__ELS[32] = { 0 }; \
@@ -324,14 +324,14 @@ typedef   signed      char br_i8;
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <time.h>
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__)
-#  include <unistd.h>
-#  include <time.h>
-#  include <sys/time.h>
 #  include <dlfcn.h>
-#  include <pthread.h>
 #  include <poll.h>
+#  include <pthread.h>
+#  include <sys/time.h>
+#  include <unistd.h>
 #endif
 
 #if BR_HAS_INCLUDE(<dirent.h>)

@@ -1,12 +1,13 @@
 #include "src/br_text_renderer.h"
+#include "include/br_free_list_header.h"
+#include "include/br_str_header.h"
 #include "src/br_da.h"
-#include "src/br_free_list.h"
+#include "src/br_filesystem.h"
 #include "src/br_gl.h"
 #include "src/br_math.h"
-#include "src/br_shaders.h"
-#include "include/br_str_header.h"
-#include "src/br_filesystem.h"
 #include "src/br_memory.h"
+#include "src/br_shaders.h"
+
 #if !defined(BR_INCLUDE_ICONS_GEN_C)
 #  define BR_INCLUDE_ICONS_GEN_C
 #  include ".generated/icons.c"
@@ -164,13 +165,15 @@ void brtr_free(void) {
     stbds_hmfree(brtr.sizes);
   }
   stbtt_PackEnd(&brtr.pack_cntx);
-  brgl_unload_texture(brtr.shaders->glyph->uvs.atlas_uv);
-  brtr.shaders->glyph->uvs.atlas_uv = 0;
+  if (brtr.shaders->glyph) {
+    brgl_unload_texture(brtr.shaders->glyph->uvs.atlas_uv);
+    brtr.shaders->glyph->uvs.atlas_uv = 0;
+  }
   br_da_free(brtr.baking_chars);
   if (brtr.custom_font_data) BR_FREE(brtr.custom_font_data);
   brfl_free(brtr.icons);
   BR_FREE(brtr.bitmap_pixels);
-  brtr.bitmap_pixels = 0;
+  brtr.bitmap_pixels = NULL;
   br_da_free(brtr.stack);
 }
 

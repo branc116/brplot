@@ -177,6 +177,8 @@ bool brui_window_deinit(brui_window_t* uiw) {
   br_shaders_free(uiw->shaders);
   brpl_window_close(&uiw->pl);
   brfl_free(uiw->touch_points);
+  memset(uiw, 0, sizeof(*uiw));
+  uiw->pl.should_close = true;
   return true;
 }
 
