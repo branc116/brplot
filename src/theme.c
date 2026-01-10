@@ -6,7 +6,7 @@ void br_theme_dark(br_theme_t* t) {
   
   t->colors.btn_inactive = br_color_lighter(bg, 0.9f);
   t->colors.btn_hovered = br_color_greener(br_color_lighter(t->colors.btn_inactive, 2.0f), 0.3f);
-  t->colors.btn_active = br_color_lighter(t->colors.btn_hovered, 1.0f);
+  t->colors.btn_active = br_color_lighter(t->colors.btn_hovered, 0.2f);
   t->colors.btn_txt_inactive = txt;
   t->colors.btn_txt_hovered = br_color_darker(txt, 0.2f);
   t->colors.btn_txt_active = txt;
@@ -35,8 +35,8 @@ void br_theme_light(br_theme_t* t) {
   br_color_t txt = BR_COLOR(0x0f, 0x0f, 0x0f, 0xff);
   
   t->colors.btn_inactive = br_color_darker(bg, 0.3f);
-  t->colors.btn_hovered = br_color_greener(br_color_darker(t->colors.btn_inactive, .4f), 0.3f);
-  t->colors.btn_active = br_color_darker(t->colors.btn_hovered, .4f);
+  t->colors.btn_hovered = br_color_greener(br_color_darker(t->colors.btn_inactive, .2f), 0.3f);
+  t->colors.btn_active = br_color_darker(t->colors.btn_hovered, .1f);
   t->colors.btn_txt_inactive = txt;
   t->colors.btn_txt_hovered = br_color_lighter(txt, 0.2f);
   t->colors.btn_txt_active = txt;
@@ -56,9 +56,9 @@ void br_theme_light(br_theme_t* t) {
 }
 
 void br_theme_reset_ui(br_theme_t* t) {
-  t->shadow_intesity = 0.1f;
-  t->shadow_spred = 5.f;
-  t->px_round = 3.f;
+  t->shadow_intesity = 1.0f;
+  t->shadow_spred = 8.f;
+  t->px_round = 2.f;
 /*
   t->ui.min_sampling = 0.001f;
   t->ui.cull_min = 2.f;

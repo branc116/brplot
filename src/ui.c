@@ -496,7 +496,7 @@ brui_stack_el_t brui_stack_el(void) {
   if (brui_state.len > 0) {
     brui_stack_el_t new_el = TOP;
     new_el.psum.x += TOP.padding.x;
-    new_el.cur_pos.x = new_el.limit.min_x + new_el.psum.x;
+    new_el.cur_pos.x = new_el.limit.min_x + new_el.padding.x;
     new_el.cur_pos.y += TOP.padding.y;
     new_el.limit.min.y += TOP.padding.y;
     new_el.limit.max.y -= TOP.padding.y;
@@ -565,14 +565,20 @@ void brui_end(void) {
 
 void brui_push(void) {
   BRUI_LOG("PUSH");
+  Z;
   brtr_stack_el_t* el = brui_push_text(brui_stack_el());
+  Z;
+  /*
   if (TOP.is_active) el->background = br_color_lighter(el->background, BR_THEME.colors.highlite_factor*0.2f);
+  else el->background = br_color_lighter(el->background, BR_THEME.colors.highlite_factor*0.1f);
+  */
+  el->background = br_color_lighter(el->background, BR_THEME.colors.highlite_factor*0.1f);
   el->limits = TOP.limit;
   el->pos = TOP.cur_pos;
 }
 
 brui_pop_t brui_pop(void) {
-  brtr_stack_el_t* el = brtr_state_pop();
+  br_color_t bg = brtr_state()->background;
 
   float width = BR_BBW(TOP.limit) - 2 * fminf(TOP2.psum.x, TOP.psum.x);
   float height = TOP.cur_content_height;
@@ -583,16 +589,19 @@ brui_pop_t brui_pop(void) {
   bool clicked = false;
   bool hovered = br_col_vec2_bb(bb, brui_state.uiw->mouse.pos);
 
-  br_color_t color = el->background; //BR_THEME.colors.plot_menu_color;
+  float factor = 1 + 0.3f*(float)brui_state.len;
   if (TOP.is_active) {
-    if (hovered) clicked = brui_state.uiw->mouse.click;
-    color = br_color_lighter(color, BR_THEME.colors.highlite_factor*0.2f);
+    if (hovered) {
+      factor *= 1.5f;
+      clicked = brui_state.uiw->mouse.click;
+    } else factor *= 1.1f;
   }
-  if (TOP.hide_bg == false) brui_background(bb, color);
+  bg = br_color_lighter(bg, BR_THEME.colors.highlite_factor*0.01f*(factor - 1));
+  if (TOP.hide_bg == false) brui_background(bb, bg);
   if (TOP.hide_border == false) brui_border1(bb);
 
   BRUI_LOG("Pre pop ex: [%.2f,%.2f,%.2f,%.2f]", BR_BB_(bb));
-  brui_pop_simple();
+  brui_pop_text();
   brui_cur_push(content_height + TOP.padding.y);
   BRUI_LOG("pop");
   return (brui_pop_t) { .clicked = clicked, .hovered = hovered, .bb = bb };
@@ -687,27 +696,33 @@ bool brui_text_input(brsp_id_t str_id) {
   br_strv_t strv = brsp_get(*sp, str_id);
   bool is_active = brui_action_typing == ACTION && str_id == ACPARM.text.id;
 
-  br_vec2_t loc        = TOP.cur_pos;
-  if (is_active)       brui_cur_set(loc.x - BRUI_ANIMF(ACPARM.text.offset_ahandle), loc.y, TOP.cur_content_height);
+  br_vec2_t loc = TOP.cur_pos;
+  loc.x -= BRUI_ANIMF(ACPARM.text.offset_ahandle);
+
+  if (is_active)       brui_cur_set(loc.x, loc.y, TOP.cur_content_height);
   float font_size      = brui_text_size();
   float opt_height     = font_size + TOP.padding.y;
   br_extent_t ex       = BR_EXTENT(TOP.cur_pos.x, TOP.cur_pos.y, TOP.limit.max_x - TOP.cur_pos.x, font_size);
-  br_bb_t text_limit   = TOP.limit;
   float half_thick     = 1.0f;
   bool changed         = false;
 
   brtr_push(strv);
+
   float text_height = font_size;
   brui_cur_push(opt_height);
   if (is_active) {
     br_size_t size = brtr_measure(br_str_sub(strv, 0, (uint32_t)ACPARM.text.cursor_pos));
-    loc.x += size.width - 1.0f;
-    text_limit.min_x -= 1.f;
-    brtr_rectangle_draw(BR_BB(loc.x - half_thick, loc.y, loc.x + half_thick, loc.y + text_height));
+    loc.x += size.width;
+    brtr_stack_el_t* el = brtr_state_push();
+      el->background = el->forground;
+      el->limits.min_x -= TOP.padding.x;
+      brtr_rectangle_draw(BR_BB(loc.x, loc.y, loc.x + 2*half_thick, loc.y + text_height));
+    brtr_state_pop();
     int off_ahandle = ACPARM.text.offset_ahandle;
-    float off = BRUI_ANIMF(off_ahandle);
-    if (size.width - off > ex.width) BRUI_ANIMFS(off_ahandle, size.width - ex.width / 2);
-    if (size.width - off < 0)        BRUI_ANIMFS(off_ahandle, br_float_max(0.f, size.width - ex.width / 2));
+    float offt = br_animf_get_target(&brui_state.uiw->anims, off_ahandle);
+    float off = br_animf(&brui_state.uiw->anims, off_ahandle);
+    if (loc.x - (offt - off) > TOP.limit.max_x) BRUI_ANIMFS(off_ahandle, offt + (TOP.limit.max_x - TOP.limit.min_x)/2);
+    if (loc.x - (offt - off) < TOP.limit.min_x - TOP.padding.x) BRUI_ANIMFS(off_ahandle, offt - (TOP.limit.max_x - TOP.limit.min_x)/2);
     changed = ACPARM.text.changed;
     ACPARM.text.changed = false;
   } else {
@@ -768,84 +783,48 @@ void brui_border2(br_bb_t bb, bool active) {
 
 bool brui_collapsable(br_strv_t name, bool* expanded) {
   float font_size = brui_text_size();
-  float opt_header_height /* text + 2*1/2*padding */ = font_size + TOP.padding.y;
-  brui_border1(BR_BB(TOP.cur_pos.x, TOP.cur_pos.y, TOP.limit.max_x - TOP.psum.x, TOP.cur_pos.y + opt_header_height));
-  brui_vsplitvp(2, BRUI_SPLITR(1), BRUI_SPLITA(font_size));
-    brtr_stack_el_t* el = brtr_state();
-    TOP.limit.max_y = fminf(TOP.limit.max_y, TOP.cur_pos.y + opt_header_height);
-    TOP.limit.min_y = fmaxf(TOP.limit.min_y, TOP.cur_pos.y);
-    el->limits = TOP.limit;
-    el->justify = br_dir_mid_mid;
-    el->ancor = br_dir_mid_mid;
-    if (brui_button(name)) *expanded = !*expanded;
-  brui_vsplit_pop();
-    if (*expanded) {
-      if (brui_button(BR_STRL("V"))) {
-        *expanded = false;
+  //float opt_header_height /* text + 2*1/2*padding */ = font_size + TOP.padding.y;
+  brui_push();
+    brui_vsplitvp(2, BRUI_SPLITR(1), BRUI_SPLITA(1.3f*font_size));
+      if (brui_button(name)) *expanded = !*expanded;
+    brui_vsplit_pop();
+      if (*expanded) {
+        if (brui_button(BR_STRL("V"))) *expanded = false;
+      } else {
+        if (brui_button(BR_STRL("<"))) *expanded = true;
       }
-    } else {
-      if (brui_button(BR_STRL("<"))) {
-        *expanded = true;
-      }
-    }
-  brui_vsplit_pop();
-  brui_cur_push(TOP.padding.y);
-  if (*expanded) {
-    brui_stack_el_t new_el = TOP;
-    new_el.limit.min_x = new_el.cur_pos.x;
-    new_el.limit.max_x = new_el.limit.max_x - new_el.psum.x;
-    new_el.limit.min_y = fmaxf(new_el.limit.min_y, new_el.cur_pos.y);
-    new_el.cur_content_height = new_el.padding.y;
-    new_el.cur_pos.x = new_el.limit.min_x + new_el.padding.x;
-    new_el.cur_pos.y = new_el.cur_pos.y + new_el.padding.y;
-    new_el.psum.x = new_el.padding.x;
-    
-    el = brui_push_text(new_el);
-    el->limits = new_el.limit;
-    el->pos = new_el.cur_pos;
+    brui_vsplit_pop();
+  if (!*expanded) {
+    TOP.hide_bg = true;
+    brui_pop();
   }
   return *expanded;
 }
 
 void brui_collapsable_end(void) {
-  float ch = TOP.cur_content_height;
-  brui_border1(BR_BB(TOP.limit.min_x, TOP.limit.min_y, TOP.limit.max_x, TOP.cur_pos.y));
-  brui_pop_text();
-  brui_cur_push(ch + TOP.padding.y);
+  brui_pop();
 }
 
 bool brui_button(br_strv_t text) {
   // BUTTON
   float font_size = brui_text_size();
   float opt_height /* text + 2*1/2*padding */ = font_size + TOP.padding.y;
-
   float button_max_x = TOP.limit.max_x - TOP.psum.x;
   float button_max_y = TOP.cur_pos.y + opt_height;
   br_bb_t button_limit = BR_BB(TOP.cur_pos.x, TOP.cur_pos.y, button_max_x, button_max_y);
   bool hovers = (br_col_vec2_bb(button_limit, brui_state.uiw->mouse.pos) && TOP.is_active);
   bool is_selected = ACTION != brui_action_sliding && (hovers || brui_state.select_next);
-  brui_state.select_next = false;
-  BRUI_LOG("button_limit: %.2f %.2f %.2f %.2f", BR_BB_(button_limit));
-  brtr_stack_el_t* el = brui_push_text(TOP);
-    TOP.limit.min_x = TOP.cur_pos.x;
-    TOP.limit.min_y = fmaxf(TOP.cur_pos.y, TOP.limit.min_y);
-    TOP.limit.max_y = fminf(button_max_y, TOP.limit.max_y);
-    TOP.limit.max_x = button_max_x;
-    el->limits     = TOP.limit;
-    el->ancor      = br_dir_mid_mid;
-    el->justify    = br_dir_mid_mid;
-    el->forground  = is_selected ? BR_THEME.colors.btn_txt_hovered : BR_THEME.colors.btn_txt_inactive;
+
+  brui_push();
+    brtr_stack_el_t* el = brtr_state();
     el->background = is_selected ? BR_THEME.colors.btn_hovered : BR_THEME.colors.btn_inactive;
-    TOP.psum.x = 0;
-    TOP.padding.y *= 0.5f;
-    TOP.start_z += 1;
-    brui_background(button_limit, el->background); // NOTE: el is invalidated...
-    brtr_state()->z += 1;
-    brui_border2(button_limit, is_selected);
+    el->forground = is_selected ? BR_THEME.colors.btn_txt_hovered : BR_THEME.colors.btn_txt_inactive;
+    el->justify = br_dir_mid_up;
+    el->ancor = br_dir_mid_up;
     brui_text(text);
-  brui_pop_text();
-  brui_cur_push(opt_height + TOP.padding.y);
-  return TOP.is_active && hovers && false == brui_state.uiw->key.ctrl_down && brui_state.uiw->mouse.click;
+    brui_cur_push((float)el->font_size*0.2f);
+  bool is_click = brui_pop().clicked;
+  return TOP.is_active && hovers && false == brui_state.uiw->key.ctrl_down && is_click;
 }
 
 bool brui_checkbox(br_strv_t text, bool* checked) {
@@ -1043,35 +1022,28 @@ bool brui_sliderf3(br_strv_t text, float* value, int percision) {
   br_strv_t value_str = br_str_printf(&brui_state.scrach, "%.*f", percision, *value);
   br_size_t size = brtr_measure(value_str);
   size.width += TOP.padding.x * 2.f;
-  float avaliable_width = BR_BBW(TOP.limit) - TOP.psum.x * 2.f;
   br_bb_t bb = BR_BB(TOP.cur_pos.x, TOP.cur_pos.y, TOP.limit.max_x - TOP.psum.x, TOP.cur_pos.y + opt_height);
   br_vec2_t mouse_pos = brui_state.uiw->mouse.pos;
+  br_color_t background = BR_THEME.colors.btn_inactive;
+  bool hovers = br_col_vec2_bb(bb, mouse_pos);
+  if (hovers) background = BR_THEME.colors.btn_hovered;
   if (ACTION == brui_action_sliding && ACPARM.slider.value == value) {
     *value *= 1.f - brui_state.uiw->time.frame * (ACPARM.slider.drag_ancor_point.x - mouse_pos.x) / 1000.f;
-    brui_background(bb, BR_THEME.colors.btn_active);
-  } else if (ACTION == brui_action_none && brui_state.uiw->mouse.click && br_col_vec2_bb(bb, mouse_pos)) {
+    background = BR_THEME.colors.btn_active;
+  } else if (ACTION == brui_action_none && brui_state.uiw->mouse.click && hovers) {
     ACTION = brui_action_sliding;
     ACPARM.slider.value = value;
     ACPARM.slider.drag_ancor_point = mouse_pos;
   }
-  brui_push_simple(TOP);
-    TOP.limit.min_y = fmaxf(TOP.cur_pos.y, TOP.limit.min_y);
-    TOP.limit.max_y = fminf(TOP.limit.min_y + opt_height, TOP.limit.max_y);
-    brtr_stack_el_t* el = brtr_state_push();
-      el->limits = TOP.limit;
-      el->ancor = br_dir_left_up;
-      el->justify = br_dir_left_up;
-      if (size.width < avaliable_width) {
-        brui_vsplitvp(2, BRUI_SPLITR(1), BRUI_SPLITA(size.width));
-          brui_text(text);
-        brui_vsplit_pop();
-          brui_text(value_str);
-        brui_vsplit_pop();
-      }
-    brtr_state_pop();
-  brui_pop_simple();
-  brui_border1(bb);
-  brui_cur_push(opt_height + TOP.padding.y);
+  brui_push();
+    brtr_state()->background = background;
+    brui_vsplitvp(2, BRUI_SPLITR(1), BRUI_SPLITA(size.width));
+      brui_text(text);
+    brui_vsplit_pop();
+      brui_text(value_str);
+    brui_vsplit_pop();
+    brui_cur_push(font_size*0.2f);
+  brui_pop();
   return false;
 }
 
@@ -1142,8 +1114,7 @@ void brui_vsplitarr(int n, brui_split_t* splits) {
     }
   }
 
-  float off = TOP.cur_pos.x - (TOP.limit.min_x + TOP.psum.x);
-  float space_left = BR_BBW(TOP.limit) - off - TOP.psum.x * 2;
+  float space_left = BR_BBW(TOP.limit) - TOP.psum.x * 2;
   float space_after_abs = space_left - absolute;
   if (space_after_abs < 0) {
     brui_vsplit(n);
@@ -1156,7 +1127,7 @@ void brui_vsplitarr(int n, brui_split_t* splits) {
   top.hide_border = true;
   top.vsplit_max_height = 0;
   top.cur_content_height = 0;
-  float cur_x = top.limit.max_x;
+  float cur_x = top.limit.max_x - TOP.psum.x;
   for (int i = n - 1; i >= 0; --i) {
     brui_stack_el_t new_el = top;
     brui_split_t t = splits[i];
@@ -2135,8 +2106,9 @@ brui_resizable_t* brui_resizable_push(int id) {
       TOP.start_z = res->max_z + 2;
       TOP.z = TOP.start_z;
       TOP.limit.max_y = fminf(TOP.limit.max_y, TOP.limit.min_y + title_height);
-      float button_width = 20.f;
+      float button_width = brui_text_size() * 1.2f;
       brui_vsplitvp(5, BRUI_SPLITR(1), BRUI_SPLITA(button_width), BRUI_SPLITA(button_width), BRUI_SPLITA(button_width), BRUI_SPLITA(button_width));
+        if (res->title_id) brui_text_input(res->title_id);
       brui_vsplit_pop();
         if (brui_button(BR_STRL("Z-"))) brui_resizable_decrement_z(rs, res);
       brui_vsplit_pop();
