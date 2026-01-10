@@ -8,8 +8,6 @@
 #  define grid_vs           "src/shaders/grid.vs"
 #  define line_fs           "src/shaders/line.fs"
 #  define line_vs           "src/shaders/line.vs"
-#  define quad_fs           "src/shaders/quad.fs"
-#  define quad_vs           "src/shaders/quad.vs"
 #  define grid_3d_fs        "src/shaders/grid_3d.fs"
 #  define grid_3d_vs        "src/shaders/grid_3d.vs"
 #  define line_3d_fs        "src/shaders/line_3d.fs"
@@ -18,6 +16,8 @@
 #  define img_vs            "src/shaders/img.vs"
 #  define glyph_vs          "src/shaders/glyph.vs"
 #  define glyph_fs          "src/shaders/glyph.fs"
+#  define rect_vs           "src/shaders/rect.vs"
+#  define rect_fs           "src/shaders/rect.fs"
 #endif
 
 #define NOP2(N, M)
@@ -60,6 +60,13 @@
       X_BUF(bg, 4)                      \
       X_BUF(clip_dists, 4)              \
       X_BUF(z, 1)                       \
+    )                                   \
+  X(rect, 1024,                         \
+      X_VEC(viewport, 4),               \
+      X_BUF(pos, 4)                     \
+      X_BUF(color, 4)                   \
+      X_BUF(clip_dists, 4)              \
+      X_BUF(z_and_round_factor, 2)      \
     )                                   \
   X(img, 2,                             \
       X_VEC(image, _TEX),               \

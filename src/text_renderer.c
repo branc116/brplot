@@ -381,16 +381,16 @@ void brtr_glyph_draw(br_bb_t where_screen, br_extent_t glyph) {
 void brtr_rectangle_draw(br_bb_t where_screen) {
   brtr_stack_el_t* el = brtr_state();
   br_vec4_t bg = BR_COLOR_TO4(el->background);
-  br_vec2_t zero = BR_VEC2(0,0);
   float z = BR_Z_TO_GL(el->z);
   br_bb_t limit = el->limits;
   br_vec2_t a = where_screen.min, b = br_bb_tr(where_screen), c = where_screen.max, d = br_bb_bl(where_screen);
-  br_size_t sz = el->viewport.size;
-  br_shader_glyph_push_quad(brtr.shaders->glyph, (br_shader_glyph_el_t[4]) {
-    { .pos = BR_VEC42(br_vec2_stog(a, sz), zero), .fg = bg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, a), .z = z },
-    { .pos = BR_VEC42(br_vec2_stog(b, sz), zero), .fg = bg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, b), .z = z },
-    { .pos = BR_VEC42(br_vec2_stog(c, sz), zero), .fg = bg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, c), .z = z },
-    { .pos = BR_VEC42(br_vec2_stog(d, sz), zero), .fg = bg, .bg = bg, .clip_dists = br_bb_clip_dists(limit, d), .z = z },
+  br_vec2_t center = br_vec2_scale(br_vec2_add(a, c), 0.5f);
+  brtr.shaders->rect->uvs.viewport_uv = el->viewport.v4;
+  br_shader_rect_push_quad(brtr.shaders->rect, (br_shader_rect_el_t[4]) {
+    { .pos = BR_VEC42(a, center), .color = bg, .clip_dists = br_bb_clip_dists(limit, a), .z_and_round_factor = BR_VEC2(z, 0.1f) },
+    { .pos = BR_VEC42(b, center), .color = bg, .clip_dists = br_bb_clip_dists(limit, b), .z_and_round_factor = BR_VEC2(z, 0.1f) },
+    { .pos = BR_VEC42(c, center), .color = bg, .clip_dists = br_bb_clip_dists(limit, c), .z_and_round_factor = BR_VEC2(z, 0.1f) },
+    { .pos = BR_VEC42(d, center), .color = bg, .clip_dists = br_bb_clip_dists(limit, d), .z_and_round_factor = BR_VEC2(z, 0.1f) },
   });
 }
 

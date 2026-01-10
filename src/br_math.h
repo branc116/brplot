@@ -149,19 +149,6 @@ typedef struct {
 typedef struct {
   union {
     struct {
-      float x, y, width, height;
-    };
-    struct {
-      br_vec2_t pos;
-      br_size_t size;
-    };
-    float arr[4];
-  };
-} br_extent_t;
-
-typedef struct {
-  union {
-    struct {
       double x, y, width, height;
     };
     struct {
@@ -267,6 +254,20 @@ typedef struct {
     double arr[4];
   };
 } br_vec4d_t;
+
+typedef struct {
+  union {
+    struct {
+      float x, y, width, height;
+    };
+    struct {
+      br_vec2_t pos;
+      br_size_t size;
+    };
+    br_vec4_t v4;
+    float arr[4];
+  };
+} br_extent_t;
 
 typedef struct {
   unsigned char r, g, b, a;
