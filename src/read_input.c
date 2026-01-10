@@ -261,8 +261,6 @@ bool br_extractor_is_valid(br_strv_t ex) {
     return false;
   }
   return true;
-
-  return true;
 }
 
 int br_extractor_extract_number(br_strv_t view, float* outF) {
@@ -347,7 +345,7 @@ int br_extractor_extract_number(br_strv_t view, float* outF) {
         break;
       default:
         BR_UNREACHABLE("Unhandled state while extracting number. state = %d", state);
-        return -1;
+        BR_RETURN_IF_TINY_C(-1);
     }
   }
   switch (state) {
@@ -366,9 +364,9 @@ int br_extractor_extract_number(br_strv_t view, float* outF) {
       return (int)view.len;
     default:
       BR_UNREACHABLE("Unhandled state while extracting number. state=%d", state);
-      return -1;
+      BR_RETURN_IF_TINY_C(-1);
   }
-  return -1;
+  BR_RETURN_IF_TINY_C(-1);
 }
 
 br_extractor_res_state_t br_extractor_extract(br_strv_t ex, br_strv_t view, float* x, float* y) {

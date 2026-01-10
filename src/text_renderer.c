@@ -58,7 +58,7 @@ typedef struct brtr_t {
   struct {stbtt_packedchar* arr; size_t len, cap; } baking_chars;
   struct {
     brtr_stack_el_t* arr;
-    int len, cap;
+    size_t len, cap;
   } stack;
   struct {
     br_extent_t* arr;
@@ -277,7 +277,7 @@ br_size_t brtr_measure(br_strv_t str) {
 
   if (size_index != -1) f = brtr.sizes[size_index];
   BR_STRV_FOREACH_UTF8(str, ch) brtr_move_loc(&f, ch, &loc);
-  return BR_SIZE(loc.x, loc.y + brtr_state()->font_size);
+  return BR_SIZE(loc.x, loc.y + (float)brtr_state()->font_size);
 }
 
 br_extent_t brtr_push(br_strv_t text) {
@@ -291,8 +291,8 @@ br_extent_t brtr_push(br_strv_t text) {
   // This is some ttf bullshit, idk...
   pos.y -= (float)font_size*0.25f;
 
-  if      (el->ancor & br_dir_mid_y) pos.y += el->font_size * 0.5f;
-  else if (el->ancor & br_dir_up)    pos.y += el->font_size;
+  if      (el->ancor & br_dir_mid_y) pos.y += (float)font_size * 0.5f;
+  else if (el->ancor & br_dir_up)    pos.y += (float)font_size;
 
   if      (el->ancor & br_dir_mid_x) pos.x -= size.width * 0.5f;
   else if (el->ancor & br_dir_right) pos.x -= size.width;
@@ -370,7 +370,6 @@ void brtr_glyph_draw(br_bb_t where_screen, br_extent_t glyph) {
   brtr_stack_el_t* el = brtr_state();
   br_vec4_t bgc = BR_COLOR_TO4(el->background);
   br_vec4_t fgc = BR_COLOR_TO4(el->forground);
-  br_vec2_t zero = BR_VEC2(0,0);
   float z = BR_Z_TO_GL(el->z);
   br_bb_t limit = el->limits;
   br_size_t sz = el->viewport.size;
@@ -442,8 +441,7 @@ br_extent_t brtr_icon(int icon) {
 
 static void brtr_icons_load(void) {
   size_t n = BR_ARR_LEN(br_icons.arr);
-  for (int i = 0; i < n; ++i) {
+  for (size_t i = 0; i < n; ++i) {
     br_icons.arr[i].handle = brtr_icon_load(br_icons_atlas, BR_SIZEI(br_icons_atlas_width, br_icons_atlas_height), br_icons.arr[i].size);
   }
-  int handle;
 }

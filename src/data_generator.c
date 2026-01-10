@@ -425,7 +425,7 @@ static size_t expr_len(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_i
     }
   }
   BR_UNREACHABLE("expr.kind: %d", expr.kind);
-  return 0;
+  BR_RETURN_IF_TINY_C(0);
 }
 
 static size_t br_dagen_expr_read_per_batch(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index) {
@@ -452,7 +452,7 @@ static size_t br_dagen_expr_read_per_batch(br_datas_t datas, br_dagen_exprs_t ar
     } break;
     default: BR_UNREACHABLE("expr.kind: %d", expr.kind);
   }
-  return 0;
+  BR_RETURN_IF_TINY_C(0);
 }
 
 static double br_dagen_rebase(br_data_t const* data, br_dagen_expr_kind_t kind) {
@@ -461,7 +461,7 @@ static double br_dagen_rebase(br_data_t const* data, br_dagen_expr_kind_t kind) 
       switch (kind) {
         case br_dagen_expr_kind_reference_x: return data->dd.rebase_x; break;
         case br_dagen_expr_kind_reference_y: return data->dd.rebase_y; break;
-        default: BR_UNREACHABLE();
+		default: BR_UNREACHABLE("data->kind: %d", data->kind);
       }
     } break;
     case br_data_kind_3d: {
@@ -469,12 +469,12 @@ static double br_dagen_rebase(br_data_t const* data, br_dagen_expr_kind_t kind) 
         case br_dagen_expr_kind_reference_x: return data->ddd.rebase.x; break;
         case br_dagen_expr_kind_reference_y: return data->ddd.rebase.y; break;
         case br_dagen_expr_kind_reference_z: return data->ddd.rebase.z; break;
-        default: BR_UNREACHABLE();
+        default: BR_UNREACHABLE("data->kind: %d", data->kind);
       }
     } break;
-    default: BR_UNREACHABLE();
+    default: BR_UNREACHABLE("data->kind: %d", data->kind);
   }
-  return 0.0;
+  BR_RETURN_IF_TINY_C(0.0);
 }
 
 static size_t expr_apply_function(float* data, br_dagen_exprs_t arena, br_datas_t datas, size_t offset, size_t n, br_strv_t func_name, size_t arg_index) {
@@ -595,7 +595,7 @@ static size_t expr_read_n(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
     } break;
     default: BR_UNREACHABLE("Expr kind unknown: %d", expr.kind);
   }
-  return 0;
+  BR_RETURN_IF_TINY_C(0);
 }
 
 static size_t expr_add_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index, size_t offset, size_t n, float* data) {
@@ -651,7 +651,7 @@ static size_t expr_add_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
     } break;
     default: BR_UNREACHABLE("Expr kind: %d", expr.kind);
   }
-  return 0;
+  BR_RETURN_IF_TINY_C(0);
 }
 
 static size_t expr_mul_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t expr_index, size_t offset, size_t n, float* data) {
@@ -704,7 +704,7 @@ static size_t expr_mul_to(br_datas_t datas, br_dagen_exprs_t arena, uint32_t exp
     } break;
     default: BR_UNREACHABLE("Unknown expr kind %d", expr.kind);
   }
-  return 0;
+  BR_RETURN_IF_TINY_C(0);
 }
 
 static br_dagen_expr_context_t br_dagen_expr_push_batch(void) {
@@ -835,7 +835,7 @@ static bool expr_parse_ref(br_dagen_exprs_t* arena, tokens_t* tokens, uint32_t* 
     br_da_push(*arena, expr);
     return true;
   }
-  LOGE("[Parser] Unexpected identifier '%.*s' at location %zu. Expected ref or number", t.str.len, t.str.str, t.position); return false;
+  LOGE("[Parser] Unexpected identifier '%.*s' at location %zu. Expected ref or number", t.str.len, t.str.str, t.position);
   return false;
 }
 

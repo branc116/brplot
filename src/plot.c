@@ -183,6 +183,7 @@ void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups, br_extent_t
   // TODO 2D/3D
   BR_ASSERTF(plot->kind == br_plot_kind_2d, "Plot kind: %d", plot->kind);
   if (plot->data_info.len == 0) return;
+  (void)ex;
 
   br_bb_t bb = { 0 };
   int n = 0;

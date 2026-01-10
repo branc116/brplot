@@ -44,7 +44,7 @@ void br_data_construct(brsp_t* sp, br_anims_t* anims) {
 
 int br_datas_get_new_id(br_datas_t *datas) {
   int max = 1;
-  br_data_t data;
+  br_data_t data = { 0 };
   brfl_foreachv(data, *datas) if (data.group_id > max) max = data.group_id;
   return max;
 }
@@ -204,13 +204,13 @@ void br_data_export_csv(br_data_t data, FILE* file) {
 }
 
 void br_datas_export(br_datas_t datas, FILE* file) {
-  br_data_t data;
+  br_data_t data = { 0 };
   brfl_foreachv(data, datas) br_data_export(data, file);
 }
 
 void br_datas_export_csv(br_datas_t datas, FILE* file) {
   fprintf(file, "group,id,x,y,z\n");
-  br_data_t data;
+  br_data_t data = { 0 };
   brfl_foreachv(data, datas) {
     for (size_t i = 0; i < data.len; ++i) {
       switch(data.kind) {

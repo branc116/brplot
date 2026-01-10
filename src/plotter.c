@@ -181,7 +181,6 @@ int br_plotter_hovered_resizable(br_plotter_t* br) {
   } else {
     return br->hovered.resizable_id;
   }
-  return -1;
 }
 
 void br_plotter_one_iter(br_plotter_t* br) {

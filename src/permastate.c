@@ -122,7 +122,7 @@ bool br_permastate_save_datas(br_str_t path_folder, br_dagens_t const* dagens, b
   BR_FILE* file = NULL;
   bool success = true;
 
-  br_data_t data;
+  br_data_t data = { 0 };
   brfl_foreachv(data, datas) {
     if (br_data_is_generated(dagens, data.group_id)) continue;
     if (false == br_fs_cd(&path_folder, br_strv_from_literal("data")))        BR_ERROR("Failed to change dir");
@@ -151,16 +151,16 @@ static bool br_permastate_savef_plotter(BR_FILE* file, br_plotter_t* br) {
   bool success = true;
   br_save_state_command_t command = br_save_state_command_plotter;
 
-  if (NULL == file)                                                          BR_ERRORE("File is NULL");
-  if (1 != BR_FWRITE(&command, sizeof(command), 1, file))                       BR_ERRORE("Failed to write command");
-  if (false == brui_save(file, &br->uiw))                                    BR_ERRORE("Failed to write brui window.");
+  if (NULL == file)                                                               BR_ERRORE("File is NULL");
+  if (1 != BR_FWRITE(&command, sizeof(command), 1, file))                         BR_ERRORE("Failed to write command");
+  if (false == brui_save(file, &br->uiw))                                         BR_ERRORE("Failed to write brui window.");
   if (1 != BR_FWRITE(&br->groups.free_len, sizeof(br->groups.free_len), 1, file)) BR_ERRORE("Failed to write datas len");
-  br_data_t d;
+  br_data_t d = { 0 };
   brfl_foreachv(d, br->groups) {
     br_data_desc_t dd = { .group_id = d.group_id, .name = d.name };
-    if (1 != BR_FWRITE(&dd, sizeof(dd), 1, file))                               BR_ERRORE("Failed to write group %d", d.group_id);
+    if (1 != BR_FWRITE(&dd, sizeof(dd), 1, file))                                 BR_ERRORE("Failed to write group %d", d.group_id);
   }
-  if (1 != BR_FWRITE(&br->ui, sizeof(br->ui), 1, file))                         BR_ERRORE("Failed to write UI.");
+  if (1 != BR_FWRITE(&br->ui, sizeof(br->ui), 1, file))                           BR_ERRORE("Failed to write UI.");
   goto done;
 
 error:

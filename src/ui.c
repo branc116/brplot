@@ -407,7 +407,6 @@ brpl_event_t brui_event_next(brui_window_t* uiw) {
         }
         brui_resizable_t* r = br_da_getp(uiw->resizables, drag_index);
         br_extent_t ex = br_animex_get_target(&brui_state.uiw->anims, r->cur_extent_ah);
-        br_extent_t old_ex = ex;
         // Handle Zoom
         {
           float old_w = old_max_x - old_min_x;
@@ -427,7 +426,6 @@ brpl_event_t brui_event_next(brui_window_t* uiw) {
           ex.x += new_x_mid - old_x_mid;
           ex.y += new_y_mid - old_y_mid;
         }
-        LOGI("ex %f %f %f %f -> %f %f %f %f", BR_EXTENT_(old_ex), BR_EXTENT_(ex));
         br_animex_set(&uiw->anims, r->cur_extent_ah, ex);
         tpp->pos = ev.touch.pos;
       } else if (uiw->touch_points.free_len == 1) {
@@ -596,7 +594,7 @@ brui_pop_t brui_pop(void) {
   br_color_t color = el->background; //BR_THEME.colors.plot_menu_color;
   if (TOP.is_active) {
     if (hovered) clicked = brui_state.uiw->mouse.click;
-    color = br_color_lighter(color, BR_THEME.colors.highlite_factor*0.2);
+    color = br_color_lighter(color, BR_THEME.colors.highlite_factor*0.2f);
   }
   if (TOP.hide_bg == false) brui_background(bb, color);
   if (TOP.hide_border == false) brui_border1(bb);
@@ -653,7 +651,6 @@ void brui_text_at(br_strv_t strv, br_vec2_t at) {
   br_bb_t text_limit = TOP.limit;
   float padd = TOP.padding.x * 2;
   br_vec2_t at_og = at;
-  br_color_t bg = br_color_lighter(brtr_state()->background, BR_THEME.colors.highlite_factor);
   br_bb_t rect = { 0 };
   br_vec2_t b = { 0 }, c = { 0 };
 
@@ -753,6 +750,8 @@ void brui_border1(br_bb_t bb) {
 }
 
 void brui_border2(br_bb_t bb, bool active) {
+	(void)bb; (void)active;
+	/*
   br_color_t ec = BR_THEME.colors.ui_edge_inactive;
   br_color_t bc = BR_THEME.colors.ui_edge_bg_inactive;
 
@@ -771,6 +770,7 @@ void brui_border2(br_bb_t bb, bool active) {
   //br_icons_draw(BR_BB(bb.min_x + edge, bb.max_y - thick, bb.max_x - edge, bb.max_y), BR_EXTENT_TOBB(br_extra_icons.edge_b.size_8), ec, bc, TOP.limit, z, viewport);
   //br_icons_draw(BR_BB(bb.min_x, bb.min_y + edge, bb.min_x + thick, bb.max_y - edge), BR_EXTENT_TOBB(br_extra_icons.edge_l.size_8), ec, bc, TOP.limit, z, viewport);
   //br_icons_draw(BR_BB(bb.max_x - thick, bb.min_y + edge, bb.max_x, bb.max_y - edge), BR_EXTENT_TOBB(br_extra_icons.edge_r.size_8), ec, bc, TOP.limit, z, viewport);
+  */
 }
 
 bool brui_collapsable(br_strv_t name, bool* expanded) {
@@ -807,7 +807,7 @@ bool brui_collapsable(br_strv_t name, bool* expanded) {
     new_el.cur_pos.y = new_el.cur_pos.y + new_el.padding.y;
     new_el.psum.x = new_el.padding.x;
     
-    brtr_stack_el_t* el = brui_push_text(new_el);
+    el = brui_push_text(new_el);
     el->limits = new_el.limit;
     el->pos = new_el.cur_pos;
   }
@@ -825,7 +825,6 @@ bool brui_button(br_strv_t text) {
   // BUTTON
   float font_size = brui_text_size();
   float opt_height /* text + 2*1/2*padding */ = font_size + TOP.padding.y;
-  float opt_y = TOP.cur_pos.y + opt_height + TOP.padding.y;
 
   float button_max_x = TOP.limit.max_x - TOP.psum.x;
   float button_max_y = TOP.cur_pos.y + opt_height;
@@ -863,9 +862,7 @@ bool brui_checkbox(br_strv_t text, bool* checked) {
   br_bb_t cb_extent = BR_BB(TOP.cur_pos.x, TOP.cur_pos.y + font_size * 0.2f, TOP.cur_pos.x + sz, TOP.cur_pos.y + sz + font_size * 0.2f);
   float top_out /* neg or 0 */ = fminf(0.f, TOP.cur_pos.y - TOP.limit.min_y);
   float opt_height = font_size + TOP.padding.y;
-  float opt_cur_y = TOP.cur_pos.y + opt_height;
   bool hover = false;
-  br_sizei_t viewport = BR_SIZE_TOI(BRUI_ANIMEX(BRUI_RS(0).cur_extent_ah));
 
   brui_push_simple(TOP);
     br_extent_t icon = *checked ?  br_icon_cb_1(font_size) : br_icon_cb_0(font_size);
@@ -978,7 +975,7 @@ bool brui_sliderf(br_strv_t text, float* val) {
   brtr_stack_el_t* el = brui_push_text(TOP);
     TOP.padding.y *= 0.1f;
     el->font_size = (int)((float)el->font_size * 0.8f);
-    float font_size = el->font_size;
+    float font_size = (float)el->font_size;
     const float lt = font_size * 0.3f;
     const float ss = lt + 3.f;
     const float opt_height /* 2*text + 4*padding + ss */ = 2 * font_size + 4 * TOP.padding.y + ss;
@@ -1200,7 +1197,7 @@ void brui_vsplitvp(int n, ...) {
     va_end(ap);
   }
 
-  brui_vsplitarr(splits.len, splits.arr);
+  brui_vsplitarr((int)splits.len, splits.arr);
 }
 
 bool brui_vsplit_pop(void) {

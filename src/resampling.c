@@ -541,9 +541,9 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           res->args_3d.eye = BR_VEC3D_TOF(eye);
           res->args_3d.target = BR_VEC3D_TOF(target);
 
-          br_resampling_draw33(res, 0, pg, plot); break;
+          br_resampling_draw33(res, 0, pg, plot);
           br_shaders_draw_all(*br_resampling.shaders);
-        }
+        } break;
       }
     } break;
     default: BR_UNREACHABLE("Unknown data kind: %d", pg->kind);
