@@ -1212,7 +1212,9 @@ void brui_scroll_bar(int bar_offset_fract_ah) {
     }
   }
   brtr_stack_el_t* el = brtr_state_push();
+    el->limits.max_x += TOP.padding.x;
     el->background = lc;
+    el->z = Z;
     brtr_rectangle_draw(line_bb);
     el->background = bc;
     brtr_rectangle_draw(slider_bb);
@@ -1307,7 +1309,7 @@ float brui_y(void) {
 }
 
 float brui_width(void) {
-  return TOP.limit.max_x - TOP.limit.min_x;
+  return TOP.limit.max_x - TOP.limit.min_x - 2*TOP.psum.x;
 }
 
 float brui_height(void) {

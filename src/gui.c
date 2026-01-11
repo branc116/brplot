@@ -103,48 +103,46 @@ void br_plotter_draw(br_plotter_t* br) {
       for (int i = 0; i < br->plots.len; ++i) {
         br_extent_t ex = brui_resizable_cur_extent(PLOT->extent_handle);
         if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
-          brui_push();
-            //brui_padding_set(BR_VEC2(0,0));
-            brui_resizable_push(PLOT->extent_handle);
-              brui_framebuffer(PLOT->texture_id);
-              if (brgui_draw_plot_menu(&br->uiw.sp, PLOT, &br->uiw.anims, br->groups)) to_remove = i;
-              brgui_draw_legend(PLOT, br->groups, &br->uiw.theme, br);
-              if (PLOT->kind == br_plot_kind_2d) {
-                br_vec2d_t v = br_plot2d_to_plot(PLOT, br->uiw.mouse.pos, ex);
-                for (int j = 0; j < PLOT->data_info.len; ++j) {
-                  br_plot_data_t pd = PLOT->data_info.arr[j];
-                  if (false == br_plot_data_is_visible(pd)) continue;
-                  br_data_t* data = br_data_get(&br->groups, pd.group_id);
-                  br_vec2d_t zoom = br_anim2d(&br->uiw.anims, PLOT->dd.zoom_ah);
-                  float dist = (float)(zoom.x*0.05);
-                  br_u32 index = 0;
-                  bool has_any = br_resampling_get_point_at2(*data, v, &dist, &index);
-                  br_strv_t name = brsp_get(br->uiw.sp, data->name);
-                  if (has_any) {
-                    br_vec2d_t vreal = br_data_el_xy1(*data, index);
-                    br_vec2_t s = br_plot2d_to_screen(PLOT, vreal, ex);
-                    brui_text_at(br_scrach_printf("%.*s: %f, %f", name.len, name.str, vreal.x, vreal.y), s);
-                  }
-                }
-              } else if (PLOT->kind == br_plot_kind_3d) {
-                br_vec3d_t vec = br_plot3d_to_plot(PLOT, br->uiw.mouse.pos, ex);
-                br_u32 index = 0;
-                for (int j = 0; j < PLOT->data_info.len; ++j) {
-                  br_plot_data_t pd = PLOT->data_info.arr[j];
-                  if (false == br_plot_data_is_visible(pd)) continue;
-                  br_data_t* data = br_data_get1(br->groups, pd.group_id);
-                  float dist = 3.5f;
-                  br_vec3_t eye = br_anim3(&br->uiw.anims, PLOT->ddd.eye_ah);
-                  if (br_resampling_get_point_at3(*data, BR_VEC3_TOD(eye), vec, &dist, &index)) {
-                    br_vec3d_t vreal = br_data_el_xyz2(*data, index);
-                    br_vec2_t s = br_plot3d_to_screen(PLOT, BR_VEC3D_TOF(vreal), ex);
-                    br_strv_t name = brsp_get(br->uiw.sp, data->name);
-                    brui_text_at(br_scrach_printf("%.*s: %f, %f, %f", name.len, name.str, vreal.x, vreal.y, vreal.z), s);
-                  }
-                }
+        //brui_padding_set(BR_VEC2(0,0));
+        brui_resizable_push(PLOT->extent_handle);
+          brui_framebuffer(PLOT->texture_id);
+          if (brgui_draw_plot_menu(&br->uiw.sp, PLOT, &br->uiw.anims, br->groups)) to_remove = i;
+          brgui_draw_legend(PLOT, br->groups, &br->uiw.theme, br);
+          if (PLOT->kind == br_plot_kind_2d) {
+            br_vec2d_t v = br_plot2d_to_plot(PLOT, br->uiw.mouse.pos, ex);
+            for (int j = 0; j < PLOT->data_info.len; ++j) {
+              br_plot_data_t pd = PLOT->data_info.arr[j];
+              if (false == br_plot_data_is_visible(pd)) continue;
+              br_data_t* data = br_data_get(&br->groups, pd.group_id);
+              br_vec2d_t zoom = br_anim2d(&br->uiw.anims, PLOT->dd.zoom_ah);
+              float dist = (float)(zoom.x*0.05);
+              br_u32 index = 0;
+              bool has_any = br_resampling_get_point_at2(*data, v, &dist, &index);
+              br_strv_t name = brsp_get(br->uiw.sp, data->name);
+              if (has_any) {
+                br_vec2d_t vreal = br_data_el_xy1(*data, index);
+                br_vec2_t s = br_plot2d_to_screen(PLOT, vreal, ex);
+                brui_text_at(br_scrach_printf("%.*s: %f, %f", name.len, name.str, vreal.x, vreal.y), s);
               }
-            brui_resizable_pop();
-          brui_pop();
+            }
+          } else if (PLOT->kind == br_plot_kind_3d) {
+            br_vec3d_t vec = br_plot3d_to_plot(PLOT, br->uiw.mouse.pos, ex);
+            br_u32 index = 0;
+            for (int j = 0; j < PLOT->data_info.len; ++j) {
+              br_plot_data_t pd = PLOT->data_info.arr[j];
+              if (false == br_plot_data_is_visible(pd)) continue;
+              br_data_t* data = br_data_get1(br->groups, pd.group_id);
+              float dist = 3.5f;
+              br_vec3_t eye = br_anim3(&br->uiw.anims, PLOT->ddd.eye_ah);
+              if (br_resampling_get_point_at3(*data, BR_VEC3_TOD(eye), vec, &dist, &index)) {
+                br_vec3d_t vreal = br_data_el_xyz2(*data, index);
+                br_vec2_t s = br_plot3d_to_screen(PLOT, BR_VEC3D_TOF(vreal), ex);
+                br_strv_t name = brsp_get(br->uiw.sp, data->name);
+                brui_text_at(br_scrach_printf("%.*s: %f, %f, %f", name.len, name.str, vreal.x, vreal.y, vreal.z), s);
+              }
+            }
+          }
+        brui_resizable_pop();
 #undef PLOT
       }
       if (to_remove != -1) br_plotter_remove_plot(br, to_remove);
@@ -883,7 +881,13 @@ static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_anims_t* anims,
 }
 
 static void draw_left_panel(br_plotter_t* br) {
+  float max_width = brui_text_size()*20;
   brui_resizable_push(br->uiw.resizables.menu_extent_handle);
+    bool do_split = brui_width() > max_width;
+    if (do_split) {
+      brui_vsplitvp(3, BRUI_SPLITR(1), BRUI_SPLITA(max_width), BRUI_SPLITR(1));
+      brui_vsplit_pop();
+    }
     if (brui_collapsable(BR_STRL("File"), &br->ui.expand_file)) {
       if (brui_button(BR_STRL("Import CSV"))) {
         br->ui.fm_state.is_inited = true;
@@ -1017,6 +1021,10 @@ static void draw_left_panel(br_plotter_t* br) {
     if (brui_button(BR_STRL("Exit"))) {
       br->uiw.pl.should_close = true;
     }
+  if (do_split) {
+    brui_vsplit_pop();
+    brui_vsplit_pop();
+  }
   brui_resizable_pop();
 }
 
