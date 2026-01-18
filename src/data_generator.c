@@ -4,7 +4,7 @@
 #include "src/br_da.h"
 #include "src/br_data.h"
 #include "src/br_memory.h"
-#include "src/br_permastate.h"
+#include "src/br_resampling.h"
 #include "src/br_plot.h"
 #include "src/br_resampling.h"
 
@@ -151,94 +151,39 @@ error:
   return false;
 }
 
-bool br_dagen_push_file_2d(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* desc, BR_FILE* file) {
-  size_t data_left = 0;
+bool br_dagen_push_file(br_dagens_t* dagens, br_data_t* data, BR_FILE* file) {
   bool success = true;
-  br_color_t color;
-  size_t cap;
+  size_t data_len = data->len;
 
-  if (file == NULL)                               BR_ERRORE("File is null");
-  if (1 != BR_FREAD(&color, sizeof(color), 1, file)) BR_ERRORE("Failed to read color");
-  if (1 != BR_FREAD(&cap, sizeof(cap), 1, file))     BR_ERROR("Failed to read capacity");
-
-  br_data_t* data = br_datas_create2(datas, desc->group_id, br_data_kind_2d, color, cap, desc->name);
-  if (NULL == data)                               BR_ERROR("Failed to create data");
-
-  if (0 != cap) {
-    data_left = cap;
-    if (1 != BR_FREAD(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file)) BR_ERRORE("Failed to read bounding box");
-    if (1 != BR_FREAD(&data->dd.rebase_x, sizeof(data->dd.rebase_x), 1, file)) BR_ERRORE("Failed to read rebase x");
-    if (1 != BR_FREAD(&data->dd.rebase_y, sizeof(data->dd.rebase_y), 1, file)) BR_ERRORE("Failed to read rebase y");
-    br_dagen_t new = {
-      .data_kind = br_data_kind_2d,
-      .state = br_dagen_state_inprogress,
-      .group_id = desc->group_id,
-      .file = {
-        .file = file,
-        .x_left = data_left,
-        .y_left = data_left,
-        .num_points = data_left
-      }
-    };
-    br_da_push(*dagens, new);
+  if (data_len == 0) {
+    BR_FCLOSE(file);
+    return success;
   }
-  goto done;
+  data->len = 0;
 
-error:
-  success = false;
-
-done:
-  return success;
-}
-
-bool br_dagen_push_file(br_dagens_t* dagens, br_datas_t* datas, br_data_desc_t* desc, BR_FILE* file) {
-  br_save_state_command_t command = br_save_state_command_save_plots;
-  size_t data_left = 0;
-  br_data_kind_t kind;
-  br_color_t color;
-  size_t cap;
-  bool success = true;
-
-  if (file == NULL)                                   BR_ERRORE("File is null");
-  if (1 != BR_FREAD(&command, sizeof(command), 1, file)) BR_ERRORE("Failed to read command");
-  switch (command) {
-    case br_save_state_command_save_data_2d: kind = br_data_kind_2d; break;
-    case br_save_state_command_save_data_3d: kind = br_data_kind_3d; break;
-    default:                                          BR_ERROR("Unknown save command: %d", command);
-  }
-  if (1 != BR_FREAD(&color, sizeof(color), 1, file))     BR_ERRORE("Failed to read color");
-  if (1 != BR_FREAD(&cap, sizeof(cap), 1, file))         BR_ERROR("Failed to read capacity");
-
-  br_data_t* data = br_datas_create2(datas, desc->group_id, kind, color, cap, desc->name);
-  if (NULL == data)                                   BR_ERROR("Failed to create data");
-
-  if (0 != cap) {
-    data_left = cap;
-    switch (kind) {
-      case br_data_kind_2d: {
-        if (1 != BR_FREAD(&data->dd.bounding_box, sizeof(data->dd.bounding_box), 1, file)) BR_ERRORE("Failed to read bounding box");
-        if (1 != BR_FREAD(&data->dd.rebase_x, sizeof(data->dd.rebase_x), 1, file))         BR_ERRORE("Failed to read rebase x");
-        if (1 != BR_FREAD(&data->dd.rebase_y, sizeof(data->dd.rebase_y), 1, file))         BR_ERRORE("Failed to read rebase y");
-      } break;
-      case br_data_kind_3d: {
-        if (1 != BR_FREAD(&data->ddd.bounding_box, sizeof(data->ddd.bounding_box), 1, file)) BR_ERRORE("Failed to read bounding box");
-        if (1 != BR_FREAD(&data->ddd.rebase, sizeof(data->ddd.rebase), 1, file))             BR_ERRORE("Failed to read rebase x");
-      } break;
-      default:                                                                            BR_ERROR("data kind unknown %d", kind);
-    }
-  }
   br_dagen_t new = {
-    .data_kind = kind,
+    .data_kind = data->kind,
     .state = br_dagen_state_inprogress,
-    .group_id = desc->group_id,
+    .group_id = data->group_id,
     .file = {
       .file = file,
-      .x_left = data_left,
-      .y_left = data_left,
-      .z_left = kind == br_data_kind_2d ? 0 : data_left,
-      .num_points = data_left
+      .num_points = data_len
     }
   };
+
+  switch (data->kind) {
+    case br_data_kind_2d: {
+      br_da_push2(new.file.axis, br_dagen_file_axis_t, .arr = data->dd.xs);
+      br_da_push2(new.file.axis, br_dagen_file_axis_t, .arr = data->dd.ys);
+    } break;
+    case br_data_kind_3d: {
+      br_da_push2(new.file.axis, br_dagen_file_axis_t, .arr = data->ddd.xs);
+      br_da_push2(new.file.axis, br_dagen_file_axis_t, .arr = data->ddd.ys);
+      br_da_push2(new.file.axis, br_dagen_file_axis_t, .arr = data->ddd.zs);
+    } break;
+    default: BR_UNREACHABLE("Data Kind: %d", data->kind);
+  }
+
   br_da_push(*dagens, new);
   return success;
 
@@ -299,38 +244,44 @@ bool br_dagens_handle_once(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* p
 }
 
 static void br_dagen_handle(br_dagen_t* dagen, br_data_t* data, br_datas_t datas) {
+  BR_ASSERT((data->kind == br_data_kind_2d) || (data->kind == br_data_kind_3d));
   switch (dagen->kind) {
     case br_dagen_kind_file:
     {
-      BR_ASSERT((data->kind == br_data_kind_2d) || (data->kind == br_data_kind_3d));
-      size_t* left = &dagen->file.x_left;
-      float* d = data->dd.xs;
-      if (*left == 0) {
-        left = &dagen->file.y_left;
-        d = data->dd.ys;
+      br_dagen_file_axis_t* axis = NULL;
+      size_t i = 0;
+      bool success = true;
+
+      for (i = 0; i < dagen->file.axis.len; ++i) {
+        axis = br_da_getp(dagen->file.axis, i);
+        if (axis->len < dagen->file.num_points) break;
       }
-      if (*left == 0) {
-        if (data->kind == br_data_kind_2d) {
-          dagen->state = br_dagen_state_finished;
-          BR_FCLOSE(dagen->file.file);
-          return;
-        }
-        left = &dagen->file.z_left;
-        d = data->ddd.zs;
+      if (i == dagen->file.axis.len) {
+        dagen->state = br_dagen_state_finished;
+        BR_FCLOSE(dagen->file.file);
+        return;
       }
-      size_t index = dagen->file.num_points - *left;
-      size_t read_n = 1024 < *left ? 1024 : *left;
-      if (read_n != BR_FREAD(&d[index], sizeof(d[index]), read_n, dagen->file.file)) goto error;
-      *left -= read_n;
-      if ((data->kind == br_data_kind_2d && d == data->dd.ys) || (data->kind == br_data_kind_3d && d == data->ddd.zs)) {
+
+      LOGI("Do group: %d, axis: %d, axis->len: %d/%d", data->group_id, i, axis->len, dagen->file.num_points);
+      if (axis->len == 0) {
+        struct { float* arr; size_t len; } floats;
+        br_da_read_head(dagen->file.file, floats);
+        if (dagen->file.num_points != floats.len) BR_ERROR("Incorrent length read...");
+      }
+
+      size_t left = dagen->file.num_points - axis->len;
+      size_t index = axis->len;
+      size_t read_n = left < 1024 ? left : 1024;
+      if (read_n != BR_FREAD(&axis->arr[index], sizeof(axis->arr[index]), read_n, dagen->file.file)) goto error;
+      if (i + 1 == dagen->file.axis.len) {
         data->len += read_n;
-        for (size_t i = data->len - read_n; i < data->len; ++i) {
-          br_resampling_add_point(data->resampling, data, (uint32_t)i);
+        for (size_t j = index; j < data->len; ++j) {
+          br_resampling_add_point(data->resampling, data, (uint32_t)j);
         }
-        if (*left == 0) {
-          dagen->state = br_dagen_state_finished;
-          BR_FCLOSE(dagen->file.file);
-        }
+      }
+      axis->len += read_n;
+      if (axis->len == dagen->file.num_points) {
+        br_da_read_check(dagen->file.file);
       }
       return;
 error:

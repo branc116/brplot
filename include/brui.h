@@ -161,12 +161,6 @@ typedef struct bruirs_t {
   int free_len;
   int free_next;
 
-  int menu_extent_handle;
-  brui_drag_mode_t drag_mode;
-  int drag_index;
-  int active_resizable;
-  br_vec2_t drag_point;
-  br_extent_t drag_old_ex;
 } bruirs_t;
 
 typedef struct br_theme_t br_theme_t;
@@ -229,13 +223,6 @@ typedef struct brui_window_t {
     double now;
     float frame;
   } time;
-
-  struct {
-    br_vec2_t padding;
-    int font_size;
-    float border_thick;
-    float animation_speed;
-  } def;
 
   br_theme_t theme;
 

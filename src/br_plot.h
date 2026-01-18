@@ -47,7 +47,6 @@ typedef struct br_plot_t {
   int selected_data_old;
   int selected_data;
 
-
   bool follow;
   bool jump_around;
   bool is_deleted;

@@ -24,6 +24,25 @@ typedef struct br_fs_files_t {
 
 #define br_fs_read(PATH, OUT_CONTENT) br_fs_read_internal(PATH, OUT_CONTENT, __FILE__, __LINE__)
 
+#define BR_FS_OPEN(HANDLE, PATH, MODE) do { \
+  HANDLE = BR_FOPEN(PATH, MODE); \
+  if (NULL == HANDLE) BR_ERRORE("Failed to open a file `%s` with access mode `%s`", PATH, MODE); \
+} while(0);
+
+#define BR_FS_WRITE1(HANDLE, VALUE) do { \
+  if (1 != BR_FWRITE(&(VALUE), sizeof(VALUE), 1, HANDLE)) BR_ERRORE("Failed to write" #VALUE); \
+} while(0);
+
+#define BR_FS_READ1(HANDLE, VALUE) do { \
+  if (1 != BR_FREAD(&(VALUE), sizeof(VALUE), 1, HANDLE)) BR_ERRORE("Failed to read" #VALUE); \
+} while(0);
+
+#define BR_FS_EOF(HANDLE) do { \
+  if (true == BR_FEOF((HANDLE))) BR_ERROR("End of file came too early"); \
+  if (0 != BR_FREAD(&(char){0}, 1, 1, (HANDLE))) BR_ERROR("End of file expected, but got something else"); \
+  if (false == BR_FEOF((HANDLE))) BR_ERROR("Expected end of file"); \
+} while(0);
+
 bool br_fs_mkdir(br_strv_t path);
 bool br_fs_exists(br_strv_t path);
 bool br_fs_get_config_dir(br_str_t* path);

@@ -74,7 +74,7 @@ void br_plotter_draw(br_plotter_t* br) {
         brtr_stack_el_t* el = brtr_state_push();
           el->forground  = br->uiw.theme.colors.grid_nums;
           el->background = br->uiw.theme.colors.grid_nums_bg;
-          el->font_size  = br->uiw.def.font_size;
+          el->font_size  = br->uiw.theme.font_size;
           el->viewport.size = ex.size;
           if (PLOT->kind == br_plot_kind_2d) {
             br_mesh_grid_draw(PLOT, &br->uiw.theme);
@@ -882,7 +882,7 @@ static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_anims_t* anims,
 
 static void draw_left_panel(br_plotter_t* br) {
   float max_width = brui_text_size()*20;
-  brui_resizable_push(br->uiw.resizables.menu_extent_handle);
+  brui_resizable_push(br->ui.menu_extent_handle);
     bool do_split = brui_width() > max_width;
     if (do_split) {
       brui_vsplitvp(3, BRUI_SPLITR(1), BRUI_SPLITA(max_width), BRUI_SPLITR(1));
@@ -938,13 +938,13 @@ static void draw_left_panel(br_plotter_t* br) {
         else br_theme_light(&br->uiw.theme);
       }
       brui_vsplit(2);
-        brui_sliderf(BR_STRL("padding.y"), &br->uiw.def.padding.y);
+        brui_sliderf(BR_STRL("padding.y"), &br->uiw.theme.padding.y);
       brui_vsplit_pop();
-        brui_sliderf(BR_STRL("padding.x"), &br->uiw.def.padding.x);
+        brui_sliderf(BR_STRL("padding.x"), &br->uiw.theme.padding.x);
       brui_vsplit_pop();
-      brui_sliderf2(BR_STRL("thick"), &br->uiw.def.border_thick);
-      brui_slideri(BR_STRL("Font Size"), &br->uiw.def.font_size);
-      brui_sliderf2(BR_STRL("Animation Speed"), &br->uiw.def.animation_speed);
+      brui_sliderf2(BR_STRL("thick"), &br->uiw.theme.border_thick);
+      brui_slideri(BR_STRL("Font Size"), &br->uiw.theme.font_size);
+      brui_sliderf2(BR_STRL("Animation Speed"), &br->uiw.theme.animation_speed);
       if (brui_button(BR_STRL("Load font"))) {
         br->ui.fm_state.is_inited = true;
         br->ui.fm_state.action = brgui_file_manager_load_font;

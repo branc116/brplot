@@ -54,6 +54,7 @@ brsp_id_t brsp_new1(brsp_t* sp, int size);
 brsp_id_t brsp_push(brsp_t* sp, br_strv_t sv);
 br_strv_t brsp_get(brsp_t sp, brsp_id_t t);
 br_strv_t brsp_try_get(brsp_t sp, brsp_id_t t);
+const char* brsp_cstr(brsp_t* sp, brsp_id_t t);
 bool brsp_is_in(brsp_t sp, brsp_id_t t);
 void brsp_set(brsp_t* sp, brsp_id_t t, br_strv_t str);
 void brsp_insert_char(brsp_t* sp, brsp_id_t t, int at, unsigned char c);

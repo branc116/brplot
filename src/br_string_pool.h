@@ -68,6 +68,14 @@ br_strv_t brsp_try_get(brsp_t sp, brsp_id_t t) {
   return brsp_get(sp, t);
 }
 
+const char* brsp_cstr(brsp_t* sp, brsp_id_t t) {
+  br_strv_t s = brsp_try_get(*sp, t);
+  if (s.str == NULL) return NULL;
+  brsp_zero(sp, t);
+  s = brsp_try_get(*sp, t);
+  return s.str;
+}
+
 bool brsp_is_in(brsp_t sp, brsp_id_t t) {
   if (t <= 0) return false;
   if (sp.len < t) return false;

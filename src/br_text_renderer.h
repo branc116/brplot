@@ -48,7 +48,7 @@ typedef struct {
   // Ancor and padding insided of the limits bounding box.
   //
   //  |--------------------| Justify: left_up        # |--------------------| Justify: left_up     # |--------------------| Justify: left_up
-  //  |HELLO               | Ancor:   left_up        HELLO                  | Ancor:   mid_up     HELLO                   | Ancor:   right_up
+  //  |HELLO               | Ancor:   left_up        HELLO                  | Ancor:   mid_up    HELLO                    | Ancor:   right_up
   //  |                    | Pos:     0,0            # |                    | Pos:     0,0         # |                    | Pos:     0,0
   //  |                    |   You can't really see  # |                    |                      # |                    |
   //  |                    |   the up/down ancor     # |                    |  Again can't really  # |                    |
@@ -111,12 +111,14 @@ void brtr_triangle_draw(br_vec2_t a, br_vec2_t b, br_vec2_t c);
 // Load icon or any image into the texture with the fonts.
 // NOTE: Only one chanel. ( no RGB. )
 // NOTE: To load a simly face such as this:
+//```
 //       |-----------|
 //       |     |----||
 //       |     | :) ||
 //       |     |----||
 //       |           |
 //       |-----------|
+//```
 // pass buff: u8[13*6], buff_size = BR_SIZEI(13, 6), icon_extent = BR_EXTENTI(1/*TOP*/, 6/*LEFT*/, 6/*WIDTH*/, 3/*HEIGHT*/)
 int brtr_icon_load(br_u8 const* buff, br_sizei_t buff_size, br_extenti_t icon_extent);
 

@@ -32,6 +32,47 @@ typedef enum br_plotter_entity_kind_t {
   br_plotter_entity_text_input,
 } br_plotter_entity_kind_t;
 
+typedef struct br_plotter_ui_t {
+  brsp_id_t csv_file_opened;
+  brsp_id_t font_path_id;
+  brsp_id_t project_path_id;
+  brgui_file_manager_t fm_state;
+  brgui_csv_reader_t csv_state;
+  brgui_add_expression_t add_expression;
+  brgui_show_data_t show_data;
+  int menu_extent_handle;
+  float min_sampling;
+  float cull_min;
+  float default_grid_line_thickenss;
+  struct {
+    bool show;
+    bool key_bindings;
+    bool cli_help;
+    bool c_help;
+    bool python_help;
+  } help;
+  struct {
+    int selected_frame;
+    int selected_nid;
+    bool show;
+  } memory;
+  bool debug;
+  bool dark_theme;
+  bool multisampling;
+  bool expand_file;
+  bool expand_plots;
+  bool expand_optimizations;
+  bool expand_ui_styles;
+  bool expand_ui_styles_shadows;
+  bool expand_export;
+  bool expand_data;
+  bool expand_about;
+  bool show_license;
+  bool show_about;
+  bool show_log;
+  bool show_atlas;
+} br_plotter_ui_t;
+
 typedef struct q_commands q_commands;
 typedef struct br_plotter_t {
   br_datas_t groups;
@@ -53,51 +94,13 @@ typedef struct br_plotter_t {
     };
   } action, hovered;
 
-
 #if BR_HAS_HOTRELOAD
   br_hotreload_state_t hot_state;
 #endif
 
-  br_permastate_status_t loaded_status;
+  br_plotter_ui_t ui;
+
   bool exited;
-  struct {
-    brsp_id_t csv_file_opened;
-    brgui_file_manager_t fm_state;
-    brgui_csv_reader_t csv_state;
-    brsp_id_t font_path_id;
-    brgui_add_expression_t add_expression;
-    brgui_show_data_t show_data;
-    float min_sampling;
-    float cull_min;
-    float default_grid_line_thickenss;
-    struct {
-      bool show;
-      bool key_bindings;
-      bool cli_help;
-      bool c_help;
-      bool python_help;
-    } help;
-    struct {
-      int selected_frame;
-      int selected_nid;
-      bool show;
-    } memory;
-    bool debug;
-    bool dark_theme;
-    bool multisampling;
-    bool expand_file;
-    bool expand_plots;
-    bool expand_optimizations;
-    bool expand_ui_styles;
-    bool expand_ui_styles_shadows;
-    bool expand_export;
-    bool expand_data;
-    bool expand_about;
-    bool show_license;
-    bool show_about;
-    bool show_log;
-    bool show_atlas;
-  } ui;
 } br_plotter_t;
 
 br_plotter_t* br_plotter_malloc(void);

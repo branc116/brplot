@@ -88,7 +88,7 @@ void              brui_resizable_update(bruirs_t* rs, br_extent_t viewport);
 void              brui_resizable_mouse_move(bruirs_t* resizables, br_vec2_t mouse_pos);
 void              brui_resizable_mouse_pressl(bruirs_t* resizables, br_vec2_t mouse_pos, bool ctrl_down);
 void              brui_resizable_mouse_pressr(bruirs_t* resizables, br_vec2_t mouse_pos);
-void              brui_resizable_mouse_releasel(bruirs_t* resizables, br_vec2_t mouse_pos);
+void              brui_resizable_mouse_releasel(br_vec2_t mouse_pos);
 void              brui_resizable_mouse_releaser(bruirs_t* resizables, br_vec2_t mouse_pos);
 bool              brui_resizable_mouse_scroll_px(bruirs_t* resizables, br_vec2_t delta);
 bool              brui_resizable_mouse_scroll(bruirs_t* resizables, br_vec2_t delta);
@@ -108,6 +108,7 @@ bruir_children_t  brui_resizable_children_temp(int resizable_handle);
 int               brui_resizable_children_count(int resizable_handle);
 int               brui_resizable_children_top_z(bruirs_t* rs, int resizable_handle);
 br_extent_t       brui_resizable_cur_extent(int resizable_handle);
+int               brui_resizable_active(void);
 
 brui_resizable_temp_push_t brui_resizable_temp_push(br_strv_t id);
 bool              brui_resizable_temp_pop(void);

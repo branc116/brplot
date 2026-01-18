@@ -149,7 +149,7 @@ br_vec3d_t br_data_el_xyz2(br_data_t data, br_u32 index) {
   BR_RETURN_IF_TINY_C((br_vec3d_t){0});
 }
 
-br_vec3_t  br_data_el_xyz_rebased(br_data_t data, br_u32 index) {
+br_vec3_t br_data_el_xyz_rebased(br_data_t data, br_u32 index) {
   switch (data.kind) {
     case br_data_kind_2d: return BR_VEC3(data.dd.xs[index], data.dd.ys[index], 0.f);
     case br_data_kind_3d: return BR_VEC3(data.dd.xs[index], data.dd.ys[index], data.ddd.zs[index]);
@@ -389,6 +389,52 @@ bool br_data_realloc(br_data_t* data, size_t new_cap) {
   return true;
 }
 
+bool br_data_malloc_axis(br_data_t* data, size_t len) {
+  bool success = true;
+
+  switch (data->kind) {
+    case br_data_kind_2d: {
+      data->dd.xs = data->dd.ys = NULL;
+      BR_MALLOCE(data->dd.xs, len);
+      BR_MALLOCE(data->dd.ys, len);
+    } break;
+    case br_data_kind_3d: {
+      data->ddd.xs = data->ddd.ys = data->ddd.zs = NULL;
+      BR_MALLOCE(data->ddd.xs, len);
+      BR_MALLOCE(data->ddd.ys, len);
+      BR_MALLOCE(data->ddd.zs, len);
+    } break;
+    default: BR_ERROR("Bad kind: %d", data->kind);
+  }
+  data->resampling = br_resampling_malloc(data->kind);
+  if (data->resampling == NULL) BR_ERROR("Failed to allocate resampling");
+
+error:
+  if (false == success) {
+    br_data_free_axis(data);
+  }
+
+  return success;
+}
+
+void br_data_free_axis(br_data_t* data) {
+  switch (data->kind) {
+    case br_data_kind_2d: {
+      BR_FREE(data->dd.xs);
+      BR_FREE(data->dd.ys);
+      data->dd.xs = data->dd.ys = NULL;
+    } break;
+    case br_data_kind_3d: {
+      BR_FREE(data->ddd.xs);
+      BR_FREE(data->ddd.ys);
+      BR_FREE(data->ddd.zs);
+      data->ddd.xs = data->ddd.ys = data->ddd.zs = NULL;
+    } break;
+    default: break;
+  }
+  br_resampling_free(data->resampling);
+}
+
 br_data_t* br_data_get1(br_datas_t pg, int group) {
   brfl_foreach(i, pg) if (pg.arr[i].group_id == group) return &pg.arr[i];
   return NULL;
@@ -410,6 +456,7 @@ br_data_t* br_data_get2(br_datas_t* pg, int group, br_data_kind_t kind) {
   return br_da_getp(*pg, handle);
 }
 
+// TODO: name should be sp_id, This is bad..
 void br_data_set_name(br_datas_t* pg, int group, br_str_t name) {
   br_data_t* g = br_data_get(pg, group);
   if (pg == NULL) return;
@@ -419,10 +466,11 @@ void br_data_set_name(br_datas_t* pg, int group, br_str_t name) {
 
 size_t br_data_element_size(br_data_kind_t kind) {
   switch (kind) {
-    case br_data_kind_2d:      return sizeof(br_vec2_t);
-    case br_data_kind_3d:      return sizeof(br_vec3_t);
-    default: BR_ASSERT(0); return 0;
+    case br_data_kind_2d: return sizeof(br_vec2_t);
+    case br_data_kind_3d: return sizeof(br_vec3_t);
+    default: BR_UNREACHABLE("data kind: %d", kind);
   }
+  BR_RETURN_IF_TINY_C(0);
 }
 
 static void br_data_push_point2(br_data_t* g, br_vec2_t v) {

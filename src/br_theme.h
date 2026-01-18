@@ -29,6 +29,11 @@ typedef struct br_theme_t {
   float shadow_spred;
   float px_round;
   float shadow_intesity;
+
+  br_vec2_t padding;
+  int font_size;
+  float border_thick;
+  float animation_speed;
 } br_theme_t;
 
 void br_theme_dark(br_theme_t* theme);

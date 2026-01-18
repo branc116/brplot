@@ -59,13 +59,13 @@ void br_theme_reset_ui(br_theme_t* t) {
   t->shadow_intesity = 1.0f;
   t->shadow_spred = 8.f;
   t->px_round = 2.f;
+  t->padding = BR_VEC2(4, 2);
+  t->font_size = 20;
+  t->border_thick = 1;
+  t->animation_speed = 10.f;
 /*
   t->ui.min_sampling = 0.001f;
   t->ui.cull_min = 2.f;
-  t->ui.padding = BR_VEC2(4, 2);
-  t->ui.font_size = 20;
-  t->ui.border_thick = 1;
-  t->ui.animation_speed = 10.f;
   t->ui.default_grid_line_thickenss = 1.5f;
 */
 }

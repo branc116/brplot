@@ -59,6 +59,8 @@
 
 #define br_da_push(ARR, VALUE) br_da_push_t(size_t, ARR, VALUE)
 
+#define br_da_push2(ARR, TYPE, ...) br_da_push_t(size_t, ARR, ((TYPE) { __VA_ARGS__ }))
+
 #define br_da_free(ARR) do {                 \
   if ((ARR).arr != NULL) BR_FREE((ARR).arr); \
   (ARR).arr = NULL;                          \
@@ -120,14 +122,82 @@
 
 #define br_da_copy(DES, SRC) do { \
   BR_ASSERT(sizeof((DES).arr[0]) == sizeof((SRC).arr[0])); \
-  if ((DES).cap < (SRC).len) { \
-    (DES).arr = realloc((DES).arr, sizeof((SRC).arr[0]) * (size_t)(SRC).len); \
-    BR_ASSERT((DES).arr); \
+  if ((SRC).len == 0) { \
+    (DES).arr = NULL; \
+    (DES).len = (DES).cap = 0; \
+  } else { \
+    if ((DES).cap < (SRC).len) { \
+      (DES).arr = BR_REALLOC((DES).arr, sizeof((SRC).arr[0]) * (size_t)(SRC).len); \
+      BR_ASSERT((DES).arr); \
+    } \
+    memcpy(&(DES).arr[0], &(SRC).arr[0], sizeof((SRC).arr[0]) * (size_t)(SRC).len); \
+    (DES).len = (SRC).len; \
+    (DES).cap = (SRC).cap; \
   } \
-  memcpy(&(DES).arr[0], &(SRC).arr[0], sizeof((SRC).arr[0]) * (size_t)(SRC).len); \
 } while (0)
 
 #define br_da_top(ARR) br_da_get(ARR, (ARR).len - 1)
+
+#define BR_DA_CHECK 0xdeadbeefdeadbeefULL
+#define BR_MAX_LEN (1ULL<<31ULL)
+
+#define br_da_write_header(FILE, ARR) do { \
+  if (1 != BR_FWRITE(&(br_u64) { BR_DA_CHECK }, sizeof(br_u64), 1, FILE)) BR_ERRORE("Failed to write a array first check"); \
+  if (1 != BR_FWRITE(&(ARR), sizeof((ARR)), 1, FILE))                     BR_ERRORE("Failed to write a array header"); \
+  if (1 != BR_FWRITE(&(br_u64) { BR_DA_CHECK }, sizeof(br_u64), 1, FILE)) BR_ERRORE("Failed to write a array mid check"); \
+} while (0)
+
+#define br_da_write(FILE, ARR) do { \
+  size_t BR_L = (size_t)(ARR).len; \
+  br_da_write_header(FILE, ARR); \
+  if (BR_L > 0) { \
+    if (BR_L != BR_FWRITE((ARR).arr, sizeof((ARR).arr[0]), BR_L, FILE))   BR_ERRORE("Failed to write a data"); \
+  } \
+  if (1 != BR_FWRITE(&(br_u64) { BR_DA_CHECK }, sizeof(br_u64), 1, FILE)) BR_ERRORE("Failed to write a array final check"); \
+} while(0)
+
+#define br_da_read_check(FILE) do { \
+  br_u64 tmp = 0; \
+  if (1   != BR_FREAD(&tmp, sizeof(tmp), 1, FILE)) BR_ERRORE("Failed to read array first check"); \
+  if (tmp != BR_DA_CHECK) { \
+    fseek(FILE, SEEK_CUR, -64 - 8); \
+    br_u8 tmp_buff[2*64 + 8]; \
+    BR_FREAD(&tmp_buff, 2*64 + 8, 1, FILE); \
+    for (int BR__i = 0; BR__i < 2*64 + 8; ++BR__i) { \
+      if (BR__i == 64) printf("["); \
+      printf("0x%02X", tmp_buff[BR__i]); \
+      if (BR__i == 64 + 7) printf("] "); \
+      else if ((BR__i + 1) % 8 == 0) printf("   "); \
+      else printf(" "); \
+      if ((BR__i + 1) % 16 == 0) printf("\n"); \
+    } \
+    BR_ERROR("First check don't match.."); \
+  } \
+} while(0)
+
+#define br_da_read_head(FILE, ARR) do { \
+  (ARR).arr = NULL; \
+  br_da_read_check(FILE); \
+  if (1ULL != BR_FREAD(&(ARR), sizeof((ARR)), 1, FILE)) BR_ERRORE("Failed to write a data len"); \
+  if ((size_t)(ARR).len > BR_MAX_LEN)                   BR_ERROR("Array too big %zu (%llu is max)..", (size_t)(ARR).len, BR_MAX_LEN); \
+  br_da_read_check(FILE); \
+} while(0)
+
+#define br_da_read(FILE, ARR) do { \
+  br_da_read_head(FILE, ARR); \
+  size_t BR_L = (size_t)(ARR).len; \
+  \
+  if (BR_L > 0) { \
+    if (NULL == ((ARR).arr = BR_MALLOC(sizeof((ARR).arr[0]) * BR_L))) BR_ERRORE("Failed to allocate %zu bytes for array", BR_L); \
+    (ARR).cap = (ARR).len; \
+    if (BR_L != BR_FREAD((ARR).arr, sizeof((ARR).arr[0]), BR_L, FILE)) BR_ERRORE("Failed to read a data"); \
+    br_da_read_check(FILE); \
+  } else { \
+    (ARR).arr = NULL; \
+    (ARR).cap = 0; \
+    br_da_read_check(FILE); \
+  } \
+} while(0)
 
 
 #define br_da_contains(ARR, V, CONTAINS) br_da_contains_t(size_t, ARR, V, CONTAINS)

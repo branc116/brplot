@@ -78,74 +78,24 @@ void br_plotter_init(br_plotter_t* br) {
   br_hotreload_start(&br->hot_state);
 #endif
   brui_window_init(&br->uiw);
-  if (!br->uiw.pl.is_recording && !br->uiw.pl.is_replaying) br->loaded_status = br_permastate_load(br);
-  if (br->ui.multisampling) brgl_enable_multisampling();
-  else                      brgl_disable_multisampling();
-  if (br->loaded_status != br_permastate_status_ok) {
-    br_datas_deinit(&br->groups);
-    br->plots.len = 0;
-    if (br_permastate_status_ui_loaded == br->loaded_status) {
-      float padding = 4.f;
-      br_size_t window_size = BR_SIZEI_TOF(br->uiw.pl.viewport.size);
-      br_extent_t plot_extent = BR_EXTENT(padding, padding, window_size.width - padding*2, window_size.height - padding*2);
-      br_plot_t plot = br_plot_2d(&br->uiw.anims, br->ui.default_grid_line_thickenss);
-      br_plot_create_texture(&plot, plot_extent);
-      bool found_resizable = false, found_menu_ex = false, found_legend_ex = false;
-      brfl_foreach(i, br->uiw.resizables) {
-        if (br_da_get(br->uiw.resizables, i).tag != 100) continue;
-        found_resizable = true;
-        plot.extent_handle = i;
-        break;
-      }
-      if (false == found_resizable) {
-        plot.extent_handle = brui_resizable_new2(&br->uiw.resizables, plot_extent, 0, (brui_resizable_t) { .title_enabled = true, .tag = 100  });
-      } else {
-        brfl_foreach(i, br->uiw.resizables) {
-          if (br_da_get(br->uiw.resizables, i).parent != plot.extent_handle) continue;
-          int tag = br_da_get(br->uiw.resizables, i).tag;
-          if (tag == 101) {
-            found_menu_ex = true;
-            plot.menu_extent_handle = i;
-          }
-          if (tag == 102) {
-            found_legend_ex = true;
-            plot.legend_extent_handle = i;
-          }
-        }
-      }
-      if (false == found_menu_ex) {
-        br_extent_t menu_extent = BR_EXTENT(0, 0, 300, plot_extent.height);
-        plot.menu_extent_handle = brui_resizable_new2(&br->uiw.resizables, menu_extent, plot.extent_handle, (brui_resizable_t) { .tag = 101, });
-        brui_resizable_show(plot.menu_extent_handle, false);
-      }
-      if (false == found_legend_ex) {
-        br_extent_t menu_extent = BR_EXTENT(plot_extent.width - 110, 10, 100, 60);
-        plot.legend_extent_handle = brui_resizable_new2(&br->uiw.resizables, menu_extent, plot.extent_handle, (brui_resizable_t) { .tag = 102 });
-      }
-      br_da_push_t(int, (br->plots), plot);
-    } else {
-      br_plotter_add_plot_2d(br);
-    }
+  LOGW("Calling this..");
+  bool read_editor = false;
+  if (!br->uiw.pl.is_recording && !br->uiw.pl.is_replaying) read_editor = brps_editor_read(br, NULL);
+  if (read_editor) {
+    if (0 != br->ui.font_path_id)    brtr_font_load(brsp_get(br->uiw.sp, br->ui.font_path_id));
+    if (0 != br->ui.project_path_id) brps_project_read(br, brsp_cstr(&br->uiw.sp, br->ui.project_path_id));
   } else {
-    for (int i = 0; i < br->plots.len; ++i) {
-      br_plot_t* p = &br->plots.arr[i];
-      br_extent_t ex = brui_resizable_cur_extent(p->extent_handle);
-      br->plots.arr[i].texture_id = brgl_create_framebuffer((int)roundf(ex.width), (int)roundf(ex.height));
-    }
-  }
-  if (br->loaded_status < br_permastate_status_ui_loaded) {
-    br->uiw.resizables.menu_extent_handle = brui_resizable_new(&br->uiw.resizables, BR_EXTENT(10, 40, 160, (float)br->uiw.pl.viewport.height/2.f), 0);
+    br->ui.menu_extent_handle = brui_resizable_new(&br->uiw.resizables, BR_EXTENT(10, 40, 160, (float)br->uiw.pl.viewport.height/2.f), 0);
     br_theme_dark(&br->uiw.theme);
     br_theme_reset_ui(&br->uiw.theme);
-  } else {
-    brtr_font_load(brsp_try_get(br->uiw.sp, br->ui.font_path_id));
   }
-  memset(&br->ui.fm_state.cur_dir, 0, sizeof(br->ui.fm_state.cur_dir));
+  if (br->ui.multisampling) brgl_enable_multisampling();
+  else                      brgl_disable_multisampling();
 }
 
 void br_plotter_deinit(br_plotter_t* br) {
   br_read_input_stop();
-  br_permastate_save(br);
+  brps_editor_write(br, NULL);
   for (int i = 0; i < br->plots.len; ++i) {
     br_plot_deinit(br_da_getp(br->plots, i));
   }
@@ -167,15 +117,6 @@ void br_plotter_free(br_plotter_t* br) {
   br_scrach_finish();
   //BR_FREE(br);
   LOGI("Plotter freed");
-}
-
-int br_plotter_hovered_resizable(br_plotter_t* br) {
-  if (br->hovered.active == br_plotter_entity_plot_2d ||
-      br->hovered.active == br_plotter_entity_plot_3d) {
-    return br->plots.arr[br->hovered.plot_id].extent_handle;
-  } else {
-    return br->hovered.resizable_id;
-  }
 }
 
 void br_plotter_one_iter(br_plotter_t* br) {
@@ -245,6 +186,11 @@ void br_plotter_update(br_plotter_t* br) {
               } break;
               case BR_KEY_T: {
                 br_datas_add_test_points(&br->groups);
+              } break;
+              case BR_KEY_S: {
+                if (br->uiw.key.ctrl_down) {
+                  brps_project_write(br, brsp_cstr(&br->uiw.sp, br->ui.project_path_id));
+                }
               } break;
             }
           } else if (br->action.active == br_plotter_entity_text_input) {
@@ -329,7 +275,7 @@ void br_plotter_update(br_plotter_t* br) {
         int found_plot = -1;
         for (int j = 0; j < br->plots.len; ++j) {
           br_plot_t plot = br_da_get(br->plots, j);
-          if (plot.extent_handle == br->uiw.resizables.active_resizable) {
+          if (plot.extent_handle == brui_resizable_active()) {
             switch (plot.kind) {
               case br_plot_kind_2d: br->hovered.active = br_plotter_entity_plot_2d; break;
               case br_plot_kind_3d: br->hovered.active = br_plotter_entity_plot_3d; break;
@@ -378,7 +324,6 @@ void br_plotter_update(br_plotter_t* br) {
               br_anim3_set(anims, plot->ddd.eye_ah, br_vec3_add(eye, delta));
             }
           } else {
-            br->hovered.resizable_id = br->uiw.resizables.active_resizable;
             br->hovered.active = br_plotter_entity_ui;
           }
         }
@@ -466,7 +411,7 @@ void br_plotter_update(br_plotter_t* br) {
               br->uiw.mouse.pos = ev.pos;
               brui_resizable_mouse_move(&br->uiw.resizables, point.pos);
               brui_resizable_mouse_pressl(&br->uiw.resizables, point.pos, br->uiw.key.ctrl_down);
-              brui_resizable_mouse_releasel(&br->uiw.resizables, point.pos);
+              brui_resizable_mouse_releasel(point.pos);
             }
             br->uiw.touch_points.last_free_time = br->uiw.time.now;
           }

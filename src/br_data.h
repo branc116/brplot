@@ -64,16 +64,6 @@ typedef struct br_datas_t {
   int free_len, free_next;
 } br_datas_t;
 
-typedef struct {
-  int group_id;
-  brsp_id_t name;
-} br_data_desc_t;
-
-typedef struct {
-  br_data_desc_t* arr;
-  size_t len, cap;
-} br_data_descs_t;
-
 typedef struct brsp_t brsp_t;
 typedef struct br_anims_t br_anims_t;
 void br_data_construct(brsp_t* sp, br_anims_t* anims);
@@ -113,6 +103,8 @@ void br_datas_export_csv(br_datas_t datas, FILE* file);
 br_color_t br_data_get_default_color(int data_id);
 bool br_data_is_generated(br_dagens_t const* dagens, int groups_id);
 bool br_data_realloc(br_data_t* data, size_t new_cap);
+bool br_data_malloc_axis(br_data_t* data, size_t len);
+void br_data_free_axis(br_data_t* data);
 
 size_t br_data_element_size(br_data_kind_t kind);
 

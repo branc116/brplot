@@ -140,6 +140,11 @@ void __sanitizer_print_stack_trace(void);
 #  define BR_MEMORY_FINISH()
 #endif
 
+#define BR_MALLOCE(ARR, ELEMENTS) do { \
+  ARR = BR_MALLOC(sizeof(*(ARR)) * ELEMENTS); \
+  if (NULL == ARR) BR_ERRORE("Failed to malloc %zu elments of " #ARR, ELEMENTS); \
+} while(0);
+
 
 #if defined(BR_RELEASE)
 #  define BR_ASSERT(...)

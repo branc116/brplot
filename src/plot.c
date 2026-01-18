@@ -89,13 +89,13 @@ void br_plot2d_zoom(br_plot_t* plot, br_vec2_t vec, br_extent_t screen_extent, b
 br_vec2d_t br_plot2d_to_plot(br_plot_t* plot, br_vec2_t vec, br_extent_t ex) {
   br_vec2_t vec_in_resizable = br_vec2_sub(vec, ex.pos);
   br_vec2_t vec_in_resizable2 = br_vec2_scale(vec_in_resizable, 2);
-  br_vec2_t b = br_vec2_sub(ex.size.vec, vec_in_resizable2);
-  br_vec2_t c = br_vec2_scale(b, 1.f/(float)ex.height);
+  br_vec2d_t b = br_vec2d_sub(BR_VEC2_TOD(ex.size.vec), BR_VEC2_TOD(vec_in_resizable2));
+  br_vec2d_t c = br_vec2d_scale(b, 1.0/(double)ex.height);
   br_vec2d_t zoom = br_anim2d(br_plot_state.anims, plot->dd.zoom_ah);
   br_vec2d_t offset = br_anim2d(br_plot_state.anims, plot->dd.offset_ah);
   return BR_VEC2D(
-    -(double)c.x*zoom.x/2.0 + offset.x,
-     (double)c.y*zoom.y/2.0 + offset.y
+    -c.x*zoom.x/2.0 + offset.x,
+     c.y*zoom.y/2.0 + offset.y
   );
 }
 
