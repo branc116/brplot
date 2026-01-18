@@ -408,6 +408,7 @@ bool br_data_malloc_axis(br_data_t* data, size_t len) {
   }
   data->resampling = br_resampling_malloc(data->kind);
   if (data->resampling == NULL) BR_ERROR("Failed to allocate resampling");
+  data->cap = len;
 
 error:
   if (false == success) {
@@ -433,6 +434,7 @@ void br_data_free_axis(br_data_t* data) {
     default: break;
   }
   br_resampling_free(data->resampling);
+  data->cap = 0;
 }
 
 br_data_t* br_data_get1(br_datas_t pg, int group) {

@@ -186,10 +186,6 @@ bool br_dagen_push_file(br_dagens_t* dagens, br_data_t* data, BR_FILE* file) {
 
   br_da_push(*dagens, new);
   return success;
-
-error:
-  if (file != NULL) BR_FCLOSE(file);
-  return success;
 }
 
 void br_dagens_handle(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots, double until) {
@@ -201,7 +197,10 @@ void br_dagens_handle(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots,
 
 void br_dagens_free(br_dagens_t* dagens) {
   for (size_t i = 0; i < dagens->len; ++i)
-    if (dagens->arr[i].kind == br_dagen_kind_file) BR_FCLOSE(dagens->arr[i].file.file);
+    if (dagens->arr[i].kind == br_dagen_kind_file) {
+      BR_FCLOSE(dagens->arr[i].file.file);
+      br_da_free(dagens->arr[i].file.axis);
+    }
     else if (dagens->arr[i].kind == br_dagen_kind_expr) {
       for (size_t j = 0; j < dagens->arr[i].expr_2d.arena.len; ++j) {
         if (dagens->arr[i].expr_2d.arena.arr[j].kind == br_dagen_expr_kind_function_call) {

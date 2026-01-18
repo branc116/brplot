@@ -690,6 +690,7 @@ void brui_text_at(br_strv_t strv, br_vec2_t at) {
   brtr_rectangle_draw(rect);
   brtr_triangle_draw(at_og, b, c);
   brtr_state()->pos = BR_VEC2(rect.min_x + padd, rect.min_y);
+  brtr_state()->z += 1;
   brtr_push(strv);
 }
 
