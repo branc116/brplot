@@ -1,5 +1,5 @@
 vim.keymap.set("n", "<F6>", function()
-  vim.cmd[[term make CONFIG=DEBUG && ./brplot]]
+  vim.cmd[[term ./nob -d]]
 end)
 
 vim.keymap.set("n", "<F7>", function()

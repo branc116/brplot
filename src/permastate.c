@@ -10,6 +10,7 @@
 #include "include/br_free_list_header.h"
 #include "src/br_ui.h"
 #include "src/br_memory.h"
+#include "src/br_series.h"
 
 typedef struct br_data_save_t {
   // Both project and editor
@@ -21,6 +22,7 @@ typedef struct br_data_save_t {
   br_plots_t plots;
   br_dagens_t dagens;
   br_datas_t datas;
+  br_serieses_t serieses;
 
   // Only editor
   br_plotter_ui_t ui;
@@ -37,6 +39,7 @@ static void brps_copy_deinit(brps_copy_t copy) {
   brfl_free(copy.resizables);
   br_da_free(copy.dagens);
   brfl_free(copy.datas);
+  brfl_free(copy.serieses);
 }
 
 static int brps_string_save(br_plotter_t const* br, brps_copy_t* save, int string_handle) {
@@ -159,6 +162,15 @@ static void brps_plot_load(br_plotter_t* br, brps_copy_t const* save, int plot_i
   br_da_push_t(int, br->plots, copy_plot);
 }
 
+static int brps_series_save(br_plotter_t const* br, brps_copy_t* save, int series_handle) {
+  br_series_t s =  br_da_get(br->serieses, series_handle);
+  return brfl_push(save->serieses, s);
+}
+static int brps_series_load(br_plotter_t* br, brps_copy_t const* save, int series_handle) {
+  br_series_t s =  br_da_get(save->serieses, series_handle);
+  return brfl_push(br->serieses, s);
+}
+
 static void brps_plotter_save(br_plotter_t const* br, brps_copy_t* save) {
   for (int i = 0; i < br->plots.len; ++i) {
     brps_plot_save(br, save, i);
@@ -170,6 +182,9 @@ static void brps_plotter_save(br_plotter_t const* br, brps_copy_t* save) {
     br_data_t data_copy = data;
     data_copy.name = brps_string_save(br, save, data.name);
     data_copy.resampling = NULL;
+    for (int j = 0; j < data.serieses_len; ++j) {
+      data_copy.series_handles[j] = brps_series_save(br, save, data.series_handles[j]);
+    }
     brfl_push(save->datas, data_copy);
   }
 
@@ -190,6 +205,9 @@ static void brps_plotter_load(br_plotter_t* br, brps_copy_t const* save) {
     BR_ASSERT(!br_data_is_generated(&save->dagens, data.group_id));
     br_data_t data_copy = data;
     data_copy.name = brps_string_load(br, save, data.name);
+    for (int j = 0; j < data.serieses_len; ++j) {
+      data_copy.series_handles[j] = brps_series_load(br, save, data.series_handles[j]);
+    }
     brfl_push(br->groups, data_copy);
   }
 
@@ -222,27 +240,7 @@ static bool brps_project_fwrite(BR_FILE* file, br_plotter_t const* br) {
   brfl_write(file, copy.datas, err);
   if (err) BR_ERRORE("Failed to write datas");
 
-  for (int i = 0; i < copy.datas.len; ++i) {
-    br_data_t data = br_da_get(copy.datas, i);
-    if (data.len == 0) continue;
-    struct {
-      float* arr;
-      size_t len;
-    } floats = { .len = data.len };
-    LOGI("Start of data %d= %zd", i, ftell(file));
-    switch (data.kind) {
-      case br_plot_kind_2d: {
-        floats.arr = data.dd.xs; br_da_write(file, floats);
-        floats.arr = data.dd.ys; br_da_write(file, floats);
-      } break;
-      case br_plot_kind_3d: {
-        floats.arr = data.ddd.xs; br_da_write(file, floats);
-        floats.arr = data.ddd.ys; br_da_write(file, floats);
-        floats.arr = data.ddd.zs; br_da_write(file, floats);
-      } break;
-      default: BR_UNREACHABLE("Data kind %d", data.kind);
-    }
-  }
+  if (false == br_serieses_write(file, copy.serieses)) BR_ERROR("Failed to write serieses");;
 
 error:
   brps_copy_deinit(copy);
@@ -250,41 +248,7 @@ error:
   return success;
 }
 
-static bool brps_data_read(const char* file_path, long long* seek_pos, brps_copy_t* copy, int data_index) {
-  size_t to_add = 0, len = 0;
-  BR_FILE* fi = NULL;
-  bool success = true;
-  br_data_t* data = NULL;
-
-  data = br_da_getp(copy->datas, data_index);
-  len = data->len;
-  if (len == 0) {
-    if (false == br_data_malloc_axis(data, data->len)) BR_ERROR("Failed to alloc axis");
-    return true;
-  }
-  if (false == br_data_malloc_axis(data, data->len)) BR_ERROR("Failed to alloc axis");
-  fi = BR_FOPEN(file_path, "rb");
-  fseek(fi, *seek_pos, SEEK_SET);
-  if (false == br_dagen_push_file(&copy->dagens, data, fi)) BR_ERROR("Failed to push a file");
-
-error:
-  if (false == success) {
-    br_data_free_axis(data);
-  }
-  to_add = 0;
-  to_add += sizeof(size_t)+sizeof(float*)+sizeof(size_t)+sizeof(size_t); // HEADER
-  to_add += sizeof(float)*len;                                           // DATA
-  to_add += sizeof(size_t);                                              // FINAL_CHECK
-  switch (data->kind) {
-    case br_data_kind_2d: *seek_pos += to_add * 2; break;
-    case br_data_kind_3d: *seek_pos += to_add * 3; break;
-    default: BR_ERROR("Bad data kind %d", data->kind);
-  }
-
-  return success;
-}
-
-static bool brps_project_fread(BR_FILE* file, const char* file_path, br_plotter_t* br) {
+static bool brps_project_fread(BR_FILE* file, br_plotter_t* br) {
   bool success = true;
   int err = 0;
   brps_copy_t copy = { 0 };
@@ -302,25 +266,33 @@ static bool brps_project_fread(BR_FILE* file, const char* file_path, br_plotter_
   if (err) BR_ERRORE("Failed to read resizables");
 
   br_da_read(file, copy.dagens);
-
   brfl_read(file, copy.datas, err);
-  // |START....other stuff....data_header..data1|data2|data3...
-  // data1 = [check: size_t, arr: float*, len: size_t, check: size_t, xs: float[len]][2 or 3 times]|
-  long long end_of_data_header = ftell(file);
-  long long seek_pos = end_of_data_header;
-
-  for (int i = 0; i < copy.datas.len; ++i) {
-    if (false == brps_data_read(file_path, &seek_pos, &copy, i)) {
-      LOGE("Failed to push a file %d", i);
-      brfl_remove(copy.datas, i);
-      br_plots_remove_group(copy.plots, i);
-    }
+  LOGI("datas len: %d", copy.datas.free_len);
+  brfl_foreach(i, copy.datas) {
+    LOGI("data %d=%d", i, copy.datas.arr[i].group_id);
   }
+
+  // TODO: Maybe just some series failed to read. Handle that case...
+  if (false == br_serieses_read(file, &copy.serieses)) BR_ERROR("Failed to write serieses");;
+
+  brfl_foreach(i, copy.datas) {
+    br_data_t* data = br_da_getp(copy.datas, i);
+    br_series_t s = br_da_get(copy.serieses, data->series_handles[0]);
+    size_t len = br_series_len(s);
+    br_dagen_push_file(&copy.dagens, data, len);
+  }
+
   brps_plotter_load(br, &copy);
   for (int i = 0; i < br->plots.len; ++i) {
     br_plot_t* p = &br->plots.arr[i];
     br_extent_t ex = brui_resizable_cur_extent(p->extent_handle);
     p->texture_id = brgl_create_framebuffer((int)roundf(ex.width), (int)roundf(ex.height));
+  }
+
+  brfl_foreach(i, br->groups) {
+    br_data_t* data = br_da_getp(br->groups, i);
+    data->resampling = br_resampling_malloc(data->kind);
+    BR_ASSERTF(data->resampling, "Failed to allocate resampling structure for data with id %d", data->group_id);
   }
 
 error:
@@ -361,7 +333,7 @@ bool brps_project_read(br_plotter_t* br, const char* file_name) {
   file = BR_FOPEN(file_name, "rb");
   if (file == NULL) BR_ERRORE("Failed to open a file `%s`", file_name);
 
-  if (false == brps_project_fread(file, file_name, br)) BR_ERROR("Failed to load the project..");
+  if (false == brps_project_fread(file, br)) BR_ERROR("Failed to load the project..");
 
 error:
   if (file != NULL) BR_FCLOSE(file);

@@ -34,7 +34,8 @@ typedef struct br_fs_files_t {
 } while(0);
 
 #define BR_FS_READ1(HANDLE, VALUE) do { \
-  if (1 != BR_FREAD(&(VALUE), sizeof(VALUE), 1, HANDLE)) BR_ERRORE("Failed to read" #VALUE); \
+  size_t BR_read = BR_FREAD(&(VALUE), sizeof(VALUE), 1, HANDLE); \
+  if (1 != BR_read) BR_ERRORE("Read %zu Failed to read " #VALUE, BR_read); \
 } while(0);
 
 #define BR_FS_EOF(HANDLE) do { \

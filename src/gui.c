@@ -556,48 +556,81 @@ void brgui_draw_csv_manager(brsp_t* sp, brgui_csv_reader_t* reader, br_csv_parse
   if (brui_resizable_temp_pop()) reader->is_open = false;
 }
 
+static void brgui_draw_series_info(br_series_t series) {
+  brui_push();
+
+    brui_vsplit(2);
+      brui_textf("len: %zu", series.len);
+    brui_vsplit_pop();
+      brui_textf("cap: %zu", series.cap);
+    brui_vsplit_pop();
+    brui_vsplit(2);
+      brui_textf("Offset: %f", series.offset);
+    brui_vsplit_pop();
+      brui_textf("Scale: %f", series.scale);
+    brui_vsplit_pop();
+    brui_vsplit(3);
+      brui_textf("Min: %f", series.min);
+    brui_vsplit_pop();
+      brui_textf("Max: %f", series.max);
+    brui_vsplit_pop();
+      brui_textf("Avg: %f", series.average);
+    brui_vsplit_pop();
+
+    float local_y = brui_local_y();
+    float ts = brui_text_size() + brui_padding_y();
+    br_u32 i = 0;
+    if (local_y < -ts) {
+      br_u32 n = (br_u32)(-(local_y + 2.f*ts)/ts);
+      if (n > 0) {
+        brui_new_lines((br_i32)n);
+        i += n;
+      }
+    }
+    float space_left = brui_max_y() - brui_y();
+    br_u32 max_n = (br_u32)(space_left / ts) + 1;
+    br_u32 lines = (br_u32)series.len;
+    br_u32 j = 0;
+    for (j = 0; j < max_n && j + i < lines; ++j) {
+      float value = br_series(series, i + j);
+      brui_textf("%f", value);
+    }
+    brui_new_lines((br_i32)lines - (br_i32)i - (br_i32)j);
+  brui_pop();
+}
+
 static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas) {
   if (false == d->show) return;
 
   brui_resizable_temp_push(BR_STRL("Data"));
     br_data_t* data = br_data_get1(datas, d->data_id);
     if (NULL != data) {
-      float local_y = brui_local_y();
-      float ts = brui_text_size() + brui_padding_y();
-      br_u32 i = 0;
-      if (local_y < -ts) {
-        br_u32 n = (br_u32)(-(local_y + 2.f*ts)/ts);
-        if (n > 0) {
-          brui_new_lines((br_i32)n);
-          i += n;
-        }
-      }
-      float space_left = brui_max_y() - brui_y();
-      br_u32 max_n = (br_u32)(space_left / ts) + 1;
-      br_u32 lines = (br_u32)data->len;
-      br_u32 j = 0;
       switch (data->kind) {
         case br_data_kind_2d: {
-          br_vec2d_t v2 = br_data_el_xy1(*data, i);
+          int sh_x = data->series_handles[0];
+          int sh_y = data->series_handles[1];
+          LOGI("Series handles: x=%d, y=%d", sh_x, sh_y);
           brui_vsplit(2);
-            for (j = 0; j < max_n && j + i < lines; ++j) v2 = br_data_el_xy1(*data, i + j), brui_textf("%f", v2.x);
+            brgui_draw_series_info(br_serieses_get(sh_x));
           brui_vsplit_pop();
-            for (j = 0; j < max_n && j + i < lines; ++j) v2 = br_data_el_xy1(*data, i + j), brui_textf("%f", v2.y);
+            brgui_draw_series_info(br_serieses_get(sh_y));
           brui_vsplit_pop();
         } break;
         case br_data_kind_3d: {
-          br_vec3d_t v2;
+          int sh_x = data->series_handles[0];
+          int sh_y = data->series_handles[1];
+          int sh_z = data->series_handles[3];
+          LOGI("Series handles: x=%d, y=%d, z=%d", sh_x, sh_y, sh_z);
           brui_vsplit(3);
-            for (j = 0; j < max_n && j + i < lines; ++j) v2 = br_data_el_xyz1(*data, i + j), brui_textf("%f", v2.x);
+            brgui_draw_series_info(br_serieses_get(sh_x));
           brui_vsplit_pop();
-            for (j = 0; j < max_n && j + i < lines; ++j) v2 = br_data_el_xyz1(*data, i + j), brui_textf("%f", v2.y);
+            brgui_draw_series_info(br_serieses_get(sh_y));
           brui_vsplit_pop();
-            for (j = 0; j < max_n && j + i < lines; ++j) v2 = br_data_el_xyz1(*data, i + j), brui_textf("%f", v2.z);
+            brgui_draw_series_info(br_serieses_get(sh_z));
           brui_vsplit_pop();
         } break;
         default: BR_UNREACHABLE("Kind %d not handled", data->kind);
       }
-      brui_new_lines((br_i32)lines - (br_i32)i - (br_i32)j);
     }
   if (brui_resizable_temp_pop()) d->show = false;
 }
@@ -978,17 +1011,18 @@ static void draw_left_panel(br_plotter_t* br) {
           br_data_t data = br_da_get(br->groups, i);
           br_strv_t name = brsp_get(br->uiw.sp, data.name);
           brui_text_input(data.name);
-          brui_textf("%.*s (%d) (%zu points)", name.len, name.str, data.group_id, data.len);
+          brui_textf("%.*s (%d) (%zu points)", name.len, name.str, data.group_id, br_data_len(data));
           brui_textf("%.2fms (%.3f %.3f)", br_resampling_get_draw_time(data.resampling)*1000.0f, br_resampling_get_something(data.resampling), br_resampling_get_something2(data.resampling));
           brui_textf("name id: %d", data.name);
           switch (data.kind) {
             case br_data_kind_2d: {
-              brui_textf("2D rebase: %.3f, %.3f", data.dd.rebase_x, data.dd.rebase_y);
-              br_bb_t bb = br_bb_add(data.dd.bounding_box, BR_VEC2((float)data.dd.rebase_x, (float)data.dd.rebase_y));
+              //brui_textf("2D rebase: %.3f, %.3f", data.dd.rebase_x, data.dd.rebase_y);
+              br_bb_t bb = br_data_bb(data);
               brui_textf("   box: (%.3f, %.3f) (%.3f, %3.f)", BR_BB_(bb));
             } break;
             case br_data_kind_3d: {
-              brui_textf("3D rebase: %.3f, %.3f, %.3f", BR_VEC3_(data.ddd.rebase));
+              br_bb_t bb = br_data_bb(data);
+              brui_textf("   box: (%.3f, %.3f) (%.3f, %3.f)", BR_BB_(bb));
             } break;
           }
         if (brui_pop().clicked) {

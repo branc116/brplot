@@ -68,8 +68,9 @@ static br_plot_t br_plot_2d(br_anims_t* anims, float grid_line_thickness) {
 }
 
 void br_plotter_init(br_plotter_t* br) {
-  br_resampling_construct(&br->uiw.shaders, &br->ui.min_sampling, &br->ui.cull_min, &br->uiw.anims);
-  br_data_construct(&br->uiw.sp, &br->uiw.anims);
+  br_serieses_construct(&br->serieses);
+  br_resampling_construct(&br->uiw.shaders, &br->ui.min_sampling, &br->ui.cull_min, &br->uiw.anims, &br->serieses);
+  br_data_construct(&br->uiw.sp, &br->uiw.anims, &br->serieses);
   br_mesh_construct(&br->uiw.shaders, &br->ui.debug, &br->uiw.theme, &br->uiw.anims);
   br_plot_construct(&br->uiw.anims);
   br->ui.default_grid_line_thickenss = 1.5f;

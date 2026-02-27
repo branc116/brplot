@@ -190,15 +190,16 @@ void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups, br_extent_t
     br_plot_data_t di = plot->data_info.arr[i];
     if (false == br_plot_data_is_visible(di)) continue;
     br_data_t* d = br_data_get1(groups, di.group_id);
+    size_t len = br_data_len(*d);
     if (n > 0) {
-      if (d->len > 0) {
-        br_bb_t this_bb = br_bb_add(d->dd.bounding_box, BR_VEC2((float)d->dd.rebase_x, (float)d->dd.rebase_y));
+      if (len > 0) {
+        br_bb_t this_bb = br_data_bb(*d);
         bb = br_bb_union(bb, this_bb);
         ++n;
       }
     } else {
-      if (d->len > 0) {
-        bb = br_bb_add(d->dd.bounding_box, BR_VEC2((float)d->dd.rebase_x, (float)d->dd.rebase_y));
+      if (len > 0) {
+        bb = br_data_bb(*d);
         ++n;
       }
     }

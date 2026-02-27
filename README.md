@@ -471,6 +471,7 @@ sudo rm /usr/bin/brplot
 * 3d plot wasd is broken because of something to do with rebasing
 * Bug with resizing plot window and numbers being scizered off. Most likely to do with viewport being calculated wrongly.
 * Windows is not focused on in the start for some reason.
+* version with BR_DEBUG but use hardcoded shaders. For brui.
 
 ## Screenshots
 Here is a history of how brplot looked over time:

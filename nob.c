@@ -138,6 +138,7 @@ const char* sources[] = {
  "src/threads.c",
  "src/gl.c",
  "src/theme.c",
+ "src/series.c",
 };
 
 typedef enum platform_kind_t {

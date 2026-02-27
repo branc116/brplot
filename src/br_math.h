@@ -153,6 +153,7 @@ typedef struct {
     };
     struct {
       br_vec2d_t pos;
+      br_vec2d_t size;
     };
     double arr[4];
   };

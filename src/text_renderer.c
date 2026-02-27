@@ -136,6 +136,8 @@ static bool brtr_free_internal(bool keep_the_stack) {
   BR_FREE(brtr.bitmap_pixels);
   brtr.bitmap_pixels = NULL;
   if (false == keep_the_stack) br_da_free(brtr.stack);
+
+  return true;
 }
 
 bool brtr_font_load(br_strv_t path) {

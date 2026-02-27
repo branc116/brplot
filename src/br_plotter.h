@@ -10,6 +10,7 @@
 #include "src/br_plot.h"
 #include "src/br_theme.h"
 #include "src/br_ui.h"
+#include "src/br_series.h"
 
 #if BR_HAS_HOTRELOAD
 typedef struct br_plotter_t br_plotter_t;
@@ -79,6 +80,7 @@ typedef struct br_plotter_t {
   br_plots_t plots;
   br_dagens_t dagens;
   br_csv_parser_t csv_parser;
+  br_serieses_t serieses;
 
   // Any thread can write to this q, only render thread can pop
   q_commands* commands;

@@ -19,24 +19,17 @@ typedef struct {
 } br_dagen_file_axis_t;
 
 typedef struct {
-  BR_FILE* file;
-  struct {
-    br_dagen_file_axis_t* arr;
-    size_t len, cap;
-  } axis;
   size_t num_points;
 } br_dagen_file_t;
 
 typedef enum {
-  br_dagen_expr_kind_reference_x,
-  br_dagen_expr_kind_reference_y,
-  br_dagen_expr_kind_reference_z,
-  br_dagen_expr_kind_add,
-  br_dagen_expr_kind_mul,
-  br_dagen_expr_kind_pair,
-  br_dagen_expr_kind_iota,
-  br_dagen_expr_kind_constant,
-  br_dagen_expr_kind_function_call,
+  br_dagen_expr_reference,
+  br_dagen_expr_add,
+  br_dagen_expr_mul,
+  br_dagen_expr_pair,
+  br_dagen_expr_iota,
+  br_dagen_expr_constant,
+  br_dagen_expr_function_call,
 } br_dagen_expr_kind_t;
 
 typedef struct br_dagen_expr_t {
@@ -51,7 +44,8 @@ typedef struct br_dagen_expr_t {
       uint32_t op2;
     } operands;
     struct {
-      int group_id;
+      int data_id;
+      int series_index; // inside the data.series_handles
       int iota_state;
       float value;
     };
@@ -118,16 +112,10 @@ typedef struct {
 
 typedef struct br_plotter_t br_plotter_t;
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
 bool br_dagen_push_expr_xy(br_dagens_t* dagens, br_datas_t* datas, br_dagen_exprs_t arena, uint32_t x, uint32_t y, int group_id);
 bool br_dagens_add_expr_str(br_dagens_t* dagens, br_datas_t* datas, br_strv_t str, int group_id);
-bool br_dagen_push_file(br_dagens_t* dagens, br_data_t* datas, BR_FILE* file);
+void br_dagen_push_file(br_dagens_t* dagens, br_data_t* data, size_t data_len);
 void br_dagens_remove_dependent(br_datas_t* datas, int group_id);
 void br_dagens_handle(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots, double until);
 void br_dagens_free(br_dagens_t* dagens);
 bool br_dagens_handle_once(br_datas_t* datas, br_dagens_t* dagens, br_plots_t* plots);
-#if defined(__cplusplus)
-}
-#endif

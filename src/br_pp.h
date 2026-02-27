@@ -159,7 +159,7 @@ void __sanitizer_print_stack_trace(void);
   } while (0)
 #  define BR_ASSERTF(x, fmt, ...) do { \
      if (!(x)) { \
-       LOGE("ASSERT FAILED: `" #x "`" fmt, ##__VA_ARGS__); \
+       LOGE("ASSERT FAILED `" #x "`: " fmt, ##__VA_ARGS__); \
        BR_BREAKPOINT(); \
        LOGF("Exiting"); \
      } \
