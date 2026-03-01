@@ -186,6 +186,17 @@ br_bb_t br_data_bb(br_data_t data) {
   return BR_BB((float)sx.min, (float)sy.min, (float)sx.max, (float)sy.max);
 }
 
+br_mat_t br_data_model_mat(br_data_t data) {
+  br_mat_t mat = BR_MAT_ONE;
+  for (int i = 0; i < data.serieses_len; ++i) {
+    int handle = data.series_handles[i];
+    br_series_t s = br_da_get(*br_data.serieses, handle);
+    mat.rows[i].arr[i] = (float)s.scale;
+    //mat.rows[i].arr[3] = (float)(s.offset/s.scale)*0.0;
+  }
+  return mat;
+}
+
 float* br_data_series_local(br_data_t data, int series_index) {
   br_series_t s = br_da_get(*br_data.serieses, data.series_handles[series_index]);
   return s.arr;

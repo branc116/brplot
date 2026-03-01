@@ -70,6 +70,7 @@ br_vec2d_t br_data_zoom_to_local(br_data_t data, br_vec2d_t v);
 br_extentd_t br_data_ex_to_local(br_data_t data, br_extentd_t ex);
 
 br_bb_t br_data_bb(br_data_t data);
+br_mat_t br_data_model_mat(br_data_t data);
 
 float* br_data_series_local(br_data_t data, int series_index);
 

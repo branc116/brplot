@@ -489,26 +489,24 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           br_shader_line_draw(br_resampling.shaders->line);
         } break;
         case br_plot_kind_3d: {
-          BR_TODO("br_plot_kind_3d");
-#if 0
           br_vec3_t target = br_anim3(br_resampling.anims, plot->ddd.target_ah);
-          target.xy = br_data_v2_to_local(*pg, BR_VEC2_TOD(target.xy));
           br_vec3_t eye = br_anim3(br_resampling.anims, plot->ddd.eye_ah);
-          eye.xy = br_data_v2_to_local(*pg, BR_VEC2_TOD(eye.xy));
-          br_vec2_t re = (br_vec2_t) { .x = extent.width, .y = extent.height };
-          br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
-          br_mat_t look = br_mat_look_at(eye, target, plot->ddd.up);
-          br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
+          br_vec2_t re = (br_vec2_t) { .x = extentf.width, .y = extentf.height };
+          br_mat_t model = br_data_model_mat(*pg);
+          br_mat_t view = br_mat_look_at(eye, target, plot->ddd.up);
+          target = br_vec3_transform_scale(target, model);
+          eye    = br_vec3_transform_scale(eye, model);
+          br_mat_t perspective = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
+          br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(model, br_mat_mul(view, perspective));
           br_resampling.shaders->line_3d->uvs.eye_uv = br_vec3_sub(eye, target);
           br_resampling.shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
           res->args_3d.line_thickness = pd_thickness;
           res->args_3d.mvp = br_resampling.shaders->line_3d->uvs.m_mvp_uv;
-          res->args_3d.eye = eye;
           res->args_3d.target = target;
+          res->args_3d.eye = eye;
 
           br_resampling_draw32(res, 0, pg, plot);
           br_shader_line_3d_draw(br_resampling.shaders->line_3d);
-#endif
         } break;
       }
     } break;

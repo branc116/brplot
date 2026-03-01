@@ -22,4 +22,5 @@ vec4 phong() {
 
 void main() {
   finalColor = phong();
+  finalColor = vec4(1.0);
 }

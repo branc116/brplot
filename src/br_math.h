@@ -31,6 +31,12 @@
                    (M).m3, (M).m7, (M).m11, (M).m15
 #define BR_MAT3(...) ((br_mat3_t) { .arr = { __VA_ARGS__ } })
 #define BR_MAT2(...) ((br_mat2_t) { .arr = { __VA_ARGS__ } })
+#define BR_MAT_ONE   ((br_mat_t)  { .rows = { \
+      BR_VEC4(1, 0, 0, 0), \
+      BR_VEC4(0, 1, 0, 0), \
+      BR_VEC4(0, 0, 1, 0), \
+      BR_VEC4(0, 0, 0, 1), \
+    }})
 
 #define BR_EXTENT_ASPECT(E) ((E).height / (E).width)
 #define BR_EXTENT(X, Y, WIDTH, HEIGHT) (br_extent_t) { .arr = { (X), (Y), (WIDTH), (HEIGHT) } }
