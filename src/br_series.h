@@ -1,3 +1,4 @@
+#pragma once
 #include "src/br_pp.h"
 
 #define BR_SERIES_SUPPORT_CAP 16UL

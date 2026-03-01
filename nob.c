@@ -342,11 +342,7 @@ const char* compiler_set_output(Nob_Cmd* cmd, const char* output_name, compile_o
           case compile_output_exe: {
             if (has_hotreload) nob_cmd_append(cmd, "-fpie", "-rdynamic");
             nob_cmd_append(cmd, "-o", output_name);
-            const char* ret = cmd->items[cmd->count - 1];
-            if (is_tracy) nob_cmd_append(cmd, "-l:libTracyClient.a", "-lstdc++");
-            nob_cmd_append(cmd, "-ldl", "-lm", "-pthread");
-            if (enable_asan) nob_cmd_append(cmd, SANITIZER_FLAGS);
-            return ret;
+            return cmd->items[cmd->count - 1];
           } break;
           case compile_output_slib: {
             nob_cmd_append(cmd, nob_temp_sprintf("%s.a", output_name));
@@ -369,10 +365,6 @@ const char* compiler_set_output(Nob_Cmd* cmd, const char* output_name, compile_o
           case compile_output_exe: BR_TODO("wasm exe"); break;
           case compile_output_slib: BR_TODO("wasm static lib"); break;
           case compile_output_dlib: {
-            nob_cmd_append(cmd, "-sWASM_BIGINT", "-sALLOW_MEMORY_GROWTH", "-sUSE_GLFW=3", "-sUSE_WEBGL2=1",
-                                          "-sGL_ENABLE_GET_PROC_ADDRESS",
-                                          "-sCHECK_NULL_WRITES=0", "-sDISABLE_EXCEPTION_THROWING=1", "-sFILESYSTEM=0", "-sDYNAMIC_EXECUTION=0");
-            nob_cmd_append(cmd, "-sMODULARIZE=1", "-sEXPORT_ES6=1");
             nob_cmd_append(cmd, "-o", nob_temp_sprintf("%s.js", output_name));
             return cmd->items[cmd->count - 1];
           } break;
@@ -406,6 +398,47 @@ const char* compiler_set_output(Nob_Cmd* cmd, const char* output_name, compile_o
   }
 }
 
+void compiler_link_c(Nob_Cmd* cmd, compile_output_kind_t kind, platform_kind_t target, const char* compiler) {
+  if (is_msvc(compiler)) {
+    // Mscv links c automaticaly
+  } else {
+    switch (target) {
+      case p_linux: {
+        switch (kind) {
+          case compile_output_exe: {
+            if (enable_asan) nob_cmd_append(cmd, SANITIZER_FLAGS);
+            if (is_tracy) nob_cmd_append(cmd, "-l:libTracyClient.a", "-lstdc++");
+            nob_cmd_append(cmd, "-ldl", "-lm", "-pthread");
+          } break;
+          case compile_output_obj:
+          case compile_output_slib:
+          case compile_output_dlib: {
+             // No need to link the c when outputing these..
+          } break;
+          default: BR_UNREACHABLE("output kind: %d", kind); break;
+        }
+      } break;
+      case p_wasm: {
+        switch (kind) {
+          case compile_output_obj: break;
+          case compile_output_dlib: {
+            nob_cmd_append(cmd, "-sWASM_BIGINT", "-sALLOW_MEMORY_GROWTH", "-sUSE_GLFW=3", "-sUSE_WEBGL2=1",
+                                          "-sGL_ENABLE_GET_PROC_ADDRESS",
+                                          "-sCHECK_NULL_WRITES=0", "-sDISABLE_EXCEPTION_THROWING=1", "-sFILESYSTEM=0", "-sDYNAMIC_EXECUTION=0");
+            nob_cmd_append(cmd, "-sMODULARIZE=1", "-sEXPORT_ES6=1");
+            return cmd->items[cmd->count - 1];
+          } break;
+          default: BR_UNREACHABLE("output kind: %d", kind); break;
+        }
+      } break;
+      case p_mac:
+      case p_windows: {
+      } break;
+      default: BR_UNREACHABLE("target: %d", target);
+    }
+  }
+}
+
 void compiler_base_flags(Nob_Cmd* cmd, const char* compiler) {
   nob_cmd_append(cmd, compiler);
   if (is_msvc(compiler)) {
@@ -415,27 +448,29 @@ void compiler_base_flags(Nob_Cmd* cmd, const char* compiler) {
   }
 }
 
-const char* compiler_single_file2(compile_output_kind_t output_kind, platform_kind_t platform, const char* src_name, const char* output_file, Nob_Cmd additional_libs) {
+char* compiler_single_file2(compile_output_kind_t output_kind, platform_kind_t platform, const char* src_name, const char* output_file, Nob_Cmd additional_libs) {
   static Nob_Cmd cmd = { 0 };
   cmd.count = 0;
   const char* compiler = get_compiler(platform);
   compiler_base_flags(&cmd, compiler);
   nob_cmd_append(&cmd, src_name);
-  const char* output = compiler_set_output(&cmd, output_file, output_kind, platform, compiler);
+  const char* output_const = compiler_set_output(&cmd, output_file, output_kind, platform, compiler);
+  char* output = strdup(output_const);
+  compiler_link_c(&cmd, output_kind, platform, compiler);
   nob_cmd_extend(&cmd, &additional_libs);
   if (false == nob_cmd_run_cache(&cmd)) return NULL;
   return output;
 }
 
-const char* compiler_single_file_exe2(platform_kind_t platform, const char* src_name, const char* output_file, Nob_Cmd additional_libs) {
+char* compiler_single_file_exe2(platform_kind_t platform, const char* src_name, const char* output_file, Nob_Cmd additional_libs) {
   return compiler_single_file2(compile_output_exe, platform, src_name, output_file, additional_libs);
 }
 
-const char* compiler_single_file_exe(platform_kind_t platform, const char* src_name, const char* output_file) {
+char* compiler_single_file_exe(platform_kind_t platform, const char* src_name, const char* output_file) {
   return compiler_single_file_exe2(platform, src_name, output_file, (Nob_Cmd) {0});
 }
 
-const char* compiler_single_file_obj(platform_kind_t platform, const char* src_name, const char* output_file) {
+char* compiler_single_file_obj(platform_kind_t platform, const char* src_name, const char* output_file) {
   return compiler_single_file2(compile_output_obj, platform, src_name, output_file, (Nob_Cmd) {0});
 }
 
@@ -448,7 +483,7 @@ static bool create_all_dirs(void) {
 
 static bool bake_font(void) {
   Nob_Cmd cmd = { 0 };
-  const char* output = compiler_single_file_exe(p_native, "tools/font_bake.c", "bin/font_bake");
+  char* output = compiler_single_file_exe(p_native, "tools/font_bake.c", "bin/font_bake");
   if (NULL == output) return false;
 
   nob_cmd_append(&cmd, output, "./content/font.ttf", ".generated/default_font.h");
@@ -598,6 +633,8 @@ static bool compile_and_link(platform_kind_t target, Nob_Cmd* cmd) {
     br_str_t build_dir = { 0 };
     if (false == compile_one(target, cmd, nob_sv_from_cstr(sources[i]), &link_command, &build_dir)) return false;
   }
+
+  compiler_link_c(&link_command, out_kind, target, compiler);
 
   bool ret = nob_cmd_run_cache(&link_command);
   nob_cmd_free(link_command);
