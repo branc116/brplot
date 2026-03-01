@@ -426,7 +426,6 @@ void compiler_link_c(Nob_Cmd* cmd, compile_output_kind_t kind, platform_kind_t t
                                           "-sGL_ENABLE_GET_PROC_ADDRESS",
                                           "-sCHECK_NULL_WRITES=0", "-sDISABLE_EXCEPTION_THROWING=1", "-sFILESYSTEM=0", "-sDYNAMIC_EXECUTION=0");
             nob_cmd_append(cmd, "-sMODULARIZE=1", "-sEXPORT_ES6=1");
-            return cmd->items[cmd->count - 1];
           } break;
           default: BR_UNREACHABLE("output kind: %d", kind); break;
         }
