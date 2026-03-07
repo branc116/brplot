@@ -198,8 +198,8 @@ br_mat_t br_data_model_mat(br_data_t data) {
 }
 
 float* br_data_series_local(br_data_t data, int series_index) {
-  br_series_t s = br_da_get(*br_data.serieses, data.series_handles[series_index]);
-  return s.arr;
+  br_series_t series = br_da_get(*br_data.serieses, data.series_handles[series_index]);
+  return br_series_local(series);
 }
 
 void br_data_empty(br_data_t* pg) {

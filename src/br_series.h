@@ -45,6 +45,7 @@ bool br_series_deinit(br_series_t* s);
 bool br_series_push(br_series_t* s, double value);
 
 float                 br_series(br_series_t s, br_u64 index);
+float*                br_series_local(br_series_t s);
 br_series_view_t      br_series_view(br_series_t s, br_u64 index, br_u64 len);
 double                br_series_zero(br_series_t s, br_u64 index);
 br_series_view_zero_t br_series_view_zero(br_series_t s, br_u64 index, br_u64 len);

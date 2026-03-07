@@ -55,6 +55,20 @@ float br_series(br_series_t s, br_u64 index) {
   else return (br_da_get(s, index));
 }
 
+float* br_series_local(br_series_t s) {
+  if (s.len <= BR_SERIES_SUPPORT_CAP) {
+    // Use the float buffer for the local value.
+    // NOTE: At this point we didn't determin offset or scale,
+    //       so just assume it's defalult.
+    // NOTE: We copy this every time we call this functions,
+    //       but that's ok because SUPPORT_CAP is small.
+    for (br_u64 i = 0; i < s.len; ++i) {
+      s.arr[i] = (float)s.support[i];
+    }
+    return s.arr;
+  } else return s.arr;
+}
+
 br_series_view_t br_series_view(br_series_t s, br_u64 index, br_u64 len) {
   BR_ASSERTF(index + len <= s.len, "index = %llu, len = %llu, s.len = %llu", index, len, s.len);
   BR_ASSERTF(index + len >= index, "index = %llu, len = %llu", index, len);
@@ -132,8 +146,17 @@ bool br_series_read(BR_FILE* file, br_series_t* s) {
   LOGI("Pos=%ld 0x%lX", ftell(file), ftell(file));
   BR_FS_READ1(file, value);
   if (value == 0) {
-    br_da_read_head(file, *s);
+    s->offset = 0;
+    s->scale = 1.0;
+    br_da_reserve(*s, 2*BR_SERIES_SUPPORT_CAP);
     BR_MALLOCE(s->support, BR_SERIES_SUPPORT_CAP);
+
+    br_series_t read = {0};
+    br_da_read_head(file, read);
+    s->len = read.len;
+    s->min = read.min;
+    s->max = read.max;
+    s->average = read.average;
     if (s->len > 0) {
       if (s->len != BR_FREAD(s->support, sizeof(s->support[0]), s->len, file)) BR_ERRORE("Failed to read the support");
     }
