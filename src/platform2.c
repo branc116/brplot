@@ -179,6 +179,7 @@ const char* br_x11_library_names[] = {
 
 const char* br_xi_library_names[] = {
   "libXi.so",
+  "libXi.so.6",
 };
 
 #define BR_WANTS_XI 1
