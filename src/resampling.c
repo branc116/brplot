@@ -1,3 +1,4 @@
+#include "src/br_pp.h"
 #include "src/br_resampling.h"
 #include "src/br_da.h"
 #include "src/br_data.h"
@@ -460,13 +461,19 @@ static void br_resampling_draw33(br_resampling_t const* const res, size_t index,
   }
 }
 
+static inline float br_vec3_angle2(br_vec3_t v1, br_vec3_t v2) {
+  float len = br_vec3_len(v1) * br_vec3_len(v2);
+  float dot = br_vec3_dot(v1, v2);
+  return acosf(dot/len);
+}
+
 void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* plot, float pd_thickness, br_extent_t extentf) {
   double start = brpl_time();
   if (res->common.len == 0) return;
-  switch (pg->kind) {
-    case br_data_kind_2d: {
-      switch (plot->kind) {
-        case br_plot_kind_2d: {
+  switch (plot->kind) {
+    case br_plot_kind_2d: {
+      switch (pg->kind) {
+        case br_data_kind_2d: {
           br_vec2d_t zoom  = br_anim2d(br_resampling.anims, plot->dd.zoom_ah);
           br_vec2d_t offset= br_anim2d(br_resampling.anims, plot->dd.offset_ah);
 
@@ -487,57 +494,41 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
           br_resampling_draw22(&res->dd, 0, pg, BR_EXTENTD_TOF(plot_rect));
           br_line_culler_end(&res->culler);
           br_shader_line_draw(br_resampling.shaders->line);
-        } break;
-        case br_plot_kind_3d: {
-          br_vec3_t target = br_anim3(br_resampling.anims, plot->ddd.target_ah);
-          br_vec3_t eye = br_anim3(br_resampling.anims, plot->ddd.eye_ah);
-          br_vec2_t re = (br_vec2_t) { .x = extentf.width, .y = extentf.height };
-          br_mat_t model = br_data_model_mat(*pg);
-          br_mat_t view = br_mat_look_at(eye, target, plot->ddd.up);
-          target = br_vec3_transform_scale(target, model);
-          eye    = br_vec3_transform_scale(eye, model);
-          br_mat_t perspective = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
-          br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(model, br_mat_mul(view, perspective));
-          br_resampling.shaders->line_3d->uvs.eye_uv = br_vec3_sub(eye, target);
-          br_resampling.shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
-          res->args_3d.line_thickness = pd_thickness;
-          res->args_3d.mvp = br_resampling.shaders->line_3d->uvs.m_mvp_uv;
-          res->args_3d.target = target;
-          res->args_3d.eye = eye;
 
+        } break;
+        case br_data_kind_3d: BR_ASSERTF(0, "Can't have 3d data on 2d plot.."); break;
+        default: BR_UNREACHABLE("Unknown data kind %d", pg->kind);
+      }
+    } break;
+    case br_plot_kind_3d: {
+      br_vec3_t target = br_anim3(br_resampling.anims, plot->ddd.target_ah);
+      br_vec3_t eye = br_anim3(br_resampling.anims, plot->ddd.eye_ah);
+      br_vec2_t re = (br_vec2_t) { .x = extentf.width, .y = extentf.height };
+      br_mat_t model = br_data_model_mat(*pg);
+      br_mat_t view = br_mat_look_at(eye, target, plot->ddd.up);
+      br_mat_t perspective = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
+      br_mat_t vp = br_mat_mul(view, perspective);
+      br_resampling.shaders->line_3d->uvs.m_vp_uv = vp;
+      br_resampling.shaders->line_3d->uvs.eye_uv = br_vec3_sub(eye, target);
+      br_resampling.shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
+      res->args_3d.line_thickness = pd_thickness;
+      res->args_3d.mvp = br_mat_mul(model, vp);
+      res->args_3d.model = model;
+      res->args_3d.target = target;
+      res->args_3d.eye = eye;
+
+      switch (pg->kind) {
+        case br_data_kind_2d: {
           br_resampling_draw32(res, 0, pg, plot);
-          br_shader_line_3d_draw(br_resampling.shaders->line_3d);
         } break;
-      }
-    } break;
-    case br_data_kind_3d: {
-      switch (plot->kind) {
-        case br_plot_kind_2d: BR_UNREACHABLE("Can't draw 3d data on 2d plot..");
-        case br_plot_kind_3d: {
-          BR_TODO("br_plot_kind_3d");
-#if 0
-          br_vec3_t eye = br_anim3(br_resampling.anims, plot->ddd.eye_ah);
-          br_vec3_t target = br_anim3(br_resampling.anims, plot->ddd.target_ah);
-          target = br_data_v3_to_local(*pg, BR_VEC3_TOD(target));
-          eye = br_data_v3_to_local(*pg, BR_VEC3_TOD(eye));
-          br_vec2_t re = extent.size.vec;
-          br_mat_t per = br_mat_perspective(plot->ddd.fov_y, re.x / re.y, plot->ddd.near_plane, plot->ddd.far_plane);
-          br_mat_t look = br_mat_look_at(BR_VEC3D_TOF(eye), BR_VEC3D_TOF(target), plot->ddd.up);
-          br_resampling.shaders->line_3d->uvs.m_mvp_uv = br_mat_mul(look, per);
-          br_resampling.shaders->line_3d->uvs.eye_uv = br_vec3_sub(eye, target); //TODO: Is this realy eye or eye target vector?
-          br_resampling.shaders->line_3d->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
-          res->args_3d.line_thickness = pd_thickness;
-          res->args_3d.mvp = br_resampling.shaders->line_3d->uvs.m_mvp_uv;
-          res->args_3d.eye = BR_VEC3D_TOF(eye);
-          res->args_3d.target = BR_VEC3D_TOF(target);
-
+        case br_data_kind_3d: {
           br_resampling_draw33(res, 0, pg, plot);
-          br_shaders_draw_all(*br_resampling.shaders);
-#endif
         } break;
+        default: BR_UNREACHABLE("Data kind: %d", pg->kind);
       }
+      br_shaders_draw_all(*br_resampling.shaders);
     } break;
-    default: BR_UNREACHABLE("Unknown data kind: %d", pg->kind);
+    default: BR_UNREACHABLE("Unknown plot kind %d", plot->kind);
   }
   res->render_time = brpl_time() - start;
   ++res->draw_count;

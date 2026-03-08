@@ -10,6 +10,7 @@ typedef struct br_mesh_line_t {
 typedef struct br_mesh_line_3d_t {
   float line_thickness;
   br_mat_t mvp;
+  br_mat_t model;
   br_vec3_t eye;
   br_vec3_t target;
   br_vec2_t prev[4];

@@ -41,7 +41,7 @@
     )                                   \
   X(line_3d, 16*1024,                   \
       X_VEC(eye, 3)                     \
-      X_VEC(m_mvp, 16)                  \
+      X_VEC(m_vp, 16)                   \
       X_VEC(color, 3),                  \
                                         \
       X_BUF(pos, 3)                     \

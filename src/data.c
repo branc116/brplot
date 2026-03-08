@@ -14,8 +14,8 @@
 
 static br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind_t kind, br_color_t color, size_t cap, brsp_id_t name);
 static br_data_t br_data_init(int group_id, br_data_kind_t kind);
-static void br_data_push_point2(br_data_t* g, br_vec2_t v);
-static void br_data_push_point3(br_data_t* g, br_vec3_t v);
+static void br_data_push_point2(br_data_t* g, br_vec2d_t v);
+static void br_data_push_point3(br_data_t* g, br_vec3d_t v);
 
 static BR_THREAD_LOCAL struct {
   brsp_t* sp;
@@ -52,32 +52,29 @@ br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind)
 }
 
 void br_data_push_y(br_datas_t* pg_array, double y, int group) {
-  br_data_t* pg = br_data_get(pg_array, group);
-  if (pg == NULL) return;
-  br_serieses_push_len(pg->series_handles[0]);
-  br_serieses_push(pg->series_handles[1], y);
+  br_data_t* data = br_data_get(pg_array, group);
+  if (data == NULL) return;
+  double x = (double)br_serieses_len(data->series_handles[0]);
+  br_data_push_point2(data, BR_VEC2D(x, y));
 }
 
 void br_data_push_x(br_datas_t* pg_array, double x, int group) {
-  br_data_t* pg = br_data_get(pg_array, group);
-  if (pg == NULL) return;
-  br_serieses_push(pg->series_handles[0], x);
-  br_serieses_push_len(pg->series_handles[1]);
+  br_data_t* data = br_data_get(pg_array, group);
+  if (data == NULL) return;
+  double y = (double)br_serieses_len(data->series_handles[0]);
+  br_data_push_point2(data, BR_VEC2D(x, y));
 }
 
 void br_data_push_xy(br_datas_t* pg_array, double x, double y, int group) {
-  br_data_t* pg = br_data_get(pg_array, group);
-  if (pg == NULL) return;
-  br_serieses_push(pg->series_handles[0], x);
-  br_serieses_push(pg->series_handles[1], y);
+  br_data_t* data = br_data_get(pg_array, group);
+  if (data == NULL) return;
+  br_data_push_point2(data, BR_VEC2D(x, y));
 }
 
 void br_data_push_xyz(br_datas_t* datas, double x, double y, double z, int group) {
   br_data_t* data = br_data_get2(datas, group, br_data_kind_3d);
   if (data == NULL) return;
-  br_serieses_push(data->series_handles[0], x);
-  br_serieses_push(data->series_handles[1], y);
-  br_serieses_push(data->series_handles[2], z);
+  br_data_push_point3(data, BR_VEC3D(x, y, z));
 }
 
 float br_data_local(br_data_t data, br_u32 series_index, br_u32 index) {
@@ -191,10 +188,20 @@ br_mat_t br_data_model_mat(br_data_t data) {
   for (int i = 0; i < data.serieses_len; ++i) {
     int handle = data.series_handles[i];
     br_series_t s = br_da_get(*br_data.serieses, handle);
-    mat.rows[i].arr[i] = (float)s.scale;
-    //mat.rows[i].arr[3] = (float)(s.offset/s.scale)*0.0;
+    mat.rows[i].arr[i] = (float)(s.scale);
+    mat.rows[i].arr[3] = (float)(s.offset);
   }
   return mat;
+}
+
+br_vec3_t br_data_model_scale(br_data_t data) {
+  br_vec3_t ret = BR_VEC3(1,1,1);
+  for (int i = 0; i < data.serieses_len; ++i) {
+    int handle = data.series_handles[i];
+    br_series_t s = br_da_get(*br_data.serieses, handle);
+    ret.arr[i] = (float)(1.0/s.scale);
+  }
+  return ret;
 }
 
 float* br_data_series_local(br_data_t data, int series_index) {
@@ -299,7 +306,7 @@ void br_datas_add_test_points(br_datas_t* pg) {
     for (int i = 0; i < 1024; ++i)
       br_data_push_xy(pg, (i + len)/128.0, (i + len)/128.0, group);
   }
-  return;
+
   {
     int group = 0;
     br_data_t* g = br_data_get(pg, group);
@@ -332,6 +339,7 @@ void br_datas_add_test_points(br_datas_t* pg) {
     br_data_t* g = br_data_get(pg, 6);
     if (NULL == g) return;
   }
+
   {
     int group = 11;
     br_data_t* g = br_data_get2(pg, group, br_data_kind_3d);
@@ -342,7 +350,7 @@ void br_datas_add_test_points(br_datas_t* pg) {
       double x = sqrt(t)*cos(log2(t));
       double y = sqrt(t)*sin(log2(t));
       double z = 2.f * sin(t*0.05f);
-      br_data_push_point3(g, BR_VEC3((float)x, (float)y, (float)z));
+      br_data_push_point3(g, BR_VEC3D(x, y, z));
     }
   }
 }
@@ -490,15 +498,20 @@ error:
   return success ? br_da_getp(*datas, handle) : NULL;
 }
 
-
-static void br_data_push_point2(br_data_t* g, br_vec2_t v) {
-  br_serieses_push(g->series_handles[0], v.x);
-  br_serieses_push(g->series_handles[1], v.y);
+static void br_data_push_point2(br_data_t* data, br_vec2d_t v) {
+  br_u64 next_index = br_serieses_len(data->series_handles[0]);
+  br_serieses_push(data->series_handles[0], v.x);
+  br_serieses_push(data->series_handles[1], v.y);
+  BR_ASSERTF(next_index < 0xFFFFFFFF, "Too much data");
+  br_resampling_add_point(data->resampling, data, (br_u32)next_index);
 }
 
-static void br_data_push_point3(br_data_t* g, br_vec3_t v) {
-  br_serieses_push(g->series_handles[0], v.x);
-  br_serieses_push(g->series_handles[1], v.y);
-  br_serieses_push(g->series_handles[2], v.z);
+static void br_data_push_point3(br_data_t* data, br_vec3d_t v) {
+  br_u64 next_index = br_serieses_len(data->series_handles[0]);
+  br_serieses_push(data->series_handles[0], v.x);
+  br_serieses_push(data->series_handles[1], v.y);
+  br_serieses_push(data->series_handles[2], v.z);
+  BR_ASSERTF(next_index < 0xFFFFFFFF, "Too much data");
+  br_resampling_add_point(data->resampling, data, (br_u32)next_index);
 }
 

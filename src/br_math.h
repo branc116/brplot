@@ -773,7 +773,7 @@ static inline br_vec3_t br_vec3_lerp(br_vec3_t a, br_vec3_t b, float t) {
 static inline br_vec3_t br_vec3_slerp(br_vec3_t v0, br_vec3_t v1, float t) {
   if (t < 0.001f) return v0;
   if (t >= 1.f) return v1;
-  float omega = br_vec3_angle(v0, v1);
+  float omega = br_vec3_angle(br_vec3_normalize(v0), br_vec3_normalize(v1));
   if (fabsf(omega) < 0.00001f) {
     return br_vec3_lerp(v0, v1, t);
   }
