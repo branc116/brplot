@@ -212,7 +212,8 @@ static void br_dagen_handle(br_dagen_t* dagen, br_data_t* data, br_datas_t datas
       size_t index = len - dagen->file.num_points;
       size_t left = len - index;
       size_t read_n = left < 1024 ? left : 1024;
-      for (size_t j = index; j < read_n; ++j) {
+      size_t index_to = index + read_n;
+      for (size_t j = index; j < index_to; ++j) {
         br_resampling_add_point(data->resampling, data, (uint32_t)j);
       }
       BR_ASSERT(dagen->file.num_points >= read_n);

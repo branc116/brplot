@@ -298,7 +298,6 @@ void br_data_remove(br_datas_t* datas, int data_id) {
 }
 
 void br_datas_add_test_points(br_datas_t* pg) {
-  goto treed;
   {
     int group = 100;
     br_data_t* g = br_data_get(pg, group);
@@ -341,7 +340,6 @@ void br_datas_add_test_points(br_datas_t* pg) {
     if (NULL == g) return;
   }
 
-treed:;
   {
     int group = 11;
     br_data_t* g = br_data_get2(pg, group, br_data_kind_3d);
