@@ -51,7 +51,6 @@ typedef struct brtr_t {
   unsigned char const* default_font_data;
   unsigned char*       custom_font_data;
 
-  struct {stbtt_packedchar* arr; size_t len, cap; } baking_chars;
   struct {
     brtr_stack_el_t* arr;
     size_t len, cap;
@@ -130,7 +129,6 @@ static bool brtr_free_internal(bool keep_the_stack) {
     brgl_unload_texture(brtr.shaders->glyph->uvs.atlas_uv);
     brtr.shaders->glyph->uvs.atlas_uv = 0;
   }
-  br_da_free(brtr.baking_chars);
   if (brtr.custom_font_data) BR_FREE(brtr.custom_font_data);
   brfl_free(brtr.icons);
   BR_FREE(brtr.bitmap_pixels);
@@ -183,21 +181,17 @@ void brtr_free(void) {
   brtr_free_internal(false);
 }
 
-static void brtr_bake_range(brtr_t* r, int size, br_u32 start, br_u32 len) {
-  if (len == 0) return;
+static void brtr_bake_one(brtr_t* r, int size, br_u32 ch) {
   r->is_dirty = true;
-  br_da_reserve(r->baking_chars, (size_t)len);
-  stbtt_PackFontRange(&r->pack_cntx, r->font_data, 0, (float)size, (br_i32)start, (br_i32)len, r->baking_chars.arr);
+  stbtt_packedchar baked = { 0 };
+  stbtt_PackFontRange(&r->pack_cntx, r->font_data, 0, (float)size, (br_i32)ch, 1, &baked);
   ptrdiff_t k = stbds_hmgeti(r->sizes, size);
   if (k == -1) {
     stbds_hmput(r->sizes, size, NULL);
     k = stbds_hmgeti(r->sizes, size);
   }
-  for (br_u32 j = 0; j < len; ++j) {
-    br_u32 key = start + j;
-    // NOTE: Even tho the len of baking_chars is not set, this is valid, because PackFontRange set the values for this.
-    stbds_hmput(r->sizes[k].value, key, r->baking_chars.arr[j]);
-  }
+
+  stbds_hmput(r->sizes[k].value, ch, baked);
 }
 
 static void brtr_dump(void) {
@@ -244,7 +238,7 @@ static bool brtr_move_loc(brtr_size_to_font_t* s, br_u32 c, br_vec2_t* pos) {
   if ((char)c == '\r') return true;
   ptrdiff_t char_index = s->value == NULL ? -1 : stbds_hmgeti(s->value, c);
   if (char_index == -1) {
-    brtr_bake_range(&brtr, s->key, c, 1);
+    brtr_bake_one(&brtr, s->key, c);
 
     ptrdiff_t size_index = stbds_hmgeti(brtr.sizes, s->key);
     if (size_index != -1) *s = brtr.sizes[size_index];
@@ -338,7 +332,7 @@ br_extent_t brtr_push(br_strv_t text) {
         ch = '?';
         char_index = stbds_hmgeti(s.value, ch);
         if (char_index == -1) {
-          brtr_bake_range(&brtr, s.key, ch, 1);
+          brtr_bake_one(&brtr, s.key, ch);
           size_index = stbds_hmgeti(brtr.sizes, font_size);
           BR_ASSERT(size_index > -1);
           s = brtr.sizes[size_index];
