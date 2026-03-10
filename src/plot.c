@@ -61,7 +61,6 @@ static br_vec2d_t br_plot2d_to_plot_target(br_plot_t* plot, br_vec2_t vec, br_ex
 }
 
 void br_plot2d_zoom(br_plot_t* plot, br_vec2_t vec, br_extent_t screen_extent, br_vec2_t mouse_pos_screen) {
-  // TODO: br_plot2d_to_plot should prob be br_plot2d_to_plot_target...
   br_vec2d_t old = br_plot2d_to_plot_target(plot, mouse_pos_screen, screen_extent);
   bool any = false;
   br_vec2d_t zoom = br_anim2d(br_plot_state.anims, plot->dd.zoom_ah);
@@ -184,41 +183,74 @@ void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups, br_extent_t
   if (plot->data_info.len == 0) return;
   (void)ex;
 
-  br_bb_t bb = { 0 };
-  int n = 0;
-  for (int i = 0; i < plot->data_info.len; ++i) {
-    br_plot_data_t di = plot->data_info.arr[i];
-    if (false == br_plot_data_is_visible(di)) continue;
-    br_data_t* d = br_data_get1(groups, di.group_id);
-    size_t len = br_data_len(*d);
-    if (n > 0) {
-      if (len > 0) {
-        br_bb_t this_bb = br_data_bb(*d);
-        bb = br_bb_union(bb, this_bb);
-        ++n;
+  switch (plot->kind) {
+    case br_plot_kind_2d: {
+      br_bb_t bb = { 0 };
+      int n = 0;
+      for (int i = 0; i < plot->data_info.len; ++i) {
+        br_plot_data_t di = plot->data_info.arr[i];
+        if (false == br_plot_data_is_visible(di)) continue;
+        br_data_t* d = br_data_get1(groups, di.group_id);
+        size_t len = br_data_len(*d);
+        if (n > 0) {
+          if (len > 0) {
+            br_bb_t this_bb = br_data_bb(*d);
+            bb = br_bb_union(bb, this_bb);
+            ++n;
+          }
+        } else {
+          if (len > 0) {
+            bb = br_data_bb(*d);
+            ++n;
+          }
+        }
       }
-    } else {
-      if (len > 0) {
-        bb = br_data_bb(*d);
-        ++n;
+      if (n == 0) return;
+
+      float new_width = BR_BBW(bb);
+      float new_height = BR_BBH(bb);
+      bb.max_x += new_width  * .1f;
+      bb.max_y += new_height * .1f;
+      bb.min_x -= new_width  * .1f;
+      bb.min_y -= new_height * .1f;
+      new_width = BR_BBW(bb);
+      new_height = BR_BBH(bb);
+      br_vec2_t bl = bb.min;
+
+      br_vec2d_t offset = BR_VEC2D(bl.x + new_width / 2.0, bl.y + new_height / 2.0);
+      br_vec2d_t zoom  = BR_VEC2D(new_width, new_height);
+      br_anim2d_set(br_plot_state.anims, plot->dd.offset_ah, offset);
+      br_anim2d_set(br_plot_state.anims, plot->dd.zoom_ah, zoom);
+    } break;
+    case br_plot_kind_3d: {
+      bool any = false;
+      br_bb3_t bb = { 0 };
+      for (int i = 0; i < plot->data_info.len; ++i) {
+        br_plot_data_t pd = br_da_get(plot->data_info, i);
+        if (false == br_plot_data_is_visible(pd)) continue;
+        br_data_t* data = br_data_get1(groups, pd.group_id);
+        if (any) {
+          for (int j = 0; j < data.sserieses_len; ++j) {
+            br_series_t ser = br_da_get(data.series_handles, j);
+            bb.min.arr[j] = br_float_min(bb.min.arr[j], ser.min);
+            bb.max.arr[j] = br_float_max(bb.max.arr[j], ser.max);
+          }
+        } else {
+          for (int j = 0; j < data.series_handles; ++j) {
+            br_series_t ser = br_da_get(data.serieses, j);
+            bb.min.arr[j] = ser.min;
+            bb.max.arr[j] = ser.max;
+          }
+        }
       }
-    }
+      br_vec3_t center = BR_VEC3(
+        (bb.min.x*.5f + bb.max.x*.5f),
+        (bb.min.y*.5f + bb.max.y*.5f),
+        (bb.min.z*.5f + bb.max.z*.5f)
+      );
+      br_anim3_set(plot->ddd.target_ah, center);
+    } break;
+    default: BR_UNREACHABLE("Plot kind: %d", plot->kind);
   }
-  if (n == 0) return;
-
-  float new_width = BR_BBW(bb);
-  float new_height = BR_BBH(bb);
-  bb.max_x += new_width  * .1f;
-  bb.max_y += new_height * .1f;
-  bb.min_x -= new_width  * .1f;
-  bb.min_y -= new_height * .1f;
-  new_width = BR_BBW(bb);
-  new_height = BR_BBH(bb);
-  br_vec2_t bl = bb.min;
-
-  br_vec2d_t offset = BR_VEC2D(bl.x + new_width / 2.0, bl.y + new_height / 2.0);
-  br_vec2d_t zoom  = BR_VEC2D(new_width, new_height);
-  br_anim2d_set(br_plot_state.anims, plot->dd.offset_ah, offset);
-  br_anim2d_set(br_plot_state.anims, plot->dd.zoom_ah, zoom);
 }
 

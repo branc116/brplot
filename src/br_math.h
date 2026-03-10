@@ -696,7 +696,6 @@ static inline br_vec3_t br_vec3_normalize(br_vec3_t a) {
   return BR_VEC3(0,0,0);
 }
 
-// TODO: This look sus...
 static inline br_vec3_t br_vec3_transform_scale(br_vec3_t v, br_mat_t mat) {
   br_vec3_t result = BR_VEC3(HUGE_VALF, HUGE_VALF, HUGE_VALF);
   float x = v.x, y = v.y, z = v.z;
@@ -1008,8 +1007,6 @@ static inline br_mat_t br_mat_perspective(float fovY, float aspect, float nearPl
   float right = top*aspect;
   float left = -right;
 
-  // TODO: Check this out..
-  // MatrixFrustum(-right, right, -top, top, near, far);
   float rl = (right - left);
   float tb = (top - bottom);
   float fn = (farPlane - nearPlane);

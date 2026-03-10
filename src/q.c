@@ -64,19 +64,19 @@ void handle_all_commands(br_plotter_t* br, q_commands* commands) {
         br_data_t* d = br_data_get1(br->groups, comm.clear.group);
         if (NULL != d) br_data_empty(d);
       } break;
-      case q_command_clear:         br_plotter_data_remove(br, comm.clear.group); break;
-      case q_command_clear_all:     br_plotter_datas_deinit(br); break;
-      case q_command_screenshot:    /*br_plot_screenshot(br->text, &br->plots.arr[0], &br->shaders, br->groups, comm.path_arg.path);*/ BR_FREE(comm.path_arg.path); break;
-      case q_command_export:        br_plotter_export(br, comm.path_arg.path);     BR_FREE(comm.path_arg.path); break;
-      case q_command_exportcsv:     br_plotter_export_csv(br, comm.path_arg.path); BR_FREE(comm.path_arg.path); break;
-      case q_command_hide:          BR_TODO("Command hide not implemented");
-      case q_command_show:          BR_TODO("Command show not implemented");
-      case q_command_set_name:      br_data_set_name(&br->groups, comm.set_quoted_str.group, comm.set_quoted_str.str);  break;
-      case q_command_add_expr:      br_dagens_add_expr_str(&br->dagens, &br->groups, br_str_as_view(comm.add_expr.expr), comm.add_expr.group); br_str_free(comm.add_expr.expr); break;
-      case q_command_flush:         return;
-      case q_command_focus:         br_plots_focus_visible(br->plots, br->groups); break;
-      case q_command_new_data:      br_datas_create(&br->groups, comm.new_data.data_id, comm.new_data.kind); break;
-      default:                      BR_UNREACHABLE("Unknown command(%zu,%zu): %d\n", commands->read_index, commands->write_index, comm.type);
+      case q_command_clear:      br_plotter_data_remove(br, comm.clear.group); break;
+      case q_command_clear_all:  br_plotter_datas_deinit(br); break;
+      case q_command_screenshot: /*br_plot_screenshot(br->text, &br->plots.arr[0], &br->shaders, br->groups, comm.path_arg.path);*/ BR_FREE(comm.path_arg.path); break;
+      case q_command_export:     br_plotter_export(br, comm.path_arg.path);     BR_FREE(comm.path_arg.path); break;
+      case q_command_exportcsv:  br_plotter_export_csv(br, comm.path_arg.path); BR_FREE(comm.path_arg.path); break;
+      case q_command_hide:       BR_TODO("Command hide not implemented");
+      case q_command_show:       BR_TODO("Command show not implemented");
+      case q_command_set_name:   br_data_set_name(&br->groups, comm.set_quoted_str.group, comm.set_quoted_str.str);  break;
+      case q_command_add_expr:   br_dagens_add_expr_str(&br->dagens, &br->groups, br_str_as_view(comm.add_expr.expr), comm.add_expr.group); br_str_free(comm.add_expr.expr); break;
+      case q_command_flush:      return;
+      case q_command_focus:      br_plots_focus_visible(br->plots, br->groups); break;
+      case q_command_new_data:   br_datas_create(&br->groups, comm.new_data.data_id, comm.new_data.kind); break;
+      default:                   BR_UNREACHABLE("Unknown command(%zu,%zu): %d\n", commands->read_index, commands->write_index, comm.type);
     }
   }
 }

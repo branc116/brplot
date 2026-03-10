@@ -443,7 +443,8 @@ br_data_t* br_data_get2(br_datas_t* pg, int group, br_data_kind_t kind) {
   return br_da_getp(*pg, handle);
 }
 
-// TODO: name should be sp_id, This is bad..
+// NOTE: This looks ugly but it's used by q.c
+//       q.c should be changed such that it uses string pool maybe..
 void br_data_set_name(br_datas_t* pg, int group, br_str_t name) {
   br_data_t* g = br_data_get(pg, group);
   if (pg == NULL) return;

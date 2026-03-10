@@ -292,7 +292,6 @@ static void br_mesh_grid_3d_draw(br_vec3_t normal, br_vec3_t up, br_size_t size,
 
 // TODO: This should be split to _gen and _draw
 void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
-  // TODO 2D/3D
 #define BR_MESH_LINE_THICK_N 32
   br_mesh_line_thick line_thicks[BR_MESH_LINE_THICK_N];
   br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
