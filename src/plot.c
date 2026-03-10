@@ -6,6 +6,7 @@
 #include "src/br_math.h"
 #include "src/br_memory.h"
 #include "src/br_resampling.h"
+#include "src/br_series.h"
 #include "src/br_ui.h"
 
 static BR_THREAD_LOCAL struct {
@@ -178,8 +179,6 @@ void br_plots_focus_visible(br_plots_t plots, br_datas_t const groups) {
 }
 
 void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups, br_extent_t ex) {
-  // TODO 2D/3D
-  BR_ASSERTF(plot->kind == br_plot_kind_2d, "Plot kind: %d", plot->kind);
   if (plot->data_info.len == 0) return;
   (void)ex;
 
@@ -230,25 +229,30 @@ void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups, br_extent_t
         if (false == br_plot_data_is_visible(pd)) continue;
         br_data_t* data = br_data_get1(groups, pd.group_id);
         if (any) {
-          for (int j = 0; j < data.sserieses_len; ++j) {
-            br_series_t ser = br_da_get(data.series_handles, j);
-            bb.min.arr[j] = br_float_min(bb.min.arr[j], ser.min);
-            bb.max.arr[j] = br_float_max(bb.max.arr[j], ser.max);
+          for (int j = 0; j < data->serieses_len; ++j) {
+            br_i32 series_handle = data->series_handles[j];
+            br_series_t ser = br_serieses_get(series_handle);
+            bb.min.arr[j] = br_float_min(bb.min.arr[j], (float)ser.min);
+            bb.max.arr[j] = br_float_max(bb.max.arr[j], (float)ser.max);
           }
         } else {
-          for (int j = 0; j < data.series_handles; ++j) {
-            br_series_t ser = br_da_get(data.serieses, j);
-            bb.min.arr[j] = ser.min;
-            bb.max.arr[j] = ser.max;
+          for (int j = 0; j < data->serieses_len; ++j) {
+            br_i32 series_handle = data->series_handles[j];
+            br_series_t ser = br_serieses_get(series_handle);
+            bb.min.arr[j] = (float)ser.min;
+            bb.max.arr[j] = (float)ser.max;
           }
+          any = true;
         }
+        LOGI("i=%d BB: %f %f %f; %f %f %f", i, BR_BB3_(bb));
       }
+      LOGI("BB: %f %f %f; %f %f %f", BR_BB3_(bb));
       br_vec3_t center = BR_VEC3(
         (bb.min.x*.5f + bb.max.x*.5f),
         (bb.min.y*.5f + bb.max.y*.5f),
         (bb.min.z*.5f + bb.max.z*.5f)
       );
-      br_anim3_set(plot->ddd.target_ah, center);
+      br_anim3_set(br_plot_state.anims, plot->ddd.target_ah, center);
     } break;
     default: BR_UNREACHABLE("Plot kind: %d", plot->kind);
   }

@@ -62,6 +62,7 @@
 #define BR_BBW(BB) ((BB).max_x - (BB).min_x)
 #define BR_BBH(BB) ((BB).max_y - (BB).min_y)
 #define BR_BB_(BB) (BB).min_x, (BB).min_y, (BB).max_x, (BB).max_y
+#define BR_BB3_(BB) (BB).min_x, (BB).min_y, (BB).min_z, (BB).max_x, (BB).max_y, (BB).max_y
 
 #define BR_VEC4(X, Y, Z, W) ((br_vec4_t) { .x = (X), .y = (Y), .z = (Z), .w = (W) })
 #define BR_VEC4_TOD(V) ((br_vec4d_t) { .x = (double)(V).x, .y = (double)(V).y, .z = (double)(V).z, .w = (double)(V).w })

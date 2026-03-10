@@ -143,7 +143,6 @@ bool br_series_read(BR_FILE* file, br_series_t* s) {
 
   *s = (br_series_t){0};
 
-  LOGI("Pos=%ld 0x%lX", ftell(file), ftell(file));
   BR_FS_READ1(file, value);
   if (value == 0) {
     s->offset = 0;

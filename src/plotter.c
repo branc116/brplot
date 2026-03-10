@@ -79,7 +79,6 @@ void br_plotter_init(br_plotter_t* br) {
   br_hotreload_start(&br->hot_state);
 #endif
   brui_window_init(&br->uiw);
-  LOGW("Calling this..");
   bool read_editor = false;
   if (!br->uiw.pl.is_recording && !br->uiw.pl.is_replaying) read_editor = brps_editor_read(br, NULL);
   if (read_editor) {
@@ -156,13 +155,15 @@ void br_plotter_update(br_plotter_t* br) {
                 }
               } break;
               case BR_KEY_F: {
-                if (br->hovered.active == br_plotter_entity_plot_2d) {
-                  br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
-                  br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
-                  if (br->uiw.key.ctrl_down) br_plot_focus_visible(plot, br->groups, ex);
-                  else                       plot->follow = !plot->follow;
-                } else {
-                  BR_TODO("br->hovered.active: %d", br->hovered.active);
+                switch (br->hovered.active) {
+                  case br_plotter_entity_plot_2d: BR_FALLTHROUGH;
+                  case br_plotter_entity_plot_3d: {
+                    br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
+                    br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
+                    if (br->uiw.key.ctrl_down) br_plot_focus_visible(plot, br->groups, ex);
+                    else                       plot->follow = !plot->follow;
+                  } break;
+                  default: break;
                 }
               } break;
               case BR_KEY_H: {

@@ -267,10 +267,6 @@ static bool brps_project_fread(BR_FILE* file, br_plotter_t* br) {
 
   br_da_read(file, copy.dagens);
   brfl_read(file, copy.datas, err);
-  LOGI("datas len: %d", copy.datas.free_len);
-  brfl_foreach(i, copy.datas) {
-    LOGI("data %d=%d", i, copy.datas.arr[i].group_id);
-  }
 
   // TODO: Maybe just some series failed to read. Handle that case...
   if (false == br_serieses_read(file, &copy.serieses)) BR_ERROR("Failed to write serieses");;
