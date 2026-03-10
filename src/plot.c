@@ -244,9 +244,7 @@ void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups, br_extent_t
           }
           any = true;
         }
-        LOGI("i=%d BB: %f %f %f; %f %f %f", i, BR_BB3_(bb));
       }
-      LOGI("BB: %f %f %f; %f %f %f", BR_BB3_(bb));
       br_vec3_t center = BR_VEC3(
         (bb.min.x*.5f + bb.max.x*.5f),
         (bb.min.y*.5f + bb.max.y*.5f),
