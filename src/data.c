@@ -300,11 +300,11 @@ void br_data_remove(br_datas_t* datas, int data_id) {
 void br_datas_add_test_points(br_datas_t* pg) {
   {
     int group = 100;
-    br_data_t* g = br_data_get(pg, group);
+    br_data_t* g = br_data_get2(pg, group, br_data_kind_3d);
     if (NULL == g) return;
     double len = (double)br_data_len(*g);
     for (int i = 0; i < 1024; ++i)
-      br_data_push_xy(pg, (i + len)/128.0, (i + len)/128.0, group);
+      br_data_push_xyz(pg, 0, (i + len)/128.0, (i + len)/128.0, group);
   }
 
   {

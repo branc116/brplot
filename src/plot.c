@@ -224,6 +224,7 @@ void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups, br_extent_t
     case br_plot_kind_3d: {
       bool any = false;
       br_bb3_t bb = { 0 };
+      br_vec3_t curv = { 0 };
       for (int i = 0; i < plot->data_info.len; ++i) {
         br_plot_data_t pd = br_da_get(plot->data_info, i);
         if (false == br_plot_data_is_visible(pd)) continue;
@@ -244,6 +245,8 @@ void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups, br_extent_t
           }
           any = true;
         }
+        br_vec3_t c = br_resampling_curv(data);
+        curv = br_vec3_add(curv, c);
       }
       br_vec3_t center = BR_VEC3(
         (bb.min.x*.5f + bb.max.x*.5f),
@@ -251,6 +254,20 @@ void br_plot_focus_visible(br_plot_t* plot, br_datas_t const groups, br_extent_t
         (bb.min.z*.5f + bb.max.z*.5f)
       );
       br_anim3_set(br_plot_state.anims, plot->ddd.target_ah, center);
+
+      br_vec3_t curv_norm = br_vec3_normalize(curv);
+      br_vec3_t curv_norm_abs = br_vec3_abs(curv_norm);
+      br_vec3_t curv_norm_abs_plus_one = br_vec3_add(curv_norm_abs, BR_VEC3(1,1,1));
+      br_vec3_t bb_size = br_vec3_sub(bb.max, bb.min);
+      br_vec3_t normal_eye_dir = bb_size;
+      br_vec3_t normal_eye_dir_norm = br_vec3_normalize(normal_eye_dir);
+      br_vec3_t eye_dir = br_vec3_cross(plot->ddd.up, normal_eye_dir_norm);
+      br_vec3_t eye_dir_norm = br_vec3_normalize(eye_dir);
+      float dist = br_float_max3(BR_VEC3_(bb_size)) * 2;
+      br_vec3_t eye_target = br_vec3_scale(eye_dir_norm, dist);
+      br_vec3_t eye_target_abs = br_vec3_abs(eye_target);
+      br_vec3_t eye = br_vec3_add(center, eye_target_abs);
+      br_anim3_set(br_plot_state.anims, plot->ddd.eye_ah, eye);
     } break;
     default: BR_UNREACHABLE("Plot kind: %d", plot->kind);
   }

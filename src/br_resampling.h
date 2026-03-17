@@ -16,8 +16,10 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* rd
 // TODO: index should be size_t...
 void br_resampling_add_point(br_resampling_t* res, br_data_t const* pg, uint32_t index);
 
+// TODO: Pass data by const pointer
 bool br_resampling_get_point_at2(br_data_t data, br_vec2d_t vec, float* dist, br_u32* out_index);
 bool br_resampling_get_point_at3(br_data_t data, br_vec3d_t from, br_vec3d_t to, float* dist, br_u32* out_index);
+br_vec3_t br_resampling_curv(const br_data_t* data);
 
 void br_resampling_reset(br_resampling_t* res);
 void br_resampling_change_something(br_datas_t pg);

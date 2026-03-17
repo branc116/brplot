@@ -236,6 +236,7 @@ void br_plotter_update(br_plotter_t* br) {
           plot->follow = false;
         } else if (br->action.active == br_plotter_entity_plot_3d) {
           br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
+          plot->follow = false;
           float speed = (float)br->uiw.time.frame / 2.f;
           br_vec3_t eye = br_anim3_get_target(anims, plot->ddd.eye_ah);
           br_vec3_t target = br_anim3_get_target(anims, plot->ddd.target_ah);

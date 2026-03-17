@@ -225,6 +225,22 @@ bool br_resampling_get_point_at3(br_data_t data, br_vec3d_t fromd, br_vec3d_t to
 #undef BR_STACK_PUSH
 #undef BR_STACK_POP
 
+br_vec3_t br_resampling_curv(const br_data_t* data) {
+  switch (data->kind) {
+    case br_data_kind_2d: {
+      // NOTE: For all usescases it don't matter it's hardcoded.
+      //       Only important thing is that it's on xy plane.
+      return BR_VEC3(1, 0, 0);
+    } break;
+    case br_data_kind_3d: {
+      if (NULL == data->resampling) return BR_VEC3(0, 0, 0);
+      if (NULL == data->resampling->ddd.arr) return BR_VEC3(0, 0, 0);
+      return data->resampling->ddd.arr[0].curvature;
+    } break;
+    default: BR_UNREACHABLE("Data kind: %d", data->kind);
+  }
+}
+
 void br_resampling_reset(br_resampling_t* res) {
   res->common.len = 0;
 }
@@ -433,8 +449,8 @@ static void br_resampling_draw33(br_resampling_t const* const res, size_t index,
     return;
   }
   br_vec2_t ratios = br_resampling_nodes_3d_get_ratios(&node, pg, br_vec3_sub(target, eye));
-  BR_ASSERT(ratios.x > 0);
-  BR_ASSERT(ratios.y > 0);
+  BR_ASSERTF(ratios.x >= 0, "ratio=%f", ratios.x);
+  BR_ASSERT(ratios.y >= 0);
   float rmin = fmaxf(ratios.x, ratios.y);
   if (rmin < (node.base.depth == 1 ? pg->resampling->something2 : pg->resampling->something)) {
     size_t indexies[] = {
