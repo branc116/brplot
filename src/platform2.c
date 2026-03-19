@@ -399,6 +399,10 @@ static BR_THREAD_LOCAL struct {
 
 
 bool brpl_window_open(brpl_window_t* window) {
+  // NOTE: Load headless so that I don't have to implmenet
+  //       new functions for all platforms at the same time..
+  brpl_headless_load(window);
+
   const char* rec_path = getenv("BRPL_RECORD");
   const char* rep_path = getenv("BRPL_REPLAY");
   const char* rep_skip = getenv("BRPL_REPLAY_SKIP");
@@ -435,7 +439,7 @@ bool brpl_window_open(brpl_window_t* window) {
 #if BR_HAS_WIN32
     case brpl_window_win32: loaded = brpl_win32_load(window); break;
 #endif
-    case brpl_window_headless: loaded = brpl_headless_load(window); break;
+    case brpl_window_headless: /* Already loaded.. */ break;
     default: LOGE("Unknown kind: %d", window->kind); break;
   }
   if (loaded) loaded = window->f.window_open && window->f.window_open(window);
@@ -446,15 +450,6 @@ bool brpl_window_open(brpl_window_t* window) {
 
 void brpl_window_close(brpl_window_t* window) {
   window->f.window_close(window);
-}
-
-void brpl_frame_start(brpl_window_t* window) {
-  window->f.frame_start(window);
-  brgl_enable_framebuffer(0, window->viewport.width, window->viewport.height);
-}
-
-void brpl_frame_end(brpl_window_t* window) {
-  window->f.frame_end(window);
 }
 
 brpl_event_t brpl_event_next(brpl_window_t* window) {
@@ -536,6 +531,22 @@ start:
     else return (brpl_event_t){ .kind = brpl_event_nop };
   }
   return ev;
+}
+
+void brpl_frame_start(brpl_window_t* window) {
+  window->f.frame_start(window);
+  brgl_enable_framebuffer(0, window->viewport.width, window->viewport.height);
+}
+
+void brpl_frame_end(brpl_window_t* window) {
+  window->f.frame_end(window);
+}
+
+bool brpl_pointer_kind_set(brpl_window_t* window, brpl_pointer_kind_t kind) {
+  //if (window->pointer_kind == kind) return true;
+  bool ok = window->f.pointer_kind_set(window, kind);
+  if (ok) window->pointer_kind = kind;
+  return ok;
 }
 
 uint64_t brpl_timestamp(void) {
@@ -638,6 +649,11 @@ brpl_event_t brpl_q_pop(brpl_q_t* q) {
 // -------------------------------
 #if BR_HAS_X11
 
+typedef struct brpl_x11_cursour_mapping_t {
+  int cursor_id;
+  brpl_x11_Cursor cursor_xid;
+} brpl_x11_cursour_mapping_t;
+
 typedef struct brpl_window_x11_t {
   void* display;
   int screen;
@@ -653,6 +669,8 @@ typedef struct brpl_window_x11_t {
   brpl_x11_Atom WM_DELETE_WINDOW;
 
   int xi_opcode;
+
+  brpl_x11_cursour_mapping_t cursor_mappings[brpl_pointer_kind_count];
 } brpl_window_x11_t;
 
 static void brpl_x11_frame_start(brpl_window_t* window) {
@@ -1015,6 +1033,14 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
   XISelectEvents(x11.display, x11.window_handle, &evmask, 1);
   brpl_x11_XFlush(x11.display);
 
+#define XC_arrow 2
+#define XC_crosshair 34
+#define XC_fleur 52
+#define XC_sizing 120
+  x11.cursor_mappings[brpl_pointer_normal].cursor_id = XC_arrow;
+  x11.cursor_mappings[brpl_pointer_move].cursor_id   = XC_fleur;
+  x11.cursor_mappings[brpl_pointer_resize].cursor_id = XC_sizing;
+
   brpl_window_x11_t* win = BR_MALLOC(sizeof(brpl_window_x11_t));
   memcpy(win, &x11, sizeof(x11));
   window->win = win;
@@ -1035,6 +1061,26 @@ static void brpl_x11_close_window(brpl_window_t* window) {
   brpl_x11_XFlush(win->display);
   brpl_x11_XCloseDisplay(win->display);
   BR_FREE(win);
+}
+
+bool brpl_x11_pointer_kind_set(brpl_window_t* win, brpl_pointer_kind_t kind) {
+  brpl_window_x11_t* x11_win = win->win;
+  brpl_x11_cursour_mapping_t* cursor_mapping = NULL;
+  switch (kind) {
+    case brpl_pointer_hidden: {
+      BR_TODO("x11 brpl_pointer_hidden");
+    } break;
+    default: {
+      BR_ASSERTF(kind < brpl_pointer_kind_count, "kind = %d", kind);
+      cursor_mapping = &x11_win->cursor_mappings[kind];
+    }
+  }
+
+  if (cursor_mapping->cursor_xid == 0) {
+    cursor_mapping->cursor_xid = brpl_x11_XCreateFontCursor(x11_win->display, cursor_mapping->cursor_id);
+  }
+
+  brpl_x11_XDefineCursor(x11_win->display, x11_win->window_handle, cursor_mapping->cursor_xid);
 }
 
 static int brpl_x11_keysym(brpl_x11_XEvent event) {
@@ -1066,11 +1112,13 @@ static int brpl_x11_keysym(brpl_x11_XEvent event) {
 static bool brpl_x11_load(brpl_window_t* win) {
   bool ok = br_x11_load() && br_gl_load() && br_glx_load() && br_xi_load();
   if (ok) {
-    win->f.frame_start = brpl_x11_frame_start;
-    win->f.frame_end =   brpl_x11_frame_end;
-    win->f.event_next =  brpl_x11_event_next;
-    win->f.window_open =  brpl_x11_open_window;
-    win->f.window_close =  brpl_x11_close_window;
+    win->f.frame_start  = brpl_x11_frame_start;
+    win->f.frame_end    = brpl_x11_frame_end;
+    win->f.event_next   = brpl_x11_event_next;
+    win->f.window_open  = brpl_x11_open_window;
+    win->f.window_close = brpl_x11_close_window;
+
+    win->f.pointer_kind_set = brpl_x11_pointer_kind_set;
   }
   return ok;
 }
@@ -1477,6 +1525,11 @@ static void brpl_headless_window_close(brpl_window_t* window) {
   (void)window;
 }
 
+static brpl_event_t brpl_headless_event_next(brpl_window_t* window) {
+  (void)window;
+  return (brpl_event_t) { .kind = brpl_event_nop };
+}
+
 static void brpl_headless_frame_start(brpl_window_t* window) {
   (void)window;
 }
@@ -1485,17 +1538,19 @@ static void brpl_headless_frame_end(brpl_window_t* window) {
   (void)window;
 }
 
-static brpl_event_t brpl_headless_event_next(brpl_window_t* window) {
-  (void)window;
-  return (brpl_event_t) { .kind = brpl_event_nop };
+static bool brpl_headless_pointer_kind_set(brpl_window_t* window, brpl_pointer_kind_t pointer) {
+  (void)window; (void)pointer;
+  LOGI("Headless pointer_kind_set: %d", pointer);
 }
 
 static bool brpl_headless_load(brpl_window_t* window) {
   window->f.window_open  = brpl_headless_open_window;
   window->f.window_close = brpl_headless_window_close;
+  window->f.event_next   = brpl_headless_event_next;
   window->f.frame_start  = brpl_headless_frame_start;
   window->f.frame_end    = brpl_headless_frame_end;
-  window->f.event_next   = brpl_headless_event_next;
+
+  window->f.pointer_kind_set = brpl_headless_pointer_kind_set;
   return true;
 }
 

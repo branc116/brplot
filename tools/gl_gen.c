@@ -149,6 +149,9 @@ struct {
       "int XQueryExtension(brpl_x11_Display* d, const char* name, int* major, int* minor, int* error)"
       "brpl_x11_Bool XGetEventData(brpl_x11_Display* display, brpl_x11_XGenericEventCookie* cookie)"
       "void XFreeEventData(brpl_x11_Display* display, brpl_x11_XGenericEventCookie* cookie)"
+      "brpl_x11_Cursor XCreateFontCursor(brpl_x11_Display* display, br_u32 cursor_id)"
+      "br_i32 XFreeCursor(brpl_x11_Display* display, brpl_x11_Cursor cursor)"
+      "br_i32 XDefineCursor(brpl_x11_Display* display, brpl_x11_Window w, brpl_x11_Cursor cursor)"
   }, {
     .name = "xi",
     .name_upper = "XI",

@@ -93,6 +93,16 @@ typedef struct brpl_q_t {
   brpl_event_t events[1024];
 } brpl_q_t;
 
+typedef enum brpl_pointer_kind_t {
+  brpl_pointer_hidden,
+
+  brpl_pointer_normal,
+  brpl_pointer_resize,
+  brpl_pointer_move,
+
+  brpl_pointer_kind_count,
+} brpl_pointer_kind_t;
+
 typedef enum brpl_window_kind_t {
   brpl_window_any,
   brpl_window_x11,
@@ -104,11 +114,13 @@ typedef enum brpl_window_kind_t {
 typedef struct brpl_window_t brpl_window_t;
 typedef struct brpl_window_t {
   struct {
-    void (*frame_start)(brpl_window_t* window);
-    void (*frame_end)(brpl_window_t* window);
+    bool         (*window_open)(brpl_window_t* window);
+    void         (*window_close)(brpl_window_t* window);
     brpl_event_t (*event_next)(brpl_window_t* window);
-    bool (*window_open)(brpl_window_t* window);
-    void (*window_close)(brpl_window_t* window);
+    void         (*frame_start)(brpl_window_t* window);
+    void         (*frame_end)(brpl_window_t* window);
+
+    bool         (*pointer_kind_set)(brpl_window_t* window, brpl_pointer_kind_t kind);
   } f;
   // Data that specific windowing backend is using
   void* win;
@@ -123,6 +135,9 @@ typedef struct brpl_window_t {
   } opengl_version;        // INPUT
 
   br_vec2_t scale; // Think DPI
+
+  brpl_pointer_kind_t pointer_kind;
+
   bool active;
   bool should_close;
   bool is_recording;
@@ -132,10 +147,12 @@ typedef struct brpl_window_t {
 bool brpl_window_open(brpl_window_t* window);
 void brpl_window_close(brpl_window_t* window);
 
+brpl_event_t brpl_event_next(brpl_window_t* window);
+
 void brpl_frame_start(brpl_window_t* window);
 void brpl_frame_end  (brpl_window_t* window);
 
-brpl_event_t brpl_event_next(brpl_window_t* window);
+bool brpl_pointer_kind_set(brpl_window_t* window, brpl_pointer_kind_t kind);
 
 uint64_t brpl_timestamp(void);
 double   brpl_time(void);
@@ -198,8 +215,6 @@ void brpl_window_size_set(brpl_window_t* window, int height, int width);
 #define BR_KEY_BACKSLASH          92  /* \ */
 #define BR_KEY_RIGHT_BRACKET      93  /* ] */
 #define BR_KEY_GRAVE_ACCENT       96  /* ` */
-#define BR_KEY_WORLD_1            161 /* non-US #1 */
-#define BR_KEY_WORLD_2            162 /* non-US #2 */
 
 /* Function keys */
 #define BR_KEY_ESCAPE             256
