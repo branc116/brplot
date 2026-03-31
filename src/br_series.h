@@ -1,7 +1,7 @@
 #pragma once
 #include "src/br_pp.h"
 
-#define BR_SERIES_SUPPORT_CAP 16UL
+#define BR_SERIES_SUPPORT_CAP 16ULL
 
 typedef struct br_series_t {
   float* arr;
