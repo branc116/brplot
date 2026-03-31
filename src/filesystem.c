@@ -336,21 +336,21 @@ bool br_fs_read_internal(const char* path, br_str_t* out_content, const char* fi
   LOGW("Failed to read %s on web at: %s:%d", path, file_name, line);
   return false;
 #else
-  FILE* file        = NULL;
+  BR_FILE* file        = NULL;
   long size         = 0;
   size_t wanted_cap = 0;
   bool success      = true;
 
   if (NULL == path)                                                          BR_ERROR("[%s:%d] Provided path is NULL", file_name, line);
-  if (NULL == (file = fopen(path, "rb")))                                    BR_ERROR("[%s:%d] Failed to open file %s: %s", file_name, line, path, strerror(errno));
-  if (-1 == fseek(file, 0, SEEK_END))                                        BR_ERROR("[%s:%d] Failed to seek file %s: %s", file_name, line, path, strerror(errno));
-  if (-1 == (size = ftell(file)))                                            BR_ERROR("[%s:%d] Failed to get the file size %s: %s", file_name, line, path, strerror(errno));
-  if (-1 == fseek(file, 0, SEEK_SET))                                        BR_ERROR("[%s:%d] Failed to get seek set file %s: %s", file_name, line, path, strerror(errno));
+  if (NULL == (file = BR_FOPEN(path, "rb")))                                 BR_ERROR("[%s:%d] Failed to open file %s: %s", file_name, line, path, strerror(errno));
+  if (-1 == BR_FSEEK(file, 0, SEEK_END))                                     BR_ERROR("[%s:%d] Failed to seek file %s: %s", file_name, line, path, strerror(errno));
+  if (-1 == (size = BR_FTELL(file)))                                         BR_ERROR("[%s:%d] Failed to get the file size %s: %s", file_name, line, path, strerror(errno));
+  if (-1 == BR_FSEEK(file, 0, SEEK_SET))                                     BR_ERROR("[%s:%d] Failed to get seek set file %s: %s", file_name, line, path, strerror(errno));
   out_content->len = 0;
   wanted_cap = (size_t)size + 1;
   if (false == br_str_push_uninitialized(out_content, (uint32_t)wanted_cap)) BR_ERROR("[%s:%d] Failed to push unininitialized string", file_name, line);
   if (out_content->cap < wanted_cap)                                         BR_ERROR("[%s:%d] Failed to malloc %zu bytes file %s: %s", file_name, line, wanted_cap, path, strerror(errno));
-  if (size != (long)fread(out_content->str, 1, (size_t)size, file))          BR_ERROR("[%s:%d] Failed to read file %s: %s", file_name, line, path, strerror(errno));
+  if (size != (long)BR_FREAD(out_content->str, 1, (size_t)size, file))       BR_ERROR("[%s:%d] Failed to read file %s: %s", file_name, line, path, strerror(errno));
   out_content->str[size] = '\0';
   out_content->len = (uint32_t)size;
   goto done;
@@ -360,7 +360,7 @@ error:
   out_content->len = 0;
 
 done:
-  if (file != NULL) fclose(file);
+  if (file != NULL) BR_FCLOSE(file);
   return success;
 #endif
 }

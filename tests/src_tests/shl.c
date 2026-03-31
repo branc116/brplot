@@ -20,6 +20,7 @@
 #include "src/permastate.c"
 #include "src/read_input.c"
 #include "src/threads.c"
+#include "src/series.c"
 #include "external/shl_impls.c"
 
 static unsigned char buffer[4096];
@@ -65,4 +66,28 @@ int test_close(BR_FILE* file) {
 
 int test_feof(BR_FILE* file) {
   return file->read_index == file->len;
+}
+
+int test_fseek(BR_FILE* file, long int whenc, int offset) {
+  switch (whenc) {
+    case SEEK_SET: {
+      file->read_index = offset;
+    } break;
+    case SEEK_CUR: {
+      file->read_index += offset;
+    } break;
+    case SEEK_END: {
+      file->read_index = file->len - offset;
+    } break;
+    default: {
+      LOGE("Unknown seek whenc: %d", whenc);
+      errno = EINVAL;
+      return -1;
+    } break;
+  }
+  BR_RETURN_IF_TINY_C(0);
+}
+
+long test_ftell(BR_FILE* file) {
+  return file->read_index;
 }

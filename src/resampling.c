@@ -378,7 +378,7 @@ static void br_resampling_draw22(br_resampling_nodes_2d_allocator_t const* const
       node.base.index_start + node.base.len - (is_end ? 1 : 0)
     };
     qsort(indexies, sizeof(indexies)/sizeof(indexies[0]), sizeof(indexies[0]), &size_t_cmp);
-    br_vec2_t pss[] = {
+    br_vec2_t pss[6] = {
       BR_VEC2(xs[indexies[0]], ys[indexies[0]]), BR_VEC2(xs[indexies[1]], ys[indexies[0]]),
       BR_VEC2(xs[indexies[2]], ys[indexies[2]]), BR_VEC2(xs[indexies[3]], ys[indexies[3]]),
       BR_VEC2(xs[indexies[4]], ys[indexies[4]]), BR_VEC2(xs[indexies[5]], ys[indexies[5]]),
@@ -417,7 +417,7 @@ static void br_resampling_draw32(br_resampling_t const* const res, size_t index,
       node.base.index_start + node.base.len - (is_end ? 1 : 0)
     };
     qsort(indexies, sizeof(indexies)/sizeof(indexies[0]), sizeof(indexies[0]), &size_t_cmp);
-    br_vec2_t pss[] = {
+    br_vec2_t pss[6] = {
       BR_VEC2(xs[indexies[0]], ys[indexies[0]]), BR_VEC2(xs[indexies[1]], ys[indexies[1]]),
       BR_VEC2(xs[indexies[2]], ys[indexies[2]]), BR_VEC2(xs[indexies[3]], ys[indexies[3]]),
       BR_VEC2(xs[indexies[4]], ys[indexies[4]]), BR_VEC2(xs[indexies[5]], ys[indexies[5]]),

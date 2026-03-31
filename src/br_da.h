@@ -160,7 +160,7 @@
   br_u64 tmp = 0; \
   if (1   != BR_FREAD(&tmp, sizeof(tmp), 1, FILE)) BR_ERRORE("Failed to read array first check"); \
   if (tmp != BR_DA_CHECK) { \
-    fseek(FILE, SEEK_CUR, -64 - 8); \
+    BR_FSEEK(FILE, SEEK_CUR, -64 - 8); \
     br_u8 tmp_buff[2*64 + 8]; \
     BR_FREAD(&tmp_buff, 2*64 + 8, 1, FILE); \
     for (int BR__i = 0; BR__i < 2*64 + 8; ++BR__i) { \

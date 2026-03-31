@@ -2176,7 +2176,7 @@ brui_resizable_t* brui_resizable_push(int id) {
       TOP.limit.max_y = fminf(TOP.limit.max_y, TOP.limit.min_y + title_height);
       float button_width = brui_text_size() * 1.2f;
       brui_vsplitvp(5, BRUI_SPLITR(1), BRUI_SPLITA(button_width), BRUI_SPLITA(button_width), BRUI_SPLITA(button_width), BRUI_SPLITA(button_width));
-        if (res->title_id) brui_text_input(res->title_id);
+        if (res->title_id) brui_text(brsp_get(brui_state.uiw->sp, res->title_id));
       brui_vsplit_pop();
         if (brui_button(BR_STRL("Z-"))) brui_resizable_decrement_z(rs, res);
       brui_vsplit_pop();

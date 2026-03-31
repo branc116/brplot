@@ -3,6 +3,8 @@
 #define BR_FOPEN test_open
 #define BR_FCLOSE test_close
 #define BR_FEOF test_feof
+#define BR_FSEEK test_fseek
+#define BR_FTELL test_ftell
 #define BR_FILE br_test_file_t
 
 #include <stddef.h>
@@ -12,11 +14,13 @@ typedef struct {
   int len, cap;
   int read_index;
 } br_test_file_t;
-size_t test_read(void* dest, size_t el_size, size_t n, br_test_file_t* d);
-size_t test_write(const void* src, size_t el_size, size_t n, br_test_file_t* d);
+size_t test_read(void* dest, size_t el_size, size_t n, BR_FILE* d);
+size_t test_write(const void* src, size_t el_size, size_t n, BR_FILE* d);
 BR_FILE* test_open(const char* path, const char* mode);
-int test_close(BR_FILE* file);
-int test_feof(BR_FILE* file);
+int  test_close(BR_FILE* file);
+int  test_feof(BR_FILE* file);
+int  test_fseek(BR_FILE* file, long int whenc, int offset);
+long test_ftell(BR_FILE* file);
 
 #include "src/br_pp.h"
 #include "src/br_da.h"
@@ -34,3 +38,4 @@ int test_feof(BR_FILE* file);
 #include "src/br_filesystem.h"
 #include "src/br_permastate.h"
 #include "src/br_plotter.h"
+#include "src/br_series.h"

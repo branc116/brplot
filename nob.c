@@ -423,8 +423,9 @@ void compiler_link_c(Nob_Cmd* cmd, compile_output_kind_t kind, platform_kind_t t
           case compile_output_obj: break;
           case compile_output_dlib: {
             nob_cmd_append(cmd, "-sWASM_BIGINT", "-sALLOW_MEMORY_GROWTH", "-sUSE_GLFW=3", "-sUSE_WEBGL2=1",
-                                          "-sGL_ENABLE_GET_PROC_ADDRESS",
-                                          "-sCHECK_NULL_WRITES=0", "-sDISABLE_EXCEPTION_THROWING=1", "-sFILESYSTEM=0", "-sDYNAMIC_EXECUTION=0");
+                                          //"-sGL_ENABLE_GET_PROC_ADDRESS",
+                                          //"-sCHECK_NULL_WRITES=0",
+                                          "-sDISABLE_EXCEPTION_THROWING=1", "-sFILESYSTEM=0", "-sDYNAMIC_EXECUTION=0");
             nob_cmd_append(cmd, "-sMODULARIZE=1", "-sEXPORT_ES6=1");
           } break;
           default: BR_UNREACHABLE("output kind: %d", kind); break;

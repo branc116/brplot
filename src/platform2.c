@@ -401,7 +401,7 @@ static BR_THREAD_LOCAL struct {
 bool brpl_window_open(brpl_window_t* window) {
   // NOTE: Load headless so that I don't have to implmenet
   //       new functions for all platforms at the same time..
-  brpl_headless_load(window);
+  bool loaded = brpl_headless_load(window);
 
   const char* rec_path = getenv("BRPL_RECORD");
   const char* rep_path = getenv("BRPL_REPLAY");
@@ -414,7 +414,6 @@ bool brpl_window_open(brpl_window_t* window) {
   window->is_replaying = brpl__time.replay_path != NULL;
 
   brpl_time_init();
-  bool loaded = false;
   if (window->kind == brpl_window_any) {
 #if defined(HEADLESS)
     window->kind = brpl_window_headless;
@@ -1231,14 +1230,18 @@ static bool brpl_glfw_window_open(brpl_window_t* window) {
   glfwSetWindowSizeCallback(glfw_window, brpl_glfw_windowsizefun);
   glfwSetWindowCloseCallback(glfw_window, brpl_glfw_windowclosefun);
   glfwSetWindowFocusCallback(glfw_window, brpl_glfw_windowfocusfun);
+#if __EMSCRIPTEN_MAJOR__ > 3
   glfwSetWindowContentScaleCallback(glfw_window, brpl_glfw_windowcontentscalefun);
+#endif
   glfwSetMouseButtonCallback(glfw_window, brpl_glfw_mousebuttonfun);
   glfwSetCursorPosCallback(glfw_window, brpl_glfw_cursorposfun);
   glfwSetScrollCallback(glfw_window, brpl_glfw_scrollfun);
   glfwSetKeyCallback(glfw_window, brpl_glfw_keyfun);
   glfwSetCharCallback(glfw_window, brpl_glfw_charfun);
   glfwMakeContextCurrent(glfw_window);
+#if __EMSCRIPTEN_MAJOR__ > 3
   glfwGetWindowContentScale(glfw_window, &window->scale.x, &window->scale.y);
+#endif
   if (false == br_gl_load()) {
     LOGE("Failed to load gl.");
     return false;

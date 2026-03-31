@@ -253,7 +253,9 @@ void __sanitizer_print_stack_trace(void);
 #  define _GNU_SOURCE // Linux bullshit
 #endif
 
-#if defined(__has_include)
+#if defined(__TINYC__)
+#  define BR_HAS_INCLUDE(path) __has_include(path)
+#elif defined(__has_include)
 #  define BR_HAS_INCLUDE(path) __has_include(path)
 #else
 #  define BR_HAS_INCLUDE(path)
@@ -306,6 +308,14 @@ void __sanitizer_print_stack_trace(void);
 #  define BR_FEOF feof
 #endif
 
+#if !defined(BR_FSEEK)
+#  define BR_FSEEK fseek
+#endif
+
+#if !defined(BR_FTELL)
+#  define BR_FTELL ftell
+#endif
+
 typedef unsigned long long br_u64;
 typedef unsigned       int br_u32;
 typedef unsigned     short br_u16;
@@ -339,7 +349,11 @@ typedef   signed      char br_i8;
 #  include <unistd.h>
 #endif
 
-#if BR_HAS_INCLUDE(<dirent.h>)
+#if defined(__TINYC__)
+#  if defined(__linux__)
+#    include <dirent.h>
+#  endif
+#elif BR_HAS_INCLUDE(<dirent.h>)
 #  include <dirent.h>
 #endif
 

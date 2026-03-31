@@ -320,4 +320,8 @@ BR_EXPORT void br_empty(br_plotter_t* plotter, br_data_id data);
 #    define BR_INCLUDE_RESAMPLING_C
 #    include "src/resampling.c"
 #  endif
+#  if !defined(BR_INCLUDE_SERIES_C)
+#    define BR_INCLUDE_SERIES_C
+#    include "src/series.c"
+#  endif
 #endif
