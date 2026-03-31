@@ -2275,7 +2275,7 @@ static void nob__ptrace_append_file(Nob_Ptrace_Cache* cache, Nob__Ptrace_Cache_N
 
     int output_mask = O_APPEND | O_CREAT | O_WRONLY;
     if (output_mask & mode) nob__ptrace_cache_node_push_file(cache, &node->output_paths, file_path.data);
-    else if (exists)        nob__ptrace_cache_node_push_file(cache, &node->input_paths,  file_path.data);
+    else if (exists)    nob__ptrace_cache_node_push_file(cache, &node->input_paths,  file_path.data);
 }
 
 static void nob__ptrace_rename_file(Nob_Ptrace_Cache* cache, Nob__Ptrace_Cache_Node* node, Nob_String_View file_path_src, Nob_String_View file_path_dst, bool absolute_paths)
@@ -2590,7 +2590,7 @@ static Nob__Ptrace_Cache_Run_Status nob__cmd_run_ptrace(Nob_Cmd *cmd, Nob_Cmd_Op
         Nob_Fd cur_child = waitpid(-1, &status, 0);
         Nob_String_Builder file_path = { 0 };
         Nob_String_Builder file_path2 = { 0 };
-        nob__ptrace_append_file(cache, node, nob_sv_from_cstr(cmd->items[0]), 0, nob_file_exists(cmd->items[0]), true);
+        nob__ptrace_append_file(cache, node, nob_sv_from_cstr(cmd->items[0]), 0, nob_file_exists(cmd->items[0]) == 1, true);
 
         ret = ptrace(PTRACE_SETOPTIONS, cur_child, 1, PTRACE_O_TRACEVFORK | PTRACE_O_TRACEFORK | PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACECLONE);
         if (ret < 0) {
@@ -2672,7 +2672,7 @@ static Nob__Ptrace_Cache_Run_Status nob__cmd_run_ptrace(Nob_Cmd *cmd, Nob_Cmd_Op
             }
 
             if (should_add) {
-                bool exists = nob_file_exists(file_path.items);
+                bool exists = nob_file_exists(file_path.items) == 1;
                 nob__ptrace_append_file(cache, node, nob_sb_to_sv(file_path), mode, exists, false == cache->no_absolute);
             } else if (should_rename) {
                 file_path.count -= 1;
@@ -2686,7 +2686,7 @@ static Nob__Ptrace_Cache_Run_Status nob__cmd_run_ptrace(Nob_Cmd *cmd, Nob_Cmd_Op
             for (int i = node->output_paths.count; i; --i) {
                 int index = node->output_paths.items[i - 1];
                 const char* file_path = &cache->arena.items[index];
-                if (false == nob_file_exists(file_path)) {
+                if (1 != nob_file_exists(file_path)) {
                     node->output_paths.count -= 1;
                     node->output_paths.items[i - 1] = node->output_paths.items[node->output_paths.count];
                 }
