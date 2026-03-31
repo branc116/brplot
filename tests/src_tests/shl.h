@@ -1,3 +1,6 @@
+#if !defined(_CRT_SECURE_NO_WARNINGS)
+#  define _CRT_SECURE_NO_WARNINGS 1
+#endif
 #define BR_FREAD test_read
 #define BR_FWRITE test_write
 #define BR_FOPEN test_open
