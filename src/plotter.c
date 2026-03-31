@@ -97,7 +97,7 @@ void br_plotter_deinit(br_plotter_t* br) {
   br_read_input_stop();
   brps_editor_write(br, NULL);
   for (int i = 0; i < br->plots.len; ++i) {
-    br_plot_deinit(br_da_getp(br->plots, i));
+    br_plot_deinit(&br_da_get(br->plots, i));
   }
   br_datas_deinit(&br->groups);
   BR_FREE(br->plots.arr);
@@ -158,7 +158,7 @@ void br_plotter_update(br_plotter_t* br) {
                 switch (br->hovered.active) {
                   case br_plotter_entity_plot_2d: { BR_FALLTHROUGH; }
                   case br_plotter_entity_plot_3d: {
-                    br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
+                    br_plot_t* plot = &br_da_get(br->plots, br->action.plot_id);
                     br_extent_t ex = brgl_framebuffer_last_draw_extent(plot->texture_id);
                     if (br->uiw.key.ctrl_down) br_plot_focus_visible(plot, br->groups, ex);
                     else                       plot->follow = !plot->follow;
@@ -174,12 +174,12 @@ void br_plotter_update(br_plotter_t* br) {
               } break;
               case BR_KEY_R: {
                 if (br->hovered.active == br_plotter_entity_plot_2d) {
-                  br_plot_t* plot = br_da_getp(br->plots, br->hovered.plot_id);
+                  br_plot_t* plot = &br_da_get(br->plots, br->hovered.plot_id);
                   if (!br->uiw.key.ctrl_down) br_anim2d_set(anims, plot->dd.zoom_ah, BR_VEC2D(1.f, 1.f));
                   if (!br->uiw.key.ctrl_down) br_anim2d_set(anims, plot->dd.offset_ah, BR_VEC2D(0.f, 0.f));
                   plot->follow = false;
                 } else if (br->hovered.active == br_plotter_entity_plot_3d) {
-                  br_plot_t* plot = br_da_getp(br->plots, br->hovered.plot_id);
+                  br_plot_t* plot = &br_da_get(br->plots, br->hovered.plot_id);
                   br_plot_3d_t* pi3 = &plot->ddd;
                   br_anim3_set(anims, pi3->eye_ah, BR_VEC3(0, 0, 100));
                   br_anim3_set(anims, pi3->target_ah, BR_VEC3(0, 0, 0));
@@ -230,12 +230,12 @@ void br_plotter_update(br_plotter_t* br) {
         if (false == br->uiw.mouse.dragging_right) break;
 
         if (br->action.active == br_plotter_entity_plot_2d) {
-          br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
+          br_plot_t* plot = &br_da_get(br->plots, br->action.plot_id);
           br_extent_t ex = brgl_framebuffer_last_draw_extent(plot->texture_id);
           br_plot2d_move_screen_space(plot, br->uiw.mouse.delta, ex.size);
           plot->follow = false;
         } else if (br->action.active == br_plotter_entity_plot_3d) {
-          br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
+          br_plot_t* plot = &br_da_get(br->plots, br->action.plot_id);
           plot->follow = false;
           float speed = (float)br->uiw.time.frame / 2.f;
           br_vec3_t eye = br_anim3_get_target(anims, plot->ddd.eye_ah);
@@ -353,7 +353,7 @@ void br_plotter_update(br_plotter_t* br) {
         }
         if (tpp == NULL) break;
         if (br->hovered.active == br_plotter_entity_plot_2d) {
-          br_plot_t* plot = br_da_getp(br->plots, br->hovered.plot_id);
+          br_plot_t* plot = &br_da_get(br->plots, br->hovered.plot_id);
           br_extent_t ex = brgl_framebuffer_last_draw_extent(plot->texture_id);
           if (br->uiw.touch_points.free_len == 1) {
             br_vec2_t delta = br_vec2_sub(ev.touch.pos, tpp->pos);
@@ -503,14 +503,14 @@ int br_plotter_add_plot_3d(br_plotter_t* br) {
 
 void br_plotter_remove_plot(br_plotter_t* br, int plot_index) {
   // TODO: Implement free list with plots...
-  br_plot_deinit(br_da_getp(br->plots, plot_index));
+  br_plot_deinit(&br_da_get(br->plots, plot_index));
   // 0 1 2 3 | 4
   //   |
   // 0 2 3   | 3
   int count_to_move = (br->plots.len - plot_index - 1);
   if (count_to_move > 0) {
     size_t bytes_to_move = sizeof(br->plots.arr[0]) * (size_t)count_to_move;
-    memmove(br_da_getp(br->plots, plot_index), br_da_getp(br->plots, plot_index + 1), bytes_to_move);
+    memmove(&br_da_get(br->plots, plot_index), &br_da_get(br->plots, plot_index + 1), bytes_to_move);
   }
   --br->plots.len;
 }
@@ -587,21 +587,21 @@ void br_plotter_datas_deinit(br_plotter_t* br) {
 }
 
 void br_plotter_datas_deinit_in_plot(br_plotter_t* br, int plot_id) {
-  br_plot_t* plot = br_da_getp(br->plots, plot_id);
+  br_plot_t* plot = &br_da_get(br->plots, plot_id);
   for (int i = 0; i < plot->data_info.len; ++i) {
     br_plot_data_t pd = br_da_get(plot->data_info, i);
     br_anim_delete(&br->uiw.anims, pd.thickness_multiplyer_ah);
     br_data_remove(&br->groups, pd.group_id);
     for (int j = 0; j < br->plots.len; ++j) {
       if (plot_id == j) continue;
-      br_plot_t* plot2 = br_da_getp(br->plots, j);
+      br_plot_t* plot2 = &br_da_get(br->plots, j);
       br_da_remove_feeld(plot2->data_info, group_id, pd.group_id);
     }
   }
   plot->data_info.len = 0;
 }
 void br_plotter_datas_empty_in_plot(br_plotter_t* br, int plot_id) {
-  br_plot_t* plot = br_da_getp(br->plots, plot_id);
+  br_plot_t* plot = &br_da_get(br->plots, plot_id);
   for (int i = 0; i < plot->data_info.len; ++i) {
     br_plot_data_t pd = br_da_get(plot->data_info, i);
     br_data_empty(br_data_get1(br->groups, pd.group_id));

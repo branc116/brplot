@@ -18,7 +18,7 @@ brsp_id_t brsp_new1(brsp_t* sp, int size) {
     *sp = (brsp_t) { 0 };
   } else {
     brfl_foreach_free(i, *sp) {
-      brsp_node_t* node = br_da_getp(*sp, i);
+      brsp_node_t* node = &br_da_get(*sp, i);
       int next_free = sp->free_arr[i];
       if (node->cap >= size) {
         if (prev == -1) sp->free_next      = next_free < 0 ? -1 : next_free;
@@ -85,17 +85,17 @@ bool brsp_is_in(brsp_t sp, brsp_id_t t) {
 
 void brsp_set(brsp_t* sp, brsp_id_t t, br_strv_t str) {
   brsp_resize(sp, t, (int)str.len);
-  brsp_node_t* tn = br_da_getp(*sp, t - 1);
+  brsp_node_t* tn = &br_da_get(*sp, t - 1);
   BR_ASSERTF(tn->start_index >= 0, "Start index is %d", tn->start_index);
   memmove(&sp->pool.str[tn->start_index], str.str, str.len);
   tn->len = (int)str.len;
 }
 
 void brsp_insert_char(brsp_t* sp, brsp_id_t t, int at, unsigned char c) {
-  brsp_node_t* node = br_da_getp(*sp, t - 1);
+  brsp_node_t* node = &br_da_get(*sp, t - 1);
   int old_loc = node->start_index;
   if (brsp_resize(sp, t, node->len + 2)) {
-    node = br_da_getp(*sp, t - 1);
+    node = &br_da_get(*sp, t - 1);
     memmove(sp->pool.str + node->start_index, sp->pool.str + old_loc, (size_t)node->len);
   }
   for (int i = node->len; i >= at; --i) sp->pool.str[node->start_index + i + 1] = sp->pool.str[node->start_index + i];
@@ -133,49 +133,49 @@ int brsp_insert_unicode(brsp_t* sp, brsp_id_t t, int at, uint32_t u) {
 }
 
 void brsp_insert_char_at_end(brsp_t* sp, brsp_id_t id, char c) {
-  brsp_node_t* node = br_da_getp(*sp, id - 1);
+  brsp_node_t* node = &br_da_get(*sp, id - 1);
   int old_loc = node->start_index;
   if (brsp_resize(sp, id, node->len + 2)) {
-    node = br_da_getp(*sp, id - 1);
+    node = &br_da_get(*sp, id - 1);
     memmove(sp->pool.str + node->start_index, sp->pool.str + old_loc, (size_t)node->len);
   }
   sp->pool.str[node->start_index + node->len++] = c;
 }
 
 void brsp_insert_strv_at_end(brsp_t* sp, brsp_id_t id, br_strv_t sv) {
-  brsp_node_t* node = br_da_getp(*sp, id - 1);
+  brsp_node_t* node = &br_da_get(*sp, id - 1);
   //LOGI("node start_index: %d len: %d", node->start_index, node->len);
   int old_loc = node->start_index;
   if (brsp_resize(sp, id, node->len + (int)sv.len)) {
-    node = br_da_getp(*sp, id - 1);
+    node = &br_da_get(*sp, id - 1);
     memmove(sp->pool.str + node->start_index, sp->pool.str + old_loc, (size_t)node->len);
   }
   for (uint32_t i = 0; i < sv.len; ++i) sp->pool.str[node->start_index + node->len++] = sv.str[i];
 }
 
 void brsp_zero(brsp_t* sp, brsp_id_t id) {
-  brsp_node_t* node = br_da_getp(*sp, id - 1);
+  brsp_node_t* node = &br_da_get(*sp, id - 1);
   int old_loc = node->start_index;
   if (brsp_resize(sp, id, node->len + 2)) {
-    node = br_da_getp(*sp, id - 1);
+    node = &br_da_get(*sp, id - 1);
     memmove(sp->pool.str + node->start_index, sp->pool.str + old_loc, (size_t)node->len);
   }
   sp->pool.str[node->start_index + node->len] = '\0';
 }
 
 void brsp_clear(brsp_t* sp, brsp_id_t id) {
-  brsp_node_t* node = br_da_getp(*sp, id - 1);
+  brsp_node_t* node = &br_da_get(*sp, id - 1);
   node->len = 0;
 }
 
 char brsp_remove_char_end(brsp_t* sp, brsp_id_t id) {
-  brsp_node_t* node = br_da_getp(*sp, id - 1);
+  brsp_node_t* node = &br_da_get(*sp, id - 1);
   if (node->len > 0) --node->len;
   return sp->pool.str[node->start_index + node->len];
 }
 
 int brsp_remove_utf8_after(brsp_t* sp, brsp_id_t id, int position) {
-  brsp_node_t* node = br_da_getp(*sp, id - 1);
+  brsp_node_t* node = &br_da_get(*sp, id - 1);
   if (node->len == 0) return 0;
   if (position >= node->len) return 0;
   int to_remove = 0;
@@ -198,7 +198,7 @@ void brsp_remove(brsp_t* sp, brsp_id_t t) {
 brsp_id_t brsp_copy(brsp_t* sp, brsp_id_t id) {
   brsp_node_t node = br_da_get(*sp, id - 1);
   brsp_id_t ret_id = brsp_new1(sp, node.len + /* Give a bit of slack, just in case... */ 16);
-  brsp_node_t* ret_node = br_da_getp(*sp, ret_id - 1);
+  brsp_node_t* ret_node = &br_da_get(*sp, ret_id - 1);
   memcpy(&sp->pool.str[ret_node->start_index], &sp->pool.str[node.start_index], (size_t)node.len);
   ret_node->len = node.len;
   return ret_id;
@@ -214,7 +214,7 @@ bool brsp_compress(brsp_t* sp, float factor, int slack) {
 
   int full_len = 1;
   for (int i = 0; i < sp->len; ++i) {
-    brsp_node_t* node = br_da_getp(*sp, i);
+    brsp_node_t* node = &br_da_get(*sp, i);
     bool is_free = brfl_is_free(*sp, i) || node->len < 0 || node->cap < 0;
     int new_cap = is_free ? 0 : (int)((float)node->len * factor) + slack;
     full_len += new_cap;
@@ -226,7 +226,7 @@ bool brsp_compress(brsp_t* sp, float factor, int slack) {
   }
   int cur_index = 0;
   for (int i = 0; i < sp->len; ++i) {
-    brsp_node_t* node = br_da_getp(*sp, i);
+    brsp_node_t* node = &br_da_get(*sp, i);
     bool is_free = brfl_is_free(*sp, i) || node->len < 0 || node->cap < 0;
     if (is_free) {
       node->cap = -1;
@@ -327,14 +327,14 @@ static bool brsp_resize(brsp_t* sp, brsp_id_t t, int new_size) {
   brsp_node_t tn = br_da_get(*sp, t - 1);
   if (tn.cap >= new_size) return false;
   brfl_foreach_free(i, *sp) {
-    brsp_node_t* node = br_da_getp(*sp, i);
+    brsp_node_t* node = &br_da_get(*sp, i);
     int taken_cap = node->cap;
     if (taken_cap < new_size) continue;
     brsp_node_t tmp = *node;
     *node = tn;
     tmp.cap = taken_cap;
     tmp.len = new_size;
-    br_da_set(*sp, t - 1, tmp);
+    br_da_get(*sp, t - 1) = tmp;
     return true;
   }
   brsp_node_t new_node = tn;
@@ -350,7 +350,7 @@ static bool brsp_resize(brsp_t* sp, brsp_id_t t, int new_size) {
     .len = tn.len,
     .cap = (int)ex_size,
   };
-  br_da_set(*sp, t - 1, tn);
+  br_da_get(*sp, t - 1) = tn;
   br_str_push_uninitialized(&sp->pool, (unsigned int)(ex_size));
   return true;
 }

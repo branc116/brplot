@@ -16,7 +16,7 @@ void br_anims_tick(br_anims_t* anims, float dt) {
   lerp_factor = br_float_clamp(lerp_factor, 0.f, 1.f);
   brfl_foreach(i, anims->alive) {
     int anim_handle = br_da_get(anims->alive, i);
-    br_anim_t* anim = br_da_getp(anims->all, anim_handle);
+    br_anim_t* anim = &br_da_get(anims->all, anim_handle);
     switch (anim->kind) {
       case br_anim_float: {
         anim->f.current = br_float_lerp(anim->f.current, anim->f.target, lerp_factor);
@@ -132,7 +132,7 @@ bool br_anim_alive(br_anims_t* anims, int anim_handle) {
 }
 
 void br_anim_instant(br_anims_t* anims, int anim_handle) {
-  br_anim_t* anim = br_da_getp(anims->all, anim_handle);
+  br_anim_t* anim = &br_da_get(anims->all, anim_handle);
   anim->is_instant = true;
   if (anim->is_alive) {
     anim->is_alive = false;
@@ -145,24 +145,24 @@ void br_anim_instant(br_anims_t* anims, int anim_handle) {
 }
 
 void br_anim_slerp(br_anims_t* anims, int anim_handle, bool should_slerp) {
-  br_anim_t* anim = br_da_getp(anims->all, anim_handle);
+  br_anim_t* anim = &br_da_get(anims->all, anim_handle);
   anim->is_slerp = should_slerp;
 }
 
 void br_anim_slerp_origin(br_anims_t* anims, int anim_handle, int origin) {
-  br_anim_t* anim = br_da_getp(anims->all, anim_handle);
+  br_anim_t* anim = &br_da_get(anims->all, anim_handle);
   anim->vec3.slerp_origin = origin;
 }
 
 #if BR_DEBUG
 void br_anim_trace(br_anims_t* anims, int anim_handle) {
-  br_anim_t* a = br_da_getp(anims->all, anim_handle);
+  br_anim_t* a = &br_da_get(anims->all, anim_handle);
   a->trace = true;
 }
 #endif
 
 void br_animf_set(br_anims_t* anims, int anim_handle, float target_value) {
-  br_anim_t* anim = br_da_getp(anims->all, anim_handle);
+  br_anim_t* anim = &br_da_get(anims->all, anim_handle);
   BR_ASSERTF(anim->kind == br_anim_float, "Anim kind should be float, but it's: %d", anim->kind);
 #if BR_DEBUG
   if (anim->trace) {
@@ -195,7 +195,7 @@ float br_animf_get_target(br_anims_t* anims, int anim_handle) {
 }
 
 void br_anim2d_set(br_anims_t* anims, int anim_handle, br_vec2d_t target_value) {
-  br_anim_t* anim = br_da_getp(anims->all, anim_handle);
+  br_anim_t* anim = &br_da_get(anims->all, anim_handle);
   BR_ASSERTF(anim->kind == br_anim_vec2d, "Anim kind should be vec2d, but it's: %d", anim->kind);
 #if BR_DEBUG
   if (anim->trace) {
@@ -241,7 +241,7 @@ br_vec3_t br_anim3_get_target(br_anims_t* anims, int anim_handle) {
 }
 
 void br_anim3_set(br_anims_t* anims, int anim_handle, br_vec3_t target_value) {
-  br_anim_t* anim = br_da_getp(anims->all, anim_handle);
+  br_anim_t* anim = &br_da_get(anims->all, anim_handle);
   BR_ASSERTF(anim->kind == br_anim_vec3, "Anim kind should be vec3, but it's: %d", anim->kind);
   if (anim->is_instant) {
     anim->vec3.target = target_value;
@@ -256,7 +256,7 @@ void br_anim3_set(br_anims_t* anims, int anim_handle, br_vec3_t target_value) {
 }
 
 void br_animex_set(br_anims_t* anims, int anim_handle, br_extent_t target_value) {
-  br_anim_t* anim = br_da_getp(anims->all, anim_handle);
+  br_anim_t* anim = &br_da_get(anims->all, anim_handle);
   BR_ASSERTF(anim->kind == br_anim_extent, "Anim kind should be extent, but it's: %d", anim->kind);
   if (anim->is_instant) {
     anim->ex.target = target_value;
@@ -283,7 +283,7 @@ br_extent_t br_animex_get_target(br_anims_t* anims, int anim_handle) {
 }
 
 br_extent_t br_anim_rebase(br_anims_t* anims, int anim_handle, br_vec2_t rebase_for) {
-  br_anim_t* anim = br_da_getp(anims->all, anim_handle);
+  br_anim_t* anim = &br_da_get(anims->all, anim_handle);
   BR_ASSERTF(anim->kind == br_anim_extent, "Anim kind should be extent, but it's: %d", anim->kind);
   anim->ex.target.pos = br_vec2_sub(anim->ex.target.pos, rebase_for);
   anim->ex.current.pos = br_vec2_sub(anim->ex.current.pos, rebase_for);

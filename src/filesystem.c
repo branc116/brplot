@@ -395,7 +395,7 @@ bool br_fs_list_dir(br_strv_t path, br_fs_files_t* out_files) {
     if (strcmp(".", de->d_name) == 0) continue;
     if (strcmp("..", de->d_name) == 0) continue;
     if (out_files->len <= i) br_da_push(*out_files, ((br_fs_file_t) {0}));
-    s = br_da_getp(*out_files, i);
+    s = &br_da_get(*out_files, i);
     s->name.len = 0;
     br_str_push_c_str(&s->name, de->d_name);
 #if defined(_DIRENT_HAVE_D_TYPE)

@@ -189,7 +189,7 @@ bool br_serieses_read(BR_FILE* file, br_serieses_t* s) {
   brfl_read(file, *s, error);
   if (error) BR_ERROR("Failed to read serieses..");
   brfl_foreach(i, *s) {
-    if (false == br_series_read(file, br_da_getp(*s, i))) BR_ERROR("Failed to read series %d", i);
+    if (false == br_series_read(file, &br_da_get(*s, i))) BR_ERROR("Failed to read series %d", i);
   }
 
 error:
@@ -201,12 +201,12 @@ void br_serieses_construct(br_serieses_t* s) {
 }
 
 void br_serieses_push(int handle, double value) {
-  br_series_t* series = br_da_getp(*br_serieses.s, handle);
+  br_series_t* series = &br_da_get(*br_serieses.s, handle);
   br_series_push(series, value);
 }
 
 void br_serieses_push_len(int handle) {
-  br_series_t* series = br_da_getp(*br_serieses.s, handle);
+  br_series_t* series = &br_da_get(*br_serieses.s, handle);
   double value = (double)series->len;
   br_series_push(series, value);
 }
@@ -223,12 +223,12 @@ br_u64 br_serieses_len(int handle) {
 }
 
 void br_serieses_empty(int handle) {
-  br_series_t* series = br_da_getp(*br_serieses.s, handle);
+  br_series_t* series = &br_da_get(*br_serieses.s, handle);
   series->len = 0;
 }
 
 void br_serieses_release(int handle) {
-  br_series_t* series = br_da_getp(*br_serieses.s, handle);
+  br_series_t* series = &br_da_get(*br_serieses.s, handle);
   BR_FREE(series->arr);
 
   brfl_remove(*br_serieses.s, handle);

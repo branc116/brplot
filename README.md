@@ -472,7 +472,7 @@ sudo rm /usr/bin/brplot
 * Bug with resizing plot window and numbers being scizered off. Most likely to do with viewport being calculated wrongly.
 * Windows is not focused on in the start for some reason.
 * version with BR_DEBUG but use hardcoded shaders. For brui.
-* merge br_da_get and br_da_getp with the inversion of assertion trick.
+* ~~merge br_da_get and &br_da_get with the inversion of assertion trick.~~
 
 ## Screenshots
 Here is a history of how brplot looked over time:

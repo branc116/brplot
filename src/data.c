@@ -48,7 +48,7 @@ int br_datas_get_new_id(br_datas_t *datas) {
 br_data_t* br_datas_create(br_datas_t* datas, int group_id, br_data_kind_t kind) {
   br_data_t data = br_data_init(group_id, kind);
   int index = brfl_push(*datas, data);
-  return br_da_getp(*datas, index);
+  return &br_da_get(*datas, index);
 }
 
 void br_data_push_y(br_datas_t* pg_array, double y, int group) {
@@ -440,7 +440,7 @@ br_data_t* br_data_get2(br_datas_t* pg, int group, br_data_kind_t kind) {
   }
   br_data_t new_data = br_data_init(group, kind);
   int handle = brfl_push(*pg, new_data);
-  return br_da_getp(*pg, handle);
+  return &br_da_get(*pg, handle);
 }
 
 // NOTE: This looks ugly but it's used by q.c
@@ -496,7 +496,7 @@ static br_data_t* br_datas_create2(br_datas_t* datas, int group_id, br_data_kind
 
 error:
   if (!success) br_data_deinit(&d);
-  return success ? br_da_getp(*datas, handle) : NULL;
+  return success ? &br_da_get(*datas, handle) : NULL;
 }
 
 static void br_data_push_point2(br_data_t* data, br_vec2d_t v) {

@@ -204,8 +204,6 @@
 
 #if defined(BR_RELEASE)
 #define br_da_get(ARR, INDEX) (ARR).arr[(INDEX)]
-#define br_da_getp(ARR, INDEX) (&(ARR).arr[(INDEX)])
-#define br_da_set(ARR, INDEX, VALUE) (ARR).arr[(INDEX)] = (VALUE)
 #else
 static inline void ___br_function_call_asset_id_ok(ssize_t arr_len, ssize_t acc_index, const char* file_location, int line_number) {
   if (arr_len <= acc_index || acc_index < 0) {
@@ -214,13 +212,8 @@ static inline void ___br_function_call_asset_id_ok(ssize_t arr_len, ssize_t acc_
   }
   BR_ASSERT(arr_len > acc_index && acc_index >= 0);
 }
-#define br_da_get(ARR, INDEX) (___br_function_call_asset_id_ok((ssize_t)((ARR).len), (ssize_t)(INDEX), __FILE__, __LINE__), \
-  (ARR).arr[(INDEX)])
-#define br_da_getp(ARR, INDEX) (___br_function_call_asset_id_ok((ssize_t)((ARR).len), (ssize_t)(INDEX), __FILE__, __LINE__), \
-  &(ARR).arr[(INDEX)])
-#define br_da_set(ARR, INDEX, VALUE) do { \
-  ___br_function_call_asset_id_ok((ssize_t)((ARR).len), (ssize_t)(INDEX), __FILE__, __LINE__), \
-  (ARR).arr[(INDEX)] = (VALUE); \
-} while(0)
+#define br_da_get(ARR, INDEX) (ARR).arr[(\
+    ___br_function_call_asset_id_ok((ssize_t)((ARR).len), (ssize_t)(INDEX), __FILE__, __LINE__), \
+    INDEX)]
 #endif
   

@@ -61,12 +61,12 @@ void br_plotter_draw(br_plotter_t* br) {
   BR_PROFILE("Plotter draw") {
     BR_PROFILE("Draw Plots") {
       for (int i = 0; i < br->plots.len; ++i) {
-#define PLOT br_da_getp(br->plots, i)
-        br_extent_t texture_extent = brgl_framebuffer_last_draw_extent(PLOT->texture_id);
-        if (PLOT->follow) br_plot_focus_visible(PLOT, br->groups, texture_extent);
-        if (brui_resizable_is_hidden(PLOT->resizable_handle)) continue;
+#define PLOT br_da_get(br->plots, i)
+        br_extent_t texture_extent = brgl_framebuffer_last_draw_extent(PLOT.texture_id);
+        if (PLOT.follow) br_plot_focus_visible(&PLOT, br->groups, texture_extent);
+        if (brui_resizable_is_hidden(PLOT.resizable_handle)) continue;
 
-        brgl_enable_framebuffer(PLOT->texture_id, (int)roundf(texture_extent.width), (int)roundf(texture_extent.height));
+        brgl_enable_framebuffer(PLOT.texture_id, (int)roundf(texture_extent.width), (int)roundf(texture_extent.height));
         brgl_clear(BR_COLOR_COMPF(br->uiw.theme.colors.plot_bg));
         if (br->ui.multisampling) brgl_enable_multisampling();
         else                      brgl_disable_multisampling();
@@ -76,17 +76,17 @@ void br_plotter_draw(br_plotter_t* br) {
           el->background = br->uiw.theme.colors.grid_nums_bg;
           el->font_size  = br->uiw.theme.font_size;
           el->viewport.size = texture_extent.size;
-          if (PLOT->kind == br_plot_kind_2d) {
-            br_mesh_grid_draw(PLOT, &br->uiw.theme);
+          if (PLOT.kind == br_plot_kind_2d) {
+            br_mesh_grid_draw(&PLOT, &br->uiw.theme);
             br_shaders_draw_all(br->uiw.shaders); // TODO: This should be called whenever a other shader are being drawn.
-            br_datas_draw(br->groups, PLOT, texture_extent);
-            brgui_draw_grid_numbers(PLOT);
-          } else if (PLOT->kind == br_plot_kind_3d) {
-            br_datas_draw(br->groups, PLOT, texture_extent);
+            br_datas_draw(br->groups, &PLOT, texture_extent);
+            brgui_draw_grid_numbers(&PLOT);
+          } else if (PLOT.kind == br_plot_kind_3d) {
+            br_datas_draw(br->groups, &PLOT, texture_extent);
             br_shaders_draw_all(br->uiw.shaders);
-            br_mesh_grid_draw(PLOT, &br->uiw.theme);
+            br_mesh_grid_draw(&PLOT, &br->uiw.theme);
             br_shaders_draw_all(br->uiw.shaders);
-            brgui_draw_grid_numbers(PLOT);
+            brgui_draw_grid_numbers(&PLOT);
           }
         brtr_state_pop();
         br_shaders_draw_all(br->uiw.shaders);
@@ -101,44 +101,44 @@ void br_plotter_draw(br_plotter_t* br) {
 #endif
       int to_remove = -1;
       for (int i = 0; i < br->plots.len; ++i) {
-        br_extent_t ex = brgl_framebuffer_last_draw_extent(PLOT->texture_id);
-        if (brui_resizable_is_hidden(PLOT->resizable_handle)) continue;
+        br_extent_t ex = brgl_framebuffer_last_draw_extent(PLOT.texture_id);
+        if (brui_resizable_is_hidden(PLOT.resizable_handle)) continue;
         //brui_padding_set(BR_VEC2(0,0));
-        brui_resizable_push(PLOT->resizable_handle);
-          brui_framebuffer(PLOT->texture_id);
-          if (brgui_draw_plot_menu(&br->uiw.sp, PLOT, &br->uiw.anims, br->groups)) to_remove = i;
-          brgui_draw_legend(PLOT, br->groups, &br->uiw.theme, br);
+        brui_resizable_push(PLOT.resizable_handle);
+          brui_framebuffer(PLOT.texture_id);
+          if (brgui_draw_plot_menu(&br->uiw.sp, &PLOT, &br->uiw.anims, br->groups)) to_remove = i;
+          brgui_draw_legend(&PLOT, br->groups, &br->uiw.theme, br);
           brtr_stack_el_t* el = brtr_state_push();
             el->z = BR_Z_MAX - 10;
-            if (PLOT->kind == br_plot_kind_2d) {
-              br_vec2d_t v = br_plot2d_to_plot(PLOT, br->uiw.mouse.pos, ex);
-              for (int j = 0; j < PLOT->data_info.len; ++j) {
-                br_plot_data_t pd = PLOT->data_info.arr[j];
+            if (PLOT.kind == br_plot_kind_2d) {
+              br_vec2d_t v = br_plot2d_to_plot(&PLOT, br->uiw.mouse.pos, ex);
+              for (int j = 0; j < PLOT.data_info.len; ++j) {
+                br_plot_data_t pd = PLOT.data_info.arr[j];
                 if (false == br_plot_data_is_visible(pd)) continue;
                 br_data_t* data = br_data_get(&br->groups, pd.group_id);
-                br_vec2d_t zoom = br_anim2d(&br->uiw.anims, PLOT->dd.zoom_ah);
+                br_vec2d_t zoom = br_anim2d(&br->uiw.anims, PLOT.dd.zoom_ah);
                 float dist = (float)(zoom.x*0.05);
                 br_u32 index = 0;
                 bool has_any = br_resampling_get_point_at2(*data, v, &dist, &index);
                 br_strv_t name = brsp_get(br->uiw.sp, data->name);
                 if (has_any) {
                   br_vec2d_t vreal = br_data_el_xy1(*data, index);
-                  br_vec2_t s = br_plot2d_to_screen(PLOT, vreal, ex);
+                  br_vec2_t s = br_plot2d_to_screen(&PLOT, vreal, ex);
                   brui_text_at(br_scrach_printf("%.*s: %f, %f", name.len, name.str, vreal.x, vreal.y), s);
                 }
               }
-            } else if (PLOT->kind == br_plot_kind_3d) {
-              br_vec3d_t vec = br_plot3d_to_plot(PLOT, br->uiw.mouse.pos, ex);
+            } else if (PLOT.kind == br_plot_kind_3d) {
+              br_vec3d_t vec = br_plot3d_to_plot(&PLOT, br->uiw.mouse.pos, ex);
               br_u32 index = 0;
-              for (int j = 0; j < PLOT->data_info.len; ++j) {
-                br_plot_data_t pd = PLOT->data_info.arr[j];
+              for (int j = 0; j < PLOT.data_info.len; ++j) {
+                br_plot_data_t pd = PLOT.data_info.arr[j];
                 if (false == br_plot_data_is_visible(pd)) continue;
                 br_data_t* data = br_data_get1(br->groups, pd.group_id);
                 float dist = 3.5f;
-                br_vec3_t eye = br_anim3(&br->uiw.anims, PLOT->ddd.eye_ah);
+                br_vec3_t eye = br_anim3(&br->uiw.anims, PLOT.ddd.eye_ah);
                 if (br_resampling_get_point_at3(*data, BR_VEC3_TOD(eye), vec, &dist, &index)) {
                   br_vec3d_t vreal = br_data_el_xyz2(*data, index);
-                  br_vec2_t s = br_plot3d_to_screen(PLOT, BR_VEC3D_TOF(vreal), ex);
+                  br_vec2_t s = br_plot3d_to_screen(&PLOT, BR_VEC3D_TOF(vreal), ex);
                   br_strv_t name = brsp_get(br->uiw.sp, data->name);
                   brui_text_at(br_scrach_printf("%.*s: %f, %f, %f", name.len, name.str, vreal.x, vreal.y, vreal.z), s);
                 }
@@ -435,7 +435,7 @@ static bool br_csv_parse(br_csv_parser_t* parser) {
   parser->rows.real_len = 0;
 
   if (parser->rows.len <= parser->rows.real_len) br_da_push(parser->rows, ((br_csv_cells_t) { 0 }));
-  cells = br_da_getp(parser->rows, parser->rows.real_len);
+  cells = &br_da_get(parser->rows, parser->rows.real_len);
   cells->len = 0;
 
   for (uint32_t i = 0; i < str.len; ++i) {
@@ -463,7 +463,7 @@ static bool br_csv_parse(br_csv_parser_t* parser) {
           if (cells->len != parser->header.len) BR_ERROR("Expected %zu rows, but got %zu on line %d", parser->header.len, cells->len, line);
           ++parser->rows.real_len;
           if (parser->rows.len <= parser->rows.real_len) br_da_push(parser->rows, ((br_csv_cells_t) { 0 }));
-          cells = br_da_getp(parser->rows, parser->rows.real_len);
+          cells = &br_da_get(parser->rows, parser->rows.real_len);
           cells->len = 0;
           cur.str = str.str + i + 1;
           cur.len = 0;
@@ -885,7 +885,7 @@ static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_anims_t* anims,
       };
       for (int k = 0; k < datas.len; ++k) {
         bool is_shown = false;
-        br_data_t* data = br_da_getp(datas, k);
+        br_data_t* data = &br_da_get(datas, k);
         for (int j = 0; j < plot->data_info.len; ++j) {
           if (br_da_get(plot->data_info, j).group_id == data->group_id) {
             is_shown = true;
@@ -947,7 +947,7 @@ static void draw_left_panel(br_plotter_t* br) {
 
       for (int i = 0; i < br->plots.len; ++i) {
         char* scrach = br_scrach_get(4096);
-          br_plot_t* plot = br_da_getp(br->plots, i);
+          br_plot_t* plot = &br_da_get(br->plots, i);
           int n = sprintf(scrach, "%s Plot %d", plot->kind == br_plot_kind_2d ? "2D" : "3D", i);
           bool is_visible = !brui_resizable_is_hidden(plot->resizable_handle);
           if (brui_checkbox(BR_STRV(scrach, (uint32_t)n), &is_visible)) brui_resizable_show(plot->resizable_handle, is_visible);

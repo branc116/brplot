@@ -112,7 +112,7 @@ static void brps_plot_save(br_plotter_t const* br, brps_copy_t* save, int plot_i
   copy_plot.data_info.cap = 0;
   br_da_copy(copy_plot.data_info, plot.data_info);
   for (int i = 0; i < copy_plot.data_info.len; ++i) {
-    br_plot_data_t* data = br_da_getp(copy_plot.data_info, i);
+    br_plot_data_t* data = &br_da_get(copy_plot.data_info, i);
     data->thickness_multiplyer_ah = brps_anim_save(br, save, data->thickness_multiplyer_ah);
   }
   // TODO: Parent of plot can be something other than root..
@@ -141,7 +141,7 @@ static void brps_plot_load(br_plotter_t* br, brps_copy_t const* save, int plot_i
   copy_plot.data_info.cap = 0;
   br_da_copy(copy_plot.data_info, plot.data_info);
   for (int i = 0; i < copy_plot.data_info.len; ++i) {
-    br_plot_data_t* data = br_da_getp(copy_plot.data_info, i);
+    br_plot_data_t* data = &br_da_get(copy_plot.data_info, i);
     data->thickness_multiplyer_ah = brps_anim_load(br, save, data->thickness_multiplyer_ah);
   }
   // TODO: Parent of plot can be something other than root..
@@ -272,7 +272,7 @@ static bool brps_project_fread(BR_FILE* file, br_plotter_t* br) {
   if (false == br_serieses_read(file, &copy.serieses)) BR_ERROR("Failed to write serieses");;
 
   brfl_foreach(i, copy.datas) {
-    br_data_t* data = br_da_getp(copy.datas, i);
+    br_data_t* data = &br_da_get(copy.datas, i);
     br_series_t s = br_da_get(copy.serieses, data->series_handles[0]);
     size_t len = br_series_len(s);
     br_dagen_push_file(&copy.dagens, data, len);
@@ -286,7 +286,7 @@ static bool brps_project_fread(BR_FILE* file, br_plotter_t* br) {
   }
 
   brfl_foreach(i, br->groups) {
-    br_data_t* data = br_da_getp(br->groups, i);
+    br_data_t* data = &br_da_get(br->groups, i);
     data->resampling = br_resampling_malloc(data->kind);
     BR_ASSERTF(data->resampling, "Failed to allocate resampling structure for data with id %d", data->group_id);
   }

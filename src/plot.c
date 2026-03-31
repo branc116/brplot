@@ -25,7 +25,7 @@ br_plot_data_t br_plot_data(int group_id) {
 }
 
 bool br_plot_data_is_visible(br_plot_data_t pd) {
-  return br_da_getp(br_plot_state.anims->all, pd.thickness_multiplyer_ah)->f.target > 0.1f;
+  return br_da_get(br_plot_state.anims->all, pd.thickness_multiplyer_ah).f.target > 0.1f;
 }
 
 void br_plot_deinit(br_plot_t* plot) {
@@ -167,13 +167,13 @@ void br_plot_remove_group(br_plot_t* plot, int group_id) {
 
 void br_plots_remove_group(br_plots_t plots, int group) {
   for (int i = 0; i < plots.len; ++i) {
-    br_plot_remove_group(br_da_getp(plots, i), group);
+    br_plot_remove_group(&br_da_get(plots, i), group);
   }
 }
 
 void br_plots_focus_visible(br_plots_t plots, br_datas_t const groups) {
   for (int i = 0; i < plots.len; ++i) {
-    br_plot_t* plot = br_da_getp(plots, i);
+    br_plot_t* plot = &br_da_get(plots, i);
     if (plot->kind != br_plot_kind_2d) continue;
     br_extent_t extent = brgl_framebuffer_last_draw_extent(plot->texture_id);
     br_plot_focus_visible(plot, groups, extent);
