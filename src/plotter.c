@@ -156,10 +156,10 @@ void br_plotter_update(br_plotter_t* br) {
               } break;
               case BR_KEY_F: {
                 switch (br->hovered.active) {
-                  case br_plotter_entity_plot_2d: BR_FALLTHROUGH;
+                  case br_plotter_entity_plot_2d: { BR_FALLTHROUGH; }
                   case br_plotter_entity_plot_3d: {
                     br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
-                    br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
+                    br_extent_t ex = brgl_framebuffer_last_draw_extent(plot->texture_id);
                     if (br->uiw.key.ctrl_down) br_plot_focus_visible(plot, br->groups, ex);
                     else                       plot->follow = !plot->follow;
                   } break;
@@ -231,8 +231,8 @@ void br_plotter_update(br_plotter_t* br) {
 
         if (br->action.active == br_plotter_entity_plot_2d) {
           br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
-          //LOGI("br->uiw.mouse.delta: %f %f", BR_VEC2_(br->uiw.mouse.delta));
-          br_plot2d_move_screen_space(plot, br->uiw.mouse.delta, br_animex(anims, br_da_get(br->uiw.resizables, plot->extent_handle).cur_extent_ah).size);
+          br_extent_t ex = brgl_framebuffer_last_draw_extent(plot->texture_id);
+          br_plot2d_move_screen_space(plot, br->uiw.mouse.delta, ex.size);
           plot->follow = false;
         } else if (br->action.active == br_plotter_entity_plot_3d) {
           br_plot_t* plot = br_da_getp(br->plots, br->action.plot_id);
@@ -256,7 +256,7 @@ void br_plotter_update(br_plotter_t* br) {
         if (br->action.active != br_plotter_entity_none) break;
         if (br->hovered.active == br_plotter_entity_plot_2d) {
           br_plot_t* plot = &br->plots.arr[br->hovered.plot_id];
-          br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
+          br_extent_t ex = brui_resizable_cur_extent(plot->resizable_handle);
           br_vec2_t zoom = BR_VEC2(-ev.vec.y*2, -ev.vec.y*2);
           if (br->uiw.key.down[BR_KEY_X]) zoom.y = 0.f;
           if (br->uiw.key.down[BR_KEY_Y]) zoom.x = 0.f;
@@ -278,7 +278,7 @@ void br_plotter_update(br_plotter_t* br) {
         int found_plot = -1;
         for (int j = 0; j < br->plots.len; ++j) {
           br_plot_t plot = br_da_get(br->plots, j);
-          if (plot.extent_handle == brui_resizable_active()) {
+          if (plot.resizable_handle == brui_resizable_active()) {
             switch (plot.kind) {
               case br_plot_kind_2d: br->hovered.active = br_plotter_entity_plot_2d; break;
               case br_plot_kind_3d: br->hovered.active = br_plotter_entity_plot_3d; break;
@@ -304,7 +304,7 @@ void br_plotter_update(br_plotter_t* br) {
               }
               zoom.x *= 60.f*(float)br->uiw.time.frame;
               zoom.y *= 60.f*(float)br->uiw.time.frame;
-              br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
+              br_extent_t ex = brgl_framebuffer_last_draw_extent(plot->texture_id);
               br_plot2d_zoom(plot, zoom, ex, br->uiw.mouse.pos);
             } else if (br->hovered.active == br_plotter_entity_plot_3d) {
               br_vec3_t eye = br_anim3_get_target(anims, plot->ddd.eye_ah);
@@ -354,7 +354,7 @@ void br_plotter_update(br_plotter_t* br) {
         if (tpp == NULL) break;
         if (br->hovered.active == br_plotter_entity_plot_2d) {
           br_plot_t* plot = br_da_getp(br->plots, br->hovered.plot_id);
-          br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
+          br_extent_t ex = brgl_framebuffer_last_draw_extent(plot->texture_id);
           if (br->uiw.touch_points.free_len == 1) {
             br_vec2_t delta = br_vec2_sub(ev.touch.pos, tpp->pos);
             br_plot2d_move_screen_space(plot, delta, ex.size);
@@ -439,8 +439,8 @@ br_datas_t* br_plotter_get_br_datas(br_plotter_t* br) {
 void br_plotter_switch_2d(br_plotter_t* br) {
   for (int i = 0; i < br->plots.len; ++i) {
     if (br->plots.arr[i].kind != br_plot_kind_2d) continue;
-    brui_resizable_show(br->plots.arr[i].extent_handle, true);
-    brui_resizable_move_on_top(&br->uiw.resizables, br->plots.arr[i].extent_handle);
+    brui_resizable_show(br->plots.arr[i].resizable_handle, true);
+    brui_resizable_move_on_top(&br->uiw.resizables, br->plots.arr[i].resizable_handle);
     return;
   }
   br_plotter_add_plot_2d(br);
@@ -449,8 +449,8 @@ void br_plotter_switch_2d(br_plotter_t* br) {
 void br_plotter_switch_3d(br_plotter_t* br) {
   for (int i = 0; i < br->plots.len; ++i) {
     if (br->plots.arr[i].kind != br_plot_kind_3d) continue;
-    brui_resizable_show(br->plots.arr[i].extent_handle, true);
-    brui_resizable_move_on_top(&br->uiw.resizables, br->plots.arr[i].extent_handle);
+    brui_resizable_show(br->plots.arr[i].resizable_handle, true);
+    brui_resizable_move_on_top(&br->uiw.resizables, br->plots.arr[i].resizable_handle);
     return;
   }
   br_plotter_add_plot_3d(br);
@@ -462,13 +462,13 @@ int br_plotter_add_plot_2d(br_plotter_t* br) {
   br_extent_t ex = BR_EXTENT(padding, padding, window_size.width - padding*2, window_size.height - padding*2);
   br_plot_t plot = br_plot_2d(&br->uiw.anims, br->ui.default_grid_line_thickenss);
   br_plot_create_texture(&plot, ex);
-  plot.extent_handle = brui_resizable_new2(&br->uiw.resizables, ex, 0, (brui_resizable_t) { .tag = 100, .title_enabled = true });
+  plot.resizable_handle = brui_resizable_new2(&br->uiw.resizables, ex, 0, (brui_resizable_t) { .tag = 100, .title_enabled = true });
 #if defined(__EMSCRIPTEN__)
-  brui_resizable_maximize(plot.extent_handle, true);
+  brui_resizable_maximize(plot.resizable_handle, true);
 #endif
-  plot.menu_extent_handle = brui_resizable_new2(&br->uiw.resizables, BR_EXTENT(0, 0, 300, ex.height), plot.extent_handle, (brui_resizable_t) { .tag = 101 });
-  brui_resizable_show(plot.menu_extent_handle, false);
-  plot.legend_extent_handle = brui_resizable_new2(&br->uiw.resizables, BR_EXTENT(ex.width - 110, 10, 100, 60), plot.extent_handle, (brui_resizable_t) { .tag = 102 });
+  plot.menu_resizable_handle = brui_resizable_new2(&br->uiw.resizables, BR_EXTENT(0, 0, 300, ex.height), plot.resizable_handle, (brui_resizable_t) { .tag = 101 });
+  brui_resizable_show(plot.menu_resizable_handle, false);
+  plot.legend_resizable_handle = brui_resizable_new2(&br->uiw.resizables, BR_EXTENT(ex.width - 110, 10, 100, 60), plot.resizable_handle, (brui_resizable_t) { .tag = 102 });
   br_da_push_t(int, (br->plots), plot);
   return br->plots.len - 1;
 }
@@ -493,10 +493,10 @@ int br_plotter_add_plot_3d(br_plotter_t* br) {
   plot.ddd.target_ah = br_anim3_new(&br->uiw.anims, BR_VEC3(0, 0, 0), BR_VEC3(0, 0, 0));
   br_anim_slerp_origin(&br->uiw.anims, plot.ddd.eye_ah, plot.ddd.target_ah);
   br_plot_create_texture(&plot, ex);
-  plot.extent_handle = brui_resizable_new(&br->uiw.resizables, ex, 0);
-  plot.menu_extent_handle = brui_resizable_new(&br->uiw.resizables, BR_EXTENT(0, 0, 300, ex.height), plot.extent_handle);
-  brui_resizable_show(plot.menu_extent_handle, false);
-  plot.legend_extent_handle = brui_resizable_new2(&br->uiw.resizables, BR_EXTENT(ex.width - 110, 10, 100, 60), plot.extent_handle, (brui_resizable_t) { 0 });
+  plot.resizable_handle = brui_resizable_new(&br->uiw.resizables, ex, 0);
+  plot.menu_resizable_handle = brui_resizable_new(&br->uiw.resizables, BR_EXTENT(0, 0, 300, ex.height), plot.resizable_handle);
+  brui_resizable_show(plot.menu_resizable_handle, false);
+  plot.legend_resizable_handle = brui_resizable_new2(&br->uiw.resizables, BR_EXTENT(ex.width - 110, 10, 100, 60), plot.resizable_handle, (brui_resizable_t) { 0 });
   br_da_push_t(int, (br->plots), plot);
   return br->plots.len - 1;
 }

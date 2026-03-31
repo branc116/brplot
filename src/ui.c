@@ -348,7 +348,6 @@ brpl_event_t brui_event_next(brui_window_t* uiw) {
 
       if (brui_state.drag.mode == brui_drag_mode_none) {
         brui_drag_t drag = brui_drag_mode_if_clicked(&uiw->resizables, uiw->mouse.pos, brui_state.uiw->key.ctrl_down);
-        LOGI("Next drag mode = %d", drag.mode);
         switch (drag.mode) {
           case brui_drag_mode_none: brpl_pointer_kind_set(&brui_state.uiw->pl, brpl_pointer_normal); break;
           case brui_drag_mode_move: brpl_pointer_kind_set(&brui_state.uiw->pl, brpl_pointer_move); break;
@@ -880,7 +879,7 @@ bool brui_checkbox(br_strv_t text, bool* checked) {
   return false;
 }
 
-void brui_texture(unsigned int texture_id) {
+br_extent_t brui_texture(unsigned int texture_id) {
   brui_push_simple(TOP);
     TOP.limit.min.x += TOP.psum.x;
     TOP.limit.max.x -= TOP.psum.x;
@@ -901,10 +900,13 @@ void brui_texture(unsigned int texture_id) {
     });
     br_shader_img_draw(img);
   brui_pop_simple();
+  return BR_EXTENT(a.x, a.y, b.x-a.x, c.y-a.y);
 }
 
 void brui_framebuffer(unsigned int framebuffer_id) {
-  brui_texture(brgl_framebuffer_to_texture(framebuffer_id));
+  br_u32 texture_id = brgl_framebuffer_to_texture(framebuffer_id);
+  br_extent_t extent = brui_texture(texture_id);
+  brgl_framebuffer_last_draw_extent_set(framebuffer_id, extent);
 }
 
 void brui_icon(float size, br_extent_t icon, br_color_t forground, br_color_t background) {

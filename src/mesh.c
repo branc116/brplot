@@ -4,6 +4,7 @@
 #include "src/br_math.h"
 #include "src/br_theme.h"
 #include "src/br_anim.h"
+#include "src/br_gl.h"
 
 static BR_THREAD_LOCAL struct {
   br_shaders_t* shaders;
@@ -294,7 +295,7 @@ static void br_mesh_grid_3d_draw(br_vec3_t normal, br_vec3_t up, br_size_t size,
 void br_mesh_grid_draw(br_plot_t* plot, br_theme_t* theme) {
 #define BR_MESH_LINE_THICK_N 32
   br_mesh_line_thick line_thicks[BR_MESH_LINE_THICK_N];
-  br_extent_t ex = brui_resizable_cur_extent(plot->extent_handle);
+  br_extent_t ex = brgl_framebuffer_last_draw_extent(plot->texture_id);
   switch (plot->kind) {
     case br_plot_kind_2d: {
       BR_PROFILE("grid_draw_2d") {

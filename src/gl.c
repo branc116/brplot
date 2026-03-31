@@ -131,6 +131,8 @@ void brgl_disable_multisampling(void) {
 static BR_THREAD_LOCAL struct {
   GLuint fb_id, tx_id, rb_id;
   int width, height;
+
+  br_extent_t last_draw_extent;
 } br_framebuffers[BR_FRAMEBUFFERS] = { 0 };
 
 void brgl_viewport(GLint x, GLint y, GLsizei width, GLsizei height) {
@@ -227,6 +229,14 @@ void brgl_enable_framebuffer(GLuint br_id, int new_width, int new_height) {
   br_framebuffers[br_id].width = new_width;
   br_framebuffers[br_id].height = new_height;
   brgl_viewport(0, 0, new_width, new_height);
+}
+
+br_extent_t brgl_framebuffer_last_draw_extent(GLuint fb_id) {
+  return br_framebuffers[fb_id].last_draw_extent;
+}
+
+void brgl_framebuffer_last_draw_extent_set(GLuint fb_id, br_extent_t extent) {
+  br_framebuffers[fb_id].last_draw_extent = extent;
 }
 
 void brgl_destroy_framebuffer(GLuint br_id) {

@@ -16,7 +16,7 @@ bool brui_text_input(brsp_id_t str_id);
 void brui_new_lines(int n);
 bool brui_button(br_strv_t text);
 bool brui_checkbox(br_strv_t text, bool* checked);
-void brui_texture(unsigned int texture_id);
+br_extent_t brui_texture(unsigned int texture_id);
 void brui_framebuffer(unsigned int framebuffer_id);
 void brui_icon(float size, br_extent_t icon, br_color_t forground, br_color_t background);
 bool brui_button_icon(br_size_t size, br_extent_t icon);

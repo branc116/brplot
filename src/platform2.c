@@ -649,7 +649,7 @@ brpl_event_t brpl_q_pop(brpl_q_t* q) {
 #if BR_HAS_X11
 
 typedef struct brpl_x11_cursour_mapping_t {
-  int cursor_id;
+  br_u32 cursor_id;
   brpl_x11_Cursor cursor_xid;
 } brpl_x11_cursour_mapping_t;
 
@@ -1080,6 +1080,8 @@ bool brpl_x11_pointer_kind_set(brpl_window_t* win, brpl_pointer_kind_t kind) {
   }
 
   brpl_x11_XDefineCursor(x11_win->display, x11_win->window_handle, cursor_mapping->cursor_xid);
+
+  return true;
 }
 
 static int brpl_x11_keysym(brpl_x11_XEvent event) {
@@ -1230,7 +1232,7 @@ static bool brpl_glfw_window_open(brpl_window_t* window) {
   glfwSetWindowSizeCallback(glfw_window, brpl_glfw_windowsizefun);
   glfwSetWindowCloseCallback(glfw_window, brpl_glfw_windowclosefun);
   glfwSetWindowFocusCallback(glfw_window, brpl_glfw_windowfocusfun);
-#if __EMSCRIPTEN_MAJOR__ > 3
+#if !defined(__EMSCRIPTEN__) || (__EMSCRIPTEN_MAJOR__ > 3)
   glfwSetWindowContentScaleCallback(glfw_window, brpl_glfw_windowcontentscalefun);
 #endif
   glfwSetMouseButtonCallback(glfw_window, brpl_glfw_mousebuttonfun);
@@ -1239,7 +1241,7 @@ static bool brpl_glfw_window_open(brpl_window_t* window) {
   glfwSetKeyCallback(glfw_window, brpl_glfw_keyfun);
   glfwSetCharCallback(glfw_window, brpl_glfw_charfun);
   glfwMakeContextCurrent(glfw_window);
-#if __EMSCRIPTEN_MAJOR__ > 3
+#if !defined(__EMSCRIPTEN__) || (__EMSCRIPTEN_MAJOR__ > 3)
   glfwGetWindowContentScale(glfw_window, &window->scale.x, &window->scale.y);
 #endif
   if (false == br_gl_load()) {
@@ -1544,6 +1546,7 @@ static void brpl_headless_frame_end(brpl_window_t* window) {
 static bool brpl_headless_pointer_kind_set(brpl_window_t* window, brpl_pointer_kind_t pointer) {
   (void)window; (void)pointer;
   LOGI("Headless pointer_kind_set: %d", pointer);
+  return true;
 }
 
 static bool brpl_headless_load(brpl_window_t* window) {

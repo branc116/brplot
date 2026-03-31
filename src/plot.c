@@ -30,7 +30,7 @@ bool br_plot_data_is_visible(br_plot_data_t pd) {
 
 void br_plot_deinit(br_plot_t* plot) {
   br_da_free(plot->data_info);
-  brui_resizable_delete(plot->extent_handle);
+  brui_resizable_delete(plot->resizable_handle);
   brgl_destroy_framebuffer(plot->texture_id);
   br_anim_delete(br_plot_state.anims, plot->ddd.eye_ah);
   br_anim_delete(br_plot_state.anims, plot->ddd.target_ah);
@@ -173,8 +173,10 @@ void br_plots_remove_group(br_plots_t plots, int group) {
 
 void br_plots_focus_visible(br_plots_t plots, br_datas_t const groups) {
   for (int i = 0; i < plots.len; ++i) {
-    if (plots.arr[i].kind != br_plot_kind_2d) continue;
-    br_plot_focus_visible(&plots.arr[i], groups, brui_resizable_cur_extent(plots.arr[i].extent_handle));
+    br_plot_t* plot = br_da_getp(plots, i);
+    if (plot->kind != br_plot_kind_2d) continue;
+    br_extent_t extent = brgl_framebuffer_last_draw_extent(plot->texture_id);
+    br_plot_focus_visible(plot, groups, extent);
   }
 }
 

@@ -52,9 +52,9 @@ void br_plotter_draw(br_plotter_t* br) {
 #if BR_DEBUG
   for (int i = 0; i < br->plots.len; ++i) {
     br_plot_t p = br_da_get(br->plots, i);
-    BR_ASSERTF(false == brfl_is_free(br->uiw.resizables, p.extent_handle), "Plot id=%d, extent=%d", i, p.extent_handle);
-    BR_ASSERTF(false == brfl_is_free(br->uiw.resizables, p.menu_extent_handle), "Plot id=%d, extent=%d", i, p.menu_extent_handle);
-    BR_ASSERTF(false == brfl_is_free(br->uiw.resizables, p.legend_extent_handle), "Plot id=%d, extent=%d", i, p.legend_extent_handle);
+    BR_ASSERTF(false == brfl_is_free(br->uiw.resizables, p.resizable_handle), "Plot id=%d, extent=%d", i, p.resizable_handle);
+    BR_ASSERTF(false == brfl_is_free(br->uiw.resizables, p.menu_resizable_handle), "Plot id=%d, extent=%d", i, p.menu_resizable_handle);
+    BR_ASSERTF(false == brfl_is_free(br->uiw.resizables, p.legend_resizable_handle), "Plot id=%d, extent=%d", i, p.legend_resizable_handle);
   }
 #endif
   brsp_t* sp = &br->uiw.sp;
@@ -62,11 +62,11 @@ void br_plotter_draw(br_plotter_t* br) {
     BR_PROFILE("Draw Plots") {
       for (int i = 0; i < br->plots.len; ++i) {
 #define PLOT br_da_getp(br->plots, i)
-        br_extent_t ex = brui_resizable_cur_extent(PLOT->extent_handle);
-        if (PLOT->follow) br_plot_focus_visible(PLOT, br->groups, ex);
-        if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
+        br_extent_t texture_extent = brgl_framebuffer_last_draw_extent(PLOT->texture_id);
+        if (PLOT->follow) br_plot_focus_visible(PLOT, br->groups, texture_extent);
+        if (brui_resizable_is_hidden(PLOT->resizable_handle)) continue;
 
-        brgl_enable_framebuffer(PLOT->texture_id, (int)roundf(ex.width), (int)roundf(ex.height));
+        brgl_enable_framebuffer(PLOT->texture_id, (int)roundf(texture_extent.width), (int)roundf(texture_extent.height));
         brgl_clear(BR_COLOR_COMPF(br->uiw.theme.colors.plot_bg));
         if (br->ui.multisampling) brgl_enable_multisampling();
         else                      brgl_disable_multisampling();
@@ -75,14 +75,14 @@ void br_plotter_draw(br_plotter_t* br) {
           el->forground  = br->uiw.theme.colors.grid_nums;
           el->background = br->uiw.theme.colors.grid_nums_bg;
           el->font_size  = br->uiw.theme.font_size;
-          el->viewport.size = ex.size;
+          el->viewport.size = texture_extent.size;
           if (PLOT->kind == br_plot_kind_2d) {
             br_mesh_grid_draw(PLOT, &br->uiw.theme);
             br_shaders_draw_all(br->uiw.shaders); // TODO: This should be called whenever a other shader are being drawn.
-            br_datas_draw(br->groups, PLOT, ex);
+            br_datas_draw(br->groups, PLOT, texture_extent);
             brgui_draw_grid_numbers(PLOT);
           } else if (PLOT->kind == br_plot_kind_3d) {
-            br_datas_draw(br->groups, PLOT, ex);
+            br_datas_draw(br->groups, PLOT, texture_extent);
             br_shaders_draw_all(br->uiw.shaders);
             br_mesh_grid_draw(PLOT, &br->uiw.theme);
             br_shaders_draw_all(br->uiw.shaders);
@@ -101,10 +101,10 @@ void br_plotter_draw(br_plotter_t* br) {
 #endif
       int to_remove = -1;
       for (int i = 0; i < br->plots.len; ++i) {
-        br_extent_t ex = brui_resizable_cur_extent(PLOT->extent_handle);
-        if (brui_resizable_is_hidden(PLOT->extent_handle)) continue;
+        br_extent_t ex = brgl_framebuffer_last_draw_extent(PLOT->texture_id);
+        if (brui_resizable_is_hidden(PLOT->resizable_handle)) continue;
         //brui_padding_set(BR_VEC2(0,0));
-        brui_resizable_push(PLOT->extent_handle);
+        brui_resizable_push(PLOT->resizable_handle);
           brui_framebuffer(PLOT->texture_id);
           if (brgui_draw_plot_menu(&br->uiw.sp, PLOT, &br->uiw.anims, br->groups)) to_remove = i;
           brgui_draw_legend(PLOT, br->groups, &br->uiw.theme, br);
@@ -194,9 +194,9 @@ void br_plotter_draw(br_plotter_t* br) {
 }
 
 static void brgui_draw_legend(br_plot_t* plot, br_datas_t datas, br_theme_t* theme, br_plotter_t* br) {
-  if (brui_resizable_is_hidden(plot->legend_extent_handle)) return;
+  if (brui_resizable_is_hidden(plot->legend_resizable_handle)) return;
   float text_size = brui_text_size();
-  brui_resizable_push(plot->legend_extent_handle);
+  brui_resizable_push(plot->legend_resizable_handle);
     bool is_active = brui_active();
     int active_group = -1;
     bool pressed = br->uiw.mouse.click;
@@ -851,13 +851,13 @@ static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_anims_t* anims,
   float og_text_size = brui_text_size();
   float icon_size = og_text_size;
   bool ret = false;
-  if (brui_resizable_is_hidden(plot->menu_extent_handle)) {
-    if (brui_button_icon(BR_SIZE(icon_size, icon_size), br_icon_menu(og_text_size))) brui_resizable_show(plot->menu_extent_handle, true);
+  if (brui_resizable_is_hidden(plot->menu_resizable_handle)) {
+    if (brui_button_icon(BR_SIZE(icon_size, icon_size), br_icon_menu(og_text_size))) brui_resizable_show(plot->menu_resizable_handle, true);
   } else {
     char* c = br_scrach_get(4096);
-    brui_resizable_push(plot->menu_extent_handle);
+    brui_resizable_push(plot->menu_resizable_handle);
       brui_vsplitvp(2, BRUI_SPLITA(icon_size), BRUI_SPLITR(1));
-        if (brui_button_icon(BR_SIZE(icon_size, icon_size), br_icon_back(og_text_size))) brui_resizable_show(plot->menu_extent_handle, false);
+        if (brui_button_icon(BR_SIZE(icon_size, icon_size), br_icon_back(og_text_size))) brui_resizable_show(plot->menu_resizable_handle, false);
       brui_vsplit_pop();
         brui_text_size_set(og_text_size);
         brui_text_ancor_set(br_dir_mid_up);
@@ -879,9 +879,9 @@ static bool brgui_draw_plot_menu(brsp_t* sp, br_plot_t* plot, br_anims_t* anims,
 
       brui_text_size_set(og_text_size*1.2f);
       brui_checkbox(BR_STRL("Follow"), &plot->follow);
-      bool show_legend = false == brui_resizable_is_hidden(plot->legend_extent_handle);
+      bool show_legend = false == brui_resizable_is_hidden(plot->legend_resizable_handle);
       if (brui_checkbox(BR_STRL("Show Legend"), &show_legend)) {
-        brui_resizable_show(plot->legend_extent_handle, show_legend);
+        brui_resizable_show(plot->legend_resizable_handle, show_legend);
       };
       for (int k = 0; k < datas.len; ++k) {
         bool is_shown = false;
@@ -949,8 +949,8 @@ static void draw_left_panel(br_plotter_t* br) {
         char* scrach = br_scrach_get(4096);
           br_plot_t* plot = br_da_getp(br->plots, i);
           int n = sprintf(scrach, "%s Plot %d", plot->kind == br_plot_kind_2d ? "2D" : "3D", i);
-          bool is_visible = !brui_resizable_is_hidden(plot->extent_handle);
-          if (brui_checkbox(BR_STRV(scrach, (uint32_t)n), &is_visible)) brui_resizable_show(plot->extent_handle, is_visible);
+          bool is_visible = !brui_resizable_is_hidden(plot->resizable_handle);
+          if (brui_checkbox(BR_STRV(scrach, (uint32_t)n), &is_visible)) brui_resizable_show(plot->resizable_handle, is_visible);
         br_scrach_free();
       }
       brui_collapsable_end();
@@ -1224,7 +1224,7 @@ void brgui_draw_grid_numbers(br_plot_t* plot) {
   if(plot->kind != br_plot_kind_2d) return;
 
   BR_PROFILE_START("draw_grid_numbers");
-  br_extent_t vpf = brui_resizable_cur_extent(plot->extent_handle);
+  br_extent_t vpf = brgl_framebuffer_last_draw_extent(plot->texture_id);
   br_extentd_t r = br_plot2d_extent_to_plot(*plot, vpf);
   char* scrach = br_scrach_get(128);
   br_vec2d_t sz = BR_VEC2_TOD(vpf.size.vec);

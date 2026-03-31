@@ -38,9 +38,9 @@ typedef struct br_plot_t {
   float grid_line_thickness;
   float grid_major_line_thickness;
 
-  int extent_handle;
-  int menu_extent_handle;
-  int legend_extent_handle;
+  int resizable_handle;
+  int menu_resizable_handle;
+  int legend_resizable_handle;
 
   unsigned int texture_id;
 

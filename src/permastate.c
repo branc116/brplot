@@ -116,9 +116,9 @@ static void brps_plot_save(br_plotter_t const* br, brps_copy_t* save, int plot_i
     data->thickness_multiplyer_ah = brps_anim_save(br, save, data->thickness_multiplyer_ah);
   }
   // TODO: Parent of plot can be something other than root..
-  copy_plot.extent_handle = brps_resizable_save(br, save, plot.extent_handle, 0);
-  copy_plot.menu_extent_handle = brps_resizable_save(br, save, plot.menu_extent_handle, copy_plot.extent_handle);
-  copy_plot.legend_extent_handle = brps_resizable_save(br, save, plot.legend_extent_handle, copy_plot.extent_handle);
+  copy_plot.resizable_handle = brps_resizable_save(br, save, plot.resizable_handle, 0);
+  copy_plot.menu_resizable_handle = brps_resizable_save(br, save, plot.menu_resizable_handle, copy_plot.resizable_handle);
+  copy_plot.legend_resizable_handle = brps_resizable_save(br, save, plot.legend_resizable_handle, copy_plot.resizable_handle);
   switch (plot.kind) {
     case br_plot_kind_2d: {
       copy_plot.dd.zoom_ah = brps_anim_save(br, save, plot.dd.zoom_ah);
@@ -145,9 +145,9 @@ static void brps_plot_load(br_plotter_t* br, brps_copy_t const* save, int plot_i
     data->thickness_multiplyer_ah = brps_anim_load(br, save, data->thickness_multiplyer_ah);
   }
   // TODO: Parent of plot can be something other than root..
-  copy_plot.extent_handle = brps_resizable_load(br, save, plot.extent_handle, 0);
-  copy_plot.menu_extent_handle = brps_resizable_load(br, save, plot.menu_extent_handle, copy_plot.extent_handle);
-  copy_plot.legend_extent_handle = brps_resizable_load(br, save, plot.legend_extent_handle, copy_plot.extent_handle);
+  copy_plot.resizable_handle = brps_resizable_load(br, save, plot.resizable_handle, 0);
+  copy_plot.menu_resizable_handle = brps_resizable_load(br, save, plot.menu_resizable_handle, copy_plot.resizable_handle);
+  copy_plot.legend_resizable_handle = brps_resizable_load(br, save, plot.legend_resizable_handle, copy_plot.resizable_handle);
   switch (plot.kind) {
     case br_plot_kind_2d: {
       copy_plot.dd.zoom_ah = brps_anim_load(br, save, plot.dd.zoom_ah);
@@ -281,7 +281,7 @@ static bool brps_project_fread(BR_FILE* file, br_plotter_t* br) {
   brps_plotter_load(br, &copy);
   for (int i = 0; i < br->plots.len; ++i) {
     br_plot_t* p = &br->plots.arr[i];
-    br_extent_t ex = brui_resizable_cur_extent(p->extent_handle);
+    br_extent_t ex = brui_resizable_cur_extent(p->resizable_handle);
     p->texture_id = brgl_create_framebuffer((int)roundf(ex.width), (int)roundf(ex.height));
   }
 

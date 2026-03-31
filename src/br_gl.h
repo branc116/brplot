@@ -1,4 +1,5 @@
 #pragma once
+#include "src/br_math.h"
 
 #define BRGL_TEX_GRAY 1
 
@@ -134,6 +135,8 @@ void brgl_unload_texture(GLuint tex_id);
 GLuint brgl_create_framebuffer(int width, int height);
 GLuint brgl_framebuffer_to_texture(GLuint br_id);
 void brgl_enable_framebuffer(GLuint fb_id, int new_width, int new_height);
+br_extent_t brgl_framebuffer_last_draw_extent(GLuint fb_id);
+void brgl_framebuffer_last_draw_extent_set(GLuint fb_id, br_extent_t extent);
 void brgl_destroy_framebuffer(GLuint fb_id);
 
 GLuint brgl_load_vao(void);
