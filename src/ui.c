@@ -984,7 +984,7 @@ bool brui_sliderf(br_strv_t text, float* val) {
         brui_text(text);
         el->justify = br_dir_mid_y;
         el->pos.y -= font_size;
-        brui_textf("%f", text.len, text.str, *val);
+        brui_textf("%f", *val);
       brtr_state_pop();
 
       br_vec2_t mouse = brui_state.uiw->mouse.pos;

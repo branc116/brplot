@@ -20,7 +20,7 @@
       (ARR).arr = new_arr;                                                                                          \
       (ARR).cap = new_cap;                                                                                          \
     } else {                                                                                                        \
-      BR_LOGE("Failed to reserve %zu elements in the array.", (size_t)N);                                           \
+      BR_LOGE("Failed to reserve %llu elements in the array.", (size_t)N);                                           \
     }                                                                                                               \
   }                                                                                                                 \
 } while(0)                                                                                                          \

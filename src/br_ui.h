@@ -10,7 +10,7 @@ void brui_begin(void);
 void brui_end(void);
 
 br_size_t brui_text(br_strv_t strv);
-br_size_t brui_textf(const char* str, ...);
+br_size_t brui_textf(const char* str, ...) BR_PRINTF_FORMAT(1, 2);
 void brui_text_at(br_strv_t strv, br_vec2_t at);
 bool brui_text_input(brsp_id_t str_id);
 void brui_new_lines(int n);

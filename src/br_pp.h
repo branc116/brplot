@@ -142,7 +142,7 @@ void __sanitizer_print_stack_trace(void);
 
 #define BR_MALLOCE(ARR, ELEMENTS) do { \
   ARR = BR_MALLOC(sizeof(*(ARR)) * ELEMENTS); \
-  if (NULL == ARR) BR_ERRORE("Failed to malloc %zu elments of " #ARR, ELEMENTS); \
+  if (NULL == ARR) BR_ERRORE("Failed to malloc %llu elments of " #ARR, ELEMENTS); \
 } while(0);
 
 
@@ -263,6 +263,18 @@ void __sanitizer_print_stack_trace(void);
 
 #if defined(__EMSCRIPTEN__)
 #  define BR_IS_SIZE_T_32_BIT
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+// https://gcc.gnu.org/onlinedocs/gcc-4.7.2/gcc/Function-Attributes.html
+#  ifdef __MINGW_PRINTF_FORMAT
+#    define BR_PRINTF_FORMAT(STRING_INDEX, FIRST_TO_CHECK) __attribute__ ((format (__MINGW_PRINTF_FORMAT, STRING_INDEX, FIRST_TO_CHECK)))
+#  else
+#    define BR_PRINTF_FORMAT(STRING_INDEX, FIRST_TO_CHECK) __attribute__ ((format (printf, STRING_INDEX, FIRST_TO_CHECK)))
+#  endif
+#else
+// TODO: implement NOB_PRINTF_FORMAT for MSVC
+#  define BR_PRINTF_FORMAT(STRING_INDEX, FIRST_TO_CHECK)
 #endif
 
 #define BR_ARR_LEN(ARR) (sizeof((ARR)) / sizeof((ARR)[0]))

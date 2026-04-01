@@ -86,10 +86,10 @@ int        br_strv_utf8_add(br_strv_t, int cur_pos, int n);
 br_u32     br_strv_utf8_pop(br_strv_t* t);
 
 
-br_strv_t br_str_printf(br_str_t* out_str, const char* fmt, ...);
+br_strv_t br_str_printf(br_str_t* out_str, const char* fmt, ...) BR_PRINTF_FORMAT(2, 3);
 int br_str_printfvalloc(br_str_t* out_str, const char* fmt, va_list args);
 br_strv_t br_str_printfv(br_str_t* out_str, const char* fmt, va_list args);
-br_strv_t  br_scrach_printf(const char* fmt, ...);
+br_strv_t  br_scrach_printf(const char* fmt, ...)  BR_PRINTF_FORMAT(1, 2);
 int br_scrach_printfvalloc(const char* fmt, va_list args);
 br_strv_t br_scrach_printfv(int n, const char* fmt, va_list args);
 

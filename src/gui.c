@@ -560,9 +560,9 @@ static void brgui_draw_series_info(br_series_t series) {
   brui_push();
 
     brui_vsplit(2);
-      brui_textf("len: %zu", series.len);
+      brui_textf("len: %llu", series.len);
     brui_vsplit_pop();
-      brui_textf("cap: %zu", series.cap);
+      brui_textf("cap: %llu", series.cap);
     brui_vsplit_pop();
     brui_vsplit(2);
       brui_textf("Offset: %f", series.offset);
