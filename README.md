@@ -473,6 +473,7 @@ sudo rm /usr/bin/brplot
 * Windows is not focused on in the start for some reason.
 * version with BR_DEBUG but use hardcoded shaders. For brui.
 * ~~merge br_da_get and &br_da_get with the inversion of assertion trick.~~
+* Scaling width high dpi monitors.
 
 ## Screenshots
 Here is a history of how brplot looked over time:
