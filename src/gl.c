@@ -157,11 +157,25 @@ GLuint brgl_load_texture(const void* data, int width, int height, int format, bo
   else        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
-#if !defined(__EMSCRIPTEN__)
-  GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_ONE };
-  glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
-#endif
+  switch (format) {
+    case BRGL_TEX_GRAY: {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+ #if !defined(__EMSCRIPTEN__)
+      GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_ONE };
+      glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+ #endif
+    } break;
+    case BRGL_TEX_RGBA: {
+#define GL_RGBA8_EXT                      0x8058
+#define GL_UNSIGNED_INT_8_8_8_8_REV       0x8367
+#define GL_RGBA16F 0x881A
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, data);
+    } break;
+    case BRGL_TEX_FLOAT_RGBA: {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, data);
+    } break;
+    default: BR_UNREACHABLE("Unknown texture format: %d", format);
+  }
 
   if (mipmap) glGenerateMipmap(GL_TEXTURE_2D);
 
