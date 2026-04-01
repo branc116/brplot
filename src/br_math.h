@@ -277,8 +277,12 @@ typedef struct {
   };
 } br_extent_t;
 
-typedef struct {
-  unsigned char r, g, b, a;
+typedef union {
+  struct {
+    unsigned char r, g, b, a;
+  };
+  br_u32 v;
+  unsigned char arr[4];
 } br_color_t;
 
 typedef struct {
@@ -902,6 +906,33 @@ static inline br_vec3d_t br_vec3d_clamp(br_vec3d_t v, double m, double M) {
 
 // ------------------br_color_t-----------------
 
+
+static inline br_color_t br_color_avg(br_color_t a, br_color_t b) {
+  br_color_t ret = { 0 };
+  for (int i = 0; i < 4; ++i) {
+    float af = a.arr[i]/255.f;
+    float bf = b.arr[i]/255.f;
+    ret.arr[i] = 255.f * ((af + bf) / 2.f);
+  }
+  return ret;
+}
+
+static inline br_color_t br_color_scale(br_color_t a, float value) {
+  for (int i = 0; i < 4; ++i) {
+    a.arr[i] = br_float_clamp(a.arr[i]/255.f*value, 0.f, 1.f) * 255.f;
+  }
+  return a;
+}
+
+static inline br_color_t br_color_add(br_color_t a, br_color_t b) {
+  for (int i = 0; i < 4; ++i) {
+    float v = a.arr[i]/255.f + b.arr[i]/255.f;
+    a.arr[i] = br_float_clamp(v, 0.f, 1.f)*255.f;;
+  }
+  return a;
+}
+
+
 static inline br_color_t br_color_lighter(br_color_t c, float factor) {
   br_vec3_t cv = BR_COLOR_TO4(c).xyz;
   br_vec3_t newc = br_vec3_clamp(br_vec3_scale(cv, factor + 1.f), 0.f, 1.f);
@@ -987,6 +1018,34 @@ static inline float br_vec4_dot(br_vec4_t v, br_vec4_t w) {
 static inline br_vec4_t br_vec4_scale(br_vec4_t a, float s) {
   return BR_VEC4(a.x * s, a.y * s, a.z * s, a.w * s);
 }
+
+static inline br_vec4_t br_vec4_mul(br_vec4_t a, br_vec4_t b) {
+  return BR_VEC4(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
+}
+
+static inline br_vec4_t br_vec4_add(br_vec4_t a, br_vec4_t b) {
+  return BR_VEC4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+}
+
+static inline br_vec4_t br_vec4_avg(br_vec4_t a, br_vec4_t b) {
+  return br_vec4_add(br_vec4_scale(a, 0.5f), br_vec4_scale(b, 0.5f));
+}
+
+static inline br_vec4_t br_vec4_clamp(br_vec4_t a, float m, float M) {
+  for (int i = 0; i < 4; ++i) {
+    a.arr[i] = br_float_clamp(a.arr[i], m, M);
+  }
+  return a;
+}
+
+static inline br_vec4_t br_vec4_lerp(br_vec4_t a, br_vec4_t b, float factor) {
+  for (int i = 0; i < 4; ++i) {
+    a.arr[i] = br_float_lerp(a.arr[i], b.arr[i], factor);
+  }
+  return a;
+}
+
+
 
 static inline br_vec4_t br_vec4_apply(br_vec4_t v, br_mat_t mat) {
   br_vec4_t result = { 0 };

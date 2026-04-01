@@ -268,12 +268,19 @@ br_strv_t brtr_fit(br_strv_t text) {
 
 br_size_t brtr_measure(br_strv_t str) {
   br_vec2_t loc = { 0 };
+  float max_x = loc.x;
+  int lines = 1;
+
   brtr_size_to_font_t f = { .key = brtr_state()->font_size };
   ptrdiff_t size_index = stbds_hmgeti(brtr.sizes, f.key);
 
   if (size_index != -1) f = brtr.sizes[size_index];
-  BR_STRV_FOREACH_UTF8(str, ch) brtr_move_loc(&f, ch, &loc);
-  return BR_SIZE(loc.x, loc.y + (float)brtr_state()->font_size);
+  BR_STRV_FOREACH_UTF8(str, ch) {
+    if (ch == '\n') lines+=1;
+    brtr_move_loc(&f, ch, &loc);
+    max_x = br_float_max(max_x, loc.x);
+  }
+  return BR_SIZE(max_x, lines * (float)brtr_state()->font_size);
 }
 
 br_extent_t brtr_push(br_strv_t text) {

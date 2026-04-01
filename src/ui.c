@@ -663,25 +663,29 @@ br_size_t brui_textf(const char* fmt, ...) {
 void brui_text_at(br_strv_t strv, br_vec2_t at) {
   float font_size = brui_text_size();
   br_size_t size = brtr_measure(strv);
-  size.height += font_size;
   br_bb_t text_limit = TOP.limit;
   float padd = TOP.padding.x * 2;
   br_vec2_t at_og = at;
   br_bb_t rect = { 0 };
   br_vec2_t b = { 0 }, c = { 0 };
 
+  int lines = 1;
+  for (int i = 0; i < strv.len; ++i) {
+    if (strv.str[i] == '\n') lines+=1;
+  }
+
   if (at.x - size.width - padd * 3 > text_limit.min_x) {
     at.x -= size.width + padd * 2;
     at.y -= size.height * 0.5f;
-    rect = BR_BB(at.x - padd, at.y, at.x + size.width, at.y + font_size);
+    rect = BR_BB(at.x - padd, at.y, at.x + size.width, at.y + size.height);
     b = BR_VEC2(rect.max_x, rect.min_y);
     c = BR_VEC2(rect.max_x, rect.max_y);
   } else if (at.y - size.height > text_limit.min_y) {
     at.x = text_limit.min_x + padd;
     at.y -= size.height * 1.5f;
-    rect = BR_BB(at.x - padd, at.y, at.x + size.width + padd, at.y + font_size);
-    b.x = at_og.x - font_size*.5f;
-    c.x = at_og.x + font_size*.5f;
+    rect = BR_BB(at.x - padd, at.y, at.x + size.width + padd, at.y + size.height);
+    b.x = at_og.x - (lines*font_size)*.5f;
+    c.x = at_og.x + (lines*font_size)*.5f;
     float diffb = rect.min_x - b.x;
     float diffc = c.x - rect.max_x;
     float diff = br_float_max(diffb, diffc);
