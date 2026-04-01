@@ -629,7 +629,7 @@ void brpl_q_push(brpl_q_t* q, brpl_event_t event) {
   int index = q->write_index;
   q->events[index] = event;
   //_Static_Assert(sizeof(q->events) / sizeof(q->events[0]) == 1024, "events queue must be 1024 or changed the bit patter on the nextline");
-  int next_index = (index + 1) & 0x2FF;
+  int next_index = (index + 1) & 0x3FF;
   BR_ASSERT(next_index != q->read_index);
   q->write_index = next_index;
 }
@@ -639,7 +639,7 @@ brpl_event_t brpl_q_pop(brpl_q_t* q) {
   int index = q->read_index;
   brpl_event_t ret = q->events[index];
   //_Static_Assert(sizeof(q->events) / sizeof(q->events[0]) == 1024, "events queue must be 1024 or changed the bit patter on the next line");
-  q->read_index = (index + 1) & 0x2FF;
+  q->read_index = (index + 1) & 0x3FF;
   return ret;
 }
 

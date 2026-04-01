@@ -117,7 +117,7 @@ void brtr_construct(int bitmap_width, int bitmap_height, br_shaders_t* shaders) 
   brtr_icons_load();
 }
 
-static bool brtr_free_internal(bool keep_the_stack) {
+static void brtr_free_internal(bool keep_the_stack) {
   if (brtr.sizes != NULL) {
     for (long i = 0; i < stbds_hmlen(brtr.sizes); ++i) {
       stbds_hmfree(brtr.sizes[i].value);
@@ -134,8 +134,6 @@ static bool brtr_free_internal(bool keep_the_stack) {
   BR_FREE(brtr.bitmap_pixels);
   brtr.bitmap_pixels = NULL;
   if (false == keep_the_stack) br_da_free(brtr.stack);
-
-  return true;
 }
 
 bool brtr_font_load(br_strv_t path) {
