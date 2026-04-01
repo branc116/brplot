@@ -183,6 +183,15 @@ typedef struct brui_split_t {
   };
 } brui_split_t;
 
+typedef struct grid_t {
+  int cur;
+  int cols;
+  struct {
+    brui_split_t* arr;
+    int len, cap;
+  } splits;
+} grid_t;
+
 typedef struct brui_window_t {
   brpl_window_t pl; // Platform window
   br_shaders_t shaders;

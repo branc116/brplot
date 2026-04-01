@@ -1099,6 +1099,49 @@ bool brui_slideri(br_strv_t text, int* value) {
   return false;
 }
 
+grid_t grid_begin(int cols) {
+  BR_ASSERTF(cols > 0, "There should be more than 0 collumns in the grid.. Requested is: %d", cols);
+  grid_t grid = { .cur = 0, .cols = cols };
+
+  br_da_push(grid.splits, BRUI_SPLITA(10));
+  for (int i = 0; i < cols; ++i) {
+    br_da_push(grid.splits, BRUI_SPLITR(1));
+  }
+  br_da_push(grid.splits, BRUI_SPLITA(10));
+
+  return grid;
+}
+
+void grid_next(grid_t* g) {
+  if (g->cur == 0) {
+    brui_vsplitarr(g->splits.len, g->splits.arr);
+    brui_vsplit_pop(); // PADDING
+    brui_push();
+    g->cur = 1;
+  } else if (g->cur < g->cols) {
+    brui_pop();
+    brui_vsplit_pop();
+    brui_push();
+    g->cur += 1;
+  } else {
+    brui_pop();
+    brui_vsplit_pop(); // PADDING
+    brui_vsplit_pop();
+    brui_vsplitarr(g->splits.len, g->splits.arr);
+    brui_vsplit_pop(); // PADDING
+    brui_push();
+    g->cur = 1;
+  }
+}
+
+void grid_end(grid_t* g) {
+  if (g->cur > 0) {
+    brui_pop();
+    while (brui_vsplit_pop());
+  }
+  br_da_free(g->splits);
+}
+
 void brui_vsplit(int n) {
   BRUI_LOG("vsplit %d", n);
   brui_stack_el_t top = TOP;
