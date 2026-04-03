@@ -210,16 +210,22 @@ brpl_event_t brui_event_next(brui_window_t* uiw) {
         } else {
           if (ta->kind == brui_action_typing) {
             br_strv_t strv = brsp_get(uiw->sp, ta->text.id);
+            bool ctrl = uiw->key.ctrl_down;
             switch (ev.key) {
+              case BR_KEY_V: {
+                if (ctrl) {
+                  brpl_clipboard_request(&uiw->pl);
+                }
+              } break;
               case BR_KEY_LEFT: {
                 do {
                   ta->text.cursor_pos = br_strv_utf8_add(strv, ta->text.cursor_pos, -1);
-                } while (ta->text.cursor_pos > 0 && uiw->key.ctrl_down && isalnum(strv.str[ta->text.cursor_pos]));
+                } while (ta->text.cursor_pos > 0 && ctrl && isalnum(strv.str[ta->text.cursor_pos]));
               } break;
               case BR_KEY_RIGHT: {
                 do {
                   ta->text.cursor_pos = br_strv_utf8_add(strv, ta->text.cursor_pos, 1);
-                } while (ta->text.cursor_pos < (int)strv.len && uiw->key.ctrl_down && isalnum(strv.str[ta->text.cursor_pos]));
+                } while (ta->text.cursor_pos < (int)strv.len && ctrl && isalnum(strv.str[ta->text.cursor_pos]));
               } break;
               case BR_KEY_ESCAPE: {
                 ta->kind = brui_action_none;
@@ -240,7 +246,7 @@ brpl_event_t brui_event_next(brui_window_t* uiw) {
                   s = brsp_get(uiw->sp, ta->text.id);
                   c = s.str[ta->text.cursor_pos];
                   is_alnum = isalnum(c);
-                } while (ta->text.cursor_pos < (int)s.len && uiw->key.ctrl_down && is_alnum);
+                } while (ta->text.cursor_pos < (int)s.len && ctrl && is_alnum);
               } break;
               case BR_KEY_BACKSPACE: {
                 br_strv_t s = brsp_get(uiw->sp, ta->text.id);
@@ -258,7 +264,7 @@ brpl_event_t brui_event_next(brui_window_t* uiw) {
                   s = brsp_get(uiw->sp, ta->text.id);
                   c = s.str[ta->text.cursor_pos - 1];
                   is_alnum = isalnum(c);
-                } while (ta->text.cursor_pos > 0 && uiw->key.ctrl_down && is_alnum);
+                } while (ta->text.cursor_pos > 0 && ctrl && is_alnum);
               } break;
               case BR_KEY_HOME: {
                 ta->text.cursor_pos = 0;
@@ -268,7 +274,7 @@ brpl_event_t brui_event_next(brui_window_t* uiw) {
                 ta->text.cursor_pos = (int)strv.len;
                 ta->text.changed = true;
               } break;
-              default: LOGI("text input %d (%d)", ev.key, ev.keycode); break;
+              default: break;
             }
           } else {
             switch (ev.key) {
@@ -300,28 +306,23 @@ brpl_event_t brui_event_next(brui_window_t* uiw) {
     } break;
     case brpl_event_mouse_press: {
       if (uiw->time.now - uiw->touch_points.last_touch_time < 1) break;
-      if (ta->kind == brui_action_typing) {
-        ta->kind = brui_action_none;
-        brui_resizable_mouse_releasel(uiw->mouse.pos);
-      } else {
-        if (ev.mouse_key == 0) {
-          uiw->mouse.dragging_left = true;
-          brui_resizable_mouse_pressl(&uiw->resizables, uiw->mouse.pos, uiw->key.ctrl_down);
-          if (false == uiw->key.ctrl_down) {
-            uiw->mouse.click = true;
-          }
-        } else if (ev.mouse_key == 3) {
-          uiw->mouse.dragging_right = true;
-        } else {
-          LOGI("Mouse Press: %d", ev.mouse_key);
+      if (ta->kind == brui_action_typing) ta->kind = brui_action_none;
+
+      if (ev.mouse_key == 0) {
+        uiw->mouse.dragging_left = true;
+        brui_resizable_mouse_pressl(&uiw->resizables, uiw->mouse.pos, uiw->key.ctrl_down);
+        if (false == uiw->key.ctrl_down) {
+          uiw->mouse.click = true;
         }
+      } else if (ev.mouse_key == 3) {
+        uiw->mouse.dragging_right = true;
+      } else {
+        LOGI("Mouse Press: %d", ev.mouse_key);
       }
     } break;
     case brpl_event_mouse_release: {
       if (uiw->time.now - uiw->touch_points.last_touch_time < 1) break;
-      if (ta->kind != brui_action_typing) {
-        brui_resizable_mouse_releasel(uiw->mouse.pos);
-      }
+      brui_resizable_mouse_releasel(uiw->mouse.pos);
       uiw->mouse.dragging_left = false;
       uiw->mouse.dragging_right = false;
     } break;
@@ -351,7 +352,7 @@ brpl_event_t brui_event_next(brui_window_t* uiw) {
         switch (drag.mode) {
           case brui_drag_mode_none: brpl_pointer_kind_set(&brui_state.uiw->pl, brpl_pointer_normal); break;
           case brui_drag_mode_move: brpl_pointer_kind_set(&brui_state.uiw->pl, brpl_pointer_move); break;
-          default:             brpl_pointer_kind_set(&brui_state.uiw->pl, brpl_pointer_resize); break;
+          default:                  brpl_pointer_kind_set(&brui_state.uiw->pl, brpl_pointer_resize); break;
         }
       }
       if (false == uiw->mouse.dragging_right) brui_resizable_update(&uiw->resizables, BR_EXTENTI_TOF(uiw->pl.viewport));
@@ -467,6 +468,23 @@ brpl_event_t brui_event_next(brui_window_t* uiw) {
         }
       }
     } break;
+    case brpl_event_clipboard_text: {
+      if (ta->kind == brui_action_typing) {
+        // NOTE: Rest of the code don't support input having multiple lines
+        //       So just replace it here..
+        br_str_replace_all(&ev.text, '\n', ' ');
+        br_str_replace_all(&ev.text, '\r', ' ');
+        brsp_insert_strv_at_end(&uiw->sp, ta->text.id, br_str_as_view(ev.text));
+        ta->text.cursor_pos += ev.text.len;
+      }
+      // NOTE: Idk.. Someone has to free this..
+      //       If I don't free it here then I for people that call this to free this event
+      //       which is not ideal. Idk.. This buffer should prob not be owned by the event,
+      //       but by the brpl_window_t...
+      // TODO: Make it so!
+      br_str_free(ev.text);
+      ev.kind = brpl_event_nop;
+    }
     default: break;
   }
   return ev;
@@ -719,12 +737,19 @@ bool brui_text_input(brsp_id_t str_id) {
   br_vec2_t loc = TOP.cur_pos;
   loc.x -= BRUI_ANIMF(ACPARM.text.offset_ahandle);
 
-  if (is_active)       brui_cur_set(loc.x, loc.y, TOP.cur_content_height);
-  float font_size      = brui_text_size();
-  float opt_height     = font_size + TOP.padding.y;
-  br_extent_t ex       = BR_EXTENT(TOP.cur_pos.x, TOP.cur_pos.y, TOP.limit.max_x - TOP.cur_pos.x, font_size);
-  float half_thick     = 1.0f;
-  bool changed         = false;
+  if (is_active)   brui_cur_set(loc.x, loc.y, TOP.cur_content_height);
+  float font_size  = brui_text_size();
+  float opt_height = font_size + TOP.padding.y;
+  br_extent_t ex   = BR_EXTENT(TOP.cur_pos.x, TOP.cur_pos.y, TOP.limit.max_x - TOP.cur_pos.x, font_size);
+  float half_thick = 1.0f;
+  bool changed     = false;
+
+  brtr_stack_el_t* tr_stack = brtr_state_push();
+    tr_stack->limits.max_x = brui_state.uiw->mouse.pos.x;
+    int fit_len = brtr_fit(strv).len;
+    int position = fit_len;
+    if (position < strv.len) position -= 1;
+  brtr_state_pop();
 
   brtr_push(strv);
 
@@ -750,7 +775,7 @@ bool brui_text_input(brsp_id_t str_id) {
       if (brui_state.uiw->mouse.click) {
         if (br_col_vec2_bb(BR_EXTENT_TOBB(ex), brui_state.uiw->mouse.pos)) {
           ACTION = brui_action_typing;
-          ACPARM.text.cursor_pos = 0;
+          ACPARM.text.cursor_pos = position;
           ACPARM.text.id = str_id;
           BRUI_ANIMFS(ACPARM.text.offset_ahandle, 0.f);
         }
@@ -1839,7 +1864,9 @@ void brui_resizable_mouse_releasel(br_vec2_t mouse_pos) {
   brui_state.drag.index = 0;
   brui_state.drag.mode = brui_drag_mode_none;
   brui_state.drag.point = BR_VEC2(0, 0);
-  ACTION = brui_action_none;
+  if (ACTION != brui_action_typing) {
+    ACTION = brui_action_none;
+  }
 }
 
 bool brui_resizable_mouse_scroll_px(bruirs_t* rs, br_vec2_t delta) {

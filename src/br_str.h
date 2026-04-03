@@ -228,6 +228,12 @@ char* br_str_move_to_scrach(br_str_t s) {
   return ret;
 }
 
+void br_str_replace_all(br_str_t* str, char from, char to) {
+  for (int i = 0; i < str->len; ++i) {
+    if (str->str[i] == from) str->str[i] = to;
+  }
+}
+
 bool br_str_replace_one(br_str_t* out, br_strv_t in, br_strv_t to_replace, br_strv_t replace_with) {
   out->len = 0;
 

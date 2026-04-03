@@ -2,6 +2,7 @@
 #define BR_INCLUDE_BR_PLAT_HEADER_H
 #include "src/br_pp.h"
 #include "src/br_math.h"
+#include "include/br_str_header.h"
 
 typedef void* voidp;
 
@@ -48,24 +49,34 @@ typedef struct brpl_touch_point_t {
 
 typedef enum brpl_event_kind_t {
   brpl_event_none = 0, // Nothing happend
+
   brpl_event_key_press = 1,
   brpl_event_key_release = 2,
   brpl_event_input = 3,
+
   brpl_event_mouse_move = 4,
   brpl_event_mouse_scroll = 5,
   brpl_event_mouse_press = 6,
   brpl_event_mouse_release = 7,
+
   brpl_event_window_resize = 8,
   brpl_event_window_shown = 9,
   brpl_event_window_hidden = 10,
   brpl_event_window_focused = 11,
   brpl_event_window_unfocused = 12,
+
   brpl_event_close = 13,
+
   brpl_event_frame_next = 14,
+
   brpl_event_scale = 15, // DPI
+
   brpl_event_touch_begin = 16,
   brpl_event_touch_update = 17,
   brpl_event_touch_end = 18,
+
+  brpl_event_clipboard_text = 19,
+
   brpl_event_nop, // Something happend but it's nothing
   brpl_event_unknown, // Something happend but I don't know what..
 } brpl_event_kind_t;
@@ -85,6 +96,7 @@ typedef struct brpl_event_t {
       int keycode;
     };
     brpl_touch_point_t touch;
+	br_str_t text;
   };
 } brpl_event_t;
 
@@ -121,6 +133,8 @@ typedef struct brpl_window_t {
     void         (*frame_end)(brpl_window_t* window);
 
     bool         (*pointer_kind_set)(brpl_window_t* window, brpl_pointer_kind_t kind);
+
+    bool         (*clipboard_request)(brpl_window_t* window);
   } f;
   // Data that specific windowing backend is using
   void* win;
@@ -153,6 +167,8 @@ void brpl_frame_start(brpl_window_t* window);
 void brpl_frame_end  (brpl_window_t* window);
 
 bool brpl_pointer_kind_set(brpl_window_t* window, brpl_pointer_kind_t kind);
+
+bool brpl_clipboard_request(brpl_window_t* window);
 
 uint64_t brpl_timestamp(void);
 double   brpl_time(void);

@@ -548,6 +548,10 @@ bool brpl_pointer_kind_set(brpl_window_t* window, brpl_pointer_kind_t kind) {
   return ok;
 }
 
+bool brpl_clipboard_request(brpl_window_t* window) {
+  return window->f.clipboard_request(window);
+}
+
 uint64_t brpl_timestamp(void) {
 #if defined(_WIN32)
   br_u64 value;
@@ -1305,6 +1309,7 @@ typedef struct brpl_win32_window_t {
   HANDLE event_window_create_done;
   HWND hwnd;
   HDC hdc;
+  bool request_clipboard;
 } brpl_win32_window_t;
 
 static BR_THREAD_LOCAL brpl_q_t* brpl_win32_q;
@@ -1412,6 +1417,29 @@ LRESULT CALLBACK brpl_win32_event_callback(HWND hwnd, UINT uMsg, WPARAM wParam, 
   return 0;
 }
 
+static bool brpl_win32_clipoard_text(br_str_t* out, HWND hwnd) {
+  bool success = true;
+  BOOL clipboard_opened = false;
+  HANDLE clipboard_data_handle = NULL;
+  LPTSTR clipboard_data = NULL;
+
+  if (!IsClipboardFormatAvailable(CF_TEXT)) BR_ERROR("Clipboard is not text..");
+  if (!(clipboard_opened = OpenClipboard(hwnd))) BR_ERROR("Failed to open clipboard");
+
+  clipboard_data_handle = GetClipboardData(CF_TEXT);
+  if (NULL == clipboard_data_handle) BR_ERROR("Failed to get clipboard data");
+  clipboard_data = GlobalLock(clipboard_data_handle);
+  if (NULL == clipboard_data) BR_ERROR("Global lock failed...");
+
+  br_str_push_c_str(out, clipboard_data);
+
+error:;
+  if (clipboard_data) GlobalUnlock(clipboard_data_handle);
+  if (clipboard_opened) CloseClipboard();
+
+  return success;
+}
+
 static unsigned long brpl_win32_window_event_loop(void* arg) {
   brpl_window_t* win = arg;
   brpl_win32_window_t* win32 = win->win;
@@ -1457,6 +1485,16 @@ static unsigned long brpl_win32_window_event_loop(void* arg) {
   while (false == win->should_close && GetMessageA(&msg, NULL, 0, 0)) {
     TranslateMessage(&msg);
     DispatchMessageA(&msg);
+    if (win32->request_clipboard) {
+      win32->request_clipboard = false;
+      br_str_t data = { 0 };
+      if (brpl_win32_clipoard_text(&data, hwnd)) {
+         brpl_q_push(&win32->q, (brpl_event_t) {
+           .kind = brpl_event_clipboard_text,
+           .text = data
+         });
+      }
+    }
   }
   brpl_q_push(&win32->q, (brpl_event_t) { .kind = brpl_event_close });
   goto done;
@@ -1503,11 +1541,19 @@ static bool brpl_win32_open_window(brpl_window_t* window) {
   return 0 != win32->hwnd && gl_loaded;
 }
 
+static bool brpl_win32_clipboard_request(brpl_window_t* window) {
+  brpl_win32_window_t* win32 = window->win;
+  win32->request_clipboard = true;
+  return true;
+}
+
 static bool brpl_win32_load(brpl_window_t* window) {
   window->f.window_open = brpl_win32_open_window;
   window->f.frame_start = brpl_win32_frame_start;
   window->f.frame_end   = brpl_win32_frame_end;
   window->f.event_next  = brpl_win32_event_next;
+
+  window->f.clipboard_request  = brpl_win32_clipboard_request;
   return true;
 }
 
@@ -1545,7 +1591,12 @@ static void brpl_headless_frame_end(brpl_window_t* window) {
 
 static bool brpl_headless_pointer_kind_set(brpl_window_t* window, brpl_pointer_kind_t pointer) {
   (void)window; (void)pointer;
-  LOGI("Headless pointer_kind_set: %d", pointer);
+  return true;
+}
+
+static bool brpl_headless_clipboard_request(brpl_window_t* window) {
+  (void)window;
+  LOGI("Clipboard Request");
   return true;
 }
 
@@ -1557,6 +1608,8 @@ static bool brpl_headless_load(brpl_window_t* window) {
   window->f.frame_end    = brpl_headless_frame_end;
 
   window->f.pointer_kind_set = brpl_headless_pointer_kind_set;
+
+  window->f.clipboard_request = brpl_headless_clipboard_request;
   return true;
 }
 

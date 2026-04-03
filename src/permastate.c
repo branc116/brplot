@@ -362,7 +362,7 @@ bool brps_editor_write(br_plotter_t const* br, char const* file_name) {
   if (err) BR_ERRORE("Failed to write resizables");
   BR_FS_WRITE1(file, copy.theme);
   BR_FS_WRITE1(file, copy.ui);
-  LOGI("Wrote %zd bytes to %s", ftell(file), file_name);
+  LOGI("Wrote %zd bytes to %s", (size_t)ftell(file), file_name);
 
 error:
   if (file != NULL) BR_FCLOSE(file);
@@ -390,7 +390,7 @@ bool brps_editor_read(br_plotter_t* br, char const* file_name) {
   if (err) BR_ERRORE("Failed to read resizables");
   BR_FS_READ1(file, copy.theme);
   BR_FS_READ1(file, copy.ui);
-  LOGI("Read %zd bytes from %s", ftell(file), file_name);
+  LOGI("Read %zd bytes from %s", (size_t)ftell(file), file_name);
   BR_FS_EOF(file);
 
   br->ui = copy.ui;

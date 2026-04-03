@@ -213,7 +213,7 @@ void br_plotter_update(br_plotter_t* br) {
 //                  br->ui.fm_state.has_entered = true;
 //                }
               } break;
-              default: LOGI("text input %d (%d)", ev.key, ev.keycode); break;
+              default: break;
             }
           }
         }
