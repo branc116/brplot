@@ -441,7 +441,7 @@ void compiler_link_c(Nob_Cmd* cmd, compile_output_kind_t kind, platform_kind_t t
 
 void compiler_base_flags(Nob_Cmd* cmd, const char* compiler) {
   nob_cmd_append(cmd, compiler);
-  if (is_msvc(compiler)) {
+  if (is_msvc(compiler))  {
     nob_cmd_append(cmd, "/I.", "/Zi", "/D_CRT_SECURE_NO_WARNINGS=1");
   } else {
     nob_cmd_append(cmd, "-I.", "-g");
