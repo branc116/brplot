@@ -74,6 +74,19 @@ void br_plotter_init(br_plotter_t* br) {
   br_mesh_construct(&br->uiw.shaders, &br->ui.debug, &br->uiw.theme, &br->uiw.anims);
   br_plot_construct(&br->uiw.anims);
   br->ui.default_grid_line_thickenss = 1.5f;
+  // Initialize collapse animation handles to uninitialized state
+  br->ui.expand_file.anim_handle = -1;
+  br->ui.expand_plots.anim_handle = -1;
+  br->ui.expand_optimizations.anim_handle = -1;
+  br->ui.expand_ui_styles.anim_handle = -1;
+  br->ui.expand_ui_styles_shadows.anim_handle = -1;
+  br->ui.expand_export.anim_handle = -1;
+  br->ui.expand_data.anim_handle = -1;
+  br->ui.expand_about.anim_handle = -1;
+  br->ui.help.key_bindings.anim_handle = -1;
+  br->ui.help.cli_help.anim_handle = -1;
+  br->ui.help.c_help.anim_handle = -1;
+  br->ui.help.python_help.anim_handle = -1;
 
 #if BR_HAS_HOTRELOAD
   br_hotreload_start(&br->hot_state);

@@ -4,7 +4,7 @@
 brui_window_t win = { 0 };
 int font_size = 20;
 float something = 1.f;
-bool settings = false;
+brui_collapse_t settings = BRUI_COLLAPSE_INIT;
 
 int main(void) {
   brui_window_init(&win);
@@ -12,7 +12,7 @@ int main(void) {
     while (brpl_event_frame_next != brui_event_next(&win).kind); // You can also handle some of the events
     brui_frame_start(&win);
       brui_text_size_set(font_size);
-      brui_checkbox(BR_STRL("Settings"), &settings);
+      brui_checkbox(BR_STRL("Settings"), &settings.expanded);
       br_shaders_draw_all(win.shaders);
       if (brui_collapsable(BR_STRL("Settings"), &settings)) {
         brui_slideri(BR_STRL("Font Size"), &font_size);

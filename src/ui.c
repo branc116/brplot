@@ -67,6 +67,9 @@ typedef struct {
 
   float vsplit_max_height;
 
+  int collapse_anim_handle; // -1 if not a collapsable, otherwise the anim handle
+  float collapse_header_height; // height of the header portion (not animated)
+
   bool is_active;
   bool hide_border;
   bool hide_bg;
@@ -537,6 +540,7 @@ brui_stack_el_t brui_stack_el(void) {
     new_el.start_z = new_el.z;
     new_el.hide_border = false;
     new_el.hide_bg = false;
+    new_el.collapse_anim_handle = -1;
     new_el.cur_content_height = 2 * new_el.padding.y;
     return new_el;
   } else {
@@ -545,6 +549,7 @@ brui_stack_el_t brui_stack_el(void) {
       .limit = BR_EXTENT_TOBB(viewport),
       .padding = BR_THEME.padding,
       .psum = BR_THEME.padding,
+      .collapse_anim_handle = -1,
       .is_active = true
     };
     root.limit.max = br_vec2_sub(root.limit.max, root.padding);
@@ -826,27 +831,60 @@ void brui_border2(br_bb_t bb, bool active) {
   */
 }
 
-bool brui_collapsable(br_strv_t name, bool* expanded) {
+bool brui_collapsable(br_strv_t name, brui_collapse_t* state) {
   float font_size = brui_text_size();
-  //float opt_header_height /* text + 2*1/2*padding */ = font_size + TOP.padding.y;
+  // Lazily create animation handle
+  if (state->anim_handle < 0) {
+    float init = state->expanded ? 1.f : 0.f;
+    state->anim_handle = br_animf_new(&brui_state.uiw->anims, init, init);
+  }
   brui_push();
     brui_vsplitvp(2, BRUI_SPLITR(1), BRUI_SPLITA(1.3f*font_size));
-      if (brui_button(name)) *expanded = !*expanded;
+      if (brui_button(name)) state->expanded = !state->expanded;
     brui_vsplit_pop();
-      if (*expanded) {
-        if (brui_button(BR_STRL("V"))) *expanded = false;
+      if (state->expanded) {
+        if (brui_button(BR_STRL("V"))) state->expanded = false;
       } else {
-        if (brui_button(BR_STRL("<"))) *expanded = true;
+        if (brui_button(BR_STRL("<"))) state->expanded = true;
       }
     brui_vsplit_pop();
-  if (!*expanded) {
+  // Set animation target based on expanded state
+  BRUI_ANIMFS(state->anim_handle, state->expanded ? 1.f : 0.f);
+  float anim_value = BRUI_ANIMF(state->anim_handle);
+  bool should_render = anim_value > 1e-5f;
+  if (!should_render) {
     TOP.hide_bg = true;
     brui_pop();
+  } else {
+    TOP.collapse_anim_handle = state->anim_handle;
+    TOP.collapse_header_height = TOP.cur_content_height;
+    // Clip the rendering region during animation so content doesn't overflow
+    if (anim_value < 1.f - 1e-5f) {
+      float content_start = TOP.cur_pos.y;
+      float available = TOP.limit.max_y - content_start;
+      TOP.limit.max_y = content_start + available * anim_value;
+      // Sync the text renderer limits so GPU clipping works
+      brtr_state()->limits = TOP.limit;
+      // Fade content opacity based on animation progress
+      unsigned char alpha = (unsigned char)(anim_value * 255.f);
+      brtr_state()->forground.a = alpha;
+      brtr_state()->background.a = alpha;
+    }
   }
-  return *expanded;
+  return should_render;
 }
 
 void brui_collapsable_end(void) {
+  int anim_handle = TOP.collapse_anim_handle;
+  if (anim_handle >= 0) {
+    float anim_value = BRUI_ANIMF(anim_handle);
+    if (anim_value < 1.f - 1e-5f) {
+      // Only scale the body portion, keep the header height intact
+      float header_height = TOP.collapse_header_height;
+      float body_height = TOP.cur_content_height - header_height;
+      TOP.cur_content_height = header_height + body_height * anim_value;
+    }
+  }
   brui_pop();
 }
 
