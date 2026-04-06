@@ -22,6 +22,7 @@
 #define ZGL BR_Z_TO_GL(Z)
 #define BRUI_RS(RESIZABLE_HANDLE) (brui_state.uiw->resizables.arr[RESIZABLE_HANDLE])
 #define BRUI_ANIMF(ANIM_HANDLE) br_animf(&brui_state.uiw->anims, (ANIM_HANDLE))
+#define BRUI_ANIMFT(ANIM_HANDLE) br_animf_get_target(&brui_state.uiw->anims, (ANIM_HANDLE))
 #define BRUI_ANIMFS(ANIM_HANDLE, VALUE) br_animf_set(&brui_state.uiw->anims, (ANIM_HANDLE), (VALUE))
 #define BRUI_ANIMEX(ANIM_HANDLE) br_animex(&brui_state.uiw->anims, (ANIM_HANDLE))
 #define BRUI_ANIMEXS(ANIM_HANDLE, VALUE) br_animex_set(&brui_state.uiw->anims, (ANIM_HANDLE), (VALUE))
@@ -69,6 +70,7 @@ typedef struct {
 
   int collapse_anim_handle; // -1 if not a collapsable, otherwise the anim handle
   float collapse_header_height; // height of the header portion (not animated)
+  brui_collapse_t* collapse;
 
   bool is_active;
   bool hide_border;
@@ -130,6 +132,7 @@ static void brui_cur_push(float height);
 bool brui_window_init(brui_window_t* uiw) {
   brui_state.rs_temp_last = -1;
   brui_state.uiw = uiw;
+  br_anims_init(&uiw->anims);
   br_anims_construct(&uiw->theme.animation_speed);
 
   if (false == brpl_window_open(&uiw->pl)) {
@@ -831,60 +834,59 @@ void brui_border2(br_bb_t bb, bool active) {
   */
 }
 
+void brui_collapsable_init(brui_collapse_t* collapsable, bool value) {
+  float valuef = value ? 1.f : 0.f;
+  collapsable->anim_handle = br_animf_new(&brui_state.uiw->anims, valuef, valuef);
+}
+
 bool brui_collapsable(br_strv_t name, brui_collapse_t* state) {
-  float font_size = brui_text_size();
-  // Lazily create animation handle
-  if (state->anim_handle < 0) {
-    float init = state->expanded ? 1.f : 0.f;
-    state->anim_handle = br_animf_new(&brui_state.uiw->anims, init, init);
+  if (0 == state->anim_handle) {
+    state->anim_handle = br_animf_new(&brui_state.uiw->anims, 0.f, 0.f);
   }
+  BR_ASSERTF(state->anim_handle > 0, "Uninitialized anim.. %d", state->anim_handle);
+  float font_size = brui_text_size();
+  float new_value = BRUI_ANIMFT(state->anim_handle);
   brui_push();
     brui_vsplitvp(2, BRUI_SPLITR(1), BRUI_SPLITA(1.3f*font_size));
-      if (brui_button(name)) state->expanded = !state->expanded;
+      if (brui_button(name)) new_value = 1.f - new_value;
     brui_vsplit_pop();
-      if (state->expanded) {
-        if (brui_button(BR_STRL("V"))) state->expanded = false;
+      if (new_value > 0.5f ) {
+        if (brui_button(BR_STRL("V"))) new_value = 0.f;
       } else {
-        if (brui_button(BR_STRL("<"))) state->expanded = true;
+        if (brui_button(BR_STRL("<"))) new_value = 1.f;
       }
     brui_vsplit_pop();
   // Set animation target based on expanded state
-  BRUI_ANIMFS(state->anim_handle, state->expanded ? 1.f : 0.f);
+  BRUI_ANIMFS(state->anim_handle, new_value);
   float anim_value = BRUI_ANIMF(state->anim_handle);
   bool should_render = anim_value > 1e-5f;
   if (!should_render) {
     TOP.hide_bg = true;
     brui_pop();
   } else {
-    TOP.collapse_anim_handle = state->anim_handle;
     TOP.collapse_header_height = TOP.cur_content_height;
-    // Clip the rendering region during animation so content doesn't overflow
-    if (anim_value < 1.f - 1e-5f) {
-      float content_start = TOP.cur_pos.y;
-      float available = TOP.limit.max_y - content_start;
-      TOP.limit.max_y = content_start + available * anim_value;
-      // Sync the text renderer limits so GPU clipping works
-      brtr_state()->limits = TOP.limit;
-      // Fade content opacity based on animation progress
-      unsigned char alpha = (unsigned char)(anim_value * 255.f);
-      brtr_state()->forground.a = alpha;
-      brtr_state()->background.a = alpha;
-    }
+
+    float content_start = TOP.cur_pos.y;
+    float new_max_y = content_start + state->content_height * anim_value;
+    TOP.limit.max_y = br_float_min(TOP.limit.max_y, new_max_y);
+    brtr_state()->limits = TOP.limit;
+    unsigned char alpha = (unsigned char)(anim_value * 255.f);
+    brtr_state()->forground.a = alpha;
+
+    TOP.collapse = state;
   }
   return should_render;
 }
 
 void brui_collapsable_end(void) {
-  int anim_handle = TOP.collapse_anim_handle;
-  if (anim_handle >= 0) {
-    float anim_value = BRUI_ANIMF(anim_handle);
-    if (anim_value < 1.f - 1e-5f) {
-      // Only scale the body portion, keep the header height intact
-      float header_height = TOP.collapse_header_height;
-      float body_height = TOP.cur_content_height - header_height;
-      TOP.cur_content_height = header_height + body_height * anim_value;
-    }
-  }
+  BR_ASSERTF(TOP.collapse, "Collapse is null");
+  float anim_value = BRUI_ANIMF(TOP.collapse->anim_handle);
+
+  // Only scale the body portion, keep the header height intact
+  float header_height = TOP.collapse_header_height;
+  float content_height = TOP.cur_content_height - header_height;
+  TOP.collapse->content_height = content_height;
+  TOP.cur_content_height = header_height + content_height * anim_value;
   brui_pop();
 }
 

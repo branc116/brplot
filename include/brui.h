@@ -116,12 +116,9 @@ typedef struct brui_pop_t {
 } brui_pop_t;
 
 typedef struct brui_collapse_t {
-  bool expanded;
-  int anim_handle; // Initialize to -1 (uninitialized). Lazily created.
+  int anim_handle;
+  float content_height;
 } brui_collapse_t;
-
-#define BRUI_COLLAPSE_INIT { .expanded = false, .anim_handle = -1 }
-#define BRUI_COLLAPSE_INIT_OPEN { .expanded = true, .anim_handle = -1 }
 
 typedef struct brui_action_text_t {
   brsp_id_t id;

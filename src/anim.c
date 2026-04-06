@@ -10,6 +10,12 @@ void br_anims_construct(float* animation_speed) {
   br_anims_state.animation_speed = animation_speed;
 }
 
+void br_anims_init(br_anims_t* anims) {
+  BR_ASSERTF(anims->all.len == 0, "Can't init an animtations with something int it..");
+  br_anim_t none_handle = { .kind = br_anim_none };
+  brfl_push(anims->all, none_handle);
+}
+
 void br_anims_tick(br_anims_t* anims, float dt) {
   int to_kill = -1;
   float lerp_factor = *br_anims_state.animation_speed * dt;

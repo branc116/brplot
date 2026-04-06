@@ -3,6 +3,7 @@
 #include "src/br_math.h"
 
 typedef enum br_anim_kind_t {
+  br_anim_none,
   br_anim_float,
   br_anim_vec2d,
   br_anim_vec3,
@@ -60,7 +61,10 @@ typedef struct br_anims_t {
 typedef struct br_theme_t br_theme_t;
 void br_anims_construct(float* animation_speed);
 
+void br_anims_init(br_anims_t* anims);
+
 void br_anims_tick(br_anims_t* anims, float dt);
+
 
 int br_animf_new(br_anims_t* anims, float current, float target);
 int br_anim2d_new(br_anims_t* anims, br_vec2d_t current, br_vec2d_t target);

@@ -638,7 +638,7 @@ static void brgui_draw_help(br_plotter_t* br) {
   if (false == br->ui.help.show) return;
 
   brui_resizable_temp_push(BR_STRL("Help"));
-    if (brui_collapsable(BR_STRL("Key bindings"), &br->ui.help.key_bindings)) {
+    if (brui_collapsable(BR_STRL("Key bindings"), &br->ui.key_bindings)) {
       brui_text(BR_STRL("Right mouse button + Mouse move - Change plot offset"));
       brui_text(BR_STRL("Mouse wheel- Change plot zoom"));
       brui_text(BR_STRL("X + Mouse whele - Change zoom only in X axis"));
@@ -658,7 +658,7 @@ static void brgui_draw_help(br_plotter_t* br) {
       brui_text(BR_STRL("LCTRL + Mouse on edge of the window - Resize subwindows"));
       brui_collapsable_end();
     }
-    if (brui_collapsable(BR_STRL("CLI examples"), &br->ui.help.cli_help)) {
+    if (brui_collapsable(BR_STRL("CLI examples"), &br->ui.cli_help)) {
       brui_text(BR_STRL("Plot numbers from 1 to 100:"));
       brui_text(BR_STRL("   seq 100 | brplot"));
       brui_text(BR_STRL("Plot squeres of numbers from 1 to 100"));
@@ -670,7 +670,7 @@ static void brgui_draw_help(br_plotter_t* br) {
       brui_text(BR_STRL("10,12;2 - Insert point (10, 12) to line group 2"));
       brui_collapsable_end();
     }
-    if (brui_collapsable(BR_STRL("C example"), &br->ui.help.c_help)) {
+    if (brui_collapsable(BR_STRL("C example"), &br->ui.c_help)) {
       brui_text(BR_STRL("#define BRPLOT_IMPLEMENTATION"));
       brui_text(BR_STRL("#include \"brplot.h\""));
       brui_text(BR_STRL(""));
@@ -680,7 +680,7 @@ static void brgui_draw_help(br_plotter_t* br) {
       brui_text(BR_STRL("}"));
       brui_collapsable_end();
     }
-    if (brui_collapsable(BR_STRL("Python example"), &br->ui.help.python_help)) {
+    if (brui_collapsable(BR_STRL("Python example"), &br->ui.python_help)) {
       brui_text(BR_STRL("import brplot"));
       brui_text(BR_STRL("brplot.plot(range(100))"));
       brui_collapsable_end();

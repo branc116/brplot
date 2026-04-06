@@ -351,19 +351,11 @@ bool brps_editor_write(br_plotter_t const* br, char const* file_name) {
 
   copy.ui = br->ui;
   copy.theme = br->uiw.theme;
-  // Clear collapse animation handles before saving — they'll be lazily recreated on load
-  copy.ui.expand_file.anim_handle = -1;
-  copy.ui.expand_plots.anim_handle = -1;
-  copy.ui.expand_optimizations.anim_handle = -1;
-  copy.ui.expand_ui_styles.anim_handle = -1;
-  copy.ui.expand_ui_styles_shadows.anim_handle = -1;
-  copy.ui.expand_export.anim_handle = -1;
-  copy.ui.expand_data.anim_handle = -1;
-  copy.ui.expand_about.anim_handle = -1;
-  copy.ui.help.key_bindings.anim_handle = -1;
-  copy.ui.help.cli_help.anim_handle = -1;
-  copy.ui.help.c_help.anim_handle = -1;
-  copy.ui.help.python_help.anim_handle = -1;
+
+  for (int i = 0; i < BR_ALL_COLLAPSABLES; ++i) {
+    copy.ui.all_collapsables[i].anim_handle = brps_anim_save(br, &copy, copy.ui.all_collapsables[i].anim_handle);
+  }
+
   copy.ui.menu_extent_handle = brps_resizable_save(br, &copy, copy.ui.menu_extent_handle, 0);
   copy.ui.csv_file_opened = brps_string_save(br, &copy, copy.ui.csv_file_opened);
   copy.ui.font_path_id = brps_string_save(br, &copy, copy.ui.font_path_id);
@@ -375,7 +367,7 @@ bool brps_editor_write(br_plotter_t const* br, char const* file_name) {
   if (err) BR_ERRORE("Failed to write resizables");
   BR_FS_WRITE1(file, copy.theme);
   BR_FS_WRITE1(file, copy.ui);
-  LOGI("Wrote %zd bytes to %s", (size_t)ftell(file), file_name);
+  LOGI("Wrote %zd bytes to %s", (size_t)BR_FTELL(file), file_name);
 
 error:
   if (file != NULL) BR_FCLOSE(file);
@@ -403,24 +395,16 @@ bool brps_editor_read(br_plotter_t* br, char const* file_name) {
   if (err) BR_ERRORE("Failed to read resizables");
   BR_FS_READ1(file, copy.theme);
   BR_FS_READ1(file, copy.ui);
-  LOGI("Read %zd bytes from %s", (size_t)ftell(file), file_name);
+  LOGI("Read %zd bytes from %s", (size_t)BR_FTELL(file), file_name);
   BR_FS_EOF(file);
 
   br->ui = copy.ui;
   br->uiw.theme = copy.theme;
-  // Reset collapse animation handles so they're lazily recreated
-  br->ui.expand_file.anim_handle = -1;
-  br->ui.expand_plots.anim_handle = -1;
-  br->ui.expand_optimizations.anim_handle = -1;
-  br->ui.expand_ui_styles.anim_handle = -1;
-  br->ui.expand_ui_styles_shadows.anim_handle = -1;
-  br->ui.expand_export.anim_handle = -1;
-  br->ui.expand_data.anim_handle = -1;
-  br->ui.expand_about.anim_handle = -1;
-  br->ui.help.key_bindings.anim_handle = -1;
-  br->ui.help.cli_help.anim_handle = -1;
-  br->ui.help.c_help.anim_handle = -1;
-  br->ui.help.python_help.anim_handle = -1;
+
+  for (int i = 0; i < BR_ALL_COLLAPSABLES; ++i) {
+    br->ui.all_collapsables[i].anim_handle = brps_anim_load(br, &copy, copy.ui.all_collapsables[i].anim_handle);
+  }
+
   br->ui.menu_extent_handle = brps_resizable_load(br, &copy, copy.ui.menu_extent_handle, 0);
   br->ui.csv_file_opened = brps_string_load(br, &copy, copy.ui.csv_file_opened);
   br->ui.font_path_id = brps_string_load(br, &copy, copy.ui.font_path_id);
