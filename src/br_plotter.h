@@ -47,10 +47,10 @@ typedef struct br_plotter_ui_t {
   float default_grid_line_thickenss;
   struct {
     bool show;
-    bool key_bindings;
-    bool cli_help;
-    bool c_help;
-    bool python_help;
+    brui_collapse_t key_bindings;
+    brui_collapse_t cli_help;
+    brui_collapse_t c_help;
+    brui_collapse_t python_help;
   } help;
   struct {
     int selected_frame;
@@ -60,14 +60,14 @@ typedef struct br_plotter_ui_t {
   bool debug;
   bool dark_theme;
   bool multisampling;
-  bool expand_file;
-  bool expand_plots;
-  bool expand_optimizations;
-  bool expand_ui_styles;
-  bool expand_ui_styles_shadows;
-  bool expand_export;
-  bool expand_data;
-  bool expand_about;
+  brui_collapse_t expand_file;
+  brui_collapse_t expand_plots;
+  brui_collapse_t expand_optimizations;
+  brui_collapse_t expand_ui_styles;
+  brui_collapse_t expand_ui_styles_shadows;
+  brui_collapse_t expand_export;
+  brui_collapse_t expand_data;
+  brui_collapse_t expand_about;
   bool show_license;
   bool show_about;
   bool show_log;

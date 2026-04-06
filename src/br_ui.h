@@ -36,7 +36,7 @@ bool brui_vsplit_pop(void);
 void brui_background(br_bb_t bb, br_color_t color);
 void brui_border1(br_bb_t bb);
 void brui_border2(br_bb_t bb, bool active);
-bool brui_collapsable(br_strv_t name, bool* expanded);
+bool brui_collapsable(br_strv_t name, brui_collapse_t* state);
 void brui_collapsable_end(void);
 
 void brui_push(void);
