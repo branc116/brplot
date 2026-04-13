@@ -58,6 +58,9 @@
 #define brpl_x11_XIMStatusNothing  0x0400L
 #define brpl_x11_XIMPreeditNothing  0x0008L
 
+
+#define brpl_x11_CurrentTime 0
+
 typedef struct _XDisplay brpl_x11_Display;
 typedef struct _XIM *brpl_x11_XIM;
 typedef struct _XIC *brpl_x11_XIC;
@@ -197,6 +200,7 @@ const char* br_xi_library_names[] = {
 #define brpl_x11_Expose          12
 #define brpl_x11_ConfigureNotify 22
 #define brpl_x11_PropertyNotify  28
+#define brpl_x11_SelectionNotify 31
 #define brpl_x11_ClientMessage   33
 
 #define brpl_x11_XI_TouchBegin  18 /* XI 2.2 */
@@ -299,6 +303,15 @@ typedef struct {
   void           *data;
 } brpl_x11_XGenericEventCookie;
 
+typedef struct {
+  brpl_x11_XGenericEvent generic;
+  brpl_x11_Window requestor;
+  brpl_x11_Atom selection;
+  brpl_x11_Atom target;
+  brpl_x11_Atom property;  /* atom or None */
+  brpl_x11_Time time;
+} brpl_x11_XSelectionEvent;
+
 typedef union _XEvent {
   int type; /* must not be changed; first element */
   brpl_x11_XKeyEvent xkey;
@@ -308,6 +321,7 @@ typedef union _XEvent {
   brpl_x11_XPropertyEvent xproperty;
   brpl_x11_XClientMessageEvent xclient;
   brpl_x11_XGenericEventCookie xcookie;
+  brpl_x11_XSelectionEvent xselection;
   long pad[24];
 } brpl_x11_XEvent;
 
@@ -670,6 +684,7 @@ typedef struct brpl_window_x11_t {
   brpl_x11_XIC ic;
 
   brpl_x11_Atom WM_DELETE_WINDOW;
+  brpl_x11_Atom CLIPBOARD, UTF8_STRING, BRPLAT_PROP;
 
   int xi_opcode;
 
@@ -840,8 +855,39 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
         return (brpl_event_t) { .kind = brpl_event_nop };
       }
     } break;
+    case brpl_x11_SelectionNotify: {
+      if (event.xselection.selection == w->CLIPBOARD &&
+          event.xselection.target == w->UTF8_STRING &&
+          event.xselection.property == w->BRPLAT_PROP) {
+            brpl_x11_Atom type; int fmt;
+            unsigned long nitems, bytes_after;
+            unsigned char *data = NULL;
+
+            brpl_x11_XGetWindowProperty(w->display, w->window_handle, event.xselection.property,
+                               0, ~0L, true, 0,
+                               &type, &fmt, &nitems, &bytes_after, &data);
+
+            if (data) {
+              br_str_t s = {0};
+              br_str_push_c_str(&s, data);
+              brpl_event_t ret = {
+                .kind = brpl_event_clipboard_text,
+                .text = s
+              };
+              LOGI("Clipboard: %s\n", data);  // or copy it
+              brpl_x11_XFree(data);
+              return ret;
+            }
+      } else {
+        LOGE("Bad Selection notify: selection=%d, target=%d, property=%d, CLIPBOARD=%d, UTF8_STRING=%d, BRPLAT_PROP=%d",
+          event.xselection.selection,
+          event.xselection.target,
+          event.xselection.property,
+          w->CLIPBOARD, w->UTF8_STRING, w->BRPLAT_PROP);
+      }
+    } break;
     default: {
-      //LOGI("Unknown x11 event type: %d", event.type);
+      LOGI("Unknown x11 event type: %d", event.type);
       return (brpl_event_t) { .kind = brpl_event_nop };
     } break;
   }
@@ -926,7 +972,11 @@ static bool brpl_x11_open_window(brpl_window_t* window) {
     LOGE("Failed to open x11 window. display is null.");
     return false;
   }
+
   x11.WM_DELETE_WINDOW = brpl_x11_XInternAtom(d, "WM_DELETE_WINDOW", false);
+  x11.CLIPBOARD = brpl_x11_XInternAtom(d, "CLIPBOARD", false);
+  x11.UTF8_STRING = brpl_x11_XInternAtom(d, "UTF8_STRING", false);
+  x11.BRPLAT_PROP = brpl_x11_XInternAtom(d, "BRPLAT_PROP", false);
   x11.screen = brpl_x11_XDefaultScreen(x11.display);
   x11.root = brpl_x11_XRootWindow(x11.display, x11.screen);
   x11.context = brpl_x11_XrmUniqueQuark();
@@ -1066,6 +1116,13 @@ static void brpl_x11_close_window(brpl_window_t* window) {
   BR_FREE(win);
 }
 
+bool brpl_x11_clipboard_request(brpl_window_t* win) {
+  brpl_window_x11_t* x11_win = win->win;
+  brpl_x11_XConvertSelection(x11_win->display, x11_win->CLIPBOARD, x11_win->UTF8_STRING, x11_win->BRPLAT_PROP, x11_win->window_handle, brpl_x11_CurrentTime);
+  brpl_x11_XFlush(x11_win->display);
+  return true;
+}
+
 bool brpl_x11_pointer_kind_set(brpl_window_t* win, brpl_pointer_kind_t kind) {
   brpl_window_x11_t* x11_win = win->win;
   brpl_x11_cursour_mapping_t* cursor_mapping = NULL;
@@ -1122,6 +1179,8 @@ static bool brpl_x11_load(brpl_window_t* win) {
     win->f.event_next   = brpl_x11_event_next;
     win->f.window_open  = brpl_x11_open_window;
     win->f.window_close = brpl_x11_close_window;
+
+    win->f.clipboard_request = brpl_x11_clipboard_request;
 
     win->f.pointer_kind_set = brpl_x11_pointer_kind_set;
   }

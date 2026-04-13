@@ -180,7 +180,7 @@ void __sanitizer_print_stack_trace(void);
 #  elif defined(__TINYC__)
 #    define BR_BREAKPOINT()
 #  else
-#    define BR_BREAKPOINT() __builtin_trap()
+#    define BR_BREAKPOINT() asm("int3")
 #  endif
 #else
 # define BR_BREAKPOINT()
@@ -329,6 +329,7 @@ void __sanitizer_print_stack_trace(void);
 #endif
 
 typedef unsigned long long br_u64;
+typedef unsigned      long br_ulong;
 typedef unsigned       int br_u32;
 typedef unsigned     short br_u16;
 typedef unsigned      char br_u8;

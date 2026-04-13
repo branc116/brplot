@@ -120,6 +120,8 @@ struct {
       "brpl_x11_Status XInitThreads(void)"
       "void XrmInitialize(void)"
       "brpl_x11_Displayp XOpenDisplay(const char* name)"
+      "int XConvertSelection(brpl_x11_Display* display, brpl_x11_Atom selection, brpl_x11_Atom target, brpl_x11_Atom property, brpl_x11_Window requestor, brpl_x11_Time time)"
+      "int XGetWindowProperty(brpl_x11_Display* display, brpl_x11_Window w, brpl_x11_Atom property, long long_offset, long long_length, brpl_x11_Bool delete, brpl_x11_Atom req_type, brpl_x11_Atom* actual_type_return, int* actual_format_return, br_ulong* nitems_return, br_ulong* bytes_after_return, br_u8** prop_return)"
       "int XDefaultScreen(brpl_x11_Display* d)"
       "brpl_x11_Window XRootWindow(brpl_x11_Display* d, int screen)"
       "brpl_x11_Visualp XDefaultVisual(brpl_x11_Display* d, int screen)"

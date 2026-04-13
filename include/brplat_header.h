@@ -96,7 +96,7 @@ typedef struct brpl_event_t {
       int keycode;
     };
     brpl_touch_point_t touch;
-	br_str_t text;
+    br_str_t text;
   };
 } brpl_event_t;
 
