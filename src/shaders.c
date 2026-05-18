@@ -53,6 +53,7 @@ BR_ALL_SHADERS(X, NOP2, X_BUF)
     brgl_enable_shader(shader->id); \
     BUFF \
     brgl_disable_vao(); \
+    brgl_enable_shader(0); \
   }
 BR_ALL_SHADERS(X, NOP2, X_BUF)
 #undef X

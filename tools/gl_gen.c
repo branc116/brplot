@@ -18,6 +18,7 @@ struct {
     .name = "gl",
     .name_upper = "GL",
 	  .load_func = "brpl_load_gl",
+    .prefix = "brgl_",
     .functions =
       "void glBegin(GLenum mode)"
       "void glColor3f(GLfloat r, GLfloat g, GLfloat b)"
@@ -89,6 +90,9 @@ struct {
       "void glUseProgram(GLuint program)"
       "void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* pointer)"
       "void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)"
+      "void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)"
+      "void glGetBooleanv(GLenum x, GLboolean* value)"
+      "void glGetIntegerv(GLenum x, GLint* value)"
   },
   {
     .name = "glx",
@@ -162,13 +166,17 @@ struct {
   }, {
     .name = "glfw",
     .name_upper = "GLFW",
+    .prefix = "brglfw_",
     .functions =
       "int glfwInit(void)"
       "void glfwInitHint(int hint, int value)"
       "int glfwDefaultWindowHints(void)"
+      "GLFWwindowp glfwGetCurrentContext(void)"
       "void glfwSwapBuffers(GLFWwindowp win)"
       "GLFWwindowp glfwCreateWindow(int width, int height, const char* title, void* bs1, void* bs2)"
       "GLFWerrorfun glfwSetErrorCallback(GLFWerrorfun callback)"
+      "void glfwGetCursorPos(GLFWwindowp window, double* x, double* y)"
+      "void glfwGetWindowSize(GLFWwindowp window, int* width, int* height)"
       "void glfwGetWindowContentScale(GLFWwindowp window, float* x, float* y)"
       "void glfwMakeContextCurrent(GLFWwindowp window)"
       "void glfwSetWindowSize(GLFWwindowp glfw, int width, int height)"
@@ -314,7 +322,8 @@ static void print_static_declarations(FILE* file, func_t* funcs, size_t len, con
   for (int i = 0; i <  len; ++i) {
     func_t f = funcs[i];
 
-    fprintf(file, "%.*s %s%.*s(", f.ret_type.len, f.ret_type.str, prefix, f.name.len, f.name.str);
+    fprintf(file, "#define %s%.*s %.*s\n", prefix, f.name.len, f.name.str, f.name.len, f.name.str);
+    fprintf(file, "%.*s %.*s(", f.ret_type.len, f.ret_type.str, f.name.len, f.name.str);
 
     if (f.params.len == 0) {
       fprintf(file, "void");

@@ -396,6 +396,7 @@ static bool brpl_x11_load(brpl_window_t* window);
 #endif
 #if BR_HAS_GLFW
 static bool brpl_glfw_load(brpl_window_t* window);
+static bool brpl_glfw_attach_load(brpl_window_t* win);
 #endif
 #if BR_HAS_WIN32
 static bool brpl_win32_load(brpl_window_t* window);
@@ -448,6 +449,7 @@ bool brpl_window_open(brpl_window_t* window) {
 #endif
 #if BR_HAS_GLFW
     case brpl_window_glfw: loaded = brpl_glfw_load(window); break;
+    case brpl_window_glfw_attach: loaded = brpl_glfw_attach_load(window); break;
 #endif
 #if BR_HAS_WIN32
     case brpl_window_win32: loaded = brpl_win32_load(window); break;
@@ -548,7 +550,7 @@ start:
 
 void brpl_frame_start(brpl_window_t* window) {
   window->f.frame_start(window);
-  brgl_enable_framebuffer(0, window->viewport.width, window->viewport.height);
+  brgl_enable_framebuffer(0, window->viewport.x, window->viewport.y, window->viewport.width, window->viewport.height);
 }
 
 void brpl_frame_end(brpl_window_t* window) {
@@ -877,13 +879,16 @@ static brpl_event_t brpl_x11_event_next(brpl_window_t* window) {
               LOGI("Clipboard: %s\n", data);  // or copy it
               brpl_x11_XFree(data);
               return ret;
+            } else {
+              return (brpl_event_t) { .kind = brpl_event_nop };
             }
       } else {
-        LOGE("Bad Selection notify: selection=%d, target=%d, property=%d, CLIPBOARD=%d, UTF8_STRING=%d, BRPLAT_PROP=%d",
+        LOGE("Bad Selection notify: selection=%lu, target=%lu, property=%lu, CLIPBOARD=%lu, UTF8_STRING=%ld, BRPLAT_PROP=%ld",
           event.xselection.selection,
           event.xselection.target,
           event.xselection.property,
           w->CLIPBOARD, w->UTF8_STRING, w->BRPLAT_PROP);
+        return (brpl_event_t) { .kind = brpl_event_nop };
       }
     } break;
     default: {
@@ -1201,16 +1206,45 @@ static bool brpl_x11_load(brpl_window_t* win) {
 typedef struct brpl_glfw_window_t {
   GLFWwindow* glfw;
   brpl_q_t q;
+
+  struct {
+    void* outer_user_pointer;
+    GLFWwindowfocusfun outer_window_focus_callback;
+    GLFWmousebuttonfun outer_mouse_button_callback;
+    GLFWcursorposfun outer_cursor_pos_callback;
+    GLFWscrollfun outer_scroll_callback;
+    GLFWkeyfun outer_key_callback;
+    GLFWcharfun outer_char_callback;
+
+    br_extenti_t outer_viewport;
+    br_extenti_t outer_scissor;
+    bool outer_scissor_test;
+    bool outer_depth_test;
+  } attached;
 } brpl_glfw_window_t;
+
+static bool brpl_glfw_is_mouse_inside(brpl_window_t* win) {
+  brpl_glfw_window_t* w = win->win;
+  double global_mouse_pos_x = 0, global_mouse_pos_y = 0;
+  int full_width = 0, full_height = 0;
+  brglfw_glfwGetCursorPos(w->glfw, &global_mouse_pos_x, &global_mouse_pos_y);
+  brglfw_glfwGetWindowSize(w->glfw, &full_width, &full_height);
+  int top_offset = full_height - win->viewport.height - win->viewport.y;
+  if (top_offset > global_mouse_pos_y)                            return false;
+  if (top_offset + win->viewport.height < global_mouse_pos_y)     return false;
+  if (win->viewport.x > global_mouse_pos_x)                       return false;
+  if (win->viewport.x + win->viewport.width < global_mouse_pos_x) return false;
+  return true;
+}
 
 static void brpl_glfw_frame_start(brpl_window_t* win) {
   (void)win;
-  glfwPollEvents();
+  brglfw_glfwPollEvents();
 }
 
 static void brpl_glfw_frame_end(brpl_window_t* win) {
   brpl_glfw_window_t* gw = win->win;
-  glfwSwapBuffers(gw->glfw);
+  brglfw_glfwSwapBuffers(gw->glfw);
 }
 
 static brpl_event_t brpl_glfw_event_next(brpl_window_t* win) {
@@ -1225,65 +1259,130 @@ static void brpl_glfw_error_callback(int error_code, const char* description) {
   LOGE("GLFW error %d: %s", error_code, description);
 }
 static void brpl_glfw_windowsizefun(GLFWwindow* window, int width, int height) {
-  brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
+  brpl_window_t* w = brglfw_glfwGetWindowUserPointer(window);
+  brpl_glfw_window_t* win = w->win;
   brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_window_resize, .size = BR_SIZE((float)width, (float)height) });
 }
 static void brpl_glfw_windowclosefun(GLFWwindow* window) {
-  brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
+  brpl_window_t* w = brglfw_glfwGetWindowUserPointer(window);
+  brpl_glfw_window_t* win = w->win;
   brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_close });
 }
 static void brpl_glfw_windowfocusfun(GLFWwindow* window, int focused) {
-  brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
+  brpl_window_t* w = brglfw_glfwGetWindowUserPointer(window);
+  brpl_glfw_window_t* win = w->win;
   brpl_q_push(&win->q, (brpl_event_t) { .kind = focused ? brpl_event_window_focused : brpl_event_window_unfocused });
 }
 static void brpl_glfw_windowcontentscalefun(GLFWwindow* window, float xscale, float yscale) {
-  brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
+  brpl_window_t* w = brglfw_glfwGetWindowUserPointer(window);
+  brpl_glfw_window_t* win = w->win;
   brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_scale, .size = BR_SIZE(xscale, yscale) });
 }
 static void brpl_glfw_mousebuttonfun(GLFWwindow* window, int button, int action, int mods) {
   (void)mods;
-  brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
+  brpl_window_t* w = brglfw_glfwGetWindowUserPointer(window);
+  brpl_glfw_window_t* win = w->win;
+  if (w->is_attached) {
+    if (win->attached.outer_char_callback) {
+      brglfw_glfwSetWindowUserPointer(win->glfw, win->attached.outer_user_pointer);
+      win->attached.outer_mouse_button_callback(window, button, action, mods);
+      brglfw_glfwSetWindowUserPointer(win->glfw, w);
+    }
+    if (!brpl_glfw_is_mouse_inside(w)) {
+      return;
+    }
+  }
   brpl_event_kind_t ev = action == 0 ? brpl_event_mouse_release : brpl_event_mouse_press;
-  int key  = button == 0 ? 0 : 3;
+  int key = button == 0 ? 0 : 3;
   brpl_q_push(&win->q, (brpl_event_t) { .kind = ev, .mouse_key = key });
 }
 static void brpl_glfw_cursorposfun(GLFWwindow* window, double xpos, double ypos) {
-  brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
+  brpl_window_t* w = brglfw_glfwGetWindowUserPointer(window);
+  brpl_glfw_window_t* win = w->win;
+  if (w->is_attached) {
+    if (win->attached.outer_char_callback) {
+      brglfw_glfwSetWindowUserPointer(win->glfw, win->attached.outer_user_pointer);
+      win->attached.outer_cursor_pos_callback(window, xpos, ypos);
+      brglfw_glfwSetWindowUserPointer(win->glfw, w);
+    }
+    if (!brpl_glfw_is_mouse_inside(w)) {
+      return;
+    }
+    int full_width = 0, full_height = 0;
+    brglfw_glfwGetWindowSize(win->glfw, &full_width, &full_height);
+    xpos -= w->viewport.x;
+    int top_offset = full_height - w->viewport.height - w->viewport.y;
+    ypos -= top_offset;
+  }
   brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_mouse_move, .pos = BR_VEC2((float)xpos, (float)ypos) });
 }
 static void brpl_glfw_scrollfun(GLFWwindow* window, double xoffset, double yoffset) {
-  brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
+  brpl_window_t* w = brglfw_glfwGetWindowUserPointer(window);
+  brpl_glfw_window_t* win = w->win;
+  if (w->is_attached) {
+    if (win->attached.outer_char_callback) {
+      brglfw_glfwSetWindowUserPointer(win->glfw, win->attached.outer_user_pointer);
+      win->attached.outer_scroll_callback(window, xoffset, yoffset);
+      brglfw_glfwSetWindowUserPointer(win->glfw, w);
+    }
+    if (!brpl_glfw_is_mouse_inside(w)) {
+      return;
+    }
+  }
   brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_mouse_scroll, .vec = BR_VEC2((float)xoffset, (float)yoffset) });
 }
 static void brpl_glfw_keyfun(GLFWwindow* window, int key, int scancode, int action, int mods) {
   (void)mods;
-  brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
+  brpl_window_t* w = brglfw_glfwGetWindowUserPointer(window);
+  brpl_glfw_window_t* win = w->win;
+  if (w->is_attached) {
+    if (win->attached.outer_char_callback) {
+      brglfw_glfwSetWindowUserPointer(win->glfw, win->attached.outer_user_pointer);
+      win->attached.outer_key_callback(window, key, scancode, action, mods);
+      brglfw_glfwSetWindowUserPointer(win->glfw, w);
+    }
+    if (!brpl_glfw_is_mouse_inside(w)) {
+      return;
+    }
+  }
   brpl_event_kind_t event = action == 0 ? brpl_event_key_release : brpl_event_key_press;
   brpl_q_push(&win->q, (brpl_event_t) { .kind = event, .key = key, .keycode = scancode });
 }
 static void brpl_glfw_charfun(GLFWwindow* window, unsigned int codepoint) {
-  brpl_glfw_window_t* win = glfwGetWindowUserPointer(window);
+  brpl_window_t* w = brglfw_glfwGetWindowUserPointer(window);
+  brpl_glfw_window_t* win = w->win;
+
+  if (w->is_attached) {
+    if (win->attached.outer_char_callback) {
+      brglfw_glfwSetWindowUserPointer(win->glfw, win->attached.outer_user_pointer);
+      win->attached.outer_char_callback(window, codepoint);
+      brglfw_glfwSetWindowUserPointer(win->glfw, w);
+    }
+    if (!brpl_glfw_is_mouse_inside(w)) {
+      return;
+    }
+  }
   brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_input, .utf8_char = codepoint });
 }
 
 static bool brpl_glfw_window_open(brpl_window_t* window) {
-  bool ok = glfwInit();
+  bool ok = brglfw_glfwInit();
   if (false == ok) {
     LOGE("Failed to initialize the glfw");
     return false;
   }
-  glfwSetErrorCallback(brpl_glfw_error_callback);
-  glfwDefaultWindowHints();
+  brglfw_glfwSetErrorCallback(brpl_glfw_error_callback);
+  brglfw_glfwDefaultWindowHints();
 #if !defined(__EMSCRIPTEN__)
 #define GLFW_CONTEXT_VERSION_MAJOR  0x00022002
 #define GLFW_CONTEXT_VERSION_MINOR  0x00022003
 #define GLFW_OPENGL_FORWARD_COMPAT  0x00022006
-  glfwInitHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
-  glfwInitHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwInitHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  brglfw_glfwInitHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
+  brglfw_glfwInitHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  brglfw_glfwInitHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #endif
 
-  GLFWwindow* glfw_window = glfwCreateWindow(window->viewport.width, window->viewport.height, window->title, NULL, NULL);
+  GLFWwindow* glfw_window = brglfw_glfwCreateWindow(window->viewport.width, window->viewport.height, window->title, NULL, NULL);
   if (NULL == glfw_window) {
     LOGE("Failed to create glfw window");
     return false;
@@ -1291,21 +1390,21 @@ static bool brpl_glfw_window_open(brpl_window_t* window) {
   brpl_glfw_window_t* win = BR_CALLOC(1, sizeof(brpl_glfw_window_t));
   win->glfw = glfw_window;
   window->win = win;
-  glfwSetWindowUserPointer(glfw_window, win);
-  glfwSetWindowSizeCallback(glfw_window, brpl_glfw_windowsizefun);
-  glfwSetWindowCloseCallback(glfw_window, brpl_glfw_windowclosefun);
-  glfwSetWindowFocusCallback(glfw_window, brpl_glfw_windowfocusfun);
+  brglfw_glfwSetWindowUserPointer(glfw_window, window);
+  brglfw_glfwSetWindowSizeCallback(glfw_window, brpl_glfw_windowsizefun);
+  brglfw_glfwSetWindowCloseCallback(glfw_window, brpl_glfw_windowclosefun);
+  brglfw_glfwSetWindowFocusCallback(glfw_window, brpl_glfw_windowfocusfun);
 #if !defined(__EMSCRIPTEN__) || (__EMSCRIPTEN_MAJOR__ > 3)
-  glfwSetWindowContentScaleCallback(glfw_window, brpl_glfw_windowcontentscalefun);
+  brglfw_glfwSetWindowContentScaleCallback(glfw_window, brpl_glfw_windowcontentscalefun);
 #endif
-  glfwSetMouseButtonCallback(glfw_window, brpl_glfw_mousebuttonfun);
-  glfwSetCursorPosCallback(glfw_window, brpl_glfw_cursorposfun);
-  glfwSetScrollCallback(glfw_window, brpl_glfw_scrollfun);
-  glfwSetKeyCallback(glfw_window, brpl_glfw_keyfun);
-  glfwSetCharCallback(glfw_window, brpl_glfw_charfun);
-  glfwMakeContextCurrent(glfw_window);
+  brglfw_glfwSetMouseButtonCallback(glfw_window, brpl_glfw_mousebuttonfun);
+  brglfw_glfwSetCursorPosCallback(glfw_window, brpl_glfw_cursorposfun);
+  brglfw_glfwSetScrollCallback(glfw_window, brpl_glfw_scrollfun);
+  brglfw_glfwSetKeyCallback(glfw_window, brpl_glfw_keyfun);
+  brglfw_glfwSetCharCallback(glfw_window, brpl_glfw_charfun);
+  brglfw_glfwMakeContextCurrent(glfw_window);
 #if !defined(__EMSCRIPTEN__) || (__EMSCRIPTEN_MAJOR__ > 3)
-  glfwGetWindowContentScale(glfw_window, &window->scale.x, &window->scale.y);
+  brglfw_glfwGetWindowContentScale(glfw_window, &window->scale.x, &window->scale.y);
 #endif
   if (false == br_gl_load()) {
     LOGE("Failed to load gl.");
@@ -1329,7 +1428,7 @@ void brpl_additional_event_touch(brpl_window_t* window, int kind, float x, float
 
 void brpl_window_size_set(brpl_window_t* window, int width, int height) {
  brpl_glfw_window_t* win = window->win;
- glfwSetWindowSize(win->glfw, width, height);
+ brglfw_glfwSetWindowSize(win->glfw, width, height);
  brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_window_resize, .size = BR_SIZE((float)width, (float)height) });
 }
 
@@ -1346,6 +1445,87 @@ static bool brpl_glfw_load(brpl_window_t* win) {
   win->f.event_next  = brpl_glfw_event_next;
   win->f.window_open = brpl_glfw_window_open;
   win->f.window_close = brpl_glfw_window_close;
+  return ok;
+}
+
+static void brpl_glfw_attached_frame_start(brpl_window_t* win) {
+  brpl_glfw_window_t* glfw = win->win;
+  BR_STATIC_ASSERT(sizeof(GLint[4]) == sizeof(br_extenti_t), "GLint size is not the same as the br_extenti_t");
+  brgl_glGetIntegerv(GL_VIEWPORT, (GLint*)&glfw->attached.outer_viewport);
+  brgl_glGetIntegerv(GL_SCISSOR_BOX, (GLint*)&glfw->attached.outer_scissor);
+  brgl_glGetBooleanv(GL_SCISSOR_TEST, (GLboolean*)&glfw->attached.outer_scissor_test);
+  brgl_glGetBooleanv(GL_DEPTH_TEST, (GLboolean*)&glfw->attached.outer_depth_test);
+  brgl_glFlush();
+  brgl_enable(GL_SCISSOR_TEST);
+  brgl_glScissor(win->viewport.x, win->viewport.y, win->viewport.width, win->viewport.height);
+  brgl_glViewport(win->viewport.x, win->viewport.y, win->viewport.width, win->viewport.height);
+  brgl_enable(GL_DEPTH_TEST);
+
+  // TODO: save other opengl state such as blend mode, depth testing, etc..
+}
+
+static void brpl_glfw_attached_frame_end(brpl_window_t* win) {
+  brpl_glfw_window_t* glfw = win->win;
+  br_extenti_t outer;
+  brgl_glFlush();
+
+
+  // Restore opengl state as it's was before the attached_frame_start was called..
+  outer = glfw->attached.outer_viewport;
+  brgl_glViewport(outer.x, outer.y, outer.width, outer.height);
+  outer = glfw->attached.outer_scissor;
+  brgl_glScissor(outer.x, outer.y, outer.width, outer.height);
+  if (false == glfw->attached.outer_scissor_test) brgl_disable(GL_SCISSOR_TEST);
+  if (false == glfw->attached.outer_depth_test) brgl_disable(GL_DEPTH_TEST);
+  brgl_enable_shader(0);
+
+  // TODO: restore other opengl state such as blend mode, depth testing, etc..
+}
+
+static bool brpl_glfw_window_attach(brpl_window_t* window) {
+  brpl_glfw_window_t* win = BR_CALLOC(1, sizeof(brpl_glfw_window_t));
+
+  GLFWwindowp glfw_window = brglfw_glfwGetCurrentContext();
+  if (glfw_window == NULL) {
+    LOGE("Can't attach to the glfw context, context does not exits...");
+    return false;
+  }
+  win->glfw = glfw_window;
+
+  window->win = win;
+  win->attached.outer_user_pointer = brglfw_glfwGetWindowUserPointer(glfw_window);
+  brglfw_glfwSetWindowUserPointer(glfw_window, window);
+  //brglfw_glfwSetWindowSizeCallback(glfw_window, brpl_glfw_windowsizefun);
+  //brglfw_glfwSetWindowCloseCallback(glfw_window, brpl_glfw_windowclosefun);
+  win->attached.outer_window_focus_callback = brglfw_glfwSetWindowFocusCallback(glfw_window, brpl_glfw_windowfocusfun);
+#if !defined(__EMSCRIPTEN__) || (__EMSCRIPTEN_MAJOR__ > 3)
+  brglfw_glfwSetWindowContentScaleCallback(glfw_window, brpl_glfw_windowcontentscalefun);
+#endif
+  win->attached.outer_mouse_button_callback = brglfw_glfwSetMouseButtonCallback(glfw_window, brpl_glfw_mousebuttonfun);
+  win->attached.outer_cursor_pos_callback = brglfw_glfwSetCursorPosCallback(glfw_window, brpl_glfw_cursorposfun);
+  win->attached.outer_scroll_callback = brglfw_glfwSetScrollCallback(glfw_window, brpl_glfw_scrollfun);
+  win->attached.outer_key_callback = brglfw_glfwSetKeyCallback(glfw_window, brpl_glfw_keyfun);
+  win->attached.outer_char_callback = brglfw_glfwSetCharCallback(glfw_window, brpl_glfw_charfun);
+#if !defined(__EMSCRIPTEN__) || (__EMSCRIPTEN_MAJOR__ > 3)
+  brglfw_glfwGetWindowContentScale(glfw_window, &window->scale.x, &window->scale.y);
+#endif
+  if (false == br_gl_load()) {
+    LOGE("Failed to load gl.");
+    return false;
+  }
+  brpl_q_push(&win->q, (brpl_event_t) { .kind = brpl_event_window_focused });
+  return true;
+}
+
+static bool brpl_glfw_attach_load(brpl_window_t* win) {
+// /usr/include/GLFW/glfw3.h
+  bool ok = br_glfw_load();
+  win->f.frame_start = brpl_glfw_attached_frame_start;
+  win->f.frame_end   = brpl_glfw_attached_frame_end;
+  win->f.event_next  = brpl_glfw_event_next;
+  win->f.window_open = brpl_glfw_window_attach;
+  win->f.window_close = NULL; /* Nothing to do here, we don't own the window... */
+  win->is_attached = true;
   return ok;
 }
 

@@ -160,7 +160,9 @@ bool brui_window_init(brui_window_t* uiw) {
   brgl_enable_clip_distance();
   brgl_blend_func(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   brgl_blend_equation(GL_FUNC_ADD);
-  brgl_viewport(0, 0, uiw->pl.viewport.width, uiw->pl.viewport.height);
+  if (false == uiw->pl.is_attached) {
+    brgl_viewport(0, 0, uiw->pl.viewport.width, uiw->pl.viewport.height);
+  }
 
   uiw->shaders = br_shaders_malloc();
   brtr_construct(2*1024, 2*1024, &uiw->shaders);
@@ -1483,6 +1485,7 @@ static void bruir_update_extent(bruirs_t* rs, int index, br_extent_t new_ex);
 
 void brui_resizable_init(bruirs_t* rs, br_extent_t extent) {
   brui_resizable_t screen = { 0 };
+  extent.x = extent.y = 0;
   screen.cur_extent_ah = br_animex_new(&brui_state.uiw->anims, extent, extent);
   screen.scroll_offset_percent_ah = br_animf_new(&brui_state.uiw->anims, 0, 0);
   br_anim_instant(&brui_state.uiw->anims, screen.cur_extent_ah);
@@ -1625,6 +1628,7 @@ static void bruir_update_extent(bruirs_t* rs, int index, br_extent_t new_ex) {
 }
 
 void brui_resizable_update(bruirs_t* rs, br_extent_t viewport) {
+  viewport.x = viewport.y = 0;
   bruir_update_extent(rs, 0, viewport);
   brui_state.snap_cooldown -= brui_state.uiw->time.frame;
 

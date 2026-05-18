@@ -66,7 +66,7 @@ void br_plotter_draw(br_plotter_t* br) {
         if (PLOT.follow) br_plot_focus_visible(&PLOT, br->groups, texture_extent);
         if (brui_resizable_is_hidden(PLOT.resizable_handle)) continue;
 
-        brgl_enable_framebuffer(PLOT.texture_id, (int)roundf(texture_extent.width), (int)roundf(texture_extent.height));
+        brgl_enable_framebuffer(PLOT.texture_id, 0, 0, (int)roundf(texture_extent.width), (int)roundf(texture_extent.height));
         brgl_clear(BR_COLOR_COMPF(br->uiw.theme.colors.plot_bg));
         if (br->ui.multisampling) brgl_enable_multisampling();
         else                      brgl_disable_multisampling();
@@ -93,7 +93,7 @@ void br_plotter_draw(br_plotter_t* br) {
       }
     }
 
-    brgl_enable_framebuffer(0, br->uiw.pl.viewport.width, br->uiw.pl.viewport.height);
+    brgl_enable_framebuffer(0, br->uiw.pl.viewport.x, br->uiw.pl.viewport.y, br->uiw.pl.viewport.width, br->uiw.pl.viewport.height);
     BR_PROFILE("UI") {
       br_shaders_draw_all(br->uiw.shaders);
 #if BR_HAS_HOTRELOAD

@@ -31,7 +31,7 @@ void brgl_enable_clip_distance(void) {}
 void brgl_blend_func(GLenum sfactor, GLenum dfactor) { (void)sfactor; (void)dfactor; }
 void brgl_blend_equation(GLenum mode) { (void)mode; }
 void brgl_viewport(GLint x, GLint y, GLsizei width, GLsizei height) { (void)x; (void)y; (void)width; (void)height; }
-void brgl_enable_framebuffer(GLuint fb_id, int new_width, int new_height) { (void)fb_id; (void)new_width; (void)new_height; }
+void brgl_enable_framebuffer(GLuint fb_id, int x_offset, int y_offset, int new_width, int new_height) { (void)fb_id; (void)x_offset; (void)y_offset; (void)new_width; (void)new_height; }
 GLuint brgl_load_texture(const void* data, int width, int height, int format, bool mipmap) { (void)data; (void)width; (void)height; (void)format; (void)mipmap; return 1; }
 void brgl_unload_texture(GLuint tex_id) { (void)tex_id; }
 GLuint brgl_framebuffer_to_texture(GLuint br_id) { (void)br_id; return 1; }

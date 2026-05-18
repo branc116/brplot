@@ -15,19 +15,29 @@
 #  define BR_RELEASE
 #endif
 
+#if __STDC_VERSION__ > 202311LL
+#  define BR_STATIC_ASSERT(EXPR, msg) static_assert(EXPR, msg)
+#else
+#  define BR_STATIC_ASSERT(EXPR, msg) _Static_assert(EXPR, msg)
+#endif
+
 void brgui_push_log_line(const char* fmt, ...);
 #if !defined(BR_DISABLE_LOG)
 #if defined(BR_DEBUG)
 
+#if !defined(LOGE)
 #define BR_LOG(SEVERITY, FMT, ...) do { \
   BRGUI_PUSH_LOG_LINE(SEVERITY FMT, ##__VA_ARGS__); \
   fprintf(stderr, SEVERITY"[ " __FILE__ ":%d ] " FMT "\n", __LINE__, ##__VA_ARGS__); \
 } while(0)
+#endif
 
+#if !defined(LOGE)
 #define LOGE(format, ...) do { \
     fprintf(stderr, "[ERROR][ " __FILE__ ":%d ] " format "\n", __LINE__, ##__VA_ARGS__); \
     BR_STACKTRACE(); \
 } while(0)
+#endif
 //#define BR_ON_FATAL_ERROR br_on_fatal_error
 //#define BRGUI_PUSH_LOG_LINE brgui_push_log_line
 #define BR_ON_FATAL_ERROR(...)
@@ -35,14 +45,18 @@ void brgui_push_log_line(const char* fmt, ...);
 
 #else
 
+#if !defined(BR_LOG)
 #define BR_LOG(SEVERITY, FMT, ...) do { \
   fprintf(stderr, SEVERITY"[ " __FILE__ ":%d ] " FMT "\n", __LINE__, ##__VA_ARGS__); \
 } while(0)
+#endif
 
+#if !defined(BR_LOGE)
 #define LOGE(format, ...) do { \
     fprintf(stderr, "[ERROR][ " __FILE__ ":%d ] " format "\n", __LINE__, ##__VA_ARGS__); \
     BR_STACKTRACE(); \
 } while(0)
+#endif
 #define BR_ON_FATAL_ERROR(...)
 
 #endif
@@ -52,19 +66,25 @@ void brgui_push_log_line(const char* fmt, ...);
 #  define BR_ON_FATAL_ERROR(...)
 #endif
 
-#define LOGI(format, ...) BR_LOG("[INFO]", format, ##__VA_ARGS__)
-#define LOGW(format, ...) BR_LOG("[WARNING]", format, ##__VA_ARGS__)
+#if !defined(LOGI)
+#  define LOGI(format, ...) BR_LOG("[INFO]", format, ##__VA_ARGS__)
+#endif
+#if !defined(LOGW)
+#  define LOGW(format, ...) BR_LOG("[WARNING]", format, ##__VA_ARGS__)
+#endif
 #define BR_LOGI LOGI
 #define BR_LOGW LOGW
 #define BR_LOGE LOGE
 
 extern void br_on_fatal_error(void);
+#if !defined(LOGF)
 #define LOGF(format, ...) do { \
   fprintf(stderr, "[FATAL][" __FILE__ ":%d] " format "\n", __LINE__, ##__VA_ARGS__); \
   BR_ON_FATAL_ERROR(); \
   BR_STACKTRACE(); \
   abort(); \
 } while(0)
+#endif
 
 #if defined(__TINYC__)
 #  define BR_RETURN_IF_TINY_C(EXPR) return (EXPR)

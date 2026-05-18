@@ -1,6 +1,7 @@
 #include "src/br_anim.h"
 #include "src/br_da.h"
 #include "include/br_free_list_header.h"
+#include "src/br_math.h"
 
 static BR_THREAD_LOCAL struct br_anims_state {
   float* animation_speed;
@@ -264,6 +265,12 @@ void br_anim3_set(br_anims_t* anims, int anim_handle, br_vec3_t target_value) {
 void br_animex_set(br_anims_t* anims, int anim_handle, br_extent_t target_value) {
   br_anim_t* anim = &br_da_get(anims->all, anim_handle);
   BR_ASSERTF(anim->kind == br_anim_extent, "Anim kind should be extent, but it's: %d", anim->kind);
+#if BR_DEBUG
+  if (anim->trace) {
+    LOGI("ANIM %d: (%f, %f, %f, %f) -> (%f, %f, %f, %f) (current: (%f, %f, %f, %f))", anim_handle, BR_EXTENT_(anim->ex.target), BR_EXTENT_(target_value), BR_EXTENT_(anim->ex.current));
+    BR_STACKTRACE();
+  }
+#endif
   if (anim->is_instant) {
     anim->ex.target = target_value;
     anim->ex.current = target_value;

@@ -120,6 +120,7 @@ typedef enum brpl_window_kind_t {
   brpl_window_x11,
   brpl_window_win32,
   brpl_window_glfw,
+  brpl_window_glfw_attach,
   brpl_window_headless,
 } brpl_window_kind_t;
 
@@ -152,6 +153,7 @@ typedef struct brpl_window_t {
 
   brpl_pointer_kind_t pointer_kind;
 
+  bool is_attached; // E.g. brpl_window_kind == brpl_window_glfw_attach
   bool active;
   bool should_close;
   bool is_recording;

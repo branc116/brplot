@@ -288,7 +288,7 @@ BR_EXPORT void br_wasm_loop(br_plotter_t* br) {
   br_main_iter(br);
 }
 
-// void glfwSetWindowSize(GLFWwindow* window, int width, int height);
+// void brglfw_glfwSetWindowSize(GLFWwindow* window, int width, int height);
 BR_EXPORT void br_wasm_resize(br_plotter_t* br, int width, int height) {
   brpl_window_size_set(&br->uiw.pl, width, height);
 }

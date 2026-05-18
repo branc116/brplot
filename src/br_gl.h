@@ -60,7 +60,10 @@
 #define GL_DST_COLOR 0x0306
 #define GL_CULL_FACE 0x0B44
 #define GL_DEPTH_TEST 0x0B71
+#define GL_VIEWPORT	0x0BA2
 #define GL_BLEND 0x0BE2
+#define GL_SCISSOR_BOX 0x0C10
+#define GL_SCISSOR_TEST 0x0C11
 #define GL_UNPACK_ALIGNMENT 0x0CF5
 #define GL_TEXTURE_2D 0x0DE1
 #define GL_UNSIGNED_BYTE 0x1401
@@ -141,7 +144,7 @@ void brgl_unload_texture(GLuint tex_id);
 
 GLuint brgl_create_framebuffer(int width, int height);
 GLuint brgl_framebuffer_to_texture(GLuint br_id);
-void brgl_enable_framebuffer(GLuint fb_id, int new_width, int new_height);
+void brgl_enable_framebuffer(GLuint fb_id, int x_offset, int y_offset, int new_width, int new_height);
 br_extent_t brgl_framebuffer_last_draw_extent(GLuint fb_id);
 void brgl_framebuffer_last_draw_extent_set(GLuint fb_id, br_extent_t extent);
 void brgl_destroy_framebuffer(GLuint fb_id);

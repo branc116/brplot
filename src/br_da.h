@@ -1,4 +1,5 @@
-#pragma once
+#if !defined(BR_INCLUDE_BR_DA_H)
+#define BR_INCLUDE_BR_DA_H
 #include "src/br_pp.h"
 
 #define DECLTYPE(VALUE) void
@@ -217,3 +218,4 @@ static inline void ___br_function_call_asset_id_ok(ssize_t arr_len, ssize_t acc_
     INDEX)]
 #endif
   
+#endif
