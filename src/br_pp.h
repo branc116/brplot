@@ -15,7 +15,9 @@
 #  define BR_RELEASE
 #endif
 
-#if __STDC_VERSION__ > 202311LL
+#if defined(_MSC_VER)
+#  define BR_STATIC_ASSERT(EXPR, msg)
+#elif __STDC_VERSION__ > 202311LL
 #  define BR_STATIC_ASSERT(EXPR, msg) static_assert(EXPR, msg)
 #else
 #  define BR_STATIC_ASSERT(EXPR, msg) _Static_assert(EXPR, msg)
@@ -171,19 +173,19 @@ void __sanitizer_print_stack_trace(void);
 #  define BR_ASSERTF(...)
 #else
 #  define BR_ASSERT(x) do { \
-    if (!(x)) { \
-       LOGE("ASSERT FAILED: `%s`", #x); \
-       BR_BREAKPOINT(); \
-       LOGF("Exiting"); \
-    } \
-  } while (0)
-#  define BR_ASSERTF(x, fmt, ...) do { \
      if (!(x)) { \
-       LOGE("ASSERT FAILED `" #x "`: " fmt, ##__VA_ARGS__); \
-       BR_BREAKPOINT(); \
-       LOGF("Exiting"); \
+        LOGE("ASSERT FAILED: `%s`", #x); \
+        BR_BREAKPOINT(); \
+        LOGF("Exiting"); \
      } \
-  } while (0)
+   } while (0)
+#  define BR_ASSERTF(x, fmt, ...) do { \
+      if (!(x)) { \
+        LOGE("ASSERT FAILED `" #x "`: " fmt, ##__VA_ARGS__); \
+        BR_BREAKPOINT(); \
+        LOGF("Exiting"); \
+      } \
+   } while (0)
 #endif
 
 #if defined(_MSC_VER)
@@ -235,7 +237,7 @@ void __sanitizer_print_stack_trace(void);
 #define BR_CAT2(A, B) A##B
 #if TRACY_ENABLE
 #  define BR_PROFILE(NAME) TracyCZoneN(BR_CAT(br_profiler, __LINE__),  NAME, true); \
-     for (int BR_CAT(profile_loop_start, __LINE__) = 1; BR_CAT(profile_loop_start, __LINE__) == 1; BR_CAT(profile_loop_start, __LINE__) = 0, TracyCZoneEnd(BR_CAT(br_profiler, __LINE__)))
+      for (int BR_CAT(profile_loop_start, __LINE__) = 1; BR_CAT(profile_loop_start, __LINE__) == 1; BR_CAT(profile_loop_start, __LINE__) = 0, TracyCZoneEnd(BR_CAT(br_profiler, __LINE__)))
 #  define BR_PROFILE_START(NAME) TracyCFrameMarkStart(NAME)
 #  define BR_PROFILE_END(NAME) TracyCFrameMarkEnd(NAME)
 #  define BR_PROFILE_FRAME_MARK() TracyCFrameMark
@@ -401,4 +403,3 @@ typedef   signed      char br_i8;
 #if defined(__APPLE__)
 #  include <mach/mach_time.h>
 #endif
-
