@@ -196,7 +196,7 @@ bool brui_window_deinit(brui_window_t* uiw) {
   return true;
 }
 
-static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t ancor);
+static int brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t ancor);
 static int bruir_find_at(bruirs_t* rs, int index, br_vec2_t loc, br_vec2_t* out_local_pos);
 static brui_drag_t brui_drag_mode_if_clicked(bruirs_t* rs, br_vec2_t mouse_pos, bool ctrl_down);
 brpl_event_t brui_event_next(brui_window_t* uiw) {
@@ -2095,7 +2095,11 @@ static br_strv_t brui_ancor_to_str(brui_ancor_t ancor) {
   return br_str_as_view(brui_state.scrach);
 }
 
-static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t ancor) {
+// Returns id of a temp resizable parent, if the sibling_id is != 0,
+// then new resizable will be created and sibling and res will be placed inside it.
+//
+// If sibling_id is 0 then return value will be 0
+static int brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t ancor) {
   (void)brui_ancor_to_str;
   bruirs_t* rs = &brui_state.uiw->resizables;
   brui_resizable_t* res = &br_da_get(*rs, res_id);
@@ -2152,10 +2156,11 @@ static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t an
     else if (ancor == brui_ancor_bottom) sibling->ancor = brui_ancor_top;
     else if (ancor == brui_ancor_left)   sibling->ancor = brui_ancor_right;
     else if (ancor == brui_ancor_right)  sibling->ancor = brui_ancor_left;
+    return new_id;
   } else {
     if (parent->tag == brui_resizable_tag_ancor_helper) {
       int gp = parent->parent;
-      if (parent->parent == -1) return;
+      if (parent->parent == -1) return 0;
       parent->parent = parent_id;
       br_extent_t pex = BRUI_ANIMEX(parent->cur_extent_ah);
       br_vec2_t rebase = br_vec2_scale(pex.pos, -1.f);
@@ -2219,6 +2224,8 @@ static void brui_resizable_set_ancor(int res_id, int sibling_id, brui_ancor_t an
       }
     }
   }
+
+  return 0;
 }
 
 br_bb_t brui_resizable_limit(int id) {
