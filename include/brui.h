@@ -136,7 +136,7 @@ typedef struct brui_action_t {
   brui_action_text_t text;
 } brui_action_t;
 
-typedef struct {
+typedef struct brui_resizable_t {
   brui_ancor_t ancor;
   int z, max_z;
   int parent;
