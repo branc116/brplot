@@ -19,7 +19,6 @@ static void br_data_push_point3(br_data_t* g, br_vec3d_t v);
 
 static BR_THREAD_LOCAL struct {
   brsp_t* sp;
-  br_color_t base_colors[8];
   br_anims_t* anims;
   br_serieses_t* serieses;
 } br_data;
@@ -28,14 +27,6 @@ void br_data_construct(brsp_t* sp, br_anims_t* anims, br_serieses_t* serieses) {
   br_data.sp = sp;
   br_data.anims = anims;
   br_data.serieses = serieses;
-  br_data.base_colors[0] = BR_RED;
-  br_data.base_colors[1] = BR_GREEN;
-  br_data.base_colors[2] = BR_BLUE;
-  br_data.base_colors[3] = BR_LIGHTGRAY;
-  br_data.base_colors[4] = BR_PINK;
-  br_data.base_colors[5] = BR_GOLD;
-  br_data.base_colors[6] = BR_VIOLET;
-  br_data.base_colors[7] = BR_DARKPURPLE;
 }
 
 int br_datas_get_new_id(br_datas_t *datas) {
@@ -401,19 +392,39 @@ static br_data_t br_data_init(int group_id, br_data_kind_t kind) {
 }
 
 br_color_t br_data_get_default_color(int group_id) {
-  group_id = abs(group_id);
-  static int base_colors_count = sizeof(br_data.base_colors)/sizeof(br_color_t);
-  float count = 2.f;
-  br_color_t c = br_data.base_colors[group_id%base_colors_count];
-  group_id /= base_colors_count;
-  while (group_id > 0) {
-    c.r = (unsigned char)(((float)c.r + (float)br_data.base_colors[group_id%base_colors_count].r) / count);
-    c.g = (unsigned char)(((float)c.g + (float)br_data.base_colors[group_id%base_colors_count].g) / count);
-    c.b = (unsigned char)(((float)c.b + (float)br_data.base_colors[group_id%base_colors_count].b) / count);
-    group_id /= base_colors_count;
-    count += 1;
-  }
-  return c;
+  // NOTE: Stolen from raylib :)
+  int sum = 1024*(1 + sin(0.212*group_id - 2));
+  float hue = sum % 2048;
+  float saturation = 0.8f;
+  float value      = 0.8f;
+
+  br_color_t color = { .a = 255 };
+
+  // Red channel
+  float k = fmodf((5.0f + hue/60.0f), 6);
+  float t = 4.0f - k;
+  k = (t < k)? t : k;
+  k = (k < 1)? k : 1;
+  k = (k > 0)? k : 0;
+  color.r = (unsigned char)((value - value*saturation*k)*255.0f);
+
+  // Green channel
+  k = fmodf((3.0f + hue/60.0f), 6);
+  t = 4.0f - k;
+  k = (t < k)? t : k;
+  k = (k < 1)? k : 1;
+  k = (k > 0)? k : 0;
+  color.g = (unsigned char)((value - value*saturation*k)*255.0f);
+
+  // Blue channel
+  k = fmodf((1.0f + hue/60.0f), 6);
+  t = 4.0f - k;
+  k = (t < k)? t : k;
+  k = (k < 1)? k : 1;
+  k = (k > 0)? k : 0;
+  color.b = (unsigned char)((value - value*saturation*k)*255.0f);
+
+  return color;
 }
 
 bool br_data_is_generated(br_dagens_t const* dagens, int group_id) {
