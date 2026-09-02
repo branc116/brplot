@@ -36,7 +36,6 @@ static inline float max6(float a, float b, float c, float d, float e, float f);
 static inline bool br_resampling_nodes_2d_is_inside(br_resampling_nodes_t res, float const* xs, float const* ys, br_extent_t rect);
 static bool br_resampling_nodes_2d_is_inside_3d(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mat);
 static br_vec2_t br_resampling_nodes_2d_get_ratios(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, float screen_width, float screen_height);
-static br_vec2_t br_resampling_nodes_2d_get_ratios(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, float screen_width, float screen_height);
 static br_vec2_t br_resampling_nodes_2d_get_ratios_3d(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mvp);
 
 static bool br_resampling_nodes_3d_is_inside(br_resampling_nodes_3d_t const* res, br_data_t const* data, br_mat_t mvp);
@@ -132,8 +131,9 @@ bool br_resampling_get_point_at2(br_data_t data, br_vec2d_t vecd, float* dist, b
     br_resampling_nodes_2d_t node = rns.arr[cur_node];
     if (br_resampling_nodes_2d_is_inside(node.base, xs, ys, ex)) {
       if (node.base.depth == 0) {
-        for (br_u32 i = 0; i < node.base.len; ++i) {
+        for (br_u32 i = 0; i < node.base.len_with_nans; ++i) {
           br_u32 index = i + node.base.index_start;
+          if (isnanf(xs[index])) continue;
           float cur_dist = br_vec2_dist(BR_VEC2(xs[index], ys[index]), vec);
           if (cur_dist < *dist) {
             *out_index = index;
@@ -180,7 +180,7 @@ static void br_resampling_get_info(br_resampling_t* res, br_data_kind_t kind, br
   *child2 = base.child2;
   *depth = base.depth;
   *index_start = base.index_start;
-  *node_len = base.len;
+  *node_len = base.len_with_nans;
 }
 
 
@@ -255,34 +255,44 @@ static void br_resampling_nodes_deinit(br_resampling_t* nodes) {
 
 static bool br_resampling_nodes_2d_push_point(br_resampling_nodes_2d_allocator_t* nodes, size_t node_index, uint32_t index, float const* xs, float const* ys) {
   br_resampling_nodes_2d_t node = nodes->arr[node_index];
-  ++node.base.len;
-  if (node.base.len == 1) {
-    node.base.index_start =
-    node.base.max_index_y =
-    node.base.min_index_y =
-    node.base.max_index_x =
-    node.base.min_index_x = index;
-  } else {
-    if (ys[index] < ys[node.base.min_index_y]) node.base.min_index_y = index;
-    if (ys[index] > ys[node.base.max_index_y]) node.base.max_index_y = index;
-    if (xs[index] < xs[node.base.min_index_x]) node.base.min_index_x = index;
-    if (xs[index] > xs[node.base.max_index_x]) node.base.max_index_x = index;
+  ++node.base.len_with_nans;
+  if (isnanf(xs[index])) {
+    node.base.last_nan_index = index;
     if (node.base.depth > 0) {
       if (false == br_resampling_nodes_2d_push_point(nodes, node.base.child2, index, xs, ys)) {
         return false;
       }
     }
-    uint32_t power = br_resampling.powers[node.base.depth];
-    bool split = (node_index == 0 && node.base.len == RESAMPLING_NODE_MAX_LEN * power) ||
-      (node_index != 0 && node.base.len > RESAMPLING_NODE_MAX_LEN * power);
-    if (split) {
-      br_resampling_nodes_2d_t left = node;
-      br_resampling_nodes_2d_t right = {0};
-      br_da_push_t(br_u32, *nodes, left);
-      node.base.child1 = nodes->len - 1;
-      br_da_push_t(br_u32, *nodes, right);
-      node.base.child2 = nodes->len - 1;
-      ++node.base.depth;
+  } else {
+    ++node.base.len_without_nans;
+    if (node.base.len_without_nans == 1) {
+      node.base.index_start =
+      node.base.max_index_y =
+      node.base.min_index_y =
+      node.base.max_index_x =
+      node.base.min_index_x = index;
+    } else {
+      if (ys[index] < ys[node.base.min_index_y]) node.base.min_index_y = index;
+      if (ys[index] > ys[node.base.max_index_y]) node.base.max_index_y = index;
+      if (xs[index] < xs[node.base.min_index_x]) node.base.min_index_x = index;
+      if (xs[index] > xs[node.base.max_index_x]) node.base.max_index_x = index;
+      if (node.base.depth > 0) {
+        if (false == br_resampling_nodes_2d_push_point(nodes, node.base.child2, index, xs, ys)) {
+          return false;
+        }
+      }
+      uint32_t power = br_resampling.powers[node.base.depth];
+      bool split = (node_index == 0 && node.base.len_without_nans == RESAMPLING_NODE_MAX_LEN * power) ||
+        (node_index != 0 && node.base.len_without_nans > RESAMPLING_NODE_MAX_LEN * power);
+      if (split) {
+        br_resampling_nodes_2d_t left = node;
+        br_resampling_nodes_2d_t right = {0};
+        br_da_push_t(br_u32, *nodes, left);
+        node.base.child1 = nodes->len - 1;
+        br_da_push_t(br_u32, *nodes, right);
+        node.base.child2 = nodes->len - 1;
+        ++node.base.depth;
+      }
     }
   }
   nodes->arr[node_index] = node;
@@ -292,52 +302,63 @@ static bool br_resampling_nodes_2d_push_point(br_resampling_nodes_2d_allocator_t
 static bool br_resampling_nodes_3d_push_point(br_resampling_nodes_3d_allocator_t* nodes, size_t node_index, uint32_t index,
     float const* xs, float const* ys, float const* zs) {
   br_resampling_nodes_3d_t node = nodes->arr[node_index];
-  ++node.base.len;
-  if (node.base.len == 1) {
-    node.base.index_start =
-    node.max_index_z =
-    node.min_index_z =
-    node.base.max_index_y =
-    node.base.min_index_y =
-    node.base.max_index_x =
-    node.base.min_index_x = index;
-    node.curvature = BR_VEC3(0, 0, 0);
-  } else {
-    br_vec3_t v = BR_VEC3(xs[index], ys[index], zs[index]);
-    if (zs[index] < zs[node.min_index_z]) node.min_index_z = index;
-    if (zs[index] > zs[node.max_index_z]) node.max_index_z = index;
-    if (ys[index] < ys[node.base.min_index_y]) node.base.min_index_y = index;
-    if (ys[index] > ys[node.base.max_index_y]) node.base.max_index_y = index;
-    if (xs[index] < xs[node.base.min_index_x]) node.base.min_index_x = index;
-    if (xs[index] > xs[node.base.max_index_x]) node.base.max_index_x = index;
-    if (index > 2) {
-      // TODO: This needs not be calculated on every depth...
-      br_vec3_t m1 = BR_VEC3(xs[index - 1], ys[index - 1], zs[index - 1]);
-      br_vec3_t m2 = BR_VEC3(xs[index - 2], ys[index - 2], zs[index - 2]);
-      br_vec3_t d1 = br_vec3_sub(v, m1);
-      br_vec3_t d2 = br_vec3_sub(m1, m2);
-      br_vec3_t cur = br_vec3_sub(br_vec3_normalize(d1), br_vec3_normalize(d2));
-      cur.x = fabsf(cur.x);
-      cur.y = fabsf(cur.y);
-      cur.z = fabsf(cur.z);
-      node.curvature = br_vec3_add(node.curvature, cur);
-    }
+  ++node.base.len_with_nans;
+
+  if (isnanf(xs[index])) {
+    node.base.last_nan_index = index;
     if (node.base.depth > 0) {
       if (false == br_resampling_nodes_3d_push_point(nodes, node.base.child2, index, xs, ys, zs)) {
         return false;
       }
     }
-    uint32_t power = br_resampling.powers[node.base.depth];
-    bool split = (node_index == 0 && node.base.len == RESAMPLING_NODE_MAX_LEN * power) ||
-      (node_index != 0 && node.base.len > RESAMPLING_NODE_MAX_LEN * power);
-    if (split) {
-      br_resampling_nodes_3d_t left = node;
-      br_resampling_nodes_3d_t right = {0};
-      br_da_push_t(br_u32, *nodes, left);
-      node.base.child1 = nodes->len - 1;
-      br_da_push_t(br_u32, *nodes, right);
-      node.base.child2 = nodes->len - 1;
-      ++node.base.depth;
+  } else {
+    ++node.base.len_without_nans;
+    if (node.base.len_without_nans == 1) {
+      node.base.index_start =
+      node.max_index_z =
+      node.min_index_z =
+      node.base.max_index_y =
+      node.base.min_index_y =
+      node.base.max_index_x =
+      node.base.min_index_x = index;
+      node.curvature = BR_VEC3(0, 0, 0);
+    } else {
+      br_vec3_t v = BR_VEC3(xs[index], ys[index], zs[index]);
+      if (zs[index] < zs[node.min_index_z]) node.min_index_z = index;
+      if (zs[index] > zs[node.max_index_z]) node.max_index_z = index;
+      if (ys[index] < ys[node.base.min_index_y]) node.base.min_index_y = index;
+      if (ys[index] > ys[node.base.max_index_y]) node.base.max_index_y = index;
+      if (xs[index] < xs[node.base.min_index_x]) node.base.min_index_x = index;
+      if (xs[index] > xs[node.base.max_index_x]) node.base.max_index_x = index;
+      if (index > 2) {
+        // TODO: This needs not be calculated on every depth...
+        br_vec3_t m1 = BR_VEC3(xs[index - 1], ys[index - 1], zs[index - 1]);
+        br_vec3_t m2 = BR_VEC3(xs[index - 2], ys[index - 2], zs[index - 2]);
+        br_vec3_t d1 = br_vec3_sub(v, m1);
+        br_vec3_t d2 = br_vec3_sub(m1, m2);
+        br_vec3_t cur = br_vec3_sub(br_vec3_normalize(d1), br_vec3_normalize(d2));
+        cur.x = fabsf(cur.x);
+        cur.y = fabsf(cur.y);
+        cur.z = fabsf(cur.z);
+        node.curvature = br_vec3_add(node.curvature, cur);
+      }
+      if (node.base.depth > 0) {
+        if (false == br_resampling_nodes_3d_push_point(nodes, node.base.child2, index, xs, ys, zs)) {
+          return false;
+        }
+      }
+      uint32_t power = br_resampling.powers[node.base.depth];
+      bool split = (node_index == 0 && node.base.len_without_nans == RESAMPLING_NODE_MAX_LEN * power) ||
+        (node_index != 0 && node.base.len_without_nans > RESAMPLING_NODE_MAX_LEN * power);
+      if (split) {
+        br_resampling_nodes_3d_t left = node;
+        br_resampling_nodes_3d_t right = {0};
+        br_da_push_t(br_u32, *nodes, left);
+        node.base.child1 = nodes->len - 1;
+        br_da_push_t(br_u32, *nodes, right);
+        node.base.child2 = nodes->len - 1;
+        ++node.base.depth;
+      }
     }
   }
   nodes->arr[node_index] = node;
@@ -347,6 +368,25 @@ static bool br_resampling_nodes_3d_push_point(br_resampling_nodes_3d_allocator_t
 static int size_t_cmp(void const* a, void const* b) {
   long long const* ap = a, *bp = b;
   return (int)(*ap - *bp);
+}
+
+static void br_resampling_node_to_vecs(br_resampling_nodes_2d_t node, bool is_end, float const* xs, float const* ys, br_vec2_t pss[12], int* out_len) {
+  size_t indexies[] = {
+    node.base.index_start,
+    node.base.min_index_x,
+    node.base.min_index_y,
+    node.base.max_index_x,
+    node.base.max_index_y,
+    node.base.index_start + node.base.len_with_nans - (is_end ? 1 : 0),
+    0
+  };
+  int indexies_len = 6;
+  if (node.base.len_with_nans != node.base.len_without_nans) {
+    indexies[indexies_len++] = node.base.last_nan_index;
+  }
+  qsort(indexies, indexies_len, sizeof(indexies[0]), &size_t_cmp);
+  for (int i = 0; i < indexies_len; ++i) pss[i] = BR_VEC2(xs[indexies[i]], ys[indexies[i]]);
+  *out_len = indexies_len;
 }
 
 static void br_resampling_draw22(br_resampling_nodes_2d_allocator_t const* const nodes, size_t index, br_data_t const* const pg, br_extent_t plot_extent) {
@@ -360,30 +400,20 @@ static void br_resampling_draw22(br_resampling_nodes_2d_allocator_t const* const
     return;
   }
   size_t len = br_data_len(*pg);
-  bool is_end = len == node.base.index_start + node.base.len;
+  bool is_end = len == node.base.index_start + node.base.len_with_nans;
+  uint32_t last_index = node.base.len_with_nans + (is_end ? 0 : 1);
   if (node.base.depth == 0) {
     // This is the leaf node
-    br_line_culler_push_line_strip2(&xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1), &pg->resampling->culler, plot_size);
+    br_line_culler_push_line_strip2(&xs[node.base.index_start], &ys[node.base.index_start], last_index, &pg->resampling->culler, plot_size);
     return;
   }
   br_vec2_t ratios = br_resampling_nodes_2d_get_ratios(&node, xs, ys, plot_extent.width, plot_extent.height);
   float rmin = fminf(ratios.x, ratios.y);
   if (rmin < (node.base.depth == 1 ? pg->resampling->something : pg->resampling->something2)) {
-    size_t indexies[] = {
-      node.base.index_start,
-      node.base.min_index_x,
-      node.base.min_index_y,
-      node.base.max_index_x,
-      node.base.max_index_y,
-      node.base.index_start + node.base.len - (is_end ? 1 : 0)
-    };
-    qsort(indexies, sizeof(indexies)/sizeof(indexies[0]), sizeof(indexies[0]), &size_t_cmp);
-    br_vec2_t pss[6] = {
-      BR_VEC2(xs[indexies[0]], ys[indexies[0]]), BR_VEC2(xs[indexies[1]], ys[indexies[0]]),
-      BR_VEC2(xs[indexies[2]], ys[indexies[2]]), BR_VEC2(xs[indexies[3]], ys[indexies[3]]),
-      BR_VEC2(xs[indexies[4]], ys[indexies[4]]), BR_VEC2(xs[indexies[5]], ys[indexies[5]]),
-    };
-    br_line_culler_push_line_strip(pss, 6, &pg->resampling->culler, plot_size);
+    br_vec2_t pss[12];
+    int len = 0;
+    br_resampling_node_to_vecs(node, is_end, xs, ys, pss, &len);
+    br_line_culler_push_line_strip(pss, len, &pg->resampling->culler, plot_size);
   } else {
     br_resampling_draw22(nodes, node.base.child1, pg, plot_extent);
     br_resampling_draw22(nodes, node.base.child2, pg, plot_extent);
@@ -400,29 +430,18 @@ static void br_resampling_draw32(br_resampling_t const* const res, size_t index,
   br_mat_t mvp = res->args_3d.mvp;
   if (false == br_resampling_nodes_2d_is_inside_3d(&node, xs, ys, mvp)) return;
   size_t len = br_data_len(*pg);
-  bool is_end = len == node.base.index_start + node.base.len;
+  bool is_end = len == node.base.index_start + node.base.len_with_nans;
   if (node.base.depth == 0) { // This is the leaf node
-    br_mesh_3d_gen_line_strip3(res->args_3d, &xs[node.base.index_start], &ys[node.base.index_start], node.base.len + (is_end ? 0 : 1));
+    br_mesh_3d_gen_line_strip3(res->args_3d, &xs[node.base.index_start], &ys[node.base.index_start], node.base.len_with_nans + (is_end ? 0 : 1));
     return;
   }
   br_vec2_t ratios = br_resampling_nodes_2d_get_ratios_3d(&node, xs, ys, mvp);
   float rmin = fminf(ratios.x, ratios.y);
   if (rmin < (node.base.depth == 1 ? res->something : res->something2 )) {
-    size_t indexies[] = {
-      node.base.index_start,
-      node.base.min_index_x,
-      node.base.min_index_y,
-      node.base.max_index_x,
-      node.base.max_index_y,
-      node.base.index_start + node.base.len - (is_end ? 1 : 0)
-    };
-    qsort(indexies, sizeof(indexies)/sizeof(indexies[0]), sizeof(indexies[0]), &size_t_cmp);
-    br_vec2_t pss[6] = {
-      BR_VEC2(xs[indexies[0]], ys[indexies[0]]), BR_VEC2(xs[indexies[1]], ys[indexies[1]]),
-      BR_VEC2(xs[indexies[2]], ys[indexies[2]]), BR_VEC2(xs[indexies[3]], ys[indexies[3]]),
-      BR_VEC2(xs[indexies[4]], ys[indexies[4]]), BR_VEC2(xs[indexies[5]], ys[indexies[5]]),
-    };
-    br_mesh_3d_gen_line_strip2(res->args_3d, pss, 6);
+    br_vec2_t pss[12];
+    int len = 0;
+    br_resampling_node_to_vecs(node, is_end, xs, ys, pss, &len);
+    br_mesh_3d_gen_line_strip2(res->args_3d, pss, len);
   } else {
     br_resampling_draw32(res, node.base.child1, pg, plot);
     br_resampling_draw32(res, node.base.child2, pg, plot);
@@ -442,10 +461,10 @@ static void br_resampling_draw33(br_resampling_t const* const res, size_t index,
   br_vec3_t target = br_anim3(br_resampling.anims, plot->ddd.target_ah);
   if (false == br_resampling_nodes_3d_is_inside(&node, pg, mvp)) return;
   size_t len = br_data_len(*pg);
-  bool is_end = len == node.base.index_start + node.base.len;
+  bool is_end = len == node.base.index_start + node.base.len_with_nans;
   if (node.base.depth == 0) { // This is the leaf node
     size_t st = node.base.index_start;
-    br_mesh_3d_gen_line_strip1(res->args_3d, &xs[st], &ys[st], &zs[st], node.base.len + (is_end ? 0 : 1));
+    br_mesh_3d_gen_line_strip1(res->args_3d, &xs[st], &ys[st], &zs[st], node.base.len_with_nans + (is_end ? 0 : 1));
     return;
   }
   br_vec2_t ratios = br_resampling_nodes_3d_get_ratios(&node, pg, br_vec3_sub(target, eye));
@@ -453,6 +472,7 @@ static void br_resampling_draw33(br_resampling_t const* const res, size_t index,
   BR_ASSERT(ratios.y >= 0);
   float rmin = fmaxf(ratios.x, ratios.y);
   if (rmin < (node.base.depth == 1 ? pg->resampling->something2 : pg->resampling->something)) {
+    // TODO: Handle line splitting on locations where nans are..
     size_t indexies[] = {
       node.base.index_start,
       node.base.min_index_x,
@@ -461,7 +481,7 @@ static void br_resampling_draw33(br_resampling_t const* const res, size_t index,
       node.base.max_index_x,
       node.base.max_index_y,
       node.max_index_z,
-      node.base.index_start + node.base.len - (is_end ? 1 : 0)
+      node.base.index_start + node.base.len_with_nans - (is_end ? 1 : 0)
     };
 
     qsort(indexies, sizeof(indexies)/sizeof(indexies[0]), sizeof(indexies[0]), &size_t_cmp);
@@ -505,7 +525,7 @@ void br_resampling_draw(br_resampling_t* res, br_data_t const* pg, br_plot_t* pl
 
           br_resampling.shaders->line->uvs.color_uv = BR_COLOR_TO4(pg->color).xyz;
           br_extentd_t plot_rect = br_plot2d_extent_to_plot(*plot, BR_EXTENTD_TOF(extent));
-          plot_rect = br_data_ex_to_local(*pg, plot_rect); 
+          plot_rect = br_data_ex_to_local(*pg, plot_rect);
 
           br_resampling_draw22(&res->dd, 0, pg, BR_EXTENTD_TOF(plot_rect));
           br_line_culler_end(&res->culler);
@@ -582,9 +602,15 @@ float br_resampling_get_something2(br_resampling_t* res) {
 }
 
 static void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_vec2_t plot_size) {
+  if (isnanf(p.x)) {
+    lc->has_old = false;
+    return;
+  }
+
   if (lc->has_old == false) {
     lc->old = p;
     lc->has_old = true;
+    return;
   }
 
   br_vec2_t d =
@@ -648,13 +674,13 @@ static inline float max6(float a, float b, float c, float d, float e, float f) {
 }
 
 static inline bool br_resampling_nodes_2d_is_inside(br_resampling_nodes_t res, float const* xs, float const* ys, br_extent_t rect) {
-  if (res.len == 0) return false;
+  if (res.len_without_nans == 0) return false;
   float minx = xs[res.min_index_x], miny = ys[res.min_index_y], maxx = xs[res.max_index_x], maxy = ys[res.max_index_y];
   return !((miny > rect.y) || (maxy < rect.y - rect.height) || (minx > rect.x + rect.width) || (maxx < rect.x));
 }
 
 static bool br_resampling_nodes_2d_is_inside_3d(br_resampling_nodes_2d_t const* res, float const* xs, float const* ys, br_mat_t mat) {
-  if (res->base.len == 0) return false;
+  if (res->base.len_without_nans == 0) return false;
   br_vec3_t minx = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_x], ys[res->base.min_index_x]), mat),
             miny = br_vec2_transform_scale(BR_VEC2(xs[res->base.min_index_y], ys[res->base.min_index_y]), mat),
             maxx = br_vec2_transform_scale(BR_VEC2(xs[res->base.max_index_x], ys[res->base.max_index_x]), mat),
@@ -776,7 +802,7 @@ static br_vec2_t br_resampling_nodes_3d_get_ratios(br_resampling_nodes_3d_t cons
   br_vec3_t nA2 = br_vec3_abs(br_vec3_rot(BR_VEC3(0, diff.y, 0), rot_axis, angle));
   br_vec3_t nA3 = br_vec3_abs(br_vec3_rot(BR_VEC3(0, 0, diff.z), rot_axis, angle));
   br_vec3_t nA = BR_VEC3(max3(nA1.x, nA2.x, nA3.x), max3(nA1.y, nA2.y, nA3.y), 0);
-  br_vec3_t curv = br_vec3_scale(res->curvature, 1.f/(float)res->base.len);
+  br_vec3_t curv = br_vec3_scale(res->curvature, 1.f/(float)res->base.len_without_nans);
   br_vec3_t nC1 = br_vec3_abs(br_vec3_rot(BR_VEC3(curv.x, 0, 0), rot_axis, angle));
   br_vec3_t nC2 = br_vec3_abs(br_vec3_rot(BR_VEC3(0, curv.y, 0), rot_axis, angle));
   br_vec3_t nC3 = br_vec3_abs(br_vec3_rot(BR_VEC3(0, 0, curv.z), rot_axis, angle));

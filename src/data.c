@@ -500,6 +500,9 @@ error:
 }
 
 static void br_data_push_point2(br_data_t* data, br_vec2d_t v) {
+  if      (isnan(v.x)) v.y = NAN;
+  else if (isnan(v.y)) v.x = NAN;
+
   br_u64 next_index = br_serieses_len(data->series_handles[0]);
   br_serieses_push(data->series_handles[0], v.x);
   br_serieses_push(data->series_handles[1], v.y);
@@ -508,6 +511,10 @@ static void br_data_push_point2(br_data_t* data, br_vec2d_t v) {
 }
 
 static void br_data_push_point3(br_data_t* data, br_vec3d_t v) {
+  if      (isnan(v.x)) v.y = v.z = NAN;
+  else if (isnan(v.y)) v.x = v.z = NAN;
+  else if (isnan(v.z)) v.x = v.y = NAN;
+
   br_u64 next_index = br_serieses_len(data->series_handles[0]);
   br_serieses_push(data->series_handles[0], v.x);
   br_serieses_push(data->series_handles[1], v.y);

@@ -30,7 +30,14 @@ float br_resampling_get_something2(br_resampling_t* res);
 
 
 typedef struct br_resampling_nodes_t {
-  br_u32 index_start, len;
+  br_u32 index_start, len_with_nans;
+  br_u32 len_without_nans;
+
+  // NOTE: This is not that precise. There can be multiple Nans in the same node,
+  //       so this should realy be modev inde culler, ig..
+  //       And the resampler_t should have a list of all of nan indexies,
+  //       and that should be passed to the culler.
+  br_u32 last_nan_index;
   br_u32 child1;
   br_u32 child2;
   br_u32 depth;
