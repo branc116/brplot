@@ -22,6 +22,13 @@
 // 104.8      - 2
 #define RESAMPLING_NODE_MAX_LEN 16
 
+#if defined(_MSC_VER)
+#  define BR_ISNANF(value) isnanf(value)
+#else
+// Windows don't have floats...
+#  define BR_ISNANF(value) isnan(value)
+#endif
+
 static void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_vec2_t plot_size);
 static void br_line_culler_push_line_strip(br_vec2_t const* points, size_t n, br_line_culler_t* lc, br_vec2_t plot_size);
 static void br_line_culler_end(br_line_culler_t* lc);
@@ -133,7 +140,7 @@ bool br_resampling_get_point_at2(br_data_t data, br_vec2d_t vecd, float* dist, b
       if (node.base.depth == 0) {
         for (br_u32 i = 0; i < node.base.len_with_nans; ++i) {
           br_u32 index = i + node.base.index_start;
-          if (isnanf(xs[index])) continue;
+          if (BR_ISNANF(xs[index])) continue;
           float cur_dist = br_vec2_dist(BR_VEC2(xs[index], ys[index]), vec);
           if (cur_dist < *dist) {
             *out_index = index;
@@ -256,7 +263,7 @@ static void br_resampling_nodes_deinit(br_resampling_t* nodes) {
 static bool br_resampling_nodes_2d_push_point(br_resampling_nodes_2d_allocator_t* nodes, size_t node_index, uint32_t index, float const* xs, float const* ys) {
   br_resampling_nodes_2d_t node = nodes->arr[node_index];
   ++node.base.len_with_nans;
-  if (isnanf(xs[index])) {
+  if (BR_ISNANF((xs[index]))) {
     node.base.last_nan_index = index;
     if (node.base.depth > 0) {
       if (false == br_resampling_nodes_2d_push_point(nodes, node.base.child2, index, xs, ys)) {
@@ -304,7 +311,7 @@ static bool br_resampling_nodes_3d_push_point(br_resampling_nodes_3d_allocator_t
   br_resampling_nodes_3d_t node = nodes->arr[node_index];
   ++node.base.len_with_nans;
 
-  if (isnanf(xs[index])) {
+  if (BR_ISNANF(xs[index])) {
     node.base.last_nan_index = index;
     if (node.base.depth > 0) {
       if (false == br_resampling_nodes_3d_push_point(nodes, node.base.child2, index, xs, ys, zs)) {
@@ -602,7 +609,7 @@ float br_resampling_get_something2(br_resampling_t* res) {
 }
 
 static void br_line_culler_push_point(br_line_culler_t* lc, br_vec2_t p, br_vec2_t plot_size) {
-  if (isnanf(p.x)) {
+  if (BR_ISNANF(p.x)) {
     lc->has_old = false;
     return;
   }
