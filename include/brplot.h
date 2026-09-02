@@ -70,6 +70,7 @@ extern "C" {
  * These functions use global instance of br_plotter_t
  * For more  details what each parameter means jump to *PARAMETER_DEFINITIONS*
  * */
+typedef struct br_plotter_t br_plotter_t;
 typedef int br_data_id;
 BR_EXPORT br_data_id brp_1 (double x,                     br_data_id data_id);
 BR_EXPORT br_data_id brp_f1(float x,                      br_data_id data_id);
@@ -94,6 +95,11 @@ BR_EXPORT void brp_flush(void);
 
 // Wait until the plot window is closed
 BR_EXPORT void brp_wait(void);
+
+// Add a function that will be called on the ui thread each frame,
+// after everything else is drawn.
+typedef void (*brp_callback_t)(br_plotter_t* plotter, void* user_data);
+BR_EXPORT void brp_add_callback(brp_callback_t callback, void* user_data);
 
 /*
  * This macro is used to extend structures so that backward compatibility is

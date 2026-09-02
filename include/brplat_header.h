@@ -174,6 +174,7 @@ bool brpl_clipboard_request(brpl_window_t* window);
 
 uint64_t brpl_timestamp(void);
 double   brpl_time(void);
+void     brpl_sleep(double seconds);
 
 void* brpl_load_library(const char* path);
 void* brpl_load_symbol(void* library, const char* name);

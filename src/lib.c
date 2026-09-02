@@ -7,7 +7,6 @@
 #include "src/br_threads.h"
 #include "src/br_q.h"
 
-
 #define BR_VERSION ((BR_MAJOR_VERSION << 16) | (BR_MINOR_VERSION << 8) | (BR_PATCH_VERSION))
 
 typedef union {
@@ -248,8 +247,22 @@ void brp_wait(void) {
 }
 
 void brp_flush(void) {
+  // TODO: Create version of this function that takes br_plotter_t as an argument.
   brp_simp_create_plotter_if_no_exist();
   q_push(TOP_PLOTTER->commands, (q_command){ .type = q_command_flush} );
+}
+
+void brp_add_callback(brp_callback_t callback, void* user_data) {
+  // TODO: Create version of this function that takes br_plotter_t as an argument.
+  brp_simp_create_plotter_if_no_exist();
+  q_command command = {
+    .type = q_command_add_callback,
+    .callback = {
+      .function = callback,
+      .user_data = user_data
+    }
+  };
+  q_push(TOP_PLOTTER->commands, command);
 }
 
 void brp_label(const char* label, br_data_id data_id) {

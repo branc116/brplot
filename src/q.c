@@ -76,6 +76,10 @@ void handle_all_commands(br_plotter_t* br, q_commands* commands) {
       case q_command_flush:      return;
       case q_command_focus:      br_plots_focus_visible(br->plots, br->groups); break;
       case q_command_new_data:   br_datas_create(&br->groups, comm.new_data.data_id, comm.new_data.kind); break;
+      case q_command_add_callback: {
+        br_plotter_callback_t cb = { .function = comm.callback.function, .user_data = comm.callback.user_data };
+        br_da_push(br->callbacks, cb);
+      } break;
       default:                   BR_UNREACHABLE("Unknown command(%zu,%zu): %d\n", commands->read_index, commands->write_index, comm.type);
     }
   }

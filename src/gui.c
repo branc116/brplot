@@ -609,7 +609,6 @@ static void brgui_draw_show_data(brgui_show_data_t* d, br_datas_t datas) {
         case br_data_kind_2d: {
           int sh_x = data->series_handles[0];
           int sh_y = data->series_handles[1];
-          LOGI("Series handles: x=%d, y=%d", sh_x, sh_y);
           brui_vsplit(2);
             brgui_draw_series_info(br_serieses_get(sh_x));
           brui_vsplit_pop();

@@ -590,6 +590,22 @@ double brpl_time(void) {
   return (double)(brpl_timestamp() - brpl__time.start) / brpl__time.frequency;
 }
 
+void brpl_sleep(double seconds) {
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __NetBSD__) || defined(__DragonFly__) || defined (__APPLE__) || defined(__CYGWIN__)
+  struct timespec duration = {
+    .tv_sec = seconds,
+  };
+  duration.tv_nsec = (seconds - duration.tv_sec)*1e9;
+  nanosleep(&duration, NULL);
+#elif defined(_WIN32)
+  Sleep(seconds*1000);
+#elif defined(__EMSCRIPTEN__)
+  // Web don't sleep
+#else
+#  error "Sleep not defined on this platform.."
+#endif
+}
+
 static void brpl_time_init(void) {
 #if defined(_WIN32)
   LARGE_INTEGER freq;

@@ -25,6 +25,12 @@ typedef struct br_hotreload_state_t {
 } br_hotreload_state_t;
 #endif
 
+typedef void (*brp_callback_t)(br_plotter_t* plotter, void* user_data);
+typedef struct br_plotter_callback_t {
+  brp_callback_t function;
+  void* user_data;
+} br_plotter_callback_t;
+
 typedef enum br_plotter_entity_kind_t {
   br_plotter_entity_none,
   br_plotter_entity_plot_2d,
@@ -32,6 +38,7 @@ typedef enum br_plotter_entity_kind_t {
   br_plotter_entity_ui,
   br_plotter_entity_text_input,
 } br_plotter_entity_kind_t;
+
 
 typedef struct br_plotter_ui_t {
   brsp_id_t csv_file_opened;
@@ -88,6 +95,10 @@ typedef struct br_plotter_t {
   br_dagens_t dagens;
   br_csv_parser_t csv_parser;
   br_serieses_t serieses;
+  struct {
+    br_plotter_callback_t* arr;
+    size_t len, cap;
+  } callbacks;
 
   // Any thread can write to this q, only render thread can pop
   q_commands* commands;

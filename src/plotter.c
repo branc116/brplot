@@ -340,6 +340,10 @@ void br_plotter_update(br_plotter_t* br) {
           } else if (brui_action()->kind == brui_action_typing) {
             br->action.active = br_plotter_entity_text_input;
           }
+          for (int i = 0; i < br->callbacks.len; ++i) {
+            br_plotter_callback_t cb = br_da_get(br->callbacks, i);
+            cb.function(br, cb.user_data);
+          }
         brui_frame_end(&br->uiw);
         return;
       } break;

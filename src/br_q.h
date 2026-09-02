@@ -4,6 +4,7 @@
 #include "include/br_str_header.h"
 
 typedef struct br_plotter_t br_plotter_t;
+typedef void (*brp_callback_t)(br_plotter_t* plotter, void* user_data);
 
 typedef enum {
   q_command_none,
@@ -28,7 +29,8 @@ typedef enum {
   q_command_add_expr,
   q_command_focus,
   q_command_flush,
-  q_command_new_data
+  q_command_new_data,
+  q_command_add_callback,
 } q_command_type;
 
 typedef struct q_command {
@@ -78,6 +80,10 @@ typedef struct q_command {
       int data_id;
       br_data_kind_t kind;
     } new_data;
+    struct {
+      brp_callback_t function;
+      void* user_data;
+    } callback;
   };
 } q_command;
 
